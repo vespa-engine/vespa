@@ -13,7 +13,6 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
-import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Ignore;
 import org.junit.Test;
 

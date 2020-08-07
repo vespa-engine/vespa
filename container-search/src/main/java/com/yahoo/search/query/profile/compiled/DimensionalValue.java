@@ -179,12 +179,13 @@ public class DimensionalValue<VALUE> {
             void compact() {
                 Collections.sort(variants);
                 List<Binding> compacted = new ArrayList<>();
+
                 if (variants.get(variants.size() - 1).dimensions().length == 0) { // Shortcut
                     variants = List.of(variants.get(variants.size() - 1));
                 }
                 else {
                     for (int i = variants.size() - 1; i >= 0; i--) {
-                        if (!containsGeneralizationOf(variants.get(i), compacted))
+                        if ( ! containsGeneralizationOf(variants.get(i), compacted))
                             compacted.add(variants.get(i));
                     }
                     Collections.reverse(compacted);

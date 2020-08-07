@@ -45,17 +45,17 @@ public class QueryProfileXMLReader {
 
             for (File file : sortFiles(dir)) {
                 if ( ! file.getName().endsWith(".xml")) continue;
-                queryProfileReaders.add(new NamedReader(file.getName(),new FileReader(file)));
+                queryProfileReaders.add(new NamedReader(file.getName(), new FileReader(file)));
             }
             File typeDir=new File(dir,"types");
             if (typeDir.isDirectory()) {
                 for (File file : sortFiles(typeDir)) {
                     if ( ! file.getName().endsWith(".xml")) continue;
-                    queryProfileTypeReaders.add(new NamedReader(file.getName(),new FileReader(file)));
+                    queryProfileTypeReaders.add(new NamedReader(file.getName(), new FileReader(file)));
                 }
             }
 
-            return read(queryProfileTypeReaders,queryProfileReaders);
+            return read(queryProfileTypeReaders, queryProfileReaders);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not read query profiles from '" + directory + "'", e);

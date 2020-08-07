@@ -90,12 +90,12 @@ public class Binding implements Comparable<Binding> {
      * Returns whether this binding is a proper generalization of the given binding:
      * Meaning it contains a proper subset of the given bindings.
      */
-    public boolean generalizes(Binding binding) {
-        if ( dimensions.length >= binding.dimensions.length) return false;
-        for (int i = 0; i < dimensions.length; i++) {
-            int indexOfDimension = indexOf(dimensions[i], binding.dimensions);
-            if (indexOfDimension < 0) return false;
-            if ( ! binding.dimensionValues[i].equals(binding.dimensionValues[indexOfDimension])) return false;
+    public boolean generalizes(Binding other) {
+        if ( this.dimensions.length >= other.dimensions.length) return false;
+        for (int i = 0; i < this.dimensions.length; i++) {
+            int otherIndexOfDimension = this.indexOf(dimensions[i], other.dimensions);
+            if (otherIndexOfDimension < 0) return false;
+            if ( ! this.dimensionValues[i].equals(other.dimensionValues[otherIndexOfDimension])) return false;
         }
         return true;
     }
