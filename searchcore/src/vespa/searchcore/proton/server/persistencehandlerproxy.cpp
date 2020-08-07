@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistencehandlerproxy.h"
-#include "documentretriever.h"
 #include "documentdb.h"
 #include <vespa/searchcore/proton/feedoperation/createbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
@@ -10,7 +9,6 @@
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 
 using storage::spi::Bucket;
@@ -18,8 +16,8 @@ using storage::spi::Timestamp;
 
 namespace proton {
 
-PersistenceHandlerProxy::PersistenceHandlerProxy(const DocumentDB::SP &documentDB)
-    : _documentDB(documentDB),
+PersistenceHandlerProxy::PersistenceHandlerProxy(DocumentDB::SP documentDB)
+    : _documentDB(std::move(documentDB)),
       _feedHandler(_documentDB->getFeedHandler()),
       _bucketHandler(_documentDB->getBucketHandler()),
       _clusterStateHandler(_documentDB->getClusterStateHandler())

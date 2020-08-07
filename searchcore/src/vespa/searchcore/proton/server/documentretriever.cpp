@@ -143,7 +143,7 @@ public:
         }
     }
 
-    virtual bool allowVisitCaching() const override {
+    bool allowVisitCaching() const override {
         return _visitor.allowVisitCaching();
     }
 
@@ -154,7 +154,8 @@ private:
 
 }  // namespace
 
-Document::UP DocumentRetriever::getDocument(DocumentIdT lid) const
+Document::UP
+DocumentRetriever::getDocument(DocumentIdT lid) const
 {
     Document::UP doc = _doc_store.read(lid, getDocumentTypeRepo());
     if (doc) {

@@ -314,6 +314,17 @@ struct Fixture {
         attr->commit();
     }
 
+    Fixture &
+    addIndexField(const Schema::IndexField &field) {
+        schema.addIndexField(field);
+        return *this;
+    }
+
+    void
+    build() {
+        _retriever = std::make_unique<DocumentRetriever>(_dtName, repo, schema, meta_store, attr_manager, doc_store);
+    }
+
     Fixture()
         : repo(getRepoConfig()),
           meta_store(std::make_shared<BucketDBOwner>()),
@@ -335,46 +346,29 @@ struct Fixture {
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());
         schema::CollectionType ct = schema::CollectionType::SINGLE;
-        addAttribute<IntegerAttribute>(
-                dyn_field_i, dyn_value_i, DataType::INT32, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_field_d, dyn_value_d, DataType::DOUBLE, ct);
-        addAttribute<StringAttribute>(
-                dyn_field_s, dyn_value_s, DataType::STRING, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_field_n, DataType::FLOAT, ct);
-        addAttribute<IntegerAttribute>(
-                dyn_field_nai, DataType::INT32, ct);
-        addAttribute<StringAttribute>(
-                dyn_field_nas, DataType::STRING, ct);
-        addAttribute<IntegerAttribute>(
-                zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
+        addAttribute<IntegerAttribute>(dyn_field_i, dyn_value_i, DataType::INT32, ct);
+        addAttribute<FloatingPointAttribute>(dyn_field_d, dyn_value_d, DataType::DOUBLE, ct);
+        addAttribute<StringAttribute>(dyn_field_s, dyn_value_s, DataType::STRING, ct);
+        addAttribute<FloatingPointAttribute>(dyn_field_n, DataType::FLOAT, ct);
+        addAttribute<IntegerAttribute>(dyn_field_nai, DataType::INT32, ct);
+        addAttribute<StringAttribute>(dyn_field_nas, DataType::STRING, ct);
+        addAttribute<IntegerAttribute>(zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
         addTensorAttribute(dyn_field_tensor.c_str(), *dynamic_tensor);
-        PredicateAttribute *attr = addAttribute<PredicateAttribute>(
-                dyn_field_p, DataType::BOOLEANTREE, ct);
+        PredicateAttribute *attr = addAttribute<PredicateAttribute>(dyn_field_p, DataType::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
         attr->commit();
         ct = schema::CollectionType::ARRAY;
-        addAttribute<IntegerAttribute>(
-                dyn_arr_field_i, dyn_value_i, DataType::INT32, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_d, dyn_value_d, DataType::DOUBLE, ct);
-        addAttribute<StringAttribute>(
-                dyn_arr_field_s, dyn_value_s, DataType::STRING, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_n, DataType::FLOAT, ct);
-        addAttribute<IntegerAttribute>(
-                zcurve_array_field, dynamic_zcurve_value, DataType::INT64, ct);
+        addAttribute<IntegerAttribute>(dyn_arr_field_i, dyn_value_i, DataType::INT32, ct);
+        addAttribute<FloatingPointAttribute>(dyn_arr_field_d, dyn_value_d, DataType::DOUBLE, ct);
+        addAttribute<StringAttribute>(dyn_arr_field_s, dyn_value_s, DataType::STRING, ct);
+        addAttribute<FloatingPointAttribute>(dyn_arr_field_n, DataType::FLOAT, ct);
+        addAttribute<IntegerAttribute>(zcurve_array_field, dynamic_zcurve_value, DataType::INT64, ct);
         ct = schema::CollectionType::WEIGHTEDSET;
-        addAttribute<IntegerAttribute>(
-                dyn_wset_field_i, dyn_value_i, DataType::INT32, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_d, dyn_value_d, DataType::DOUBLE, ct);
-        addAttribute<StringAttribute>(
-                dyn_wset_field_s, dyn_value_s, DataType::STRING, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_n, DataType::FLOAT, ct);
-        _retriever = std::make_unique<DocumentRetriever>(_dtName, repo, schema, meta_store, attr_manager, doc_store);
+        addAttribute<IntegerAttribute>(dyn_wset_field_i, dyn_value_i, DataType::INT32, ct);
+        addAttribute<FloatingPointAttribute>(dyn_wset_field_d, dyn_value_d, DataType::DOUBLE, ct);
+        addAttribute<StringAttribute>(dyn_wset_field_s, dyn_value_s, DataType::STRING, ct);
+        addAttribute<FloatingPointAttribute>(dyn_wset_field_n, DataType::FLOAT, ct);
+        build();
     }
 
     void clearAttributes(std::vector<vespalib::string> names) {
@@ -386,15 +380,13 @@ struct Fixture {
     }
 };
 
-TEST_F("require that document retriever can retrieve document meta data",
-       Fixture) {
+TEST_F("require that document retriever can retrieve document meta data", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
     EXPECT_EQUAL(f.lid, meta_data.lid);
     EXPECT_EQUAL(f.timestamp, meta_data.timestamp);
 }
 
-TEST_F("require that document retriever can retrieve bucket meta data",
-       Fixture) {
+TEST_F("require that document retriever can retrieve bucket meta data", Fixture) {
     DocumentMetaData::Vector result;
     f._retriever->getBucketMetaData(makeSpiBucket(f.bucket_id, PartitionId(0)), result);
     ASSERT_EQUAL(1u, result.size());
@@ -476,7 +468,7 @@ TEST_F("require that attributes are patched into stored document", Fixture) {
 }
 
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
-    f.schema.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING));
+    f.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING)).build();
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());
@@ -574,9 +566,8 @@ TEST_F("require that tensor attribute can be retrieved", Fixture) {
     ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(dyn_field_tensor);
-    ASSERT_TRUE(value.get());
-    TensorFieldValue *tensor_value =
-        dynamic_cast<TensorFieldValue *>(value.get());
+    ASSERT_TRUE(value);
+    TensorFieldValue *tensor_value = dynamic_cast<TensorFieldValue *>(value.get());
     ASSERT_TRUE(tensor_value->getAsTensorPtr()->equals(*dynamic_tensor));
 }
 
