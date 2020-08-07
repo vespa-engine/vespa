@@ -291,22 +291,22 @@ TEST(FieldCollectionTest, testHash ) {
     const DocumentType & type = *repo.getDocumentType("testdoctype1");
     FieldCollection fc(type);
     EXPECT_EQ(0ul, fc.hash());
-        fc.insertField(type.getField("headerval"));
+    fc.insertField(type.getField("headerval"));
     EXPECT_EQ(0ul, fc.hash());
     fc.complete();
     EXPECT_EQ(0x548599858c77ef83ul, fc.hash());
-        fc.insertField(type.getField("hstringval")).complete();
+    fc.insertField(type.getField("hstringval")).complete();
     EXPECT_EQ(0x4a7ff2406d36a9b0ul, fc.hash());
-        fc.insertField(type.getField("headerval")).complete();
+    fc.insertField(type.getField("headerval")).complete();
     EXPECT_EQ(0x4a7ff2406d36a9b0ul, fc.hash());
 
     FieldCollection fc2(type);
     EXPECT_EQ(0ul, fc2.hash());
-        fc2.insertField(type.getField("hstringval")).complete();
+    fc2.insertField(type.getField("hstringval")).complete();
     EXPECT_EQ(0x1e0918531b19734ul, fc2.hash());
-        fc2.insertField(type.getField("headerval")).complete();
+    fc2.insertField(type.getField("headerval")).complete();
     EXPECT_EQ(fc.hash(), fc2.hash());
-        fc2.insertField(type.getField("headerval")).complete();
+    fc2.insertField(type.getField("headerval")).complete();
     EXPECT_EQ(fc.hash(), fc2.hash());
 }
 
