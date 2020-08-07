@@ -78,7 +78,7 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
       _fields(fields.clone()),
       _defaultSerializedSize((readConsistency == ReadConsistency::WEAK) ? defaultSerializedSize : -1),
       _readConsistency(readConsistency),
-      _metaOnly(fields.getType() == document::FieldSet::NONE),
+      _metaOnly(fields.getType() == document::FieldSet::Type::NONE),
       _ignoreMaxBytes((readConsistency == ReadConsistency::WEAK) && ignoreMaxBytes),
       _fetchedData(false),
       _sources(),
@@ -140,7 +140,7 @@ public:
                 _selectSession = _cachedSelect->createSession();
                 using document::select::GidFilter;
                 _gidFilter = GidFilter::for_selection_root_node(_selectSession->selectNode());
-                _selectCxt.reset(new SelectContext(*_cachedSelect));
+                _selectCxt = std::make_unique<SelectContext>(*_cachedSelect);
                 _selectCxt->getAttributeGuards();
             }
         } else {
@@ -216,7 +216,7 @@ public:
         }
     }
 
-    virtual bool allowVisitCaching() const override {
+    bool allowVisitCaching() const override {
         return _allowVisitCaching;
     }
 

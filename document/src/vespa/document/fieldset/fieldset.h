@@ -15,7 +15,7 @@ class Document;
 class FieldSet
 {
 public:
-    enum Type {
+    enum class Type {
         FIELD,
         SET,
         ALL,

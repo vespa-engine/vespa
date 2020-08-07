@@ -17,13 +17,13 @@ parseSpecialValues(vespalib::stringref name)
 {
     FieldSet::UP fs;
     if ((name.size() == 4) && (name[1] == 'i') && (name[2] == 'd') && (name[3] == ']')) {
-        fs.reset(new DocIdOnly());
+        fs = std::make_unique<DocIdOnly>();
     } else if ((name.size() == 5) && (name[1] == 'a') && (name[2] == 'l') && (name[3] == 'l') && (name[4] == ']')) {
-        fs.reset(new AllFields());
+        fs = std::make_unique<AllFields>();
     } else if ((name.size() == 6) && (name[1] == 'n') && (name[2] == 'o') && (name[3] == 'n') && (name[4] == 'e') && (name[5] == ']')) {
-        fs.reset(new NoFields());
+        fs = std::make_unique<NoFields>();
     } else if ((name.size() == 7) && (name[1] == 'd') && (name[2] == 'o') && (name[3] == 'c') && (name[4] == 'i') && (name[5] == 'd') && (name[6] == ']')) {
-        fs.reset(new DocIdOnly());
+        fs = std::make_unique<DocIdOnly>();
     } else {
         throw vespalib::IllegalArgumentException(
                 "The only special names (enclosed in '[]') allowed are "
@@ -44,20 +44,20 @@ parseFieldCollection(const DocumentTypeRepo& repo,
     const DocumentType& type(*typePtr);
 
     StringTokenizer tokenizer(fieldNames, ",");
-    FieldCollection::UP collection(new FieldCollection(type));
+    auto collection = std::make_unique<FieldCollection>(type);
 
-    for (uint32_t i = 0; i < tokenizer.size(); ++i) {
-        const DocumentType::FieldSet * fs = type.getFieldSet(tokenizer[i]);
+    for (const auto & token : tokenizer) {
+        const DocumentType::FieldSet * fs = type.getFieldSet(token);
         if (fs) {
-            for (DocumentType::FieldSet::Fields::const_iterator it(fs->getFields().begin()), mt(fs->getFields().end()); it != mt; it++) {
-                collection->insert(type.getField(*it));
+            for (const auto & fieldName : fs->getFields()) {
+                collection->insert(type.getField(fieldName));
             }
         } else {
-            collection->insert(type.getField(tokenizer[i]));
+            collection->insert(type.getField(token));
         }
     }
 
-    return FieldSet::UP(collection.release());
+    return collection;
 }
 
 }
@@ -83,34 +83,33 @@ vespalib::string
 FieldSetRepo::serialize(const FieldSet& fieldSet)
 {
     switch (fieldSet.getType()) {
-    case FieldSet::FIELD:
-        return static_cast<const Field&>(fieldSet).getName();
-    case FieldSet::SET:
-    {
-        const FieldCollection& collection = static_cast<const FieldCollection&>(fieldSet);
+        case FieldSet::Type::FIELD:
+            return static_cast<const Field&>(fieldSet).getName();
+        case FieldSet::Type::SET: {
+            const auto & collection = static_cast<const FieldCollection&>(fieldSet);
 
-        vespalib::asciistream stream;
-        stream << collection.getDocumentType().getName() << ":";
-        for (Field::Set::const_iterator iter = collection.getFields().begin();
-             iter != collection.getFields().end();
-             ++iter) {
-            if (iter != collection.getFields().begin()) {
-                stream << ",";
+            vespalib::asciistream stream;
+            stream << collection.getDocumentType().getName() << ":";
+            bool first = true;
+            for (const Field * field : collection.getFields()) {
+                if (first) {
+                    first = false;
+                } else {
+                    stream << ",";
+                }
+                stream << field->getName();
             }
 
-            stream << (*iter)->getName();
+            return stream.str();
         }
-
-        return stream.str();
-    }
-    case FieldSet::ALL:
-        return AllFields::NAME;
-    case FieldSet::NONE:
-        return NoFields::NAME;
-    case FieldSet::DOCID:
-        return DocIdOnly::NAME;
-    default:
-        return "";
+        case FieldSet::Type::ALL:
+            return AllFields::NAME;
+        case FieldSet::Type::NONE:
+            return NoFields::NAME;
+        case FieldSet::Type::DOCID:
+            return DocIdOnly::NAME;
+        default:
+            return "";
     }
 }
 
