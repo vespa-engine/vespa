@@ -1249,6 +1249,18 @@ public class QueryProfileVariantsTestCase {
         assertEquals("yahoo/alerts", cAlert.get("vertical.custid", toMap("entry=alert", "intl=us", "lang=en-US")));
     }
 
+    @Test
+    public void testCompactedVariants() {
+        QueryProfile test = new QueryProfile("main_single_feed");
+        test.setDimensions(new String[] {"x"});
+        test.set("InX1Only", "x1", new String[] { "x1" }, null);
+
+        CompiledQueryProfile ctest = test.compile(null);
+        assertEquals("x1", ctest.get("InX1Only", toMap("x=x1")));
+        assertEquals(null, ctest.get("InX1Only", toMap("x=x2")));
+        assertEquals(null, ctest.get("InX1Only"));
+    }
+
     private void assertGet(String expectedValue, String parameter, String[] dimensionValues, QueryProfile profile, CompiledQueryProfile cprofile) {
         Map<String,String> context=toMap(profile,dimensionValues);
         assertEquals("Looking up '" + parameter + "' for '" + Arrays.toString(dimensionValues) + "'",expectedValue,cprofile.get(parameter,context));

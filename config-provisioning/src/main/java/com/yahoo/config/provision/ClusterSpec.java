@@ -181,7 +181,7 @@ public final class ClusterSpec {
      * are ignored.
      */
     public boolean satisfies(ClusterSpec other) {
-        if (!other.id.equals(this.id)) return false; // ID mismatch
+        if ( ! other.id.equals(this.id)) return false; // ID mismatch
         if (other.type.isContent() || this.type.isContent()) // Allow seamless transition between content and combined
             return other.type.isContent() == this.type.isContent();
         return other.type.equals(this.type);
