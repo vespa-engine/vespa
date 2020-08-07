@@ -498,7 +498,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         updateMetrics();
 
         // GET metrics
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-central-1/metrics", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/dev/region/us-central-1/instance/default/metrics", GET)
                         .userIdentity(USER_ID),
                                 new File("proton-metrics.json"));
 
