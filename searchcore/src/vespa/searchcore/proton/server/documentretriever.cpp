@@ -54,7 +54,7 @@ FieldSetAttributeDB::FieldSetAttributeDB(const IFieldInfo & fieldInfo)
 FieldSetAttributeDB::~FieldSetAttributeDB() = default;
 
 bool
-FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::Field::Set & set) const {
+FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const std::vector<const document::Field *> & set) const {
     std::lock_guard guard(_lock);
     auto found = _isFieldSetAttributeOnly.find(key);
     if (found != _isFieldSetAttributeOnly.end()) {
@@ -109,12 +109,13 @@ DocumentRetriever
                 && ((*attr)->getBasicType() != BasicType::PREDICATE)
                 && ((*attr)->getBasicType() != BasicType::REFERENCE))
             {
-                _attributeFields.insert(field);
+                _attributeFields.emplace_back(field);
             } else {
                 _areAllFieldsAttributes = false;
             }
         }
     }
+    std::sort(_attributeFields.begin(), _attributeFields.end(), document::Field::FieldPtrComparator());
 }
 
 bool
@@ -140,7 +141,8 @@ DocumentRetriever::needFetchFromDocStore(const document::FieldSet & fieldSet) co
 
 bool
 DocumentRetriever::isFieldAttribute(const document::Field & field) const {
-    return _attributeFields.find(&field) != _attributeFields.end();
+    return std::binary_search(_attributeFields.begin(), _attributeFields.end(),
+                              &field, document::Field::FieldPtrComparator());
 }
 
 DocumentRetriever::~DocumentRetriever() = default;
@@ -246,8 +248,8 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
                 break;
             case document::FieldSet::Type::FIELD: {
                 const auto & field = static_cast<const document::Field &>(fieldSet);
-                document::Field::Set attributes;
-                attributes.insert(&field);
+                std::vector<const document::Field *> attributes;
+                attributes.emplace_back(&field);
                 populate(lid, *doc, attributes);
                 break;
             }
@@ -276,7 +278,7 @@ DocumentRetriever::populate(DocumentIdT lid, Document & doc) const {
 }
 
 void
-DocumentRetriever::populate(DocumentIdT lid, Document & doc, const document::Field::Set & attributeFields) const
+DocumentRetriever::populate(DocumentIdT lid, Document & doc, const std::vector<const document::Field *> & attributeFields) const
 {
     for (const document::Field * field : attributeFields) {
         AttributeGuard::UP attr = _attr_manager.getAttribute(field->getName());

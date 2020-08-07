@@ -39,9 +39,9 @@ public:
 class FieldCollection : public FieldSet
 {
 public:
-    typedef std::unique_ptr<FieldCollection> UP;
+    using FieldList = std::vector<const Field *>;
 
-    FieldCollection(const DocumentType& docType, Field::Set set);
+    FieldCollection(const DocumentType& docType, FieldList set);
     FieldCollection(const FieldCollection &);
     FieldCollection(FieldCollection&&) = default;
     ~FieldCollection() override;
@@ -59,14 +59,14 @@ public:
     /**
      * Returns all the fields contained in this collection.
      */
-    const Field::Set& getFields() const { return _set; }
+    const FieldList & getFields() const { return _fields; }
 
     FieldSet* clone() const override { return new FieldCollection(*this); }
 
     uint64_t hash() const { return _hash; }
 private:
-    Field::Set _set;
-    uint64_t   _hash;
+    FieldList           _fields;
+    uint64_t            _hash;
     const DocumentType& _docType;
 };
 

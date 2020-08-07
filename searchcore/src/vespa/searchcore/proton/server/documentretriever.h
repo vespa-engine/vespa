@@ -23,7 +23,7 @@ class FieldSetAttributeDB {
 public:
     FieldSetAttributeDB(const IFieldInfo & fieldInfo);
     ~FieldSetAttributeDB();
-    bool areAllFieldsAttributes(uint64_t key, const document::Field::Set & set) const;
+    bool areAllFieldsAttributes(uint64_t key, const std::vector<const document::Field *> & set) const;
 private:
     using FieldSetAttributeMap = vespalib::hash_map<uint64_t, bool>;
     const IFieldInfo               & _fieldInfo;
@@ -49,14 +49,15 @@ public:
     void populate(search::DocumentIdT lid, document::Document & doc) const;
     bool needFetchFromDocStore(const document::FieldSet &) const;
 private:
-    void populate(search::DocumentIdT lid, document::Document & doc, const document::Field::Set & attributeFields) const;
+    using AttributeFields = std::vector<const document::Field *>;;
+    void populate(search::DocumentIdT lid, document::Document & doc, const std::vector<const document::Field *> & attributeFields) const;
 
     bool isFieldAttribute(const document::Field & field) const override;
     const search::index::Schema     &_schema;
     const search::IAttributeManager &_attr_manager;
     const search::IDocumentStore    &_doc_store;
     PositionFields                   _possiblePositionFields;
-    document::Field::Set             _attributeFields;
+    AttributeFields                  _attributeFields;
     bool                             _areAllFieldsAttributes;
     FieldSetAttributeDB              _fieldSetAttributeInfo;
 

@@ -583,27 +583,28 @@ TEST("require ") {
     document::Field attr1("attr1", 1, *document::DataType::LONG, true);
     document::Field attr2("attr2", 2, *document::DataType::LONG, true);
     document::Field not_attr1("not_attr1", 3, *document::DataType::LONG, true);
-    document::Field::Set allAttr;
-    allAttr.insert(&attr1);
+    std::vector<const document::Field *> allAttr;
+    allAttr.emplace_back(&attr1);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
     EXPECT_EQUAL(1u, lookup._count);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
     EXPECT_EQUAL(1u, lookup._count);
 
-    allAttr.insert(&attr2);
+    allAttr.emplace_back(&attr2);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
     EXPECT_EQUAL(3u, lookup._count);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
     EXPECT_EQUAL(3u, lookup._count);
 
-    document::Field::Set notAllAttr;
-    notAllAttr.insert(&not_attr1);
+    std::vector<const document::Field *> notAllAttr;
+    notAllAttr.emplace_back(&not_attr1);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
     EXPECT_EQUAL(4u, lookup._count);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
     EXPECT_EQUAL(4u, lookup._count);
 
-    notAllAttr.insert(&attr1);
+    notAllAttr.insert(notAllAttr.begin(), &attr1);
+    notAllAttr.emplace_back(&attr2);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
     EXPECT_EQUAL(6u, lookup._count);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));

@@ -16,7 +16,7 @@ namespace storage {
 class FieldVisitor : public document::select::Visitor {
 private:
     document::DocumentType _docType;
-    document::Field::Set _fields;
+    document::FieldCollection::FieldList _fields;
     
 public:
     explicit FieldVisitor(const document::DocumentType & docType)

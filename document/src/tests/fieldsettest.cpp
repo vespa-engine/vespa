@@ -14,18 +14,12 @@ namespace document {
 class FieldSetTest : public ::testing::Test {
 
 protected:
-    std::string stringifyFields(const Document& doc) const;
-    std::string doCopyFields(const Document& src,
-                             const DocumentTypeRepo& docRepo,
-                             const std::string& fieldSetStr,
-                             Document* dest = 0) const;
-    std::string doCopyDocument(const Document& src,
-                               const DocumentTypeRepo& docRepo,
-                               const std::string& fieldSetStr);
-    std::string doStripFields(const Document& doc,
-                              const DocumentTypeRepo& docRepo,
-                              const std::string& fieldSetStr);
-    Document::UP createTestDocument(const TestDocMan& testDocMan) const;
+    static std::string stringifyFields(const Document& doc);
+    static std::string doCopyFields(const Document& src, const DocumentTypeRepo& docRepo,
+                                    const std::string& fieldSetStr,Document* dest = nullptr);
+    static std::string doCopyDocument(const Document& src, const DocumentTypeRepo& docRepo, const std::string& fieldSetStr);
+    static std::string doStripFields(const Document& doc, const DocumentTypeRepo& docRepo, const std::string& fieldSetStr);
+    static Document::UP createTestDocument(const TestDocMan& testDocMan);
 };
 
 TEST_F(FieldSetTest, testParsing)
@@ -33,20 +27,16 @@ TEST_F(FieldSetTest, testParsing)
     TestDocMan testDocMan;
     const DocumentTypeRepo& docRepo = testDocMan.getTypeRepo();
 
-    FieldSetRepo repo;
+    (void) dynamic_cast<AllFields&>(*FieldSetRepo::parse(docRepo, AllFields::NAME));
+    (void) dynamic_cast<NoFields&>(*FieldSetRepo::parse(docRepo, NoFields::NAME));
+    (void) dynamic_cast<DocIdOnly&>(*FieldSetRepo::parse(docRepo, DocIdOnly::NAME));
 
-    (void) dynamic_cast<AllFields&>(*repo.parse(docRepo, AllFields::NAME));
-    (void) dynamic_cast<NoFields&>(*repo.parse(docRepo, NoFields::NAME));
-    (void) dynamic_cast<DocIdOnly&>(*repo.parse(docRepo, DocIdOnly::NAME));
-
-    FieldSet::UP set = repo.parse(docRepo, "testdoctype1:headerval,content");
-    FieldCollection& coll = dynamic_cast<FieldCollection&>(*set);
+    FieldSet::UP set = FieldSetRepo::parse(docRepo, "testdoctype1:headerval,content");
+    auto & coll = dynamic_cast<FieldCollection&>(*set);
 
     std::ostringstream ost;
-    for (Field::Set::const_iterator iter = coll.getFields().begin();
-         iter != coll.getFields().end();
-         ++iter) {
-        ost << (*iter)->getName() << " ";
+    for (const Field * field : coll.getFields()) {
+        ost << field->getName() << " ";
     }
 
     EXPECT_EQ(std::string("content headerval "), ost.str());
@@ -54,18 +44,17 @@ TEST_F(FieldSetTest, testParsing)
 
 namespace {
 
-bool checkContains(FieldSetRepo& r, const DocumentTypeRepo& repo,
-                   const std::string& str1, const std::string str2) {
-    FieldSet::UP set1 = r.parse(repo, str1);
-    FieldSet::UP set2 = r.parse(repo, str2);
+bool checkContains(const DocumentTypeRepo& repo,
+                   const std::string& str1, const std::string & str2) {
+    FieldSet::UP set1 = FieldSetRepo::parse(repo, str1);
+    FieldSet::UP set2 = FieldSetRepo::parse(repo, str2);
 
     return set1->contains(*set2);
 }
 
-bool checkError(FieldSetRepo& r, const DocumentTypeRepo& repo,
-                const std::string& str) {
+bool checkError(const DocumentTypeRepo& repo, const std::string& str) {
     try {
-        r.parse(repo, str);
+        FieldSetRepo::parse(repo, str);
         return false;
     } catch (...) {
         return true;
@@ -99,25 +88,24 @@ TEST_F(FieldSetTest, testContains)
     EXPECT_EQ(false, none.contains(id));
     EXPECT_EQ(true, id.contains(none));
 
-    FieldSetRepo r;
-    EXPECT_EQ(true, checkContains(r, repo,
+    EXPECT_EQ(true, checkContains(repo,
                                              "testdoctype1:content,headerval",
                                              "testdoctype1:content"));
-    EXPECT_EQ(false, checkContains(r, repo,
+    EXPECT_EQ(false, checkContains(repo,
                                               "testdoctype1:content",
                                               "testdoctype1:content,headerval"));
-    EXPECT_EQ(true, checkContains(r, repo,
+    EXPECT_EQ(true, checkContains(repo,
                                              "testdoctype1:headerval,content",
                                              "testdoctype1:content,headerval"));
 
-    EXPECT_TRUE(checkError(r, repo, "nodoctype"));
-    EXPECT_TRUE(checkError(r, repo, "unknowndoctype:foo"));
-    EXPECT_TRUE(checkError(r, repo, "testdoctype1:unknownfield"));
-    EXPECT_TRUE(checkError(r, repo, "[badid]"));
+    EXPECT_TRUE(checkError(repo, "nodoctype"));
+    EXPECT_TRUE(checkError(repo, "unknowndoctype:foo"));
+    EXPECT_TRUE(checkError(repo, "testdoctype1:unknownfield"));
+    EXPECT_TRUE(checkError(repo, "[badid]"));
 }
 
 std::string
-FieldSetTest::stringifyFields(const Document& doc) const
+FieldSetTest::stringifyFields(const Document& doc)
 {
     std::vector<std::string> output;
     const StructFieldValue& fields(doc.getFields());
@@ -147,14 +135,13 @@ std::string
 FieldSetTest::doCopyFields(const Document& src,
                            const DocumentTypeRepo& docRepo,
                            const std::string& fieldSetStr,
-                           Document* dest) const
+                           Document* dest)
 {
     Document destDoc(src.getType(), DocumentId("id:ns:" + src.getType().getName() + "::fieldset"));
     if (!dest) {
         dest = &destDoc;
     }
-    FieldSetRepo repo;
-    FieldSet::UP fset = repo.parse(docRepo, fieldSetStr);
+    FieldSet::UP fset = FieldSetRepo::parse(docRepo, fieldSetStr);
     FieldSet::copyFields(*dest, src, *fset);
     return stringifyFields(*dest);
 }
@@ -165,14 +152,13 @@ FieldSetTest::doStripFields(const Document& doc,
                             const std::string& fieldSetStr)
 {
     Document::UP copy(doc.clone());
-    FieldSetRepo repo;
-    FieldSet::UP fset = repo.parse(docRepo, fieldSetStr);
+    FieldSet::UP fset = FieldSetRepo::parse(docRepo, fieldSetStr);
     FieldSet::stripFields(*copy, *fset);
     return stringifyFields(*copy);
 }
 
 Document::UP
-FieldSetTest::createTestDocument(const TestDocMan& testDocMan) const
+FieldSetTest::createTestDocument(const TestDocMan& testDocMan)
 {
     Document::UP doc(testDocMan.createDocument("megafoo megabar",
                                                "id:ns:testdoctype1::1",
@@ -212,8 +198,7 @@ FieldSetTest::doCopyDocument(const Document& src,
                              const DocumentTypeRepo& docRepo,
                              const std::string& fieldSetStr)
 {
-    FieldSetRepo repo;
-    FieldSet::UP fset = repo.parse(docRepo, fieldSetStr);
+    FieldSet::UP fset = FieldSetRepo::parse(docRepo, fieldSetStr);
     Document::UP doc(FieldSet::createDocumentSubsetCopy(src, *fset));
     return stringifyFields(*doc);
 }
@@ -240,9 +225,9 @@ TEST_F(FieldSetTest, testDocumentSubsetCopy)
         NoFields::NAME,
         "testdoctype1:hstringval,content"
     };
-    for (size_t i = 0; i < sizeof(fieldSets) / sizeof(fieldSets[0]); ++i) {
-        EXPECT_EQ(doCopyFields(*src, repo, fieldSets[i]),
-                  doCopyDocument(*src, repo, fieldSets[i]));
+    for (const char * fieldSet : fieldSets) {
+        EXPECT_EQ(doCopyFields(*src, repo, fieldSet),
+                  doCopyDocument(*src, repo, fieldSet));
     }
 }
 
@@ -260,9 +245,9 @@ TEST_F(FieldSetTest, testSerialize)
     };
 
     FieldSetRepo repo;
-    for (size_t i = 0; i < sizeof(fieldSets) / sizeof(fieldSets[0]); ++i) {
-        FieldSet::UP fs = repo.parse(docRepo, fieldSets[i]);
-        EXPECT_EQ(vespalib::string(fieldSets[i]), repo.serialize(*fs));
+    for (const char * fieldSet : fieldSets) {
+        FieldSet::UP fs = FieldSetRepo::parse(docRepo, fieldSet);
+        EXPECT_EQ(vespalib::string(fieldSet), repo.serialize(*fs));
     }
 }
 
@@ -289,13 +274,13 @@ TEST(FieldCollectionTest, testHash ) {
     TestDocMan testDocMan;
     const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
     const DocumentType & type = *repo.getDocumentType("testdoctype1");
-    Field::Set set;
+    FieldCollection::FieldList set;
     EXPECT_EQ(0ul, FieldCollection(type, set).hash());
-    set.insert(&type.getField("headerval"));
+    set.emplace_back(&type.getField("headerval"));
     EXPECT_EQ(0x548599858c77ef83ul, FieldCollection(type, set).hash());
-    set.insert(&type.getField("hstringval"));
+    set.emplace_back(&type.getField("hstringval"));
     EXPECT_EQ(0x4a7ff2406d36a9b0ul, FieldCollection(type, set).hash());
-    set.erase(&type.getField("headerval"));
+    set.erase(set.begin());
     EXPECT_EQ(0x1e0918531b19734ul, FieldCollection(type, set).hash());
 }
 

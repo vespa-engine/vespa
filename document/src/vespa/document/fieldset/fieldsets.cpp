@@ -4,6 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <algorithm>
 #include <xxhash.h>
 
 namespace document {
@@ -11,11 +12,11 @@ namespace document {
 namespace {
 
 uint64_t
-computeHash(const Field::Set & set) {
-    if (set.empty()) return 0ul;
+computeHash(const FieldCollection::FieldList & list) {
+    if (list.empty()) return 0ul;
 
     vespalib::asciistream os;
-    for (const Field * field : set) {
+    for (const Field * field : list) {
         os << field->getName() << ':';
     }
     return XXH64(os.c_str(), os.size(), 0);
@@ -23,11 +24,15 @@ computeHash(const Field::Set & set) {
 
 }
 
-FieldCollection::FieldCollection(const DocumentType& type, Field::Set set)
-    : _set(std::move(set)),
-      _hash(computeHash(_set)),
+FieldCollection::FieldCollection(const DocumentType& type, FieldList list)
+    : _fields(std::move(list)),
+      _hash(0),
       _docType(type)
-{ }
+{
+    std::sort(_fields.begin(), _fields.end(), Field::FieldPtrComparator());
+    std::unique(_fields.begin(), _fields.end(), [](const Field *a, const Field *b) { return a->getId() == b->getId(); });
+    _hash = computeHash(_fields);
+}
 
 FieldCollection::FieldCollection(const FieldCollection&) = default;
 
@@ -38,22 +43,18 @@ FieldCollection::contains(const FieldSet& fields) const
 {
     switch (fields.getType()) {
         case Type::FIELD:
-            return _set.find(static_cast<const Field*>(&fields)) != _set.end();
+            return std::binary_search(_fields.begin(), _fields.end(),
+                                      static_cast<const Field*>(&fields), Field::FieldPtrComparator());
         case Type::SET: {
             const auto & coll = static_cast<const FieldCollection&>(fields);
 
-            if (_set.size() < coll._set.size()) {
-                return false;
-            }
+            if (_fields.size() < coll._fields.size()) return false;
 
-            auto iter = coll.getFields().begin();
-
-            while (iter != coll.getFields().end()) {
-                if (_set.find(*iter) == _set.end()) {
+            for (const Field * field : coll.getFields()) {
+                if ( ! std::binary_search(_fields.begin(), _fields.end(),
+                                          field, Field::FieldPtrComparator())) {
                     return false;
                 }
-
-                ++iter;
             }
 
             return true;
