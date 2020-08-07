@@ -18,9 +18,9 @@ private:
     BucketHandler       &_bucketHandler;
     ClusterStateHandler &_clusterStateHandler;
 public:
-    PersistenceHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
+    explicit PersistenceHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
 
-    virtual ~PersistenceHandlerProxy();
+    ~PersistenceHandlerProxy() override;
 
 
     void initialize() override;

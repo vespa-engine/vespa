@@ -26,7 +26,7 @@ DocumentRetrieverBase::DocumentRetrieverBase(
       _hasFields(hasFields)
 {
     const document::DocumentType * docType(_repo.getDocumentType(_docTypeName.getName()));
-    _emptyDoc.reset(new document::Document(*docType, DocumentId("id:empty:" + _docTypeName.getName() + "::empty")));
+    _emptyDoc = std::make_unique<document::Document>(*docType, DocumentId("id:empty:" + _docTypeName.getName() + "::empty"));
     _emptyDoc->setRepo(_repo);
 }
 
@@ -58,7 +58,7 @@ DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
 const search::IAttributeManager *
 DocumentRetrieverBase::getAttrMgr() const
 {
-    return NULL;
+    return nullptr;
 }
 
     
@@ -71,7 +71,7 @@ DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
             return _selectCache[selection];
     }
     
-    CachedSelect::SP nselect(new CachedSelect());
+    auto nselect = std::make_shared<CachedSelect>();
     
     nselect->set(selection,
                  _docTypeName.getName(),
