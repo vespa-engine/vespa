@@ -18,7 +18,9 @@ import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.SubstringItem;
+import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
+import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.query.parser.SpecialTokens;
 import com.yahoo.prelude.query.parser.TestLinguistics;
@@ -2505,6 +2507,26 @@ public class ParseTestCase {
         // which was the behavior when adding handling of too large term
         // weights, it is at least consistent. It should probably be implicit
         // phrases instead.
+    }
+
+    @Test
+    public void testAndSegmenting() {
+        Item root = tester.parseQuery("a'b&c'd", Language.ENGLISH, Query.Type.ALL);
+        assertTrue(root instanceof AndItem);
+        AndItem top = (AndItem) root;
+        assertTrue(top.getItem(0) instanceof AndSegmentItem);
+        assertTrue(top.getItem(1) instanceof AndSegmentItem);
+        AndSegmentItem seg1 = (AndSegmentItem) top.getItem(0);
+        AndSegmentItem seg2 = (AndSegmentItem) top.getItem(1);
+        Item t1 = seg1.getItem(0);
+        Item t2 = seg1.getItem(1);
+        Item t3 = seg2.getItem(0);
+        Item t4 = seg2.getItem(1);
+        assertTrue(((TaggableItem)t2).hasUniqueID());
+        assertTrue(((TaggableItem)t3).hasUniqueID());
+        assertTrue(((TaggableItem)t1).getConnectedItem() == t2);
+        assertTrue(((TaggableItem)t2).getConnectedItem() == t3);
+        assertTrue(((TaggableItem)t3).getConnectedItem() == t4);
     }
 
     @Test
