@@ -341,6 +341,9 @@ public class SessionRepository {
      * @param sessionId session id for the new session
      */
     public void sessionAdded(long sessionId) {
+        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+        if (sessionZKClient.readStatus().equals(Session.Status.DELETE)) return;
+
         log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
         RemoteSession remoteSession = createRemoteSession(sessionId);
         loadSessionIfActive(remoteSession);
