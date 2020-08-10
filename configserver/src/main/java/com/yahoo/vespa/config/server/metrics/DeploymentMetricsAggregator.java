@@ -7,29 +7,29 @@ import java.util.Optional;
  * @author olaa
  * @author ogronnesby
  */
-public class MetricsAggregator {
+public class DeploymentMetricsAggregator {
 
     private LatencyMetrics feed;
     private LatencyMetrics qr;
     private LatencyMetrics container;
     private Double documentCount;
 
-    public synchronized MetricsAggregator addFeedLatency(double sum, double count) {
+    public synchronized DeploymentMetricsAggregator addFeedLatency(double sum, double count) {
         this.feed = combineLatency(this.feed, sum, count);
         return this;
     }
 
-    public synchronized MetricsAggregator addQrLatency(double sum, double count) {
+    public synchronized DeploymentMetricsAggregator addQrLatency(double sum, double count) {
         this.qr = combineLatency(this.qr, sum, count);
         return this;
     }
 
-    public synchronized MetricsAggregator addContainerLatency(double sum, double count) {
+    public synchronized DeploymentMetricsAggregator addContainerLatency(double sum, double count) {
         this.container = combineLatency(this.container, sum, count);
         return this;
     }
 
-    public synchronized MetricsAggregator addDocumentCount(double count) {
+    public synchronized DeploymentMetricsAggregator addDocumentCount(double count) {
         this.documentCount = (this.documentCount == null ? 0.0 : this.documentCount) + count;
         return this;
     }

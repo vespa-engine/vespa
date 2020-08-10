@@ -8,7 +8,7 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.metrics.ClusterInfo;
-import com.yahoo.vespa.config.server.metrics.MetricsAggregator;
+import com.yahoo.vespa.config.server.metrics.DeploymentMetricsAggregator;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,11 +17,11 @@ import java.util.Map;
 /**
  * @author olaa
  */
-public class MetricsResponse extends HttpResponse {
+public class DeploymentMetricsResponse extends HttpResponse {
 
     private final Slime slime = new Slime();
 
-    public MetricsResponse(int status, ApplicationId applicationId, Map<ClusterInfo, MetricsAggregator> aggregatedMetrics) {
+    public DeploymentMetricsResponse(int status, ApplicationId applicationId, Map<ClusterInfo, DeploymentMetricsAggregator> aggregatedMetrics) {
         super(status);
 
         Cursor application = slime.setObject();
@@ -34,7 +34,7 @@ public class MetricsResponse extends HttpResponse {
             cluster.setString("clusterId", entry.getKey().getClusterId());
             cluster.setString("clusterType", entry.getKey().getClusterType());
 
-            MetricsAggregator aggregator = entry.getValue();
+            DeploymentMetricsAggregator aggregator = entry.getValue();
             Cursor metrics = cluster.setObject("metrics");
             aggregator.aggregateQueryRate().ifPresent(queryRate -> metrics.setDouble("queriesPerSecond", queryRate));
             aggregator.aggregateFeedRate().ifPresent(feedRate -> metrics.setDouble("feedPerSecond", feedRate));

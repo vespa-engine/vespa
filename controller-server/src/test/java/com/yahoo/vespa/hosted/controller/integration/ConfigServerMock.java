@@ -17,6 +17,7 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -33,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceCon
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
@@ -57,6 +59,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.json.JSONObject;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
@@ -81,6 +84,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
+    private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -259,6 +263,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     public void setMetrics(DeploymentId deployment, List<ClusterMetrics> clusterMetrics) {
         this.clusterMetrics.put(deployment, clusterMetrics);
+    }
+
+    public void setProtonMetrics(List<ProtonMetrics> protonMetrics) {
+        this.protonMetrics = protonMetrics;
     }
 
     public void deferLoadBalancerProvisioningIn(Set<Environment> environments) {
@@ -444,8 +452,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public List<ClusterMetrics> getMetrics(DeploymentId deployment) {
+    public List<ClusterMetrics> getDeploymentMetrics(DeploymentId deployment) {
         return Collections.unmodifiableList(clusterMetrics.getOrDefault(deployment, List.of()));
+    }
+
+    @Override
+    public List<ProtonMetrics> getProtonMetrics(DeploymentId deployment) {
+        return this.protonMetrics;
     }
 
     // Returns a canned example response

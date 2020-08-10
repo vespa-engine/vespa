@@ -27,16 +27,16 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author olaa
  */
-public class ApplicationMetricsRetrieverTest {
+public class DeploymentMetricsRetrieverTest {
 
     @Test
     public void getMetrics()  {
         MockModel mockModel = new MockModel(mockHosts());
-        MockMetricsRetriever mockMetricsRetriever = new MockMetricsRetriever();
+        MockDeploymentMetricsRetriever mockMetricsRetriever = new MockDeploymentMetricsRetriever();
         Application application = new Application(mockModel, null, 0, false,
         null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
-        ApplicationMetricsRetriever clusterMetricsRetriever = new ApplicationMetricsRetriever(mockMetricsRetriever);
+        DeploymentMetricsRetriever clusterMetricsRetriever = new DeploymentMetricsRetriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);
 
         assertEquals(2, mockMetricsRetriever.hosts.size()); // Verify that logserver was ignored
@@ -57,19 +57,19 @@ public class ApplicationMetricsRetrieverTest {
         return List.of(hostInfo1, hostInfo2, hostInfo3);
     }
 
-    class MockMetricsRetriever extends ClusterMetricsRetriever {
+    class MockDeploymentMetricsRetriever extends ClusterDeploymentMetricsRetriever {
 
         Collection<URI> hosts = new ArrayList<>();
 
         @Override
-        public Map<ClusterInfo, MetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
+        public Map<ClusterInfo, DeploymentMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
             this.hosts = hosts;
 
             return Map.of(
                     new ClusterInfo("content_cluster_id", "content"),
-                    new MetricsAggregator().addDocumentCount(1000),
+                    new DeploymentMetricsAggregator().addDocumentCount(1000),
                     new ClusterInfo("container_cluster_id", "container"),
-                    new MetricsAggregator().addContainerLatency(123, 5)
+                    new DeploymentMetricsAggregator().addContainerLatency(123, 5)
             );
         }
     }

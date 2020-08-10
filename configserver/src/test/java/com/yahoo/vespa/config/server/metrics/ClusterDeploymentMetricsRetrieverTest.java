@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author olaa
  */
-public class ClusterMetricsRetrieverTest {
+public class ClusterDeploymentMetricsRetrieverTest {
 
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().dynamicPort(), true);
@@ -57,15 +57,15 @@ public class ClusterMetricsRetrieverTest {
         ClusterInfo expectedContentCluster = new ClusterInfo("content_cluster_id", "content");
         ClusterInfo expectedContainerCluster = new ClusterInfo("container_cluster_id", "container");
 
-        Map<ClusterInfo, MetricsAggregator> aggregatorMap = new ClusterMetricsRetriever().requestMetricsGroupedByCluster(hosts);
+        Map<ClusterInfo, DeploymentMetricsAggregator> aggregatorMap = new ClusterDeploymentMetricsRetriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
-                new MetricsAggregator().addDocumentCount(6000.0),
+                new DeploymentMetricsAggregator().addDocumentCount(6000.0),
                 aggregatorMap.get(expectedContentCluster)
         );
 
         compareAggregators(
-                new MetricsAggregator()
+                new DeploymentMetricsAggregator()
                         .addContainerLatency(3000, 43)
                         .addContainerLatency(2000, 0)
                         .addQrLatency(3000, 43)
@@ -87,7 +87,7 @@ public class ClusterMetricsRetrieverTest {
     // Same tolerance value as used internally in MetricsAggregator.isZero
     private static final double metricsTolerance = 0.001;
 
-    private void compareAggregators(MetricsAggregator expected, MetricsAggregator actual) {
+    private void compareAggregators(DeploymentMetricsAggregator expected, DeploymentMetricsAggregator actual) {
         BiConsumer<Double, Double> assertDoubles = (a, b) -> assertEquals(a.doubleValue(), b.doubleValue(), metricsTolerance);
 
         compareOptionals(expected.aggregateDocumentCount(), actual.aggregateDocumentCount(), assertDoubles);

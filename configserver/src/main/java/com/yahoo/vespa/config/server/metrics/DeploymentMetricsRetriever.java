@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.metrics;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.DeploymentMetricsResponse;
 
 import java.net.URI;
 import java.util.Collection;
@@ -17,29 +17,29 @@ import java.util.stream.Collectors;
  *
  * @author olaa
  */
-public class ApplicationMetricsRetriever {
+public class DeploymentMetricsRetriever {
 
-    private final ClusterMetricsRetriever metricsRetriever;
+    private final ClusterDeploymentMetricsRetriever metricsRetriever;
 
-    public ApplicationMetricsRetriever() {
-        this(new ClusterMetricsRetriever());
+    public DeploymentMetricsRetriever() {
+        this(new ClusterDeploymentMetricsRetriever());
     }
 
-    public ApplicationMetricsRetriever(ClusterMetricsRetriever metricsRetriever) {
+    public DeploymentMetricsRetriever(ClusterDeploymentMetricsRetriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 
-    public MetricsResponse getMetrics(Application application) {
+    public DeploymentMetricsResponse getMetrics(Application application) {
         var hosts = getHostsOfApplication(application);
         var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
-        return new MetricsResponse(200, application.getId(), clusterMetrics);
+        return new DeploymentMetricsResponse(200, application.getId(), clusterMetrics);
     }
 
     private static Collection<URI> getHostsOfApplication(Application application) {
         return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
                 .map(HostInfo::getHostname)
-                .map(ApplicationMetricsRetriever::createMetricsProxyURI)
+                .map(DeploymentMetricsRetriever::createMetricsProxyURI)
                 .collect(Collectors.toList());
 
     }

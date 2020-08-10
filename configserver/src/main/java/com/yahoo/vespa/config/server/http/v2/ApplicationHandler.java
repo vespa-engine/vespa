@@ -55,7 +55,8 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/*",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
@@ -137,8 +138,12 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.getLogs(applicationId, hostname, apiParams);
         }
 
-        if (isMetricsRequest(request)) {
-            return applicationRepository.getMetrics(applicationId);
+        if (isProtonMetricsRequest(request)) {
+            return applicationRepository.getProtonMetrics(applicationId);
+        }
+
+        if (isDeploymentMetricsRequest(request)) {
+            return applicationRepository.getDeploymentMetrics(applicationId);
         }
 
         if (isIsSuspendedRequest(request)) {
@@ -231,9 +236,14 @@ public class ApplicationHandler extends HttpHandler {
                request.getUri().getPath().endsWith("/suspended");
     }
 
-    private static boolean isMetricsRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("/metrics");
+    private static boolean isProtonMetricsRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 8 &&
+                request.getUri().getPath().endsWith("/metrics/proton");
+    }
+
+    private static boolean isDeploymentMetricsRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 8 &&
+                request.getUri().getPath().endsWith("/metrics/deployment");
     }
 
     private static boolean isLogRequest(HttpRequest request) {

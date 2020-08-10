@@ -8,6 +8,7 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
@@ -54,7 +55,9 @@ public interface ConfigServer {
      */
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);
 
-    List<ClusterMetrics> getMetrics(DeploymentId deployment);
+    List<ClusterMetrics> getDeploymentMetrics(DeploymentId deployment);
+
+    List<ProtonMetrics> getProtonMetrics(DeploymentId deployment);
 
     List<String> getContentClusters(DeploymentId deployment);
 

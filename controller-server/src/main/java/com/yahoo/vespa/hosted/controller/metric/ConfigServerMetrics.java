@@ -31,7 +31,7 @@ public class ConfigServerMetrics {
 
     public DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone) {
         var deploymentId = new DeploymentId(application, zone);
-        var metrics = configServer.getMetrics(deploymentId);
+        var metrics = configServer.getDeploymentMetrics(deploymentId);
 
         // The field names here come from the MetricsResponse class.
         return new DeploymentMetrics(
@@ -61,5 +61,4 @@ public class ConfigServerMetrics {
 
         return weightedLatency / rateSum;
     }
-
 }
