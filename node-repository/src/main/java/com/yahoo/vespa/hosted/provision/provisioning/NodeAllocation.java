@@ -321,8 +321,8 @@ class NodeAllocation {
         int currentRetiredCount = (int) nodes.stream().filter(node -> node.node.allocation().get().membership().retired()).count();
         int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), currentRetiredCount) - currentRetiredCount;
 
-        if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0, prefer to retire higher indexes to minimize redistribution
-            for (PrioritizableNode node : byDecreasingIndex(nodes)) {
+        if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
+            for (PrioritizableNode node : byRetiringPriority(nodes)) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state() == Node.State.active) {
                     node.node = node.node.retire(Agent.application, nodeRepository.clock().instant());
                     if (--deltaRetiredCount == 0) break;
@@ -371,8 +371,12 @@ class NodeAllocation {
                 .collect(Collectors.toList());
     }
 
-    private List<PrioritizableNode> byDecreasingIndex(Set<PrioritizableNode> nodes) {
-        return nodes.stream().sorted(nodeIndexComparator().reversed()).collect(Collectors.toList());
+    /** Prefer to retire nodes on spare hosts, otherwise retire higher indexes to minimize redistribution */
+    private List<PrioritizableNode> byRetiringPriority(Set<PrioritizableNode> nodes) {
+        return nodes.stream()
+                    .sorted(Comparator.comparing((PrioritizableNode n) -> n.violatesSpares)
+                                      .thenComparing(nodeIndexComparator()).reversed())
+                    .collect(Collectors.toList());
     }
 
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
