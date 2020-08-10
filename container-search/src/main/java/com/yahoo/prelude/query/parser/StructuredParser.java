@@ -667,9 +667,19 @@ abstract class StructuredParser extends AbstractParser {
         int items = composite.items().size();
         if (items < 2) return;
         Item nextToLast = composite.items().get(items - 2);
-        Item last = composite.items().get(items - 1);
+        if (nextToLast instanceof AndSegmentItem) {
+            var subItems = ((AndSegmentItem) nextToLast).items();
+            nextToLast = subItems.get(subItems.size() - 1);
+        }
         if ( ! (nextToLast instanceof TermItem)) return;
-        ((TermItem)nextToLast).setConnectivity(last, 1);
+        Item last = composite.items().get(items - 1);
+        if (last instanceof AndSegmentItem) {
+            last = ((AndSegmentItem) last).items().get(0);
+        }
+        if (last instanceof TaggableItem) {
+            TermItem t1 = (TermItem) nextToLast;
+            t1.setConnectivity(last, 1);
+        }
     }
 
     private boolean addStartMarking() {
