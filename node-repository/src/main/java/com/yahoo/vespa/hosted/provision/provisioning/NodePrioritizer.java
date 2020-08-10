@@ -51,13 +51,13 @@ public class NodePrioritizer {
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, int wantedGroups, boolean allocateFully, NodeRepository nodeRepository) {
+                    int wantedGroups, boolean allocateFully, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
         this.capacity = new HostCapacity(allNodes, nodeRepository.resourcesCalculator());
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.application = application;
-        this.spareHosts = capacity.findSpareHosts(allNodes.asList(), spares);
+        this.spareHosts = capacity.findSpareHosts(allNodes.asList(), nodeRepository.spareCount());
         this.allocateFully = allocateFully;
         this.nodeRepository = nodeRepository;
 

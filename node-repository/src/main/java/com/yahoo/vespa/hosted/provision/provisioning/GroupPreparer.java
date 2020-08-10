@@ -57,7 +57,7 @@ public class GroupPreparer {
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount, int wantedGroups) {
+                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups) {
         boolean dynamicProvisioningEnabled = nodeRepository.canProvisionHosts() && nodeRepository.zone().getCloud().dynamicProvisioning();
         boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
         try (Mutex lock = nodeRepository.lock(application)) {
@@ -74,7 +74,6 @@ public class GroupPreparer {
                                                                   application,
                                                                   cluster,
                                                                   requestedNodes,
-                                                                  spareCount,
                                                                   wantedGroups,
                                                                   allocateFully,
                                                                   nodeRepository);
