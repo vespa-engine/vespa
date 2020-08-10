@@ -31,6 +31,10 @@ public abstract class TaggableSegmentItem extends SegmentItem implements Taggabl
 
     /** See {@link TaggableItem#setConnectivity} */
     public void setConnectivity(Item item, double connectivity) {
+        if (!(item instanceof TaggableItem)) {
+            throw new IllegalArgumentException("setConnectivity item must be taggable, was: "
+                                               + item.getClass() + " [" + item + "]");
+        }
         setHasUniqueID(true);
         item.setHasUniqueID(true);
         if (connectedItem != null) {

@@ -27,6 +27,10 @@ public abstract class SimpleTaggableItem extends Item implements TaggableItem {
 
     @Override
     public void setConnectivity(Item item, double connectivity) {
+        if (!(item instanceof TaggableItem)) {
+            throw new IllegalArgumentException("setConnectivity item must be taggable, was: "
+                                               + item.getClass() + " [" + item + "]");
+        }
         setHasUniqueID(true);
         item.setHasUniqueID(true);
         if (connectedItem != null) {

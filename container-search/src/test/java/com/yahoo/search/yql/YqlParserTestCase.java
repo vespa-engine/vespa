@@ -1036,6 +1036,11 @@ public class YqlParserTestCase {
         // success: parsed without exception
     }
 
+    @Test
+    public void testAndSegmenting() {
+        parse("select * from sources * where (default contains ([{\"stem\": false}]\"m\") AND default contains ([{\"origin\": {\"original\": \"m\'s\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"m\", \"s\"))) timeout 472;");
+    }
+
     private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {
         boolean startAnchorIsDefault = false; // Always
 

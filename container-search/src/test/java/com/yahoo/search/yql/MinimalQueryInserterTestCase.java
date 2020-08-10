@@ -342,10 +342,17 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
+    public void testAndSegmenting() {
+        Query query = new Query("?yql=select%20%2A%20from%20sources%20%2A%20where%20%5B%7B%22defaultIndex%22%3A%20%22default%22%2C%22grammar%22%3A%20%22web%22%2C%22stem%22%3A%20true%2C%22allowEmpty%22%3A%20true%7D%5DuserInput%28%40animal%29%3B&animal=m%26m%27s&tracelevel=3");
+        execution.search(query);
+        assertEquals("select * from sources * where (default contains \"m\" AND default contains ([{\"origin\": {\"original\": \"m\\'s\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"m\", \"s\")));",
+                     query.yqlRepresentation());
+    }
+
+    @Test
     public void verifyThatWarmupIsSane() {
         assertTrue(MinimalQueryInserter.warmup());
     }
-
 
     private static void assertGrouping(String expected, Query query) {
         List<String> actual = new ArrayList<>();
