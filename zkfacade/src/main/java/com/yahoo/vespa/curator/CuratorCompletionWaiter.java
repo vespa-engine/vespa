@@ -104,7 +104,7 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, String id) {
         Path waiterPath = parentPath.append(waiterNode);
         curator.delete(waiterPath);
-        curator.createAtomically(parentPath, waiterPath);
+        curator.create(waiterPath);
         return new CuratorCompletionWaiter(curator, waiterPath.getAbsolute(), id, Clock.systemUTC());
     }
 
