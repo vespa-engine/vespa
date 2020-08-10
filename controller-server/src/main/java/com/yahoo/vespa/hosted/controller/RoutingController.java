@@ -10,6 +10,9 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -62,12 +65,14 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
+    private final BooleanFlag hideSharedRoutingEndpoint;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.routingPolicies = new RoutingPolicies(controller);
         this.rotationRepository = new RotationRepository(rotationsConfig, controller.applications(),
                                                          controller.curator());
+        this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -84,9 +89,12 @@ public class RoutingController {
         boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
         // Avoid reading application more than once per call to this
         var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
+        var hideSharedEndpoints = hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value();
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
+                // Hide shared endpoints if configured for application, and the application can be routed to directly
+                if (hideSharedEndpoints && !routingMethod.isDirect() && !isSystemApplication && canRouteDirectlyTo(deployment, application.get())) continue;
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
                 endpoints.add(policy.endpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
                 endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));

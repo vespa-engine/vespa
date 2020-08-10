@@ -358,6 +358,14 @@ public class Flags {
             "Takes effect on config server restart"
     );
 
+    public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
+            "hide-shared-routing-endpoint",
+            false,
+            "Whether the controller should hide shared routing layer endpoint",
+            "Takes effect immediately",
+            APPLICATION_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
