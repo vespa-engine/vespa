@@ -2,7 +2,7 @@
   "url": "http://localhost:8080/nodes/v2/node/host9.yahoo.com",
   "id": "host9.yahoo.com",
   "state": "provisioned",
-  "type": "tenant",
+  "type": "host",
   "hostname": "host9.yahoo.com",
   "openStackId": "host9.yahoo.com",
   "flavor": "large-variant",
