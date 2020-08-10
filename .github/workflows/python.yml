@@ -38,9 +38,9 @@ jobs:
     - name: Check if there is no diff library/notebooks
       run: |
         if [ -n "$(nbdev_diff_nbs)" ]; then echo -e "!!! Detected difference between the notebooks and the library"; false; fi
-    - name: Run notebook tests
-      run: |
-        nbdev_test_nbs
+#    - name: Run notebook tests
+#      run: |
+#        nbdev_test_nbs
     - name: Build and publish
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
