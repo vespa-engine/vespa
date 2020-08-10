@@ -141,7 +141,7 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.getProtonMetrics(applicationId);
         }
 
-        if (isDeploymentMetricsRequest(request)) {
+        if (isDeploymentMetricsRequest(request) || isVintageMetrics(request)) {
             return applicationRepository.getDeploymentMetrics(applicationId);
         }
 
@@ -238,6 +238,12 @@ public class ApplicationHandler extends HttpHandler {
     private static boolean isProtonMetricsRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 8 &&
                 request.getUri().getPath().endsWith("/metrics/proton");
+    }
+
+    //TODO: Remove this when no longer necessary
+    private static boolean isVintageMetrics(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 7 &&
+                request.getUri().getPath().endsWith("/metrics");
     }
 
     private static boolean isDeploymentMetricsRequest(HttpRequest request) {
