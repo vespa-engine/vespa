@@ -73,5 +73,15 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     zip_safe=False,
     entry_points={"console_scripts": cfg.get("console_scripts", "").split()},
+    data_files=[
+        (
+            "templates",
+            [
+                "vespa/templates/hosts.xml",
+                "vespa/templates/services.xml",
+                "vespa/templates/schema.txt",
+            ],
+        )
+    ],
     **setup_cfg
 )
