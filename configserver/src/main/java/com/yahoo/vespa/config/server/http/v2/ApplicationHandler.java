@@ -56,7 +56,6 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
