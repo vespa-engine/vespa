@@ -124,6 +124,10 @@ public class ParsingTester {
         return root;
     }
 
+    public Item parseQuery(String query, Language language, Query.Type type) {
+        return parseQuery(query, null, language, type, new SimpleLinguistics());
+    }
+
     public Item parseQuery(String query, String filter, Language language, Query.Type type, Linguistics linguistics) {
         Parser parser = ParserFactory.newInstance(type, new ParserEnvironment()
                 .setIndexFacts(indexFacts)
