@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -49,11 +51,11 @@ public class DocumentProcessingHandlerBasicTestCase extends DocumentProcessingHa
         Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
         assertNotNull(reply);
 
-        assertTrue((msg instanceof PutDocumentMessage));
+        assertThat((msg instanceof PutDocumentMessage), is(true));
         PutDocumentMessage put = (PutDocumentMessage) msg;
         Document outDoc = put.getDocumentPut().getDocument();
 
-        assertEquals(document, outDoc);
+        assertThat(document, equalTo(outDoc));
         assertFalse(reply.hasErrors());
     }
 

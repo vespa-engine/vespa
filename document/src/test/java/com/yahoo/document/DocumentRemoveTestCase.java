@@ -3,10 +3,10 @@ package com.yahoo.document;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -18,7 +18,7 @@ public class DocumentRemoveTestCase {
     public void requireThatToStringWorks() {
         DocumentId docId = new DocumentId("id:this:is::a:test");
         DocumentRemove r = new DocumentRemove(docId);
-        assertTrue(r.toString().contains(docId.toString()));
+        assertThat(r.toString().contains(docId.toString()), is(true));
     }
 
     @Test
@@ -27,18 +27,18 @@ public class DocumentRemoveTestCase {
         DocumentRemove r2 = new DocumentRemove(new DocumentId("id:this:is::a:test"));
         DocumentRemove r3 = new DocumentRemove(new DocumentId("id:this:is::nonequal"));
 
-        assertEquals(r1, r1);
-        assertEquals(r1, r2);
-        assertEquals(r2, r1);
-        assertEquals(r1.hashCode(), r2.hashCode());
+        assertThat(r1, equalTo(r1));
+        assertThat(r1, equalTo(r2));
+        assertThat(r2, equalTo(r1));
+        assertThat(r1.hashCode(), equalTo(r2.hashCode()));
 
-        assertNotEquals(r1, r3);
-        assertNotEquals(r3, r1);
-        assertNotEquals(r2, r3);
-        assertNotEquals(r3, r2);
-        assertNotEquals(r1.hashCode(), r3.hashCode());
+        assertThat(r1, not(equalTo(r3)));
+        assertThat(r3, not(equalTo(r1)));
+        assertThat(r2, not(equalTo(r3)));
+        assertThat(r3, not(equalTo(r2)));
+        assertThat(r1.hashCode(), not(equalTo(r3.hashCode())));
 
-        assertNotEquals(r1, new Object());
-        assertFalse(r1.equals("banana"));
+        assertThat(r1, not(equalTo(new Object())));
+        assertThat(r1.equals("banana"), is(false));
     }
 }

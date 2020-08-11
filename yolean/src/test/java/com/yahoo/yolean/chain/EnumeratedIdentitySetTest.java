@@ -16,7 +16,6 @@ import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -38,13 +37,13 @@ public class EnumeratedIdentitySetTest {
     @Test
     public void size() {
         EnumeratedIdentitySet<Element> set = new EnumeratedIdentitySet<>(elements);
-        assertEquals(elements.size(), set.size());
+        assertThat(set.size(), is(elements.size()));
 
         set.add(elements.get(0));
-        assertEquals(elements.size(), set.size());
+        assertThat(set.size(), is(elements.size()));
 
         set.remove(elements.get(0));
-        assertEquals(elements.size() - 1, set.size());
+        assertThat(set.size(), is(elements.size() - 1));
     }
 
     @Test
@@ -74,8 +73,8 @@ public class EnumeratedIdentitySetTest {
             count++;
         }
 
-        assertEquals(count, collectedElements.size());
-        assertEquals(elements.size(), collectedElements.size());
+        assertThat(collectedElements.size(), is(count));
+        assertThat(collectedElements.size(), is(elements.size()));
 
         for (Element element : elements) {
             assertTrue(collectedElements.containsKey(element));
@@ -151,7 +150,7 @@ public class EnumeratedIdentitySetTest {
     public void clear() {
         EnumeratedIdentitySet<Element> set = new EnumeratedIdentitySet<>(elements);
         set.clear();
-        assertTrue(set.isEmpty());
+        assertThat(set, empty());
     }
 
     @Test
@@ -196,7 +195,7 @@ public class EnumeratedIdentitySetTest {
         }
 
         List<Element> forceRenumber = set.insertionOrderedList();
-        assertEquals(elements.size(), forceRenumber.size());
+        assertThat(forceRenumber.size(), is(elements.size()));
 
         for (int i = 0; i < elements.size(); i++) {
             assertSame(forceRenumber.get(i), elements.get(i));
@@ -215,7 +214,7 @@ public class EnumeratedIdentitySetTest {
         }
 
         set.insertionOrderedList();
-        assertTrue(set.numbers().isEmpty());
+        assertThat(set.numbers(), empty());
 
         set.add(new Element());
         assertThat(set.numbers(), containsSameElements(singleton(0)));

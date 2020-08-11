@@ -30,10 +30,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -70,7 +72,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
         Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
         assertNotNull(reply);
 
-        assertTrue(result instanceof GetDocumentMessage);
+        assertThat(result, instanceOf(GetDocumentMessage.class));
 
         assertFalse(reply.hasErrors());
     }
@@ -89,9 +91,9 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
         Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
         assertNotNull(reply);
 
-        assertTrue(result instanceof PutDocumentMessage);
+        assertThat(result, instanceOf(PutDocumentMessage.class));
         PutDocumentMessage outputMsg = (PutDocumentMessage) result;
-        assertEquals("THIS IS A TEST.", ((StringFieldValue) outputMsg.getDocumentPut().getDocument().getFieldValue("blahblah")).getString());
+        assertThat(((StringFieldValue) outputMsg.getDocumentPut().getDocument().getFieldValue("blahblah")).getString(), is("THIS IS A TEST."));
 
         assertFalse(reply.hasErrors());
     }
@@ -107,9 +109,9 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
         Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
         assertNotNull(reply);
 
-        assertTrue(result instanceof RemoveDocumentMessage);
+        assertThat(result, instanceOf(RemoveDocumentMessage.class));
         RemoveDocumentMessage outputMsg = (RemoveDocumentMessage) result;
-        assertEquals("id:ns:baz::12345:6789", outputMsg.getDocumentId().toString());
+        assertThat(outputMsg.getDocumentId().toString(), is("id:ns:baz::12345:6789"));
 
         assertFalse(reply.hasErrors());
     }
@@ -126,9 +128,9 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
         Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
         assertNotNull(reply);
 
-        assertTrue(result instanceof UpdateDocumentMessage);
+        assertThat(result, instanceOf(UpdateDocumentMessage.class));
         UpdateDocumentMessage outputMsg = (UpdateDocumentMessage) result;
-        assertEquals("id:ns:baz::foo", outputMsg.getDocumentUpdate().getId().toString());
+        assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:ns:baz::foo"));
 
         assertFalse(reply.hasErrors());
     }

@@ -79,10 +79,13 @@ import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_DIVIDE;
 import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_INCREMENT;
 import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_MULTIPLY;
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -794,8 +797,8 @@ public class JsonReaderTestCase {
         d = r.next();
         DocumentUpdate update = (DocumentUpdate) d;
         checkSimpleArrayAdd(update);
-        assertTrue(update.getCreateIfNonExistent());
-        assertEquals("bla", update.getCondition().getSelection());
+        assertThat(update.getCreateIfNonExistent(), is(true));
+        assertThat(update.getCondition().getSelection(), is("bla"));
 
         d = r.next();
         DocumentRemove remove = (DocumentRemove) d;
@@ -830,8 +833,8 @@ public class JsonReaderTestCase {
         for (int x = 0; x < documentsCreated; x++) {
             DocumentUpdate update = (DocumentUpdate) r.next();
             checkSimpleArrayAdd(update);
-            assertTrue(update.getCreateIfNonExistent());
-            assertEquals("bla", update.getCondition().getSelection());
+            assertThat(update.getCreateIfNonExistent(), is(true));
+            assertThat(update.getCondition().getSelection(), is("bla"));
 
         }
 
@@ -1777,7 +1780,7 @@ public class JsonReaderTestCase {
     @Test
     public void requireThatUnknownDocTypeThrowsIllegalArgumentException() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Document type walrus does not exist");
+        exception.expectMessage(containsString("Document type walrus does not exist"));
 
         final String jsonData = inputJson(
                 "[",
@@ -1959,7 +1962,7 @@ public class JsonReaderTestCase {
     // NOTE: Do not call this method multiple times from a test method as it's using the ExpectedException rule
     private void assertParserErrorMatches(String expectedError, String... json) {
         exception.expect(JsonReaderException.class);
-        exception.expectMessage(expectedError);
+        exception.expectMessage(containsString(expectedError));
         String jsonData = inputJson(json);
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }

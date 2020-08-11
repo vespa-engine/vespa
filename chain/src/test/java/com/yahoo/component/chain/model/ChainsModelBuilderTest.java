@@ -11,7 +11,8 @@ import java.util.Set;
 
 import static com.yahoo.container.core.ChainsConfig.Components;
 import static com.yahoo.container.core.ChainsConfig.Chains;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -22,7 +23,7 @@ public class ChainsModelBuilderTest {
     @Test
     public void components_are_added_to_componentModels() throws Exception {
         ChainsModel model = chainsModel();
-        assertEquals(2, model.allComponents().size());
+        assertThat(model.allComponents().size(), is(2));
         assertTrue(model.componentModels().containsKey(new ComponentId("componentA")));
     }
 
@@ -37,7 +38,7 @@ public class ChainsModelBuilderTest {
     public void inherited_chains_are_added_to_chainSpecification() throws Exception {
         ChainsModel model = chainsModel();
         ChainSpecification inheritsChain1 = model.chainSpecifications().get(new ComponentId("inheritsChain1")).model();
-        assertEquals(2, model.allChainsFlattened().size());
+        assertThat(model.allChainsFlattened().size(), is(2));
         assertTrue(getComponentsByName(inheritsChain1.inheritance.chainSpecifications).containsKey("chain1"));
         assertTrue(getComponentsByName(inheritsChain1.inheritance.excludedComponents).containsKey("componentA"));
      }

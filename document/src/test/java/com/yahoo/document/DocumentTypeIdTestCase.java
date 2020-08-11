@@ -3,10 +3,10 @@ package com.yahoo.document;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -17,7 +17,7 @@ public class DocumentTypeIdTestCase {
     @Test
     public void requireThatToStringWorks() {
         DocumentTypeId r = new DocumentTypeId(123);
-        assertTrue(r.toString().contains("123"));
+        assertThat(r.toString().contains("123"), is(true));
     }
 
     @Test
@@ -26,24 +26,24 @@ public class DocumentTypeIdTestCase {
         DocumentTypeId r2 = new DocumentTypeId(123);
         DocumentTypeId r3 = new DocumentTypeId(456);
 
-        assertEquals(r1, r1);
-        assertEquals(r1, r2);
-        assertEquals(r2, r1);
-        assertEquals(r1.hashCode(), r2.hashCode());
+        assertThat(r1, equalTo(r1));
+        assertThat(r1, equalTo(r2));
+        assertThat(r2, equalTo(r1));
+        assertThat(r1.hashCode(), equalTo(r2.hashCode()));
 
-        assertNotEquals(r1, r3);
-        assertNotEquals(r3, r1);
-        assertNotEquals(r2, r3);
-        assertNotEquals(r3, r2);
-        assertNotEquals(r1.hashCode(), r3.hashCode());
+        assertThat(r1, not(equalTo(r3)));
+        assertThat(r3, not(equalTo(r1)));
+        assertThat(r2, not(equalTo(r3)));
+        assertThat(r3, not(equalTo(r2)));
+        assertThat(r1.hashCode(), not(equalTo(r3.hashCode())));
 
-        assertNotEquals(r1, new Object());
-        assertFalse(r1.equals("foobar"));
+        assertThat(r1, not(equalTo(new Object())));
+        assertThat(r1.equals("foobar"), is(false));
     }
 
     @Test
     public void requireThatAccessorsWork() {
         DocumentTypeId r1 = new DocumentTypeId(123);
-        assertEquals(123, r1.getId());
+        assertThat(r1.getId(), equalTo(123));
     }
 }

@@ -3,8 +3,9 @@ package com.yahoo.document;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -14,10 +15,10 @@ public class TemporaryStructuredDataTypeTestCase {
     @Test
     public void basic() {
         TemporaryStructuredDataType type = TemporaryStructuredDataType.create("banana");
-        assertEquals("banana", type.getName());
+        assertThat(type.getName(), equalTo("banana"));
         int originalId = type.getId();
         type.setName("apple");
-        assertEquals("apple", type.getName());
-        assertNotEquals(originalId, type.getId());
+        assertThat(type.getName(), equalTo("apple"));
+        assertThat(originalId, not(equalTo(type.getId())));
     }
 }

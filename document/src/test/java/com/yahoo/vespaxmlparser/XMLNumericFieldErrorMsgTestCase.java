@@ -11,7 +11,8 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -43,7 +44,7 @@ public class XMLNumericFieldErrorMsgTestCase {
             new Document(documentReader);
             fail("Sorry mac");
         } catch (DeserializationException e) {
-            assertTrue(e.getMessage().contains("Field 'floatfield': Invalid float \"\""));
+            assertThat(e.getMessage(), e.getMessage().contains("Field 'floatfield': Invalid float \"\""), is(true));
         }
     }
 
@@ -58,7 +59,7 @@ public class XMLNumericFieldErrorMsgTestCase {
             new Document(documentReader);
             fail("Sorry mac");
         } catch (DeserializationException e) {
-            assertTrue(e.getMessage().contains("Field 'doublefield': Invalid double \"\""));
+            assertThat(e.getMessage(), e.getMessage().contains("Field 'doublefield': Invalid double \"\""), is(true));
         }
     }
 
@@ -73,7 +74,7 @@ public class XMLNumericFieldErrorMsgTestCase {
             new Document(documentReader);
             fail("Sorry mac");
         } catch (DeserializationException e) {
-            assertTrue(e.getMessage().contains("Field 'longfield': Invalid long \"\""));
+            assertThat(e.getMessage(), e.getMessage().contains("Field 'longfield': Invalid long \"\""), is(true));
         }
     }
 
@@ -88,7 +89,7 @@ public class XMLNumericFieldErrorMsgTestCase {
             new Document(documentReader);
             fail("Sorry mac");
         } catch (DeserializationException e) {
-            assertTrue(e.getMessage().contains("Field 'intfield': Invalid integer \"\""));
+            assertThat(e.getMessage(), e.getMessage().contains("Field 'intfield': Invalid integer \"\""), is(true));
         }
     }
 
@@ -103,7 +104,7 @@ public class XMLNumericFieldErrorMsgTestCase {
             new Document(documentReader);
             fail("Sorry mac");
         } catch (DeserializationException e) {
-            assertTrue(e.getMessage().contains("Field 'bytefield': Invalid byte \"\""));
+            assertThat(e.getMessage(), e.getMessage().contains("Field 'bytefield': Invalid byte \"\""), is(true));
         }
     }
 

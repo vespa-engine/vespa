@@ -18,8 +18,10 @@ import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentReader;
+import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.document.serialization.XmlDocumentWriter;
 import com.yahoo.io.GrowableByteBuffer;
@@ -31,13 +33,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1079,14 +1083,15 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         Map<String, Object> parsed = new ObjectMapper().readValue(json, new TypeReference<Map<String, Object>>() {
         });
         assertEquals(parsed.get("id"), "id:ns:sertest::foobar");
-        assertTrue(parsed.get("fields") instanceof Map);
+        assertThat(parsed.get("fields"), instanceOf(Map.class));
         Object fieldMap = parsed.get("fields");
         if (fieldMap instanceof Map) {
             Map<?, ?> fields = (Map<?, ?>) fieldMap;
             assertEquals(fields.get("mailid"), "emailfromalicetobob");
             assertEquals(fields.get("date"), -2013512400);
-            assertTrue(fields.get("docindoc") instanceof Map);
-            assertTrue(fields.keySet().containsAll(Arrays.asList("mailid", "date", "attachmentcount", "rawfield", "weightedfield", "docindoc", "mapfield", "myboolfield")));
+            assertThat(fields.get("docindoc"), instanceOf(Map.class));
+            assertThat(fields.keySet(),
+                    containsInAnyOrder("mailid", "date", "attachmentcount", "rawfield", "weightedfield", "docindoc", "mapfield", "myboolfield"));
         }
     }
 
