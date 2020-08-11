@@ -735,11 +735,11 @@ public class NodeRepository extends AbstractComponent {
         if (node.type() == NodeType.tenant && node.allocation().isPresent())
             illegal(node + " is currently allocated and cannot be removed");
 
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !removingAsChild) {
+        if (!node.type().isHost() && !removingAsChild) {
             if (node.state() != State.ready)
                 illegal(node + " can not be removed as it is not in the state " + State.ready);
         }
-        else if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) { // removing a child node
+        else if (!node.type().isHost()) { // removing a child node
             Set<State> legalStates = EnumSet.of(State.provisioned, State.failed, State.parked, State.dirty, State.ready);
             if ( ! legalStates.contains(node.state()))
                 illegal(node + " can not be removed as it is not in the states " + legalStates);

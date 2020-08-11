@@ -123,6 +123,11 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         int otherHostStatePri = other.parent.map(host -> HOST_STATE_PRIORITY.indexOf(host.state())).orElse(-2);
         if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
 
+        // Prefer lower indexes to minimize redistribution
+        if (this.node.allocation().isPresent() && other.node.allocation().isPresent())
+            return Integer.compare(this.node.allocation().get().membership().index(),
+                                   other.node.allocation().get().membership().index());
+
         // All else equal choose hostname alphabetically
         return this.node.hostname().compareTo(other.node.hostname());
     }

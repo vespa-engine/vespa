@@ -36,16 +36,17 @@ public class NodeRepositoryTest {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         assertEquals(0, tester.nodeRepository().getNodes().size());
 
-        tester.addNode("id1", "host1", "default", NodeType.tenant);
-        tester.addNode("id2", "host2", "default", NodeType.tenant);
-        tester.addNode("id3", "host3", "default", NodeType.tenant);
+        tester.addNode("id1", "host1", "default", NodeType.host);
+        tester.addNode("id2", "host2", "default", NodeType.host);
+        tester.addNode("id3", "host3", "default", NodeType.host);
 
         assertEquals(3, tester.nodeRepository().getNodes().size());
         
         tester.nodeRepository().park("host2", true, Agent.system, "Parking to unit test");
         tester.nodeRepository().removeRecursively("host2");
 
-        assertEquals(2, tester.nodeRepository().getNodes().size());
+        assertEquals(3, tester.nodeRepository().getNodes().size());
+        assertEquals(1, tester.nodeRepository().getNodes(Node.State.deprovisioned).size());
     }
 
     @Test

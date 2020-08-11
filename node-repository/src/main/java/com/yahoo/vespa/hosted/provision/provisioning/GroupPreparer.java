@@ -50,14 +50,13 @@ public class GroupPreparer {
      *                           This method will remove from this list if it finds it needs additional nodes
      * @param highestIndex       the current highest node index among all active nodes in this cluster.
      *                           This method will increase this number when it allocates new nodes to the cluster.
-     * @param spareCount         The number of spare docker hosts we want when dynamically allocate docker containers
      * @return the list of nodes this cluster group will have allocated if activated
      */
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int spareCount, int wantedGroups) {
+                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups) {
         boolean dynamicProvisioningEnabled = nodeRepository.canProvisionHosts() && nodeRepository.zone().getCloud().dynamicProvisioning();
         boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
         try (Mutex lock = nodeRepository.lock(application)) {
@@ -74,7 +73,6 @@ public class GroupPreparer {
                                                                   application,
                                                                   cluster,
                                                                   requestedNodes,
-                                                                  spareCount,
                                                                   wantedGroups,
                                                                   allocateFully,
                                                                   nodeRepository);

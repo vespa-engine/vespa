@@ -26,13 +26,10 @@ class Preparer {
     private final NodeRepository nodeRepository;
     private final GroupPreparer groupPreparer;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
-    private final int spareCount;
 
-    public Preparer(NodeRepository nodeRepository, int spareCount, Optional<HostProvisioner> hostProvisioner,
-                    FlagSource flagSource,
+    public Preparer(NodeRepository nodeRepository, FlagSource flagSource, Optional<HostProvisioner> hostProvisioner,
                     Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
-        this.spareCount = spareCount;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
         this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, flagSource);
     }
@@ -69,7 +66,7 @@ class Preparer {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
             List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
                                                         requestedNodes.fraction(wantedGroups), surplusNodes,
-                                                        highestIndex, spareCount, wantedGroups);
+                                                        highestIndex, wantedGroups);
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());

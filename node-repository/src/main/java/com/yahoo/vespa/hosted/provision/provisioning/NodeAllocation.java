@@ -321,8 +321,8 @@ class NodeAllocation {
         int currentRetiredCount = (int) nodes.stream().filter(node -> node.node.allocation().get().membership().retired()).count();
         int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), currentRetiredCount) - currentRetiredCount;
 
-        if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0, prefer to retire higher indexes to minimize redistribution
-            for (PrioritizableNode node : byDecreasingIndex(nodes)) {
+        if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
+            for (PrioritizableNode node : byRetiringPriority(nodes)) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state() == Node.State.active) {
                     node.node = node.node.retire(Agent.application, nodeRepository.clock().instant());
                     if (--deltaRetiredCount == 0) break;
@@ -371,8 +371,9 @@ class NodeAllocation {
                 .collect(Collectors.toList());
     }
 
-    private List<PrioritizableNode> byDecreasingIndex(Set<PrioritizableNode> nodes) {
-        return nodes.stream().sorted(nodeIndexComparator().reversed()).collect(Collectors.toList());
+    /** Prefer to retire nodes we want the least */
+    private List<PrioritizableNode> byRetiringPriority(Set<PrioritizableNode> nodes) {
+        return nodes.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
     }
 
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
@@ -381,10 +382,6 @@ class NodeAllocation {
                     .sorted(Comparator.comparing((PrioritizableNode n) -> n.node.status().wantToRetire())
                                       .thenComparing(n -> n.node.allocation().get().membership().index()))
                     .collect(Collectors.toList());
-    }
-
-    private Comparator<PrioritizableNode> nodeIndexComparator() {
-        return Comparator.comparing((PrioritizableNode n) -> n.node.allocation().get().membership().index());
     }
 
     public String outOfCapacityDetails() {

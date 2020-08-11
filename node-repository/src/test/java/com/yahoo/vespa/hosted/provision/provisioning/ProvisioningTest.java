@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -720,7 +721,7 @@ public class ProvisioningTest {
 
         // content0
         assertFalse(state2.hostByMembership("content0", 0, 0).membership().get().retired());
-        assertFalse( state2.hostByMembership("content0", 0, 1).membership().get().retired());
+        assertFalse(state2.hostByMembership("content0", 0, 1).membership().get().retired());
         assertTrue( state2.hostByMembership("content0", 0, 2).membership().get().retired());
         assertTrue( state2.hostByMembership("content0", 0, 3).membership().get().retired());
 
@@ -729,6 +730,28 @@ public class ProvisioningTest {
         assertFalse(state2.hostByMembership("content1", 0, 1).membership().get().retired());
         assertTrue( state2.hostByMembership("content1", 0, 2).membership().get().retired());
         assertTrue( state2.hostByMembership("content1", 0, 3).membership().get().retired());
+    }
+
+    @Test
+    public void node_on_spare_host_retired_first() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                .spareCount(1).build();
+        tester.makeReadyHosts(7, defaultResources).deployZoneApp();
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec spec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion("7.1.2").build();
+
+        tester.deploy(application, spec, Capacity.from(new ClusterResources(6, 1, defaultResources)));
+
+        // Pick out a random application node and make it's parent larger, this will make it the spare host
+        NodeList nodes = tester.nodeRepository().list();
+        Node randomNode = nodes.owner(application).shuffle(new Random()).first().get();
+        tester.nodeRepository().write(nodes.parentOf(randomNode).get().with(new Flavor(new NodeResources(2, 10, 20, 8))), () -> {});
+
+        // Re-deploy application with 1 node less, the retired node should be on the spare host
+        tester.deploy(application, spec, Capacity.from(new ClusterResources(5, 1, defaultResources)));
+
+        assertTrue(tester.nodeRepository().getNode(randomNode.hostname()).get().allocation().get().membership().retired());
     }
 
     @Test

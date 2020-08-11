@@ -90,7 +90,7 @@ public class NodesV2ApiTest {
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.8.1") + "," + // test with only 1 ip address
-                                   asNodeJson("host9.yahoo.com", "large-variant", "127.0.9.1", "::9:1") + "," +
+                                   asHostJson("host9.yahoo.com", "large-variant", Optional.empty(), "127.0.9.1", "::9:1") + "," +
                                    asHostJson("parent2.yahoo.com", "large-variant", Optional.of(TenantName.from("myTenant")), "127.0.127.1", "::127:1") + "," +
                                    asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", "::11") + "]").
                                    getBytes(StandardCharsets.UTF_8),
@@ -137,13 +137,7 @@ public class NodesV2ApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host2.yahoo.com to active\"}");
 
-        // PUT a node in parked ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/host8.yahoo.com",
-                                   new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host8.yahoo.com to parked\"}");
-        tester.assertResponseContains(new Request("http://localhost:8080()/nodes/v2/node/host8.yahoo.com"),
-                                     "\"state\":\"parked\"");
-        // ... and delete it
+        // Delete a ready node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed host8.yahoo.com\"}");

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -71,9 +70,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService, flagSource));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
-                                     nodeRepository.spareCount(),
-                                     provisionServiceProvider.getHostProvisioner(),
                                      flagSource,
+                                     provisionServiceProvider.getHostProvisioner(),
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
         this.tenantNodeQuota = Flags.TENANT_NODE_QUOTA.bindTo(flagSource);
