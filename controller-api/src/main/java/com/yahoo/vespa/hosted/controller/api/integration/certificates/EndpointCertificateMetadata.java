@@ -16,19 +16,21 @@ public class EndpointCertificateMetadata {
     private final String keyName;
     private final String certName;
     private final int version;
+    private final long lastRequested;
     // TODO: make these fields required once all certs have them stored
     private final Optional<String> request_id;
     private final Optional<List<String>> requestedDnsSans;
     private final Optional<String> issuer;
 
-    public EndpointCertificateMetadata(String keyName, String certName, int version) {
-        this(keyName, certName, version, Optional.empty(), Optional.empty(), Optional.empty());
+    public EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested) {
+        this(keyName, certName, version, lastRequested, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public EndpointCertificateMetadata(String keyName, String certName, int version, Optional<String> request_id, Optional<List<String>> requestedDnsSans, Optional<String> issuer) {
+    public EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested, Optional<String> request_id, Optional<List<String>> requestedDnsSans, Optional<String> issuer) {
         this.keyName = keyName;
         this.certName = certName;
         this.version = version;
+        this.lastRequested = lastRequested;
         this.request_id = request_id;
         this.requestedDnsSans = requestedDnsSans;
         this.issuer = issuer;
@@ -44,6 +46,10 @@ public class EndpointCertificateMetadata {
 
     public int version() {
         return version;
+    }
+
+    public long lastRequested() {
+        return lastRequested;
     }
 
     public Optional<String> request_id() {
@@ -63,6 +69,19 @@ public class EndpointCertificateMetadata {
                 this.keyName,
                 this.certName,
                 version,
+                this.lastRequested,
+                this.request_id,
+                this.requestedDnsSans,
+                this.issuer
+        );
+    }
+
+    public EndpointCertificateMetadata withLastRequested(long lastRequested) {
+        return new EndpointCertificateMetadata(
+                this.keyName,
+                this.certName,
+                this.version,
+                lastRequested,
                 this.request_id,
                 this.requestedDnsSans,
                 this.issuer
@@ -75,6 +94,7 @@ public class EndpointCertificateMetadata {
                 "keyName='" + keyName + '\'' +
                 ", certName='" + certName + '\'' +
                 ", version=" + version +
+                ", lastRequested=" + lastRequested +
                 ", request_id=" + request_id +
                 ", requestedDnsSans=" + requestedDnsSans +
                 ", issuer=" + issuer +
@@ -87,6 +107,7 @@ public class EndpointCertificateMetadata {
         if (o == null || getClass() != o.getClass()) return false;
         EndpointCertificateMetadata that = (EndpointCertificateMetadata) o;
         return version == that.version &&
+                lastRequested == that.lastRequested &&
                 keyName.equals(that.keyName) &&
                 certName.equals(that.certName) &&
                 request_id.equals(that.request_id) &&
@@ -96,6 +117,6 @@ public class EndpointCertificateMetadata {
 
     @Override
     public int hashCode() {
-        return Objects.hash(keyName, certName, version, request_id, requestedDnsSans, issuer);
+        return Objects.hash(keyName, certName, version, lastRequested, request_id, requestedDnsSans, issuer);
     }
 }
