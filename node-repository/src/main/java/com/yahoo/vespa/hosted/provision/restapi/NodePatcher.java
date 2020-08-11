@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
+import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
@@ -25,8 +26,9 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -48,18 +50,18 @@ public class NodePatcher {
 
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
+    private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE);
 
+    private final com.google.common.base.Supplier<LockedNodeList> memoizedNodes;
+    private final PatchedNodes patchedNodes;
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
-    private final Supplier<LockedNodeList> nodes;
     private final Clock clock;
 
-    private Node node;
-
     public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, Supplier<LockedNodeList> nodes, Clock clock) {
+        this.memoizedNodes = Suppliers.memoize(nodes::get);
+        this.patchedNodes = new PatchedNodes(node);
         this.nodeFlavors = nodeFlavors;
-        this.node = node;
-        this.nodes = nodes;
         this.clock = clock;
         try {
             this.inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
@@ -74,44 +76,28 @@ public class NodePatcher {
      * children that must be updated in a consistent manner.
      */
     public List<Node> apply() {
-        List<Node> patchedNodes = new ArrayList<>();
         inspector.traverse((String name, Inspector value) -> {
             try {
-                node = applyField(node, name, value, inspector);
+                patchedNodes.update(applyField(patchedNodes.node(), name, value, inspector, false));
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Could not set field '" + name + "'", e);
             }
 
-            try {
-                patchedNodes.addAll(applyFieldRecursive(name, value, inspector));
-            } catch (IllegalArgumentException e) {
-                // Non recursive field, ignore
+            if (RECURSIVE_FIELDS.contains(name)) {
+                for (Node child: patchedNodes.children())
+                    patchedNodes.update(applyField(child, name, value, inspector, true));
             }
         } );
-        patchedNodes.add(node);
 
-        return patchedNodes;
+        return patchedNodes.nodes();
     }
 
-    private List<Node> applyFieldRecursive(String name, Inspector value, Inspector root) {
-        switch (name) {
-            case WANT_TO_RETIRE:
-                List<Node> childNodes = node.type().isHost() ? nodes.get().childrenOf(node).asList() : List.of();
-                return childNodes.stream()
-                        .map(child -> applyField(child, name, value, root))
-                        .collect(Collectors.toList());
-
-            default :
-                throw new IllegalArgumentException("Field " + name + " is not recursive");
-        }
-    }
-
-    private Node applyField(Node node, String name, Inspector value, Inspector root) {
+    private Node applyField(Node node, String name, Inspector value, Inspector root, boolean applyingAsChild) {
         switch (name) {
             case "currentRebootGeneration" :
                 return node.withCurrentRebootGeneration(asLong(value), clock.instant());
             case "currentRestartGeneration" :
-                return patchCurrentRestartGeneration(asLong(value));
+                return patchCurrentRestartGeneration(node, asLong(value));
             case "currentDockerImage" :
                 if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                     throw new IllegalArgumentException("Docker image can only be set for docker containers");
@@ -130,14 +116,14 @@ public class NodePatcher {
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), nodes.get());
+                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), memoizedNodes.get());
             case "additionalIpAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), nodes.get());
+                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), memoizedNodes.get());
             case WANT_TO_RETIRE :
             case WANT_TO_DEPROVISION :
                 boolean wantToRetire = asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElse(node.status().wantToRetire());
                 boolean wantToDeprovision = asOptionalBoolean(root.field(WANT_TO_DEPROVISION)).orElse(node.status().wantToDeprovision());
-                return node.withWantToRetire(wantToRetire, wantToDeprovision, Agent.operator, clock.instant());
+                return node.withWantToRetire(wantToRetire, wantToDeprovision && !applyingAsChild, Agent.operator, clock.instant());
             case "reports" :
                 return nodeWithPatchedReports(node, value);
             case "openStackId" :
@@ -160,7 +146,7 @@ public class NodePatcher {
             case "modelName":
                 return value.type() == Type.NIX ? node.withoutModelName() : node.withModelName(asString(value));
             case "requiredDiskSpeed":
-                return patchRequiredDiskSpeed(asString(value));
+                return patchRequiredDiskSpeed(node, asString(value));
             case "reservedTo":
                 return value.type() == Type.NIX ? node.withoutReservedTo() : node.withReservedTo(TenantName.from(value.asString()));
             default :
@@ -222,7 +208,7 @@ public class NodePatcher {
         return strings;
     }
 
-    private Node patchRequiredDiskSpeed(String value) {
+    private Node patchRequiredDiskSpeed(Node node, String value) {
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent())
             return node.with(allocation.get().withRequestedResources(
@@ -231,7 +217,7 @@ public class NodePatcher {
             throw new IllegalArgumentException("Node is not allocated");
     }
     
-    private Node patchCurrentRestartGeneration(Long value) {
+    private Node patchCurrentRestartGeneration(Node node, Long value) {
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent())
             return node.with(allocation.get().withRestart(allocation.get().restartGeneration().withCurrent(value)));
@@ -261,4 +247,36 @@ public class NodePatcher {
         return Optional.of(field).filter(Inspector::valid).map(this::asBoolean);
     }
 
+    private class PatchedNodes {
+        private final Map<String, Node> nodes = new HashMap<>();
+        private final String hostname;
+        private boolean fetchedChildren;
+
+        private PatchedNodes(Node node) {
+            this.hostname = node.hostname();
+
+            nodes.put(hostname, node);
+            fetchedChildren = !node.type().isHost();
+        }
+
+        public Node node() {
+            return nodes.get(hostname);
+        }
+
+        public List<Node> children() {
+            if (!fetchedChildren) {
+                memoizedNodes.get().childrenOf(hostname).forEach(this::update);
+                fetchedChildren = true;
+            }
+            return nodes.values().stream().filter(node -> !node.type().isHost()).collect(Collectors.toList());
+        }
+
+        public void update(Node node) {
+            nodes.put(node.hostname(), node);
+        }
+
+        public List<Node> nodes() {
+            return List.copyOf(nodes.values());
+        }
+    }
 }
