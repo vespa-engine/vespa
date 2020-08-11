@@ -29,9 +29,8 @@ import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.vespa.zookeeper.Configurator.ZOOKEEPER_JUTE_MAX_BUFFER;
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -140,12 +139,12 @@ public class ConfiguratorTest {
         builder.myidFile(idFile.getAbsolutePath());
 
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
-        assertThat(System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER), is("" + new ZookeeperServerConfig(builder).juteMaxBuffer()));
+        assertEquals("" + new ZookeeperServerConfig(builder).juteMaxBuffer(), System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER));
 
         final int max_buffer = 1;
         builder.juteMaxBuffer(max_buffer);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
-        assertThat(System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER), is("" + max_buffer));
+        assertEquals("" + max_buffer, System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER));
     }
 
     private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort) {
@@ -159,7 +158,7 @@ public class ConfiguratorTest {
 
     private void validateIdFile(File idFile, String expected) throws IOException {
         String actual = IOUtils.readFile(idFile);
-        assertThat(actual, is(expected));
+        assertEquals(expected, actual);
     }
 
     private String commonConfig() {
@@ -285,7 +284,7 @@ public class ConfiguratorTest {
 
     private void validateConfigFile(File cfgFile, String expected) throws IOException {
         String actual = IOUtils.readFile(cfgFile);
-        assertThat(actual, is(expected));
+        assertEquals(expected, actual);
     }
 
     private void validateThatJksKeyStoreFileExists(File cfgFile) {

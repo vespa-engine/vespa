@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -64,7 +64,7 @@ public class DelayedResponseLevelRetryHandlerTest {
         int lastExecutionCount = maxRetries + 1;
         for (int i = 1; i <= lastExecutionCount; i++) {
             handler.retryRequest(response, i, ctx);
-            assertThat(handler.getRetryInterval()).isEqualTo(delay.toMillis());
+            assertEquals(delay.toMillis(), handler.getRetryInterval());
         }
     }
 
@@ -88,7 +88,7 @@ public class DelayedResponseLevelRetryHandlerTest {
                         Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(5));
         for (int i = 1; i <= lastExecutionCount; i++) {
             handler.retryRequest(response, i, ctx);
-            assertThat(handler.getRetryInterval()).isEqualTo(expectedIntervals.get(i-1).toMillis());
+            assertEquals(expectedIntervals.get(i-1).toMillis(), handler.getRetryInterval());
         }
     }
 

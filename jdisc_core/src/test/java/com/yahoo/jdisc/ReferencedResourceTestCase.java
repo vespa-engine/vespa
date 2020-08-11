@@ -3,9 +3,7 @@ package com.yahoo.jdisc;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -19,8 +17,8 @@ public class ReferencedResourceTestCase {
         final SharedResource resource = mock(SharedResource.class);
         final ResourceReference reference = mock(ResourceReference.class);
         final ReferencedResource<SharedResource> referencedResource = new ReferencedResource<>(resource, reference);
-        assertThat(referencedResource.getResource(), is(sameInstance(resource)));
-        assertThat(referencedResource.getReference(), is(sameInstance(reference)));
+        assertSame(resource, referencedResource.getResource());
+        assertSame(reference, referencedResource.getReference());
     }
 
     @Test
