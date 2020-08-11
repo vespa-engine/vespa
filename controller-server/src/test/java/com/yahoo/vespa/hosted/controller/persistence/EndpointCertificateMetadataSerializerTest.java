@@ -11,21 +11,21 @@ import static org.junit.Assert.*;
 public class EndpointCertificateMetadataSerializerTest {
 
     private final EndpointCertificateMetadata sample =
-            new EndpointCertificateMetadata("keyName", "certName", 1);
+            new EndpointCertificateMetadata("keyName", "certName", 1, 0);
     private final EndpointCertificateMetadata sampleWithRequestMetadata =
-            new EndpointCertificateMetadata("keyName", "certName", 1, Optional.of("requestId"), Optional.of(List.of("SAN1", "SAN2")), Optional.of("issuer"));
+            new EndpointCertificateMetadata("keyName", "certName", 1, 0, Optional.of("requestId"), Optional.of(List.of("SAN1", "SAN2")), Optional.of("issuer"));
 
     @Test
     public void serialize() {
         assertEquals(
-                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1}",
+                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0}",
                 EndpointCertificateMetadataSerializer.toSlime(sample).toString());
     }
 
     @Test
     public void serializeWithRequestMetadata() {
         assertEquals(
-                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}",
+                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}",
                 EndpointCertificateMetadataSerializer.toSlime(sampleWithRequestMetadata).toString());
     }
 
@@ -34,7 +34,7 @@ public class EndpointCertificateMetadataSerializerTest {
         assertEquals(
                 sample,
                 EndpointCertificateMetadataSerializer.fromJsonString(
-                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1}"));
+                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0}"));
     }
 
     @Test
@@ -42,6 +42,14 @@ public class EndpointCertificateMetadataSerializerTest {
         assertEquals(
                 sampleWithRequestMetadata,
                 EndpointCertificateMetadataSerializer.fromJsonString(
-                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}"));
+                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}"));
+    }
+
+    @Test
+    public void deserializeFromJsonWithDefaultLastRequested() {
+        assertEquals(
+                new EndpointCertificateMetadata("keyName", "certName", 1, 1597200000),
+                EndpointCertificateMetadataSerializer.fromJsonString(
+                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1}"));
     }
 }
