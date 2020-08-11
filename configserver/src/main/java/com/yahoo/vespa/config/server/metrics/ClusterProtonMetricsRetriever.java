@@ -36,10 +36,7 @@ public class ClusterProtonMetricsRetriever {
 
     public Map<String, ProtonMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
         Map<String, ProtonMetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
-        for (URI uri : hosts) {
-            addMetricsFromHost(uri, clusterMetricsMap);
-        }
-/*        long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
         Runnable retrieveMetricsJob = () ->
                 hosts.parallelStream().forEach(host ->
                         addMetricsFromHost(host, clusterMetricsMap)
@@ -57,7 +54,7 @@ public class ClusterProtonMetricsRetriever {
 
         log.log(Level.FINE, () ->
                 String.format("Proton metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
-        );*/
+        );
 
         return clusterMetricsMap;
     }
@@ -85,8 +82,14 @@ public class ClusterProtonMetricsRetriever {
     private static void parseNode(Inspector node, Map<String, ProtonMetricsAggregator> clusterMetricsMap) {
         String nodeRole = node.field("role").asString();
         if(nodeRole.contains("content")) {
-            ProtonMetricsAggregator aggregator = new ProtonMetricsAggregator();
-            clusterMetricsMap.put(nodeRole, aggregator);
+            String clusterId = nodeRole.split("/")[1];
+            ProtonMetricsAggregator aggregator;
+            if (clusterMetricsMap.containsKey(clusterId)) {
+                aggregator = clusterMetricsMap.get(clusterId);
+            } else {
+                aggregator = new ProtonMetricsAggregator();
+                clusterMetricsMap.put(clusterId, aggregator);
+            }
             node.field("services").traverse((ArrayTraverser) (i, servicesInspector) ->
                     addServicesToAggregator(servicesInspector, aggregator)
             );
