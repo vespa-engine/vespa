@@ -3,9 +3,8 @@ package com.yahoo.document;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -20,19 +19,19 @@ public class FieldPathEntryTestCase {
         FieldPathEntry.KeyParseResult result4 = new FieldPathEntry.KeyParseResult("banana", 3);
 
 
-        assertThat(result1, equalTo(result2));
-        assertThat(result2, equalTo(result1));
-        assertThat(result1.hashCode(), equalTo(result2.hashCode()));
-        assertThat(result1.toString(), equalTo(result2.toString()));
+        assertEquals(result1, result2);
+        assertEquals(result2, result1);
+        assertEquals(result1.hashCode(), result2.hashCode());
+        assertEquals(result1.toString(), result2.toString());
 
-        assertThat(result1, not(equalTo(result3)));
-        assertThat(result3, not(equalTo(result1)));
-        assertThat(result1.hashCode(), not(equalTo(result3.hashCode())));
-        assertThat(result1.toString(), not(equalTo(result3.toString())));
+        assertNotEquals(result1, result3);
+        assertNotEquals(result3, result1);
+        assertNotEquals(result1.hashCode(), result3.hashCode());
+        assertNotEquals(result1.toString(), result3.toString());
 
-        assertThat(result1, not(equalTo(result4)));
-        assertThat(result4, not(equalTo(result1)));
-        assertThat(result1.hashCode(), not(equalTo(result4.hashCode())));
-        assertThat(result1.toString(), not(equalTo(result4.toString())));
+        assertNotEquals(result1, result4);
+        assertNotEquals(result4, result1);
+        assertNotEquals(result1.hashCode(), result4.hashCode());
+        assertNotEquals(result1.toString(), result4.toString());
     }
 }
