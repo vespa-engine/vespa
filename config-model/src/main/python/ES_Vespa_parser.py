@@ -225,6 +225,5 @@ class ElasticSearchParser:
                 if item == "no":  # Field should not be searchable
                     self.no_index.append(parent)
 
-
 if __name__ == '__main__':
     ElasticSearchParser().main()
