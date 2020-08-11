@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 public class HttpProxy {
 
-    private static Logger logger = Logger.getLogger(HttpProxy.class.getName());
+    private static final Logger logger = Logger.getLogger(HttpProxy.class.getName());
 
     private final HttpFetcher fetcher;
 

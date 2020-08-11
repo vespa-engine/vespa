@@ -100,7 +100,7 @@ public class FileServerTest {
     }
 
     private static class FileReceiver implements FileServer.Receiver {
-        CompletableFuture<byte []> content;
+        final CompletableFuture<byte []> content;
         FileReceiver(CompletableFuture<byte []> content) {
             this.content = content;
         }

@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
-import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -112,13 +111,11 @@ public class SessionActiveHandlerTest {
         private long sessionId;
         private HttpResponse actResponse;
         private ApplicationMetaData metaData;
-        private String subPath;
+        private final String subPath;
 
         ActivateRequest(String subPath) {
             this.subPath = subPath;
         }
-
-        public SessionHandler getHandler() { return handler; }
 
         HttpResponse getActResponse() { return actResponse; }
 

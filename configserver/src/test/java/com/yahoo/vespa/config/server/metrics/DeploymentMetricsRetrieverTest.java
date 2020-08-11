@@ -57,7 +57,7 @@ public class DeploymentMetricsRetrieverTest {
         return List.of(hostInfo1, hostInfo2, hostInfo3);
     }
 
-    class MockDeploymentMetricsRetriever extends ClusterDeploymentMetricsRetriever {
+    static class MockDeploymentMetricsRetriever extends ClusterDeploymentMetricsRetriever {
 
         Collection<URI> hosts = new ArrayList<>();
 
@@ -74,9 +74,9 @@ public class DeploymentMetricsRetrieverTest {
         }
     }
 
-    class MockModel implements Model {
+    static class MockModel implements Model {
 
-        Collection<HostInfo> hosts;
+        final Collection<HostInfo> hosts;
 
         MockModel(Collection<HostInfo> hosts) {
             this.hosts = hosts;

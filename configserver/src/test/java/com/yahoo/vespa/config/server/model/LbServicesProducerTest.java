@@ -54,7 +54,7 @@ public class LbServicesProducerTest {
     private static final Set<ContainerEndpoint> endpoints = Set.of(
             new ContainerEndpoint("mydisc", List.of("rotation-1", "rotation-2"))
     );
-    private InMemoryFlagSource flagSource = new InMemoryFlagSource();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final boolean useGlobalServiceId;
 
     @Parameterized.Parameters

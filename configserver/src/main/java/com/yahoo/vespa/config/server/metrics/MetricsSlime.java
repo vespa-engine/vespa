@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.metrics;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.yolean.Exceptions;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;

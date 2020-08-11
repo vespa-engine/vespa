@@ -110,10 +110,10 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                         .sessionLifetime(5));
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
         private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
-        private MockTenantListener tenantListener = new MockTenantListener();
+        private final MockTenantListener tenantListener = new MockTenantListener();
         private Optional<PermanentApplicationPackage> permanentApplicationPackage = Optional.empty();
-        private HostRegistries hostRegistries = new HostRegistries();
-        private Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
+        private final HostRegistries hostRegistries = new HostRegistries();
+        private final Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         private Optional<Provisioner> hostProvisioner = Optional.empty();
         private Zone zone = Zone.defaultZone();

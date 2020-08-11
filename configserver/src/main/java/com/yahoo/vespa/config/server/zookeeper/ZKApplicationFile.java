@@ -33,9 +33,7 @@ class ZKApplicationFile extends ApplicationFile {
         String zkPath = getZKPath(path);
         if (zkApp.exists(zkPath)) {
             String data = zkApp.getData(zkPath);
-            if (data == null || data.isEmpty() || !zkApp.getChildren(zkPath).isEmpty()) {
-                return true;
-            }
+            return data == null || data.isEmpty() || ! zkApp.getChildren(zkPath).isEmpty();
         }
         return false;
     }

@@ -126,7 +126,7 @@ public class ApplicationTest {
     public void require_that_non_existent_fields_in_schema_is_skipped() throws IOException {
         // Ask for config without schema and check that we get correct default value back
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.resolveConfig(createSimpleConfigRequest()).serialize(baos, CompressionType.UNCOMPRESSED);;
+        handler.resolveConfig(createSimpleConfigRequest()).serialize(baos, CompressionType.UNCOMPRESSED);
         assertEquals("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}", baos.toString(StandardCharsets.UTF_8));
         // Ask for config with wrong schema
         String[] schema = new String[1];

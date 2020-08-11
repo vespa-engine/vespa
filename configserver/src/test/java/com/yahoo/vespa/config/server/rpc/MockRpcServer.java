@@ -25,14 +25,10 @@ import java.util.concurrent.CompletionService;
  */
 public class MockRpcServer extends RpcServer {
 
-    public boolean forced = false;
-    public RuntimeException exception = null;
+    public final RuntimeException exception = null;
     public int errorCode = 0;
-    public ConfigResponse response = null;
+    public final ConfigResponse response = null;
 
-    // Fields used to assert on the calls made to this from tests
-    public boolean tryResolveConfig = false;
-    public boolean tryRespond = false;
     /** The last request received and responded to */
     public volatile JRTServerConfigRequest latestRequest = null;
 
@@ -54,37 +50,33 @@ public class MockRpcServer extends RpcServer {
         return new ConfigserverConfig(b);
     }
 
-    boolean waitUntilSet(Duration timeout) {
+    void waitUntilSet(Duration timeout) {
         Instant end = Instant.now().plus(timeout);
         while (Instant.now().isBefore(end)) {
             if (latestRequest != null)
-                return true;
+                return;
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        return false;
     }
 
     @Override
     public Boolean addToRequestQueue(JRTServerConfigRequest request, boolean forceResponse, CompletionService<Boolean> completionService) {
         latestRequest = request;
-        forced = forceResponse;
         return true;
     }
 
     @Override
     public void respond(JRTServerConfigRequest request) {
         latestRequest = request;
-        tryRespond = true;
         errorCode = request.errorCode();
     }
 
     @Override
     public ConfigResponse resolveConfig(JRTServerConfigRequest request, GetConfigContext context, Optional<Version> vespaVersion) {
-        tryResolveConfig = true;
         if (exception != null) {
             throw exception;
         }

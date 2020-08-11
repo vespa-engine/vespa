@@ -43,7 +43,7 @@ public class ListApplicationsHandler extends HttpHandler {
         String urlBase = Utils.getUrlBase(request, "/application/v2/tenant/" + tenantName + "/application/");
 
         List<ApplicationId> applicationIds = listApplicationIds(tenantName);
-        Collection<String> applicationUrls = Collections2.transform(applicationIds, new Function<ApplicationId, String>() {
+        Collection<String> applicationUrls = Collections2.transform(applicationIds, new Function<>() {
             @Override
             public String apply(ApplicationId id) {
                 return createUrlStringFromId(urlBase, id, zone);

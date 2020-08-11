@@ -25,7 +25,7 @@ public class ContainerEndpointSerializerTest {
         entryNames.addString("b");
 
         final var endpoint = ContainerEndpointSerializer.endpointFromSlime(slime.get());
-        assertEquals("foobar", endpoint.clusterId().toString());
+        assertEquals("foobar", endpoint.clusterId());
         assertEquals(List.of("a", "b"), endpoint.names());
     }
 

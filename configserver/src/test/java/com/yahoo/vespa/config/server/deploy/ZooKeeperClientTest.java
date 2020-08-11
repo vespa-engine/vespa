@@ -47,7 +47,7 @@ public class ZooKeeperClientTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private ConfigCurator zk;
-    private String appPath = "/1";
+    private final String appPath = "/1";
 
     @Before
     public void setupZK() throws IOException {

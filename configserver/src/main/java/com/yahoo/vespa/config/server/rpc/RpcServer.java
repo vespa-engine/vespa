@@ -460,7 +460,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     static class ChunkedFileReceiver implements FileServer.Receiver {
-        Target target;
+        final Target target;
         ChunkedFileReceiver(Target target) {
             this.target = target;
         }

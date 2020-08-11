@@ -55,8 +55,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private String createdMessage = " created.\"";
     private String tenantMessage = "";
 
-    public File testApp = new File("src/test/apps/app");
-
     static {
         postHeaders.put(ApplicationApiHandler.contentTypeHeader, ApplicationApiHandler.APPLICATION_X_GZIP);
     }

@@ -415,10 +415,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return this;
     }
 
-    public HostRegistry<ApplicationId> getApplicationHostRegistry() {
-        return hostRegistry;
-    }
-
     public ApplicationId getApplicationIdForHostName(String hostname) {
         return hostRegistry.getKeyForHost(hostname);
     }

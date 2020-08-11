@@ -35,12 +35,12 @@ public class EndpointCertificateMetadataStoreTest {
             ApplicationName.from("test"), InstanceName.defaultName());
 
     private MockCurator curator;
-    private MockSecretStore secretStore = new MockSecretStore();
+    private final MockSecretStore secretStore = new MockSecretStore();
     private EndpointCertificateMetadataStore endpointCertificateMetadataStore;
     private EndpointCertificateRetriever endpointCertificateRetriever;
-    private KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
-    private X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
-            Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
+    private final KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+    private final X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
+                                                                                   Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
 
     @Before
     public void setUp() {
