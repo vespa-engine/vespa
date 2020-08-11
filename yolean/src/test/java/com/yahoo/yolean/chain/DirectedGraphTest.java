@@ -4,14 +4,13 @@ package com.yahoo.yolean.chain;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.junit.Assert.assertThat;
 
 public class DirectedGraphTest {
 
     private DirectedGraph graph;
-    private final Vertex[] v = new Vertex[10];
+    private Vertex[] v = new Vertex[10];
 
     @Before
     public void setup() {
@@ -27,7 +26,7 @@ public class DirectedGraphTest {
         graph.addVertex(v[0]);
         graph.addBeginningVertex(v[1]);
 
-        assertTrue(graph.topologicalSort().containsAll(Arrays.asList(v[1], v[0])));
+        assertThat(graph.topologicalSort(), contains(v[1], v[0]));
     }
 
     @Test
@@ -36,7 +35,7 @@ public class DirectedGraphTest {
         graph.addBeginningVertex(v[1]);
         graph.addEdge(v[0], v[1]);
 
-        assertTrue(graph.topologicalSort().containsAll(Arrays.asList(v[0], v[1])));
+        assertThat(graph.topologicalSort(), contains(v[0], v[1]));
     }
 
     static class TestVertex implements Vertex {

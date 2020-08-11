@@ -7,10 +7,8 @@ import org.junit.Test;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -20,8 +18,8 @@ public class ProcessingTestCase {
 
     @Test
     public void serviceName() {
-        assertEquals("default", new Processing().getServiceName());
-        assertEquals("foobar", new Processing("foobar", (DocumentOperation) null, null).getServiceName());
+        assertThat(new Processing().getServiceName(), is("default"));
+        assertThat(new Processing("foobar", (DocumentOperation) null, null).getServiceName(), is("foobar"));
     }
 
     @Test
@@ -32,21 +30,21 @@ public class ProcessingTestCase {
         p.setVariable("bar", "apple");
 
         Iterator<Map.Entry<String, Object>> it = p.getVariableAndNameIterator();
-        assertTrue(it.hasNext());
-        assertNotNull(it.next());
-        assertTrue(it.hasNext());
-        assertNotNull(it.next());
-        assertFalse(it.hasNext());
+        assertThat(it.hasNext(), is(true));
+        assertThat(it.next(), not(nullValue()));
+        assertThat(it.hasNext(), is(true));
+        assertThat(it.next(), not(nullValue()));
+        assertThat(it.hasNext(), is(false));
 
-        assertTrue(p.hasVariable("foo"));
-        assertTrue(p.hasVariable("bar"));
-        assertFalse(p.hasVariable("baz"));
+        assertThat(p.hasVariable("foo"), is(true));
+        assertThat(p.hasVariable("bar"), is(true));
+        assertThat(p.hasVariable("baz"), is(false));
 
-        assertEquals("banana", p.removeVariable("foo"));
+        assertThat(p.removeVariable("foo"), is("banana"));
 
         p.clearVariables();
 
         it = p.getVariableAndNameIterator();
-        assertFalse(it.hasNext());
+        assertThat(it.hasNext(), is(false));
     }
 }

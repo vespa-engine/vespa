@@ -29,10 +29,9 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -86,30 +85,30 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
         {
             PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:put")));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof PutDocumentMessage);
+            assertThat(result, instanceOf(PutDocumentMessage.class));
             PutDocumentMessage outputMsg = (PutDocumentMessage)result;
-            assertEquals("banana", outputMsg.getDocumentPut().getDocument().getFieldValue("foostring").toString());
+            assertThat(outputMsg.getDocumentPut().getDocument().getFieldValue("foostring").toString(), is("banana"));
         }
         {
             PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:remove")));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof RemoveDocumentMessage);
+            assertThat(result, instanceOf(RemoveDocumentMessage.class));
             RemoveDocumentMessage outputMsg = (RemoveDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::put:to:remove", outputMsg.getDocumentId().toString());
+            assertThat(outputMsg.getDocumentId().toString(), is("id:nodocstatus:foo::put:to:remove"));
         }
         {
             PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:update")));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof UpdateDocumentMessage);
+            assertThat(result, instanceOf(UpdateDocumentMessage.class));
             UpdateDocumentMessage outputMsg = (UpdateDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::put:to:update", outputMsg.getDocumentUpdate().getId().toString());
+            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:nodocstatus:foo::put:to:update"));
         }
         {
             PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:nothing")));
             assertTrue(sendMessage(FOOBAR, message));
             Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
             assertNotNull(reply);
-            assertTrue(reply instanceof DocumentReply);
+            assertThat(reply, instanceOf(DocumentReply.class));
             assertFalse(reply.hasErrors());
         }
     }
@@ -118,31 +117,31 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
         {
             RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:put"));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof PutDocumentMessage);
+            assertThat(result, instanceOf(PutDocumentMessage.class));
             PutDocumentMessage outputMsg = (PutDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::remove:to:put", outputMsg.getDocumentPut().getDocument().getId().toString());
+            assertThat(outputMsg.getDocumentPut().getDocument().getId().toString(), is("id:nodocstatus:foo::remove:to:put"));
         }
 
         {
             RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:remove"));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof RemoveDocumentMessage);
+            assertThat(result, instanceOf(RemoveDocumentMessage.class));
             RemoveDocumentMessage outputMsg = (RemoveDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::remove:to:remove", outputMsg.getDocumentId().toString());
+            assertThat(outputMsg.getDocumentId().toString(), is("id:nodocstatus:foo::remove:to:remove"));
         }
         {
             RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:update"));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof UpdateDocumentMessage);
+            assertThat(result, instanceOf(UpdateDocumentMessage.class));
             UpdateDocumentMessage outputMsg = (UpdateDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::remove:to:update", outputMsg.getDocumentUpdate().getId().toString());
+            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:nodocstatus:foo::remove:to:update"));
         }
         {
             RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:nothing"));
             assertTrue(sendMessage(FOOBAR, message));
             Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
             assertNotNull(reply);
-            assertTrue(reply instanceof DocumentReply);
+            assertThat(reply, instanceOf(DocumentReply.class));
             assertFalse(reply.hasErrors());
         }
     }
@@ -151,31 +150,31 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
         {
             UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:put"));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof PutDocumentMessage);
+            assertThat(result, instanceOf(PutDocumentMessage.class));
             PutDocumentMessage outputMsg = (PutDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::update:to:put", outputMsg.getDocumentPut().getDocument().getId().toString());
+            assertThat(outputMsg.getDocumentPut().getDocument().getId().toString(), is("id:nodocstatus:foo::update:to:put"));
         }
 
         {
             UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:remove"));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof RemoveDocumentMessage);
+            assertThat(result, instanceOf(RemoveDocumentMessage.class));
             RemoveDocumentMessage outputMsg = (RemoveDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::update:to:remove", outputMsg.getDocumentId().toString());
+            assertThat(outputMsg.getDocumentId().toString(), is("id:nodocstatus:foo::update:to:remove"));
         }
         {
             UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:update"));
             Routable result = sendMessageAndGetResult(message);
-            assertTrue(result instanceof UpdateDocumentMessage);
+            assertThat(result, instanceOf(UpdateDocumentMessage.class));
             UpdateDocumentMessage outputMsg = (UpdateDocumentMessage)result;
-            assertEquals("id:nodocstatus:foo::update:to:update", outputMsg.getDocumentUpdate().getId().toString());
+            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:nodocstatus:foo::update:to:update"));
         }
         {
             UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:nothing"));
             assertTrue(sendMessage(FOOBAR, message));
             Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
             assertNotNull(reply);
-            assertTrue(reply instanceof DocumentReply);
+            assertThat(reply, instanceOf(DocumentReply.class));
             assertFalse(reply.hasErrors());
         }
     }

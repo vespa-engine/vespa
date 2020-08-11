@@ -7,8 +7,10 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
+import com.yahoo.docproc.AbstractConcreteDocumentFactory;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocprocService;
+import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 
 import com.yahoo.document.DocumentType;

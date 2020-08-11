@@ -13,11 +13,12 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 
 public class VisitorDataQueueTest {
 
@@ -41,14 +42,14 @@ public class VisitorDataQueueTest {
     }
 
     private static void assertNonNullDocumentOpResponse(final VisitorResponse response) {
-        assertNotNull(response);
-        assertTrue(response instanceof DocumentOpVisitorResponse);
+        assertThat(response, notNullValue());
+        assertThat(response, instanceOf(DocumentOpVisitorResponse.class));
     }
 
     private static void assertResponseHasSinglePut(final VisitorResponse response, final DocumentPut expectedInstance) {
         assertNonNullDocumentOpResponse(response);
         final DocumentOpVisitorResponse visitorResponse = (DocumentOpVisitorResponse)response;
-        assertSame(expectedInstance, visitorResponse.getDocumentOperation());
+        assertThat(visitorResponse.getDocumentOperation(), is(expectedInstance));
     }
 
     @Test
@@ -59,7 +60,7 @@ public class VisitorDataQueueTest {
         final VisitorResponse response = queue.getNext();
 
         assertResponseHasSinglePut(response, putMessage.getDocumentPut());
-        assertNull(queue.getNext()); // Queue now empty
+        assertThat(queue.getNext(), nullValue()); // Queue now empty
     }
 
     @Test
@@ -70,14 +71,14 @@ public class VisitorDataQueueTest {
         final VisitorResponse response = queue.getNext(1000);
 
         assertResponseHasSinglePut(response, putMessage.getDocumentPut());
-        assertNull(queue.getNext()); // Queue now empty
+        assertThat(queue.getNext(), nullValue()); // Queue now empty
     }
 
     private static void assertResponseHasSingleRemove(final VisitorResponse response, final String docId) {
         assertNonNullDocumentOpResponse(response);
         final DocumentOpVisitorResponse visitorResponse = (DocumentOpVisitorResponse)response;
-        assertTrue(visitorResponse.getDocumentOperation() instanceof DocumentRemove);
-        assertEquals(new DocumentId(docId), visitorResponse.getDocumentOperation().getId());
+        assertThat(visitorResponse.getDocumentOperation(), instanceOf(DocumentRemove.class));
+        assertThat(visitorResponse.getDocumentOperation().getId(), equalTo(new DocumentId(docId)));
     }
 
     @Test

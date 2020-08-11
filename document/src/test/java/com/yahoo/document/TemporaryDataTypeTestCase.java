@@ -4,8 +4,9 @@ package com.yahoo.document;
 import com.yahoo.document.datatypes.StringFieldValue;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Einar M R Rosenvinge
@@ -15,10 +16,10 @@ public class TemporaryDataTypeTestCase {
     @Test
     public void requireNulls() {
         TemporaryDataType type = new TemporaryDataType(0, "");
-        assertNull(type.createFieldValue(new Object()));
-        assertNull(type.createFieldValue());
-        assertNull(type.getValueClass());
-        assertFalse(type.isValueCompatible(new StringFieldValue("")));
+        assertThat(type.createFieldValue(new Object()), nullValue());
+        assertThat(type.createFieldValue(), nullValue());
+        assertThat(type.getValueClass(), nullValue());
+        assertThat(type.isValueCompatible(new StringFieldValue("")), is(false));
     }
 
 }

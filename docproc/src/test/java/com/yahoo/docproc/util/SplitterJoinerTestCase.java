@@ -12,15 +12,17 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
-@SuppressWarnings({"unchecked"})
+@SuppressWarnings({"unchecked","rawtypes"})
 public class SplitterJoinerTestCase {
 
     @Test
@@ -38,7 +40,7 @@ public class SplitterJoinerTestCase {
         DocumentTypeManager manager = splitter.manager;
 
 
-        // Create documents
+        /**** Create documents: ****/
 
         Document inner1 = new Document(manager.getDocumentType("docindoc"), "id:inner:docindoc::one");
         inner1.setFieldValue("name", new StringFieldValue("Donald Duck"));
@@ -54,17 +56,17 @@ public class SplitterJoinerTestCase {
         Document outer = new Document(manager.getDocumentType("outerdoc"), "id:outer:outerdoc::the:only:one");
         outer.setFieldValue("innerdocuments", innerArray);
 
-        // End create documents
+        /**** End create documents ****/
 
 
         Processing p = Processing.of(new DocumentPut(outer));
         splitter.process(p);
 
         assertEquals(2, p.getDocumentOperations().size());
-        assertSame(inner1, ((DocumentPut)(p.getDocumentOperations().get(0))).getDocument());
-        assertSame(inner2, ((DocumentPut)(p.getDocumentOperations().get(1))).getDocument());
-        assertSame(outer, ((DocumentPut)(p.getVariable(cfg.contextFieldName()))).getDocument());
-        assertSame(innerArray, outer.getFieldValue("innerdocuments"));
+        assertThat(((DocumentPut)(p.getDocumentOperations().get(0))).getDocument(), sameInstance(inner1));
+        assertThat(((DocumentPut)(p.getDocumentOperations().get(1))).getDocument(), sameInstance(inner2));
+        assertThat(((DocumentPut)(p.getVariable(cfg.contextFieldName()))).getDocument(), sameInstance(outer));
+        assertThat(outer.getFieldValue("innerdocuments"), sameInstance(innerArray));
         assertTrue(innerArray.isEmpty());
 
 
@@ -72,13 +74,13 @@ public class SplitterJoinerTestCase {
 
         joiner.process(p);
 
-        assertEquals(1, p.getDocumentOperations().size());
-        assertSame(outer, ((DocumentPut)p.getDocumentOperations().get(0)).getDocument());
-        assertNull(p.getVariable(cfg.contextFieldName()));
-        assertSame(innerArray, outer.getFieldValue("innerdocuments"));
-        assertEquals(2, innerArray.size());
-        assertSame(inner1, innerArray.get(0));
-        assertSame(inner2, innerArray.get(1));
+        assertThat(p.getDocumentOperations().size(), equalTo(1));
+        assertThat(((DocumentPut)p.getDocumentOperations().get(0)).getDocument(), sameInstance(outer));
+        assertThat(p.getVariable(cfg.contextFieldName()), nullValue());
+        assertThat(outer.getFieldValue("innerdocuments"), sameInstance(innerArray));
+        assertThat(innerArray.size(), equalTo(2));
+        assertThat(innerArray.get(0), sameInstance(inner1));
+        assertThat(innerArray.get(1), sameInstance(inner2));
     }
 
 }
