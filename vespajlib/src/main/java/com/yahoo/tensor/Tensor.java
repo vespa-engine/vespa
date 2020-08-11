@@ -351,7 +351,7 @@ public interface Tensor {
             Cell aCell = aIterator.next();
             double aValue = aCell.getValue();
             double bValue = b.get(aCell.getKey());
-            if (!approxEquals(aValue, bValue, 1e-5)) return false;
+            if (!approxEquals(aValue, bValue, 1e-4)) return false;
         }
         return true;
     }
