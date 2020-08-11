@@ -371,12 +371,9 @@ class NodeAllocation {
                 .collect(Collectors.toList());
     }
 
-    /** Prefer to retire nodes on spare hosts, otherwise retire higher indexes to minimize redistribution */
+    /** Prefer to retire nodes we want the least */
     private List<PrioritizableNode> byRetiringPriority(Set<PrioritizableNode> nodes) {
-        return nodes.stream()
-                    .sorted(Comparator.comparing((PrioritizableNode n) -> n.violatesSpares)
-                                      .thenComparing(nodeIndexComparator()).reversed())
-                    .collect(Collectors.toList());
+        return nodes.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
     }
 
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
@@ -385,10 +382,6 @@ class NodeAllocation {
                     .sorted(Comparator.comparing((PrioritizableNode n) -> n.node.status().wantToRetire())
                                       .thenComparing(n -> n.node.allocation().get().membership().index()))
                     .collect(Collectors.toList());
-    }
-
-    private Comparator<PrioritizableNode> nodeIndexComparator() {
-        return Comparator.comparing((PrioritizableNode n) -> n.node.allocation().get().membership().index());
     }
 
     public String outOfCapacityDetails() {
