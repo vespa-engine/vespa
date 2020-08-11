@@ -150,7 +150,7 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
      * @return ok or not
      */
     private static boolean configNameNotFound(final ConfigKey<?> requestKey, Set<ConfigKey<?>> allConfigsProduced) {
-        return !Iterables.any(allConfigsProduced, new Predicate<ConfigKey<?>>() {
+        return !Iterables.any(allConfigsProduced, new Predicate<>() {
             @Override
             public boolean apply(ConfigKey<?> k) {
                 return k.getName().equals(requestKey.getName()) && k.getNamespace().equals(requestKey.getNamespace());
@@ -175,7 +175,7 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
 
     @Override
     public DefContent getDefContent() {
-        return DefContent.fromList(Collections.<String>emptyList());
+        return DefContent.fromList(Collections.emptyList());
     }
 
     @Override

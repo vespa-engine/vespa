@@ -235,7 +235,7 @@ public class RemoteSessionTest {
         return new RemoteSession(tenantName, sessionId, registryBuilder.build(), zkc);
     }
 
-    private class MockModelFactory implements ModelFactory {
+    private static class MockModelFactory implements ModelFactory {
 
         /** Throw a RuntimeException on load - this is handled gracefully during model building */
         boolean throwOnLoad = false;
@@ -249,7 +249,7 @@ public class RemoteSessionTest {
         /** The validation overrides of this, or null if none */
         private final String validationOverrides;
         
-        private Clock clock = Clock.fixed(LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
+        private final Clock clock = Clock.fixed(LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
 
         MockModelFactory() { this(null); }
 

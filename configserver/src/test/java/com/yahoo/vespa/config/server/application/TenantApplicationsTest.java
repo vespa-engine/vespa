@@ -53,7 +53,7 @@ public class TenantApplicationsTest {
     private static final TenantName tenantName = TenantName.from("tenant");
     private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
 
-    private MockReloadListener listener = new MockReloadListener();
+    private final MockReloadListener listener = new MockReloadListener();
     private CuratorFramework curatorFramework;
     private TestComponentRegistry componentRegistry;
     private TenantApplications applications;
@@ -141,9 +141,9 @@ public class TenantApplicationsTest {
     }
 
     public static class MockReloadListener implements ReloadListener {
-        public AtomicInteger reloaded = new AtomicInteger(0);
-        AtomicInteger removed = new AtomicInteger(0);
-        Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
+        public final AtomicInteger reloaded = new AtomicInteger(0);
+        final AtomicInteger removed = new AtomicInteger(0);
+        final Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
 
         @Override
         public void configActivated(ApplicationSet application) {

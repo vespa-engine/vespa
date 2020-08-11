@@ -96,10 +96,6 @@ public class Metrics extends AbstractComponent implements MetricUpdaterFactory, 
         metric.set(METRIC_LATENCY, increment, metricContext);
     }
 
-    public long getRequests() {
-        return requests.get();
-    }
-
     public Metric getMetric() {
         return metric;
     }

@@ -85,14 +85,6 @@ public class DeployTester {
              Clock.systemUTC());
     }
 
-    public DeployTester(ConfigserverConfig configserverConfig) {
-        this(Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC());
-    }
-
-    public DeployTester(ConfigserverConfig configserverConfig, HostProvisioner provisioner) {
-        this(Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC(), provisioner);
-    }
-
     public DeployTester(ConfigserverConfig configserverConfig, Clock clock) {
         this(Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
     }
@@ -163,11 +155,6 @@ public class DeployTester {
         return createModelFactory(version, clock, Zone.defaultZone());
     }
 
-    /** Create a model factory for a particular version and zone */
-    public static CountingModelFactory createModelFactory(Version version, Zone zone) {
-        return new CountingModelFactory(version, Clock.systemUTC(), zone);
-    }
-
     /** Create a model factory for a particular version, clock and zone */
     public static CountingModelFactory createModelFactory(Version version, Clock clock, Zone zone) {
         return new CountingModelFactory(version, clock, zone);
@@ -216,18 +203,6 @@ public class DeployTester {
      */
     public PrepareResult deployApp(String applicationPath, String vespaVersion) {
         return deployApp(applicationPath, vespaVersion, Instant.now());
-    }
-
-
-    /**
-     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
-     */
-    public PrepareResult deployApp(String applicationPath, String vespaVersion, String dockerImageRepository) {
-        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder();
-        if (vespaVersion != null)
-            paramsBuilder.vespaVersion(vespaVersion);
-
-        return deployApp(applicationPath, Instant.now(), paramsBuilder.dockerImageRepository(dockerImageRepository));
     }
 
     /**

@@ -81,7 +81,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
                                    serviceInfo.getServiceType().equals(QRSERVER.serviceName)).
                     findAny();
             if (container.isPresent()) {
-                activeRotation |= Boolean.valueOf(container.get().getProperty("activeRotation").orElse("false"));
+                activeRotation |= Boolean.parseBoolean(container.get().getProperty("activeRotation").orElse("false"));
             }
         }
         return activeRotation;

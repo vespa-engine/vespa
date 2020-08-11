@@ -38,7 +38,7 @@ public class DelayedConfigResponses {
     private final ScheduledExecutorService executorService;
     private final boolean useJrtWatcher;
 
-    private Map<ApplicationId, MetricUpdater> metrics = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, MetricUpdater> metrics = new ConcurrentHashMap<>();
     
     /* Requests that resolve to config that has not changed are put on this queue. When reloading
        config, all requests on this queue are reprocessed as if they were a new request */

@@ -17,11 +17,10 @@ import java.util.logging.Logger;
  */
 public class TenantDebugger implements TreeCacheListener {
 
-    private final TreeCache cache;
     private static final Logger log = Logger.getLogger(TenantDebugger.class.getName());
 
     public TenantDebugger(Curator curator) throws Exception {
-        cache = new TreeCache(curator.framework(), "/config/v2/tenants");
+        TreeCache cache = new TreeCache(curator.framework(), "/config/v2/tenants");
         cache.getListenable().addListener(this);
         cache.start();
     }

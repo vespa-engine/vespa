@@ -22,7 +22,6 @@ import java.util.Set;
 public class SessionTest {
 
     public static class MockSessionPreparer extends SessionPreparer {
-        public boolean isPrepared = false;
 
         public MockSessionPreparer() {
             super(null, null, null, null, null, null, new MockCurator(), null, null, null);
@@ -33,7 +32,6 @@ public class SessionTest {
                                      Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
                                      Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
                                      SessionZooKeeperClient sessionZooKeeperClient) {
-            isPrepared = true;
             return new PrepareResult(AllocatedHosts.withHosts(Set.of()), List.of());
         }
     }

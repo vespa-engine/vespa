@@ -63,10 +63,7 @@ public final class Cluster implements Comparable<Cluster> {
         if (!name.equals(other.name)) {
             return false;
         }
-        if (!type.equals(other.type)) {
-            return false;
-        }
-        return true;
+        return type.equals(other.type);
     }
 
     @Override

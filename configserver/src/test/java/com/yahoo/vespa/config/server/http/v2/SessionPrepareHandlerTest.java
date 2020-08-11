@@ -53,7 +53,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private static final TenantName tenant = TenantName.from("test");
     private static final File app = new File("src/test/resources/deploy/validapp");
 
-    private Curator curator = new MockCurator();
+    private final Curator curator = new MockCurator();
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
     private final Clock clock = componentRegistry.getClock();
     private final TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));

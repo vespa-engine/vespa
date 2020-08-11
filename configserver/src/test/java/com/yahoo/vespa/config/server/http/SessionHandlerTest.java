@@ -55,10 +55,6 @@ public class SessionHandlerTest {
         return createTestRequest(path, method, cmd, id, "");
     }
 
-    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method) {
-        return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path, method);
-    }
-
     public static HttpRequest createTestRequest(String path) {
         return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path, com.yahoo.jdisc.http.HttpRequest.Method.PUT);
     }

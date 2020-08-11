@@ -54,7 +54,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final DeployLogger logger = new SilentDeployLogger();
 
     /** The repository part of docker image this application should run on. Version is separate from image repo */
-    Optional<DockerImage> dockerImageRepository;
+    final Optional<DockerImage> dockerImageRepository;
 
     /** The Vespa version this application should run on */
     private final Version version;
@@ -68,7 +68,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private boolean prepared = false;
     
     /** Whether this model should be validated (only takes effect if prepared=false) */
-    private boolean validate;
+    private final boolean validate;
 
     private boolean ignoreSessionStaleFailure = false;
 

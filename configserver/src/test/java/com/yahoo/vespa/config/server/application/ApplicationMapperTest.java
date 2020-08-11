@@ -21,8 +21,8 @@ public class ApplicationMapperTest {
 
     private ApplicationId appId;
     private ApplicationMapper applicationMapper;
-    private ArrayList<Version> vespaVersions = new ArrayList<>();
-    private ArrayList<Application> applications = new ArrayList<>();
+    private final ArrayList<Version> vespaVersions = new ArrayList<>();
+    private final ArrayList<Application> applications = new ArrayList<>();
 
     @Before
     public void setUp() {

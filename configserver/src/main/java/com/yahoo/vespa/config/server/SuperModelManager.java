@@ -89,10 +89,6 @@ public class SuperModelManager implements SuperModelProvider {
         }
     }
 
-    public Zone getZone() {
-        return zone;
-    }
-
     public void configActivated(ApplicationSet applicationSet) {
         synchronized (monitor) {
             // TODO: Should supermodel care about multiple versions?

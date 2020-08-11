@@ -88,7 +88,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
     private static final double metricsTolerance = 0.001;
 
     private void compareAggregators(DeploymentMetricsAggregator expected, DeploymentMetricsAggregator actual) {
-        BiConsumer<Double, Double> assertDoubles = (a, b) -> assertEquals(a.doubleValue(), b.doubleValue(), metricsTolerance);
+        BiConsumer<Double, Double> assertDoubles = (a, b) -> assertEquals(a, b, metricsTolerance);
 
         compareOptionals(expected.aggregateDocumentCount(), actual.aggregateDocumentCount(), assertDoubles);
         compareOptionals(expected.aggregateQueryRate(), actual.aggregateQueryRate(), assertDoubles);

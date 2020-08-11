@@ -26,8 +26,8 @@ public class ProtonMetricsRetrieverTest {
 
     @Test
     public void getMetrics()  {
-        ProtonMetricsRetrieverTest.MockModel mockModel = new ProtonMetricsRetrieverTest.MockModel(mockHosts());
-        ProtonMetricsRetrieverTest.MockProtonMetricsRetriever mockMetricsRetriever = new ProtonMetricsRetrieverTest.MockProtonMetricsRetriever();
+        ProtonMetricsRetrieverTest.MockModel mockModel = new MockModel(mockHosts());
+        ProtonMetricsRetrieverTest.MockProtonMetricsRetriever mockMetricsRetriever = new MockProtonMetricsRetriever();
         Application application = new Application(mockModel, null, 0, false,
                 null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
@@ -52,7 +52,7 @@ public class ProtonMetricsRetrieverTest {
         return List.of(hostInfo1, hostInfo2, hostInfo3);
     }
 
-    class MockProtonMetricsRetriever extends ClusterProtonMetricsRetriever {
+    static class MockProtonMetricsRetriever extends ClusterProtonMetricsRetriever {
 
         Collection<URI> hosts = new ArrayList<>();
 
@@ -67,9 +67,9 @@ public class ProtonMetricsRetrieverTest {
         }
     }
 
-    class MockModel implements Model {
+    static class MockModel implements Model {
 
-        Collection<HostInfo> hosts;
+        final Collection<HostInfo> hosts;
 
         MockModel(Collection<HostInfo> hosts) {
             this.hosts = hosts;
