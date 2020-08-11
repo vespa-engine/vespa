@@ -95,7 +95,6 @@ public class EndpointCertificateManager {
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
         var t0 = Instant.now();
         Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone, instanceSpec);
-        metadata.ifPresent(m -> curator.writeEndpointCertificateMetadata(instance.id(), m.withLastRequested(clock.instant().getEpochSecond())));
         Duration duration = Duration.between(t0, Instant.now());
         if (duration.toSeconds() > 30) log.log(Level.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
         return metadata;
@@ -186,7 +185,6 @@ public class EndpointCertificateManager {
                             storedMetaData.keyName(),
                             storedMetaData.certName(),
                             storedMetaData.version(),
-                            Instant.now().getEpochSecond(),
                             providerMetadata.request_id(),
                             providerMetadata.requestedDnsSans(),
                             providerMetadata.issuer());
