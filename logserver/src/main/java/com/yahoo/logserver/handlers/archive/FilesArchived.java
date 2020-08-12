@@ -46,9 +46,7 @@ public class FilesArchived {
     private void run() {
         try {
             while (true) {
-                while (maintenance()) {
-                    waitForTrigger(2000);
-                }
+                maintenance();
                 waitForTrigger(2000);
             }
         } catch (Exception e) {

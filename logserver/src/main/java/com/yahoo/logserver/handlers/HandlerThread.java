@@ -187,7 +187,7 @@ public class HandlerThread extends Thread implements LogHandler {
                     // messages or lists of log messages, so we need to
                     // handle them accordingly.
                     ItemOrList o = drainList.get(i);
-                    drainList.set(i, o);
+                    drainList.set(i, null);
 
                     if (o.item != null) {
                         for (LogHandler handler : handlers) {
