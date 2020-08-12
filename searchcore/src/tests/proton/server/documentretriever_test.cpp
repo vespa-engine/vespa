@@ -603,11 +603,11 @@ TEST("require ") {
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
     EXPECT_EQUAL(4u, lookup._count);
 
-    allAttr.insert(&attr1);
+    notAllAttr.insert(&attr1);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
-    EXPECT_EQUAL(5u, lookup._count);
+    EXPECT_EQUAL(6u, lookup._count);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
-    EXPECT_EQUAL(5u, lookup._count);
+    EXPECT_EQUAL(6u, lookup._count);
 }
 
 }  // namespace
