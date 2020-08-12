@@ -82,6 +82,9 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
 feature_t
 DistanceExecutor::calculateDistance(uint32_t docId)
 {
+    _best_index = -1.0;
+    _best_x = 0.0;
+    _best_y = 0.0;
     if ((! _locations.empty()) && (_pos != nullptr)) {
         LOG(debug, "calculate 2D Z-distance from %zu locations", _locations.size());
         return calculate2DZDistance(docId);
@@ -105,6 +108,9 @@ DistanceExecutor::calculate2DZDistance(uint32_t docId)
             vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
             uint64_t sqdist = loc->location.sq_distance_to({docx, docy});
             if (sqdist < sqabsdist) {
+                _best_index = i;
+		_best_x = docx;
+		_best_y = docy;
                 sqabsdist = sqdist;
             }
         }
@@ -128,6 +134,9 @@ void
 DistanceExecutor::execute(uint32_t docId)
 {
     outputs().set_number(0, calculateDistance(docId));
+    outputs().set_number(1, _best_index);
+    outputs().set_number(2, _best_y * 0.000001); // latitude
+    outputs().set_number(3, _best_x * 0.000001); // longitude
 }
 
 const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
@@ -164,6 +173,9 @@ DistanceBlueprint::setup_geopos(const IIndexEnvironment & env,
     _arg_string = attr;
     _use_geo_pos = true;
     describeOutput("out", "The euclidean distance from the query position.");
+    describeOutput("index", "Index in array of closest point");
+    describeOutput("latitude", "Latitude of closest point");
+    describeOutput("longitude", "Longitude of closest point");
     env.hintAttributeAccess(_arg_string);
     return true;
 }
