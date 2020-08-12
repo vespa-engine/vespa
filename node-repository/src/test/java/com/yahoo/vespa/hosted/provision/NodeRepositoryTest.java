@@ -17,10 +17,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -107,7 +105,7 @@ public class NodeRepositoryTest {
             tester.nodeRepository().markNodeAvailableForNewAllocation("host2", Agent.system, getClass().getSimpleName());
             fail();
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsString("hardware failure"));
+            assertTrue(e.getMessage().contains("hardware failure"));
         }
     }
 

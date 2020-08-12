@@ -11,8 +11,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Sets up actual ZooKeeper servers and verifies we can talk to them.
@@ -55,8 +54,8 @@ public class CuratorTest {
     @Test
     public void require_curator_is_created_from_config() {
         try (Curator curator = createCurator(createTestConfig())) {
-            assertThat(curator.zooKeeperEnsembleConnectionSpec(), is(spec1 + "," + spec2));
-            assertThat(curator.zooKeeperEnsembleCount(), is(2));
+            assertEquals(spec1 + "," + spec2, curator.zooKeeperEnsembleConnectionSpec());
+            assertEquals(2, curator.zooKeeperEnsembleCount());
         }
     }
 
@@ -65,7 +64,7 @@ public class CuratorTest {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         builder.zookeeperserver(createZKBuilder(localhost, port1));
         try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
-            assertThat(curator.zooKeeperEnsembleCount(), is(1));
+            assertEquals(1, curator.zooKeeperEnsembleCount());
         }
     }
 
@@ -82,7 +81,7 @@ public class CuratorTest {
          HostName.setHostNameForTestingOnly(localhostHostName);
 
         String localhostSpec = localhostHostName + ":" + localhostPort;
-         assertThat(Curator.createConnectionSpecForLocalhost(config), is(localhostSpec));
+         assertEquals(localhostSpec, Curator.createConnectionSpecForLocalhost(config));
      }
 
     private ConfigserverConfig createTestConfig() {

@@ -22,10 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static java.time.Instant.ofEpochSecond;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -33,20 +31,20 @@ import static org.junit.Assert.fail;
  * @author  Bjorn Borud
  */
 public class VespaLogHandlerTestCase {
-    private static String hostname;
-    private static String pid;
+    private final static String hostname;
+    private final static String pid;
 
-    static LogRecord record1;
-    static String record1String;
+    static final LogRecord record1;
+    static final String record1String;
 
-    static LogRecord record2;
-    private static String record2String;
+    static final LogRecord record2;
+    private static final String record2String;
 
-    private static LogRecord record3;
-    private static String record3String;
+    private static final LogRecord record3;
+    private static final String record3String;
 
-    private static LogRecord record4;
-    private static String record4String;
+    private static final LogRecord record4;
+    private static final String record4String;
 
     static {
         hostname = Util.getHostName();
@@ -191,7 +189,7 @@ public class VespaLogHandlerTestCase {
 
         h.close();
         String [] lines = target.getLines();
-        assertThat(lines.length, is(4));
+        assertEquals(4, lines.length);
         assertEquals(record1String, lines[0]);
         assertEquals(record3String, lines[1]);
         //assertEquals(record4String, lines[2]);
@@ -375,7 +373,7 @@ public class VespaLogHandlerTestCase {
     }
 
     private static class MockLevelControllerRepo implements LevelControllerRepo {
-        private LevelController levelController;
+        private final LevelController levelController;
         MockLevelControllerRepo(LevelController controller) {
             this.levelController = controller;
         }

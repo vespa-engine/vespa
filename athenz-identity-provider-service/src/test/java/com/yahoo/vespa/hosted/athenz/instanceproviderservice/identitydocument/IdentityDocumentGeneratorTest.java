@@ -32,9 +32,7 @@ import java.util.Set;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.TestUtils.getAthenzProviderConfig;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -94,7 +92,7 @@ public class IdentityDocumentGeneratorTest {
         assertEquals(expectedProviderUniqueId, signedIdentityDocument.providerUniqueId());
 
         // Validate that container ips are present
-        assertThat(signedIdentityDocument.ipAddresses(), hasItem("::1"));
+        assertTrue(signedIdentityDocument.ipAddresses().contains("::1"));
 
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
 

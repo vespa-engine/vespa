@@ -5,9 +5,8 @@ import com.yahoo.container.servlet.jersey.ResourceOrProviderClassVisitor;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class ResourceOrProviderClassVisitorTest {
@@ -53,7 +52,7 @@ public class ResourceOrProviderClassVisitorTest {
 
     @Test
     public void className_is_equal_to_getName() throws Exception {
-        assertThat(analyzeClass(com.yahoo.container.servlet.jersey.classvisitor.Resource.class).getClassName(), is(com.yahoo.container.servlet.jersey.classvisitor.Resource.class.getName()));
+        assertEquals(com.yahoo.container.servlet.jersey.classvisitor.Resource.class.getName(), analyzeClass(com.yahoo.container.servlet.jersey.classvisitor.Resource.class).getClassName());
     }
 
     public void assert_is_accepted(Class<?> clazz) throws Exception {

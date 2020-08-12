@@ -4,13 +4,16 @@ package com.yahoo.vdslib.distribution;
 import org.junit.Test;
 
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.StringTokenizer;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class GroupTestCase {
 
@@ -18,7 +21,7 @@ public class GroupTestCase {
         Group.Distribution distribution = new Group.Distribution(spec, redundancy);
         assertEquals(spec, distribution.toString());
         int[] resultArray = distribution.getRedundancyArray(redundancy);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i=0; i<resultArray.length; ++i) {
             if (i != 0) sb.append(',');
             sb.append(resultArray[i]);
@@ -29,7 +32,7 @@ public class GroupTestCase {
     private void assertDistributionFailure(String spec, int redundancy, String expectedError) {
         try{
             Group.Distribution distribution = new Group.Distribution(spec, redundancy);
-            assertTrue("Failed to fail parsing of spec \"" + spec + "\", redundancy " + redundancy + " with failure: " + expectedError, false);
+            fail("Failed to fail parsing of spec \"" + spec + "\", redundancy " + redundancy + " with failure: " + expectedError);
         } catch (Exception e) {
             assertEquals(expectedError, e.getMessage());
         }
@@ -73,7 +76,7 @@ public class GroupTestCase {
 
     private Group buildGroupTree() throws ParseException {
         Group root = new Group(5, "myroot", new Group.Distribution("2|*", 7));
-        List<Group> level_one = new ArrayList<Group>();
+        List<Group> level_one = new ArrayList<>();
         level_one.add(new Group(0, "br0", new Group.Distribution("1|1|*", 7)));
         level_one.add(new Group(1, "br1", new Group.Distribution("*", 7)));
         level_one.add(new Group(3, "br3", new Group.Distribution("8|*", 7)));
@@ -97,7 +100,7 @@ public class GroupTestCase {
         try{
             Group br8 = new Group(5, "br8", new Group.Distribution("*", 5));
             root.addSubGroup(br8);
-            assertTrue(false); // Should fail index 5 is in use at that level
+            fail(); // Should fail index 5 is in use at that level
         } catch (Exception e) {
             assertEquals("A subgroup with index 5 already exist.", e.getMessage());
         }
@@ -105,19 +108,19 @@ public class GroupTestCase {
             Group br8 = new Group(5, "br8");
             Group br9 = new Group(2, "br9");
             br8.addSubGroup(br9);
-            assertTrue(false); // Should fail as we want distribution to be set on non-leaf node
+            fail(); // Should fail as we want distribution to be set on non-leaf node
         } catch (Exception e) {
             assertEquals("Cannot add sub groups to a node without distribution set.", e.getMessage());
         }
         try{
             Group br8 = new Group(5, "br8", new Group.Distribution("*", 5));
             setNodes(br8, "1,2,3");
-            assertTrue(false); // Should fail as we can't have distribution on leaf node.
+            fail(); // Should fail as we can't have distribution on leaf node.
         } catch (Exception e) {
             assertEquals("Cannot add nodes to non-leaf group with distribution set", e.getMessage());
         }
         root.calculateDistributionHashValues();
-        Set<Integer> distributionHashes = new HashSet<Integer>();
+        Set<Integer> distributionHashes = new HashSet<>();
         verifyUniqueHashes(root, distributionHashes);
         return root;
     }
@@ -157,7 +160,7 @@ public class GroupTestCase {
     @Test
     public void testRootGroupDoesNotIncludeGroupNameWhenNoChildren() {
         Group g = new Group(0, "donkeykong");
-        assertThat(g.getUnixStylePath(), is("/"));
+        assertEquals("/", g.getUnixStylePath());
     }
 
     @Test
@@ -165,7 +168,7 @@ public class GroupTestCase {
         Group g = new Group(0, "donkeykong", dummyDistribution());
         Group child = new Group(1, "mario");
         g.addSubGroup(child);
-        assertThat(child.getUnixStylePath(), is("/mario"));
+        assertEquals("/mario", child.getUnixStylePath());
     }
 
     @Test
@@ -176,7 +179,7 @@ public class GroupTestCase {
         mario.addSubGroup(toad);
         g.addSubGroup(mario);
 
-        assertThat(toad.getUnixStylePath(), is("/mario/toad"));
+        assertEquals("/mario/toad", toad.getUnixStylePath());
     }
 
     @Test
@@ -191,9 +194,9 @@ public class GroupTestCase {
         Group luigi = new Group(4, "luigi");
         g.addSubGroup(luigi);
 
-        assertThat(toad.getUnixStylePath(), is("/mario/toad"));
-        assertThat(yoshi.getUnixStylePath(), is("/mario/yoshi"));
-        assertThat(luigi.getUnixStylePath(), is("/luigi"));
+        assertEquals("/mario/toad", toad.getUnixStylePath());
+        assertEquals("/mario/yoshi", yoshi.getUnixStylePath());
+        assertEquals("/luigi", luigi.getUnixStylePath());
     }
 
 }

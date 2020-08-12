@@ -1,12 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.pig;
 
-import org.apache.pig.data.*;
+import org.apache.pig.data.BagFactory;
+import org.apache.pig.data.DataBag;
+import org.apache.pig.data.DataByteArray;
+import org.apache.pig.data.DataType;
+import org.apache.pig.data.SortedDataBag;
+import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +26,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("serial")
 public class VespaDocumentOperationTest {
@@ -88,7 +93,7 @@ public class VespaDocumentOperationTest {
         JsonNode fields = root.path("fields");
 
         assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").getTextValue());
-        assertEquals(true, root.get("create").getBooleanValue());
+        assertTrue(root.get("create").getBooleanValue());
         assertEquals("testapp", fields.get("application").get("assign").getTextValue());
         assertEquals("clicks", fields.get("name").get("assign").getTextValue());
         assertEquals(3, fields.get("value").get("assign").getIntValue());
@@ -345,7 +350,7 @@ public class VespaDocumentOperationTest {
         assertEquals("value", map.get("string").getTextValue());
         assertEquals(3, map.get("int").getIntValue());
         assertEquals(3.145, map.get("float").getDoubleValue(), 1e-6);
-        assertEquals(true, map.get("bool").getBooleanValue());
+        assertTrue(map.get("bool").getBooleanValue());
         assertEquals("dGVzdGRhdGE=", map.get("byte").getTextValue());
 
         assertEquals("string", map.get("map").get("a").getTextValue());
@@ -491,9 +496,7 @@ public class VespaDocumentOperationTest {
 
         VespaDocumentOperation docOp = new VespaDocumentOperation(params);
         docOp.setInputSchema(schema);
-        String json = docOp.exec(tuple);
-
-        return json;
+        return docOp.exec(tuple);
     }
 
 
@@ -581,7 +584,7 @@ public class VespaDocumentOperationTest {
         docOp.setInputSchema(schema);
         String json = docOp.exec(tuple);
 
-        assertThat(outContent.toString(), CoreMatchers.containsString("Processing docId: 7654321"));
+        assertTrue(outContent.toString().contains("Processing docId: 7654321"));
     }
 
     @Test

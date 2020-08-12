@@ -8,10 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,6 +41,6 @@ public class FileLogTargetTest {
         assertNotNull(out1);
         OutputStream out2 = logTarget.open();
         assertNotNull(out2);
-        assertThat(out1, is(not(out2)));
+        assertNotEquals(out1, out2);
     }
 }

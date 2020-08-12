@@ -39,8 +39,6 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
-import com.yahoo.document.serialization.VespaDocumentDeserializerHead;
-import com.yahoo.document.serialization.VespaDocumentSerializerHead;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.tensor.Tensor;
@@ -74,16 +72,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotSame;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests vespa-documentgen-plugin
@@ -448,7 +444,7 @@ public class DocumentGenPluginTest {
 
         final Field field = book.getField("ref");
         final FieldValue value = book.getFieldValue(field);
-        assertThat(value, instanceOf(ReferenceFieldValue.class));
+        assertTrue(value instanceof ReferenceFieldValue);
         final ReferenceFieldValue refValue = (ReferenceFieldValue)value;
         assertEquals(field.getDataType(), refValue.getDataType());
         assertTrue(refValue.getDocumentId().isPresent());

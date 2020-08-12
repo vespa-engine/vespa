@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -52,10 +51,10 @@ public class SystemFlagsDataArchiveTest {
     @Rule
     public final ExpectedException expectedException = ExpectedException.none();
 
-    private static FlagsTarget mainControllerTarget = FlagsTarget.forController(SYSTEM);
-    private static FlagsTarget prodUsWestCfgTarget = createConfigserverTarget(Environment.prod, "us-west-1");
-    private static FlagsTarget prodUsEast3CfgTarget = createConfigserverTarget(Environment.prod, "us-east-3");
-    private static FlagsTarget devUsEast1CfgTarget = createConfigserverTarget(Environment.dev, "us-east-1");
+    private static final FlagsTarget mainControllerTarget = FlagsTarget.forController(SYSTEM);
+    private static final FlagsTarget prodUsWestCfgTarget = createConfigserverTarget(Environment.prod, "us-west-1");
+    private static final FlagsTarget prodUsEast3CfgTarget = createConfigserverTarget(Environment.prod, "us-east-3");
+    private static final FlagsTarget devUsEast1CfgTarget = createConfigserverTarget(Environment.dev, "us-east-1");
 
     private static FlagsTarget createConfigserverTarget(Environment environment, String region) {
         return new ConfigServerFlagsTarget(
@@ -233,15 +232,15 @@ public class SystemFlagsDataArchiveTest {
 
     private static void assertFlagDataHasValue(SystemFlagsDataArchive archive, FlagId flagId, FlagsTarget target, String value) {
         List<FlagData> data = getData(archive, flagId, target);
-        assertThat(data).hasSize(1);
+        assertEquals(1, data.size());
         FlagData flagData = data.get(0);
         RawFlag rawFlag = flagData.resolve(FetchVector.fromMap(Map.of())).get();
-        assertThat(rawFlag.asJson()).isEqualTo(String.format("\"%s\"", value));
+        assertEquals(String.format("\"%s\"", value), rawFlag.asJson());
     }
 
     private static void assertNoFlagData(SystemFlagsDataArchive archive, FlagId flagId, FlagsTarget target) {
         List<FlagData> data = getData(archive, flagId, target);
-        assertThat(data).isEmpty();
+        assertTrue(data.isEmpty());
     }
 
     private static List<FlagData> getData(SystemFlagsDataArchive archive, FlagId flagId, FlagsTarget target) {
