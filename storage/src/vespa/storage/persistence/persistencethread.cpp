@@ -8,11 +8,11 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <vespa/log/bufferedlogger.h>
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.thread");
 
 namespace storage {
