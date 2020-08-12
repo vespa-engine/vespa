@@ -157,7 +157,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         }
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
         auto doc = std::make_unique<Document>(*doc_type, doc_id);
-        ASSERT_TRUE(doc);
+        ASSERT_TRUE(doc.get());
         doc->set(static_field, static_value);
         doc->set(dyn_field_i, static_value);
         doc->set(dyn_field_s, static_value_s);
@@ -170,7 +170,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         doc->setValue(dyn_field_tensor, tensorFieldValue);
         if (_set_position_struct_field) {
             FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
-            auto &pos = dynamic_cast<StructFieldValue &>(*fv);
+            StructFieldValue &pos = static_cast<StructFieldValue &>(*fv);
             pos.set(PositionDataType::FIELD_X, 42);
             pos.set(PositionDataType::FIELD_Y, 21);
             doc->setValue(doc->getField(position_field), *fv);
@@ -179,7 +179,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         return doc;
     }
     
-    uint64_t
+    virtual uint64_t
     initFlush(uint64_t syncToken) override
     {
         return syncToken;
@@ -278,10 +278,11 @@ struct Fixture {
     search::AttributeManager attr_manager;
     Schema schema;
     DocTypeName _dtName;
-    std::unique_ptr<IDocumentRetriever> _retriever;
+    std::unique_ptr<DocumentRetriever> _retriever;
 
     template <typename T>
-    T *addAttribute(const char *name, Schema::DataType t, Schema::CollectionType ct) {
+    T *addAttribute(const char *name,
+                      Schema::DataType t, Schema::CollectionType ct) {
         AttributeVector::SP attrPtr = AttributeFactory::createAttribute(name, convertConfig(t, ct));
         T *attr = dynamic_cast<T *>(attrPtr.get());
         AttributeVector::DocId id;
@@ -296,7 +297,8 @@ struct Fixture {
     }
 
     template <typename T, typename U>
-    void addAttribute(const char *name, U val, Schema::DataType t, Schema::CollectionType ct) {
+    void addAttribute(const char *name, U val,
+                      Schema::DataType t, Schema::CollectionType ct) {
         T *attr = addAttribute<T>(name, t, ct);
         if (ct == schema::CollectionType::SINGLE) {
             attr->update(lid, val);
@@ -307,7 +309,7 @@ struct Fixture {
         attr->commit();
     }
     void addTensorAttribute(const char *name, const Tensor &val) {
-        auto * attr = addAttribute<TensorAttribute>(name, schema::DataType::TENSOR, schema::CollectionType::SINGLE);
+        TensorAttribute *attr = addAttribute<TensorAttribute>(name, schema::DataType::TENSOR, schema::CollectionType::SINGLE);
         attr->setTensor(lid, val);
         attr->commit();
     }
@@ -352,7 +354,7 @@ struct Fixture {
         addAttribute<StringAttribute>(dyn_field_nas, DataType::STRING, ct);
         addAttribute<IntegerAttribute>(zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
         addTensorAttribute(dyn_field_tensor.c_str(), *dynamic_tensor);
-        auto * attr = addAttribute<PredicateAttribute>(dyn_field_p, DataType::BOOLEANTREE, ct);
+        PredicateAttribute *attr = addAttribute<PredicateAttribute>(dyn_field_p, DataType::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
         attr->commit();
         ct = schema::CollectionType::ARRAY;
@@ -369,7 +371,7 @@ struct Fixture {
         build();
     }
 
-    void clearAttributes(const std::vector<vespalib::string> & names) const {
+    void clearAttributes(std::vector<vespalib::string> names) {
         for (const auto &name : names) {
             auto guard = *attr_manager.getAttribute(name);
             guard->clearDoc(lid);
@@ -398,14 +400,14 @@ TEST_F("require that document retriever can retrieve bucket meta data", Fixture)
 
 TEST_F("require that document retriever can retrieve document", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
-    ASSERT_TRUE(doc);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
     EXPECT_EQUAL(doc_id, doc->getId());
 }
 
 template <typename T>
 bool checkFieldValue(FieldValue::UP field_value, typename T::value_type v) {
-    ASSERT_TRUE(field_value);
+    ASSERT_TRUE(field_value.get());
     T *t_value = dynamic_cast<T *>(field_value.get());
     ASSERT_TRUE(t_value);
     return EXPECT_EQUAL(v, t_value->getValue());
@@ -413,8 +415,8 @@ bool checkFieldValue(FieldValue::UP field_value, typename T::value_type v) {
 
 template <typename T>
 void checkArray(FieldValue::UP array, typename T::value_type v) {
-    ASSERT_TRUE(array);
-    auto *array_val = dynamic_cast<ArrayFieldValue *>(array.get());
+    ASSERT_TRUE(array.get());
+    ArrayFieldValue *array_val = dynamic_cast<ArrayFieldValue *>(array.get());
     ASSERT_TRUE(array_val);
     ASSERT_EQUAL(2u, array_val->size());
     T *t_value = dynamic_cast<T *>(&(*array_val)[0]);
@@ -426,8 +428,9 @@ void checkArray(FieldValue::UP array, typename T::value_type v) {
 
 template <typename T>
 void checkWset(FieldValue::UP wset, T v) {
-    ASSERT_TRUE(wset);
-    auto *wset_val = dynamic_cast<WeightedSetFieldValue *>(wset.get());
+    ASSERT_TRUE(wset.get());
+    WeightedSetFieldValue *wset_val =
+        dynamic_cast<WeightedSetFieldValue *>(wset.get());
     ASSERT_TRUE(wset_val);
     ASSERT_EQUAL(2u, wset_val->size());
     EXPECT_EQUAL(dyn_weight, wset_val->get(v));
@@ -436,12 +439,12 @@ void checkWset(FieldValue::UP wset, T v) {
 
 TEST_F("require that attributes are patched into stored document", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
-    ASSERT_TRUE(doc);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(static_field);
-    ASSERT_TRUE(value);
-    auto *int_value = dynamic_cast<IntFieldValue *>(value.get());
+    ASSERT_TRUE(value.get());
+    IntFieldValue *int_value = dynamic_cast<IntFieldValue *>(value.get());
     ASSERT_TRUE(int_value);
     EXPECT_EQUAL(static_value, int_value->getValue());
 
@@ -467,18 +470,18 @@ TEST_F("require that attributes are patched into stored document", Fixture) {
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
     f.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING)).build();
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
-    ASSERT_TRUE(doc);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
     checkFieldValue<StringFieldValue>(doc->getValue(dyn_field_s), static_value_s);
 }
 
 void verify_position_field_has_expected_values(Fixture& f) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
-    ASSERT_TRUE(doc);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(position_field);
-    ASSERT_TRUE(value);
+    ASSERT_TRUE(value.get());
     const auto *position = dynamic_cast<StructFieldValue *>(value.get());
     ASSERT_TRUE(position);
     FieldValue::UP x = position->getValue(PositionDataType::FIELD_X);
@@ -500,10 +503,10 @@ TEST_F("zcurve attribute is authoritative for single value position field existe
 
 TEST_F("require that array position field value is generated from zcurve array attribute", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
-    ASSERT_TRUE(doc);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
     FieldValue::UP value = doc->getValue(position_array_field);
-    ASSERT_TRUE(value);
+    ASSERT_TRUE(value.get());
     const auto* array_value = dynamic_cast<const document::ArrayFieldValue*>(value.get());
     ASSERT_TRUE(array_value != nullptr);
     ASSERT_EQUAL(array_value->getNestedType(), document::PositionDataType::getInstance());
@@ -525,32 +528,33 @@ TEST_F("require that array position field value is generated from zcurve array a
 }
 
 TEST_F("require that non-existing lid returns null pointer", Fixture) {
-    Document::UP doc = f._retriever->getDocument(0, DocumentId("id:ns:document::1"));
-    ASSERT_FALSE(doc);
+    Document::UP doc = f._retriever->getDocument(0);
+    ASSERT_FALSE(doc.get());
 }
 
 TEST_F("require that predicate attributes can be retrieved", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
-    ASSERT_TRUE(doc);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(dyn_field_p);
-    ASSERT_TRUE(value);
-    auto *predicate_value = dynamic_cast<PredicateFieldValue *>(value.get());
+    ASSERT_TRUE(value.get());
+    PredicateFieldValue *predicate_value =
+        dynamic_cast<PredicateFieldValue *>(value.get());
     ASSERT_TRUE(predicate_value);
 }
 
 TEST_F("require that zero values in multivalue attribute removes fields", Fixture)
 {
     auto meta_data = f._retriever->getDocumentMetaData(doc_id);
-    auto doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    auto doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc);
     const Document *docPtr = doc.get();
     ASSERT_TRUE(doc->hasValue(dyn_arr_field_i));
     ASSERT_TRUE(doc->hasValue(dyn_wset_field_i));
     f.doc_store._testDoc = std::move(doc);
     f.clearAttributes({ dyn_arr_field_i, dyn_wset_field_i });
-    doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    doc = f._retriever->getDocument(meta_data.lid);
     EXPECT_EQUAL(docPtr, doc.get());
     ASSERT_FALSE(doc->hasValue(dyn_arr_field_i));
     ASSERT_FALSE(doc->hasValue(dyn_wset_field_i));
@@ -558,12 +562,12 @@ TEST_F("require that zero values in multivalue attribute removes fields", Fixtur
 
 TEST_F("require that tensor attribute can be retrieved", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
-    ASSERT_TRUE(doc);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(dyn_field_tensor);
     ASSERT_TRUE(value);
-    auto * tensor_value = dynamic_cast<TensorFieldValue *>(value.get());
+    TensorFieldValue *tensor_value = dynamic_cast<TensorFieldValue *>(value.get());
     ASSERT_TRUE(tensor_value->getAsTensorPtr()->equals(*dynamic_tensor));
 }
 
