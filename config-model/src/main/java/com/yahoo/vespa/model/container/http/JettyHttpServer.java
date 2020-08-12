@@ -52,9 +52,10 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
 
     @Override
     public void getConfig(ServerConfig.Builder builder) {
-        builder.metric(new ServerConfig.Metric.Builder().monitoringHandlerPaths(
-                List.of("/state/v1", "/status.html")
-        ));
+        builder.metric(new ServerConfig.Metric.Builder()
+                .monitoringHandlerPaths(List.of("/state/v1", "/status.html"))
+                .searchHandlerPaths(List.of("/search"))
+        );
     }
 
     static ComponentModel providerComponentModel(final ComponentId parentId, String className) {

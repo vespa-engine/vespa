@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.LongAdder;
 public class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful {
     private final AtomicReference<FutureCallback> shutdown = new AtomicReference<>();
     private final List<String> monitoringHandlerPaths;
+    private final List<String> searchHandlerPaths;
 
     public static enum HttpMethod {
         GET, PATCH, POST, PUT, DELETE, OPTIONS, HEAD, OTHER
@@ -54,9 +55,10 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     private final AtomicLong inFlight = new AtomicLong();
     private final LongAdder statistics[][][][];
 
-    public HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths) {
+    public HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths) {
         super();
         this.monitoringHandlerPaths = monitoringHandlerPaths;
+        this.searchHandlerPaths = searchHandlerPaths;
         statistics = new LongAdder[HttpScheme.values().length][HttpMethod.values().length][][];
         for (int scheme = 0; scheme < HttpScheme.values().length; ++scheme) {
             for (int method = 0; method < HttpMethod.values().length; method++) {
@@ -199,6 +201,9 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         String path = request.getRequestURI();
         for (String monitoringHandlerPath : monitoringHandlerPaths) {
             if (path.startsWith(monitoringHandlerPath)) return RequestType.MONITORING;
+        }
+        for (String searchHandlerPath : searchHandlerPaths) {
+            if (path.startsWith(searchHandlerPath)) return RequestType.READ;
         }
         if ("GET".equals(request.getMethod())) {
             return RequestType.READ;

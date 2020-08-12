@@ -36,7 +36,8 @@ import static org.hamcrest.Matchers.equalTo;
 public class HttpResponseStatisticsCollectorTest {
     private Connector connector;
     private List<String> monitoringPaths = List.of("/status.html");
-    private HttpResponseStatisticsCollector collector = new HttpResponseStatisticsCollector(monitoringPaths);
+    private List<String> searchPaths = List.of("/search");
+    private HttpResponseStatisticsCollector collector = new HttpResponseStatisticsCollector(monitoringPaths, searchPaths);
     private int httpResponseCode = 500;
 
     @Test
@@ -102,12 +103,14 @@ public class HttpResponseStatisticsCollectorTest {
     @Test
     public void statistics_include_request_type_dimension() throws Exception {
         testRequest("http", 200, "GET", "/search");
+        testRequest("http", 200, "POST", "/search");
         testRequest("http", 200, "POST", "/feed");
         testRequest("http", 200, "GET", "/status.html?foo=bar");
 
         var stats = collector.takeStatistics();
         assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "monitoring", 1L);
         assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", Metrics.RESPONSES_2XX, "read", 1L);
         assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", Metrics.RESPONSES_2XX, "write", 1L);
 
         testRequest("http", 200, "GET");

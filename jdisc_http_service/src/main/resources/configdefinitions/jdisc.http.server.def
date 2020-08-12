@@ -41,3 +41,6 @@ jmx.listenPort                        int    default = 1099
 
 # Paths that should be reported with monitoring dimensions where applicable
 metric.monitoringHandlerPaths[]       string
+
+# Paths that should be reported with search dimensions where applicable
+metric.searchHandlerPaths[]           string
