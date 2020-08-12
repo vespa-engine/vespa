@@ -567,6 +567,49 @@ TEST_F("require that tensor attribute can be retrieved", Fixture) {
     ASSERT_TRUE(tensor_value->getAsTensorPtr()->equals(*dynamic_tensor));
 }
 
+struct Lookup : public IFieldInfo
+{
+    Lookup() : _count(0) {}
+    bool isFieldAttribute(const document::Field & field) const override {
+        _count++;
+        return (field.getName()[0] == 'a');
+    }
+    mutable unsigned _count;
+};
+
+TEST("require ") {
+    Lookup lookup;
+    FieldSetAttributeDB fsDB(lookup);
+    document::Field attr1("attr1", 1, *document::DataType::LONG, true);
+    document::Field attr2("attr2", 2, *document::DataType::LONG, true);
+    document::Field not_attr1("not_attr1", 3, *document::DataType::LONG, true);
+    document::Field::Set allAttr;
+    allAttr.insert(&attr1);
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
+    EXPECT_EQUAL(1u, lookup._count);
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
+    EXPECT_EQUAL(1u, lookup._count);
+
+    allAttr.insert(&attr2);
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
+    EXPECT_EQUAL(3u, lookup._count);
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
+    EXPECT_EQUAL(3u, lookup._count);
+
+    document::Field::Set notAllAttr;
+    notAllAttr.insert(&not_attr1);
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
+    EXPECT_EQUAL(4u, lookup._count);
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
+    EXPECT_EQUAL(4u, lookup._count);
+
+    allAttr.insert(&attr1);
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
+    EXPECT_EQUAL(5u, lookup._count);
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
+    EXPECT_EQUAL(5u, lookup._count);
+}
+
 }  // namespace
 
 TEST_MAIN() { TEST_RUN_ALL(); }

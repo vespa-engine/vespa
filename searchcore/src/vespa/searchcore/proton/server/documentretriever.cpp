@@ -58,7 +58,7 @@ FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::Field:
     std::lock_guard guard(_lock);
     auto found = _isFieldSetAttributeOnly.find(key);
     if (found != _isFieldSetAttributeOnly.end()) {
-        return ! found->second;
+        return found->second;
     }
 
     bool isAttributeOnly = true;
