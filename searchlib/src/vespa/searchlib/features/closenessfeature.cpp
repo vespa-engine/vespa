@@ -190,7 +190,6 @@ ClosenessBlueprint::setup(const IIndexEnvironment & env,
     }
     describeOutput("out", "The closeness of the document (linear)");
     describeOutput("logscale", "The closeness of the document (logarithmic shape)");
-
     return true;
 }
 
