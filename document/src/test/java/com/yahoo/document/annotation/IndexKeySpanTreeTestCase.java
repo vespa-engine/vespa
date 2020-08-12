@@ -3,8 +3,8 @@ package com.yahoo.document.annotation;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -14,27 +14,27 @@ public class IndexKeySpanTreeTestCase {
     @Test
     public void testIndexKeys() throws Exception {
         SpanTree tree = new SpanTree("something");
-        assertThat(tree.getCurrentIndexes().isEmpty(), is(true));
+        assertTrue(tree.getCurrentIndexes().isEmpty());
 
         tree.createIndex(SpanTree.IndexKey.SPAN_NODE);
-        assertThat(tree.getCurrentIndexes().size(), is(1));
-        assertThat(tree.getCurrentIndexes().iterator().next(), is(SpanTree.IndexKey.SPAN_NODE));
+        assertEquals(1, tree.getCurrentIndexes().size());
+        assertEquals(SpanTree.IndexKey.SPAN_NODE, tree.getCurrentIndexes().iterator().next());
 
         tree.clearIndexes();
-        assertThat(tree.getCurrentIndexes().isEmpty(), is(true));
+        assertTrue(tree.getCurrentIndexes().isEmpty());
 
         tree.createIndex(SpanTree.IndexKey.ANNOTATION_TYPE);
-        assertThat(tree.getCurrentIndexes().size(), is(1));
-        assertThat(tree.getCurrentIndexes().iterator().next(), is(SpanTree.IndexKey.ANNOTATION_TYPE));
+        assertEquals(1, tree.getCurrentIndexes().size());
+        assertEquals(SpanTree.IndexKey.ANNOTATION_TYPE, tree.getCurrentIndexes().iterator().next());
 
         tree.clearIndexes();
-        assertThat(tree.getCurrentIndexes().isEmpty(), is(true));
+        assertTrue(tree.getCurrentIndexes().isEmpty());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSwitchIndexes()  {
         SpanTree tree = new SpanTree("something");
-        assertThat(tree.getCurrentIndexes().isEmpty(), is(true));
+        assertTrue(tree.getCurrentIndexes().isEmpty());
         tree.createIndex(SpanTree.IndexKey.SPAN_NODE);
         tree.createIndex(SpanTree.IndexKey.ANNOTATION_TYPE);
     }
@@ -42,7 +42,7 @@ public class IndexKeySpanTreeTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void testSwitchIndexes2()  {
         SpanTree tree = new SpanTree("something");
-        assertThat(tree.getCurrentIndexes().isEmpty(), is(true));
+        assertTrue(tree.getCurrentIndexes().isEmpty());
         tree.createIndex(SpanTree.IndexKey.ANNOTATION_TYPE);
         tree.createIndex(SpanTree.IndexKey.SPAN_NODE);
     }
@@ -50,7 +50,7 @@ public class IndexKeySpanTreeTestCase {
     @Test
     public void testSwitchIndexes3()  {
         SpanTree tree = new SpanTree("something");
-        assertThat(tree.getCurrentIndexes().isEmpty(), is(true));
+        assertTrue(tree.getCurrentIndexes().isEmpty());
         tree.createIndex(SpanTree.IndexKey.ANNOTATION_TYPE);
         tree.clearIndex(SpanTree.IndexKey.SPAN_NODE);
     }

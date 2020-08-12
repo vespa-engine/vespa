@@ -15,9 +15,9 @@ import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.statistics.StatisticsImpl;
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -60,14 +60,12 @@ public class SimpleDocumentProcessorTestCase {
         DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor());
         service.getExecutor().process(p);
 
-        assertThat(p.getDocumentOperations().size(), is(3));
-        assertThat(p.getDocumentOperations().get(0) instanceof DocumentPut, is(true));
-        assertThat(((DocumentPut) p.getDocumentOperations().get(0)).getDocument().getFieldValue("title").getWrappedValue(),
-                   is("processed"));
-        assertThat(p.getDocumentOperations().get(1) instanceof DocumentUpdate, is(true));
-        assertThat(p.getDocumentOperations().get(2) instanceof DocumentRemove, is(true));
-        assertThat(p.getDocumentOperations().get(2).getId().toString(),
-                   is("id:foobar:foobar::12345"));
+        assertEquals(3, p.getDocumentOperations().size());
+        assertTrue(p.getDocumentOperations().get(0) instanceof DocumentPut);
+        assertEquals("processed", ((DocumentPut) p.getDocumentOperations().get(0)).getDocument().getFieldValue("title").getWrappedValue());
+        assertTrue(p.getDocumentOperations().get(1) instanceof DocumentUpdate);
+        assertTrue(p.getDocumentOperations().get(2) instanceof DocumentRemove);
+        assertEquals("id:foobar:foobar::12345", p.getDocumentOperations().get(2).getId().toString());
     }
 
     @Test
@@ -78,10 +76,9 @@ public class SimpleDocumentProcessorTestCase {
         DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor());
         service.getExecutor().process(p);
 
-        assertThat(p.getDocumentOperations().size(), is(1));
-        assertThat(p.getDocumentOperations().get(0) instanceof DocumentPut, is(true));
-        assertThat(((DocumentPut) p.getDocumentOperations().get(0)).getDocument().getFieldValue("title").getWrappedValue(),
-                   is("processed"));
+        assertEquals(1, p.getDocumentOperations().size());
+        assertTrue(p.getDocumentOperations().get(0) instanceof DocumentPut);
+        assertEquals("processed", ((DocumentPut) p.getDocumentOperations().get(0)).getDocument().getFieldValue("title").getWrappedValue());
     }
 
     @Test
@@ -99,16 +96,13 @@ public class SimpleDocumentProcessorTestCase {
             //ok
         }
 
-        assertThat(p.getDocumentOperations().size(), is(3));
-        assertThat(p.getDocumentOperations().get(0) instanceof DocumentPut, is(true));
-        assertThat(((DocumentPut) p.getDocumentOperations().get(0)).getDocument().getFieldValue("title").getWrappedValue(),
-                   is("processed"));
-        assertThat(p.getDocumentOperations().get(1) instanceof DocumentRemove, is(true));
-        assertThat(p.getDocumentOperations().get(1).getId().toString(),
-                   is("id:this:foobar::is:a:remove"));
-        assertThat(p.getDocumentOperations().get(2) instanceof DocumentPut, is(true));
-        assertThat(((DocumentPut) p.getDocumentOperations().get(2)).getDocument().getFieldValue("title"),
-                   nullValue());
+        assertEquals(3, p.getDocumentOperations().size());
+        assertTrue(p.getDocumentOperations().get(0) instanceof DocumentPut);
+        assertEquals("processed", ((DocumentPut) p.getDocumentOperations().get(0)).getDocument().getFieldValue("title").getWrappedValue());
+        assertTrue(p.getDocumentOperations().get(1) instanceof DocumentRemove);
+        assertEquals("id:this:foobar::is:a:remove", p.getDocumentOperations().get(1).getId().toString());
+        assertTrue(p.getDocumentOperations().get(2) instanceof DocumentPut);
+        assertNull(((DocumentPut) p.getDocumentOperations().get(2)).getDocument().getFieldValue("title"));
 
 
     }

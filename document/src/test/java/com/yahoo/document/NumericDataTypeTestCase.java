@@ -5,8 +5,9 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -18,8 +19,8 @@ public class NumericDataTypeTestCase {
     public void basic() {
         NumericDataType type = new NumericDataType("foo", 0, FieldValue.class, IntegerFieldValue.getFactory());
         NumericDataType clonedType = type.clone();
-        assertThat(type, equalTo(clonedType));
-        assertThat(type, not(sameInstance(clonedType)));
+        assertEquals(type,clonedType);
+        assertNotSame(type, clonedType);
     }
 
     @Test

@@ -9,9 +9,9 @@ import java.util.List;
 import static com.yahoo.yolean.chain.Dependencies.after;
 import static com.yahoo.yolean.chain.Dependencies.before;
 import static com.yahoo.yolean.chain.Dependencies.provides;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -100,7 +100,7 @@ public class ChainBuilderTest {
     public void build_empty_chain() {
         Chain<Filter> chain = getChain().build();
         assertTrue(chain.isEmpty());
-        assertThat(chain.id(), is("myChain"));
+        assertEquals("myChain", chain.id());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b).add(a, before(b)).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -151,7 +151,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b, after(a)).add(a).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -162,7 +162,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b).add(a, before(b.getClass())).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -173,7 +173,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b, after(a.getClass())).add(a).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -184,7 +184,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b).add(a, before(FilterB.class)).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -195,7 +195,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b, after(FilterA.class)).add(a).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -206,7 +206,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b, provides("B")).add(a, before("B")).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -217,7 +217,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b, after("A")).add(a, provides("A")).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -228,7 +228,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(providesA).add(beforeA).build();
 
-        assertThat(chain, is(new Chain<>("myChain", beforeA, providesA)));
+        assertEquals(new Chain<>("myChain", beforeA, providesA), chain);
     }
 
     @Test
@@ -239,7 +239,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(afterA).add(providesA).build();
 
-        assertThat(chain, is(new Chain<>("myChain", providesA, afterA)));
+        assertEquals(new Chain<>("myChain", providesA, afterA), chain);
     }
 
     @Test
@@ -250,7 +250,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b).add(a, before("*")).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -261,7 +261,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b, after("*")).add(a).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -272,7 +272,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(a).add(beforeAll).build();
 
-        assertThat(chain, is(new Chain<>("myChain", beforeAll, a)));
+        assertEquals(new Chain<>("myChain", beforeAll, a), chain);
     }
 
     @Test
@@ -283,7 +283,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(afterAll).add(a).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, afterAll)));
+        assertEquals(new Chain<>("myChain", a, afterAll), chain);
     }
 
     @Test
@@ -294,7 +294,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(beforeAll).add(beforeBeforeAll).build();
 
-        assertThat(chain, is(new Chain<>("myChain", beforeBeforeAll, beforeAll)));
+        assertEquals(new Chain<>("myChain", beforeBeforeAll, beforeAll), chain);
     }
 
     @Test
@@ -305,7 +305,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(afterAfterAll).add(afterAll).build();
 
-        assertThat(chain, is(new Chain<>("myChain", afterAll, afterAfterAll)));
+        assertEquals(new Chain<>("myChain", afterAll, afterAfterAll), chain);
     }
 
     @Test
@@ -316,7 +316,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(beforeAll).add(first, before("BeforeAll")).build();
 
-        assertThat(chain, is(new Chain<>("myChain", first, beforeAll)));
+        assertEquals(new Chain<>("myChain", first, beforeAll), chain);
     }
 
     @Test
@@ -327,7 +327,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(last, after("AfterAll")).add(afterAll).build();
 
-        assertThat(chain, is(new Chain<>("myChain", afterAll, last)));
+        assertEquals(new Chain<>("myChain", afterAll, last), chain);
     }
 
     @Test
@@ -338,7 +338,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(b, after(a.getClass().getName())).add(a).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b)));
+        assertEquals(new Chain<>("myChain", a, b), chain);
     }
 
     @Test
@@ -350,7 +350,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(last, after("A")).add(first, before("A")).add(extendsA).build();
 
-        assertThat(chain, is(new Chain<>("myChain", first, extendsA, last)));
+        assertEquals(new Chain<>("myChain", first, extendsA, last), chain);
     }
 
     @Test
@@ -362,7 +362,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(last, after("A")).add(first, before("ExtendsA")).add(extendsA).build();
 
-        assertThat(chain, is(new Chain<>("myChain", first, extendsA, last)));
+        assertEquals(new Chain<>("myChain", first, extendsA, last), chain);
     }
 
     @Test
@@ -373,7 +373,7 @@ public class ChainBuilderTest {
 
         Chain<Filter> chain = getChain().
                 add(A, before("*")).add(beforeA_and_beforeB).add(B).build();
-        assertThat(chain, is(new Chain<>("myChain", beforeA_and_beforeB, A, B)));
+        assertEquals(new Chain<>("myChain", beforeA_and_beforeB, A, B), chain);
     }
 
     @Test
@@ -385,7 +385,7 @@ public class ChainBuilderTest {
         Chain<Filter> chain = getChain().
                 add(a).add(c).add(b, after(a), before(c)).build();
 
-        assertThat(chain, is(new Chain<>("myChain", a, b, c)));
+        assertEquals(new Chain<>("myChain", a, b, c), chain);
     }
 
     private ChainBuilder<Filter> getChain() {
