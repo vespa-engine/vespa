@@ -11,14 +11,14 @@ template <class Type>
 void
 addFields(Type &type, bool fieldF3IsString, bool hasFieldF4, bool hasFieldF5)
 {
-    type.addField(Field("f1", 1, *DataType::STRING, true));
-    type.addField(Field("f2", 2, *DataType::STRING, true));
-    type.addField(Field("f3", 3, fieldF3IsString ? *DataType::STRING : *DataType::INT, true));
+    type.addField(Field("f1", 1, *DataType::STRING));
+    type.addField(Field("f2", 2, *DataType::STRING));
+    type.addField(Field("f3", 3, fieldF3IsString ? *DataType::STRING : *DataType::INT));
     if (hasFieldF4) {
-        type.addField(Field("f4", 4, *DataType::STRING, true));
+        type.addField(Field("f4", 4, *DataType::STRING));
     }
     if (hasFieldF5) {
-        type.addField(Field("f5", 5, *DataType::STRING, true));
+        type.addField(Field("f5", 5, *DataType::STRING));
     }
 }
 
@@ -44,9 +44,9 @@ DocumentTypeFixture::DocumentTypeFixture(bool fieldF3IsString, bool hasFieldF4, 
     addFields(_documentType, fieldF3IsString, hasFieldF4, hasFieldF5);
     if (hasStruct) {
         addFields(_structFieldType, fieldF3IsString, hasFieldF4, hasFieldF5);
-        _documentType.addField(Field("sarray", 11, _structArrayFieldType, true));
-        _documentType.addField(Field("smap", 12, _structMapFieldType, true));
-        _documentType.addField(Field("map", 13, _mapFieldType, true));
+        _documentType.addField(Field("sarray", 11, _structArrayFieldType));
+        _documentType.addField(Field("smap", 12, _structMapFieldType));
+        _documentType.addField(Field("map", 13, _mapFieldType));
     }
 }
 
@@ -57,7 +57,7 @@ struct Fixture
     DocumentTypeFixture _oldDocType;
     DocumentTypeFixture _newDocType;
     DocumentTypeInspector _inspector;
-    Fixture(bool hasStruct = true, bool mapKeyIsByte = false)
+    explicit Fixture(bool hasStruct = true, bool mapKeyIsByte = false)
         : _oldDocType(true, true, false, hasStruct, mapKeyIsByte),
           _newDocType(false, false, true, true, false),
           _inspector(_oldDocType._documentType, _newDocType._documentType)

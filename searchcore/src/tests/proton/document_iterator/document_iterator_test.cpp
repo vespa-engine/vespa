@@ -326,8 +326,8 @@ const DocumentType &getDocType() {
     static DocumentType::UP doc_type;
     if (!doc_type) {
         doc_type = std::make_unique<DocumentType>("foo", 42);
-        doc_type->addField(Field("header", 43, *DataType::STRING, true));
-        doc_type->addField(Field("body", 44, *DataType::STRING, false));
+        doc_type->addField(Field("header", 43, *DataType::STRING));
+        doc_type->addField(Field("body", 44, *DataType::STRING));
     }
     return *doc_type;
 }
@@ -336,12 +336,12 @@ const DocumentType &getAttrDocType() {
     static DocumentType::UP doc_type;
     if (!doc_type) {
         doc_type = std::make_unique<DocumentType>("foo", 42);
-        doc_type->addField(Field("header", 43, *DataType::STRING, true));
-        doc_type->addField(Field("body", 44, *DataType::STRING, false));
-        doc_type->addField(Field("aa", 45, *DataType::INT, false));
-        doc_type->addField(Field("ab", 46, *DataType::INT, false));
-        doc_type->addField(Field("dd", 47, *DataType::DOUBLE, false));
-        doc_type->addField(Field("ss", 48, *DataType::STRING, false));
+        doc_type->addField(Field("header", 43, *DataType::STRING));
+        doc_type->addField(Field("body", 44, *DataType::STRING));
+        doc_type->addField(Field("aa", 45, *DataType::INT));
+        doc_type->addField(Field("ab", 46, *DataType::INT));
+        doc_type->addField(Field("dd", 47, *DataType::DOUBLE));
+        doc_type->addField(Field("ss", 48, *DataType::STRING));
     }
     return *doc_type;
 }

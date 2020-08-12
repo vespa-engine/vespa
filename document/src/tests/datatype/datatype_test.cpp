@@ -51,8 +51,8 @@ TEST("require that assignment operator works for LongFieldValue") {
 
 TEST("require that StructDataType can redeclare identical fields.") {
     StructDataType s("foo");
-    Field field1("field1", 42, *DataType::STRING, true);
-    Field field2("field2", 42, *DataType::STRING, true);
+    Field field1("field1", 42, *DataType::STRING);
+    Field field2("field2", 42, *DataType::STRING);
 
     s.addField(field1);
     s.addField(field1);  // ok

@@ -20,22 +20,22 @@ StructDataType::UP
 UrlDataType::createInstance()
 {
     StructDataType::UP type(new StructDataType(UrlDataType::STRUCT_NAME));
-    type->addField(Field(UrlDataType::FIELD_ALL,     *DataType::STRING, true));
-    type->addField(Field(UrlDataType::FIELD_SCHEME,  *DataType::STRING, true));
-    type->addField(Field(UrlDataType::FIELD_HOST,    *DataType::STRING, true));
-    type->addField(Field(UrlDataType::FIELD_PORT,    *DataType::STRING, true));
-    type->addField(Field(UrlDataType::FIELD_PATH,    *DataType::STRING, true));
-    type->addField(Field(UrlDataType::FIELD_QUERY,   *DataType::STRING, true));
-    type->addField(Field(UrlDataType::FIELD_FRAGMENT,*DataType::STRING, true));
+    type->addField(Field(UrlDataType::FIELD_ALL,     *DataType::STRING));
+    type->addField(Field(UrlDataType::FIELD_SCHEME,  *DataType::STRING));
+    type->addField(Field(UrlDataType::FIELD_HOST,    *DataType::STRING));
+    type->addField(Field(UrlDataType::FIELD_PORT,    *DataType::STRING));
+    type->addField(Field(UrlDataType::FIELD_PATH,    *DataType::STRING));
+    type->addField(Field(UrlDataType::FIELD_QUERY,   *DataType::STRING));
+    type->addField(Field(UrlDataType::FIELD_FRAGMENT,*DataType::STRING));
     return type;
 }
 
 const StructDataType &
 UrlDataType::getInstance()
 {
-    if (_instance.get() == NULL) {
+    if ( ! _instance ) {
         vespalib::LockGuard guard(_lock);
-        if (_instance.get() == NULL) {
+        if ( ! _instance ) {
             _instance = createInstance();
         }
     }

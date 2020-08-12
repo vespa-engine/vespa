@@ -21,17 +21,17 @@ StructDataType::UP
 PositionDataType::createInstance()
 {
     StructDataType::UP type(new StructDataType(PositionDataType::STRUCT_NAME));
-    type->addField(Field(PositionDataType::FIELD_X, *DataType::INT, true));
-    type->addField(Field(PositionDataType::FIELD_Y, *DataType::INT, true));
+    type->addField(Field(PositionDataType::FIELD_X, *DataType::INT));
+    type->addField(Field(PositionDataType::FIELD_Y, *DataType::INT));
     return type;
 }
 
 const StructDataType &
 PositionDataType::getInstance()
 {
-    if (_instance.get() == NULL) {
+    if ( ! _instance) {
         vespalib::LockGuard guard(_lock);
-        if (_instance.get() == NULL) {
+        if ( ! _instance) {
             _instance = createInstance();
         }
     }

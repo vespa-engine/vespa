@@ -150,10 +150,10 @@ struct DocumentModel {
     }
     ~DocumentModel();
     void initChildDocType() {
-        childDocType.addField(Field("ref", refDataType, true));
-        childDocType.addField(Field("other_ref", refDataType, true));
-        childDocType.addField(Field("parent2_ref", refDataType2, true));
-        childDocType.addField(Field("parent3_ref", refDataType3, true));
+        childDocType.addField(Field("ref", refDataType));
+        childDocType.addField(Field("other_ref", refDataType));
+        childDocType.addField(Field("parent2_ref", refDataType2));
+        childDocType.addField(Field("parent3_ref", refDataType3));
     }
 };
 

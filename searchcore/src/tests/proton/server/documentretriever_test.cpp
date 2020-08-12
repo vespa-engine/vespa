@@ -580,9 +580,9 @@ struct Lookup : public IFieldInfo
 TEST("require ") {
     Lookup lookup;
     FieldSetAttributeDB fsDB(lookup);
-    document::Field attr1("attr1", 1, *document::DataType::LONG, true);
-    document::Field attr2("attr2", 2, *document::DataType::LONG, true);
-    document::Field not_attr1("not_attr1", 3, *document::DataType::LONG, true);
+    document::Field attr1("attr1", 1, *document::DataType::LONG);
+    document::Field attr2("attr2", 2, *document::DataType::LONG);
+    document::Field not_attr1("not_attr1", 3, *document::DataType::LONG);
     std::vector<const document::Field *> allAttr;
     allAttr.emplace_back(&attr1);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
