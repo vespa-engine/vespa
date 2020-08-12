@@ -8,7 +8,6 @@ AdminV2 =
    GenericConfig* &
    LogServer? &
    (ConfigServer | ConfigServers)? &
-   FileDistribution? &
    AdminSlobroks? &
    AdminMonitoring? &
    Metrics? &
@@ -68,11 +67,6 @@ ConfigServers = element configservers {
 
 LogServer = element logserver {
    service.attlist
-}
-
-FileDistribution = element filedistribution {
-   element uploadbitrate { xsd:string {   pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }? &
-   element downloadbitrate { xsd:string { pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }?
 }
 
 Metrics = element metrics {
