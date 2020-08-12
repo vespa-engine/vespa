@@ -101,7 +101,7 @@ public class ProtobufSerialization {
             mergeToSearchRequestFromSorting(ranking.getSorting(), builder);
         }
         if (ranking.getLocation() != null) {
-            builder.setGeoLocation(ranking.getLocation().toString());
+            builder.setGeoLocation(ranking.getLocation().backendString());
         }
 
         var featureMap = ranking.getFeatures().asMap();
@@ -144,7 +144,7 @@ public class ProtobufSerialization {
         builder.setRankProfile(ranking.getProfile());
 
         if (ranking.getLocation() != null) {
-            builder.setGeoLocation(ranking.getLocation().toString());
+            builder.setGeoLocation(ranking.getLocation().backendString());
         }
         if (includeQueryData) {
             mergeQueryDataToDocsumRequest(query, builder);
