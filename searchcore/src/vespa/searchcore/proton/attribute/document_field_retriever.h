@@ -16,8 +16,7 @@ struct DocumentFieldRetriever
     static void populate(search::DocumentIdT lid,
                          document::Document &doc,
                          const document::Field &field,
-                         const search::attribute::IAttributeVector &attr,
-                         bool isIndexField);
+                         const search::attribute::IAttributeVector &attr);
 };
 
 } // namespace proton
