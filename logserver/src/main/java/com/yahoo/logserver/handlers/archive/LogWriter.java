@@ -33,7 +33,7 @@ public class LogWriter {
         this.archive = archive;
         this.generation = archive.highestGen(prefix);
         writer = nextWriter();
-        archive.maintenance();
+        archive.triggerMaintenance();
     }
 
     /**
@@ -99,7 +99,7 @@ public class LogWriter {
     public void write(String str) throws IOException {
         if (writer == null) {
             writer = nextWriter();
-            archive.maintenance();
+            archive.triggerMaintenance();
         }
 
         bytesWritten += str.length();
@@ -110,7 +110,7 @@ public class LogWriter {
                              + currentFile.getAbsolutePath()
                              + "' full, rotating");
             writer = nextWriter();
-            archive.maintenance();
+            archive.triggerMaintenance();
         }
     }
 
