@@ -16,10 +16,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 import java.util.Arrays;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -227,7 +225,7 @@ public class DocumentIdTestCase {
             new DocumentId(strId);
             fail("Expected an IllegalArgumentException to be thrown");
         } catch (IllegalArgumentException ex) {
-            assertThat(ex.getMessage(), containsString(exceptionMsg));
+            assertTrue(ex.getMessage().contains(exceptionMsg));
         }
     }
 
@@ -254,7 +252,7 @@ public class DocumentIdTestCase {
             DocumentId.createFromSerialized(strId);
             fail("Expected an IllegalArgumentException to be thrown");
         } catch (IllegalArgumentException ex) {
-            assertThat(ex.getMessage(), containsString("illegal zero byte code point"));
+            assertTrue(ex.getMessage().contains("illegal zero byte code point"));
         }
     }
 

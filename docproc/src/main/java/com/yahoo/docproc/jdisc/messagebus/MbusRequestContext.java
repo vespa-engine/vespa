@@ -24,7 +24,6 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.jdisc.MbusRequest;
 import com.yahoo.messagebus.jdisc.MbusResponse;
-import com.yahoo.messagebus.routing.Route;
 
 import java.net.URI;
 import java.util.ArrayList;

@@ -12,12 +12,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -59,8 +57,8 @@ public abstract class ApplicationFileTest {
         Path p1 = Path.fromString("foo/bar/baz");
         ApplicationFile f1 = getApplicationFile(p1);
         ApplicationFile f2 = getApplicationFile(p1);
-        assertThat(f1.getPath(), is(p1));
-        assertThat(f2.getPath(), is(p1));
+        assertEquals(p1, f1.getPath());
+        assertEquals(p1, f2.getPath());
     }
 
     @Test
@@ -134,7 +132,7 @@ public abstract class ApplicationFileTest {
         file.writeFile(new StringReader("foobar"));
         assertTrue(file.exists());
         assertFalse(file.isDirectory());
-        assertThat(com.yahoo.io.IOUtils.readAll(file.createReader()), is("foobar"));
+        assertEquals("foobar", com.yahoo.io.IOUtils.readAll(file.createReader()));
     }
 
     @Test
@@ -144,7 +142,7 @@ public abstract class ApplicationFileTest {
         file.writeFile(new StringReader("foobar"));
         assertTrue(file.exists());
         assertFalse(file.isDirectory());
-        assertThat(com.yahoo.io.IOUtils.readAll(file.createReader()), is("foobar"));
+        assertEquals("foobar", com.yahoo.io.IOUtils.readAll(file.createReader()));
     }
     
     @Test
@@ -153,7 +151,7 @@ public abstract class ApplicationFileTest {
         assertTrue(file.exists());
         assertTrue(file.isDirectory());
         List<ApplicationFile> list = file.listFiles();
-        assertThat(list.size(), is(6));
+        assertEquals(6, list.size());
         assertTrue(listContains(list, "vespa-services.xml"));
         assertTrue(listContains(list, "vespa-hosts.xml"));
         assertTrue(listContains(list, "components/"));
@@ -175,7 +173,7 @@ public abstract class ApplicationFileTest {
         assertTrue(listContains(list, "components/file.txt"));
 
         list = getApplicationFile(Path.fromString("templates")).listFiles(true);
-        assertThat(list.size(), is(14));
+        assertEquals(14, list.size());
         assertTrue(listContains(list, "templates/basic/"));
         assertTrue(listContains(list, "templates/basic/error.templ"));
         assertTrue(listContains(list, "templates/basic/header.templ"));
@@ -211,7 +209,7 @@ public abstract class ApplicationFileTest {
                 return path.getName().endsWith(".xml");
             }
         });
-        assertThat(list.size(), is(2));
+        assertEquals(2, list.size());
         assertFalse(listContains(list, "components/"));
         assertFalse(listContains(list, "files/"));
         assertFalse(listContains(list, "searchdefinitions/"));
@@ -237,7 +235,7 @@ public abstract class ApplicationFileTest {
     public void testApplicationFileCanBeDeleted() throws Exception {
         ApplicationFile file = getApplicationFile(Path.fromString("file1.txt"));
         file.writeFile(new StringReader("file1"));
-        assertThat(file.getPath().getName(), is("file1.txt"));
+        assertEquals("file1.txt", file.getPath().getName());
         file.delete();
         assertFalse(file.exists());
         assertFalse(file.isDirectory());
@@ -246,7 +244,7 @@ public abstract class ApplicationFileTest {
         
         file = getApplicationFile(Path.fromString("subdir/file2.txt"));
         file.writeFile(new StringReader("file2"));
-        assertThat(file.getPath().getName(), is("file2.txt"));
+        assertEquals("file2.txt", file.getPath().getName());
         file.delete();
         assertFalse(file.exists());
         assertFalse(file.isDirectory());
@@ -257,48 +255,48 @@ public abstract class ApplicationFileTest {
     @Test
     public void getGetMetaPath() throws Exception {
         ApplicationFile file = getApplicationFile(Path.fromString("file1.txt"));
-        assertThat(file.getMetaPath().toString(), is(".meta/file1.txt"));
+        assertEquals(".meta/file1.txt", file.getMetaPath().toString());
 
         file = getApplicationFile(Path.fromString("dir/file1.txt"));
-        assertThat(file.getMetaPath().toString(), is("dir/.meta/file1.txt"));
+        assertEquals("dir/.meta/file1.txt", file.getMetaPath().toString());
 
         file = getApplicationFile(Path.fromString("dir"));
-        assertThat(file.getMetaPath().toString(), is(".meta/dir"));
+        assertEquals(".meta/dir", file.getMetaPath().toString());
 
         file = getApplicationFile(Path.fromString(""));
-        assertThat(file.getMetaPath().toString(), is(".meta/.root"));
+        assertEquals(".meta/.root", file.getMetaPath().toString());
     }
 
     @Test
     public void getGetMetaContent() throws Exception {
         String testFileName = "file1.txt";
         ApplicationFile file = getApplicationFile(Path.fromString(testFileName));
-        assertThat(file.getMetaPath().toString(), is(".meta/" + testFileName));
+        assertEquals(".meta/" + testFileName, file.getMetaPath().toString());
         String input = "a";
         file.writeFile(new StringReader(input));
-        assertThat(file.getMetaData().getStatus(), is(ApplicationFile.ContentStatusNew));
-        assertThat(file.getMetaData().getMd5(), is(ConfigUtils.getMd5(input)));
+        assertEquals(ApplicationFile.ContentStatusNew, file.getMetaData().getStatus());
+        assertEquals(ConfigUtils.getMd5(input), file.getMetaData().getMd5());
 
         testFileName = "foo";
         ApplicationFile fooDir = getApplicationFile(Path.fromString(testFileName));
         fooDir.createDirectory();
-        assertThat(fooDir.getMetaData().getStatus(), is(ApplicationFile.ContentStatusNew));
-        assertThat(fooDir.getMetaData().getMd5(), is(""));
+        assertEquals(ApplicationFile.ContentStatusNew, fooDir.getMetaData().getStatus());
+        assertTrue(fooDir.getMetaData().getMd5().isEmpty());
 
         testFileName = "foo/file2.txt";
         file = getApplicationFile(Path.fromString(testFileName));
         input = "a";
         file.writeFile(new StringReader(input));
-        assertThat(file.getMetaData().getStatus(), is(ApplicationFile.ContentStatusNew));
-        assertThat(file.getMetaData().getMd5(), is(ConfigUtils.getMd5(input)));
+        assertEquals(ApplicationFile.ContentStatusNew, file.getMetaData().getStatus());
+        assertEquals(ConfigUtils.getMd5(input), file.getMetaData().getMd5());
 
         file.delete();
-        assertThat(file.getMetaData().getStatus(), is(ApplicationFile.ContentStatusDeleted));
-        assertThat(file.getMetaData().getMd5(), is(""));
+        assertEquals(ApplicationFile.ContentStatusDeleted, file.getMetaData().getStatus());
+        assertTrue(file.getMetaData().getMd5().isEmpty());
 
         fooDir.delete();
-        assertThat(fooDir.getMetaData().getStatus(), is(ApplicationFile.ContentStatusDeleted));
-        assertThat(file.getMetaData().getMd5(), is(""));
+        assertEquals(ApplicationFile.ContentStatusDeleted, fooDir.getMetaData().getStatus());
+        assertTrue(file.getMetaData().getMd5().isEmpty());
 
         // non-existing file
         testFileName = "non-existing";
@@ -320,7 +318,7 @@ public abstract class ApplicationFileTest {
     private void assertFileContent(String expected, String path) throws Exception {
         ApplicationFile file = getApplicationFile(Path.fromString(path));
         String actual = com.yahoo.io.IOUtils.readAll(file.createReader());
-        assertThat(actual, is(expected));
+        assertEquals(expected, actual);
     }
     
     public abstract ApplicationFile getApplicationFile(Path path) throws Exception;
