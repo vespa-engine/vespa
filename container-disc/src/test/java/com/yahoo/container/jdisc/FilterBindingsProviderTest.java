@@ -10,8 +10,6 @@ import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
-import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
 import com.yahoo.jdisc.http.server.FilterBindings;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -23,11 +21,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
@@ -54,9 +52,9 @@ public class FilterBindingsProviderTest {
 
         final FilterBindings filterBindings = provider.get();
 
-        assertThat(filterBindings, is(not(nullValue())));
-        assertThat(filterBindings.getRequestFilters().iterator().hasNext(), is(false));
-        assertThat(filterBindings.getResponseFilters().iterator().hasNext(), is(false));
+        assertNotNull(filterBindings);
+        assertFalse(filterBindings.getRequestFilters().iterator().hasNext());
+        assertFalse(filterBindings.getResponseFilters().iterator().hasNext());
     }
 
     @Test
@@ -93,21 +91,21 @@ public class FilterBindingsProviderTest {
                 new ChainsConfig(new ChainsConfig.Builder()),
                 availableRequestFilters,
                 availableResponseFilters,
-                new ComponentRegistry<SecurityRequestFilter>(),
-                new ComponentRegistry<SecurityResponseFilter>());
+                new ComponentRegistry<>(),
+                new ComponentRegistry<>());
 
         // Set up the provider that we aim to test.
         final FilterBindingsProvider provider = new FilterBindingsProvider(
                 new ComponentId("foo"),
                 new ServerConfig(configBuilder),
                 filterChainRepository,
-                new ComponentRegistry<SecurityRequestFilter>());
+                new ComponentRegistry<>());
 
         // Execute.
         final FilterBindings filterBindings = provider.get();
 
         // Verify.
-        assertThat(filterBindings, is(not(nullValue())));
+        assertNotNull(filterBindings);
         assertThat(
                 filterBindings.getRequestFilters(),
                 containsFilters(requestFilter1Instance, requestFilter2Instance));
@@ -150,7 +148,7 @@ public class FilterBindingsProviderTest {
                     new ComponentRegistry<>());
             fail("Dual-role filter should not be accepted");
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), containsString("Invalid config"));
+            assertTrue(e.getMessage().contains("Invalid config"));
         }
     }
 
@@ -175,7 +173,7 @@ public class FilterBindingsProviderTest {
                     new ComponentRegistry<>());
             fail("Config with unknown filter reference should not be accepted");
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), containsString("Invalid config"));
+            assertTrue(e.getMessage().contains("Invalid config"));
         }
     }
 
@@ -183,7 +181,7 @@ public class FilterBindingsProviderTest {
     @SuppressWarnings("varargs")
     private static <T> Matcher<? super BindingRepository<T>> containsFilters(
             final T... requiredInstances) {
-        return new TypeSafeMatcher<BindingRepository<T>>() {
+        return new TypeSafeMatcher<>() {
             private final Set<T> requiredFilterSet = new HashSet<>(Arrays.asList(requiredInstances));
 
             @Override

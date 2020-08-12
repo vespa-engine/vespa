@@ -15,14 +15,11 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -92,7 +89,7 @@ public class FilesApplicationPackageTest {
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         assertTrue(app.getDeployment().isPresent());
         assertFalse(app.getMajorVersion().isPresent());
-        assertThat(IOUtils.readAll(new FileReader(deployment)), is(IOUtils.readAll(app.getDeployment().get())));
+        assertEquals(IOUtils.readAll(app.getDeployment().get()), IOUtils.readAll(new FileReader(deployment)));
     }
 
     @Test
@@ -104,7 +101,7 @@ public class FilesApplicationPackageTest {
         assertTrue(app.getDeployment().isPresent());
         assertTrue(app.getMajorVersion().isPresent());
         assertEquals(6, (int)app.getMajorVersion().get());
-        assertThat(IOUtils.readAll(new FileReader(deployment)), is(IOUtils.readAll(app.getDeployment().get())));
+        assertEquals(IOUtils.readAll(app.getDeployment().get()), IOUtils.readAll(new FileReader(deployment)));
     }
 
 }

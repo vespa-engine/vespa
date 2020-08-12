@@ -12,8 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.jar.JarFile;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -32,9 +31,9 @@ public class ConfigDefinitionDirTest {
         File defDir = temporaryFolder.newFolder();
         ConfigDefinitionDir dir = new ConfigDefinitionDir(defDir);
         Bundle bundle = new Bundle(new JarFile(bundleFile), bundleFile);
-        assertThat(defDir.listFiles().length, is(0));
-        dir.addConfigDefinitionsFromBundle(bundle, new ArrayList<Bundle>());
-        assertThat(defDir.listFiles().length, is(1));
+        assertEquals(0, defDir.listFiles().length);
+        dir.addConfigDefinitionsFromBundle(bundle, new ArrayList<>());
+        assertEquals(1, defDir.listFiles().length);
     }
 
 
@@ -62,10 +61,10 @@ public class ConfigDefinitionDirTest {
         try {
             dir.addConfigDefinitionsFromBundle(bundle2, bundlesAdded);
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(),
-                    is("The config definition with name 'bar.foo' contained in the bundle '" +
-                            bundleFileName +
-                            "' conflicts with the same config definition in the bundle 'com.yahoo.searcher1.jar'. Please choose a different name."));
+            assertEquals("The config definition with name 'bar.foo' contained in the bundle '" +
+                         bundleFileName +
+                         "' conflicts with the same config definition in the bundle 'com.yahoo.searcher1.jar'. Please choose a different name.",
+                         e.getMessage());
         }
     }
 }

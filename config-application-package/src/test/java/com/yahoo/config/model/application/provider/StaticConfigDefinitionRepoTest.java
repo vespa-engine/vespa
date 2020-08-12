@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
-import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -12,8 +11,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -31,7 +29,7 @@ public class StaticConfigDefinitionRepoTest {
         addFile(defDir, new ConfigDefinitionKey("foo", "foons"), "namespace=foons\nval int\n");
         addFile(defDir, new ConfigDefinitionKey("bar", "barns"), "namespace=barns\nval string\n");
         ConfigDefinitionRepo repo = new StaticConfigDefinitionRepo(defDir);
-        assertThat(repo.getConfigDefinitions().size(), is(2));
+        assertEquals(2, repo.getConfigDefinitions().size());
     }
 
     private void addFile(File defDir, ConfigDefinitionKey key, String content) throws IOException {

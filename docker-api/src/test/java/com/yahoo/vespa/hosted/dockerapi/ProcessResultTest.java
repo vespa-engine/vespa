@@ -3,21 +3,22 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ProcessResultTest {
     @Test
     public void testBasicProperties() {
         ProcessResult processResult = new ProcessResult(0, "foo", "bar");
-        assertThat(processResult.getExitStatus(), is(0));
-        assertThat(processResult.getOutput(), is("foo"));
-        assertThat(processResult.isSuccess(), is(true));
+        assertEquals(0, processResult.getExitStatus());
+        assertEquals("foo", processResult.getOutput());
+        assertTrue(processResult.isSuccess());
     }
 
     @Test
     public void testSuccessFails() {
         ProcessResult processResult = new ProcessResult(1, "foo", "bar");
-        assertThat(processResult.isSuccess(), is(false));
+        assertFalse(processResult.isSuccess());
     }
 }

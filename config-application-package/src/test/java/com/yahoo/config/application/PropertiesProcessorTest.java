@@ -4,17 +4,12 @@ package com.yahoo.config.application;
 import org.custommonkey.xmlunit.XMLUnit;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author hmusum
@@ -44,9 +39,9 @@ public class PropertiesProcessorTest {
         PropertiesProcessor p = new PropertiesProcessor();
         p.process(Xml.getDocument(new StringReader(input)));
         Map<String, String> properties = p.getProperties();
-        assertThat(properties.size(), is(2));
-        assertThat(properties.get("slobrok.port"), is("4099"));
-        assertThat(properties.get("redundancy"), is("2"));
+        assertEquals(2, properties.size());
+        assertEquals("4099", properties.get("slobrok.port"));
+        assertEquals("2", properties.get("redundancy"));
     }
 
     @Test
