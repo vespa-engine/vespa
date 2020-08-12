@@ -32,6 +32,7 @@ public class EndpointCertificateMetadataSerializer {
     private final static String keyNameField = "keyName";
     private final static String certNameField = "certName";
     private final static String versionField = "version";
+    private final static String lastRequestedField = "lastRequested";
     private final static String requestIdField = "requestId";
     private final static String requestedDnsSansField = "requestedDnsSans";
     private final static String issuerField = "issuer";
@@ -42,6 +43,7 @@ public class EndpointCertificateMetadataSerializer {
         object.setString(keyNameField, metadata.keyName());
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
+        object.setLong(lastRequestedField, metadata.lastRequested());
 
         metadata.request_id().ifPresent(id -> object.setString(requestIdField, id));
         metadata.requestedDnsSans().ifPresent(sans -> {
@@ -69,10 +71,16 @@ public class EndpointCertificateMetadataSerializer {
                 Optional.of(inspector.field(issuerField).asString()) :
                 Optional.empty();
 
+        long lastRequested = inspector.field(lastRequestedField).valid() ?
+                inspector.field(lastRequestedField).asLong() :
+                1597200000L; // Wed Aug 12 02:40:00 UTC 2020
+                // Not originally stored, so we default to when field was added
+
         return new EndpointCertificateMetadata(
                 inspector.field(keyNameField).asString(),
                 inspector.field(certNameField).asString(),
                 Math.toIntExact(inspector.field(versionField).asLong()),
+                lastRequested,
                 request_id,
                 requestedDnsSans,
                 issuer);
