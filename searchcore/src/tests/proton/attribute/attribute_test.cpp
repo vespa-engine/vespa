@@ -984,7 +984,7 @@ public:
     StructWriterTestBase()
         : AttributeWriterTest(),
           _type("test"),
-          _valueField("value", 2, *DataType::INT, true),
+          _valueField("value", 2, *DataType::INT),
           _structFieldType("struct")
     {
         addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)});
@@ -1019,7 +1019,7 @@ public:
     StructArrayWriterTest()
         : StructWriterTestBase(),
           _structArrayFieldType(_structFieldType),
-          _structArrayField("array", _structArrayFieldType, true)
+          _structArrayField("array", _structArrayFieldType)
     {
         addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         _type.addField(_structArrayField);
@@ -1070,7 +1070,7 @@ public:
     StructMapWriterTest()
         : StructWriterTestBase(),
           _structMapFieldType(*DataType::INT, _structFieldType),
-          _structMapField("map", _structMapFieldType, true)
+          _structMapField("map", _structMapFieldType)
     {
         addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});

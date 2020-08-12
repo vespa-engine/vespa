@@ -1002,7 +1002,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
         EXPECT_TRUE(detector.foundHeaderField);
     }
 
@@ -1011,7 +1011,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
         EXPECT_TRUE(detector.foundHeaderField);
     }
 
@@ -1020,7 +1020,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
         EXPECT_TRUE(detector.foundHeaderField);
     }
 
@@ -1029,7 +1029,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
     }
 
     {
@@ -1040,7 +1040,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
     }
 
 }

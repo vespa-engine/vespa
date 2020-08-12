@@ -143,15 +143,15 @@ struct MyDocType {
 };
 
 MyDocType::MyDocType()
-    : _name_field("name", 1, *DataType::STRING, true),
-      _weight_field("weight", 2, *DataType::INT, true),
+    : _name_field("name", 1, *DataType::STRING),
+      _weight_field("weight", 2, *DataType::INT),
       _elem_type(make_elem_type(_name_field, _weight_field)),
       _elem_array_type(_elem_type),
       _elem_map_type(*DataType::STRING, _elem_type),
       _str_int_map_type(*DataType::STRING, *DataType::INT),
-      _elem_array_field("elem_array", 3, _elem_array_type, true),
-      _elem_map_field("elem_map", 4, _elem_map_type, true),
-      _str_int_map_field("str_int_map", _str_int_map_type, true),
+      _elem_array_field("elem_array", 3, _elem_array_type),
+      _elem_map_field("elem_map", 4, _elem_map_type),
+      _str_int_map_field("str_int_map", _str_int_map_type),
       _document_type("test")
 {
     _document_type.addField(_elem_array_field);
