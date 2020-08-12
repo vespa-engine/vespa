@@ -104,7 +104,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
     void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override {}
     DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return DocumentMetaData(); }
-    Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
+    Document::UP getFullDocument(DocumentIdT lid) const override {
         return Document::UP(_docs[lid]->clone());
     }
 

@@ -38,11 +38,11 @@ public:
     /**
      * Extracts the full document based on the LID
      */
-    virtual DocumentUP getDocumentByLidOnly(search::DocumentIdT lid) const = 0;
+    virtual DocumentUP getFullDocument(search::DocumentIdT lid) const = 0;
     /**
      * Fetches the necessary set of fields, allowing for more optimal fetch when combining only from attributes.
      */
-    virtual DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const = 0;
+    virtual DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const;
     virtual ReadGuard getReadGuard() const = 0;
     virtual uint32_t getDocIdLimit() const = 0;
     /**
@@ -64,7 +64,6 @@ public:
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
     ReadGuard getReadGuard() const override { return ReadGuard(); }
     uint32_t getDocIdLimit() const override { return std::numeric_limits<uint32_t>::max(); }
-    DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId &, const document::FieldSet &) const override;
 };
 
 } // namespace proton

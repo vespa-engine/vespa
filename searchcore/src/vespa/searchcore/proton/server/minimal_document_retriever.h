@@ -27,7 +27,7 @@ public:
                              bool hasFields);
     ~MinimalDocumentRetriever() override;
 
-    document::Document::UP getDocumentByLidOnly(search::DocumentIdT lid) const override;
+    document::Document::UP getFullDocument(search::DocumentIdT lid) const override;
     void visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const override;
 };
 }  // namespace proton

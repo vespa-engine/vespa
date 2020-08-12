@@ -133,7 +133,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         }
         return DocumentMetaData();
     }
-    document::Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
+    document::Document::UP getFullDocument(DocumentIdT lid) const override {
         return Document::UP((lid == docid) ? document->clone() : nullptr);
     }
 
@@ -179,11 +179,11 @@ struct VisitRecordingUnitDR : UnitDR {
     {
     }
 
-    document::Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
+    document::Document::UP getFullDocument(DocumentIdT lid) const override {
         if (lid == docid) {
             visited_lids.insert(lid);
         }
-        return UnitDR::getDocumentByLidOnly(lid);
+        return UnitDR::getFullDocument(lid);
     }
 };
 
@@ -262,9 +262,9 @@ struct PairDR : DocumentRetrieverBaseForTest {
         DocumentMetaData ret = first->getDocumentMetaData(id);
         return (ret.valid()) ? ret : second->getDocumentMetaData(id);
     }
-    document::Document::UP getDocumentByLidOnly(DocumentIdT lid) const override {
-        Document::UP ret = first->getDocumentByLidOnly(lid);
-        return ret ? std::move(ret) : second->getDocumentByLidOnly(lid);
+    document::Document::UP getFullDocument(DocumentIdT lid) const override {
+        Document::UP ret = first->getFullDocument(lid);
+        return ret ? std::move(ret) : second->getFullDocument(lid);
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {

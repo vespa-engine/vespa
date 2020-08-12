@@ -45,6 +45,31 @@ bool is_array_of_position_type(const document::DataType& field_type) noexcept {
 
 }
 
+FieldSetAttributeDB::FieldSetAttributeDB(const IFieldInfo & fieldInfo)
+    : _fieldInfo(fieldInfo),
+      _isFieldSetAttributeOnly(),
+      _lock()
+{}
+
+FieldSetAttributeDB::~FieldSetAttributeDB() = default;
+
+bool
+FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::Field::Set & set) const {
+    std::lock_guard guard(_lock);
+    auto found = _isFieldSetAttributeOnly.find(key);
+    if (found != _isFieldSetAttributeOnly.end()) {
+        return ! found->second;
+    }
+
+    bool isAttributeOnly = true;
+    for (const document::Field * field : set) {
+        isAttributeOnly = _fieldInfo.isFieldAttribute(*field);
+        if (!isAttributeOnly) break;
+    }
+    _isFieldSetAttributeOnly[key] = isAttributeOnly;
+    return isAttributeOnly;
+}
+
 DocumentRetriever
 ::DocumentRetriever(const DocTypeName &docTypeName,
                     const DocumentTypeRepo &repo,
@@ -58,8 +83,8 @@ DocumentRetriever
       _doc_store(doc_store),
       _possiblePositionFields(),
       _attributeFields(),
-      _areAllFieldsAttributes(false),
-      _isFieldSetAttributeOnly()
+      _areAllFieldsAttributes(true),
+      _fieldSetAttributeInfo(*this)
 {
     const DocumentType * documentType = repo.getDocumentType(docTypeName.getName());
     document::Field::Set fields = documentType->getFieldSet();
@@ -73,6 +98,8 @@ DocumentRetriever
             if (attr && attr->valid()) {
                 LOG(debug, "Field '%s' is a registered attribute field", zcurve_name.c_str());
                 _possiblePositionFields.emplace_back(field, zcurve_name);
+            } else {
+                _areAllFieldsAttributes = false;
             }
         } else {
             const vespalib::string &name = field->getName();
@@ -83,6 +110,8 @@ DocumentRetriever
                 && ((*attr)->getBasicType() != BasicType::REFERENCE))
             {
                 _attributeFields.insert(field);
+            } else {
+                _areAllFieldsAttributes = false;
             }
         }
     }
@@ -92,18 +121,17 @@ bool
 DocumentRetriever::needFetchFromDocStore(const document::FieldSet & fieldSet) const {
     switch (fieldSet.getType()) {
         case document::FieldSet::Type::NONE:
-            return false;
         case document::FieldSet::Type::DOCID:
             return false;
         case document::FieldSet::Type::ALL:
             return ! _areAllFieldsAttributes;
         case document::FieldSet::Type::FIELD: {
             const auto & field = static_cast<const document::Field &>(fieldSet);
-            return needFetchFromDocStore(field.getId(), field);
+            return ! isFieldAttribute(field);
         }
         case document::FieldSet::Type::SET: {
             const auto &set = static_cast<const document::FieldCollection &>(fieldSet);
-            return needFetchFromDocStore(set.hash(), set.getFields());
+            return ! _fieldSetAttributeInfo.areAllFieldsAttributes(set.hash(), set.getFields());
         }
         default:
             abort();
@@ -113,51 +141,14 @@ DocumentRetriever::needFetchFromDocStore(const document::FieldSet & fieldSet) co
 bool
 DocumentRetriever::isFieldAttribute(const document::Field & field) const {
     return _attributeFields.find(&field) != _attributeFields.end();
-#if 0
-    for (const document::Field * attr : _attributeFields) {
-        if (attr->getId() == field.getId()) {
-            return true;
-        }
-    }
-    return false;
-#endif
-}
-
-bool
-DocumentRetriever::needFetchFromDocStore(uint64_t key, const document::Field & field) const {
-    std::lock_guard guard(_lock);
-    auto found = _isFieldSetAttributeOnly.find(key);
-    if (found != _isFieldSetAttributeOnly.end()) {
-        return ! found->second;
-    }
-
-    bool isAttributeOnly = isFieldAttribute(field);
-    _isFieldSetAttributeOnly[key] = isAttributeOnly;
-    return isAttributeOnly;
-}
-
-bool
-DocumentRetriever::needFetchFromDocStore(uint64_t key, const document::Field::Set & set) const {
-    std::lock_guard guard(_lock);
-    auto found = _isFieldSetAttributeOnly.find(key);
-    if (found != _isFieldSetAttributeOnly.end()) {
-        return ! found->second;
-    }
-
-    bool isAttributeOnly = true;
-    for (const document::Field * field : set) {
-        isAttributeOnly = isFieldAttribute(*field);
-        if (!isAttributeOnly) break;
-    }
-    _isFieldSetAttributeOnly[key] = isAttributeOnly;
-    return isAttributeOnly;
 }
 
 DocumentRetriever::~DocumentRetriever() = default;
 
 namespace {
 
-FieldValue::UP positionFromZcurve(int64_t zcurve) {
+std::unique_ptr<document::FieldValue>
+positionFromZcurve(int64_t zcurve) {
     int32_t x, y;
     ZCurve::decode(zcurve, &x, &y);
 
@@ -184,7 +175,8 @@ zcurve_array_attribute_to_field_value(const document::Field& field,
     return new_fv;
 }
 
-void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields, const IAttributeManager & attr_manager)
+void
+fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields, const IAttributeManager & attr_manager)
 {
     for (const auto & it : possiblePositionFields) {
         auto attr_guard = attr_manager.getAttribute(it.second);
@@ -228,7 +220,7 @@ private:
 }  // namespace
 
 Document::UP
-DocumentRetriever::getDocumentByLidOnly(DocumentIdT lid) const
+DocumentRetriever::getFullDocument(DocumentIdT lid) const
 {
     Document::UP doc = _doc_store.read(lid, getDocumentTypeRepo());
     if (doc) {
@@ -238,7 +230,7 @@ DocumentRetriever::getDocumentByLidOnly(DocumentIdT lid) const
 }
 
 Document::UP
-DocumentRetriever::getDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const {
+DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const {
     Document::UP doc;
     if (needFetchFromDocStore(fieldSet)) {
         doc = _doc_store.read(lid, getDocumentTypeRepo());

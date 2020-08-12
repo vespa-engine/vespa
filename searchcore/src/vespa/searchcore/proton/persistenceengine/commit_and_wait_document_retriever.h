@@ -24,8 +24,8 @@ public:
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override;
     void getBucketMetaData(const Bucket &bucket, search::DocumentMetaData::Vector &result) const override;
     search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override;
-    DocumentUP getDocumentByLidOnly(search::DocumentIdT lid) const override;
-    DocumentUP getDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const override;
+    DocumentUP getFullDocument(search::DocumentIdT lid) const override;
+    DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const override;
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override;
     ReadGuard getReadGuard() const override;

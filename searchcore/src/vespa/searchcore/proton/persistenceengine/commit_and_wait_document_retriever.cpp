@@ -28,18 +28,18 @@ CommitAndWaitDocumentRetriever::getDocumentMetaData(const document::DocumentId &
 }
 
 document::Document::UP
-CommitAndWaitDocumentRetriever::getDocumentByLidOnly(search::DocumentIdT lid) const {
+CommitAndWaitDocumentRetriever::getFullDocument(search::DocumentIdT lid) const {
     // Ensure that attribute vectors are committed
     _commit.commitAndWait();
-    return _retriever->getDocumentByLidOnly(lid);
+    return _retriever->getFullDocument(lid);
 }
 
 document::Document::UP
-CommitAndWaitDocumentRetriever::getDocument(search::DocumentIdT lid, const document::DocumentId & docId,
-                                            const document::FieldSet & fieldSet) const
+CommitAndWaitDocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId,
+                                                   const document::FieldSet & fieldSet) const
 {
     _commit.commitAndWait();
-    return _retriever->getDocument(lid, docId, fieldSet);
+    return _retriever->getPartialDocument(lid, docId, fieldSet);
 }
 
 void

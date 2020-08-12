@@ -24,7 +24,7 @@ MinimalDocumentRetriever::MinimalDocumentRetriever(
 MinimalDocumentRetriever::~MinimalDocumentRetriever() = default;
 
 Document::UP
-MinimalDocumentRetriever::getDocumentByLidOnly(DocumentIdT lid) const {
+MinimalDocumentRetriever::getFullDocument(DocumentIdT lid) const {
     return _doc_store.read(lid, *_repo);
 }
 

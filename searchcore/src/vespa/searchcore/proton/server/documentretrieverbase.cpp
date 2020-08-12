@@ -87,13 +87,4 @@ DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
     return nselect;
 }
 
-document::Document::UP
-DocumentRetrieverBase::getDocument(search::DocumentIdT lid, const document::DocumentId &, const document::FieldSet & fieldSet) const {
-    auto doc = getDocumentByLidOnly(lid);
-    if (doc) {
-        document::FieldSet::stripFields(*doc, fieldSet);
-    }
-    return doc;
-}
-
 }  // namespace proton

@@ -9,24 +9,24 @@ namespace proton {
 
 document::Document::UP
 IDocumentRetriever::getDocument(search::DocumentIdT lid, const document::DocumentId & docId) const {
-    return getDocument(lid, docId, document::AllFields());
+    return getPartialDocument(lid, docId, document::AllFields());
+}
+
+document::Document::UP
+IDocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::DocumentId &, const document::FieldSet & fieldSet) const {
+    auto doc = getFullDocument(lid);
+    if (doc) {
+        document::FieldSet::stripFields(*doc, fieldSet);
+    }
+    return doc;
 }
 
 void
 DocumentRetrieverBaseForTest::visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const {
     (void) readConsistency;
     for (uint32_t lid : lids) {
-        visitor.visit(lid, getDocumentByLidOnly(lid));
+        visitor.visit(lid, getFullDocument(lid));
     }
-}
-
-document::Document::UP
-DocumentRetrieverBaseForTest::getDocument(search::DocumentIdT lid, const document::DocumentId &, const document::FieldSet & fieldSet) const {
-    auto doc = getDocumentByLidOnly(lid);
-    if (doc) {
-        document::FieldSet::stripFields(*doc, fieldSet);
-    }
-    return doc;
 }
 
 }
