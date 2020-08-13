@@ -120,8 +120,7 @@ void
 DocumentFieldRetriever::populate(DocumentIdT lid,
                                  Document &doc,
                                  const document::Field & field,
-                                 const IAttributeVector &attr,
-                                 bool isIndexField)
+                                 const IAttributeVector &attr)
 {
     switch (attr.getBasicType()) {
     case BasicType::BOOL:
@@ -138,12 +137,6 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
         setValue<double>(lid, doc, field, attr);
         break;
     case BasicType::STRING:
-        // If it is a stringfield we also need to check if
-        // it is an index field. In that case we shall
-        // keep the original in order to preserve annotations.
-        if (isIndexField) {
-            break;
-        }
         setValue<const char *>(lid, doc, field, attr);
         break;
     case BasicType::PREDICATE:
