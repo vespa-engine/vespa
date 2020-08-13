@@ -439,10 +439,11 @@ PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const 
                 if (document::FieldSet::Type::NONE == fields.getType()) {
                     return GetResult::make_for_metadata_only(meta.timestamp);
                 }
-                document::Document::UP doc = retriever.getPartialDocument(meta.lid, did, fields);
+                document::Document::UP doc = retriever.getDocument(meta.lid);
                 if (!doc || doc->getId().getGlobalId() != meta.gid) {
                     return GetResult();
                 }
+                document::FieldSet::stripFields(*doc, fields);
                 return GetResult(std::move(doc), meta.timestamp);
             }
         }
