@@ -4,13 +4,13 @@ package com.yahoo.yolean.chain;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.yahoo.yolean.chain.Dependencies.after;
 import static com.yahoo.yolean.chain.Dependencies.before;
 import static com.yahoo.yolean.chain.Dependencies.provides;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -103,6 +103,13 @@ public class ChainBuilderTest {
         assertEquals("myChain", chain.id());
     }
 
+    boolean equalOrder(Iterator<Filter> a, Iterator<Filter> b) {
+        while (a.hasNext() && b.hasNext()) {
+            if ( ! a.next().equals(b.next())) return false;
+        }
+        return a.hasNext() == b.hasNext();
+    }
+
     @Test
     public void filters_without_dependencies_are_not_reordered() {
         List<Filter> filters = new ArrayList<>();
@@ -114,7 +121,7 @@ public class ChainBuilderTest {
             chain.add(filter);
         }
 
-        assertThat(chain.build(), contains(filters.toArray()));
+        assertTrue(equalOrder(chain.build().iterator(), filters.iterator()));
     }
 
     @Test(expected = ChainCycleException.class)

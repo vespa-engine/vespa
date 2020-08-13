@@ -5,17 +5,14 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.yahoo.yolean.chain.ContainsSameElements.containsSameElements;
-import static com.yahoo.yolean.chain.ContainsSameElements.toIdentitySet;
 import static java.util.Collections.singleton;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -81,6 +78,28 @@ public class EnumeratedIdentitySetTest {
             assertTrue(collectedElements.containsKey(element));
         }
     }
+    private static boolean containsSame(Object a, Collection<?> coll) {
+        for (Object b : coll) {
+            if (a == b) return true;
+        }
+        return false;
+    }
+    private static boolean containsSubsetSame(Collection<?> subSet, Collection<?> superSet) {
+        for (Object a : subSet) {
+            if ( ! containsSame(a, superSet)) return false;
+        }
+        return true;
+    }
+
+    private static boolean containsAllSame(Collection<?> a, Collection<?> b) {
+        return containsSubsetSame(a, b) && containsSubsetSame(b, a);
+    }
+
+    private static <T> Set<T> toIdentitySet(Collection<? extends T> collection) {
+        Set<T> identitySet = Collections.newSetFromMap(new IdentityHashMap<>());
+        identitySet.addAll(collection);
+        return identitySet;
+    }
 
     @Test
     public void toArray() {
@@ -89,8 +108,9 @@ public class EnumeratedIdentitySetTest {
         Object[] array = set.toArray();
         Element[] array2 = set.toArray(new Element[0]);
 
-        assertThat(Arrays.asList(array), containsSameElements(set));
-        assertThat(Arrays.asList(array2), containsSameElements(set));
+        assertTrue(set.containsAll(Arrays.asList(array)));
+        assertTrue(containsAllSame(Arrays.asList(array), set));
+        assertTrue(containsAllSame(Arrays.asList(array2), set));
     }
 
     @Test
@@ -123,7 +143,7 @@ public class EnumeratedIdentitySetTest {
         EnumeratedIdentitySet<Element> set = new EnumeratedIdentitySet<>();
         set.addAll(elements);
 
-        assertThat(set, containsSameElements(elements));
+        assertTrue(containsAllSame(set, elements));
     }
 
     @Test
@@ -134,7 +154,7 @@ public class EnumeratedIdentitySetTest {
         boolean changed = set.retainAll(toIdentitySet(elements.subList(3, 10)));
 
         assertTrue(changed);
-        assertThat(set, containsSameElements(elements.subList(3, 5)));
+        assertTrue(containsAllSame(set, elements.subList(3, 5)));
 
         changed = set.retainAll(toIdentitySet(elements));
         assertFalse(changed);
@@ -144,7 +164,7 @@ public class EnumeratedIdentitySetTest {
     public void removeAll() {
         EnumeratedIdentitySet<Element> set = new EnumeratedIdentitySet<>(elements);
         set.removeAll(elements.subList(0, 5));
-        assertThat(set, containsSameElements(elements.subList(5, 10)));
+        assertTrue(containsAllSame(set, elements.subList(5, 10)));
     }
 
     @Test
@@ -157,8 +177,8 @@ public class EnumeratedIdentitySetTest {
     @Test
     public void removeNulls() {
         Element[] singletonArray = { null, elements.get(0), null };
-        assertThat(EnumeratedIdentitySet.removeNulls(singletonArray),
-                   containsSameElements(Arrays.asList(elements.get(0))));
+        assertTrue(containsAllSame(EnumeratedIdentitySet.removeNulls(singletonArray),
+                   Arrays.asList(elements.get(0))));
 
         Element[] elementsWithNull = new Element[20];
 
@@ -168,7 +188,7 @@ public class EnumeratedIdentitySetTest {
         copyElementsTo(iterator, elementsWithNull, 4, 8);
         copyElementsTo(iterator, elementsWithNull, 19, 1);
 
-        assertThat(EnumeratedIdentitySet.removeNulls(elementsWithNull), containsSameElements(elements));
+        assertTrue(containsAllSame(EnumeratedIdentitySet.removeNulls(elementsWithNull), elements));
     }
 
     private void copyElementsTo(Iterator<Element> iterator, Element[] array, int startIndex, int numItems) {
@@ -203,7 +223,7 @@ public class EnumeratedIdentitySetTest {
         }
 
         set.add(new Element());
-        assertThat(set.numbers(), containsSameElements(range(0, 10)));
+        assertTrue(containsAllSame(set.numbers(), range(0, 10)));
     }
 
     @Test
@@ -218,7 +238,7 @@ public class EnumeratedIdentitySetTest {
         assertTrue(set.numbers().isEmpty());
 
         set.add(new Element());
-        assertThat(set.numbers(), containsSameElements(singleton(0)));
+        assertTrue(containsAllSame(set.numbers(), singleton(0)));
     }
 
     private List<Integer> range(int start, int endInclusive) {

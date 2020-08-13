@@ -15,9 +15,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.yahoo.container.standalone.StandaloneContainer.withContainerModel;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.number.OrderingComparison.greaterThan;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -42,15 +41,15 @@ public class StandaloneSubscriberTest {
             keys.add(componentsKey);
             Subscriber subscriber = new StandaloneSubscriberFactory(root).getSubscriber(keys);
             Map<ConfigKey<ConfigInstance>, ConfigInstance> config = subscriber.config();
-            assertThat(config.size(), is(2));
+            assertEquals(2, config.size());
 
             PlatformBundlesConfig platformBundlesConfig = (PlatformBundlesConfig) config.get(platformBundlesKey);
             ApplicationBundlesConfig applicationBundlesConfig = (ApplicationBundlesConfig) config.get(applicationBundlesKey);
             ComponentsConfig componentsConfig = (ComponentsConfig) config.get(componentsKey);
 
-            assertThat(platformBundlesConfig.bundlePaths().size(), is(0));
-            assertThat(applicationBundlesConfig.bundles().size(), is(0));
-            assertThat(componentsConfig.components().size(), greaterThan(10));
+            assertEquals(0, platformBundlesConfig.bundlePaths().size());
+            assertEquals(0, applicationBundlesConfig.bundles().size());
+            assertTrue(componentsConfig.components().size() > 10);
             return null;
         });
     }

@@ -21,9 +21,8 @@ import org.mockito.ArgumentMatchers;
 
 import java.util.OptionalLong;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -70,7 +69,7 @@ public class DockerImplTest {
 
         final ProcessResult result = docker.executeInContainerAsUser(
                 new ContainerName(containerId), "root", OptionalLong.empty(), command);
-        assertThat(result.getExitStatus(), is(exitCode));
+        assertEquals(exitCode, result.getExitStatus());
     }
 
     @Test

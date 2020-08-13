@@ -13,8 +13,7 @@ import org.junit.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.collections.CollectionUtil.first;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -24,7 +23,7 @@ public class FilterBindingsTest extends DomBuilderTest {
 
     private static final String MY_CHAIN_BINDING = "http://*/my-chain-binding";
 
-    private Http buildHttp(Element xml) throws Exception {
+    private Http buildHttp(Element xml) {
         Http http = new HttpBuilder().build(root.getDeployState(), root, xml);
         root.freezeModelTopology();
         http.validate();
@@ -50,8 +49,8 @@ public class FilterBindingsTest extends DomBuilderTest {
         Http http = buildHttp(xml);
 
         Binding binding = first(http.getBindings());
-        assertThat(binding.filterId().getName(), is("my-request-chain"));
-        assertThat(binding.binding(), is(MY_CHAIN_BINDING));
+        assertEquals("my-request-chain", binding.filterId().getName());
+        assertEquals(MY_CHAIN_BINDING, binding.binding());
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-request-chain");
         assertNotNull("Missing chain", myChain);
@@ -70,15 +69,15 @@ public class FilterBindingsTest extends DomBuilderTest {
         Http http = buildHttp(xml);
 
         Binding binding = first(http.getBindings());
-        assertThat(binding.filterId().getName(), is("my-response-chain"));
-        assertThat(binding.binding(), is(MY_CHAIN_BINDING));
+        assertEquals("my-response-chain", binding.filterId().getName());
+        assertEquals(MY_CHAIN_BINDING, binding.binding());
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-response-chain");
         assertNotNull("Missing chain", myChain);
     }
 
     @Test
-    public void bindings_are_added_to_config_for_all_http_servers_with_jetty() throws Exception {
+    public void bindings_are_added_to_config_for_all_http_servers_with_jetty() {
         final Element xml = parse(
                 "<container version='1.0'>",
                 "  <http>",
@@ -95,15 +94,15 @@ public class FilterBindingsTest extends DomBuilderTest {
 
         {
             final ServerConfig config = root.getConfig(ServerConfig.class, "container/http/jdisc-jetty/server1");
-            assertThat(config.filter().size(), is(1));
-            assertThat(config.filter(0).id(), is("my-request-chain"));
-            assertThat(config.filter(0).binding(), is(MY_CHAIN_BINDING));
+            assertEquals(1, config.filter().size());
+            assertEquals("my-request-chain", config.filter(0).id());
+            assertEquals(MY_CHAIN_BINDING, config.filter(0).binding());
         }
         {
             final ServerConfig config = root.getConfig(ServerConfig.class, "container/http/jdisc-jetty/server2");
-            assertThat(config.filter().size(), is(1));
-            assertThat(config.filter(0).id(), is("my-request-chain"));
-            assertThat(config.filter(0).binding(), is(MY_CHAIN_BINDING));
+            assertEquals(1, config.filter().size());
+            assertEquals("my-request-chain", config.filter(0).id());
+            assertEquals(MY_CHAIN_BINDING, config.filter(0).binding());
         }
     }
 

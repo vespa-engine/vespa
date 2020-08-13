@@ -5,10 +5,8 @@ import org.junit.Test;
 
 import java.util.function.Supplier;
 
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -49,7 +47,7 @@ public class AthenzDomainTest {
             AthenzDomain domain = domainCreator.get();
             fail("Expected IllegalArgumentException for domain: " + domain.getName());
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), startsWith("Not a valid domain name"));
+            assertTrue(e.getMessage().startsWith("Not a valid domain name"));
         }
     }
 

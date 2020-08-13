@@ -5,11 +5,19 @@ import com.yahoo.language.Language;
 import com.yahoo.language.simple.SimpleTokenizer;
 import org.junit.Test;
 
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test of tokenization, with stemming and accent removal
@@ -134,8 +142,8 @@ public class TokenizationTestCase {
 
         int idx = 0;
         for (Token token : tokenizer.tokenize(input, Language.GERMAN, StemMode.SHORTEST, false)) {
-            assertThat("Token offset for token #" + idx, token.getOffset(), is(expOffset[idx]));
-            assertThat("Token len for token #" + idx, token.getOrig().length(), is(len[idx]));
+            assertEquals("Token offset for token #" + idx, expOffset[idx], token.getOffset());
+            assertEquals("Token len for token #" + idx, len[idx], token.getOrig().length());
             idx++;
         }
     }
@@ -214,21 +222,21 @@ public class TokenizationTestCase {
                 for (int comp = 0; comp < token.getNumComponents(); comp++) {
                     Token t = token.getComponent(comp);
                     if (t.getType().isIndexable()) {
-                        assertThat("comp index: " + i, toLowerCase(t.getTokenString()), is(indexed.get(i++)));
+                        assertEquals("comp index: " + i, indexed.get(i++), toLowerCase(t.getTokenString()));
                     }
                 }
             } else {
                 if (token.getType().isIndexable()) {
-                    assertThat("exp index: " + i, toLowerCase(token.getTokenString()), is(indexed.get(i++)));
+                    assertEquals("exp index: " + i, indexed.get(i++), toLowerCase(token.getTokenString()));
                 }
             }
             if (orig != null) {
-                assertThat("orig index: " + j, token.getOrig(), is(orig.get(j++)));
+                assertEquals("orig index: " + j, orig.get(j++), token.getOrig());
             }
         }
-        assertThat("indexed length", i, is(indexed.size()));
+        assertEquals("indexed length", indexed.size(), i);
         if (orig != null) {
-            assertThat("orig length", j, is(orig.size()));
+            assertEquals("orig length", orig.size(), j);
         }
     }
 
