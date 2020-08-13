@@ -57,16 +57,16 @@ bool
 FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::Field::Set & set) const {
     std::lock_guard guard(_lock);
     auto found = _isFieldSetAttributeOnly.find(key);
-    if (found != _isFieldSetAttributeOnly.end()) {
-        return found->second;
-    }
-
     bool isAttributeOnly = true;
-    for (const document::Field * field : set) {
-        isAttributeOnly = _fieldInfo.isFieldAttribute(*field);
-        if (!isAttributeOnly) break;
+    if (found == _isFieldSetAttributeOnly.end()) {
+        for (const document::Field *field : set) {
+            isAttributeOnly = _fieldInfo.isFieldAttribute(*field);
+            if (!isAttributeOnly) break;
+        }
+        _isFieldSetAttributeOnly[key] = isAttributeOnly;
+    } else {
+        isAttributeOnly = found->second;
     }
-    _isFieldSetAttributeOnly[key] = isAttributeOnly;
     return isAttributeOnly;
 }
 
@@ -133,9 +133,8 @@ DocumentRetriever::needFetchFromDocStore(const document::FieldSet & fieldSet) co
             const auto &set = static_cast<const document::FieldCollection &>(fieldSet);
             return ! _fieldSetAttributeInfo.areAllFieldsAttributes(set.hash(), set.getFields());
         }
-        default:
-            abort();
     }
+    abort();
 }
 
 bool
@@ -256,8 +255,9 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
                 populate(lid, *doc, set.getFields());
                 break;
             }
-            default:
-                abort();
+            case document::FieldSet::Type::NONE:
+            case document::FieldSet::Type::DOCID:
+                break;
         }
     }
     return doc;

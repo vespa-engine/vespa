@@ -17,6 +17,7 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/eval/tensor/tensor.h>
@@ -464,6 +465,14 @@ TEST_F("require that attributes are patched into stored document", Fixture) {
     EXPECT_FALSE(doc->getValue(dyn_wset_field_n));
 }
 
+TEST_F("require that we can look up NONE and DOCIDONLY field sets", Fixture) {
+        DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+        Document::UP doc = f._retriever->getPartialDocument(meta_data.lid, doc_id, document::NoFields());
+        ASSERT_TRUE(doc);
+        doc = f._retriever->getPartialDocument(meta_data.lid, doc_id, document::DocIdOnly());
+        ASSERT_TRUE(doc);
+}
+
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
     f.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING)).build();
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
@@ -577,7 +586,7 @@ struct Lookup : public IFieldInfo
     mutable unsigned _count;
 };
 
-TEST("require ") {
+TEST("require that fieldset can figure out their attributeness and rember it") {
     Lookup lookup;
     FieldSetAttributeDB fsDB(lookup);
     document::Field attr1("attr1", 1, *document::DataType::LONG, true);
