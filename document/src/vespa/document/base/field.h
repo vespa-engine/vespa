@@ -28,16 +28,35 @@ class Field final : public vespalib::FieldBase,
     const DataType *_dataType;
     int             _fieldId;
 public:
-    typedef std::shared_ptr<const Field> CSP;
-    typedef std::shared_ptr<Field> SP;
+    using CSP = std::shared_ptr<const Field>;
+    using SP = std::shared_ptr<Field>;
+    using CPtr = const Field *;
 
     struct FieldPtrComparator {
-        bool operator()(const Field* f1, const Field* f2) const {
+        bool operator()(CPtr f1, CPtr f2) const {
             return (*f1 < *f2);
         }
     };
 
-    using Set = std::set<const Field*, FieldPtrComparator>;
+    class Set {
+    public:
+        class Builder {
+        public:
+            Builder & reserve(size_t sz) { _vector.reserve(sz); return *this; }
+            Builder & insert(CPtr field) { _vector.emplace_back(field); return *this; }
+            Set build() { return Set(std::move(_vector)); }
+        private:
+            std::vector<CPtr> _vector;
+        };
+        bool contains(const Field & field) const;
+        size_t size() const { return _fields.size(); }
+        bool empty() const { return _fields.empty(); }
+        const CPtr * begin() const { return &_fields[0]; }
+        const CPtr * end() const { return begin() + _fields.size(); }
+    private:
+        explicit Set(std::vector<CPtr> fields);
+        std::vector<CPtr> _fields;
+    };
 
     /**
      * Creates a completely specified field instance.
@@ -47,8 +66,7 @@ public:
      * @param type The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(vespalib::stringref name, int fieldId,
-          const DataType &type);
+    Field(vespalib::stringref name, int fieldId, const DataType &type);
 
     Field();
 

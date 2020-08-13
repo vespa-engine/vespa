@@ -4,6 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <algorithm>
 #include <xxhash.h>
 
 namespace document {
@@ -38,25 +39,10 @@ FieldCollection::contains(const FieldSet& fields) const
 {
     switch (fields.getType()) {
         case Type::FIELD:
-            return _set.find(static_cast<const Field*>(&fields)) != _set.end();
+            return _set.contains(static_cast<const Field &>(fields));
         case Type::SET: {
             const auto & coll = static_cast<const FieldCollection&>(fields);
-
-            if (_set.size() < coll._set.size()) {
-                return false;
-            }
-
-            auto iter = coll.getFields().begin();
-
-            while (iter != coll.getFields().end()) {
-                if (_set.find(*iter) == _set.end()) {
-                    return false;
-                }
-
-                ++iter;
-            }
-
-            return true;
+            return std::includes(_set.begin(), _set.end(), coll.getFields().begin(), coll.getFields().end(), Field::FieldPtrComparator());
         }
         case Type::NONE:
         case Type::DOCID:

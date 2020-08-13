@@ -164,11 +164,12 @@ bool StructDataType::hasField(int32_t fieldId) const {
 Field::Set
 StructDataType::getFieldSet() const
 {
-    Field::Set fields;
+    Field::Set::Builder builder;
+    builder.reserve(_idFieldMap.size());
     for (const auto & entry : _idFieldMap) {
-        fields.insert(entry.second.get());
+        builder.insert(entry.second.get());
     }
-    return fields;
+    return builder.build();
 }
 
 namespace {

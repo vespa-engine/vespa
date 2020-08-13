@@ -7,8 +7,20 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/bobhash.h>
+#include <algorithm>
 
 namespace document {
+
+Field::Set::Set(std::vector<CPtr> fields)
+    : _fields(std::move(fields))
+{
+    std::sort(_fields.begin(), _fields.end(), Field::FieldPtrComparator());
+}
+
+bool
+Field::Set::contains(const Field & field) const {
+    return std::binary_search(_fields.begin(), _fields.end(), &field, Field::FieldPtrComparator());
+}
 
 Field::Field() : Field("", 0, *DataType::INT) { }
 

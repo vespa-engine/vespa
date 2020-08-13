@@ -82,7 +82,7 @@ DocumentRetriever
       _attr_manager(attr_manager),
       _doc_store(doc_store),
       _possiblePositionFields(),
-      _attributeFields(),
+      _attributeFields(document::Field::Set::Builder().build()),
       _areAllFieldsAttributes(true),
       _fieldSetAttributeInfo(*this)
 {
@@ -90,6 +90,7 @@ DocumentRetriever
     document::Field::Set fields = documentType->getFieldSet();
     int32_t positionDataTypeId = PositionDataType::getInstance().getId();
     LOG(debug, "checking document type '%s' for position fields", docTypeName.getName().c_str());
+    document::Field::Set::Builder attrBuilder;
     for (const document::Field * field : fields) {
         if ((field->getDataType().getId() == positionDataTypeId) || is_array_of_position_type(field->getDataType())) {
             LOG(debug, "Field '%s' is a position field", field->getName().data());
@@ -109,12 +110,13 @@ DocumentRetriever
                 && ((*attr)->getBasicType() != BasicType::PREDICATE)
                 && ((*attr)->getBasicType() != BasicType::REFERENCE))
             {
-                _attributeFields.insert(field);
+                attrBuilder.insert(field);
             } else {
                 _areAllFieldsAttributes = false;
             }
         }
     }
+    _attributeFields = attrBuilder.build();
 }
 
 bool
@@ -139,7 +141,7 @@ DocumentRetriever::needFetchFromDocStore(const document::FieldSet & fieldSet) co
 
 bool
 DocumentRetriever::isFieldAttribute(const document::Field & field) const {
-    return _attributeFields.find(&field) != _attributeFields.end();
+    return _attributeFields.contains(field);
 }
 
 DocumentRetriever::~DocumentRetriever() = default;
@@ -245,9 +247,7 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
                 break;
             case document::FieldSet::Type::FIELD: {
                 const auto & field = static_cast<const document::Field &>(fieldSet);
-                document::Field::Set attributes;
-                attributes.insert(&field);
-                populate(lid, *doc, attributes);
+                populate(lid, *doc, document::Field::Set::Builder().insert(&field).build());
                 break;
             }
             case document::FieldSet::Type::SET: {

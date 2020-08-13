@@ -583,7 +583,7 @@ struct Lookup : public IFieldInfo
     Lookup() : _count(0) {}
     bool isFieldAttribute(const document::Field & field) const override {
         _count++;
-        return (field.getName()[0] == 'a');
+        return ((field.getName()[0] % 2) == 1); // a, c, e... are attributes
     }
     mutable unsigned _count;
 };
@@ -592,29 +592,27 @@ TEST("require that fieldset can figure out their attributeness and rember it") {
     Lookup lookup;
     FieldSetAttributeDB fsDB(lookup);
     document::Field attr1("attr1", 1, *document::DataType::LONG);
-    document::Field attr2("attr2", 2, *document::DataType::LONG);
-    document::Field not_attr1("not_attr1", 3, *document::DataType::LONG);
-    document::Field::Set allAttr;
-    allAttr.insert(&attr1);
+    document::Field attr2("cttr2", 2, *document::DataType::LONG);
+    document::Field not_attr1("b_not_attr1", 3, *document::DataType::LONG);
+    document::Field::Set allAttr = document::Field::Set::Builder().insert(&attr1).build();
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
     EXPECT_EQUAL(1u, lookup._count);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
     EXPECT_EQUAL(1u, lookup._count);
 
-    allAttr.insert(&attr2);
+    allAttr = document::Field::Set::Builder().insert(&attr1).insert(&attr2).build();
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
     EXPECT_EQUAL(3u, lookup._count);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
     EXPECT_EQUAL(3u, lookup._count);
 
-    document::Field::Set notAllAttr;
-    notAllAttr.insert(&not_attr1);
+    document::Field::Set notAllAttr = document::Field::Set::Builder().insert(&not_attr1).build();
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
     EXPECT_EQUAL(4u, lookup._count);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
     EXPECT_EQUAL(4u, lookup._count);
 
-    notAllAttr.insert(&attr1);
+    notAllAttr = document::Field::Set::Builder().insert(&attr1).insert(&not_attr1).insert(&attr2).build();
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
     EXPECT_EQUAL(6u, lookup._count);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
