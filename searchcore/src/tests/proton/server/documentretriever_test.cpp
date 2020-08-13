@@ -469,8 +469,10 @@ TEST_F("require that we can look up NONE and DOCIDONLY field sets", Fixture) {
         DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
         Document::UP doc = f._retriever->getPartialDocument(meta_data.lid, doc_id, document::NoFields());
         ASSERT_TRUE(doc);
+        EXPECT_TRUE(doc->getFields().empty());
         doc = f._retriever->getPartialDocument(meta_data.lid, doc_id, document::DocIdOnly());
         ASSERT_TRUE(doc);
+        EXPECT_TRUE(doc->getFields().empty());
 }
 
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
