@@ -33,19 +33,4 @@ public:
     void visitFieldValueNode(const FieldValueNode& expr) override;
 };
 
-class NeedDocumentDetector : public TraversingVisitor
-{
-private:
-    bool _needDocument;
-    void visitDocumentType(const DocType &) override {
-        _needDocument = true;
-    }
-    void visitFieldValueNode(const FieldValueNode &) override {
-        _needDocument = true;
-    }
-public:
-    NeedDocumentDetector() : _needDocument(false) { }
-    bool needDocument() const { return _needDocument; }
-};
-
 }

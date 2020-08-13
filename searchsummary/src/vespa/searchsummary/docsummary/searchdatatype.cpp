@@ -17,13 +17,13 @@ PrimitiveDataType STRING_OBJ(DataType::T_STRING);
 StructDataType URI_OBJ("url");
 
 const StructDataType *setUpUriType() {
-    URI_OBJ.addField(Field("all", STRING_OBJ, true));
-    URI_OBJ.addField(Field("scheme", STRING_OBJ, true));
-    URI_OBJ.addField(Field("host", STRING_OBJ, true));
-    URI_OBJ.addField(Field("port", STRING_OBJ, true));
-    URI_OBJ.addField(Field("path", STRING_OBJ, true));
-    URI_OBJ.addField(Field("query", STRING_OBJ, true));
-    URI_OBJ.addField(Field("fragment", STRING_OBJ, true));
+    URI_OBJ.addField(Field("all", STRING_OBJ));
+    URI_OBJ.addField(Field("scheme", STRING_OBJ));
+    URI_OBJ.addField(Field("host", STRING_OBJ));
+    URI_OBJ.addField(Field("port", STRING_OBJ));
+    URI_OBJ.addField(Field("path", STRING_OBJ));
+    URI_OBJ.addField(Field("query", STRING_OBJ));
+    URI_OBJ.addField(Field("fragment", STRING_OBJ));
     return &URI_OBJ;
 }
 }  // namespace

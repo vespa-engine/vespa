@@ -422,8 +422,8 @@ TEST("requireThatWeightedSetFieldValueCanBeSerialized") {
     EXPECT_EQUAL(3u, weight);
 }
 
-const Field field1("field1", *DataType::INT, false);
-const Field field2("field2", *DataType::STRING, false);
+const Field field1("field1", *DataType::INT);
+const Field field2("field2", *DataType::STRING);
 
 StructDataType getStructDataType() {
     StructDataType struct_type("struct");
@@ -638,7 +638,7 @@ TEST("requireThatDocumentWithDocumentCanBeSerialized") {
 
 
     setSpanTree(str, *tree);
-    const Field str_field("str", *DataType::STRING, false);
+    const Field str_field("str", *DataType::STRING);
 
     Document inner(*inner_type, DocumentId("id:ns:" + inner_type->getName() + "::"));
     inner.setValue(str_field, str);
@@ -646,7 +646,7 @@ TEST("requireThatDocumentWithDocumentCanBeSerialized") {
     ASSERT_TRUE(type);
     DocumentId doc_id("id:ns:" + type->getName() + "::");
     Document value(*type, doc_id);
-    const Field doc_field(inner_name, *inner_type, false);
+    const Field doc_field(inner_name, *inner_type);
     value.setValue(doc_field, inner);
 
     nbostream stream;

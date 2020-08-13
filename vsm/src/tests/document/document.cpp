@@ -24,8 +24,8 @@ DocumentTest::testStorageDocument()
 {
     DocumentType dt("testdoc", 0);
 
-    Field fa("a", 0, *DataType::STRING, true);
-    Field fb("b", 1, *DataType::STRING, true);
+    Field fa("a", 0, *DataType::STRING);
+    Field fb("b", 1, *DataType::STRING);
     dt.addField(fa);
     dt.addField(fb);
 

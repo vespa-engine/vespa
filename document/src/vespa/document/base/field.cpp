@@ -10,22 +10,18 @@
 
 namespace document {
 
-Field::Field() : Field("", 0, *DataType::INT, false) { }
+Field::Field() : Field("", 0, *DataType::INT) { }
 
-Field::Field(vespalib::stringref name, int fieldId,
-             const DataType& dataType, bool headerField)
+Field::Field(vespalib::stringref name, int fieldId, const DataType& dataType)
     : FieldBase(name),
       _dataType(&dataType),
-      _fieldId(fieldId),
-      _isHeaderField(headerField)
+      _fieldId(fieldId)
 { }
 
-Field::Field(vespalib::stringref name,
-             const DataType& dataType, bool headerField)
+Field::Field(vespalib::stringref name, const DataType& dataType)
     : FieldBase(name),
       _dataType(&dataType),
-      _fieldId(calculateIdV7()),
-      _isHeaderField(headerField)
+      _fieldId(calculateIdV7())
 { }
 
 FieldValue::UP
@@ -42,9 +38,6 @@ Field::toString(bool verbose) const
         out << ", id " << _fieldId;
     }
     out << ", " << _dataType->toString();
-    if (verbose) {
-        out << ", " << (_isHeaderField ? "header" : "body");
-    }
     out << ")";
     return out.str();
 }

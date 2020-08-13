@@ -591,9 +591,9 @@ struct Lookup : public IFieldInfo
 TEST("require that fieldset can figure out their attributeness and rember it") {
     Lookup lookup;
     FieldSetAttributeDB fsDB(lookup);
-    document::Field attr1("attr1", 1, *document::DataType::LONG, true);
-    document::Field attr2("attr2", 2, *document::DataType::LONG, true);
-    document::Field not_attr1("not_attr1", 3, *document::DataType::LONG, true);
+    document::Field attr1("attr1", 1, *document::DataType::LONG);
+    document::Field attr2("attr2", 2, *document::DataType::LONG);
+    document::Field not_attr1("not_attr1", 3, *document::DataType::LONG);
     document::Field::Set allAttr;
     allAttr.insert(&attr1);
     EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));

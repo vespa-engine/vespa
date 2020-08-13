@@ -26,8 +26,7 @@ class Field final : public vespalib::FieldBase,
                     public FieldSet
 {
     const DataType *_dataType;
-    int  _fieldId;
-    bool _isHeaderField;
+    int             _fieldId;
 public:
     typedef std::shared_ptr<const Field> CSP;
     typedef std::shared_ptr<Field> SP;
@@ -49,7 +48,7 @@ public:
      * @param headerField Whether or not this is a "header" field.
      */
     Field(vespalib::stringref name, int fieldId,
-          const DataType &type, bool headerField);
+          const DataType &type);
 
     Field();
 
@@ -61,7 +60,7 @@ public:
      * @param dataType The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(vespalib::stringref name, const DataType &dataType, bool headerField);
+    Field(vespalib::stringref name, const DataType &dataType);
 
     Field* clone() const override { return new Field(*this); }
     std::unique_ptr<FieldValue> createValue() const;
@@ -74,7 +73,6 @@ public:
     const DataType &getDataType() const { return *_dataType; }
 
     int getId() const { return _fieldId; }
-    bool isHeaderField() const { return _isHeaderField; }
 
     vespalib::string toString(bool verbose=false) const;
     bool contains(const FieldSet& fields) const override;
