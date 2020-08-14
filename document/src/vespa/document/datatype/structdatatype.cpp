@@ -167,7 +167,7 @@ StructDataType::getFieldSet() const
     Field::Set::Builder builder;
     builder.reserve(_idFieldMap.size());
     for (const auto & entry : _idFieldMap) {
-        builder.insert(entry.second.get());
+        builder.add(entry.second.get());
     }
     return builder.build();
 }

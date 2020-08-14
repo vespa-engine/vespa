@@ -32,9 +32,15 @@ public:
     using SP = std::shared_ptr<Field>;
     using CPtr = const Field *;
 
-    struct FieldPtrComparator {
+    struct FieldPtrLess {
         bool operator()(CPtr f1, CPtr f2) const {
             return (*f1 < *f2);
+        }
+    };
+
+    struct FieldPtrEqual {
+        bool operator()(CPtr f1, CPtr f2) const {
+            return (*f1 == *f2);
         }
     };
 
@@ -43,16 +49,18 @@ public:
         class Builder {
         public:
             Builder & reserve(size_t sz) { _vector.reserve(sz); return *this; }
-            Builder & insert(CPtr field) { _vector.emplace_back(field); return *this; }
+            Builder & add(CPtr field) { _vector.push_back(field); return *this; }
             Set build() { return Set(std::move(_vector)); }
         private:
             std::vector<CPtr> _vector;
         };
         bool contains(const Field & field) const;
+        bool contains(const Set & field) const;
         size_t size() const { return _fields.size(); }
         bool empty() const { return _fields.empty(); }
         const CPtr * begin() const { return &_fields[0]; }
         const CPtr * end() const { return begin() + _fields.size(); }
+        static Set emptySet() { return Builder().build(); }
     private:
         explicit Set(std::vector<CPtr> fields);
         std::vector<CPtr> _fields;

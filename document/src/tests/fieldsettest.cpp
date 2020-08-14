@@ -275,9 +275,10 @@ TEST(FieldCollectionTest, testHash ) {
     const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
     const DocumentType & type = *repo.getDocumentType("testdoctype1");
     EXPECT_EQ(0ul, FieldCollection(type, Field::Set::Builder().build()).hash());
-    EXPECT_EQ(0x548599858c77ef83ul, FieldCollection(type, Field::Set::Builder().insert(&type.getField("headerval")).build()).hash());
-    EXPECT_EQ(0x4a7ff2406d36a9b0ul, FieldCollection(type, Field::Set::Builder().insert(&type.getField("headerval")).insert(&type.getField("hstringval")).build()).hash());
-    EXPECT_EQ(0x1e0918531b19734ul, FieldCollection(type, Field::Set::Builder().insert(&type.getField("hstringval")).build()).hash());
+    EXPECT_EQ(0x548599858c77ef83ul, FieldCollection(type, Field::Set::Builder().add(&type.getField("headerval")).build()).hash());
+    EXPECT_EQ(0x4a7ff2406d36a9b0ul, FieldCollection(type, Field::Set::Builder().add(&type.getField("headerval")).add(
+            &type.getField("hstringval")).build()).hash());
+    EXPECT_EQ(0x1e0918531b19734ul, FieldCollection(type, Field::Set::Builder().add(&type.getField("hstringval")).build()).hash());
 }
 
 } // document

@@ -49,10 +49,10 @@ parseFieldCollection(const DocumentTypeRepo& repo,
         const DocumentType::FieldSet * fs = type.getFieldSet(token);
         if (fs) {
             for (const auto & fieldName : fs->getFields()) {
-                builder.insert(&type.getField(fieldName));
+                builder.add(&type.getField(fieldName));
             }
         } else {
-            builder.insert(&type.getField(token));
+            builder.add(&type.getField(token));
         }
     }
     return std::make_unique<FieldCollection>(type, builder.build());

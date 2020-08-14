@@ -42,7 +42,7 @@ FieldCollection::contains(const FieldSet& fields) const
             return _set.contains(static_cast<const Field &>(fields));
         case Type::SET: {
             const auto & coll = static_cast<const FieldCollection&>(fields);
-            return std::includes(_set.begin(), _set.end(), coll.getFields().begin(), coll.getFields().end(), Field::FieldPtrComparator());
+            return _set.contains(coll.getFields());
         }
         case Type::NONE:
         case Type::DOCID:
