@@ -7,10 +7,32 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/bobhash.h>
+#include <algorithm>
 
 namespace document {
 
-Field::Field() : Field("", 0, *DataType::INT) { }
+Field::Set::Set(std::vector<CPtr> fields)
+    : _fields(std::move(fields))
+{
+    std::sort(_fields.begin(), _fields.end(), Field::FieldPtrLess());
+    _fields.erase(std::unique(_fields.begin(), _fields.end(), Field::FieldPtrEqual()), _fields.end());
+}
+
+bool
+Field::Set::contains(const Field & field) const {
+    return std::binary_search(_fields.begin(), _fields.end(), &field, Field::FieldPtrLess());
+}
+
+bool
+Field::Set::contains(const Set & fields) const {
+    return std::includes(_fields.begin(), _fields.end(),
+                         fields._fields.begin(), fields._fields.end(),
+                         Field::FieldPtrLess());
+}
+
+Field::Field()
+    : Field("", 0, *DataType::INT)
+{ }
 
 Field::Field(vespalib::stringref name, int fieldId, const DataType& dataType)
     : FieldBase(name),

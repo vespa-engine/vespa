@@ -65,8 +65,8 @@ public:
 
     uint64_t hash() const { return _hash; }
 private:
-    Field::Set _set;
-    uint64_t   _hash;
+    Field::Set          _set;
+    uint64_t            _hash;
     const DocumentType& _docType;
 };
 

@@ -44,18 +44,18 @@ parseFieldCollection(const DocumentTypeRepo& repo,
     const DocumentType& type(*typePtr);
 
     StringTokenizer tokenizer(fieldNames, ",");
-    Field::Set fields;
+    Field::Set::Builder builder;
     for (const auto & token : tokenizer) {
         const DocumentType::FieldSet * fs = type.getFieldSet(token);
         if (fs) {
             for (const auto & fieldName : fs->getFields()) {
-                fields.insert(&type.getField(fieldName));
+                builder.add(&type.getField(fieldName));
             }
         } else {
-            fields.insert(&type.getField(token));
+            builder.add(&type.getField(token));
         }
     }
-    return std::make_unique<FieldCollection>(type, std::move(fields));
+    return std::make_unique<FieldCollection>(type, builder.build());
 }
 
 }
