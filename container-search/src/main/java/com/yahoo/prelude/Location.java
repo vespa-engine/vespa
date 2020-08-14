@@ -374,7 +374,7 @@ public class Location {
     }
 
     private int backendRadius() {
-        return (r < 0) ?  (512 * 1024 * 1024) : r;
+        return (r < 0) ?  -1 : r;
     }
 
     /**
