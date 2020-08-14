@@ -455,11 +455,11 @@ MessageTracker::UP
 PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker)
 {
     tracker->setMetric(_env._metrics.createIterator);
-    document::FieldSet::UP fieldSet = document::FieldSetRepo::parse(*_env._component.getTypeRepo(), cmd.getFields());
+    document::FieldSet::SP fieldSet = document::FieldSetRepo::parse(*_env._component.getTypeRepo(), cmd.getFields());
     tracker->context().setReadConsistency(cmd.getReadConsistency());
     spi::CreateIteratorResult result(_spi.createIterator(
-        spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
-        *fieldSet, cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
+            spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
+            std::move(fieldSet), cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
     if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<CreateIteratorReply>(cmd, spi::IteratorId(result.getIteratorId())));
     }

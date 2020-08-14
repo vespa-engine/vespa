@@ -124,11 +124,11 @@ MergeHandler::populateMetaData(
     spi::Selection sel(docSel);
     sel.setToTimestamp(spi::Timestamp(maxTimestamp.getTime()));
     spi::CreateIteratorResult createIterResult(_spi.createIterator(
-                                                       bucket,
-                                                       document::NoFields(),
-                                                       sel,
-                                                       spi::ALL_VERSIONS,
-                                                       context));
+            bucket,
+            std::make_shared<document::NoFields>(),
+            sel,
+            spi::ALL_VERSIONS,
+            context));
 
     if (createIterResult.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
@@ -376,8 +376,7 @@ MergeHandler::fetchLocalData(
         "remaining size to fill is %u",
         bucket.toString().c_str(), alreadyFilled, _maxChunkSize, remainingSize);
     if (remainingSize == 0) {
-        LOG(debug,
-            "Diff already at max chunk size, not fetching any local data");
+        LOG(debug, "Diff already at max chunk size, not fetching any local data");
         return;
     }
 
@@ -387,7 +386,7 @@ MergeHandler::fetchLocalData(
     sel.setTimestampSubset(slots);
     spi::CreateIteratorResult createIterResult(
             _spi.createIterator(bucket,
-                                document::AllFields(),
+                                std::make_shared<document::AllFields>(),
                                 sel,
                                 spi::NEWEST_DOCUMENT_OR_REMOVE,
                                 context));
@@ -409,8 +408,7 @@ MergeHandler::fetchLocalData(
     bool fetchedAllLocalData = false;
     bool chunkLimitReached = false;
     while (true) {
-        spi::IterateResult result(
-                _spi.iterate(iteratorId, remainingSize, context));
+        spi::IterateResult result(_spi.iterate(iteratorId, remainingSize, context));
         if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to iterate for "
