@@ -209,12 +209,6 @@
        <groupId>org.apache.curator</groupId>
        <artifactId>curator-test</artifactId>
        <scope>test</scope>
-           <exclusions>
-                <exclusion>
-                    <groupId>org.apache.zookeeper</groupId>
-                    <artifactId>zookeeper</artifactId>
-                </exclusion>
-            </exclusions>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.ext</groupId>
