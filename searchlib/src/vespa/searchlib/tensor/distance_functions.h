@@ -165,8 +165,8 @@ public:
     }
     double to_rawscore(double distance) const override {
         double hav_diff = sqrt(distance);
-        // distance in meters:
-        double d = 2 * asin(hav_diff) * 6371008.8; // Earth mean radius
+        // distance in kilometers:
+        double d = 2 * asin(hav_diff) * 6371.0088; // Earth mean radius
         return 1.0 / (1.0 + d);
     }
     double calc_with_limit(const vespalib::tensor::TypedCells& lhs,
