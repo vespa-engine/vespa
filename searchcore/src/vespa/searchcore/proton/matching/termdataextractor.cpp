@@ -29,8 +29,6 @@ public:
         }
     }
 
-    void visit(ProtonLocationTerm &) override {}
-
     virtual void visit(ProtonNodeTypes::AndNot &n) override {
         assert(n.getChildren().size() > 0);
         n.getChildren()[0]->accept(*this);
