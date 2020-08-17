@@ -17,6 +17,9 @@ class GeoLocationParser
 public:
     GeoLocationParser();
 
+    bool parseNoField(const std::string &locStr);
+    bool parseWithField(const std::string &locStr);
+
     bool parseOldFormat(const std::string &locStr);
     bool parseOldFormatWithField(const std::string &str);
 
@@ -42,6 +45,7 @@ private:
 
     const char *_parseError;
     bool correctDimensionalitySkip(const char * &p);
+    bool parseJsonFormat(const std::string &locStr);
 };
 
 } // namespace
