@@ -389,27 +389,25 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * Returns the context for this request, or null if the server is not properly set up with handlers
      */
     GetConfigContext createGetConfigContext(Optional<TenantName> optionalTenant, JRTServerConfigRequest request, Trace trace) {
-        if ("*".equals(request.getConfigKey().getConfigId())) {
+        if ("*".equals(request.getConfigKey().getConfigId()))
             return GetConfigContext.create(ApplicationId.global(), superModelRequestHandler, trace);
-        }
-        // TODO: Look into if this fallback really is needed
-        TenantName tenant = optionalTenant.orElse(TenantName.defaultName());
-        Optional<RequestHandler> requestHandler = getRequestHandler(tenant);
+
+        String clientHostName = request.getClientHostName();
+        Optional<RequestHandler> requestHandler = optionalTenant.flatMap(this::getRequestHandler);
         if (requestHandler.isEmpty()) {
-            String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant '" + tenant  +
-                         "'. Request from host '" + request.getClientHostName() + "'";
+            String msg = "Unable to find request handler for tenant '" + optionalTenant +
+                         "'. Request from host '" + clientHostName + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
             log.log(Level.WARNING, msg);
             return null;
         }
+
         RequestHandler handler = requestHandler.get();
-        ApplicationId applicationId = handler.resolveApplicationId(request.getClientHostName());
-        // TODO: Look into if this fallback really is needed
-        if (applicationId == null && tenant.equals(TenantName.defaultName()))
-                applicationId = ApplicationId.defaultId();
+        ApplicationId applicationId = handler.resolveApplicationId(clientHostName);
+        if (applicationId == null) throw new RuntimeException("Could not find application for request from " + clientHostName);
         if (trace.shouldTrace(TRACELEVEL_DEBUG)) {
-            trace.trace(TRACELEVEL_DEBUG, "Host '" + request.getClientHostName() + "' should have config from application '" + applicationId + "'");
+            trace.trace(TRACELEVEL_DEBUG, "Host '" + clientHostName + "' should have config from application '" + applicationId + "'");
         }
         return GetConfigContext.create(applicationId, handler, trace);
     }
