@@ -47,7 +47,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -317,8 +316,7 @@ public class SessionRepository {
         getRemoteSessions().forEach(this::sessionAdded);
     }
 
-    private synchronized void sessionsChanged() throws NumberFormatException {
-        List<Long> sessions = getSessionListFromDirectoryCache(directoryCache.getCurrentData());
+    private synchronized void sessionsChanged(List<Long> sessions) throws NumberFormatException {
         checkForRemovedSessions(sessions);
         checkForAddedSessions(sessions);
     }
@@ -418,14 +416,15 @@ public class SessionRepository {
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
             log.log(Level.FINE, () -> "Got child event: " + event);
+            List<Long> sessions = getSessionListFromDirectoryCache(directoryCache.getCurrentData());
             switch (event.getType()) {
                 case CHILD_ADDED:
-                    sessionsChanged();
-                    synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
+                    sessionsChanged(sessions);
+                    synchronizeOnNew(sessions);
                     break;
                 case CHILD_REMOVED:
                 case CONNECTION_RECONNECTED:
-                    sessionsChanged();
+                    sessionsChanged(sessions);
                     break;
             }
         });
