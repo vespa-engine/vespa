@@ -17,6 +17,8 @@ public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
 
+    Quota getQuota(TenantName tenant);
+
     /**
      * @return String containing error message if something went wrong. Empty otherwise
      */
