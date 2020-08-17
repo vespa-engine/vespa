@@ -103,8 +103,8 @@ void Test::requireThatTermsAreAdded() {
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    EXPECT_EQUAL(7u, term_data.size());
-    for (int i = 0; i < 7; ++i) {
+    EXPECT_EQUAL(8u, term_data.size());
+    for (int i = 0; i < 8; ++i) {
         EXPECT_EQUAL(id[i], term_data[i]->getUniqueId());
         EXPECT_EQUAL(1u, term_data[i]->numFields());
     }
@@ -118,8 +118,8 @@ void Test::requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm() {
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    EXPECT_EQUAL(7u, term_data.size());
-    for (int i = 0; i < 7; ++i) {
+    EXPECT_EQUAL(8u, term_data.size());
+    for (int i = 0; i < 8; ++i) {
         EXPECT_EQUAL(id[i], term_data[i]->getUniqueId());
         EXPECT_EQUAL(2u, term_data[i]->numFields());
     }

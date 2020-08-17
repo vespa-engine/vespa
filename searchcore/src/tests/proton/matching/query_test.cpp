@@ -716,7 +716,7 @@ void checkQueryAddsLocation(Test &test, const string &loc_string) {
                     ViewResolver(), index_environment);
     vector<const ITermData *> term_data;
     query.extractTerms(term_data);
-    test.EXPECT_EQUAL(1u, term_data.size());
+    test.EXPECT_EQUAL(2u, term_data.size());
 
     FakeRequestContext requestContext;
     FakeSearchContext context;

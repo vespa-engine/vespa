@@ -260,7 +260,7 @@ public:
      * This indicates if this instance is actually used for ranking or not.
      * @return true if it is not needed.
      */
-    bool  isNotNeeded() const { return ((_flags & (UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG)) == 0u); }
+    bool isNotNeeded() const { return ((_flags & (UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG)) == 0u); }
 
     bool needs_normal_features() const { return ((_flags & UNPACK_NORMAL_FEATURES_FLAG) != 0u); }
 
