@@ -25,11 +25,11 @@
 #include <unordered_map>
 
 namespace storage {
+    struct DoneInitializeHandler;
+    class HostInfo;
+}
 
-struct DoneInitializeHandler;
-class HostInfo;
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpaceRepo;
 class SimpleMaintenanceScanner;
@@ -342,5 +342,4 @@ private:
     bool _must_send_updated_host_info;
 };
 
-} // distributor
-} // storage
+}

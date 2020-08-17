@@ -261,6 +261,7 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
             case FieldSet::Type::DOCID:
                 break;
         }
+        doc->setRepo(getDocumentTypeRepo());
     }
     return doc;
 }
