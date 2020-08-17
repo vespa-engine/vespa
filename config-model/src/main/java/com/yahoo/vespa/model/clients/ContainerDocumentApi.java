@@ -5,8 +5,9 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -35,14 +36,14 @@ public class ContainerDocumentApi {
 
         if (options.bindings.isEmpty()) {
             handler.addServerBindings(
-                    BindingPattern.createModelGeneratedFromHttpPath(bindingSuffix),
-                    BindingPattern.createModelGeneratedFromHttpPath(bindingSuffix + '/'));
+                    SystemBindingPattern.fromHttpPath(bindingSuffix),
+                    SystemBindingPattern.fromHttpPath(bindingSuffix + '/'));
         } else {
             for (String rootBinding : options.bindings) {
                 String pathWithoutLeadingSlash = bindingSuffix.substring(1);
                 handler.addServerBindings(
-                        BindingPattern.createUserGeneratedFromPattern(rootBinding + pathWithoutLeadingSlash),
-                        BindingPattern.createUserGeneratedFromPattern(rootBinding + pathWithoutLeadingSlash + '/'));
+                        UserBindingPattern.fromPattern(rootBinding + pathWithoutLeadingSlash),
+                        UserBindingPattern.fromPattern(rootBinding + pathWithoutLeadingSlash + '/'));
             }
 
         }

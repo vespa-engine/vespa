@@ -48,6 +48,7 @@ import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
@@ -118,13 +119,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
-    public static final BindingPattern STATE_HANDLER_BINDING_1 = BindingPattern.createModelGeneratedFromHttpPath(StateHandler.STATE_API_ROOT);
-    public static final BindingPattern STATE_HANDLER_BINDING_2 = BindingPattern.createModelGeneratedFromHttpPath(StateHandler.STATE_API_ROOT + "/*");
+    public static final BindingPattern STATE_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(StateHandler.STATE_API_ROOT);
+    public static final BindingPattern STATE_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(StateHandler.STATE_API_ROOT + "/*");
 
     public static final String ROOT_HANDLER_PATH = "/";
-    public static final BindingPattern ROOT_HANDLER_BINDING = BindingPattern.createModelGeneratedFromHttpPath(ROOT_HANDLER_PATH);
+    public static final BindingPattern ROOT_HANDLER_BINDING = SystemBindingPattern.fromHttpPath(ROOT_HANDLER_PATH);
 
-    public static final BindingPattern VIP_HANDLER_BINDING = BindingPattern.createModelGeneratedFromHttpPath("/status.html");
+    public static final BindingPattern VIP_HANDLER_BINDING = SystemBindingPattern.fromHttpPath("/status.html");
 
     private final String name;
 
@@ -235,7 +236,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
                         APPLICATION_STATUS_HANDLER_CLASS, null), null));
-        statusHandler.addServerBindings(BindingPattern.createModelGeneratedFromHttpPath("/ApplicationStatus"));
+        statusHandler.addServerBindings(SystemBindingPattern.fromHttpPath("/ApplicationStatus"));
         addComponent(statusHandler);
     }
 

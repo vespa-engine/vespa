@@ -27,14 +27,14 @@ public class BindingPatternTest {
     @Test
     public void getters_returns_correct_components() {
         {
-            BindingPattern pattern = BindingPattern.createModelGeneratedFromPattern("http://host:1234/path/*");
+            BindingPattern pattern = SystemBindingPattern.fromPattern("http://host:1234/path/*");
             assertEquals("http", pattern.scheme());
             assertEquals("host", pattern.host());
             assertEquals("1234", pattern.port().get());
             assertEquals("/path/*", pattern.path());
         }
         {
-            BindingPattern pattern = BindingPattern.createModelGeneratedFromPattern("https://*/path/v1/");
+            BindingPattern pattern = SystemBindingPattern.fromPattern("https://*/path/v1/");
             assertEquals("https", pattern.scheme());
             assertEquals("*", pattern.host());
             assertFalse(pattern.port().isPresent());
@@ -43,7 +43,7 @@ public class BindingPatternTest {
     }
 
     private static void assertBindingParses(String binding) {
-        BindingPattern pattern = BindingPattern.createModelGeneratedFromPattern(binding);
+        BindingPattern pattern = SystemBindingPattern.fromPattern(binding);
         String stringRepresentation = pattern.patternString();
         assertEquals(
                 "Expected string representation of parsed binding to match original binding string",

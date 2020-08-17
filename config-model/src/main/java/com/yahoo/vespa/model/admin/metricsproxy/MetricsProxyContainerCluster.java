@@ -7,12 +7,12 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
-import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
-import ai.vespa.metricsproxy.http.yamas.YamasHandler;
+import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
+import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -37,8 +37,8 @@ import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
 import java.nio.file.Path;
@@ -131,8 +131,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         Handler<AbstractConfigProducer<?>> metricsHandler = new Handler<>(
                 new ComponentModel(clazz.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
         metricsHandler.addServerBindings(
-                BindingPattern.createModelGeneratedFromHttpPath(bindingPath),
-                BindingPattern.createModelGeneratedFromHttpPath(bindingPath + "/*"));
+                SystemBindingPattern.fromHttpPath(bindingPath),
+                SystemBindingPattern.fromHttpPath(bindingPath + "/*"));
         return metricsHandler;
     }
 

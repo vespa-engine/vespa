@@ -6,6 +6,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.Http;
 
@@ -55,7 +56,7 @@ class UriBindingsValidator extends Validator {
     private static void validateHostedApplicationUserBinding(BindingPattern binding) {
         // only perform these validation for used-generated bindings
         // bindings produced by the hosted config model amender will violate some of the rules below
-        if (!binding.isUserGenerated()) return;
+        if (binding instanceof SystemBindingPattern) return;
 
         if (binding.port().isPresent()) {
             throw new IllegalArgumentException(createErrorMessage(binding, "binding with port is not allowed"));

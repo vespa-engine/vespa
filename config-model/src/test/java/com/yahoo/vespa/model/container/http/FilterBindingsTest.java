@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.BindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
@@ -22,7 +23,7 @@ import static org.junit.Assert.assertNotNull;
  */
 public class FilterBindingsTest extends DomBuilderTest {
 
-    private static final BindingPattern MY_CHAIN_BINDING = BindingPattern.createUserGeneratedFromHttpPath("/my-chain-binding");
+    private static final BindingPattern MY_CHAIN_BINDING = UserBindingPattern.fromHttpPath("/my-chain-binding");
 
     private Http buildHttp(Element xml) {
         Http http = new HttpBuilder().build(root.getDeployState(), root, xml);

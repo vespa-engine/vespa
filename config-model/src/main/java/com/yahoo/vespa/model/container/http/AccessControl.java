@@ -9,6 +9,7 @@ import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -140,7 +141,7 @@ public final class AccessControl {
     }
 
     private static Stream<BindingPattern> servletBindings(Servlet servlet) {
-        return Stream.of(BindingPattern.createModelGeneratedFromHttpPath("/" + servlet.bindingPath));
+        return Stream.of(SystemBindingPattern.fromHttpPath("/" + servlet.bindingPath));
     }
 
     private static boolean handlerNeedsProtection(Handler<?> handler) {

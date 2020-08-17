@@ -9,6 +9,8 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.Http;
@@ -41,18 +43,18 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     private static final Set<BindingPattern> REQUIRED_HANDLER_BINDINGS =
             Set.of(
-                    BindingPattern.createUserGeneratedFromHttpPath("/custom-handler/*"),
-                    BindingPattern.createModelGeneratedFromHttpPath("/search/*"),
-                    BindingPattern.createModelGeneratedFromHttpPath("/document/v1/*"),
-                    BindingPattern.createModelGeneratedFromHttpPath("/reserved-for-internal-use/feedapi"));
+                    UserBindingPattern.fromHttpPath("/custom-handler/*"),
+                    SystemBindingPattern.fromHttpPath("/search/*"),
+                    SystemBindingPattern.fromHttpPath("/document/v1/*"),
+                    SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi"));
 
     private static final Set<BindingPattern> FORBIDDEN_HANDLER_BINDINGS =
             Set.of(
-                    BindingPattern.createModelGeneratedFromHttpPath("/ApplicationStatus"),
-                    BindingPattern.createModelGeneratedFromHttpPath("/status.html"),
-                    BindingPattern.createModelGeneratedFromHttpPath("/statistics/"),
-                    BindingPattern.createModelGeneratedFromHttpPath("/state/v1"),
-                    BindingPattern.createModelGeneratedFromHttpPath("/"));
+                    SystemBindingPattern.fromHttpPath("/ApplicationStatus"),
+                    SystemBindingPattern.fromHttpPath("/status.html"),
+                    SystemBindingPattern.fromHttpPath("/statistics/"),
+                    SystemBindingPattern.fromHttpPath("/state/v1"),
+                    SystemBindingPattern.fromHttpPath("/"));
 
     @Test
     public void access_control_filter_chain_is_set_up() {
@@ -151,8 +153,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void handler_can_be_excluded_by_excluding_one_of_its_bindings() {
-        BindingPattern notExcludedBinding = BindingPattern.createUserGeneratedFromHttpPath("/custom-handler/*");
-        BindingPattern excludedBinding = BindingPattern.createModelGeneratedFromHttpPath("/excluded/*");
+        BindingPattern notExcludedBinding = UserBindingPattern.fromHttpPath("/custom-handler/*");
+        BindingPattern excludedBinding = SystemBindingPattern.fromHttpPath("/excluded/*");
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 httpWithExcludedBinding(excludedBinding),
@@ -190,8 +192,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         Http http = getHttp(clusterElem);
 
         Set<BindingPattern> requiredBindings = Set.of(
-                BindingPattern.createModelGeneratedFromHttpPath("/" + servletPath),
-                BindingPattern.createModelGeneratedFromHttpPath("/" + restApiPath + "/*"));
+                SystemBindingPattern.fromHttpPath("/" + servletPath),
+                SystemBindingPattern.fromHttpPath("/" + restApiPath + "/*"));
         Set<BindingPattern> missingRequiredBindings = requiredBindings.stream()
                 .filter(requiredBinding -> ! containsBinding(http.getBindings(), requiredBinding))
                 .collect(Collectors.toSet());
@@ -203,8 +205,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void servlet_can_be_excluded_by_excluding_one_of_its_bindings() {
         String servletPath = "servlet/path";
-        BindingPattern notExcludedBinding = BindingPattern.createModelGeneratedFromPattern("http://*:8081/" + servletPath);
-        BindingPattern excludedBinding = BindingPattern.createModelGeneratedFromPattern("http://*:8080/" + servletPath);
+        BindingPattern notExcludedBinding = SystemBindingPattern.fromPattern("http://*:8081/" + servletPath);
+        BindingPattern excludedBinding = SystemBindingPattern.fromPattern("http://*:8080/" + servletPath);
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 httpWithExcludedBinding(excludedBinding),
@@ -224,8 +226,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void rest_api_can_be_excluded_by_excluding_one_of_its_bindings() {
         String restApiPath = "api/v0";
-        BindingPattern notExcludedBinding = BindingPattern.createModelGeneratedFromPattern("http://*:8081/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX);
-        BindingPattern excludedBinding = BindingPattern.createModelGeneratedFromPattern("http://*:8080/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX);;
+        BindingPattern notExcludedBinding = SystemBindingPattern.fromPattern("http://*:8081/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX);
+        BindingPattern excludedBinding = SystemBindingPattern.fromPattern("http://*:8080/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX);;
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 httpWithExcludedBinding(excludedBinding),
