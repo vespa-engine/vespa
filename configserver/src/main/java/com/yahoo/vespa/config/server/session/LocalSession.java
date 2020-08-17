@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 
@@ -22,7 +19,6 @@ import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 // TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer   -bratseth
 public class LocalSession extends Session {
 
-    protected final ApplicationPackage applicationPackage;
     private final TenantApplications applicationRepo;
 
     /**
@@ -31,18 +27,9 @@ public class LocalSession extends Session {
      * @param sessionId The session id for this session.
      */
     public LocalSession(TenantName tenant, long sessionId, ApplicationPackage applicationPackage,
-                        SessionZooKeeperClient sessionZooKeeperClient,
-                        TenantApplications applicationRepo) {
-        super(tenant, sessionId, sessionZooKeeperClient);
-        this.applicationPackage = applicationPackage;
+                        SessionZooKeeperClient sessionZooKeeperClient, TenantApplications applicationRepo) {
+        super(tenant, sessionId, sessionZooKeeperClient, applicationPackage);
         this.applicationRepo = applicationRepo;
-    }
-
-    public ApplicationFile getApplicationFile(Path relativePath, Mode mode) {
-        if (mode.equals(Mode.WRITE)) {
-            markSessionEdited();
-        }
-        return applicationPackage.getFile(relativePath);
     }
 
     void setPrepared() {
@@ -51,10 +38,6 @@ public class LocalSession extends Session {
 
     private Transaction createSetStatusTransaction(Status status) {
         return sessionZooKeeperClient.createWriteStatusTransaction(status);
-    }
-
-    private void setStatus(Session.Status newStatus) {
-        sessionZooKeeperClient.writeStatus(newStatus);
     }
 
     public CompletionWaiter createActiveWaiter() {
@@ -67,20 +50,12 @@ public class LocalSession extends Session {
         return transaction;
     }
 
-    private void markSessionEdited() {
-        setStatus(Session.Status.NEW);
-    }
-
     public long getActiveSessionAtCreate() {
-        return applicationPackage.getMetaData().getPreviousActiveGeneration();
+        return getMetaData().getPreviousActiveGeneration();
     }
 
     public enum Mode {
         READ, WRITE
     }
-
-    public ApplicationMetaData getMetaData() { return applicationPackage.getMetaData(); }
-
-    public ApplicationPackage getApplicationPackage() { return applicationPackage; }
 
 }

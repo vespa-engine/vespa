@@ -325,6 +325,10 @@ public class ApplicationRepositoryTest {
 
         {
             PrepareResult prepareResult = deployApp(testApp);
+
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            assertNotNull(sessionRepository.getLocalSession(prepareResult.sessionId()));
+
             try {
                 applicationRepository.delete(applicationId(), Duration.ZERO);
                 fail("Should have gotten an exception");
@@ -334,8 +338,7 @@ public class ApplicationRepositoryTest {
 
             // No active session or remote session (deleted in step above), but an exception was thrown above
             // A new delete should cleanup and be successful
-            RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
-            assertNull(activeSession);
+            assertNull(applicationRepository.getActiveSession(applicationId()));
             assertNull(sessionRepository.getLocalSession(prepareResult.sessionId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
