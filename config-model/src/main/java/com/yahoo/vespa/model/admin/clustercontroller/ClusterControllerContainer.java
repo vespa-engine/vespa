@@ -12,9 +12,9 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
-import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
 import java.util.Set;
@@ -79,7 +79,7 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void addHandler(Handler h, String path) {
-        h.addServerBindings(BindingPattern.createModelGeneratedFromHttpPath(path));
+        h.addServerBindings(SystemBindingPattern.fromHttpPath(path));
         super.addHandler(h);
     }
 

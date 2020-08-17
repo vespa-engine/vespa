@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.component.BindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.FilterBinding;
@@ -76,7 +76,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         Element excludeElem = XML.getChild(accessControlElem, "exclude");
         if (excludeElem != null) {
             XML.getChildren(excludeElem, "binding").stream()
-                    .map(xml -> BindingPattern.createUserGeneratedFromPattern(XML.getValue(xml)))
+                    .map(xml -> UserBindingPattern.fromPattern(XML.getValue(xml)))
                     .forEach(builder::excludeBinding);
         }
         return builder.build();
@@ -124,7 +124,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    result.add(FilterBinding.create(chainId, BindingPattern.createUserGeneratedFromPattern(binding)));
+                    result.add(FilterBinding.create(chainId, UserBindingPattern.fromPattern(binding)));
                 }
             }
         }

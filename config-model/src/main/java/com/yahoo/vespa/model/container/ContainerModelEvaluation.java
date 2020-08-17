@@ -6,8 +6,8 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
-import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.util.List;
 import java.util.Objects;
@@ -50,8 +50,8 @@ public class ContainerModelEvaluation implements RankProfilesConfig.Producer, Ra
     public static Handler<?> getHandler() {
         Handler<?> handler = new Handler<>(new ComponentModel(REST_HANDLER_NAME, null, BUNDLE_NAME));
         handler.addServerBindings(
-                BindingPattern.createModelGeneratedFromHttpPath(REST_BINDING_PATH),
-                BindingPattern.createModelGeneratedFromHttpPath(REST_BINDING_PATH + "/*"));
+                SystemBindingPattern.fromHttpPath(REST_BINDING_PATH),
+                SystemBindingPattern.fromHttpPath(REST_BINDING_PATH + "/*"));
         return handler;
     }
 

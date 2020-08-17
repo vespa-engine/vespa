@@ -3,8 +3,9 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -52,8 +53,8 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     private void verifyCustomBindings(String id) {
         Handler<?> handler = getHandlers("cluster1").get(id);
 
-        assertThat(handler.getServerBindings(), hasItem(BindingPattern.createUserGeneratedFromHttpPath("/document-api/reserved-for-internal-use/feedapi")));
-        assertThat(handler.getServerBindings(), hasItem(BindingPattern.createUserGeneratedFromHttpPath("/document-api/reserved-for-internal-use/feedapi/")));
+        assertThat(handler.getServerBindings(), hasItem(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi")));
+        assertThat(handler.getServerBindings(), hasItem(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi/")));
 
         assertThat(handler.getServerBindings().size(), is(2));
     }
@@ -75,10 +76,10 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
-                .contains(BindingPattern.createModelGeneratedFromHttpPath("/reserved-for-internal-use/feedapi")),
+                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")),
                 is(true));
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
-                .contains(BindingPattern.createModelGeneratedFromHttpPath("/reserved-for-internal-use/feedapi")),
+                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")),
                 is(true));
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size(), equalTo(2));
     }

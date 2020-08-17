@@ -59,6 +59,8 @@ import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
@@ -112,7 +114,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     static final String SEARCH_HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
-    static final BindingPattern SEARCH_HANDLER_BINDING = BindingPattern.createModelGeneratedFromHttpPath("/search/*");
+    static final BindingPattern SEARCH_HANDLER_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
 
     public enum Networking { disable, enable }
 
@@ -280,7 +282,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     new FileStatusHandlerComponent(
                             name + "-status-handler",
                             statusFile.orElse(HOSTED_VESPA_STATUS_FILE),
-                            BindingPattern.createModelGeneratedFromHttpPath("/" + name)));
+                            SystemBindingPattern.fromHttpPath("/" + name)));
         } else {
             cluster.addVipHandler();
         }
@@ -806,7 +808,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
         Handler<?> guiHandler = new GUIHandler();
-        guiHandler.addServerBindings(BindingPattern.createModelGeneratedFromHttpPath(GUIHandler.BINDING_PATH));
+        guiHandler.addServerBindings(SystemBindingPattern.fromHttpPath(GUIHandler.BINDING_PATH));
         cluster.addComponent(guiHandler);
     }
 
@@ -825,7 +827,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         for (Element element: bindingElements) {
             String text = element.getTextContent().trim();
             if (!text.isEmpty())
-                result.add(BindingPattern.createUserGeneratedFromPattern(text));
+                result.add(UserBindingPattern.fromPattern(text));
         }
 
         return result.toArray(BindingPattern[]::new);

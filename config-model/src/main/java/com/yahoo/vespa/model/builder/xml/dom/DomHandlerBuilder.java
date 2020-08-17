@@ -11,6 +11,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
@@ -47,10 +48,10 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         Handler<? super Component<?, ?>> handler = createHandler(handlerElement);
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))
-            addServerBinding(handler, BindingPattern.createUserGeneratedFromPattern(XML.getValue(binding)), deployState.getDeployLogger());
+            addServerBinding(handler, UserBindingPattern.fromPattern(XML.getValue(binding)), deployState.getDeployLogger());
 
         for (Element clientBinding : XML.getChildren(handlerElement, "clientBinding"))
-            handler.addClientBindings(BindingPattern.createUserGeneratedFromPattern(XML.getValue(clientBinding)));
+            handler.addClientBindings(UserBindingPattern.fromPattern(XML.getValue(clientBinding)));
 
         DomComponentBuilder.addChildren(deployState, parent, handlerElement, handler);
 

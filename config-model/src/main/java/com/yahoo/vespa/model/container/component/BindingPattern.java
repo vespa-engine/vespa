@@ -10,13 +10,9 @@ import java.util.regex.Pattern;
 /**
  * URI binding pattern used by filter and handler bindings.
  *
- * There are two types of binding; user generated and model generated bindings.
- * - User generated bindings are bindings which are constructed from directly from 'binding' elements from services.xml
- * - Model generated bindings are binding which are implicitly constructed by the model, e.g built-in handlers.
- *
  * @author bjorncs
  */
-public class BindingPattern implements Comparable<BindingPattern> {
+public abstract class BindingPattern implements Comparable<BindingPattern> {
 
     private static final Pattern BINDING_PATTERN =
             Pattern.compile("([^:]+)://([^:/]+)(:((\\*)|([0-9]+)))?(/.*)", Pattern.UNICODE_CASE | Pattern.CANON_EQ);
@@ -27,19 +23,25 @@ public class BindingPattern implements Comparable<BindingPattern> {
     private final String host;
     private final String port;
     private final String path;
-    private final boolean isUserGenerated;
 
-    private BindingPattern(
+    protected BindingPattern(
             String scheme,
             String host,
             String port,
-            String path,
-            boolean isUserGenerated) {
+            String path) {
         this.scheme = Objects.requireNonNull(scheme, "Scheme in binding must be specified");
         this.host = Objects.requireNonNull(host, "Host must be specified");
         this.port = port;
         this.path = validatePath(path);
-        this.isUserGenerated = isUserGenerated;
+    }
+
+    protected BindingPattern(String binding) {
+        Matcher matcher = BINDING_PATTERN.matcher(binding);
+        if (!matcher.matches()) throw new IllegalArgumentException("Invalid binding: " + binding);
+        this.scheme = matcher.group(1);
+        this.host = matcher.group(2);
+        this.port = matcher.group(4);
+        this.path = matcher.group(7);
     }
 
     private static String validatePath(String path) {
@@ -48,37 +50,10 @@ public class BindingPattern implements Comparable<BindingPattern> {
         return path;
     }
 
-    public static BindingPattern createUserGeneratedFromPattern(String pattern) {
-        return createFromBindingString(pattern, true);
-    }
-
-    public static BindingPattern createUserGeneratedFromHttpPath(String path) {
-        return new BindingPattern("http", "*", null, path, true);
-    }
-
-    public static BindingPattern createModelGeneratedFromPattern(String pattern) {
-        return createFromBindingString(pattern, false);
-    }
-
-    public static BindingPattern createModelGeneratedFromHttpPath(String path) {
-        return new BindingPattern("http", "*", null, path, false);
-    }
-
-    private static BindingPattern createFromBindingString(String binding, boolean isUserGenerated) {
-        Matcher matcher = BINDING_PATTERN.matcher(binding);
-        if (!matcher.matches()) throw new IllegalArgumentException("Invalid binding: " + binding);
-        String scheme = matcher.group(1);
-        String host = matcher.group(2);
-        String port = matcher.group(4);
-        String path = matcher.group(7);
-        return new BindingPattern(scheme, host, port, path, isUserGenerated);
-    }
-
     public String scheme() { return scheme; }
     public String host() { return host; }
     public Optional<String> port() { return Optional.ofNullable(port); }
     public String path() { return path; }
-    public boolean isUserGenerated() { return isUserGenerated; }
 
     public String patternString() {
         StringBuilder builder = new StringBuilder(scheme).append("://").append(host);
@@ -92,30 +67,17 @@ public class BindingPattern implements Comparable<BindingPattern> {
     public boolean hasSamePattern(BindingPattern other) { return this.patternString().equals(other.patternString()); }
 
     @Override
-    public String toString() {
-        return "BindingPattern{" +
-                "scheme='" + scheme + '\'' +
-                ", host='" + host + '\'' +
-                ", port='" + port + '\'' +
-                ", path='" + path + '\'' +
-                ", isUserGenerated=" + isUserGenerated +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BindingPattern that = (BindingPattern) o;
-        return isUserGenerated == that.isUserGenerated &&
-                Objects.equals(scheme, that.scheme) &&
+        return Objects.equals(scheme, that.scheme) &&
                 Objects.equals(host, that.host) &&
                 Objects.equals(port, that.port) &&
                 Objects.equals(path, that.path);
     }
 
-    @Override public int hashCode() { return Objects.hash(scheme, host, port, path, isUserGenerated); }
-
+    @Override public int hashCode() { return Objects.hash(scheme, host, port, path); }
 
     @Override
     public int compareTo(BindingPattern o) {
@@ -123,7 +85,6 @@ public class BindingPattern implements Comparable<BindingPattern> {
                 .thenComparing(BindingPattern::host)
                 .thenComparing(pattern -> pattern.port().orElse(null))
                 .thenComparing(BindingPattern::path)
-                .thenComparing(BindingPattern::isUserGenerated)
                 .compare(this, o);
     }
 }

@@ -27,6 +27,7 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
@@ -56,12 +57,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         MetricsProxyApiConfig.Producer {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
-    public static final BindingPattern METRICS_V2_HANDLER_BINDING_1 = BindingPattern.createModelGeneratedFromHttpPath(MetricsV2Handler.V2_PATH);
-    public static final BindingPattern METRICS_V2_HANDLER_BINDING_2 = BindingPattern.createModelGeneratedFromHttpPath(MetricsV2Handler.V2_PATH + "/*");
+    public static final BindingPattern METRICS_V2_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(MetricsV2Handler.V2_PATH);
+    public static final BindingPattern METRICS_V2_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(MetricsV2Handler.V2_PATH + "/*");
 
     public static final String PROMETHEUS_V1_HANDLER_CLASS = PrometheusV1Handler.class.getName();
-    private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = BindingPattern.createModelGeneratedFromHttpPath(PrometheusV1Handler.V1_PATH);
-    private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = BindingPattern.createModelGeneratedFromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
+    private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH);
+    private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
 
     public static final int heapSizePercentageOfTotalNodeMemory = 60;
     public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 17;
