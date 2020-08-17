@@ -82,12 +82,6 @@
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>${maven-bundle-plugin.version}</version>
-                    <configuration>
-                        <!-- TODO: remove when bundle-plugin understands java 10, https://issues.apache.org/jira/browse/FELIX-5879 -->
-                        <instructions>
-                            <_noee>true</_noee>
-                        </instructions>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -770,7 +764,8 @@
         <commons.math3.version>3.6.1</commons.math3.version>
         <junit.version>5.6.2</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
-        <maven-bundle-plugin.version>3.5.0</maven-bundle-plugin.version>
+        <!-- TODO: in order to upgrade above 4.1.0, we probably need to convert fat-model-deps to a jar artifact. -->
+        <maven-bundle-plugin.version>4.1.0</maven-bundle-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
         <maven-deploy-plugin.version>2.8.1</maven-deploy-plugin.version>
