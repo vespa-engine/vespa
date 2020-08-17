@@ -74,6 +74,7 @@ private:
               subBucketsCompletelyExpanded(false)
         {
         }
+        ~SuperBucketInfo();
 
     };
 
