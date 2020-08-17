@@ -385,6 +385,86 @@ public class VersionStatusTest {
     }
 
     @Test
+    public void testConfidenceWithLingeringVersions() {
+        DeploymentTester tester = new DeploymentTester().atMondayMorning();
+        Version version0 = new Version("6.2");
+        tester.controllerTester().upgradeSystem(version0);
+        tester.upgrader().maintain();
+        var appPackage = new ApplicationPackageBuilder().region("us-west-1").region("us-east-3").upgradePolicy("canary");
+
+        var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
+                            .submit(appPackage.build())
+                            .deploy();
+
+        assertEquals("All applications running on this version: High",
+                     Confidence.high, confidence(tester.controller(), version0));
+
+        // New version is released
+        Version version1 = new Version("6.3");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        tester.triggerJobs();
+
+        // App upgrades to the new version and fails
+        canary0.failDeployment(systemTest);
+        canary0.abortJob(stagingTest);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals("One canary failed: Broken",
+                     Confidence.broken, confidence(tester.controller(), version1));
+
+        // New version is released
+        Version version2 = new Version("6.4");
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().maintain();
+        assertEquals("Confidence remains unchanged for version1 until app overrides old tests: Broken",
+                     Confidence.broken, confidence(tester.controller(), version1));
+        assertEquals("Confidence defaults to low for version with no applications",
+                     Confidence.low, confidence(tester.controller(), version2));
+        assertEquals(version2, canary0.instance().change().platform().orElseThrow());
+
+        canary0.failDeployment(systemTest);
+        canary0.abortJob(stagingTest);
+        tester.controllerTester().computeVersionStatus();
+        assertFalse("Previous version should be forgotten, as canary only had test jobs run on it",
+                    tester.controller().versionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version1)));
+
+        // App succeeds with tests, but fails production deployment
+        canary0.runJob(systemTest)
+               .runJob(stagingTest)
+               .failDeployment(productionUsWest1);
+
+        assertEquals("One canary failed: Broken",
+                     Confidence.broken, confidence(tester.controller(), version2));
+
+        // A new version is released, and the app again fails production deployment.
+        Version version3 = new Version("6.5");
+        tester.controllerTester().upgradeSystem(version3);
+        tester.upgrader().maintain();
+        assertEquals("Confidence remains unchanged for version2: Broken",
+                     Confidence.broken, confidence(tester.controller(), version2));
+        assertEquals("Confidence defaults to low for version with no applications",
+                     Confidence.low, confidence(tester.controller(), version3));
+        assertEquals(version3, canary0.instance().change().platform().orElseThrow());
+
+        canary0.runJob(systemTest)
+               .runJob(stagingTest)
+               .failDeployment(productionUsWest1);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals("Confidence remains unchanged for version2: Broken",
+                     Confidence.broken, confidence(tester.controller(), version2));
+        assertEquals("Canary broken, so confidence for version3: Broken",
+                     Confidence.broken, confidence(tester.controller(), version3));
+
+        // App succeeds production deployment, clearing failure on version2
+        canary0.runJob(productionUsWest1);
+        tester.controllerTester().computeVersionStatus();
+        assertFalse("Previous version should be forgotten, as canary only had test jobs run on it",
+                    tester.controller().versionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version2)));
+        assertEquals("Canary OK, but not done upgrading, so confidence for version3: Low",
+                     Confidence.low, confidence(tester.controller(), version3));
+    }
+
+    @Test
     public void testConfidenceOverride() {
         DeploymentTester tester = new DeploymentTester();
         Version version0 = new Version("6.2");
