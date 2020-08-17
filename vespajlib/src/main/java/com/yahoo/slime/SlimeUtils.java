@@ -124,6 +124,13 @@ public class SlimeUtils {
         return Optional.of(inspector.asString()).filter(s -> !s.isEmpty());
     }
 
+    public static Optional<Long> optionalLong(Inspector inspector) {
+        if (inspector.type() == Type.LONG) {
+            return Optional.of(inspector.asLong());
+        }
+        return Optional.empty();
+    }
+
     public static Iterator<Inspector> entriesIterator(Inspector inspector) {
         return new Iterator<>() {
             private int current = 0;
