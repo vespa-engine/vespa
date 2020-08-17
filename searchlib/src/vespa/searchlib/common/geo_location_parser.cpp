@@ -220,8 +220,9 @@ GeoLocationParser::parseJsonFormat(const std::string &str)
     vespalib::Slime slime;
     size_t decoded = vespalib::slime::JsonFormat::decode(str, slime);
     if (decoded == 0) {
-        LOG(warning, "bad location JSON: %s",
-            slime.get()["error_message"].asString().make_string().c_str());
+        LOG(warning, "bad location JSON: %s\n>> %s <<",
+            slime.get()["error_message"].asString().make_string().c_str(),
+            str.c_str());
         _parseError = "Failed decoding JSON format location";
         return false;
     }
