@@ -16,7 +16,6 @@ using Aspect = search::common::GeoLocation::Aspect;
 
 constexpr int32_t plus_inf = std::numeric_limits<int32_t>::max();
 constexpr int32_t minus_inf = std::numeric_limits<int32_t>::min();
-constexpr uint32_t u32_inf = std::numeric_limits<uint32_t>::max();
 
 bool is_parseable(const char *str) {
     GeoLocationParser parser;
