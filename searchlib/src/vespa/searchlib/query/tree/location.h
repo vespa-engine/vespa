@@ -22,6 +22,7 @@ public:
 
     bool operator==(const Location &other) const;
     std::string getOldFormatString() const;
+    std::string getJsonFormatString() const;
 };
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc);
