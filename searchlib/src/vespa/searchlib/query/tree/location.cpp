@@ -33,13 +33,12 @@ Location::Location(const Rectangle &rect)
 bool
 Location::operator==(const Location &other) const
 {
-    auto me = getJsonFormatString();
-    auto it = other.getJsonFormatString();
+    auto me = getOldFormatString();
+    auto it = other.getOldFormatString();
     if (me == it) {
         return true;
     } else {
         // dump 'me' and 'it' here if unit tests fail
-        // fprintf(stderr, "me='%s', it='%s'\n", me.c_str(), it.c_str());
         return false;
     }
 }
@@ -70,37 +69,8 @@ Location::getOldFormatString() const
     return buf.str();
 }
 
-std::string
-Location::getJsonFormatString() const
-{
-    // Only produce what search::common::GeoLocationParser can parse
-    vespalib::asciistream buf;
-    buf << "{";
-    if (has_point) {
-        buf << "p:{x:" << point.x << ",y:" << point.y << "}";
-        if (has_radius()) {
-            buf << "," << "r:" << radius;
-        }
-        if (x_aspect.active()) {
-            buf << "," << "a:" << x_aspect.multiplier;
-        }
-    }
-    if (bounding_box.active()) {
-        if (has_point) {
-            buf << ",";
-        }
-        buf << "b:{x:[" << bounding_box.x.low
-            << "," << bounding_box.x.high
-            << "],y:[" << bounding_box.y.low
-            << "," << bounding_box.y.high
-            << "]}" ;
-    }
-    buf << "}";
-    return buf.str();
-}
-
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {
     return out << loc.getOldFormatString();
 }
 
-} // namespace
+}
