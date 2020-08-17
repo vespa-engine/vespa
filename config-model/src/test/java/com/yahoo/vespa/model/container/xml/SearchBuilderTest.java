@@ -20,6 +20,8 @@ import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_BINDING;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_CLASS;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -48,7 +50,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertTrue(discBindingsConfig.contains(GUIHandler.BINDING));
+        assertThat(discBindingsConfig, containsString(GUIHandler.BINDING_PATH));
 
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
 
@@ -66,8 +68,8 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search>",
-                "    <binding>binding0</binding>",
-                "    <binding>binding1</binding>",
+                "    <binding>http://*/binding0</binding>",
+                "    <binding>http://*/binding1</binding>",
                 "  </search>",
                 nodesXml,
                 "</container>");
@@ -75,9 +77,9 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertTrue(discBindingsConfig.contains(".serverBindings[0] \"binding0\""));
-        assertTrue(discBindingsConfig.contains(".serverBindings[1] \"binding1\""));
-        assertFalse(discBindingsConfig.contains("/search/*"));
+        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
+        assertThat(discBindingsConfig, not(containsString("/search/*")));
     }
 
     @Test
@@ -103,7 +105,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 "<container id='default' version='1.0'>",
                 "  <search />",
                 "  <handler id='" + myHandler + "'>",
-                "    <binding>" + SEARCH_HANDLER_BINDING + "</binding>",
+                "    <binding>" + SEARCH_HANDLER_BINDING.patternString() + "</binding>",
                 "  </handler>",
                 nodesXml,
                 "</container>");
@@ -111,7 +113,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
-        assertEquals(SEARCH_HANDLER_BINDING, discBindingsConfig.handlers(myHandler).serverBindings(0));
+        assertEquals(SEARCH_HANDLER_BINDING.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(0));
         assertNull(discBindingsConfig.handlers(SEARCH_HANDLER_CLASS));
     }
 

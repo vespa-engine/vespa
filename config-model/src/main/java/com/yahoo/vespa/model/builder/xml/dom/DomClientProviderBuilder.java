@@ -2,11 +2,12 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import org.w3c.dom.Element;
 
 /**
@@ -24,10 +25,10 @@ public class DomClientProviderBuilder extends DomHandlerBuilder {
         Handler<? super Component<?, ?>> client = createHandler(clientElement);
 
         for (Element binding : XML.getChildren(clientElement, "binding"))
-            client.addClientBindings(XML.getValue(binding));
+            client.addClientBindings(UserBindingPattern.fromPattern(XML.getValue(binding)));
 
         for (Element serverBinding : XML.getChildren(clientElement, "serverBinding"))
-            client.addServerBindings(XML.getValue(serverBinding));
+            client.addServerBindings(UserBindingPattern.fromPattern(XML.getValue(serverBinding)));
 
         DomComponentBuilder.addChildren(deployState, parent, clientElement, client);
 
