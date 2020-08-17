@@ -19,6 +19,7 @@ private:
     const unsigned int _numDocs;
     const bool         _strict;
     const Location &   _location;
+    uint32_t           _num_values;
     std::vector<search::AttributeVector::largeint_t> _pos;
 
     void doSeek(uint32_t docId) override;
@@ -40,6 +41,7 @@ LocationIterator::LocationIterator(search::fef::TermFieldMatchData &tfmd,
     _numDocs(numDocs),
     _strict(strict),
     _location(location),
+    _num_values(0),
     _pos()
 {
     _pos.resize(1);  //Need at least 1 entry as the singlevalue attributes does not honour given size.
@@ -56,12 +58,12 @@ LocationIterator::doSeek(uint32_t docId)
         if (__builtin_expect(docId >= _numDocs, false)) {
             break;
         }
-        uint32_t numValues = _location.getVec()->get(docId, &_pos[0], _pos.size());
-        if (numValues > _pos.size()) {
-            _pos.resize(numValues);
-            numValues = _location.getVec()->get(docId, &_pos[0], _pos.size());
+        _num_values = _location.getVec()->get(docId, &_pos[0], _pos.size());
+        while (_num_values > _pos.size()) {
+            _pos.resize(_num_values);
+            _num_values = _location.getVec()->get(docId, &_pos[0], _pos.size());
         }
-        for (uint32_t i = 0; i < numValues; i++) {
+        for (uint32_t i = 0; i < _num_values; i++) {
             int64_t docxy(_pos[i]);
             if (_location.inside_limit(docxy)) {
                 setDocId(docId);
@@ -82,8 +84,8 @@ LocationIterator::doUnpack(uint32_t docId)
     uint64_t sqabsdist = std::numeric_limits<uint64_t>::max();
     int32_t docx = 0;
     int32_t docy = 0;
-    uint32_t numValues = _location.getVec()->get(docId, &_pos[0], _pos.size());
-    for (uint32_t i = 0; i < numValues; i++) {
+    // use _num_values from _pos fetched in doSeek()
+    for (uint32_t i = 0; i < _num_values; i++) {
         int64_t docxy(_pos[i]);
         vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
         uint64_t sqdist = _location.sq_distance_to({docx, docy});
