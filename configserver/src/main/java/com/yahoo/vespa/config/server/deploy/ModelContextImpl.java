@@ -14,6 +14,7 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Provisioned;
+import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
@@ -162,6 +163,7 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final double feedCoreThreadPoolSizeFactor;
+        private final Quota quota;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -177,7 +179,8 @@ public class ModelContextImpl implements ModelContext {
                           FlagSource flagSource,
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                           Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles) {
+                          Optional<ApplicationRoles> applicationRoles,
+                          Optional<Quota> maybeQuota) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -218,6 +221,7 @@ public class ModelContextImpl implements ModelContext {
             this.applicationRoles = applicationRoles;
             feedCoreThreadPoolSizeFactor = Flags.FEED_CORE_THREAD_POOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.quota = maybeQuota.orElseGet(Quota::empty);
         }
 
         @Override

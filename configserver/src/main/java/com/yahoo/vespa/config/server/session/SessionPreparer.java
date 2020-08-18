@@ -216,7 +216,8 @@ public class SessionPreparer {
                                                               currentActiveApplicationSet.isEmpty(),
                                                               flagSource,
                                                               endpointCertificateSecrets,
-                                                              athenzDomain, applicationRoles);
+                                                              athenzDomain, applicationRoles,
+                                                              params.quota());
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,

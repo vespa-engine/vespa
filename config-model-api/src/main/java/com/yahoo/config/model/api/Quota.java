@@ -20,6 +20,10 @@ public class Quota {
         return new Quota(clusterSize.map(Long::intValue), budget.map(Long::intValue));
     }
 
+    public static Quota empty() {
+        return new Quota(Optional.empty(), Optional.empty());
+    }
+
     public Optional<Integer> maxClusterSize() {
         return maxClusterSize;
     }

@@ -149,7 +149,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                        .flatMap(new EndpointCertificateRetriever(secretStore)::readEndpointCertificateSecrets),
                                                zkClient.readAthenzDomain(),
                                                new ApplicationRolesStore(curator, TenantRepository.getTenantPath(tenant))
-                                                       .readApplicationRoles(applicationId));
+                                                       .readApplicationRoles(applicationId),
+                                               Optional.empty());
 
     }
 
