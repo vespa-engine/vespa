@@ -25,9 +25,9 @@ import static org.junit.Assert.assertEquals;
  */
 public class AllocatedHostsSerializerTest {
 
-    private static final NodeResources slowSmallNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow);
-    private static final NodeResources slowBiggerNode = new NodeResources(1.0, 6.2, 8, 2, NodeResources.DiskSpeed.slow);
-    private static final NodeResources fastNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any);
+    private static final NodeResources smallSlowDiskSpeedNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow);
+    private static final NodeResources bigSlowDiskSpeedNode = new NodeResources(1.0, 6.2, 8, 2, NodeResources.DiskSpeed.slow);
+    private static final NodeResources anyDiskSpeedNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any);
 
     @Test
     public void testAllocatedHostsSerialization() throws IOException {
@@ -35,35 +35,35 @@ public class AllocatedHostsSerializerTest {
         hosts.add(new HostSpec("empty", List.of(), Optional.empty()));
         hosts.add(new HostSpec("with-aliases", List.of("alias1", "alias2"), Optional.empty()));
         hosts.add(new HostSpec("allocated",
-                               slowSmallNode,
-                               slowBiggerNode,
-                               fastNode,
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))));
         hosts.add(new HostSpec("flavor-from-resources-2",
-                               slowSmallNode,
-                               slowBiggerNode,
-                               fastNode,
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.empty()));
         hosts.add(new HostSpec("with-version",
-                               slowSmallNode,
-                               slowBiggerNode,
-                               fastNode,
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.of(Version.fromString("3.4.5")),
                                Optional.empty(), Optional.empty()));
         hosts.add(new HostSpec("with-ports",
-                               slowSmallNode,
-                               slowBiggerNode,
-                               fastNode,
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.empty(),
