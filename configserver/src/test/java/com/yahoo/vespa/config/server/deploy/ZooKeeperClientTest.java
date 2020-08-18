@@ -165,7 +165,7 @@ public class ZooKeeperClientTest {
         Path hostsPath = app.append(ZKApplicationPackage.allocatedHostsNode);
         assertTrue(zk.exists(hostsPath.getAbsolute()));
         
-        AllocatedHosts deserialized = fromJson(zk.getBytes(hostsPath.getAbsolute()), Optional.empty());
+        AllocatedHosts deserialized = fromJson(zk.getBytes(hostsPath.getAbsolute()));
         assertEquals(hosts, deserialized.getHosts());
     }
 

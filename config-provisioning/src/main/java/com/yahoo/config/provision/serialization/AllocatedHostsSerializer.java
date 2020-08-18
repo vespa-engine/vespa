@@ -16,7 +16,6 @@ import com.yahoo.slime.SlimeUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -93,7 +92,7 @@ public class AllocatedHostsSerializer {
                 object.setString(hostSpecDockerImageRepoKey, repo.repository());
             });
         });
-        host.flavor().ifPresent(flavor -> toSlime(flavor, object)); // TODO: Remove this line after June 2020
+        host.flavor().ifPresent(flavor -> toSlime(flavor, object)); // TODO: Remove this line when 7.272 has been released
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
         host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
@@ -124,25 +123,25 @@ public class AllocatedHostsSerializer {
         resourcesObject.setString(storageTypeKey, storageTypeToString(resources.storageType()));
     }
 
-    public static AllocatedHosts fromJson(byte[] json, Optional<NodeFlavors> nodeFlavors) {
-        return fromSlime(SlimeUtils.jsonToSlime(json).get(), nodeFlavors);
+    public static AllocatedHosts fromJson(byte[] json) {
+        return fromSlime(SlimeUtils.jsonToSlime(json).get());
     }
 
-    public static AllocatedHosts fromSlime(Inspector inspector, Optional<NodeFlavors> nodeFlavors) {
+    public static AllocatedHosts fromSlime(Inspector inspector) {
         Inspector array = inspector.field(mappingKey);
         Set<HostSpec> hosts = new LinkedHashSet<>();
         array.traverse((ArrayTraverser)(i, host) -> {
-            hosts.add(hostFromSlime(host.field(hostSpecKey), nodeFlavors));
+            hosts.add(hostFromSlime(host.field(hostSpecKey)));
         });
         return AllocatedHosts.withHosts(hosts);
     }
 
-    private static HostSpec hostFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
+    private static HostSpec hostFromSlime(Inspector object) {
         if (object.field(hostSpecMembershipKey).valid()) { // Hosted
             return new HostSpec(object.field(hostSpecHostNameKey).asString(),
-                                nodeResourcesFromSlime(object.field(realResourcesKey), object, nodeFlavors),
-                                nodeResourcesFromSlime(object.field(advertisedResourcesKey), object, nodeFlavors),
-                                optionalNodeResourcesFromSlime(object.field(requestedResourcesKey)), // TODO: Make non-optional after June 2020
+                                nodeResourcesFromSlime(object.field(realResourcesKey)),
+                                nodeResourcesFromSlime(object.field(advertisedResourcesKey)),
+                                nodeResourcesFromSlime(object.field(requestedResourcesKey)),
                                 membershipFromSlime(object),
                                 optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
                                 NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
@@ -176,18 +175,6 @@ public class AllocatedHostsSerializer {
                                  resources.field(bandwidthKey).asDouble(),
                                  diskSpeedFromSlime(resources.field(diskSpeedKey)),
                                  storageTypeFromSlime(resources.field(storageTypeKey)));
-    }
-
-    private static NodeResources optionalNodeResourcesFromSlime(Inspector resources) {
-        if ( ! resources.valid()) return NodeResources.unspecified();
-        return nodeResourcesFromSlime(resources);
-    }
-
-    private static NodeResources nodeResourcesFromSlime(Inspector resources, Inspector parent,
-                                                        Optional<NodeFlavors> nodeFlavors) {
-        if ( ! resources.valid()) // TODO: Remove the fallback using nodeFlavors after June 2020
-            return flavorFromSlime(parent, nodeFlavors).map(f -> f.resources()).orElse(NodeResources.unspecified);
-        return nodeResourcesFromSlime(resources);
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {

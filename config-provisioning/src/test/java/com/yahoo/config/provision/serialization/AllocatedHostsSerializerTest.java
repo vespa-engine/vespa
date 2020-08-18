@@ -5,12 +5,9 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provisioning.FlavorsConfig;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -28,42 +25,45 @@ import static org.junit.Assert.assertEquals;
  */
 public class AllocatedHostsSerializerTest {
 
+    private static final NodeResources slowSmallNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow);
+    private static final NodeResources slowBiggerNode = new NodeResources(1.0, 6.2, 8, 2, NodeResources.DiskSpeed.slow);
+    private static final NodeResources fastNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any);
+
     @Test
     public void testAllocatedHostsSerialization() throws IOException {
-        NodeFlavors configuredFlavors = configuredFlavorsFrom("C/12/45/100", 12, 45, 100, 50, Flavor.Type.BARE_METAL);
         Set<HostSpec> hosts = new LinkedHashSet<>();
         hosts.add(new HostSpec("empty", List.of(), Optional.empty()));
         hosts.add(new HostSpec("with-aliases", List.of("alias1", "alias2"), Optional.empty()));
         hosts.add(new HostSpec("allocated",
-                               NodeResources.unspecified(),
-                               NodeResources.unspecified(),
-                               NodeResources.unspecified(),
+                               slowSmallNode,
+                               slowBiggerNode,
+                               fastNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))));
         hosts.add(new HostSpec("flavor-from-resources-2",
-                               new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow),
-                               new NodeResources(1.0, 6.2, 8, 2, NodeResources.DiskSpeed.slow),
-                               new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any),
+                               slowSmallNode,
+                               slowBiggerNode,
+                               fastNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.empty()));
         hosts.add(new HostSpec("with-version",
-                               NodeResources.unspecified(),
-                               NodeResources.unspecified(),
-                               NodeResources.unspecified(),
+                               slowSmallNode,
+                               slowBiggerNode,
+                               fastNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.of(Version.fromString("3.4.5")),
                                Optional.empty(), Optional.empty()));
         hosts.add(new HostSpec("with-ports",
-                               NodeResources.unspecified(),
-                               NodeResources.unspecified(),
-                               NodeResources.unspecified(),
+                               slowSmallNode,
+                               slowBiggerNode,
+                               fastNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.empty(),
@@ -71,11 +71,11 @@ public class AllocatedHostsSerializerTest {
                                                                     new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
                                Optional.empty()));
 
-        assertAllocatedHosts(AllocatedHosts.withHosts(hosts), configuredFlavors);
+        assertAllocatedHosts(AllocatedHosts.withHosts(hosts));
     }
 
-    private void assertAllocatedHosts(AllocatedHosts expectedHosts, NodeFlavors configuredFlavors) throws IOException {
-        AllocatedHosts deserializedHosts = fromJson(toJson(expectedHosts), Optional.of(configuredFlavors));
+    private void assertAllocatedHosts(AllocatedHosts expectedHosts) throws IOException {
+        AllocatedHosts deserializedHosts = fromJson(toJson(expectedHosts));
 
         assertEquals(expectedHosts, deserializedHosts);
         for (HostSpec expectedHost : expectedHosts.getHosts()) {
@@ -97,19 +97,6 @@ public class AllocatedHostsSerializerTest {
             if (host.hostname().equals(hostname))
                 return host;
         throw new IllegalArgumentException("No host " + hostname + " is present");
-    }
-
-    private NodeFlavors configuredFlavorsFrom(String flavorName, double cpu, double mem, double disk, double bandwidth, Flavor.Type type) {
-        FlavorsConfig.Builder b = new FlavorsConfig.Builder();
-        FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
-        flavor.name(flavorName);
-        flavor.minDiskAvailableGb(disk);
-        flavor.minCpuCores(cpu);
-        flavor.minMainMemoryAvailableGb(mem);
-        flavor.bandwidth(bandwidth);
-        flavor.environment(type.name());
-        b.flavor(flavor);
-        return new NodeFlavors(b.build());
     }
 
 }

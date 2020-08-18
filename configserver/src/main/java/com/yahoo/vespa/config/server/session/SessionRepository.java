@@ -9,7 +9,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -653,9 +652,8 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
-        Optional<NodeFlavors> nodeFlavors = componentRegistry.getZone().nodeFlavors();
         Path sessionPath = getSessionPath(sessionId);
-        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), sessionPath, serverId, nodeFlavors);
+        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), sessionPath, serverId);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {
