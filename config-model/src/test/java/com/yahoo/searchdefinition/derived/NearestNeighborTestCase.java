@@ -27,9 +27,9 @@ public class NearestNeighborTestCase extends AbstractExportingTestCase {
             Query q = new Query("?ranking.features.query(q_vec)=[1,2,3,4,5,6]", // length is 6, not 5
                                 queryProfiles.getComponent("default"));
             fail("This should fail when q_vec is parsed as a tensor");
-        } catch (IllegalInputException e) {
+        } catch (IllegalArgumentException e) {
             // success
-            assertEquals("Invalid request parameter", e.getMessage());
+            assertEquals("Could not set 'ranking.features.query(q_vec)' to '[1,2,3,4,5,6]'", e.getMessage());
         } catch (RuntimeException e) {
             e.printStackTrace();
             throw e;
