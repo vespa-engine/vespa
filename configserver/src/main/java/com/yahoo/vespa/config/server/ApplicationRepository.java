@@ -90,6 +90,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -342,6 +343,54 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private Deployment deployFromPreparedSession(LocalSession session, Tenant tenant, Duration timeout) {
         return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false);
+    }
+
+    public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+        SessionRepository sessionRepository = tenantRepository.getTenant(prepared.getTenantName()).getSessionRepository();
+        Transaction transaction = sessionRepository.createActivateTransaction(prepared);
+        if (active != null) {
+            checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
+            checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
+            transaction.add(active.createDeactivateTransaction().operations());
+        }
+        return transaction;
+    }
+
+    static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {
+        long activeSessionAtCreate = session.getActiveSessionAtCreate();
+        log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        if (activeSessionAtCreate == 0) return; // No active session at create
+
+        long sessionId = session.getSessionId();
+        long currentActiveSessionSessionId = currentActiveSession.getSessionId();
+        log.log(Level.FINE, currentActiveSession.logPre() + "sessionId=" + sessionId +
+                            ", current active session=" + currentActiveSessionSessionId);
+        if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
+            currentActiveSessionSessionId != sessionId) {
+            String errMsg = currentActiveSession.logPre() + "Cannot activate session " +
+                            sessionId + " because the currently active session (" +
+                            currentActiveSessionSessionId + ") has changed since session " + sessionId +
+                            " was created (was " + activeSessionAtCreate + " at creation time)";
+            if (ignoreStaleSessionFailure) {
+                log.warning(errMsg + " (Continuing because of force.)");
+            } else {
+                throw new ActivationConflictException(errMsg);
+            }
+        }
+    }
+
+    private static boolean isValidSession(Session session) {
+        return session != null;
+    }
+
+    // As of now, config generation is based on session id, and config generation must be a monotonically
+    // increasing number
+    static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
+        if (sessionId < currentActiveSessionId) {
+            throw new ActivationConflictException("It is not possible to activate session " + sessionId +
+                                                  ", because it is older than current active session (" +
+                                                  currentActiveSessionId + ")");
+        }
     }
 
     // ---------------- Application operations ----------------------------------------------------------------
@@ -604,6 +653,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     // ---------------- Session operations ----------------------------------------------------------------
+
+
+
+    public CompletionWaiter activate(LocalSession session, Session previousActiveSession, ApplicationId applicationId, boolean ignoreSessionStaleFailure) {
+        CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
+        NestedTransaction transaction = new NestedTransaction();
+        transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, ignoreSessionStaleFailure));
+        hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
+        transaction.commit();
+        return waiter;
+    }
 
     /**
      * Gets the active Session for the given application id.

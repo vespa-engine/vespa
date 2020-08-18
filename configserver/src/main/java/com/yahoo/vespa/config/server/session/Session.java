@@ -57,9 +57,17 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readStatus();
     }
 
+    public SessionZooKeeperClient getSessionZooKeeperClient() {
+        return sessionZooKeeperClient;
+    }
+
     @Override
     public String toString() {
         return "Session,id=" + sessionId;
+    }
+
+    public long getActiveSessionAtCreate() {
+        return getMetaData().getPreviousActiveGeneration();
     }
 
     /**
@@ -161,7 +169,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     public ApplicationFile getApplicationFile(Path relativePath, LocalSession.Mode mode) {
-        if (mode.equals(LocalSession.Mode.WRITE)) {
+        if (mode.equals(Session.Mode.WRITE)) {
             markSessionEdited();
         }
         return getApplicationPackage().getFile(relativePath);
@@ -180,6 +188,10 @@ public abstract class Session implements Comparable<Session>  {
         Long lhsId = getSessionId();
         Long rhsId = rhs.getSessionId();
         return lhsId.compareTo(rhsId);
+    }
+
+    public enum Mode {
+        READ, WRITE
     }
 
 }
