@@ -209,7 +209,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     private static Set<String> getFilterBindings(Http http, ComponentId filerChain) {
         return http.getBindings().stream()
-                .filter(binding -> binding.filterId().toId().equals(filerChain))
+                .filter(binding -> binding.chainId().toId().equals(filerChain))
                 .map(binding -> binding.binding().patternString())
                 .collect(Collectors.toSet());
     }

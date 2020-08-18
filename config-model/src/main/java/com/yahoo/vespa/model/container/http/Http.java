@@ -76,7 +76,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
     public void getConfig(ServerConfig.Builder builder) {
         for (FilterBinding binding : bindings) {
             builder.filter(new ServerConfig.Filter.Builder()
-                    .id(binding.filterId().stringValue())
+                    .id(binding.chainId().stringValue())
                     .binding(binding.binding().patternString()));
         }
     }
@@ -92,8 +92,8 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
 
         for (FilterBinding binding: bindings) {
-            if (filters.getComponent(binding.filterId()) == null && chains.getComponent(binding.filterId()) == null)
-                throw new RuntimeException("Can't find filter " + binding.filterId() + " for binding " + binding.binding());
+            if (filters.getComponent(binding.chainId()) == null && chains.getComponent(binding.chainId()) == null)
+                throw new RuntimeException("Can't find filter " + binding.chainId() + " for binding " + binding.binding());
         }
     }
 }

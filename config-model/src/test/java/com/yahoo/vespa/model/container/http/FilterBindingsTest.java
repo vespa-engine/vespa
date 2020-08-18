@@ -51,7 +51,7 @@ public class FilterBindingsTest extends DomBuilderTest {
         Http http = buildHttp(xml);
 
         FilterBinding binding = first(http.getBindings());
-        assertEquals("my-request-chain", binding.filterId().getName());
+        assertEquals("my-request-chain", binding.chainId().getName());
         assertEquals(MY_CHAIN_BINDING, binding.binding());
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-request-chain");
@@ -71,7 +71,7 @@ public class FilterBindingsTest extends DomBuilderTest {
         Http http = buildHttp(xml);
 
         FilterBinding binding = first(http.getBindings());
-        assertEquals("my-response-chain", binding.filterId().getName());
+        assertEquals("my-response-chain", binding.chainId().getName());
         assertEquals(MY_CHAIN_BINDING, binding.binding());
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-response-chain");

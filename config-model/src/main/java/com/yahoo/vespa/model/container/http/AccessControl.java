@@ -131,9 +131,9 @@ public class AccessControl {
     private void removeDuplicateBindingsFromAccessControlChain(Http http) {
         Set<FilterBinding> duplicateBindings = new HashSet<>();
         for (FilterBinding binding : http.getBindings()) {
-            if (binding.filterId().toId().equals(ACCESS_CONTROL_CHAIN_ID)) {
+            if (binding.chainId().toId().equals(ACCESS_CONTROL_CHAIN_ID)) {
                 for (FilterBinding otherBinding : http.getBindings()) {
-                    if (!binding.filterId().equals(otherBinding.filterId())
+                    if (!binding.chainId().equals(otherBinding.chainId())
                             && binding.binding().equals(otherBinding.binding())) {
                         duplicateBindings.add(binding);
                     }
