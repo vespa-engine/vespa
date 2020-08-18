@@ -48,7 +48,7 @@ public class ZKApplicationPackageTest {
             Collections.singleton(new HostSpec("foo.yahoo.com",
                                                TEST_FLAVOR.get().resources(),
                                                TEST_FLAVOR.get().resources(),
-                                               NodeResources.unspecified(),
+                                               TEST_FLAVOR.get().resources(),
                                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                                       Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
                                                Optional.of(Version.fromString("6.0.1")), Optional.empty(),

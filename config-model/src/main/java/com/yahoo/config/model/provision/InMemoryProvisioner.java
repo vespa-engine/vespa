@@ -197,7 +197,7 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(clusterGroup.type(), clusterGroup.id()), startIndex);
         while (allocation.size() < nodesInGroup) {
-            // Find the smallest host that can fit the requested requested
+            // Find the smallest host that can fit the requested resources
             Optional<NodeResources> hostResources = freeNodes.keySet().stream()
                     .sorted(new MemoryDiskCpu())
                     .filter(resources -> requestedResources.isUnspecified() || resources.satisfies(requestedResources))

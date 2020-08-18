@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -137,11 +136,12 @@ public class AllocatedHostsSerializer {
     }
 
     private static HostSpec hostFromSlime(Inspector object) {
+
         if (object.field(hostSpecMembershipKey).valid()) { // Hosted
             return new HostSpec(object.field(hostSpecHostNameKey).asString(),
                                 nodeResourcesFromSlime(object.field(realResourcesKey)),
                                 nodeResourcesFromSlime(object.field(advertisedResourcesKey)),
-                                nodeResourcesFromSlime(object.field(requestedResourcesKey)),
+                                optionalNodeResourcesFromSlime(object.field(requestedResourcesKey)), // TODO: Make non-optional when we serialize NodeResources.unspecified()
                                 membershipFromSlime(object),
                                 optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
                                 NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
@@ -161,13 +161,6 @@ public class AllocatedHostsSerializer {
         return aliases;
     }
 
-    private static Optional<Flavor> flavorFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
-        if (object.field(flavorKey).valid() && nodeFlavors.isPresent() && nodeFlavors.get().exists(object.field(flavorKey).asString()))
-            return nodeFlavors.get().getFlavor(object.field(flavorKey).asString());
-        else
-            return Optional.empty();
-    }
-
     private static NodeResources nodeResourcesFromSlime(Inspector resources) {
         return new NodeResources(resources.field(vcpuKey).asDouble(),
                                  resources.field(memoryKey).asDouble(),
@@ -175,6 +168,11 @@ public class AllocatedHostsSerializer {
                                  resources.field(bandwidthKey).asDouble(),
                                  diskSpeedFromSlime(resources.field(diskSpeedKey)),
                                  storageTypeFromSlime(resources.field(storageTypeKey)));
+    }
+
+    private static NodeResources optionalNodeResourcesFromSlime(Inspector resources) {
+        if ( ! resources.valid()) return NodeResources.unspecified();
+        return nodeResourcesFromSlime(resources);
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {
