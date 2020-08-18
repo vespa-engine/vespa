@@ -51,24 +51,21 @@ public class SessionZooKeeperClient {
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
-    private final Optional<NodeFlavors> nodeFlavors;
 
     // Only for testing
     // TODO: Remove, use the constructor below
     public SessionZooKeeperClient(Curator curator, Path sessionPath) {
-        this(curator, ConfigCurator.create(curator), sessionPath, "1", Optional.empty());
+        this(curator, ConfigCurator.create(curator), sessionPath, "1");
     }
 
     public SessionZooKeeperClient(Curator curator,
                                   ConfigCurator configCurator,
                                   Path sessionPath,
-                                  String serverId,
-                                  Optional<NodeFlavors> nodeFlavors) {
+                                  String serverId) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.sessionPath = sessionPath;
         this.serverId = serverId;
-        this.nodeFlavors = nodeFlavors;
         this.sessionStatusPath = sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
     }
 
@@ -135,7 +132,7 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(configCurator, sessionPath, nodeFlavors);
+        return new ZKApplicationPackage(configCurator, sessionPath);
     }
 
     public ConfigDefinitionRepo getUserConfigDefinitions() {

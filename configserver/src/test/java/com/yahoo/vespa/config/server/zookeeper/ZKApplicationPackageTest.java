@@ -48,7 +48,7 @@ public class ZKApplicationPackageTest {
             Collections.singleton(new HostSpec("foo.yahoo.com",
                                                TEST_FLAVOR.get().resources(),
                                                TEST_FLAVOR.get().resources(),
-                                               NodeResources.unspecified(),
+                                               TEST_FLAVOR.get().resources(),
                                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                                       Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
                                                Optional.of(Version.fromString("6.0.1")), Optional.empty(),
@@ -67,7 +67,7 @@ public class ZKApplicationPackageTest {
     @Test
     public void testBasicZKFeed() throws IOException {
         feed(configCurator, new File(APP));
-        ZKApplicationPackage zkApp = new ZKApplicationPackage(configCurator, Path.fromString("/0"), Optional.of(new MockNodeFlavors()));
+        ZKApplicationPackage zkApp = new ZKApplicationPackage(configCurator, Path.fromString("/0"));
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getServices())).matches());
         assertTrue(Pattern.compile(".*<alias>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getHosts())).matches());
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
