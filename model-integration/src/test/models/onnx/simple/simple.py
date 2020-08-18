@@ -14,7 +14,7 @@ nodes = [
         ['matmul'],
     ),
     helper.make_node(
-        'add',
+        'Add',
         ['matmul', 'bias_tensor'],
         ['output'],
     ),
