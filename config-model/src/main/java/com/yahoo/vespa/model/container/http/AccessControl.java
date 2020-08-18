@@ -96,7 +96,7 @@ public class AccessControl {
         this.handlers = handlers;
     }
 
-    public void configure(Http http) {
+    public void configureHttpFilterChains(Http http) {
         http.setAccessControl(this);
         addAccessControlFilterChain(http);
         addAccessControlExcludedChain(http);

@@ -54,7 +54,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         http.getBindings().addAll(bindings);
         http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
         if (accessControl != null) {
-            accessControl.configure(http);
+            accessControl.configureHttpFilterChains(http);
         }
         return http;
     }
