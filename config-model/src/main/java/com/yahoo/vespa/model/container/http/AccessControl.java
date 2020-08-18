@@ -146,11 +146,11 @@ public class AccessControl {
     private static FilterBinding createAccessControlBinding(String path) {
         return FilterBinding.create(
                 new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()),
-                SystemBindingPattern.fromPortAndPath(Integer.toString(HOSTED_CONTAINER_PORT), path));
+                SystemBindingPattern.fromHttpPortAndPath(Integer.toString(HOSTED_CONTAINER_PORT), path));
     }
 
     private static FilterBinding createAccessControlExcludedBinding(BindingPattern excludedBinding) {
-        BindingPattern rewrittenBinding = SystemBindingPattern.fromPortAndPath(
+        BindingPattern rewrittenBinding = SystemBindingPattern.fromHttpPortAndPath(
                 Integer.toString(HOSTED_CONTAINER_PORT), excludedBinding.path()); // only keep path from excluded binding
         return FilterBinding.create(
                 new ComponentSpecification(ACCESS_CONTROL_EXCLUDED_CHAIN_ID.stringValue()),
