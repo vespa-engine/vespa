@@ -7,12 +7,15 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.path.Path;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
@@ -24,9 +27,12 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Zookeeper client for a specific session. Path for a session is /config/v2/tenants/&lt;tenant&gt;/sessions/&lt;sessionid&gt;
@@ -46,6 +52,7 @@ public class SessionZooKeeperClient {
     private static final String CREATE_TIME_PATH = "createTime";
     private static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
     private static final String ATHENZ_DOMAIN = "athenzDomain";
+    private static final String QUOTA_PATH = "quota";
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final Path sessionPath;
@@ -179,6 +186,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(ATHENZ_DOMAIN).getAbsolute();
     }
 
+    private String quotaPath() {
+        return sessionPath.append(QUOTA_PATH).getAbsolute();
+    }
+
     public void writeVespaVersion(Version version) {
         configCurator.putData(versionPath(), version.toString());
     }
@@ -238,6 +249,20 @@ public class SessionZooKeeperClient {
         return Optional.ofNullable(configCurator.getData(athenzDomainPath()))
                 .filter(domain -> ! domain.isBlank())
                 .map(AthenzDomain::from);
+    }
+
+    public void writeQuota(Optional<Quota> maybeQuota) {
+        maybeQuota.ifPresent(quota -> {
+            var bytes = uncheck(() -> SlimeUtils.toJsonBytes(quota.toSlime()));
+            configCurator.putData(quotaPath(), bytes);
+        });
+    }
+
+    public Optional<Quota> readQuota() {
+        if ( ! configCurator.exists(quotaPath())) return Optional.empty();
+        return Optional.ofNullable(configCurator.getData(quotaPath()))
+                .map(SlimeUtils::jsonToSlime)
+                .map(slime -> Quota.fromSlime(slime.get()));
     }
 
     /**
