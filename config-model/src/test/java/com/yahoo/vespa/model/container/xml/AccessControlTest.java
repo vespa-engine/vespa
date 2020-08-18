@@ -12,6 +12,8 @@ import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,13 +39,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_filter_chains_are_set_up() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='my-tenant-domain' />",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
 
         FilterChains filterChains = http.getFilterChains();
         assertTrue(filterChains.hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
@@ -53,13 +53,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void properties_are_set_from_xml() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='my-tenant-domain'/>",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
 
         AccessControl accessControl = http.getAccessControl().get();
 
@@ -69,13 +67,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void read_is_disabled_and_write_is_enabled_by_default() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='my-tenant-domain'/>",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
 
         assertFalse("Wrong default value for read.", http.getAccessControl().get().readEnabled);
         assertTrue("Wrong default value for write.", http.getAccessControl().get().writeEnabled);
@@ -84,13 +80,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void read_and_write_can_be_overridden() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='my-tenant-domain' read='true' write='false'/>",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
 
         assertTrue("Given read value not honoured.", http.getAccessControl().get().readEnabled);
         assertFalse("Given write value not honoured.", http.getAccessControl().get().writeEnabled);
@@ -99,13 +93,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_excluded_filter_chain_has_all_bindings_from_excluded_handlers() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control/>",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
 
         Set<String> actualBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
         assertThat(actualBindings, containsInAnyOrder(
@@ -123,13 +115,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_excluded_chain_does_not_contain_any_bindings_from_access_control_chain() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control/>",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
 
         Set<String> bindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_CHAIN_ID);
         Set<String> excludedBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
@@ -143,7 +133,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_excluded_filter_chain_has_user_provided_excluded_bindings() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <handler id='custom.Handler'>",
                 "      <binding>http://*/custom-handler/*</binding>",
@@ -156,8 +145,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "        </exclude>",
                 "      </access-control>",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
 
         Set<String> actualBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
         assertThat(actualBindings, hasItems("http://*:4443/custom-handler/*", "http://*:4443/search/*", "http://*:4443/status.html"));
@@ -166,13 +154,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_filter_chain_contains_catchall_bindings() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control/>",
                 "    </filtering>",
-                "  </http>",
-                "</container>");
+                "  </http>");
         Set<String> actualBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_CHAIN_ID);
         assertThat(actualBindings, containsInAnyOrder("http://*:4443/*"));
     }
@@ -191,7 +177,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_is_implicitly_added_for_hosted_apps_with_existing_http_element() {
         Http http = createModelAndGetHttp(
-                "<container version='1.0'>",
                 "  <http>",
                 "    <server port='" + getDefaults().vespaWebServicePort() + "' id='main' />",
                 "    <filtering>",
@@ -200,21 +185,25 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "        <filter id='inner' />",
                 "      </request-chain>",
                 "    </filtering>",
-                "  </http>",
-                "</container>" );
+                "  </http>");
         assertThat(http.getAccessControl().isPresent(), is(true));
         assertThat(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID), is(true));
         assertThat(http.getFilterChains().hasChain(ComponentId.fromString("myChain")), is(true));
     }
 
-    private Http createModelAndGetHttp(String... servicesXml) {
+    private Http createModelAndGetHttp(String... httpElement) {
+        List<String> servicesXml = new ArrayList<>();
+        servicesXml.add("<container version='1.0'>");
+        servicesXml.addAll(List.of(httpElement));
+        servicesXml.add("</container>");
+
         AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
         DeployState state = new DeployState.Builder().properties(
                 new TestProperties()
                         .setAthenzDomain(tenantDomain)
                         .setHostedVespa(true))
                 .build();
-        createModel(root, state, null, DomBuilderTest.parse(servicesXml));
+        createModel(root, state, null, DomBuilderTest.parse(servicesXml.toArray(String[]::new)));
         return  ((ApplicationContainer) root.getProducer("container/container.0")).getHttp();
     }
 
