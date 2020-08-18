@@ -7,14 +7,11 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.vespa.model.container.ApplicationContainer;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
-import com.yahoo.vespa.model.container.http.Filter;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
 import org.junit.Test;
 
-import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,7 +22,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,12 +48,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         FilterChains filterChains = http.getFilterChains();
         assertTrue(filterChains.hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
         assertTrue(filterChains.hasChain(AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID));
-
-        Chain<Filter> excludedChain = filterChains.allChains().getComponent(AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
-        Collection<Filter> innerComponents = excludedChain.getInnerComponents();
-        assertThat(innerComponents, hasSize(1));
-        String accessControlExcludedChain = innerComponents.iterator().next().getClassId().stringValue();
-        assertEquals("com.yahoo.jdisc.http.filter.security.misc.NoopFilter", accessControlExcludedChain);
     }
 
     @Test
