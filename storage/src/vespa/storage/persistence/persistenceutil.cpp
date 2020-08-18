@@ -162,7 +162,7 @@ PersistenceUtil::PersistenceUtil(
       _nodeIndex(_component.getIndex()),
       _metrics(metrics),
       _bucketFactory(_component.getBucketIdFactory()),
-      _repo(_component.getTypeRepo()),
+      _repo(_component.getTypeRepo()->documentTypeRepo),
       _spi(provider)
 {
 }

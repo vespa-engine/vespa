@@ -23,7 +23,8 @@ public:
         DOCID
     };
 
-    typedef std::unique_ptr<FieldSet> UP;
+    using SP = std::shared_ptr<FieldSet>;
+    using UP = std::unique_ptr<FieldSet>;
 
     virtual ~FieldSet() = default;
 
@@ -37,11 +38,6 @@ public:
      * @return Returns the type of field set this is.
      */
     virtual Type getType() const = 0;
-
-    /**
-     * @return Returns a copy of this object.
-     */
-    virtual FieldSet* clone() const = 0;
 
     /**
      * Copy all fields from src into dest that are contained within the

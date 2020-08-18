@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // @author Vegard Sjonfjell
 
-#include <vespa/storage/persistence/fieldvisitor.h>
-#include <vespa/storage/persistence/testandsethelper.h>
+#include "fieldvisitor.h"
+#include "testandsethelper.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -11,19 +11,19 @@ using namespace std::string_literals;
 
 namespace storage {
 
-void TestAndSetHelper::getDocumentType() {
+void TestAndSetHelper::getDocumentType(const document::DocumentTypeRepo & documentTypeRepo) {
     if (!_docId.hasDocType()) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Document id has no doctype"));
     }
 
-    _docTypePtr = _component.getTypeRepo()->getDocumentType(_docId.getDocType());
+    _docTypePtr = documentTypeRepo.getDocumentType(_docId.getDocType());
     if (_docTypePtr == nullptr) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Document type does not exist"));
     }
 }
 
-void TestAndSetHelper::parseDocumentSelection() {
-    document::select::Parser parser(*_component.getTypeRepo(), _component.getBucketIdFactory());
+void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo) {
+    document::select::Parser parser(documentTypeRepo, _component.getBucketIdFactory());
 
     try {
         _docSelectionUp = parser.parse(_cmd.getCondition().getSelection());
@@ -49,8 +49,9 @@ TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAn
       _docTypePtr(nullptr),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
-    getDocumentType();
-    parseDocumentSelection();
+    auto docTypeRepo = _component.getTypeRepo()->documentTypeRepo;
+    getDocumentType(*docTypeRepo);
+    parseDocumentSelection(*docTypeRepo);
 }
 
 TestAndSetHelper::~TestAndSetHelper() = default;
