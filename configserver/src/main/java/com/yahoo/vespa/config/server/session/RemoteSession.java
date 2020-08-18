@@ -101,7 +101,7 @@ public class RemoteSession extends Session {
                                                                               KeeperException.NodeExistsException.class);
             Class<? extends Throwable> exceptionClass = e.getCause().getClass();
             if (acceptedExceptions.contains(exceptionClass))
-                log.log(Level.INFO, "Not able to notify completion for session " + getSessionId() +
+                log.log(Level.FINE, "Not able to notify completion for session " + getSessionId() +
                                     " (" + completionWaiter + ")," +
                                     " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
                                     ? "has been deleted"
