@@ -130,7 +130,7 @@ public class VdsVisitorTestCase {
             traceLevel = 100;
             summary = "fancysummary";
             profile = "fancyprofile";
-            location = "(1,10000,2000,0,1,0)";
+            location = "(2,10000,2000,0,0,1,0)";
             sortSpec = "+surname -yearofbirth";
             rankProperties = "rankfeature.something=2";
 

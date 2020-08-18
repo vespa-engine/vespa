@@ -139,7 +139,7 @@ final class ProgramParser {
                                   int charPositionInLine,
                                   @NotNull String msg,
                                   @Nullable RecognitionException e) {
-            throw new ProgramCompileException(new Location(programName, line, charPositionInLine), msg);
+            throw new ProgramCompileException(new Location(programName, line, charPositionInLine), "%s", msg);
           }
 
         });
@@ -156,7 +156,7 @@ final class ProgramParser {
                                   int charPositionInLine,
                                   @NotNull String msg,
                                   @Nullable RecognitionException e) {
-            throw new ProgramCompileException(new Location(programName, line, charPositionInLine), msg);
+            throw new ProgramCompileException(new Location(programName, line, charPositionInLine), "%s", msg);
           }
 
         });
