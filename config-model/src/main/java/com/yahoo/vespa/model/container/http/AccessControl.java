@@ -3,9 +3,6 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.component.chain.dependencies.Dependencies;
-import com.yahoo.component.chain.model.ChainedComponentModel;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -117,16 +114,7 @@ public class AccessControl {
     }
 
     private void addAccessControlExcludedChain(Http http) {
-        Chain<Filter> chain = createChain(ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
-        chain.addInnerComponent(
-                new Filter(
-                        new ChainedComponentModel(
-                                new BundleInstantiationSpecification(
-                                        new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.NoopFilter"),
-                                        null,
-                                        new ComponentSpecification("jdisc-security-filters")),
-                                Dependencies.emptyDependencies())));
-        http.getFilterChains().add(chain);
+        http.getFilterChains().add(createChain(ACCESS_CONTROL_EXCLUDED_CHAIN_ID));
         for (BindingPattern excludedBinding : excludedBindings) {
             http.getBindings().add(createAccessControlExcludedBinding(excludedBinding));
         }
