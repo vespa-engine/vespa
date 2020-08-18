@@ -53,7 +53,8 @@ public class SessionZooKeeperClient {
     private final String serverId;  // hostname
     private final Optional<NodeFlavors> nodeFlavors;
 
-    // Only for testing when cache loader does not need cache entries.
+    // Only for testing
+    // TODO: Remove, use the constructor below
     public SessionZooKeeperClient(Curator curator, Path sessionPath) {
         this(curator, ConfigCurator.create(curator), sessionPath, "1", Optional.empty());
     }
@@ -93,7 +94,7 @@ public class SessionZooKeeperClient {
         return createCompletionWaiter(PREPARE_BARRIER);
     }
 
-    Curator.CompletionWaiter createActiveWaiter() {
+    public Curator.CompletionWaiter createActiveWaiter() {
         return createCompletionWaiter(ACTIVE_BARRIER);
     }
 

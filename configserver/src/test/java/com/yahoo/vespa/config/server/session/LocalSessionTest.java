@@ -77,31 +77,21 @@ public class LocalSessionTest {
     }
 
     @Test
-    public void require_that_session_status_is_updated() throws Exception {
-        LocalSession session = createSession(TenantName.defaultName(), 3);
-        assertThat(session.getStatus(), is(Session.Status.NEW));
-        doPrepare(session);
-        assertThat(session.getStatus(), is(Session.Status.PREPARE));
-        session.createActivateTransaction().commit();
-        assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
-    }
-
-    @Test
     public void require_that_marking_session_modified_changes_status_to_new() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
         doPrepare(session);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
-        session.getApplicationFile(Path.createRoot(), LocalSession.Mode.READ);
+        session.getApplicationFile(Path.createRoot(), Session.Mode.READ);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
-        session.getApplicationFile(Path.createRoot(), LocalSession.Mode.WRITE);
+        session.getApplicationFile(Path.createRoot(), Session.Mode.WRITE);
         assertThat(session.getStatus(), is(Session.Status.NEW));
     }
 
     @Test
     public void require_that_application_file_can_be_fetched() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
-        ApplicationFile f1 = session.getApplicationFile(Path.fromString("services.xml"), LocalSession.Mode.READ);
-        ApplicationFile f2 = session.getApplicationFile(Path.fromString("services2.xml"), LocalSession.Mode.READ);
+        ApplicationFile f1 = session.getApplicationFile(Path.fromString("services.xml"), Session.Mode.READ);
+        ApplicationFile f2 = session.getApplicationFile(Path.fromString("services2.xml"), Session.Mode.READ);
         assertTrue(f1.exists());
         assertFalse(f2.exists());
     }
@@ -127,7 +117,7 @@ public class LocalSessionTest {
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         TenantApplications applications = tenantRepository.getTenant(tenantName).getApplicationRepo();
         applications.createApplication(applicationId());
-        LocalSession session = new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp), zkc, applications);
+        LocalSession session = new LocalSession(tenant, sessionId, FilesApplicationPackage.fromFile(testApp), zkc);
         session.setApplicationId(applicationId());
         return session;
     }

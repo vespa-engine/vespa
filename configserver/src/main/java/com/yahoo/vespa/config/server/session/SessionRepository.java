@@ -165,7 +165,7 @@ public class SessionRepository {
                                                               getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
-        session.setPrepared();
+        setPrepared(session);
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
     }
@@ -488,7 +488,7 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
     }
@@ -546,7 +546,7 @@ public class SessionRepository {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
             SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient, applicationRepo);
+            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -595,7 +595,7 @@ public class SessionRepository {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
+        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
     }
 
     /**
@@ -694,6 +694,20 @@ public class SessionRepository {
 
     private Path lockPath(long sessionId) {
         return locksPath.append(String.valueOf(sessionId));
+    }
+
+    public Transaction createActivateTransaction(Session session) {
+        Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
+        transaction.add(applicationRepo.createPutTransaction(session.sessionZooKeeperClient.readApplicationId(), session.getSessionId()).operations());
+        return transaction;
+    }
+
+    private Transaction createSetStatusTransaction(Session session, Session.Status status) {
+        return session.sessionZooKeeperClient.createWriteStatusTransaction(status);
+    }
+
+    void setPrepared(Session session) {
+        session.setStatus(Session.Status.PREPARE);
     }
 
     private static class FileTransaction extends AbstractTransaction {
