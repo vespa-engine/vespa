@@ -67,7 +67,6 @@ public:
     };
     using UP = std::unique_ptr<StorageComponent>;
     using PriorityConfig = vespa::config::content::core::internal::InternalStorPrioritymappingType;
-    using DocumentTypeRepoSP = std::shared_ptr<Repos>;
     using LoadTypeSetSP = std::shared_ptr<documentapi::LoadTypeSet>;
     using DistributionSP = std::shared_ptr<lib::Distribution>;
 
@@ -99,7 +98,7 @@ public:
 
     vespalib::string getIdentity() const;
 
-    DocumentTypeRepoSP getTypeRepo() const;
+    std::shared_ptr<Repos> getTypeRepo() const;
     LoadTypeSetSP getLoadTypes() const;
     const document::BucketIdFactory& getBucketIdFactory() const
         { return _bucketIdFactory; }
@@ -111,7 +110,7 @@ private:
     vespalib::string _clusterName;
     const lib::NodeType* _nodeType;
     uint16_t _index;
-    DocumentTypeRepoSP _repos;
+    std::shared_ptr<Repos> _repos;
     // TODO: move loadTypes and _distribution in to _repos so lock will only taken once and only copying one shared_ptr.
     LoadTypeSetSP _loadTypes;
     std::unique_ptr<PriorityMapper> _priorityMapper;

@@ -122,7 +122,7 @@ StorageComponent::getPriority(const documentapi::LoadType& lt) const
     return _priorityMapper->getPriority(lt);
 }
 
-StorageComponent::DocumentTypeRepoSP
+std::shared_ptr<StorageComponent::Repos>
 StorageComponent::getTypeRepo() const
 {
     std::lock_guard guard(_lock);
