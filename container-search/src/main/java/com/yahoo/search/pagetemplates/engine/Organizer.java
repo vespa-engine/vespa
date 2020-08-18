@@ -9,9 +9,7 @@ import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.*;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Reorganizes and prunes a result as prescribed by a resolved template.
@@ -29,13 +27,13 @@ public class Organizer {
      * @param result the result to organize
      */
     public void organize(Choice templateChoice, Resolution resolution, Result result) {
-        PageTemplate template=(PageTemplate)templateChoice.get(resolution.getResolution(templateChoice)).get(0);
-        SectionHitGroup sectionGroup =toGroup(template.getSection(),resolution,result);
-        ErrorHit errors=result.hits().getErrorHit();
+        PageTemplate template = (PageTemplate)templateChoice.get(resolution.getResolution(templateChoice)).get(0);
+        SectionHitGroup sectionGroup = toGroup(template.getSection(), resolution, result);
+        ErrorHit errors = result.hits().getErrorHit();
 
         // transfer state from existing hit
         sectionGroup.setQuery(result.hits().getQuery());
-        if (errors!=null && errors instanceof DefaultErrorHit)
+        if (errors instanceof DefaultErrorHit)
             sectionGroup.add((DefaultErrorHit)errors);
         result.hits().forEachField((name, value) -> sectionGroup.setField(name, value));
         result.setHits(sectionGroup);

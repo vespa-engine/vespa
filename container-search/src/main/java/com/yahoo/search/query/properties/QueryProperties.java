@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
 
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 
@@ -317,7 +318,7 @@ public class QueryProperties extends Properties {
             if (e.getMessage() != null && e.getMessage().startsWith("Could not set"))
                 throw e;
             else
-                throw new IllegalArgumentException("Could not set '" + key + "' to '" + value + "'", e);
+                throw new IllegalInputException("Could not set '" + key + "' to '" + value + "'", e);
         }
     }
 
@@ -364,8 +365,8 @@ public class QueryProperties extends Properties {
     }
 
     private void throwIllegalParameter(String key,String namespace) {
-        throw new IllegalArgumentException("'" + key + "' is not a valid property in '" + namespace +
-                                           "'. See the query api for valid keys starting by '" + namespace + "'.");
+        throw new IllegalInputException("'" + key + "' is not a valid property in '" + namespace +
+                                        "'. See the query api for valid keys starting by '" + namespace + "'.");
     }
 
     @Override

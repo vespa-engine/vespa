@@ -6,7 +6,6 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -15,8 +14,6 @@ import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.querytransform.SortingDegrader;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
-
-import java.util.Collections;
 
 import static org.junit.Assert.*;
 
@@ -67,12 +64,10 @@ public class SortingDegraderTestCase {
         try {
             Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.maxFilterCoverage=37");
             assertTrue(false);
-        } catch (QueryException qe) {
-            assertEquals("Invalid request parameter", qe.getMessage());
-            Throwable setE = qe.getCause();
-            assertTrue(setE instanceof IllegalArgumentException);
-            assertEquals("Could not set 'ranking.matchPhase.maxFilterCoverage' to '37'", setE.getMessage());
-            Throwable rootE = setE.getCause();
+        } catch (IllegalArgumentException qe) {
+            assertTrue(qe instanceof IllegalArgumentException);
+            assertEquals("Could not set 'ranking.matchPhase.maxFilterCoverage' to '37'", qe.getMessage());
+            Throwable rootE = qe.getCause();
             assertTrue(rootE instanceof IllegalArgumentException);
             assertEquals("maxFilterCoverage must be in the range [0.0, 1.0]. It is 37.0", rootE.getMessage());
         }

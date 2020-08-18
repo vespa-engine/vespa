@@ -22,7 +22,7 @@ public class GeoLocationItem extends TermItem {
     public GeoLocationItem(Location location) {
         this(location, location.getAttribute());
         if (! location.hasAttribute()) {
-            throw new IllegalArgumentException("missing attribute on location: "+location);
+            throw new IllegalArgumentException("Missing attribute on location: " + location);
         }
     }
 
@@ -34,13 +34,14 @@ public class GeoLocationItem extends TermItem {
     public GeoLocationItem(Location location, String fieldName) {
         super(fieldName, false);
         if (location.hasAttribute() && ! location.getAttribute().equals(fieldName)) {
-            throw new IllegalArgumentException("inconsistent attribute on location: "+location.getAttribute()+" versus fieldName: "+fieldName);
+            throw new IllegalArgumentException("Inconsistent attribute on location: " + location.getAttribute() +
+                                               " versus fieldName: " + fieldName);
         }
         if (! location.isGeoCircle()) {
-            throw new IllegalArgumentException("GeoLocationItem only supports Geo Circles, got: "+location);
+            throw new IllegalArgumentException("GeoLocationItem only supports Geo Circles, got: " + location);
         }
         if (location.hasBoundingBox()) {
-            throw new IllegalArgumentException("GeoLocationItem does not support bounding box yet, got: "+location);
+            throw new IllegalArgumentException("GeoLocationItem does not support bounding box, got: " + location);
         }
         this.location = new Location(location.toString());
         this.location.setAttribute(null); // keep this in (superclass) indexName only

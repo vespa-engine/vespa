@@ -162,7 +162,7 @@ final class OperatorNode<T extends Operator> {
     }
 
     // we are aware only of types used in our logical operator trees -- OperatorNode, List, and constant values
-    private static final Function<Object, Object> COPY = new Function<Object, Object>() {
+    private static final Function<Object, Object> COPY = new Function<>() {
         @Override
         public Object apply(Object input) {
             if (input instanceof List) {

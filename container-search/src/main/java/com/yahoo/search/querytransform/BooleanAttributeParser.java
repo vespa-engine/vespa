@@ -14,10 +14,10 @@ import java.math.BigInteger;
  * a 64-bit hex number <code>0x1234</code> or a list of bits <code>[0, 2, 43,
  * 22, ...]</code>.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
- * @since 5.1.15
+ * @author Magnar Nedland
  */
 abstract class BooleanAttributeParser extends SimpleMapParser {
+
     private boolean isMap = true;
 
     @Override

@@ -449,8 +449,8 @@ public class YqlParserTestCase {
                         "title contains ([{\"id\": 1, \"connectivity\": {\"id\": 4, \"weight\": 7.0}}]\"madonna\") " +
                         "and title contains ([{\"id\": 2}]\"saint\") " +
                         "and title contains ([{\"id\": 3}]\"angel\");",
-                        new NullPointerException("Item 'title:madonna' was specified to connect to item with ID 4, " +
-                                                 "which does not exist in the query."));
+                        new IllegalArgumentException("Item 'title:madonna' was specified to connect to item with ID 4, " +
+                                                     "which does not exist in the query."));
     }
 
     @Test

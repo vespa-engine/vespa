@@ -622,19 +622,19 @@ final class ProgramParser {
     }
 
     private OperatorNode<SequenceOperator> convertMerge(List<Merge_componentContext> mergeComponentList, Scope scope) {
-          Preconditions.checkArgument(mergeComponentList != null);
-          List<OperatorNode<SequenceOperator>> sources = Lists.newArrayListWithExpectedSize(mergeComponentList.size());
-          for (Merge_componentContext mergeComponent:mergeComponentList) {
-              Select_statementContext selectContext = mergeComponent.select_statement();
-              Source_statementContext sourceContext = mergeComponent.source_statement();
-              if (selectContext != null) {
-                  sources.add(convertQuery(selectContext, scope.getRoot()));
-              } else {
-                  sources.add(convertQuery(sourceContext, scope.getRoot()));
-              }
-          }
-          return OperatorNode.create(SequenceOperator.MERGE, sources);
-      }
+        Preconditions.checkArgument(mergeComponentList != null);
+        List<OperatorNode<SequenceOperator>> sources = Lists.newArrayListWithExpectedSize(mergeComponentList.size());
+        for (Merge_componentContext mergeComponent:mergeComponentList) {
+            Select_statementContext selectContext = mergeComponent.select_statement();
+            Source_statementContext sourceContext = mergeComponent.source_statement();
+            if (selectContext != null) {
+                sources.add(convertQuery(selectContext, scope.getRoot()));
+            } else {
+                sources.add(convertQuery(sourceContext, scope.getRoot()));
+            }
+        }
+        return OperatorNode.create(SequenceOperator.MERGE, sources);
+    }
 
     private OperatorNode<SequenceOperator> convertQuery(ParseTree node, Scope scope) {
         if (node instanceof Select_statementContext
@@ -642,7 +642,7 @@ final class ProgramParser {
            || node instanceof Update_statementContext
            || node instanceof Delete_statementContext) {
             return convertSelectOrInsertOrUpdateOrDelete(node, scope.getRoot());
-        } else if (node instanceof Source_statementContext) { //for pipe
+        } else if (node instanceof Source_statementContext) { // for pipe
             Source_statementContext sourceStatementContext = (Source_statementContext)node;
             return convertPipe(sourceStatementContext.query_statement(), sourceStatementContext.pipeline_step(), scope);
         } else if (node instanceof Merge_statementContext) {

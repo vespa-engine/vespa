@@ -5,6 +5,7 @@ import com.google.common.annotations.Beta;
 import com.google.inject.Inject;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -28,6 +29,7 @@ import java.util.logging.Logger;
  *
  * @author Steinar Knutsen
  */
+// TODO: The query model should do this
 @Beta
 @Provides(MinimalQueryInserter.EXTERNAL_YQL)
 @Before(PhaseNames.TRANSFORMED_QUERY)
@@ -40,19 +42,22 @@ public class MinimalQueryInserter extends Searcher {
 
     private static final CompoundName MAX_HITS = new CompoundName("maxHits");
     private static final CompoundName MAX_OFFSET = new CompoundName("maxOffset");
-    private static Logger log = Logger.getLogger(MinimalQueryInserter.class.getName());
+    private static final Logger log = Logger.getLogger(MinimalQueryInserter.class.getName());
 
     @Inject
     public MinimalQueryInserter(Linguistics linguistics) {
         // Warmup is needed to avoid a large 400ms init cost during first execution of yql code.
         warmup(linguistics);
     }
+
     public MinimalQueryInserter() {
         this(new SimpleLinguistics());
     }
+
     static boolean warmup() {
         return warmup(new SimpleLinguistics());
     }
+
     private static boolean warmup(Linguistics linguistics) {
         Query query = new Query("search/?yql=select%20*%20from%20sources%20where%20title%20contains%20'xyz';");
         Result result = insertQuery(query, new ParserEnvironment().setLinguistics(linguistics));
@@ -65,6 +70,18 @@ public class MinimalQueryInserter extends Searcher {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public Result search(Query query, Execution execution) {
+        try {
+            if (query.properties().get(YQL) == null) return execution.search(query);
+            Result result = insertQuery(query, ParserEnvironment.fromExecutionContext(execution.context()));
+            return (result == null) ? execution.search(query) : result;
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalInputException("Illegal YQL query", e);
+        }
     }
 
     private static Result insertQuery(Query query, ParserEnvironment env) {
@@ -114,14 +131,6 @@ public class MinimalQueryInserter extends Searcher {
         }
         query.trace("YQL+ query parsed", true, 2);
         return null;
-    }
-
-    @Override
-    public Result search(Query query, Execution execution) {
-        if (query.properties().get(YQL) == null) return execution.search(query);
-
-        Result result = insertQuery(query, ParserEnvironment.fromExecutionContext(execution.context()));
-        return (result == null) ? execution.search(query) : result;
     }
 
 }

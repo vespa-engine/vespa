@@ -2,7 +2,6 @@
 package com.yahoo.search.grouping;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -41,18 +40,19 @@ public class UniqueGroupingSearcherTestCase {
                                new MockResultProvider(0, false));
         assertEquals(0, result.hits().size());
     }
+
     @Test
     public void testIllegalSortingSpec() {
         try {
             search("?query=foo&unique=fingerprint&sorting=-1",
                     new MockResultProvider(0, true).addGroupList(new GroupList("fingerprint")));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
             assertThat(
                     Exceptions.toMessageString(e),
                     containsString(
-                            "Invalid request parameter: Could not set 'ranking.sorting' to '-1': " +
+                            "Could not set 'ranking.sorting' to '-1': " +
                             "Illegal attribute name '1' for sorting. Requires '[\\[]*[a-zA-Z_][\\.a-zA-Z0-9_-]*[\\]]*'"));
         }
     }

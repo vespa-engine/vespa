@@ -4,6 +4,7 @@ package com.yahoo.search.querytransform;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.*;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -92,7 +93,7 @@ public class WandSearcher extends Searcher {
         private WandType resolveWandType(IndexFacts.Session indexFacts, Query query) {
             Index index = indexFacts.getIndex(fieldName);
             if (index.isNull()) {
-                throw new IllegalArgumentException("Field '" + fieldName + "' was not found in " + indexFacts);
+                throw new IllegalInputException("Field '" + fieldName + "' was not found in " + indexFacts);
             } else {
                 return WandType.create(query.properties().getString(WAND_TYPE, "vespa"));
             }
@@ -100,15 +101,15 @@ public class WandSearcher extends Searcher {
 
         private int resolveHeapSize(Query query) {
             String defaultHeapSize = "100";
-            return Integer.valueOf(query.properties().getString(WAND_HEAP_SIZE, defaultHeapSize));
+            return Integer.parseInt(query.properties().getString(WAND_HEAP_SIZE, defaultHeapSize));
         }
 
         private double resolveScoreThreshold(Query query) {
-            return Double.valueOf(query.properties().getString(WAND_SCORE_THRESHOLD, "0"));
+            return Double.parseDouble(query.properties().getString(WAND_SCORE_THRESHOLD, "0"));
         }
 
         private double resolveThresholdBoostFactor(Query query) {
-            return Double.valueOf(query.properties().getString(WAND_THRESHOLD_BOOST_FACTOR, "1"));
+            return Double.parseDouble(query.properties().getString(WAND_THRESHOLD_BOOST_FACTOR, "1"));
         }
 
         public boolean hasValidData() {
@@ -166,7 +167,7 @@ public class WandSearcher extends Searcher {
         } else if (inputs.getWandType().equals(WandType.DOT_PRODUCT)) {
             return populate(new DotProductItem(inputs.getFieldName()), inputs.getTokens());
         }
-        throw new IllegalArgumentException("Unknown type '" + inputs.getWandType() + "'");
+        throw new IllegalInputException("Unknown type '" + inputs.getWandType() + "'");
     }
 
     private CompositeItem populate(CompositeItem parent, String fieldName, Map<String,Integer> tokens) {
@@ -195,10 +196,12 @@ public class WandSearcher extends Searcher {
     }
 
     private static class IntegerMapParser extends MapParser<Integer> {
+
         @Override
         protected Integer parseValue(String s) {
             return Integer.parseInt(s);
         }
+
     }
 
 }

@@ -56,7 +56,7 @@ public class LocalProviderSpec {
         this.cacheSize = cacheSize;
 
         if (clusterName == null)
-            throw new IllegalArgumentException("Missing cluster name.");
+            throw new IllegalArgumentException("Missing cluster name");
     }
 
     public static boolean includesType(String type) {

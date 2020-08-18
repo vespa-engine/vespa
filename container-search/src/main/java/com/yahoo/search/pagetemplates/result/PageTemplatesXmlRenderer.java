@@ -271,10 +271,10 @@ public class PageTemplatesXmlRenderer extends AsynchronousSectionedRenderer<Resu
 
     private Result getResult() {
         try {
-            return (Result) getResponse();
+            return (Result)getResponse();
         } catch (ClassCastException e) {
-            throw new IllegalArgumentException("PageTemplatesXmlRenderer attempted used outside a search context, got a " +
-                                               getResponse().getClass().getName());
+            throw new IllegalStateException("PageTemplatesXmlRenderer attempted used outside a search context, got a " +
+                                            getResponse().getClass().getName());
         }
     }
 
