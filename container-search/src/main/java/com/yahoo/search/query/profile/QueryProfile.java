@@ -4,6 +4,7 @@ package com.yahoo.search.query.profile;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.FreezableSimpleComponent;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
@@ -451,7 +452,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             setNode(name, value, null, binding, registry);
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "'", e);
+            throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
         }
     }
 
@@ -688,15 +689,15 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         FieldDescription fieldDescription = type.getField(localName);
         if (fieldDescription == null) {
             if (type.isStrict())
-                throw new IllegalArgumentException("'" + localName + "' is not declared in " + type + ", and the type is strict");
+                throw new IllegalInputException("'" + localName + "' is not declared in " + type + ", and the type is strict");
             return value;
         }
 
         if (registry == null && (fieldDescription.getType() instanceof QueryProfileFieldType))
-            throw new IllegalArgumentException("A registry was not passed: Query profile references is not supported");
+            throw new IllegalInputException("A registry was not passed: Query profile references is not supported");
         Object convertedValue = fieldDescription.getType().convertFrom(value, registry);
         if (convertedValue == null)
-            throw new IllegalArgumentException("'" + value + "' is not a " + fieldDescription.getType().toInstanceDescription());
+            throw new IllegalInputException("'" + value + "' is not a " + fieldDescription.getType().toInstanceDescription());
         return convertedValue;
     }
 

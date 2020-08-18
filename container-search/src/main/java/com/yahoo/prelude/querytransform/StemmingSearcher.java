@@ -359,7 +359,7 @@ public class StemmingSearcher extends Searcher {
             default:
                 throw new IllegalArgumentException("Unknown segmenting rule: " + current.getSegmentingRule() +
                                                    ". This is a bug in Vespa, as the implementation has gotten out of sync." +
-                                                   " Please create a ticket as soon as possible.");
+                                                   " Please create an issue.");
         }
     }
 

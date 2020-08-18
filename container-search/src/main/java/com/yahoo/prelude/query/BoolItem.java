@@ -1,6 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import com.yahoo.processing.IllegalInputException;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -59,7 +61,7 @@ public class BoolItem extends TermItem {
         switch (stringValue.toLowerCase()) {
             case "true" : return true;
             case "false" : return false;
-            default: throw new IllegalArgumentException("Expected 'true' or 'false', got '" + stringValue + "'");
+            default: throw new IllegalInputException("Expected 'true' or 'false', got '" + stringValue + "'");
         }
     }
 

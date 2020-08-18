@@ -21,8 +21,8 @@ import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.parser.ParseException;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.context.QueryContext;
@@ -61,7 +61,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -229,10 +228,8 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             try {
                 return handleBody(request);
-            } catch (QueryException e) {
-                return (e.getCause() instanceof IllegalArgumentException)
-                        ? invalidParameterResponse(request, e)
-                        : illegalQueryResponse(request, e);
+            } catch (IllegalInputException e) {
+                return illegalQueryResponse(request, e);
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
@@ -263,10 +260,6 @@ public class SearchHandler extends LoggingRequestHandler {
         return new HttpSearchResponse(getHttpResponseStatus(request, result), result, query, renderer);
     }
 
-    private HttpResponse invalidParameterResponse(HttpRequest request, RuntimeException e) {
-        return errorResponse(request, ErrorMessage.createInvalidQueryParameter(Exceptions.toMessageString(e)));
-    }
-
     private HttpResponse illegalQueryResponse(HttpRequest request, RuntimeException e) {
         return errorResponse(request, ErrorMessage.createIllegalQuery(Exceptions.toMessageString(e)));
     }
@@ -274,7 +267,6 @@ public class SearchHandler extends LoggingRequestHandler {
     private HttpResponse internalServerErrorResponse(HttpRequest request, RuntimeException e) {
         return errorResponse(request, ErrorMessage.createInternalServerError(Exceptions.toMessageString(e)));
     }
-
 
     private HttpSearchResponse handleBody(HttpRequest request) {
         Map<String, String> requestMap = requestMapFromRequest(request);
@@ -450,19 +442,15 @@ public class SearchHandler extends LoggingRequestHandler {
                                                                  + Exceptions.toMessageString(e));
             log.log(Level.FINE, error::getDetailedMessage);
             return new Result(query, error);
+        } catch (IllegalInputException e) {
+            ErrorMessage error = ErrorMessage.createBadRequest("Invalid request [" + request + "]: "
+                                                               + Exceptions.toMessageString(e));
+            log.log(Level.FINE, error::getDetailedMessage);
+            return new Result(query, error);
         } catch (IllegalArgumentException e) {
-            if ("Comparison method violates its general contract!".equals(e.getMessage())) {
-                // This is an error in application components or Vespa code
-                log(request, query, e);
-                return new Result(query, ErrorMessage.createUnspecifiedError("Failed searching: " +
-                                                                             Exceptions.toMessageString(e), e));
-            }
-            else {
-                ErrorMessage error = ErrorMessage.createBadRequest("Invalid search request [" + request + "]: "
-                                                                   + Exceptions.toMessageString(e));
-                log.log(Level.FINE, error::getDetailedMessage);
-                return new Result(query, error);
-            }
+            log(request, query, e);
+            return new Result(query, ErrorMessage.createUnspecifiedError("Failed: " +
+                                                                         Exceptions.toMessageString(e), e));
         } catch (LinkageError | StackOverflowError e) {
             // LinkageError should have been an Exception in an OSGi world - typical bundle dependency issue problem
             // StackOverflowError is recoverable
@@ -472,7 +460,7 @@ public class SearchHandler extends LoggingRequestHandler {
             return new Result(query, error);
         } catch (Exception e) {
             log(request, query, e);
-            return new Result(query, ErrorMessage.createUnspecifiedError("Failed searching: " +
+            return new Result(query, ErrorMessage.createUnspecifiedError("Failed: " +
                                                                          Exceptions.toMessageString(e), e));
         }
     }
@@ -579,8 +567,8 @@ public class SearchHandler extends LoggingRequestHandler {
             byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
             inspector = SlimeUtils.jsonToSlime(byteArray).get();
             if (inspector.field("error_message").valid()) {
-                throw new QueryException("Illegal query: " + inspector.field("error_message").asString() + " at: '" +
-                                         new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+                throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() + " at: '" +
+                                                new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
             }
 
         } catch (IOException e) {
@@ -593,9 +581,9 @@ public class SearchHandler extends LoggingRequestHandler {
         requestMap.putAll(request.propertyMap());
 
         if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
-            throw new QueryException("Illegal query: Query contains both yql and select parameter");
+            throw new IllegalInputException("Illegal query: Query contains both yql and select parameter");
         if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
-            throw new QueryException("Illegal query: Query contains both query and select parameter");
+            throw new IllegalInputException("Illegal query: Query contains both query and select parameter");
 
         return requestMap;
     }

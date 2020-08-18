@@ -4,6 +4,7 @@ package com.yahoo.search.rendering;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Result;
 import com.yahoo.search.pagetemplates.result.PageTemplatesXmlRenderer;
@@ -103,8 +104,8 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
 
         com.yahoo.processing.rendering.Renderer<Result> renderer = getComponent(format);
         if (renderer == null)
-            throw new IllegalArgumentException("No renderer with id or alias '" + format + "'. " +
-                                               "Available renderers are: [" + rendererNames() + "].");
+            throw new IllegalInputException("No renderer with id or alias '" + format + "'. " +
+                                            "Available renderers are: [" + rendererNames() + "].");
         return renderer;
     }
 

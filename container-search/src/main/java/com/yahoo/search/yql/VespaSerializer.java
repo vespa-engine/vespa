@@ -142,7 +142,7 @@ public class VespaSerializer {
                     escape(((WordItem) current).getIndexedString(), destination).append('"');
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName()
-                                    + " in segment AND expressions not implemented, please report this as a bug.");
+                                                       + " in segment AND expressions not implemented, please report this as a bug.");
                 }
             }
         }
@@ -643,7 +643,7 @@ public class VespaSerializer {
                     WordAlternativesSerializer.serialize(destination, (WordAlternativesItem) current, false);
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
-                                                      " in phrases not implemented, please report this as a bug.");
+                                                       " in phrases not implemented, please report this as a bug.");
                 }
             }
             destination.append(')');
@@ -1158,7 +1158,7 @@ public class VespaSerializer {
             Serializer doIt = dispatch.get(item.getClass());
 
             if (doIt == null) {
-                throw new IllegalArgumentException(item.getClass() + " not supported for YQL+ marshalling.");
+                throw new IllegalArgumentException(item.getClass() + " not supported for YQL marshalling.");
             }
 
             if (state.peekFirst() != null && state.peekFirst().subItems > 0) {

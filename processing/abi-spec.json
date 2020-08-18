@@ -1,4 +1,17 @@
 {
+  "com.yahoo.processing.IllegalInputException": {
+    "superClass": "java.lang.IllegalArgumentException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.Throwable)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
+    ],
+    "fields": []
+  },
   "com.yahoo.processing.Processor": {
     "superClass": "com.yahoo.component.chain.ChainedComponent",
     "interfaces": [],
