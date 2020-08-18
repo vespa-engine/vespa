@@ -63,19 +63,6 @@ GeoLocationParser::correctDimensionalitySkip(const char * &p) {
 }
 
 bool
-GeoLocationParser::parseOldFormatWithField(const std::string &str)
-{
-     auto sep = str.find(':');
-     if (sep == std::string::npos) {
-         _parseError = "Location string lacks field specification";
-         return false;
-     }
-     _field_name = str.substr(0, sep);
-     std::string only_loc = str.substr(sep + 1);
-     return parseOldFormat(only_loc);
-}
-
-bool
 GeoLocationParser::parseOldFormat(const std::string &locStr)
 {
     bool foundBoundingBox = false;

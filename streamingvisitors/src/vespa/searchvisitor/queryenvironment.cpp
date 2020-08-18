@@ -26,7 +26,7 @@ parseLocation(const string & location_str)
         return fefLocations;
     }
     GeoLocationParser locationParser;
-    if (!locationParser.parseOldFormatWithField(location_str)) {
+    if (!locationParser.parseWithField(location_str)) {
         LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
                      location_str.c_str(), locationParser.getParseError());
         return fefLocations;
