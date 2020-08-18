@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.threadpool;
 
+import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.protect.ProcessTerminator;
@@ -20,10 +22,11 @@ import java.util.concurrent.TimeUnit;
  * @author bratseth
  * @author bjorncs
  */
-public class ContainerThreadPool implements AutoCloseable {
+public class ContainerThreadPool extends AbstractComponent implements AutoCloseable {
 
     private final ExecutorServiceWrapper threadpool;
 
+    @Inject
     public ContainerThreadPool(ThreadpoolConfig config, Metric metric) {
         this(config, metric, new ProcessTerminator());
     }
@@ -48,6 +51,7 @@ public class ContainerThreadPool implements AutoCloseable {
 
     public Executor executor() { return threadpool; }
     @Override public void close() { closeInternal(); }
+    @Override public void deconstruct() { closeInternal(); super.deconstruct(); }
 
     /**
      * Shutdown the thread pool, give a grace period of 1 second before forcibly
