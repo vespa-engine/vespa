@@ -13,6 +13,7 @@ public class SystemBindingPattern extends BindingPattern {
 
     public static SystemBindingPattern fromHttpPath(String path) { return new SystemBindingPattern("http", "*", null, path);}
     public static SystemBindingPattern fromPattern(String binding) { return new SystemBindingPattern(binding);}
+    public static SystemBindingPattern fromHttpPortAndPath(String port, String path) { return new SystemBindingPattern("http", "*", port, path); }
 
     @Override
     public String toString() {

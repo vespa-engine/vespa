@@ -14,7 +14,6 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.FilterChains;
@@ -25,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
-
-import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 
 /**
  * @author Tony Vaagenes
@@ -48,8 +45,6 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
                 accessControl = buildAccessControl(deployState, ancestor, accessControlElem);
-                bindings.addAll(accessControl.getBindings());
-                filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
             filterChains = new FilterChainsBuilder().newChainsInstance(ancestor);
@@ -57,8 +52,10 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
         Http http = new Http(filterChains);
         http.getBindings().addAll(bindings);
-        http.setAccessControl(accessControl);
         http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
+        if (accessControl != null) {
+            accessControl.configureHttpFilterChains(http);
+        }
         return http;
     }
 
