@@ -61,7 +61,6 @@ import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
@@ -375,7 +374,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .readEnabled(false)
                 .writeEnabled(false)
                 .build()
-                .configure(http);
+                .configureHttpFilterChains(http);
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
