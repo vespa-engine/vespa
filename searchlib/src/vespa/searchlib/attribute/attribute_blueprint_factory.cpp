@@ -263,8 +263,18 @@ public:
     const common::Location &location() const { return _location; }
 
     SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &, bool strict) const override
+    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
+        if (tfmda.size() == 1) {
+            // search in exactly one field
+            fef::TermFieldMatchData &tfmd = *tfmda[0];
+            return search::common::create_location_iterator(tfmd,
+                                                            _attribute.getNumDocs(),
+                                                            strict,
+                                                            _location);
+        } else {
+            LOG(debug, "wrong size tfmda: %zu (fallback to old location iterator)\n", tfmda.size());
+        }
         return FastS_AllocLocationIterator(_attribute.getNumDocs(), strict, _location);
     }
 };
@@ -273,7 +283,8 @@ public:
 
 Blueprint::UP
 make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc) {
-    LOG(debug, "make_location_blueprint(p[%d,%d], r[%u], aspect[%u], bb[[%d,%d],[%d,%d]])",
+    LOG(debug, "make_location_blueprint(fieldId[%u], p[%d,%d], r[%u], aspect[%u], bb[[%d,%d],[%d,%d]])",
+        field.getFieldId(),
         loc.point.x, loc.point.y, loc.radius,
         loc.x_aspect.multiplier,
         loc.bounding_box.x.low, loc.bounding_box.x.high,

@@ -6,7 +6,7 @@
 #include "objectstore.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 
-namespace search::common { class GeoLocationSpec; }
+namespace search::common { struct GeoLocationSpec; }
 
 namespace search::fef {
 

@@ -29,7 +29,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
@@ -57,9 +56,11 @@ import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.SecretStore;
-import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
@@ -113,7 +114,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     static final String SEARCH_HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
-    static final String SEARCH_HANDLER_BINDING = "http://*/search/*";
+    static final BindingPattern SEARCH_HANDLER_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
 
     public enum Networking { disable, enable }
 
@@ -278,8 +279,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             String name = "status.html";
             Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_SETTING));
             cluster.addComponent(
-                    new FileStatusHandlerComponent(name + "-status-handler", statusFile.orElse(HOSTED_VESPA_STATUS_FILE),
-                            "http://*/" + name));
+                    new FileStatusHandlerComponent(
+                            name + "-status-handler",
+                            statusFile.orElse(HOSTED_VESPA_STATUS_FILE),
+                            SystemBindingPattern.fromHttpPath("/" + name)));
         } else {
             cluster.addVipHandler();
         }
@@ -369,7 +372,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
         if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
         AccessControl accessControl =
-                new AccessControl.Builder(tenantDomain.value(), deployState.getDeployLogger())
+                new AccessControl.Builder(tenantDomain.value())
                         .setHandlers(cluster)
                         .readEnabled(false)
                         .writeEnabled(false)
@@ -795,8 +798,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(cluster.getSearch().getChains(),
                                                                                 "com.yahoo.search.handler.SearchHandler");
-        String[] defaultBindings = {SEARCH_HANDLER_BINDING};
-        for (String binding: serverBindings(searchElement, defaultBindings)) {
+        BindingPattern[] defaultBindings = {SEARCH_HANDLER_BINDING};
+        for (BindingPattern binding: serverBindings(searchElement, defaultBindings)) {
             searchHandler.addServerBindings(binding);
         }
 
@@ -805,12 +808,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
         Handler<?> guiHandler = new GUIHandler();
-        guiHandler.addServerBindings("http://"+GUIHandler.BINDING);
+        guiHandler.addServerBindings(SystemBindingPattern.fromHttpPath(GUIHandler.BINDING_PATH));
         cluster.addComponent(guiHandler);
     }
 
 
-    private String[] serverBindings(Element searchElement, String... defaultBindings) {
+    private BindingPattern[] serverBindings(Element searchElement, BindingPattern... defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
         if (bindings.isEmpty())
             return defaultBindings;
@@ -818,16 +821,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return toBindingList(bindings);
     }
 
-    private String[] toBindingList(List<Element> bindingElements) {
-        List<String> result = new ArrayList<>();
+    private BindingPattern[] toBindingList(List<Element> bindingElements) {
+        List<BindingPattern> result = new ArrayList<>();
 
         for (Element element: bindingElements) {
             String text = element.getTextContent().trim();
             if (!text.isEmpty())
-                result.add(text);
+                result.add(UserBindingPattern.fromPattern(text));
         }
 
-        return result.toArray(new String[result.size()]);
+        return result.toArray(BindingPattern[]::new);
     }
 
     private ContainerDocumentApi buildDocumentApi(ApplicationContainerCluster cluster, Element spec) {

@@ -3,6 +3,11 @@
 #include "geo_location_parser.h"
 #include <limits>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/slime/json_format.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.common.geo_location_parser");
 
 namespace {
 
@@ -39,7 +44,7 @@ GeoLocationParser::GeoLocationParser()
       _max_x(std::numeric_limits<int32_t>::max()),
       _min_y(std::numeric_limits<int32_t>::min()),
       _max_y(std::numeric_limits<int32_t>::max()),
-      _parseError(NULL)
+      _parseError(nullptr)
 {}
 
 bool
@@ -62,7 +67,7 @@ GeoLocationParser::parseOldFormatWithField(const std::string &str)
 {
      auto sep = str.find(':');
      if (sep == std::string::npos) {
-         _parseError = "Location string lacks field specification.";
+         _parseError = "Location string lacks field specification";
          return false;
      }
      _field_name = str.substr(0, sep);
@@ -179,9 +184,87 @@ GeoLocationParser::parseOldFormat(const std::string &locStr)
     return _valid;
 }
 
+bool
+GeoLocationParser::parseWithField(const std::string &str)
+{
+     auto sep = str.find(':');
+     if (sep == std::string::npos) {
+         _parseError = "Location string lacks field specification";
+         return false;
+     }
+     _field_name = str.substr(0, sep);
+     std::string only_loc = str.substr(sep + 1);
+     return parseNoField(only_loc);
+}
+
+bool
+GeoLocationParser::parseNoField(const std::string &str)
+{
+    if (str.empty()) {
+        _parseError = "Location string is empty";
+        return false;
+    }
+    if (str[0] == '(' || str[0] == '[') {
+        return parseOldFormat(str);
+    }
+    if (str[0] != '{') {
+        _parseError = "Location string should start with '{'";
+        return false;
+    }
+    return parseJsonFormat(str);
+}
+
+bool
+GeoLocationParser::parseJsonFormat(const std::string &str)
+{
+    vespalib::Slime slime;
+    size_t decoded = vespalib::slime::JsonFormat::decode(str, slime);
+    if (decoded == 0) {
+        LOG(warning, "bad location JSON: %s\n>> %s <<",
+            slime.get()["error_message"].asString().make_string().c_str(),
+            str.c_str());
+        _parseError = "Failed decoding JSON format location";
+        return false;
+    }
+ // fprintf(stderr, "parsed location JSON %s -> %s\n", str.c_str(), slime.toString().c_str());
+    const auto &root = slime.get();
+    const auto &point = root["p"];
+    const auto &radius = root["r"];
+    const auto &aspect = root["a"];
+    const auto &bbox = root["b"];
+
+    if (point.valid()) {
+        _x = point["x"].asLong();
+        _y = point["y"].asLong();
+        _has_point = true;
+    }
+    if (radius.valid()) {
+        _radius = radius.asLong();
+    }
+    if (aspect.valid()) {
+        _x_aspect = aspect.asLong();
+    }
+    if (bbox.valid()) {
+        _min_x = bbox["x"][0].asLong();
+        _max_x = bbox["x"][1].asLong();
+        _min_y = bbox["y"][0].asLong();
+        _max_y = bbox["y"][1].asLong();
+        _has_bounding_box = true;
+    }
+    if (_has_point || _has_bounding_box) {
+        _valid = true;
+    } else {
+        _parseError = "Neither point nor bounding box found";
+    }
+    return _valid;
+}
+
 GeoLocation
 GeoLocationParser::getGeoLocation() const
 {
+    if (! _valid) {
+        return GeoLocation();
+    }
     GeoLocation::Aspect aspect(_x_aspect);
     if (_has_bounding_box) {
         GeoLocation::Range x_range{_min_x, _max_x};

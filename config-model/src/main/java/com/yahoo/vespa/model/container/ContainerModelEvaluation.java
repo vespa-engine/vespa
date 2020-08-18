@@ -7,6 +7,7 @@ import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,7 +22,7 @@ public class ContainerModelEvaluation implements RankProfilesConfig.Producer, Ra
     private final static String BUNDLE_NAME = "model-evaluation";
     private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();
     private final static String REST_HANDLER_NAME = "ai.vespa.models.handler.ModelsEvaluationHandler";
-    private final static String REST_BINDING = "model-evaluation/v1";
+    private final static String REST_BINDING_PATH = "/model-evaluation/v1";
 
     /** Global rank profiles, aka models */
     private final RankProfileList rankProfileList;
@@ -48,8 +49,9 @@ public class ContainerModelEvaluation implements RankProfilesConfig.Producer, Ra
 
     public static Handler<?> getHandler() {
         Handler<?> handler = new Handler<>(new ComponentModel(REST_HANDLER_NAME, null, BUNDLE_NAME));
-        handler.addServerBindings("http://*/" + REST_BINDING,
-                                  "http://*/" + REST_BINDING + "/*");
+        handler.addServerBindings(
+                SystemBindingPattern.fromHttpPath(REST_BINDING_PATH),
+                SystemBindingPattern.fromHttpPath(REST_BINDING_PATH + "/*"));
         return handler;
     }
 
