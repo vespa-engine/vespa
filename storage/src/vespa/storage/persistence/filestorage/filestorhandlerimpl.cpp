@@ -14,11 +14,6 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
-#ifndef XXH_NO_INLINE_ALL
-#ifndef XXH_INLINE_ALL
-#  define XXH_INLINE_ALL // Let XXH64 be inlined for fixed hash size (bucket ID)
-#endif
-#endif
 #include <xxhash.h>
 
 #include <vespa/log/log.h>
