@@ -66,8 +66,14 @@ else()
   set(VESPA_STDCXX_FS_LIB "stdc++fs")
 endif()
 
+if(VESPA_OS_DISTRO_COMBINED STREQUAL "debian 10")
+  set(VESPA_XXHASH_DEFINE "-DXXH_NO_INLINE_ALL")
+else()
+  set(VESPA_XXHASH_DEFINE "-DXXH_INLINE_ALL")
+endif()
+
 # C and C++ compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} -DXXH_INLINE_ALL -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} ${VESPA_XXHASH_DEFINE} -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
 # AddressSanitizer/ThreadSanitizer work for both GCC and Clang
 if (VESPA_USE_SANITIZER)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_USE_SANITIZER}")
