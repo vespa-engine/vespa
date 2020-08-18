@@ -58,7 +58,7 @@ public class ContainerDocumentApi {
 
     private static Handler<AbstractConfigProducer<?>> addRestApiHandler(ContainerCluster<?> cluster, Options options) {
         var handler = newVespaClientHandler(
-                "com.yahoo.document.restapi.resource.RestApi", "document/v1/*", options);
+                "com.yahoo.document.restapi.resource.RestApi", "/document/v1/*", options);
         cluster.addComponent(handler);
         return handler;
     }
