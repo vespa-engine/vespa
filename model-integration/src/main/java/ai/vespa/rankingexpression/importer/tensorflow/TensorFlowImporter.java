@@ -98,7 +98,7 @@ public class TensorFlowImporter extends ModelImporter {
 
     private Pair<Integer, String> convertToOnnx(String savedModel, String output, int opset) throws IOException {
         ProcessExecuter executer = new ProcessExecuter();
-        String job = "python3 -m tf2onnx.convert --saved-model " + savedModel + " --output " + output + " --opset " + opset;
+        String job = "vespa-convert-tf2onnx --saved-model " + savedModel + " --output " + output + " --opset " + opset;
         return executer.exec(job);
     }
 
