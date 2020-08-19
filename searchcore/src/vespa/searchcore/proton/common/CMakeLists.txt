@@ -15,6 +15,7 @@ vespa_add_library(searchcore_pcommon STATIC
     indexschema_inspector.cpp
     monitored_refcount.cpp
     operation_rate_tracker.cpp
+    pendinglidtracker.cpp
     select_utils.cpp
     selectcontext.cpp
     selectpruner.cpp

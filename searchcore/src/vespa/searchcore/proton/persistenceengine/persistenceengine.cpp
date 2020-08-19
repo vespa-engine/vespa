@@ -464,8 +464,8 @@ PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const
     for (PersistenceHandlerSequence & handlers = snapshot.handlers(); handlers.valid(); handlers.next()) {
         entry->bucket_guards.push_back(handlers.get()->lockBucket(bucket));
         IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers(context.getReadConsistency());
-        for (size_t i = 0; i < retrievers->size(); ++i) {
-            entry->it.add((*retrievers)[i]);
+        for (const auto & retriever : *retrievers) {
+            entry->it.add(retriever);
         }
     }
     entry->handler_sequence = HandlerSnapshot::release(std::move(snapshot));

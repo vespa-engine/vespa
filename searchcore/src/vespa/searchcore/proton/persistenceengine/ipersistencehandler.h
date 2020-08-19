@@ -26,6 +26,7 @@ protected:
 public:
     using UP = std::unique_ptr<IPersistenceHandler>;
     using SP = std::shared_ptr<IPersistenceHandler>;
+    /// Note that you can not move awaythe handlers in the vector.
     using RetrieversSP = std::shared_ptr<std::vector<IDocumentRetriever::SP> >;
     IPersistenceHandler(const IPersistenceHandler &) = delete;
     IPersistenceHandler & operator = (const IPersistenceHandler &) = delete;
