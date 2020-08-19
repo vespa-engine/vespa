@@ -97,8 +97,8 @@ struct FixtureBase
 
     FixtureBase(bool byteWeight)
         : type("test"),
-          weightField("weight", 1, byteWeight ? *DataType::BYTE : *DataType::INT, true),
-          nameField("name", 2, *DataType::STRING, true),
+          weightField("weight", 1, byteWeight ? *DataType::BYTE : *DataType::INT),
+          nameField("name", 2, *DataType::STRING),
           doc(),
           extractor()
     {
@@ -174,9 +174,9 @@ struct ArrayFixture : public FixtureBase
     ArrayFixture(bool byteWeight = false)
         : FixtureBase(byteWeight),
           weightArrayFieldType(weightField.getDataType()),
-          weightArrayField("weight", weightArrayFieldType, true),
+          weightArrayField("weight", weightArrayFieldType),
           valueArrayFieldType(nameField.getDataType()),
-          valueArrayField("val", valueArrayFieldType, true)
+          valueArrayField("val", valueArrayFieldType)
     {
         type.addField(weightArrayField);
         type.addField(valueArrayField);
@@ -206,9 +206,9 @@ struct WeightedSetFixture : public FixtureBase
     WeightedSetFixture(bool byteWeight = false)
         : FixtureBase(byteWeight),
           weightWeightedSetFieldType(weightField.getDataType(), false, false),
-          weightWeightedSetField("weight", weightWeightedSetFieldType, true),
+          weightWeightedSetField("weight", weightWeightedSetFieldType),
           valueWeightedSetFieldType(*DataType::STRING, false, false),
-          valueWeightedSetField("val", valueWeightedSetFieldType, true)
+          valueWeightedSetField("val", valueWeightedSetFieldType)
     {
         type.addField(weightWeightedSetField);
         type.addField(valueWeightedSetField);
@@ -280,7 +280,7 @@ struct StructArrayFixture : public StructFixtureBase
     StructArrayFixture(bool byteWeight = false)
         : StructFixtureBase(byteWeight),
           structArrayFieldType(structFieldType),
-          structArrayField("s", 11, structArrayFieldType, true)
+          structArrayField("s", 11, structArrayFieldType)
     {
         type.addField(structArrayField);
     }
@@ -310,7 +310,7 @@ struct StructMapFixture : public StructFixtureBase
     StructMapFixture(bool byteWeight = false, bool byteKey = false)
         : StructFixtureBase(byteWeight),
           structMapFieldType(byteKey ? *DataType::BYTE : *DataType::STRING, structFieldType),
-          structMapField("s", 12, structMapFieldType, true)
+          structMapField("s", 12, structMapFieldType)
     {
         type.addField(structMapField);
     }
@@ -343,7 +343,7 @@ struct PrimitiveMapFixture : public FixtureBase
     PrimitiveMapFixture()
         : FixtureBase(false),
           mapFieldType(nameField.getDataType(), weightField.getDataType()),
-          mapField("map", mapFieldType, true)
+          mapField("map", mapFieldType)
     {
         type.addField(mapField);
     }

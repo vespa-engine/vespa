@@ -54,7 +54,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                                                           new OrchestratorMock(),
                                                           Clock.systemUTC());
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         sessionId = applicationRepository.getActiveLocalSession(tenant, applicationId()).getSessionId();
 
         handler = createHandler();

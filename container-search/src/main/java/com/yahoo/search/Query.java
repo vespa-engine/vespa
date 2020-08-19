@@ -10,7 +10,6 @@ import com.yahoo.fs4.MapEncoder;
 import java.util.logging.Level;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.dispatch.Dispatcher;
@@ -413,11 +412,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
                 CompoundName fullName = prefix.append(field.getName());
                 for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
-                    try {
-                        properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
-                    } catch (IllegalArgumentException e) {
-                        throw new QueryException("Invalid request parameter", e);
-                    }
+                    properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
                 }
             }
             else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
@@ -427,11 +422,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 CompoundName fullName = prefix.append(field.getName());
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
-                    try {
-                        properties().set(fullName, value, context);
-                    } catch (IllegalArgumentException e) {
-                        throw new QueryException("Invalid request parameter", e);
-                    }
+                    properties().set(fullName, value, context);
                 }
             }
         }
@@ -440,13 +431,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
         for (var entry : requestMap.entrySet()) {
-            try {
-                if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
-                properties.set(entry.getKey(), entry.getValue(), requestMap);
-            }
-            catch (IllegalArgumentException e) {
-                throw new QueryException("Invalid request parameter", e);
-            }
+            if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
+            properties.set(entry.getKey(), entry.getValue(), requestMap);
         }
     }
 

@@ -791,10 +791,13 @@
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Metric)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder monitoringHandlerPaths(java.lang.String)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder monitoringHandlerPaths(java.util.Collection)",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder searchHandlerPaths(java.lang.String)",
+      "public com.yahoo.jdisc.http.ServerConfig$Metric$Builder searchHandlerPaths(java.util.Collection)",
       "public com.yahoo.jdisc.http.ServerConfig$Metric build()"
     ],
     "fields": [
-      "public java.util.List monitoringHandlerPaths"
+      "public java.util.List monitoringHandlerPaths",
+      "public java.util.List searchHandlerPaths"
     ]
   },
   "com.yahoo.jdisc.http.ServerConfig$Metric": {
@@ -807,7 +810,9 @@
     "methods": [
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Metric$Builder)",
       "public java.util.List monitoringHandlerPaths()",
-      "public java.lang.String monitoringHandlerPaths(int)"
+      "public java.lang.String monitoringHandlerPaths(int)",
+      "public java.util.List searchHandlerPaths()",
+      "public java.lang.String searchHandlerPaths(int)"
     ],
     "fields": []
   },

@@ -34,7 +34,7 @@
     <properties>
         <vespaversion>${project.version}</vespaversion>
         <target_jdk_version>11</target_jdk_version>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
         <junit.version>5.6.2</junit.version> <!-- NOTE: this must be in sync with junit version specified in 'tenant-cd-api' -->
         <test.categories>!integration</test.categories>

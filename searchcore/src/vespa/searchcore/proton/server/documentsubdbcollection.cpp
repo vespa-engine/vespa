@@ -129,16 +129,32 @@ DocumentSubDBCollection::createRetrievers()
 namespace {
 
 IDocumentRetriever::SP
-wrapRetriever(const IDocumentRetriever::SP &retriever, ICommitable &commit)
+wrapRetriever(IDocumentRetriever::SP retriever, ICommitable &commit)
 {
-    return std::make_shared<CommitAndWaitDocumentRetriever>(retriever, commit);
+    return std::make_shared<CommitAndWaitDocumentRetriever>(std::move(retriever), commit);
 }
 
 }
 
+DocumentSubDBCollection::RetrieversSP
+DocumentSubDBCollection::getRetrievers(IDocumentRetriever::ReadConsistency consistency, ICommitable & visibilityHandler) {
+    RetrieversSP list = _retrievers.get();
+
+    if (consistency == IDocumentRetriever::ReadConsistency::STRONG) {
+        auto wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
+        wrappedList->reserve(list->size());
+        assert(list->size() == 3);
+        wrappedList->push_back(wrapRetriever((*list)[_readySubDbId], visibilityHandler));
+        wrappedList->push_back((*list)[_remSubDbId]);
+        wrappedList->push_back(wrapRetriever((*list)[_notReadySubDbId], visibilityHandler));
+        return wrappedList;
+    } else {
+        return list;
+    }
+}
 
 void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommitable &commit) {
-    RetrieversSP retrievers = getRetrievers();
+    RetrieversSP retrievers = _retrievers.get();
     MaintenanceDocumentSubDB readySubDB(getReadySubDB()->getName(),
                                         _readySubDbId,
                                         getReadySubDB()->getDocumentMetaStoreContext().getSP(),
@@ -162,10 +178,9 @@ DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapsho
                                            SerialNum configSerialNum,
                                            const index::IndexConfig & indexCfg)
 {
-    DocumentSubDbCollectionInitializer::SP task = std::make_shared<DocumentSubDbCollectionInitializer>();
+    auto task = std::make_shared<DocumentSubDbCollectionInitializer>();
     for (auto subDb : _subDBs) {
-        DocumentSubDbInitializer::SP subTask(subDb->createInitializer(configSnapshot, configSerialNum, indexCfg));
-        task->add(subTask);
+        task->add(subDb->createInitializer(configSnapshot, configSerialNum, indexCfg));
     }
     return task;
 }

@@ -232,7 +232,7 @@ struct DataTypeRepo {
 namespace {
 void addAnnotationType(const DocumenttypesConfig::Documenttype::Annotationtype &type, AnnotationTypeRepo &annotations)
 {
-    AnnotationType::UP a(new AnnotationType(type.id, type.name));
+    auto a = std::make_unique<AnnotationType>(type.id, type.name);
     annotations.addAnnotationType(std::move(a));
 }
 
@@ -257,17 +257,12 @@ void setAnnotationDataTypes(const vector<DocumenttypesConfig::Documenttype::Anno
 
 typedef DocumenttypesConfig::Documenttype::Datatype Datatype;
 
-void addField(const Datatype::Sstruct::Field &field, Repo &repo, StructDataType &struct_type, bool isHeaderField)
+void addField(const Datatype::Sstruct::Field &field, Repo &repo, StructDataType &struct_type)
 {
-    LOG(spam, "Adding field %s to %s (header: %s)",
-        field.name.c_str(), struct_type.getName().c_str(), isHeaderField ? "yes" : "no");
+    LOG(spam, "Adding field %s to %s",
+        field.name.c_str(), struct_type.getName().c_str());
     const DataType &field_type = repo.findOrThrowOrCreate(field.datatype, field.detailedtype);
-    struct_type.addField(Field(field.name, field.id, field_type, isHeaderField));
-}
-
-bool hasSuffix(const string &s, const string &suffix) {
-    string::size_type pos = s.rfind(suffix.c_str());
-    return pos != string::npos && pos == s.size() - suffix.size();
+    struct_type.addField(Field(field.name, field.id, field_type));
 }
 
 void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
@@ -318,7 +313,7 @@ void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
             CompressionConfig(type, s.compression.level, s.compression.threshold, s.compression.minsize));
 
     for (size_t i = 0; i < s.field.size(); ++i) {
-        addField(s.field[i], repo, *struct_type, hasSuffix(s.name, ".header"));
+        addField(s.field[i], repo, *struct_type);
     }
 }
 

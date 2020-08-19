@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.container.QrSearchersConfig;
@@ -80,14 +81,14 @@ public class GroupingValidator extends Searcher {
         AttributesConfig.Attribute keyAttribute = attributes.get(keyAttributeName);
         AttributesConfig.Attribute keySourceAttribute = attributes.get(keySourceAttributeName);
         if (!keySourceAttribute.datatype().equals(keyAttribute.datatype())) {
-            throw new IllegalArgumentException("Grouping request references key source attribute '" +
-                    keySourceAttributeName + "' with data type '" + keySourceAttribute.datatype() +
-                    "' that is different than data type '" + keyAttribute.datatype() + "' of key attribute '" +
-                    keyAttributeName + "'");
+            throw new IllegalInputException("Grouping request references key source attribute '" +
+                                            keySourceAttributeName + "' with data type '" + keySourceAttribute.datatype() +
+                                            "' that is different than data type '" + keyAttribute.datatype() + "' of key attribute '" +
+                                            keyAttributeName + "'");
         }
         if (!keySourceAttribute.collectiontype().equals(AttributesConfig.Attribute.Collectiontype.Enum.SINGLE)) {
-            throw new IllegalArgumentException("Grouping request references key source attribute '" +
-                    keySourceAttributeName + "' which is not of single value type");
+            throw new IllegalInputException("Grouping request references key source attribute '" +
+                                            keySourceAttributeName + "' which is not of single value type");
         }
     }
 

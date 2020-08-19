@@ -63,7 +63,7 @@ GeoLocation::GeoLocation()
     x_aspect(),
     bounding_box(no_box),
     _sq_radius(sq_radius_inf),
-    _z_bounding_box(0,0,0,0)
+    _z_bounding_box(to_z(no_box))
 {}
 
 GeoLocation::GeoLocation(Point p)
@@ -73,7 +73,7 @@ GeoLocation::GeoLocation(Point p)
     x_aspect(),
     bounding_box(no_box),
     _sq_radius(sq_radius_inf),
-    _z_bounding_box(0,0,0,0)
+    _z_bounding_box(to_z(no_box))
 {}
 
 GeoLocation::GeoLocation(Point p, Aspect xa)
@@ -83,7 +83,7 @@ GeoLocation::GeoLocation(Point p, Aspect xa)
     x_aspect(xa),
     bounding_box(no_box),
     _sq_radius(sq_radius_inf),
-    _z_bounding_box(0,0,0,0)
+    _z_bounding_box(to_z(no_box))
 {}
 
 GeoLocation::GeoLocation(Point p, uint32_t r)

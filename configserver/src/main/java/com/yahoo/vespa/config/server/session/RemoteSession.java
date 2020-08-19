@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
@@ -102,7 +101,7 @@ public class RemoteSession extends Session {
                                                                               KeeperException.NodeExistsException.class);
             Class<? extends Throwable> exceptionClass = e.getCause().getClass();
             if (acceptedExceptions.contains(exceptionClass))
-                log.log(Level.INFO, "Not able to notify completion for session " + getSessionId() +
+                log.log(Level.FINE, "Not able to notify completion for session " + getSessionId() +
                                     " (" + completionWaiter + ")," +
                                     " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
                                     ? "has been deleted"
@@ -116,10 +115,6 @@ public class RemoteSession extends Session {
         Transaction transaction = sessionZooKeeperClient.deleteTransaction();
         transaction.commit();
         transaction.close();
-    }
-
-    public ApplicationMetaData getMetaData() {
-        return sessionZooKeeperClient.loadApplicationPackage().getMetaData();
     }
 
 }

@@ -127,7 +127,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
         }
         return DocumentMetaData();
     }
-    document::Document::UP getDocument(search::DocumentIdT) const override {
+    document::Document::UP getFullDocument(search::DocumentIdT) const override {
         if (document != nullptr) {
             return Document::UP(document->clone());
         }
@@ -693,7 +693,7 @@ TEST_F("require that createIterator does", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult result =
-        f.engine.createIterator(bucket1, document::AllFields(), selection,
+        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_FALSE(result.hasError());
     EXPECT_TRUE(result.getIteratorId());
@@ -707,10 +707,10 @@ TEST_F("require that iterator ids are unique", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult result =
-        f.engine.createIterator(bucket1, document::AllFields(), selection,
+        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     CreateIteratorResult result2 =
-        f.engine.createIterator(bucket1, document::AllFields(), selection,
+        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_FALSE(result.hasError());
     EXPECT_FALSE(result2.hasError());
@@ -727,7 +727,7 @@ TEST_F("require that iterate requires valid iterator", SimpleFixture) {
     EXPECT_EQUAL("Unknown iterator with id 1", it_result.getErrorMessage());
 
     CreateIteratorResult result =
-        f.engine.createIterator(bucket1, document::AllFields(), selection,
+        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_TRUE(result.getIteratorId());
 
@@ -743,7 +743,7 @@ TEST_F("require that iterate returns documents", SimpleFixture) {
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     uint64_t max_size = 1024;
     CreateIteratorResult result =
-        f.engine.createIterator(bucket1, document::AllFields(), selection,
+        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_TRUE(result.getIteratorId());
 
@@ -758,7 +758,7 @@ TEST_F("require that destroyIterator prevents iteration", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult create_result =
-        f.engine.createIterator(bucket1, document::AllFields(), selection,
+        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_TRUE(create_result.getIteratorId());
 
@@ -779,7 +779,7 @@ TEST_F("require that buckets are frozen during iterator life", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult create_result =
-        f.engine.createIterator(bucket1, document::AllFields(), selection,
+        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_TRUE(f.hset.handler1.isFrozen(bucket1));
     EXPECT_TRUE(f.hset.handler2.isFrozen(bucket1));

@@ -2,7 +2,6 @@
 package com.yahoo.logserver.handlers;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -65,17 +64,7 @@ public class HandlerThread extends Thread implements LogHandler {
     }
 
     private final BlockingQueue<ItemOrList> queue;
-    private final List<LogHandler> handlers = new ArrayList<LogHandler>();
-    private long count;
-    @SuppressWarnings("unused")
-    private long droppedCount = 0;
-    @SuppressWarnings("unused")
-    private boolean queueWasFull = false;
-    @SuppressWarnings("unused")
-    private long lastDropLogMessage = 0;
-    @SuppressWarnings("unused")
-    private long lastAcceptingLogMessage = 0;
-
+    private final List<LogHandler> handlers = new ArrayList<>();
     public HandlerThread(String name) {
         super(name);
         queue = new LinkedBlockingQueue<>(queueSize);
@@ -122,23 +111,15 @@ public class HandlerThread extends Thread implements LogHandler {
     }
 
     public void flush() {
-        Iterator<LogHandler> it = handlers.iterator();
-        while (it.hasNext()) {
-            LogHandler handler = it.next();
+        for (LogHandler handler : handlers) {
             handler.flush();
         }
     }
 
     public void close() {
-        Iterator<LogHandler> it = handlers.iterator();
-        while (it.hasNext()) {
-            LogHandler handler = it.next();
+        for (LogHandler handler : handlers) {
             handler.close();
         }
-    }
-
-    public long getCount() {
-        return count;
     }
 
     /**
@@ -191,8 +172,8 @@ public class HandlerThread extends Thread implements LogHandler {
             throw new NullPointerException("channel is not allowed to be null");
         }
 
-        // TODO: Make the legmessage elements some kind of composite structure to handle both individual messages and lists uniformly.
-        List<ItemOrList> drainList = new ArrayList<ItemOrList>(queue.size() + 1);
+        // TODO: Make the logmessage elements some kind of composite structure to handle both individual messages and lists uniformly.
+        List<ItemOrList> drainList = new ArrayList<>(queue.size() + 1);
         try {
             for (; ; ) {
                 drainList.clear();
@@ -201,10 +182,12 @@ public class HandlerThread extends Thread implements LogHandler {
                 drainList.add(queue.take());
                 queue.drainTo(drainList);
 
-                for (ItemOrList o : drainList) {
+                for (int i = 0; i < drainList.size(); i++) {
                     // we can get two types of elements here: single log
                     // messages or lists of log messages, so we need to
                     // handle them accordingly.
+                    ItemOrList o = drainList.get(i);
+                    drainList.set(i, null);
 
                     if (o.item != null) {
                         for (LogHandler handler : handlers) {
@@ -217,7 +200,6 @@ public class HandlerThread extends Thread implements LogHandler {
                     } else {
                         throw new IllegalArgumentException("not LogMessage or List: " + o);
                     }
-                    count++;
                 }
             }
         } catch (InterruptedException e) {

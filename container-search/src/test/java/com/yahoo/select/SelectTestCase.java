@@ -14,6 +14,7 @@ import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.AllOperation;
@@ -423,7 +424,7 @@ public class SelectTestCase {
         assertParseFail("{ \"and\": [ {\"contains\" : { \"children\" : [\"title\", \"madonna\"], \"attributes\" : {\"id\": 1, \"connectivity\": {\"id\": 4, \"weight\": 7.0}} } }, " +
                 "{ \"contains\" : { \"children\" : [\"title\", \"saint\"], \"attributes\" : {\"id\": 2} } }, " +
                 "{ \"contains\" : { \"children\" : [\"title\", \"angel\"], \"attributes\" : {\"id\": 3} } } ] }",
-                new NullPointerException("Item 'title:madonna' was specified to connect to item with ID 4, " +
+                new IllegalArgumentException("Item 'title:madonna' was specified to connect to item with ID 4, " +
                 "which does not exist in the query."));
     }
 
@@ -618,7 +619,7 @@ public class SelectTestCase {
             parseWhere("{ \"range\" : { \"children\":[ \"foo\", { \">=\" : 0, \"<=\" : 1 }], \"attributes\" : {\"hitLimit\": 38, \"ascending\": true, \"descending\": false} } }");
         } catch (IllegalArgumentException e) {
             assertTrue("Expected information about abuse of settings.",
-                    e.getMessage().contains("both ascending and descending ordering set"));
+                    e.getCause().getMessage().contains("both ascending and descending ordering set"));
             gotExceptionFromParse = true;
         }
         assertTrue(gotExceptionFromParse);
@@ -775,12 +776,14 @@ public class SelectTestCase {
     private void assertParseFail(String where, Throwable expectedException) {
         try {
             parseWhere(where).toString();
-        } catch (Throwable t) {
-            assertEquals(expectedException.getClass(), t.getClass());
-            assertEquals(expectedException.getMessage(), t.getMessage());
-            return;
+            fail("Parse succeeded: " + where);
+        } catch (Throwable outer) {
+            assertEquals(IllegalInputException.class, outer.getClass());
+            assertEquals("Illegal JSON query", outer.getMessage());
+            Throwable cause = outer.getCause();
+            assertEquals(expectedException.getClass(), cause.getClass());
+            assertEquals(expectedException.getMessage(), cause.getMessage());
         }
-        fail("Parse succeeded: " + where);
     }
 
     private void assertRootClass(String where, Class<? extends Item> expectedRootClass) {

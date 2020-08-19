@@ -228,8 +228,8 @@ public abstract class GroupingOperation extends GroupingNode {
      * method verifies the input level against the operation type, and recursively resolves the level of all argument
      * expressions.
      *
-     * @param level The level of the input data.
-     * @throws IllegalArgumentException Thrown if a contained expression is invalid for the given level.
+     * @param level the level of the input data
+     * @throws IllegalArgumentException thrown if a contained expression is invalid for the given level
      */
     public void resolveLevel(int level) {
         if (groupBy != null) {
@@ -322,12 +322,7 @@ public abstract class GroupingOperation extends GroupingNode {
         return this;
     }
 
-    /**
-     * Return the accuracy of this.
-     *
-     * @return The accuracy value.
-     * @see #setAccuracy(double)
-     */
+    /** Return the accuracy of this. */
     public double getAccuracy() {
         return accuracy;
     }
@@ -335,8 +330,8 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Adds an expression to the order-by clause of this operation.
      *
-     * @param exp The expressions to add to this.
-     * @return This, to allow chaining.
+     * @param exp the expressions to add to this
+     * @return this, to allow chaining
      */
     public GroupingOperation addOrderBy(GroupingExpression exp) {
         orderBy.add(exp);
@@ -346,11 +341,11 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Convenience method to call {@link #addOrderBy(GroupingExpression)} for each element in the given list.
      *
-     * @param lst The list of expressions to add.
-     * @return This, to allow chaining.
+     * @param list the list of expressions to add
+     * @return this, to allow chaining
      */
-    public GroupingOperation addOrderBy(List<GroupingExpression> lst) {
-        for (GroupingExpression exp : lst) {
+    public GroupingOperation addOrderBy(List<GroupingExpression> list) {
+        for (GroupingExpression exp : list) {
             addOrderBy(exp);
         }
         return this;
@@ -359,7 +354,7 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns the number of expressions in the order-by clause of this.
      *
-     * @return The expression count.
+     * @return the expression count
      */
     public int getNumOrderBy() {
         return orderBy.size();
@@ -368,9 +363,9 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns the group-by expression at the given index.
      *
-     * @param i The index of the expression to return.
-     * @return The expression at the given index.
-     * @throws IndexOutOfBoundsException If the index is out of range.
+     * @param i the index of the expression to return
+     * @return the expression at the given index
+     * @throws IndexOutOfBoundsException if the index is out of range
      */
     public GroupingExpression getOrderBy(int i) {
         return orderBy.get(i);
@@ -379,7 +374,7 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns an immutable view to the order-by clause of this.
      *
-     * @return The expression list.
+     * @return the expression list
      */
     public List<GroupingExpression> getOrderBy() {
         return Collections.unmodifiableList(orderBy);
@@ -388,8 +383,8 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Adds an expression to the output clause of this operation.
      *
-     * @param exp The expressions to add to this.
-     * @return This, to allow chaining.
+     * @param exp the expressions to add to this
+     * @return this, to allow chaining
      */
     public GroupingOperation addOutput(GroupingExpression exp) {
         outputs.add(exp);
@@ -399,8 +394,8 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Convenience method to call {@link #addOutput(GroupingExpression)} for each element in the given list.
      *
-     * @param lst The list of expressions to add.
-     * @return This, to allow chaining.
+     * @param lst the list of expressions to add
+     * @return this, to allow chaining
      */
     public GroupingOperation addOutputs(List<GroupingExpression> lst) {
         for (GroupingExpression exp : lst) {
@@ -412,7 +407,7 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns the number of expressions in the output clause of this.
      *
-     * @return The expression count.
+     * @return the expression count
      */
     public int getNumOutputs() {
         return outputs.size();
@@ -421,9 +416,9 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns the output expression at the given index.
      *
-     * @param i The index of the expression to return.
-     * @return The expression at the given index.
-     * @throws IndexOutOfBoundsException If the index is out of range.
+     * @param i the index of the expression to return
+     * @return the expression at the given index
+     * @throws IndexOutOfBoundsException If the index is out of range
      */
     public GroupingExpression getOutput(int i) {
         return outputs.get(i);
@@ -432,7 +427,7 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns an immutable view to the output clause of this.
      *
-     * @return The expression list.
+     * @return the expression list
      */
     public List<GroupingExpression> getOutputs() {
         return Collections.unmodifiableList(outputs);
@@ -443,8 +438,8 @@ public abstract class GroupingOperation extends GroupingNode {
      * during expression evaluation to give the dispatch-node more data to consider when selecting the N groups that are
      * to be evaluated further.
      *
-     * @param precision The precision to set.
-     * @return This, to allow chaining.
+     * @param precision the precision to set
+     * @return this, to allow chaining
      * @see #setMax(int)
      */
     public GroupingOperation setPrecision(int precision) {
@@ -452,11 +447,7 @@ public abstract class GroupingOperation extends GroupingNode {
         return this;
     }
 
-    /**
-     * Returns the precision clause of this.
-     *
-     * @return The precision.
-     */
+    /** Returns the precision clause of this. */
     public int getPrecision() {
         return precision;
     }
@@ -464,11 +455,11 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Assigns a string as the where clause of this operation.
      *
-     * @param str The string to assign to this.
-     * @return This, to allow chaining.
+     * @param string the string to assign to this
+     * @return this, to allow chaining
      */
-    public GroupingOperation setWhere(String str) {
-        where = str;
+    public GroupingOperation setWhere(String string) {
+        where = string;
         return this;
     }
 
@@ -590,9 +581,9 @@ public abstract class GroupingOperation extends GroupingNode {
      * Convenience method to call {@link #fromStringAsList(String)} and assert that the list contains exactly one
      * grouping operation.
      *
-     * @param str The string to parse.
-     * @return A grouping operation that corresponds to the string.
-     * @throws IllegalArgumentException Thrown if the string could not be parsed as a single operation.
+     * @param str the string to parse
+     * @return a grouping operation that corresponds to the string
+     * @throws IllegalArgumentException thrown if the string could not be parsed as a single operation
      */
     public static GroupingOperation fromString(String str) {
         List<GroupingOperation> lst = fromStringAsList(str);
@@ -606,15 +597,15 @@ public abstract class GroupingOperation extends GroupingNode {
      * Parses the given string as a list of grouping operations. This method never returns null, it either returns a
      * list of valid grouping requests or it throws an exception.
      *
-     * @param str The string to parse.
-     * @return A list of grouping operations that corresponds to the string.
-     * @throws IllegalArgumentException Thrown if the string could not be parsed.
+     * @param string the string to parse
+     * @return a list of grouping operations that corresponds to the string
+     * @throws IllegalArgumentException thrown if the string could not be parsed
      */
-    public static List<GroupingOperation> fromStringAsList(String str) {
-        if (str == null || str.trim().length() == 0) {
+    public static List<GroupingOperation> fromStringAsList(String string) {
+        if (string == null || string.trim().length() == 0) {
             return Collections.emptyList();
         }
-        GroupingParserInput input = new GroupingParserInput(str);
+        GroupingParserInput input = new GroupingParserInput(string);
         try {
             return new GroupingParser(input).requestList();
         } catch (ParseException | TokenMgrException e) {

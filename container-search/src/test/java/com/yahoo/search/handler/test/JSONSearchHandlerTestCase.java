@@ -169,7 +169,7 @@ public class JSONSearchHandlerTestCase {
         String response = responseHandler.readAll();
         assertThat(responseHandler.getStatus(), is(400));
         assertThat(response, containsString("offset"));
-        assertThat(response, containsString("\"code\":" + com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER.code));
+        assertThat(response, containsString("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
     }
 
     @Test

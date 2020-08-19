@@ -12,7 +12,7 @@
 namespace storage {
 
 class DummyServiceLayerProcess : public ServiceLayerProcess {
-    spi::dummy::DummyPersistence::UP _provider;
+    std::unique_ptr<spi::PersistenceProvider> _provider;
 
 public:
     DummyServiceLayerProcess(const config::ConfigUri & configUri);

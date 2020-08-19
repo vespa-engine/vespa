@@ -43,11 +43,11 @@ import java.util.concurrent.ThreadLocalRandom;
 public class LoadTester {
 
     private static boolean debug = false;
-    private Transport transport = new Transport("rpc-client");
+    private final Transport transport = new Transport("rpc-client");
     protected Supervisor supervisor = new Supervisor(transport);
     private List<ConfigKey<?>> configs = new ArrayList<>();
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs = new HashMap<>();
-    private CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
+    private final CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
 
     /**
      * @param args command-line arguments
@@ -149,7 +149,7 @@ public class LoadTester {
         return ret;
     }
 
-    private class Metrics {
+    private static class Metrics {
 
         long totBytes = 0;
         long totLatency = 0;
@@ -214,9 +214,7 @@ public class LoadTester {
                 Tuple2<String, String[]> defContent = defs.get(dKey);
                 if (defContent == null && defs.size() > 0) { // Only complain if we actually did run with a def dir
                     System.out.println("# No def found for " + dKey + ", not sending in request.");
-                }/* else {
-                    System.out.println("# FOUND: "+dKey+" : "+ StringUtilities.implode(defContent, "\n"));
-                }*/
+                }
                 request = getRequest(ConfigKey.createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first), defContent.second);
                 if (debug) System.out.println("# Requesting: " + reqKey);
                 long start = System.currentTimeMillis();
@@ -261,7 +259,7 @@ public class LoadTester {
             if (defContent == null) defContent = new String[0];
             final long serverTimeout = 1000;
             return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
-                                                             "unknown", "", 0, serverTimeout, Trace.createDummy(),
+                                                             ConfigUtils.getCanonicalHostName(), "", 0, serverTimeout, Trace.createDummy(),
                                                              compressionType, Optional.empty());
         }
 
@@ -269,4 +267,5 @@ public class LoadTester {
             return supervisor.connect(spec);
         }
     }
+
 }

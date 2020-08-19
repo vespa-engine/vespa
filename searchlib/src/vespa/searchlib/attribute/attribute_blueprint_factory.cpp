@@ -263,8 +263,18 @@ public:
     const common::Location &location() const { return _location; }
 
     SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &, bool strict) const override
+    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
+        if (tfmda.size() == 1) {
+            // search in exactly one field
+            fef::TermFieldMatchData &tfmd = *tfmda[0];
+            return search::common::create_location_iterator(tfmd,
+                                                            _attribute.getNumDocs(),
+                                                            strict,
+                                                            _location);
+        } else {
+            LOG(debug, "wrong size tfmda: %zu (fallback to old location iterator)\n", tfmda.size());
+        }
         return FastS_AllocLocationIterator(_attribute.getNumDocs(), strict, _location);
     }
 };
@@ -273,6 +283,12 @@ public:
 
 Blueprint::UP
 make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc) {
+    LOG(debug, "make_location_blueprint(fieldId[%u], p[%d,%d], r[%u], aspect[%u], bb[[%d,%d],[%d,%d]])",
+        field.getFieldId(),
+        loc.point.x, loc.point.y, loc.radius,
+        loc.x_aspect.multiplier,
+        loc.bounding_box.x.low, loc.bounding_box.x.high,
+        loc.bounding_box.y.low, loc.bounding_box.y.high);
     auto post_filter = std::make_unique<LocationPostFilterBlueprint>(field, attribute, loc);
     const common::Location &location = post_filter->location();
     if (location.bounding_box.x.low > location.bounding_box.x.high ||
@@ -287,6 +303,7 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
             location.bounding_box.y.high);
     auto pre_filter = std::make_unique<LocationPreFilterBlueprint>(field, attribute, rangeVector);
     if (!pre_filter->should_use()) {
+        LOG(debug, "only use post filter");
         return post_filter;
     }
     auto root = std::make_unique<AndBlueprint>();

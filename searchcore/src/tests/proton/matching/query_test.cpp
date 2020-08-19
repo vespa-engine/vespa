@@ -698,7 +698,7 @@ void Test::requireThatQueryGluesEverythingTogether() {
     ASSERT_TRUE(search.get());
 }
 
-void checkQueryAddsLocation(Test &test, const string &loc_string) {
+void checkQueryAddsLocation(Test &test, const string &loc_in, const string &loc_out) {
     fef_test::IndexEnvironment index_environment;
     FieldInfo field_info(FieldType::INDEX, CollectionType::SINGLE, field, 0);
     index_environment.getFields().push_back(field_info);
@@ -712,11 +712,11 @@ void checkQueryAddsLocation(Test &test, const string &loc_string) {
 
     Query query;
     query.buildTree(stack_dump,
-                    loc_field + ":" + loc_string,
+                    loc_field + ":" + loc_in,
                     ViewResolver(), index_environment);
     vector<const ITermData *> term_data;
     query.extractTerms(term_data);
-    test.EXPECT_EQUAL(1u, term_data.size());
+    test.EXPECT_EQUAL(2u, term_data.size());
 
     FakeRequestContext requestContext;
     FakeSearchContext context;
@@ -729,9 +729,9 @@ void checkQueryAddsLocation(Test &test, const string &loc_string) {
     query.fetchPostings();
     SearchIterator::UP search = query.createSearch(*md);
     test.ASSERT_TRUE(search.get());
-    if (!test.EXPECT_NOT_EQUAL(string::npos, search->asString().find(loc_string))) {
-        fprintf(stderr, "search (missing loc_string '%s'): %s",
-                loc_string.c_str(), search->asString().c_str());
+    if (!test.EXPECT_NOT_EQUAL(string::npos, search->asString().find(loc_out))) {
+        fprintf(stderr, "search (missing loc_out '%s'): %s",
+                loc_out.c_str(), search->asString().c_str());
     }
 }
 
@@ -790,11 +790,15 @@ void Test::requireThatLocationIsAddedTheCorrectPlace() {
 }
 
 void Test::requireThatQueryAddsLocation() {
-    checkQueryAddsLocation(*this, "(2,10,10,3,0,1,0,0)");
+    checkQueryAddsLocation(*this, "(2,10,10,3,0,1,0,0)", "{p:{x:10,y:10},r:3,b:{x:[7,13],y:[7,13]}}");
+    checkQueryAddsLocation(*this, "{p:{x:10,y:10},r:3}", "{p:{x:10,y:10},r:3,b:{x:[7,13],y:[7,13]}}");
+    checkQueryAddsLocation(*this, "{b:{x:[6,11],y:[8,15]},p:{x:10,y:10},r:3}", "{p:{x:10,y:10},r:3,b:{x:[7,11],y:[8,13]}}");
+    checkQueryAddsLocation(*this, "{a:12345,b:{x:[8,10],y:[8,10]},p:{x:10,y:10},r:3}", "{p:{x:10,y:10},r:3,a:12345,b:{x:[8,10],y:[8,10]}}");
 }
 
 void Test::requireThatQueryAddsLocationCutoff() {
-    checkQueryAddsLocation(*this, "[2,10,10,20,20]");
+    checkQueryAddsLocation(*this, "[2,10,11,23,24]", "{b:{x:[10,23],y:[11,24]}}");
+    checkQueryAddsLocation(*this, "{b:{y:[11,24],x:[10,23]}}", "{b:{x:[10,23],y:[11,24]}}");
 }
 
 void

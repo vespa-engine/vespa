@@ -43,6 +43,7 @@ import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -145,18 +146,18 @@ public class SessionPreparerTest {
 
     @Test
     public void require_that_application_validation_exception_is_ignored_if_forced() throws IOException {
-        prepare(invalidTestApp, new PrepareParams.Builder().ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build());
+        prepare(invalidTestApp, new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build());
     }
 
     @Test
     public void require_that_zookeeper_is_not_written_to_if_dryrun() throws IOException {
-        prepare(testApp, new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
+        prepare(testApp, new PrepareParams.Builder().applicationId(applicationId()).dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
         assertFalse(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
-        PrepareResult result = prepare(testApp, new PrepareParams.Builder().dryRun(true).build());
+        PrepareResult result = prepare(testApp, new PrepareParams.Builder().applicationId(applicationId()).dryRun(true).build());
         assertTrue(result.getFileRegistries().get(version321).export().isEmpty());
     }
 
@@ -171,8 +172,8 @@ public class SessionPreparerTest {
         FilesApplicationPackage app = getApplicationPackage(testApp);
         HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
         hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
-        preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().build(),
-                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, new SessionZooKeeperClient(curator, sessionsPath));
+        preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().applicationId(applicationId("default")).build(),
+                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
     }
     
     @Test
@@ -183,9 +184,11 @@ public class SessionPreparerTest {
         };
         FilesApplicationPackage app = getApplicationPackage(testApp);
         HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
-        hostValidator.update(applicationId("default"), Collections.singletonList("mytesthost"));
-        preparer.prepare(hostValidator, logger, new PrepareParams.Builder().build(),
-                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, new SessionZooKeeperClient(curator, sessionsPath));
+        ApplicationId applicationId = applicationId();
+        hostValidator.update(applicationId, Collections.singletonList("mytesthost"));
+        preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
+                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app,
+                         createSessionZooKeeperClient());
         assertEquals(logged.toString(), "");
     }
 
@@ -197,9 +200,8 @@ public class SessionPreparerTest {
                                .applicationName("foo").instanceName("quux").build();
         PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
         prepare(testApp, params);
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath);
         assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
-        assertThat(zkc.readApplicationId(), is(origId));
+        assertThat(createSessionZooKeeperClient().readApplicationId(), is(origId));
     }
 
     @Test
@@ -327,14 +329,14 @@ public class SessionPreparerTest {
     }
 
     private void prepare(File app) throws IOException {
-        prepare(app, new PrepareParams.Builder().build());
+        prepare(app, new PrepareParams.Builder().applicationId(applicationId()).build());
     }
 
     private PrepareResult prepare(File app, PrepareParams params) throws IOException {
         FilesApplicationPackage applicationPackage = getApplicationPackage(app);
         return preparer.prepare(new HostRegistry<>(), getLogger(), params,
                                 Optional.empty(), tenantPath, Instant.now(), applicationPackage.getAppDir(),
-                                applicationPackage, new SessionZooKeeperClient(curator, sessionsPath));
+                                applicationPackage, createSessionZooKeeperClient());
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {
@@ -348,9 +350,18 @@ public class SessionPreparerTest {
                                        new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
     }
 
+
+    private ApplicationId applicationId() {
+        return ApplicationId.from(TenantName.defaultName(), ApplicationName.from("default"), InstanceName.defaultName());
+    }
+
     private ApplicationId applicationId(String applicationName) {
         return ApplicationId.from(TenantName.defaultName(),
                                   ApplicationName.from(applicationName), InstanceName.defaultName());
+    }
+
+    private SessionZooKeeperClient createSessionZooKeeperClient() {
+        return new SessionZooKeeperClient(curator, configCurator, sessionsPath, ConfigUtils.getCanonicalHostName());
     }
 
     private static class FailWithTransientExceptionProvisioner implements Provisioner {

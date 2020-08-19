@@ -87,5 +87,4 @@ DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
     return nselect;
 }
 
-
 }  // namespace proton

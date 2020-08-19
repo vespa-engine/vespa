@@ -40,12 +40,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.test.PatternMatcher.matchesPattern;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -796,7 +794,7 @@ public class ContentClusterTest extends ContentBaseTest {
     private static void assertPrepareRestartCommand(ContentCluster cluster) {
         Optional<String> command = cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand();
         assertTrue(command.isPresent());
-        assertThat(command.get(), matchesPattern(".*vespa-proton-cmd [0-9]+ prepareRestart"));
+        assertTrue(command.get().matches(".*vespa-proton-cmd [0-9]+ prepareRestart"));
     }
 
     private static void assertNoPreShutdownCommand(ContentCluster cluster) {

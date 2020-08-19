@@ -43,21 +43,18 @@ DataType::Type convert(Schema::DataType type) {
 }
 
 void
-insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
-                 const StructDataType & structType)
+insertStructType(document::DocumenttypesConfig::Documenttype & cfg, const StructDataType & structType)
 {
     typedef document::DocumenttypesConfig DTC;
     DTC::Documenttype::Datatype::Sstruct cfgStruct;
     cfgStruct.name = structType.getName();
     Field::Set fieldSet = structType.getFieldSet();
-    for (Field::Set::const_iterator itr = fieldSet.begin();
-         itr != fieldSet.end(); ++itr)
-    {
-        DTC::Documenttype::Datatype::Sstruct::Field field;
-        field.name = (*itr)->getName();
-        field.datatype = (*itr)->getDataType().getId();
-        field.id = (*itr)->getId();
-        cfgStruct.field.push_back(field);
+    for (const Field * field : fieldSet) {
+        DTC::Documenttype::Datatype::Sstruct::Field sField;
+        sField.name = field->getName();
+        sField.datatype = field->getDataType().getId();
+        sField.id = field->getId();
+        cfgStruct.field.push_back(sField);
     }
     cfg.datatype.push_back(DTC::Documenttype::Datatype());
     cfg.datatype.back().sstruct = cfgStruct;
@@ -66,8 +63,7 @@ insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
 
 using namespace document::config_builder;
 
-TypeOrId makeCollection(TypeOrId datatype,
-                        Schema::CollectionType collection_type) {
+TypeOrId makeCollection(TypeOrId datatype, Schema::CollectionType collection_type) {
     switch (collection_type) {
     case schema::CollectionType::ARRAY:
         return Array(datatype);

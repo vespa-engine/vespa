@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
@@ -112,7 +113,10 @@ public class SessionZooKeeperClientTest {
     }
 
     private SessionZooKeeperClient createSessionZKClient(String sessionId) {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, Path.fromString(sessionId));
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
+                                                                ConfigCurator.create(curator),
+                                                                Path.fromString(sessionId),
+                                                                ConfigUtils.getCanonicalHostName());
         zkc.createNewSession(Instant.now());
         return zkc;
     }

@@ -45,8 +45,8 @@ StructDataType::UP
 make_struct_elem_type()
 {
     auto result = std::make_unique<StructDataType>("elem");
-    result->addField(Field("name", *DataType::STRING, true));
-    result->addField(Field("weight", *DataType::INT, true));
+    result->addField(Field("name", *DataType::STRING));
+    result->addField(Field("weight", *DataType::INT));
     return result;
 }
 
@@ -87,8 +87,8 @@ public:
           _array_type(*_elem_type),
           _map_type(*DataType::STRING, *_elem_type)
     {
-        _doc_type.addField(Field("array_in_doc", _array_type, true));
-        _doc_type.addField(Field("map_in_doc", _map_type, true));
+        _doc_type.addField(Field("array_in_doc", _array_type));
+        _doc_type.addField(Field("map_in_doc", _map_type));
 
         auto* result_class = _config.AddResultClass("test", class_id);
         EXPECT_TRUE(result_class->AddConfigEntry("array", ResType::RES_JSONSTRING));
@@ -96,7 +96,7 @@ public:
         EXPECT_TRUE(result_class->AddConfigEntry("map2", ResType::RES_JSONSTRING));
         _config.CreateEnumMaps();
     }
-    ~DocsumStore() {}
+    ~DocsumStore();
     const ResultConfig& get_config() const { return _config; }
     const ResultClass* get_class() const { return _config.LookupResultClass(class_id); }
     search::docsummary::DocsumStoreValue getMappedDocsum() {
@@ -130,6 +130,8 @@ public:
     }
 };
 
+DocsumStore::~DocsumStore() = default;
+
 class AttributeContext : public IAttributeContext {
 private:
     AttributeVector::SP _map_value_name;
@@ -141,7 +143,7 @@ public:
           _map2_key(AttributeFactory::createAttribute("map2.key", Config(BasicType::STRING, CollectionType::ARRAY))),
           _array_weight(AttributeFactory::createAttribute("array.weight", Config(BasicType::INT32, CollectionType::ARRAY)))
     {}
-    ~AttributeContext() {}
+    ~AttributeContext() override;
     const IAttributeVector* getAttribute(const string&) const override { abort(); }
     const IAttributeVector* getAttributeStableEnum(const string&) const override { abort(); }
     void getAttributeList(std::vector<const IAttributeVector*>& list) const override {
@@ -152,6 +154,8 @@ public:
     void releaseEnumGuards() override { abort(); }
     void asyncForAttribute(const vespalib::string&, std::unique_ptr<search::attribute::IAttributeFunctor>) const override { abort(); }
 };
+
+AttributeContext::~AttributeContext() = default;
 
 class StateCallback : public GetDocsumsStateCallback {
 private:
@@ -164,7 +168,7 @@ public:
           _matching_elements(matching_elements)
     {
     }
-    ~StateCallback() {}
+    ~StateCallback() override;
     void FillSummaryFeatures(GetDocsumsState*, IDocsumEnvironment*) override {}
     void FillRankFeatures(GetDocsumsState*, IDocsumEnvironment*) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields&) override {
@@ -173,6 +177,8 @@ public:
         return result;
     }
 };
+
+StateCallback::~StateCallback() = default;
 
 class MatchedElementsFilterTest : public ::testing::Test {
 private:
@@ -201,7 +207,7 @@ public:
           _fields(std::make_shared<MatchingElementsFields>())
     {
     }
-    ~MatchedElementsFilterTest() {}
+    ~MatchedElementsFilterTest();
     std::unique_ptr<IDocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
         int input_field_enum = _doc_store.get_config().GetFieldNameEnum().Lookup(input_field_name.c_str());
         return MatchedElementsFilterDFW::create(input_field_name, input_field_enum,
@@ -214,6 +220,8 @@ public:
     }
     const MatchingElementsFields& fields() const { return *_fields; }
 };
+
+MatchedElementsFilterTest::~MatchedElementsFilterTest() = default;
 
 TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
 {

@@ -9,7 +9,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -47,7 +46,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -166,7 +164,7 @@ public class SessionRepository {
                                                               getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
-        session.setPrepared();
+        setPrepared(session);
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
     }
@@ -317,8 +315,7 @@ public class SessionRepository {
         getRemoteSessions().forEach(this::sessionAdded);
     }
 
-    private synchronized void sessionsChanged() throws NumberFormatException {
-        List<Long> sessions = getSessionListFromDirectoryCache(directoryCache.getCurrentData());
+    private synchronized void sessionsChanged(List<Long> sessions) throws NumberFormatException {
         checkForRemovedSessions(sessions);
         checkForAddedSessions(sessions);
     }
@@ -418,14 +415,15 @@ public class SessionRepository {
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
             log.log(Level.FINE, () -> "Got child event: " + event);
+            List<Long> sessions = getSessionListFromDirectoryCache(directoryCache.getCurrentData());
             switch (event.getType()) {
                 case CHILD_ADDED:
-                    sessionsChanged();
-                    synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
+                    sessionsChanged(sessions);
+                    synchronizeOnNew(sessions);
                     break;
                 case CHILD_REMOVED:
                 case CONNECTION_RECONNECTED:
-                    sessionsChanged();
+                    sessionsChanged(sessions);
                     break;
             }
         });
@@ -489,7 +487,7 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
     }
@@ -547,7 +545,7 @@ public class SessionRepository {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
             SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient, applicationRepo);
+            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -596,7 +594,7 @@ public class SessionRepository {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
+        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
     }
 
     /**
@@ -654,9 +652,8 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
-        Optional<NodeFlavors> nodeFlavors = componentRegistry.getZone().nodeFlavors();
         Path sessionPath = getSessionPath(sessionId);
-        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), sessionPath, serverId, nodeFlavors);
+        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), sessionPath, serverId);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {
@@ -695,6 +692,20 @@ public class SessionRepository {
 
     private Path lockPath(long sessionId) {
         return locksPath.append(String.valueOf(sessionId));
+    }
+
+    public Transaction createActivateTransaction(Session session) {
+        Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
+        transaction.add(applicationRepo.createPutTransaction(session.sessionZooKeeperClient.readApplicationId(), session.getSessionId()).operations());
+        return transaction;
+    }
+
+    private Transaction createSetStatusTransaction(Session session, Session.Status status) {
+        return session.sessionZooKeeperClient.createWriteStatusTransaction(status);
+    }
+
+    void setPrepared(Session session) {
+        session.setStatus(Session.Status.PREPARE);
     }
 
     private static class FileTransaction extends AbstractTransaction {

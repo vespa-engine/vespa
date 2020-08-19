@@ -23,7 +23,6 @@ import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.OrItem;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.request.CompoundName;
@@ -47,7 +46,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -289,7 +287,7 @@ public class QueryTestCase {
         try {
             new Query(httpEncode("/search?timeout=nalle"));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
             assertTrue(Exceptions.toMessageString(e).contains("Could not set 'timeout' to 'nalle': Error parsing 'nalle': Invalid number 'nalle'"));
         }
@@ -865,7 +863,7 @@ public class QueryTestCase {
             root.addItem(child);
             fail("Expected exception");
         }
-        catch (QueryException e) {
+        catch (IllegalArgumentException e) {
             assertEquals("Cannot add OR (AND ) to (AND ) as it would create a cycle", e.getMessage());
         }
 
@@ -875,7 +873,7 @@ public class QueryTestCase {
             child.addItem(root);
             fail("Expected exception");
         }
-        catch (QueryException e) {
+        catch (IllegalArgumentException e) {
             assertEquals("Cannot add (AND (OR )) to (OR ) as it would create a cycle", e.getMessage());
         }
     }

@@ -177,8 +177,8 @@ DocsumTest::testSlimeFieldWriter()
     }
     { // struct field value
         StructDataType subType("substruct");
-        Field fd("d", 0, *DataType::STRING, true);
-        Field fe("e", 1, *DataType::STRING, true);
+        Field fd("d", 0, *DataType::STRING);
+        Field fe("e", 1, *DataType::STRING);
         subType.addField(fd);
         subType.addField(fe);
         StructFieldValue subValue(subType);
@@ -186,9 +186,9 @@ DocsumTest::testSlimeFieldWriter()
         subValue.setValue(fe, StringFieldValue("qux"));
 
         StructDataType type("struct");
-        Field fa("a", 0, *DataType::STRING, true);
-        Field fb("b", 1, *DataType::STRING, true);
-        Field fc("c", 2, subType, true);
+        Field fa("a", 0, *DataType::STRING);
+        Field fb("b", 1, *DataType::STRING);
+        Field fc("c", 2, subType);
         type.addField(fa);
         type.addField(fb);
         type.addField(fc);
@@ -241,8 +241,8 @@ DocsumTest::requireThatSlimeFieldWriterHandlesMap()
     }
     { // map<string, struct>
         StructDataType structType("struct");
-        Field fa("a", 0, *DataType::STRING, true);
-        Field fb("b", 1, *DataType::STRING, true);
+        Field fa("a", 0, *DataType::STRING);
+        Field fb("b", 1, *DataType::STRING);
         structType.addField(fa);
         structType.addField(fb);
         StructFieldValue structValue(structType);

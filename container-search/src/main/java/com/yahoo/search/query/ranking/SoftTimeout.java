@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.ranking;
 
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -54,7 +55,7 @@ public class SoftTimeout implements Cloneable {
     /** Override the adaptive factor determined on the content nodes */
     public void setFactor(double factor) {
         if ((factor < 0.0) || (factor > 1.0)) {
-            throw new IllegalArgumentException("factor must be in the range [0.0, 1.0], got " + factor);
+            throw new IllegalInputException("factor must be in the range [0.0, 1.0], got " + factor);
         }
         this.factor = factor;
     }
@@ -64,7 +65,7 @@ public class SoftTimeout implements Cloneable {
     /** Override the tail cost factor determined on the content nodes */
     public void setTailcost(double tailcost) {
         if ((tailcost < 0.0) || (tailcost > 1.0)) {
-            throw new IllegalArgumentException("tailcost must be in the range [0.0, 1.0], got " + tailcost);
+            throw new IllegalInputException("tailcost must be in the range [0.0, 1.0], got " + tailcost);
         }
         this.tailcost = tailcost;
     }

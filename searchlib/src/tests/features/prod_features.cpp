@@ -830,8 +830,8 @@ Test::testDistance()
 
         StringList params, in, out;
         FT_SETUP_FAIL(pt, params);
-        FT_SETUP_OK(pt, params.add("pos"), in, out.add("out"));
-
+        FT_SETUP_OK(pt, params.add("pos"), in,
+                    out.add("out").add("index").add("latitude").add("longitude"));
         FT_DUMP_EMPTY(_factory, "distance");
     }
 

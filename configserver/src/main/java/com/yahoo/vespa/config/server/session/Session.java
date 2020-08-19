@@ -3,11 +3,15 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
@@ -27,11 +31,23 @@ public abstract class Session implements Comparable<Session>  {
     private final long sessionId;
     protected final TenantName tenant;
     protected final SessionZooKeeperClient sessionZooKeeperClient;
+    protected final Optional<ApplicationPackage> applicationPackage;
 
     protected Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient) {
+        this(tenant, sessionId, sessionZooKeeperClient, Optional.empty());
+    }
+
+    protected Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient,
+                      ApplicationPackage applicationPackage) {
+        this(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationPackage));
+    }
+
+    private Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient,
+                      Optional<ApplicationPackage> applicationPackage) {
         this.tenant = tenant;
         this.sessionId = sessionId;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
+        this.applicationPackage = applicationPackage;
     }
 
     public final long getSessionId() {
@@ -42,9 +58,17 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readStatus();
     }
 
+    public SessionZooKeeperClient getSessionZooKeeperClient() {
+        return sessionZooKeeperClient;
+    }
+
     @Override
     public String toString() {
         return "Session,id=" + sessionId;
+    }
+
+    public long getActiveSessionAtCreate() {
+        return getMetaData().getPreviousActiveGeneration();
     }
 
     /**
@@ -135,11 +159,40 @@ public abstract class Session implements Comparable<Session>  {
     // Note: Assumes monotonically increasing session ids
     public boolean isNewerThan(long sessionId) { return getSessionId() > sessionId; }
 
+    public ApplicationMetaData getMetaData() {
+        return applicationPackage.isPresent()
+                ? applicationPackage.get().getMetaData()
+                : sessionZooKeeperClient.loadApplicationPackage().getMetaData();
+    }
+
+    public ApplicationPackage getApplicationPackage() {
+        return applicationPackage.orElseThrow(() -> new RuntimeException("No application package found for " + this));
+    }
+
+    public ApplicationFile getApplicationFile(Path relativePath, LocalSession.Mode mode) {
+        if (mode.equals(Session.Mode.WRITE)) {
+            markSessionEdited();
+        }
+        return getApplicationPackage().getFile(relativePath);
+    }
+
+    private void markSessionEdited() {
+        setStatus(Session.Status.NEW);
+    }
+
+    void setStatus(Session.Status newStatus) {
+        sessionZooKeeperClient.writeStatus(newStatus);
+    }
+
     @Override
     public int compareTo(Session rhs) {
         Long lhsId = getSessionId();
         Long rhsId = rhs.getSessionId();
         return lhsId.compareTo(rhsId);
+    }
+
+    public enum Mode {
+        READ, WRITE
     }
 
 }

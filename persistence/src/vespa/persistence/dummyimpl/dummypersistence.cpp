@@ -547,12 +547,7 @@ DummyPersistence::get(const Bucket& b, const document::FieldSet& fieldSet, const
 }
 
 CreateIteratorResult
-DummyPersistence::createIterator(
-        const Bucket& b,
-        const document::FieldSet& fs,
-        const Selection& s,
-        IncludedVersions v,
-        Context&)
+DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection &s, IncludedVersions v, Context &)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createIterator(%s)", b.toString().c_str());
@@ -585,7 +580,7 @@ DummyPersistence::createIterator(
     }
     // Memory pointed to by 'it' should now be valid from here on out
 
-    it->_fieldSet = std::unique_ptr<document::FieldSet>(fs.clone());
+    it->_fieldSet = std::move(fs);
     const BucketContent::GidMapType& gidMap((*bc)->_gidMap);
 
     if (s.getTimestampSubset().empty()) {
@@ -600,8 +595,7 @@ DummyPersistence::createIterator(
                 entry.getTimestamp() > s.getToTimestamp()) {
                 continue;
             }
-            BucketContent::GidMapType::const_iterator gidIt(
-                    gidMap.find(bucketEntry.gid));
+            BucketContent::GidMapType::const_iterator gidIt(gidMap.find(bucketEntry.gid));
             assert(gidIt != gidMap.end());
 
             if (entry.isRemove()) {

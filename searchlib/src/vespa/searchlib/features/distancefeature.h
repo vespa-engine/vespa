@@ -18,6 +18,9 @@ private:
     GeoLocationSpecPtrs                 _locations;
     const attribute::IAttributeVector * _pos;
     attribute::IntegerContent           _intBuf;
+    feature_t                           _best_index;
+    feature_t                           _best_x;
+    feature_t                           _best_y;
 
     feature_t calculateDistance(uint32_t docId);
     feature_t calculate2DZDistance(uint32_t docId);

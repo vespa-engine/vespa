@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerialize
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -63,7 +64,7 @@ public final class PrepareParams {
                           Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles) {
         this.timeoutBudget = timeoutBudget;
-        this.applicationId = applicationId;
+        this.applicationId = Objects.requireNonNull(applicationId);
         this.ignoreValidationErrors = ignoreValidationErrors;
         this.dryRun = dryRun;
         this.verbose = verbose;
@@ -83,7 +84,7 @@ public final class PrepareParams {
         private boolean dryRun = false;
         private boolean verbose = false;
         private boolean isBootstrap = false;
-        private ApplicationId applicationId = ApplicationId.defaultId();
+        private ApplicationId applicationId = null;
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60));
         private Optional<Version> vespaVersion = Optional.empty();
         private List<ContainerEndpoint> containerEndpoints = null;

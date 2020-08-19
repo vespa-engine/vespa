@@ -108,8 +108,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _must_send_updated_host_info(false)
 {
     _component.registerMetric(*_metrics);
-    _component.registerMetricUpdateHook(_metricUpdateHook,
-                                        framework::SecondTime(0));
+    _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     _distributorStatusDelegate.registerStatusPage();
     _bucketDBStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);

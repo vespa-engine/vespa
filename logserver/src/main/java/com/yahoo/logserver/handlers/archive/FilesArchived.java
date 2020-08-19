@@ -7,9 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
@@ -30,21 +28,26 @@ public class FilesArchived {
      */
     private final File root;
 
+    private final Object mutex = new Object();
+
     // known-existing files inside the archive directory
     private List<LogFile> knownFiles;
 
-    public final static long compressAfterMillis = 2L * 3600 * 1000;
-    private long maxAgeDays = 30; // GDPR rules: max 30 days
-    private long sizeLimit = 30L * (1L << 30); // 30 GB
+    public static final long compressAfterMillis = 2L * 3600 * 1000;
+    private static final long maxAgeDays = 30; // GDPR rules: max 30 days
+    private static final long sizeLimit = 30L * (1L << 30); // 30 GB
+
+    private void waitForTrigger(long milliS) throws InterruptedException {
+        synchronized (mutex) {
+            mutex.wait(milliS);
+        }
+    }
 
     private void run() {
         try {
-            Thread.sleep(125000); // 2 m 5 s
             while (true) {
-                while (maintenance()) {
-                    Thread.sleep(2000); // 2 s
-                }
-                Thread.sleep(299000); // approx 5 min
+                maintenance();
+                waitForTrigger(2000);
             }
         } catch (Exception e) {
             // just exit thread on exception, nothing is safe afterwards
@@ -78,7 +81,13 @@ public class FilesArchived {
         return gen;
     }
 
-    public synchronized boolean maintenance() {
+    public void triggerMaintenance() {
+        synchronized (mutex) {
+            mutex.notifyAll();
+        }
+    }
+
+    synchronized boolean maintenance() {
         boolean action = false;
         rescan();
         if (removeOlderThan(maxAgeDays)) {
@@ -130,7 +139,6 @@ public class FilesArchived {
 
     // returns true if any files were compressed
     private boolean compressOldFiles() {
-        boolean action = false;
         long now = System.currentTimeMillis();
         int count = 0;
         for (LogFile lf : knownFiles) {
@@ -171,7 +179,7 @@ public class FilesArchived {
         return sum;
     }
 
-    private static Pattern dateFormatRegexp = Pattern.compile(".*/" +
+    private static final Pattern dateFormatRegexp = Pattern.compile(".*/" +
             "[0-9][0-9][0-9][0-9]/" + // year
             "[0-9][0-9]/" + // month
             "[0-9][0-9]/" + // day
@@ -192,9 +200,7 @@ public class FilesArchived {
                         log.warning("skipping file not matching log archive pattern: "+pathName);
                     }
                 } else if (sub.isDirectory()) {
-                    for (LogFile subFile : scanDir(sub)) {
-                        retval.add(subFile);
-                    }
+                    retval.addAll(scanDir(sub));
                 }
             }
         }

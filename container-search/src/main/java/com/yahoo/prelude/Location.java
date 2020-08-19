@@ -24,16 +24,9 @@ public class Location {
     private int y2 = 1;
 
     // center(x,y), radius
-    private int x = 1;
-    private int y = 1;
-    private int r = 1;
-
-    // next three are now UNUSED
-    // ranking table, rank multiplier (scale)
-    // {0, 1} an int to make parsing and rendering the hit even simpler
-    private int tableId = 0;
-    private int s = 1;
-    private int replace = 0;
+    private int x = 0;
+    private int y = 0;
+    private int r = -1;
 
     private boolean renderCircle = false;
     private boolean renderRectangle = false;
@@ -47,14 +40,14 @@ public class Location {
         return dimensions == l.dimensions
             && renderCircle == l.renderCircle
             && renderRectangle == l.renderRectangle
-            && aspect == l.aspect
-            && x1 == l.x1
-            && x2 == l.x2
-            && y1 == l.y1
-            && y2 == l.y2
-            && x == l.x
-            && y == l.y
-            && r == l.r;
+            && this.aspect == l.aspect
+            && this.x1 == l.x1
+            && this.x2 == l.x2
+            && this.y1 == l.y1
+            && this.y2 == l.y2
+            && this.x == l.x
+            && this.y == l.y
+            && this.r == l.r;
     }
 
     public boolean hasDimensions() {
@@ -64,10 +57,10 @@ public class Location {
         if (hasDimensions() && dimensions != d) {
             throw new IllegalArgumentException("already has dimensions="+dimensions+", cannot change it to "+d);
         }
-        if (d == 1 || d == 2) {
+        if (d == 2) {
             dimensions = d;
         } else {
-            throw new IllegalArgumentException("Illegal location, dimensions must be 1 or 2, but was: "+d);
+            throw new IllegalArgumentException("Illegal location, dimensions must be 2, but was: "+d);
         }
     }
     public int getDimensions() {
@@ -89,13 +82,13 @@ public class Location {
         if (px1 > px2) {
             throw new IllegalArgumentException("cannot have w > e");
         }
-        x1 = px1;
-        x2 = px2;
+        this.x1 = px1;
+        this.x2 = px2;
         if (py1 > py2) {
             throw new IllegalArgumentException("cannot have s > n");
         }
-        y1 = py1;
-        y2 = py2;
+        this.y1 = py1;
+        this.y2 = py2;
         renderRectangle = true;
     }
 
@@ -104,12 +97,12 @@ public class Location {
         //no need to "optimize" for special cases, exactly 0, 30, 45, 60, or 90 degrees won't be input anyway
         double degrees = (double) y / 1000000d;
         if (degrees <= -90.0 || degrees >= +90.0) {
-            aspect = 0;
+            this.aspect = 0;
             return;
         }
         double radians = degrees * Math.PI / 180d;
         double cosLatRadians = Math.cos(radians);
-        aspect = (long) (cosLatRadians * 4294967295L);
+        this.aspect = (long) (cosLatRadians * 4294967295L);
     }
 
     public void setGeoCircle(double ns, double ew, double radius_in_degrees) {
@@ -129,9 +122,9 @@ public class Location {
         if (radius_in_degrees < 0) {
             pr = -1;
         }
-        x = px;
-        y = py;
-        r = pr;
+        this.x = px;
+        this.y = py;
+        this.r = pr;
         renderCircle = true;
         adjustAspect();
     }
@@ -144,9 +137,9 @@ public class Location {
         if (radius_in_units < 0) {
             radius_in_units = -1;
         }
-        x = px;
-        y = py;
-        r = radius_in_units;
+        this.x = px;
+        this.y = py;
+        this.r = radius_in_units;
         renderCircle = true;
     }
 
@@ -158,17 +151,12 @@ public class Location {
         String rectPart = rectangle.substring(1,endof);
         StringTokenizer tokens = new StringTokenizer(rectPart, ",");
         setDimensions(Integer.parseInt(tokens.nextToken()));
-        if (dimensions == 1) {
-            x1 = Integer.parseInt(tokens.nextToken());
-            x2 = Integer.parseInt(tokens.nextToken());
-            if (tokens.hasMoreTokens()) {
-                throw new IllegalArgumentException("Illegal location syntax: "+rectangle);
-            }
-        } else if (dimensions == 2) {
-            x1 = Integer.parseInt(tokens.nextToken());
-            y1 = Integer.parseInt(tokens.nextToken());
-            x2 = Integer.parseInt(tokens.nextToken());
-            y2 = Integer.parseInt(tokens.nextToken());
+        this.x1 = Integer.parseInt(tokens.nextToken());
+        this.y1 = Integer.parseInt(tokens.nextToken());
+        this.x2 = Integer.parseInt(tokens.nextToken());
+        this.y2 = Integer.parseInt(tokens.nextToken());
+        if (tokens.hasMoreTokens()) {
+            throw new IllegalArgumentException("Illegal location syntax: "+rectangle);
         }
         renderRectangle = true;
         String theRest = rectangle.substring(endof+1).trim();
@@ -185,34 +173,24 @@ public class Location {
         String circlePart = circle.substring(1,endof);
         StringTokenizer tokens = new StringTokenizer(circlePart, ",");
         setDimensions(Integer.parseInt(tokens.nextToken()));
-        x = Integer.parseInt(tokens.nextToken());
-        if (dimensions == 2) {
-            y = Integer.parseInt(tokens.nextToken());
-        }
-        r = Integer.parseInt(tokens.nextToken());
+        this.x = Integer.parseInt(tokens.nextToken());
+        this.y = Integer.parseInt(tokens.nextToken());
+        this.r = Integer.parseInt(tokens.nextToken());
         Integer.parseInt(tokens.nextToken()); // was "tableId"
-        Integer.parseInt(tokens.nextToken()); // was "scale" (multiplier)
+        Integer.parseInt(tokens.nextToken()); // was "scale"
         Integer.parseInt(tokens.nextToken()); // was "replace"
-
-        if (dimensions == 1) {
-            if (tokens.hasMoreTokens()) {
-                throw new IllegalArgumentException("Illegal location syntax: "+circle);
-            }
-        }
-        else {
-            if (tokens.hasMoreTokens()) {
-                String aspectToken = tokens.nextToken();
-                if (aspectToken.equalsIgnoreCase("CalcLatLon")) {
-                    adjustAspect();
-                } else {
-                    try {
-                        aspect = Long.parseLong(aspectToken);
-                    } catch (NumberFormatException nfe) {
-                        throw new IllegalArgumentException("Aspect "+aspectToken+" for location must be an integer or 'CalcLatLon' for automatic aspect calculation.", nfe);
-                    }
-                    if (aspect > 4294967295L || aspect < 0) {
-                        throw new IllegalArgumentException("Aspect "+aspect+" for location parameter must be less than 4294967296 (2^32)");
-                    }
+        if (tokens.hasMoreTokens()) {
+            String aspectToken = tokens.nextToken();
+            if (aspectToken.equalsIgnoreCase("CalcLatLon")) {
+                adjustAspect();
+            } else {
+                try {
+                    aspect = Long.parseLong(aspectToken);
+                } catch (NumberFormatException nfe) {
+                    throw new IllegalArgumentException("Aspect "+aspectToken+" for location must be an integer or 'CalcLatLon' for automatic aspect calculation.", nfe);
+                }
+                if (aspect > 4294967295L || aspect < 0) {
+                    throw new IllegalArgumentException("Aspect "+aspect+" for location parameter must be less than 4294967296 (2^32)");
                 }
             }
         }
@@ -261,28 +239,20 @@ public class Location {
         }
         if (renderRectangle) {
             ser.append("[").append(dimensions).append(",");
-            if (dimensions == 1) {
-                ser.append(x1).append(",").
-                    append(x2);
-            }
-            else {
-                ser.append(x1).append(",").
-                    append(y1).append(",").
-                    append(x2).append(",").
-                    append(y2);
-            }
+            ser.append(x1).append(",").
+                append(y1).append(",").
+                append(x2).append(",").
+                append(y2);
             ser.append("]");
         }
         if (renderCircle) {
-            ser.append("(").append(dimensions).append(",").append(x);
-            if (dimensions == 2) {
-                ser.append(",").append(y);
-            }
-            ser.append(",").append(forBackend ? backendRadius() : r).
-                append(",").append(tableId).
-                append(",").append(s).
-                append(",").append(replace);
-            if (dimensions == 2 && aspect != 0) {
+            ser.append("(").append(dimensions).append(",").
+                append(this.x).append(",").append(this.y);
+            ser.append(",").append(forBackend ? backendRadius() : this.r).
+                append(",").append(0). // was "tableId"
+                append(",").append(1). // was "scale"
+                append(",").append(0); // was "replace"
+            if (aspect != 0) {
                 ser.append(",").append(aspect);
             }
             ser.append(")");
@@ -296,7 +266,7 @@ public class Location {
      */
     public int getBoundingWidth() {
         if (renderCircle) {
-            return r * 2;
+            return this.r * 2;
         } else {
             return x2 - x1;
         }
@@ -308,7 +278,7 @@ public class Location {
      */
     public int getBoundingHeight() {
         if (renderCircle) {
-            return r * 2;
+            return this.r * 2;
         } else {
             return y2 - y1;
         }
@@ -370,11 +340,11 @@ public class Location {
      **/
     public double degRadius() {
         checkGeoCircle();
-        return (r < 0) ? -1.0 : (0.000001 * r);
+        return (this.r < 0) ? -1.0 : (0.000001 * this.r);
     }
 
     private int backendRadius() {
-        return (r < 0) ?  (512 * 1024 * 1024) : r;
+        return (this.r < 0) ?  -1 : this.r;
     }
 
     /**

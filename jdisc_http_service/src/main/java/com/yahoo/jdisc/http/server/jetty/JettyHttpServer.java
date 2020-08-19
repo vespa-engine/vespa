@@ -257,7 +257,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
         gzipHandler.setHandler(authEnforcer);
 
-        HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths());
+        HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(), serverConfig.metric().searchHandlerPaths());
         statisticsCollector.setHandler(gzipHandler);
 
         StatisticsHandler statisticsHandler = newStatisticsHandler();

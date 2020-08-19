@@ -20,7 +20,7 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &
                                                   const std::shared_ptr<const DocumentTypeRepo> &repo,
                                                   const IAttributeWriter::SP &writer)
 {
-    _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(
+    _feedView.set(std::make_shared<FastAccessFeedView>(
             StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
                     schema,
                     curr->getDocumentMetaStore(),
@@ -30,8 +30,7 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &
                     curr->getLidReuseDelayer(),
                     curr->getCommitTimeTracker()),
             curr->getPersistentParams(),
-            FastAccessFeedView::Context(writer,
-                    curr->getDocIdLimit()))));
+            FastAccessFeedView::Context(writer,curr->getDocIdLimit())));
 }
 
 FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
@@ -43,9 +42,7 @@ FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &fe
 {
 }
 
-FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer()
-{
-}
+FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 
 IReprocessingInitializer::UP
 FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
@@ -53,8 +50,7 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const AttributeCollectionSpec &attrSpec)
 {
     FastAccessFeedView::SP oldView = _feedView.get();
-    IAttributeWriter::SP writer =
-            _factory->create(oldView->getAttributeWriter(), attrSpec);
+    IAttributeWriter::SP writer = _factory->create(oldView->getAttributeWriter(), attrSpec);
     reconfigureFeedView(oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
 
     const document::DocumentType *newDocType = newConfig.getDocumentType();

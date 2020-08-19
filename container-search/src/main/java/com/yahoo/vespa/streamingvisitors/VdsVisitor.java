@@ -346,9 +346,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
                 log.log(Level.FINE, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
             }
         } else {
-            throw new IllegalArgumentException("Query failed: " // TODO: Is it necessary to use a runtime exception?
-                    + params.getControlHandler().getResult().code + ": "
-                    + params.getControlHandler().getResult().message);
+            throw new IllegalArgumentException("Query failed: " +
+                                               params.getControlHandler().getResult().code + ": " +
+                                               params.getControlHandler().getResult().message);
         }
     }
 
@@ -425,7 +425,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
             BufferSerializer buf = new BufferSerializer( new GrowableByteBuffer(ByteBuffer.wrap(value)) );
             newGrouping.deserialize(buf);
             if (buf.getBuf().hasRemaining()) {
-                throw new IllegalArgumentException("Failed deserializing grouping. There are still data left. Position = " + buf.position() + ", limit = " + buf.getBuf().limit());
+                throw new IllegalArgumentException("Failed deserializing grouping. There is still data left. " +
+                                                   "Position = " + buf.position() + ", limit = " + buf.getBuf().limit());
             }
 
             synchronized (groupingMap) {

@@ -20,11 +20,13 @@ import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_BINDING;
 import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_CLASS;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -46,7 +48,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(GUIHandler.BINDING));
+        assertTrue(discBindingsConfig.contains(GUIHandler.BINDING));
 
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
 
@@ -56,7 +58,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 guiHandler = (GUIHandler) handler;
             }
         }
-        if (guiHandler == null) fail();
+        assertNotNull(guiHandler);
     }
 
     @Test
@@ -73,9 +75,9 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"binding0\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"binding1\""));
-        assertThat(discBindingsConfig, not(containsString("/search/*")));
+        assertTrue(discBindingsConfig.contains(".serverBindings[0] \"binding0\""));
+        assertTrue(discBindingsConfig.contains(".serverBindings[1] \"binding1\""));
+        assertFalse(discBindingsConfig.contains("/search/*"));
     }
 
     @Test
@@ -91,7 +93,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, not(containsString("/search/*")));
+        assertFalse(discBindingsConfig.contains("/search/*"));
     }
 
     @Test
@@ -109,8 +111,8 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
-        assertThat(discBindingsConfig.handlers(myHandler).serverBindings(0), is(SEARCH_HANDLER_BINDING));
-        assertThat(discBindingsConfig.handlers(SEARCH_HANDLER_CLASS), is(nullValue()));
+        assertEquals(SEARCH_HANDLER_BINDING, discBindingsConfig.handlers(myHandler).serverBindings(0));
+        assertNull(discBindingsConfig.handlers(SEARCH_HANDLER_CLASS));
     }
 
     // TODO: remove test when all containers are named 'container'
@@ -118,7 +120,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     public void cluster_with_only_search_gets_qrserver_as_service_name() {
         createClusterWithOnlyDefaultChains();
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
-        assertThat(cluster.getContainers().get(0).getServiceName(), is(QRSERVER.serviceName));
+        assertEquals(QRSERVER.serviceName, cluster.getContainers().get(0).getServiceName());
     }
 
     @Test
@@ -162,7 +164,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
             createModel(root, clusterElem);
             fail("Expected exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Setting up com.yahoo.search.handler.SearchHandler manually is not supported"));
+            assertTrue(e.getMessage().contains("Setting up com.yahoo.search.handler.SearchHandler manually is not supported"));
         }
     }
 

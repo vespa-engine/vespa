@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -18,18 +17,13 @@ import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
-import com.yahoo.vespa.config.server.session.RemoteSession;
-import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.defaults.Defaults;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -37,8 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
@@ -169,21 +161,10 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     GetApplicationResponse getApplicationResponse(ApplicationId applicationId) {
-        Tenant tenant = applicationRepository.getTenant(applicationId);
-        Optional<ApplicationSet> applicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
-        String applicationPackage = "";
-        RemoteSession session = applicationRepository.getActiveSession(applicationId);
-        if (session != null) {
-            FileReference applicationPackageReference = session.getApplicationPackageReference();
-            File downloadDirectory = new File(Defaults.getDefaults().underVespaHome(applicationRepository.configserverConfig().fileReferencesDir()));
-            if (applicationPackageReference != null && ! fileReferenceExistsOnDisk(downloadDirectory, applicationPackageReference))
-                applicationPackage = applicationPackageReference.value();
-        }
-
         return new GetApplicationResponse(Response.Status.OK,
                                           applicationRepository.getApplicationGeneration(applicationId),
-                                          applicationSet.get().getAllVersions(applicationId),
-                                          applicationPackage);
+                                          applicationRepository.getAllVersions(applicationId),
+                                          applicationRepository.getApplicationPackageReference(applicationId));
     }
 
     @Override
@@ -346,10 +327,10 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static class GetApplicationResponse extends JSONResponse {
-        GetApplicationResponse(int status, long generation, List<Version> modelVersions, String applicationPackageReference) {
+        GetApplicationResponse(int status, long generation, List<Version> modelVersions, Optional<String> applicationPackageReference) {
             super(status);
             object.setLong("generation", generation);
-            object.setString("applicationPackageFileReference", applicationPackageReference);
+            object.setString("applicationPackageFileReference", applicationPackageReference.orElse(""));
             Cursor modelVersionArray = object.setArray("modelVersions");
             modelVersions.forEach(version -> modelVersionArray.addString(version.toFullString()));
         }

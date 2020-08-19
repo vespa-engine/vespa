@@ -57,7 +57,7 @@ public final class ApplicationMapper {
 
     /** Returns whether this registry has an application for the given application id */
     public boolean hasApplication(ApplicationId applicationId, Instant now) {
-        return hasApplicationForVersion(applicationId, Optional.<Version>empty(), now);
+        return hasApplicationForVersion(applicationId, Optional.empty(), now);
     }
 
     /** Returns whether this registry has an application for the given application id and vespa version */

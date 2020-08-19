@@ -736,18 +736,7 @@ BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
 std::shared_ptr<std::vector<IDocumentRetriever::SP> >
 DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistency)
 {
-    std::shared_ptr<std::vector<IDocumentRetriever::SP> > list = _subDBs.getRetrievers();
-
-    if (consistency == IDocumentRetriever::ReadConsistency::STRONG) {
-        std::shared_ptr<std::vector<IDocumentRetriever::SP> > wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
-        wrappedList->reserve(list->size());
-        for (const IDocumentRetriever::SP & retriever : *list) {
-            wrappedList->push_back(std::make_shared<CommitAndWaitDocumentRetriever>(retriever, _visibility));
-        }
-        return wrappedList;
-    } else {
-        return list;
-    }
+    return _subDBs.getRetrievers(consistency, _visibility);
 }
 
 SerialNum

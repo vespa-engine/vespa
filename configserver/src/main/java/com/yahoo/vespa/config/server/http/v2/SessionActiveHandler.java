@@ -45,7 +45,7 @@ public class SessionActiveHandler extends SessionHandler {
         Utils.checkThatTenantExists(tenantRepository, tenantName);
         Tenant tenant = tenantRepository.getTenant(tenantName);
         TimeoutBudget timeoutBudget = getTimeoutBudget(request, DEFAULT_ACTIVATE_TIMEOUT);
-        final Long sessionId = getSessionIdV2(request);
+        long sessionId = getSessionIdV2(request);
         ApplicationId applicationId = applicationRepository.activate(tenant, sessionId, timeoutBudget,
                                                                      shouldIgnoreSessionStaleFailure(request));
         ApplicationMetaData metaData = applicationRepository.getMetadataFromLocalSession(tenant, sessionId);

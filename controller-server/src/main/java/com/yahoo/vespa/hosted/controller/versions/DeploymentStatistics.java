@@ -84,13 +84,14 @@ public class DeploymentStatistics {
                 for (Deployment deployment : instance.productionDeployments().values())
                     allVersions.add(deployment.version());
 
-            JobList failing = status.jobs().failing();
+            JobList failing = status.jobs().failing()
+                                    .not().withStatus(RunStatus.outOfCapacity)
+                                    .not().withStatus(RunStatus.aborted);
 
-            // Add all unsuccessful runs for failing jobs as any run may have resulted in an incomplete deployment
+            // Add all unsuccessful runs for failing production jobs as any run may have resulted in an incomplete deployment
             // where a subset of nodes have upgraded.
             failing.not().failingApplicationChange()
-                   .not().withStatus(RunStatus.outOfCapacity)
-                   .not().withStatus(RunStatus.aborted)
+                   .production()
                    .mapToList(JobStatus::runs)
                    .forEach(runs -> runs.descendingMap().values().stream()
                                         .dropWhile(run -> ! run.hasEnded())
@@ -101,9 +102,17 @@ public class DeploymentStatistics {
                                                 failingUpgrade.get(run.versions().targetPlatform()).add(run);
                                         }));
 
+            // Add only the last failing run for test jobs.
+            failing.not().failingApplicationChange()
+                   .not().production()
+                   .lastCompleted().asList()
+                   .forEach(run -> {
+                       failingUpgrade.putIfAbsent(run.versions().targetPlatform(), new ArrayList<>());
+                       failingUpgrade.get(run.versions().targetPlatform()).add(run);
+                   });
+
+            // Add only the last failing for instances failing only an application change, i.e., no upgrade.
             failing.failingApplicationChange()
-                   .concat(failing.withStatus(RunStatus.outOfCapacity))
-                   .concat(failing.withStatus(RunStatus.aborted))
                    .lastCompleted().asList()
                    .forEach(run -> {
                        otherFailing.putIfAbsent(run.versions().targetPlatform(), new ArrayList<>());

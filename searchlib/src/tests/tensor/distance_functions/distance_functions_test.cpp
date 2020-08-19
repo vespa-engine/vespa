@@ -25,7 +25,7 @@ void verify_geo_miles(const DistanceFunction *dist_fun,
     double abstract_distance = dist_fun->calc(t1, t2);
     double raw_score = dist_fun->to_rawscore(abstract_distance);
     double m = ((1.0/raw_score)-1.0);
-    double d_miles = m / 1609.344;
+    double d_miles = m / 1.609344;
     EXPECT_GE(d_miles, exp_miles*0.99);
     EXPECT_LE(d_miles, exp_miles*1.01);
 }
@@ -159,7 +159,7 @@ TEST(GeoDegreesTest, gives_expected_score)
 
     double g63_a = geodeg->calc(t(g6_trd), t(g3_osl));
     double g63_r = geodeg->to_rawscore(g63_a);
-    double g63_km = ((1.0/g63_r)-1.0) *.001;
+    double g63_km = ((1.0/g63_r)-1.0);
     EXPECT_GT(g63_km, 350);
     EXPECT_LT(g63_km, 375);
 

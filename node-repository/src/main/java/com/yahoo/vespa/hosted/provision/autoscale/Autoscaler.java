@@ -127,8 +127,8 @@ public class Autoscaler {
 
     public static boolean unstable(List<Node> nodes) {
         return nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
-                                                      node.allocation().get().membership().retired() ||
-                                                      node.allocation().get().isRemovable());
+                                               node.allocation().get().membership().retired() ||
+                                               node.allocation().get().isRemovable());
     }
 
 }

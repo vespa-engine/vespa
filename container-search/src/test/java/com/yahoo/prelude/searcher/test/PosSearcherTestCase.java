@@ -121,10 +121,10 @@ public class PosSearcherTestCase {
 
         q = new Query();
         q.properties().set("pos.ll", "N0;E0");
-        q.properties().set("pos.radius", "-1");
+        q.properties().set("pos.radius", "-42");
         doSearch(searcher, q, 0, 10);
         assertEquals("(2,0,0,-1,0,1,0,4294967295)", q.getRanking().getLocation().toString());
-        assertEquals("(2,0,0,536870912,0,1,0,4294967295)", q.getRanking().getLocation().backendString());
+        assertEquals("(2,0,0,-1,0,1,0,4294967295)", q.getRanking().getLocation().backendString());
     }
 
     /**

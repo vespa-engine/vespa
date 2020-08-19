@@ -6,6 +6,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcore/proton/attribute/document_field_retriever.h>
 #include <vespa/vespalib/geo/zcurve.h>
@@ -16,6 +17,8 @@
 LOG_SETUP(".proton.server.documentretriever");
 
 using document::Document;
+using document::Field;
+using document::FieldSet;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::PositionDataType;
@@ -28,6 +31,7 @@ using search::IDocumentStore;
 using search::index::Schema;
 using storage::spi::Timestamp;
 using vespalib::geo::ZCurve;
+using search::attribute::BasicType;
 
 namespace proton {
 
@@ -43,6 +47,31 @@ bool is_array_of_position_type(const document::DataType& field_type) noexcept {
 
 }
 
+FieldSetAttributeDB::FieldSetAttributeDB(const IFieldInfo & fieldInfo)
+    : _fieldInfo(fieldInfo),
+      _isFieldSetAttributeOnly(),
+      _lock()
+{}
+
+FieldSetAttributeDB::~FieldSetAttributeDB() = default;
+
+bool
+FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::Field::Set & set) const {
+    std::lock_guard guard(_lock);
+    auto found = _isFieldSetAttributeOnly.find(key);
+    bool isAttributeOnly = true;
+    if (found == _isFieldSetAttributeOnly.end()) {
+        for (const Field *field : set) {
+            isAttributeOnly = _fieldInfo.isFieldAttribute(*field);
+            if (!isAttributeOnly) break;
+        }
+        _isFieldSetAttributeOnly[key] = isAttributeOnly;
+    } else {
+        isAttributeOnly = found->second;
+    }
+    return isAttributeOnly;
+}
+
 DocumentRetriever
 ::DocumentRetriever(const DocTypeName &docTypeName,
                     const DocumentTypeRepo &repo,
@@ -55,13 +84,16 @@ DocumentRetriever
       _attr_manager(attr_manager),
       _doc_store(doc_store),
       _possiblePositionFields(),
-      _attributeFields()
+      _attributeFields(Field::Set::emptySet()),
+      _areAllFieldsAttributes(true),
+      _fieldSetAttributeInfo(*this)
 {
     const DocumentType * documentType = repo.getDocumentType(docTypeName.getName());
-    document::Field::Set fields = documentType->getFieldSet();
+    Field::Set fields = documentType->getFieldSet();
     int32_t positionDataTypeId = PositionDataType::getInstance().getId();
     LOG(debug, "checking document type '%s' for position fields", docTypeName.getName().c_str());
-    for (const document::Field * field : fields) {
+    Field::Set::Builder attrBuilder;
+    for (const Field* field : fields) {
         if ((field->getDataType().getId() == positionDataTypeId) || is_array_of_position_type(field->getDataType())) {
             LOG(debug, "Field '%s' is a position field", field->getName().data());
             const vespalib::string & zcurve_name = PositionDataType::getZCurveFieldName(field->getName());
@@ -69,22 +101,57 @@ DocumentRetriever
             if (attr && attr->valid()) {
                 LOG(debug, "Field '%s' is a registered attribute field", zcurve_name.c_str());
                 _possiblePositionFields.emplace_back(field, zcurve_name);
+            } else {
+                _areAllFieldsAttributes = false;
             }
         } else {
             const vespalib::string &name = field->getName();
             AttributeGuard::UP attr = attr_manager.getAttribute(name);
-            if (attr && attr->valid()) {
-                _attributeFields.emplace_back(field);
+            if (attr && attr->valid()
+                && !_schema.isIndexField(field->getName())
+                && ((*attr)->getBasicType() != BasicType::PREDICATE)
+                && ((*attr)->getBasicType() != BasicType::REFERENCE))
+            {
+                attrBuilder.add(field);
+            } else {
+                _areAllFieldsAttributes = false;
             }
         }
     }
+    _attributeFields = attrBuilder.build();
+}
+
+bool
+DocumentRetriever::needFetchFromDocStore(const FieldSet & fieldSet) const {
+    switch (fieldSet.getType()) {
+        case FieldSet::Type::NONE:
+        case FieldSet::Type::DOCID:
+            return false;
+        case FieldSet::Type::ALL:
+            return ! _areAllFieldsAttributes;
+        case FieldSet::Type::FIELD: {
+            const auto & field = static_cast<const Field&>(fieldSet);
+            return ! isFieldAttribute(field);
+        }
+        case FieldSet::Type::SET: {
+            const auto &set = static_cast<const document::FieldCollection &>(fieldSet);
+            return ! _fieldSetAttributeInfo.areAllFieldsAttributes(set.hash(), set.getFields());
+        }
+    }
+    abort();
+}
+
+bool
+DocumentRetriever::isFieldAttribute(const Field& field) const {
+    return _attributeFields.contains(field);
 }
 
 DocumentRetriever::~DocumentRetriever() = default;
 
 namespace {
 
-FieldValue::UP positionFromZcurve(int64_t zcurve) {
+std::unique_ptr<document::FieldValue>
+positionFromZcurve(int64_t zcurve) {
     int32_t x, y;
     ZCurve::decode(zcurve, &x, &y);
 
@@ -111,7 +178,8 @@ zcurve_array_attribute_to_field_value(const document::Field& field,
     return new_fv;
 }
 
-void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields, const IAttributeManager & attr_manager)
+void
+fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields, const IAttributeManager & attr_manager)
 {
     for (const auto & it : possiblePositionFields) {
         auto attr_guard = attr_manager.getAttribute(it.second);
@@ -155,7 +223,7 @@ private:
 }  // namespace
 
 Document::UP
-DocumentRetriever::getDocument(DocumentIdT lid) const
+DocumentRetriever::getFullDocument(DocumentIdT lid) const
 {
     Document::UP doc = _doc_store.read(lid, getDocumentTypeRepo());
     if (doc) {
@@ -164,18 +232,59 @@ DocumentRetriever::getDocument(DocumentIdT lid) const
     return doc;
 }
 
-void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const
+Document::UP
+DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const FieldSet & fieldSet) const {
+    Document::UP doc;
+    if (needFetchFromDocStore(fieldSet)) {
+        doc = _doc_store.read(lid, getDocumentTypeRepo());
+        if (doc) {
+            populate(lid, *doc);
+        }
+        FieldSet::stripFields(*doc, fieldSet);
+    } else {
+        doc = std::make_unique<Document>(getDocumentType(), docId);
+        switch (fieldSet.getType()) {
+            case FieldSet::Type::ALL:
+                populate(lid, *doc);
+                break;
+            case FieldSet::Type::FIELD: {
+                const auto & field = static_cast<const Field&>(fieldSet);
+                populate(lid, *doc, Field::Set::Builder().add(&field).build());
+                break;
+            }
+            case FieldSet::Type::SET: {
+                const auto &set = static_cast<const document::FieldCollection &>(fieldSet);
+                populate(lid, *doc, set.getFields());
+                break;
+            }
+            case FieldSet::Type::NONE:
+            case FieldSet::Type::DOCID:
+                break;
+        }
+        doc->setRepo(getDocumentTypeRepo());
+    }
+    return doc;
+}
+
+void
+DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const
 {
     PopulateVisitor populater(*this, visitor);
     _doc_store.visit(lids, getDocumentTypeRepo(), populater);
 }
 
-void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
+void
+DocumentRetriever::populate(DocumentIdT lid, Document & doc) const {
+    populate(lid, doc, _attributeFields);
+}
+
+void
+DocumentRetriever::populate(DocumentIdT lid, Document & doc, const Field::Set & attributeFields) const
 {
-    for (const document::Field * field : _attributeFields) {
+    for (const Field* field : attributeFields) {
         AttributeGuard::UP attr = _attr_manager.getAttribute(field->getName());
         if (lid < (*attr)->getCommittedDocIdLimit()) {
-            DocumentFieldRetriever::populate(lid, doc, *field, **attr, _schema.isIndexField(field->getName()));
+            DocumentFieldRetriever::populate(lid, doc, *field, **attr);
         } else {
             doc.remove(*field);
         }

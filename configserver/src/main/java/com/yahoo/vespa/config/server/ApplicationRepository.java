@@ -63,6 +63,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
@@ -90,6 +91,8 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -251,7 +254,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                 boolean ignoreSessionStaleFailure, Instant now) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
         activate(tenant, sessionId, prepareParams.getTimeoutBudget(), ignoreSessionStaleFailure);
         return result;
@@ -344,6 +347,50 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false);
     }
 
+    public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+        SessionRepository sessionRepository = tenantRepository.getTenant(prepared.getTenantName()).getSessionRepository();
+        Transaction transaction = sessionRepository.createActivateTransaction(prepared);
+        if (active != null) {
+            checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
+            checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
+            transaction.add(active.createDeactivateTransaction().operations());
+        }
+        return transaction;
+    }
+
+    static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {
+        long activeSessionAtCreate = session.getActiveSessionAtCreate();
+        log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        if (activeSessionAtCreate == 0) return; // No active session at create
+
+        long sessionId = session.getSessionId();
+        long currentActiveSessionSessionId = currentActiveSession.getSessionId();
+        log.log(Level.FINE, currentActiveSession.logPre() + "sessionId=" + sessionId +
+                            ", current active session=" + currentActiveSessionSessionId);
+        if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
+            currentActiveSessionSessionId != sessionId) {
+            String errMsg = currentActiveSession.logPre() + "Cannot activate session " +
+                            sessionId + " because the currently active session (" +
+                            currentActiveSessionSessionId + ") has changed since session " + sessionId +
+                            " was created (was " + activeSessionAtCreate + " at creation time)";
+            if (ignoreStaleSessionFailure) {
+                log.warning(errMsg + " (Continuing because of force.)");
+            } else {
+                throw new ActivationConflictException(errMsg);
+            }
+        }
+    }
+
+    // As of now, config generation is based on session id, and config generation must be a monotonically
+    // increasing number
+    static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
+        if (sessionId < currentActiveSessionId) {
+            throw new ActivationConflictException("It is not possible to activate session " + sessionId +
+                                                  ", because it is older than current active session (" +
+                                                  currentActiveSessionId + ")");
+        }
+    }
+
     // ---------------- Application operations ----------------------------------------------------------------
 
     /**
@@ -363,7 +410,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId, Duration waitTime) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
@@ -537,7 +584,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private boolean localSessionHasBeenDeleted(ApplicationId applicationId, long sessionId, Duration waitTime) {
-        SessionRepository sessionRepository = tenantRepository.getTenant(applicationId.tenant()).getSessionRepository();
+        SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
         Instant end = Instant.now().plus(waitTime);
         do {
             if (sessionRepository.getRemoteSession(sessionId) == null) return true;
@@ -545,6 +592,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } while (Instant.now().isBefore(end));
 
         return false;
+    }
+
+    public Optional<String> getApplicationPackageReference(ApplicationId applicationId) {
+        Optional<String> applicationPackage = Optional.empty();
+        RemoteSession session = getActiveSession(applicationId);
+        if (session != null) {
+            FileReference applicationPackageReference = session.getApplicationPackageReference();
+            File downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig().fileReferencesDir()));
+            if (applicationPackageReference != null && ! fileReferenceExistsOnDisk(downloadDirectory, applicationPackageReference))
+                applicationPackage = Optional.of(applicationPackageReference.value());
+        }
+        return applicationPackage;
+    }
+
+    public List<Version> getAllVersions(ApplicationId applicationId) {
+        Optional<ApplicationSet> applicationSet = getCurrentActiveApplicationSet(getTenant(applicationId), applicationId);
+        if (applicationSet.isEmpty())
+            return List.of();
+        else
+            return applicationSet.get().getAllVersions(applicationId);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
@@ -605,17 +672,28 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
+
+
+    public CompletionWaiter activate(LocalSession session, Session previousActiveSession, ApplicationId applicationId, boolean ignoreSessionStaleFailure) {
+        CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
+        NestedTransaction transaction = new NestedTransaction();
+        transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, ignoreSessionStaleFailure));
+        hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
+        transaction.commit();
+        return waiter;
+    }
+
     /**
      * Gets the active Session for the given application id.
      *
      * @return the active session, or null if there is no active session for the given application id.
      */
     public RemoteSession getActiveSession(ApplicationId applicationId) {
-        return getActiveSession(tenantRepository.getTenant(applicationId.tenant()), applicationId);
+        return getActiveSession(getTenant(applicationId), applicationId);
     }
 
     public long getSessionIdForApplication(ApplicationId applicationId) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
         return getSessionIdForApplication(tenant, applicationId);
     }
@@ -644,7 +722,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                           DeployLogger logger,
                                           boolean internalRedeploy,
                                           TimeoutBudget timeoutBudget) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         RemoteSession fromSession = getExistingSession(tenant, applicationId);
         LocalSession session = sessionRepository.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
@@ -664,7 +742,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         tenant.getApplicationRepo().createApplication(applicationId);
         Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
         LocalSession session = tenant.getSessionRepository().createSession(applicationDirectory,

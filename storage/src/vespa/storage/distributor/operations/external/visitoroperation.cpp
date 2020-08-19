@@ -41,6 +41,8 @@ VisitorOperation::BucketInfo::toString() const
     return ost.str();
 }
 
+VisitorOperation::SuperBucketInfo::~SuperBucketInfo() = default;
+
 VisitorOperation::VisitorOperation(
         DistributorComponent& owner,
         DistributorBucketSpace &bucketSpace,

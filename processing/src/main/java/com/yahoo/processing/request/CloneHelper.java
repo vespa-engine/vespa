@@ -84,11 +84,11 @@ public class CloneHelper {
         if (object instanceof FreezableClass)
             return ((FreezableClass)object).clone();
         else if (object instanceof PublicCloneable)
-            return ((PublicCloneable)object).clone();
+            return ((PublicCloneable<?>)object).clone();
         else if (object instanceof LinkedList)
-            return ((LinkedList) object).clone();
+            return ((LinkedList<?>) object).clone();
         else if (object instanceof ArrayList)
-            return ((ArrayList) object).clone();
+            return ((ArrayList<?>) object).clone();
 
         try {
             Method cloneMethod = cloneMethodCache.get(object);

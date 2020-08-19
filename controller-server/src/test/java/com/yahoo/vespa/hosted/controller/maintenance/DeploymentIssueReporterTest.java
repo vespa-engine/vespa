@@ -162,6 +162,10 @@ public class DeploymentIssueReporterTest {
         reporter.maintain();
         assertTrue("We get a platform issue when confidence is broken", issues.platformIssue());
         assertFalse("No deployment issue is filed for app2, which has a version upgrade failure.", issues.isOpenFor(app2.application().id()));
+
+        app2.runJob(systemTest);
+        tester.controllerTester().upgradeSystem(version);
+        assertEquals(VespaVersion.Confidence.low, tester.controller().versionStatus().systemVersion().get().confidence());
     }
 
 

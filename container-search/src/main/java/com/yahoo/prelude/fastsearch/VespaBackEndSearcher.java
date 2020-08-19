@@ -257,7 +257,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         if (query.getRanking().getLocation() != null) {
             s.append(" location=")
-                    .append(query.getRanking().getLocation().toString());
+                    .append(query.getRanking().getLocation().backendString());
         }
 
         if (query.getGroupingSessionCache()) {
