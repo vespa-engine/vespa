@@ -16,17 +16,10 @@ class DocumentTypeRepo;
 class FieldSetRepo
 {
 public:
-    FieldSetRepo(const DocumentTypeRepo& repo);
-    ~FieldSetRepo();
+    static FieldSet::UP parse(const DocumentTypeRepo& repo,
+                       vespalib::stringref fieldSetString);
 
-    FieldSet::SP getFieldSet(vespalib::stringref fieldSetString) const;
-
-    static FieldSet::SP parse(const DocumentTypeRepo& repo, vespalib::stringref fieldSetString);
     static vespalib::string serialize(const FieldSet& fs);
-private:
-    void configureDocumentType(const DocumentType & documentType);
-    const DocumentTypeRepo & _doumentTyperepo;
-    vespalib::hash_map<vespalib::string, FieldSet::SP> _configuredFieldSets;
 };
 
 }

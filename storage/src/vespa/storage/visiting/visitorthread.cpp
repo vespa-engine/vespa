@@ -31,7 +31,7 @@ VisitorThread::Event::Event(Event&& other)
 {
 }
 
-VisitorThread::Event::~Event() = default;
+VisitorThread::Event::~Event() {}
 
 VisitorThread::Event&
 VisitorThread::Event::operator= (Event&& other)
@@ -44,7 +44,9 @@ VisitorThread::Event::operator= (Event&& other)
     return *this;
 }
 
-VisitorThread::Event::Event(api::VisitorId visitor, const std::shared_ptr<api::StorageMessage>& msg)
+VisitorThread::Event::Event(
+        api::VisitorId visitor,
+        const std::shared_ptr<api::StorageMessage>& msg)
     : _visitorId(visitor),
       _message(msg),
       _timer(),
@@ -52,7 +54,9 @@ VisitorThread::Event::Event(api::VisitorId visitor, const std::shared_ptr<api::S
 {
 }
 
-VisitorThread::Event::Event(api::VisitorId visitor, mbus::Reply::UP reply)
+VisitorThread::Event::Event(
+        api::VisitorId visitor,
+        mbus::Reply::UP reply)
     : _visitorId(visitor),
       _mbusReply(std::move(reply)),
       _timer(),
@@ -327,7 +331,7 @@ VisitorThread::handleNonExistingVisitorCall(const Event& entry,
                                             ReturnCode& code)
 {
     // Get current time. Set the time that is the oldest still recent.
-    framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
+    framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());;
     trimRecentlyCompletedList(currentTime);
 
     // Go through all recent visitors. Ignore request if recent
@@ -431,7 +435,8 @@ VisitorThread::onCreateVisitor(
     do {
         // If no buckets are specified, fail command
         if (cmd->getBuckets().empty()) {
-            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, "No buckets specified");
+            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS,
+                                     "No buckets specified");
             LOG(warning, "CreateVisitor(%s): No buckets specified. Aborting.",
                          cmd->getInstanceId().c_str());
             break;
@@ -475,7 +480,7 @@ VisitorThread::onCreateVisitor(
         // Parse document selection
         try{
             if (!cmd->getDocumentSelection().empty()) {
-                std::shared_ptr<const document::DocumentTypeRepo> repo(_component.getTypeRepo()->documentTypeRepo);
+                std::shared_ptr<const document::DocumentTypeRepo> repo(_component.getTypeRepo());
                 const document::BucketIdFactory& idFactory(_component.getBucketIdFactory());
                 document::select::Parser parser(*repo, idFactory);
                 docSelection = parser.parse(cmd->getDocumentSelection());
