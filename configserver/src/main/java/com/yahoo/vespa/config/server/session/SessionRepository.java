@@ -623,7 +623,8 @@ public class SessionRepository {
                 log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return Optional.empty();
             }
-            ApplicationId applicationId = sessionZKClient.readApplicationId();
+            ApplicationId applicationId = sessionZKClient.readApplicationId()
+                    .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.INFO, "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addLocalSession(localSession);
@@ -697,7 +698,7 @@ public class SessionRepository {
 
     public Transaction createActivateTransaction(Session session) {
         Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
-        transaction.add(applicationRepo.createPutTransaction(session.sessionZooKeeperClient.readApplicationId(), session.getSessionId()).operations());
+        transaction.add(applicationRepo.createPutTransaction(session.getApplicationId(), session.getSessionId()).operations());
         return transaction;
     }
 

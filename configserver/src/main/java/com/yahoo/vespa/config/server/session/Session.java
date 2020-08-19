@@ -135,7 +135,10 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
-    public ApplicationId getApplicationId() { return sessionZooKeeperClient.readApplicationId(); }
+    public ApplicationId getApplicationId() {
+        return sessionZooKeeperClient.readApplicationId()
+                .orElseThrow(() -> new RuntimeException("Unable to read application id for session " + sessionId));
+    }
 
     /** Returns application id read from ZooKeeper. Will return Optional.empty() if not found */
     public Optional<ApplicationId> getOptionalApplicationId() {

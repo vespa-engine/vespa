@@ -140,10 +140,11 @@ public class SessionZooKeeperClient {
         configCurator.putData(applicationIdPath(), id.serializedForm());
     }
 
-    public ApplicationId readApplicationId() {
+    public Optional<ApplicationId> readApplicationId() {
         String idString = configCurator.getData(applicationIdPath());
-        if (idString == null) throw new RuntimeException("Unable to read application id at " + applicationIdPath());
-        return ApplicationId.fromSerializedForm(idString);
+        return (idString == null)
+                ? Optional.empty()
+                : Optional.of(ApplicationId.fromSerializedForm(idString));
     }
 
     void writeApplicationPackageReference(FileReference applicationPackageReference) {
