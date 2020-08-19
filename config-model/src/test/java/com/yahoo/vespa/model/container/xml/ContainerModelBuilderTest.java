@@ -241,7 +241,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +
                         "  <handler id='userRootHandler'>" +
-                        "    <binding>" + ROOT_HANDLER_BINDING.patternString() + "</binding>" +
+                        "    <binding>" + ROOT_HANDLER_BINDING + "</binding>" +
                         "  </handler>" +
                         "</container>");
         createModel(root, clusterElem);
@@ -260,7 +260,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +
                         "  <handler id='userHandler'>" +
-                        "    <binding>" + STATE_HANDLER_BINDING_1.patternString() + "</binding>" +
+                        "    <binding>" + STATE_HANDLER_BINDING_1 + "</binding>" +
                         "  </handler>" +
                         "</container>");
         try {
@@ -277,9 +277,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         createClusterWithJDiscHandler();
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertThat(discBindingsConfig, containsString("{discHandler}"));
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
-        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"http://*/clientBinding\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"binding0\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"binding1\""));
+        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"clientBinding\""));
     }
 
     @Test
@@ -292,9 +292,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <handler id='discHandler'>",
-                "    <binding>http://*/binding0</binding>",
-                "    <binding>http://*/binding1</binding>",
-                "    <clientBinding>http://*/clientBinding</clientBinding>",
+                "    <binding>binding0</binding>",
+                "    <binding>binding1</binding>",
+                "    <clientBinding>clientBinding</clientBinding>",
                 "  </handler>",
                 "</container>");
 
@@ -340,16 +340,16 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <processing>",
-                "    <binding>http://*/binding0</binding>",
-                "    <binding>http://*/binding1</binding>",
+                "    <binding>binding0</binding>",
+                "    <binding>binding1</binding>",
                 "  </processing>",
                 "</container>");
 
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"binding0\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"binding1\""));
         assertThat(discBindingsConfig, not(containsString("/processing/*")));
     }
 
@@ -358,9 +358,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         createModelWithClientProvider();
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertThat(discBindingsConfig, containsString("{discClient}"));
-        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"http://*/binding0\""));
-        assertThat(discBindingsConfig, containsString(".clientBindings[1] \"http://*/binding1\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/serverBinding\""));
+        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"binding0\""));
+        assertThat(discBindingsConfig, containsString(".clientBindings[1] \"binding1\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"serverBinding\""));
     }
 
     @Test
@@ -373,9 +373,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +
                 "  <client id='discClient'>" +
-                "    <binding>http://*/binding0</binding>" +
-                "    <binding>http://*/binding1</binding>" +
-                "    <serverBinding>http://*/serverBinding</serverBinding>" +
+                "    <binding>binding0</binding>" +
+                "    <binding>binding1</binding>" +
+                "    <serverBinding>serverBinding</serverBinding>" +
                 "  </client>" +
                 "</container>" );
 

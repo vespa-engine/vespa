@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,8 +23,8 @@ import java.util.Set;
  */
 public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<CHILD, ComponentModel> {
 
-    private final Set<BindingPattern> serverBindings = new LinkedHashSet<>();
-    private final List<BindingPattern> clientBindings = new ArrayList<>();
+    private Set<String> serverBindings = new LinkedHashSet<>();
+    private List<String> clientBindings = new ArrayList<>();
 
     public Handler(ComponentModel model) {
         super(model);
@@ -33,23 +34,27 @@ public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<
         return new Handler<>(new ComponentModel(className, null, null, null));
     }
 
-    public void addServerBindings(BindingPattern... bindings) {
+    public static Handler<AbstractConfigProducer<?>> getVespaHandlerFromClassName(String className) {
+        return new Handler<>(new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(className, null), null));
+    }
+
+    public void addServerBindings(String... bindings) {
         serverBindings.addAll(Arrays.asList(bindings));
     }
 
-    public void removeServerBinding(BindingPattern binding) {
+    public void removeServerBinding(String binding) {
         serverBindings.remove(binding);
     }
 
-    public void addClientBindings(BindingPattern... bindings) {
+    public void addClientBindings(String... bindings) {
         clientBindings.addAll(Arrays.asList(bindings));
     }
 
-    public final Set<BindingPattern> getServerBindings() {
+    public final Set<String> getServerBindings() {
         return Collections.unmodifiableSet(serverBindings);
     }
 
-    public final List<BindingPattern> getClientBindings() {
+    public final List<String> getClientBindings() {
         return Collections.unmodifiableList(clientBindings);
     }
 
