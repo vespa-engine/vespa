@@ -70,7 +70,7 @@ DistributorConfiguration::containsTimeStatement(const std::string& documentSelec
 {
     TimeVisitor visitor;
     try {
-        document::select::Parser parser(*_component.getTypeRepo()->documentTypeRepo, _component.getBucketIdFactory());
+        document::select::Parser parser(*_component.getTypeRepo(), _component.getBucketIdFactory());
 
         std::unique_ptr<document::select::Node> node = parser.parse(documentSelection);
         node->visit(visitor);

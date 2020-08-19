@@ -171,17 +171,19 @@ TestServiceLayerApp::TestServiceLayerApp(DiskCount dc, NodeIndex index,
     assert(dc > 0);
 }
 
-TestServiceLayerApp::~TestServiceLayerApp() = default;
+TestServiceLayerApp::~TestServiceLayerApp() {}
 
 void
 TestServiceLayerApp::setupDummyPersistence()
 {
-    auto provider = std::make_unique<spi::dummy::DummyPersistence>(getTypeRepo(), _compReg.getDiskCount());
+    spi::PersistenceProvider::UP provider(new spi::dummy::DummyPersistence(
+            getTypeRepo(), _compReg.getDiskCount()));
     setPersistenceProvider(std::move(provider));
 }
 
 void
-TestServiceLayerApp::setPersistenceProvider(PersistenceProviderUP provider)
+TestServiceLayerApp::setPersistenceProvider(
+        spi::PersistenceProvider::UP provider)
 {
     _partitions = provider->getPartitionStates().getList();
     assert(spi::PartitionId(_compReg.getDiskCount()) == _partitions.size());

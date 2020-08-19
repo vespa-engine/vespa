@@ -47,11 +47,11 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
     spi::Selection sel
         = spi::Selection(spi::DocumentSelection(documentSelection));
     spi::CreateIteratorResult createIterResult(provider.createIterator(
-            bucket,
-            std::make_shared<document::AllFields>(),
-            sel,
-            versions,
-            context));
+                                                       bucket,
+                                                       document::AllFields(),
+                                                       sel,
+                                                       versions,
+                                                       context));
 
     if (createIterResult.getErrorCode() != spi::Result::ErrorType::NONE) {
         vespalib::asciistream ss;

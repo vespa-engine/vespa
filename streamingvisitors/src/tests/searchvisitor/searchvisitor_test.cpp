@@ -35,7 +35,7 @@ private:
 
 public:
     SearchVisitorTest();
-    ~SearchVisitorTest() override;
+    ~SearchVisitorTest();
     int Main() override;
 };
 
@@ -46,9 +46,9 @@ SearchVisitorTest::SearchVisitorTest() :
 {
     _componentRegister.setNodeInfo("mycluster", lib::NodeType::STORAGE, 1);
     _componentRegister.setClock(_clock);
-    auto repo = std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(TEST_PATH("cfg/documenttypes.cfg")));
+    StorageComponent::DocumentTypeRepoSP repo(new DocumentTypeRepo(readDocumenttypesConfig(TEST_PATH("cfg/documenttypes.cfg"))));
     _componentRegister.setDocumentTypeRepo(repo);
-    _component = std::make_unique<StorageComponent>(_componentRegister, "storage");
+    _component.reset(new StorageComponent(_componentRegister, "storage"));
 }
 
 SearchVisitorTest::~SearchVisitorTest() = default;
@@ -80,8 +80,8 @@ SearchVisitorTest::testCreateSearchVisitor(const vespalib::string & dir, const v
 void
 SearchVisitorTest::testSearchEnvironment()
 {
-    EXPECT_TRUE(_env.getVSMAdapter("simple") != nullptr);
-    EXPECT_TRUE(_env.getRankManager("simple") != nullptr);
+    EXPECT_TRUE(_env.getVSMAdapter("simple") != NULL);
+    EXPECT_TRUE(_env.getRankManager("simple") != NULL);
 }
 
 void

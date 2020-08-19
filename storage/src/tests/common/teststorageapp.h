@@ -107,9 +107,8 @@ private:
 
 class TestServiceLayerApp : public TestStorageApp
 {
-    using PersistenceProviderUP = std::unique_ptr<spi::PersistenceProvider>;
     ServiceLayerComponentRegisterImpl& _compReg;
-    PersistenceProviderUP _persistenceProvider;
+    spi::PersistenceProvider::UP _persistenceProvider;
     spi::PartitionStateList _partitions;
 
 public:
@@ -119,7 +118,7 @@ public:
     ~TestServiceLayerApp();
 
     void setupDummyPersistence();
-    void setPersistenceProvider(PersistenceProviderUP);
+    void setPersistenceProvider(spi::PersistenceProvider::UP);
 
     ServiceLayerComponentRegisterImpl& getComponentRegister() { return _compReg; }
 

@@ -45,10 +45,10 @@ private:
         DocumentIterator it;
         bool in_use;
         std::vector<BucketGuard::UP> bucket_guards;
-        IteratorEntry(storage::spi::ReadConsistency readConsistency, const Bucket &b, FieldSetSP f,
+        IteratorEntry(storage::spi::ReadConsistency readConsistency, const Bucket &b, const document::FieldSet& f,
                       const Selection &s, IncludedVersions v, ssize_t defaultSerializedSize, bool ignoreMaxBytes)
             : handler_sequence(),
-              it(b, std::move(f), s, v, defaultSerializedSize, ignoreMaxBytes, readConsistency),
+              it(b, f, s, v, defaultSerializedSize, ignoreMaxBytes, readConsistency),
               in_use(false),
               bucket_guards() {}
     };
@@ -105,8 +105,8 @@ public:
     void removeAsync(const Bucket&, Timestamp, const document::DocumentId&, Context&, OperationComplete::UP) override;
     void updateAsync(const Bucket&, Timestamp, storage::spi::DocumentUpdateSP, Context&, OperationComplete::UP) override;
     GetResult get(const Bucket&, const document::FieldSet&, const document::DocumentId&, Context&) const override;
-    CreateIteratorResult
-    createIterator(const Bucket &bucket, FieldSetSP, const Selection &, IncludedVersions, Context &context) override;
+    CreateIteratorResult createIterator(const Bucket&, const document::FieldSet&, const Selection&,
+                                        IncludedVersions, Context&) override;
     IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId, Context&) override;
 

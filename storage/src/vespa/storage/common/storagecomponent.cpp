@@ -2,22 +2,17 @@
 
 #include "storagecomponent.h"
 #include <vespa/storage/storageserver/prioritymapper.h>
+
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/document/fieldset/fieldsetrepo.h>
 
 namespace storage {
 
-StorageComponent::Repos::Repos(std::shared_ptr<const document::DocumentTypeRepo> repo)
-    : documentTypeRepo(std::move(repo)),
-      fieldSetRepo(std::make_shared<document::FieldSetRepo>(*documentTypeRepo))
-{}
-
-StorageComponent::Repos::~Repos() = default;
-
 // Defined in cpp file to allow unique pointers of unknown type in header.
-StorageComponent::~StorageComponent() = default;
+StorageComponent::~StorageComponent()
+{
+}
 
 void
 StorageComponent::setNodeInfo(vespalib::stringref clusterName,
@@ -31,11 +26,10 @@ StorageComponent::setNodeInfo(vespalib::stringref clusterName,
 }
 
 void
-StorageComponent::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> docTypeRepo)
+StorageComponent::setDocumentTypeRepo(DocumentTypeRepoSP repo)
 {
-    auto repo = std::make_shared<Repos>(std::move(docTypeRepo));
     std::lock_guard guard(_lock);
-    _repos = std::move(repo);
+    _docTypeRepo = repo;
 }
 
 void
@@ -84,7 +78,7 @@ StorageComponent::StorageComponent(StorageComponentRegister& compReg,
       _clusterName(),
       _nodeType(nullptr),
       _index(0),
-      _repos(),
+      _docTypeRepo(),
       _loadTypes(),
       _priorityMapper(new PriorityMapper),
       _bucketIdFactory(),
@@ -122,11 +116,11 @@ StorageComponent::getPriority(const documentapi::LoadType& lt) const
     return _priorityMapper->getPriority(lt);
 }
 
-std::shared_ptr<StorageComponent::Repos>
+StorageComponent::DocumentTypeRepoSP
 StorageComponent::getTypeRepo() const
 {
     std::lock_guard guard(_lock);
-    return _repos;
+    return _docTypeRepo;
 }
 
 StorageComponent::LoadTypeSetSP

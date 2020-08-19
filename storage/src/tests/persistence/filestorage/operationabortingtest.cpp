@@ -77,19 +77,18 @@ spi::LoadType defaultLoadType(0, "default");
 }
 
 struct OperationAbortingTest : FileStorTestFixture {
-    std::unique_ptr<spi::dummy::DummyPersistence> _dummyProvider;
-    BlockingMockProvider * _blockingProvider;
+    spi::PersistenceProvider::UP _dummyProvider;
+    BlockingMockProvider* _blockingProvider;
     std::unique_ptr<vespalib::Barrier> _queueBarrier;
     std::unique_ptr<vespalib::Barrier> _completionBarrier;
 
     void setupProviderAndBarriers(uint32_t queueBarrierThreads) {
         FileStorTestFixture::setupPersistenceThreads(1);
-        _dummyProvider = std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo(), 1);
-        _queueBarrier = std::make_unique<vespalib::Barrier>(queueBarrierThreads);
-        _completionBarrier = std::make_unique<vespalib::Barrier>(2);
-        auto blockingProvider = std::make_unique<BlockingMockProvider>(*_dummyProvider, *_queueBarrier, *_completionBarrier);
-        _blockingProvider = blockingProvider.get();
-        _node->setPersistenceProvider(std::move(blockingProvider));
+        _dummyProvider.reset(new spi::dummy::DummyPersistence(_node->getTypeRepo(), 1));
+        _queueBarrier.reset(new vespalib::Barrier(queueBarrierThreads));
+        _completionBarrier.reset(new vespalib::Barrier(2));
+        _blockingProvider = new BlockingMockProvider(*_dummyProvider, *_queueBarrier, *_completionBarrier);
+        _node->setPersistenceProvider(spi::PersistenceProvider::UP(_blockingProvider));
     }
 
     void validateReplies(DummyStorageLink& link, size_t repliesTotal,
