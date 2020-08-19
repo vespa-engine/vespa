@@ -119,6 +119,15 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return curator.getChildren(applicationsPath).stream()
                       .sorted()
                       .map(ApplicationId::fromSerializedForm)
+                      .filter(applicationId -> {
+                          if ( ! applicationId.tenant().equals(tenant)) {
+                              log.log(Level.WARNING, "There is an application ('" + applicationId + "') with wrong tenant (should be '" +
+                                                     tenant + "') in " + applicationsPath);
+                              return false;
+                          } else {
+                              return true;
+                          }
+                      })
                       .filter(id -> activeSessionOf(id).isPresent())
                       .collect(Collectors.toUnmodifiableList());
     }
