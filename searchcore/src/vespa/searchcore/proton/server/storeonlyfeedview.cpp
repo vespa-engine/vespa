@@ -380,7 +380,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP do
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, doc = std::move(doc), onDone = std::move(onDone), lid, this] {
+            makeLambdaTask([serialNum, doc = std::move(doc), onDone, lid, this] {
                 (void) onDone;
                 _summaryAdapter->put(serialNum, lid, *doc);
                 _pendingLidsForDocStore.consume(lid);
@@ -390,7 +390,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP do
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
     _pendingLidsForDocStore.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, onDone = std::move(onDone), this] {
+            makeLambdaTask([serialNum, lid, onDone, this] {
                 (void) onDone;
                 _summaryAdapter->remove(serialNum, lid);
                 _pendingLidsForDocStore.consume(lid);
