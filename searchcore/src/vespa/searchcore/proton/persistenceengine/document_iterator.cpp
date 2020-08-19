@@ -90,9 +90,9 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
 DocumentIterator::~DocumentIterator() = default;
 
 void
-DocumentIterator::add(const IDocumentRetriever::SP &retriever)
+DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    _sources.push_back(retriever);
+    _sources.push_back(std::move(retriever));
 }
 
 IterateResult

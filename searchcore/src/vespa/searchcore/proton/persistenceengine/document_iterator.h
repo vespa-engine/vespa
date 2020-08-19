@@ -40,7 +40,7 @@ public:
                      ssize_t defaultSerializedSize, bool ignoreMaxBytes,
                      ReadConsistency readConsistency=ReadConsistency::STRONG);
     ~DocumentIterator();
-    void add(const IDocumentRetriever::SP &retriever);
+    void add(IDocumentRetriever::SP retriever);
     storage::spi::IterateResult iterate(size_t maxBytes);
 };
 

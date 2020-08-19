@@ -7,7 +7,7 @@
 #include "isummaryadapter.h"
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
-#include "pendinglidtracker.h"
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>

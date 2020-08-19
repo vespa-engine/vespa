@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -121,9 +122,7 @@ public:
     void maintenanceSync(MaintenanceController &mc, ICommitable &commit);
 
     // Internally synchronized
-    RetrieversSP getRetrievers() {
-        return _retrievers.get();
-    }
+    RetrieversSP getRetrievers(IDocumentRetriever::ReadConsistency consistency, ICommitable & visibilityHandler);
 
     IDocumentSubDB *getReadySubDB() { return _subDBs[_readySubDbId]; }
     const IDocumentSubDB *getReadySubDB() const { return _subDBs[_readySubDbId]; }
