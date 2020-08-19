@@ -43,6 +43,7 @@ import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -172,7 +173,7 @@ public class SessionPreparerTest {
         HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
         hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().applicationId(applicationId("default")).build(),
-                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, new SessionZooKeeperClient(curator, sessionsPath));
+                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
     }
     
     @Test
@@ -187,7 +188,7 @@ public class SessionPreparerTest {
         hostValidator.update(applicationId, Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
                          Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app,
-                         new SessionZooKeeperClient(curator, sessionsPath));
+                         createSessionZooKeeperClient());
         assertEquals(logged.toString(), "");
     }
 
@@ -199,9 +200,8 @@ public class SessionPreparerTest {
                                .applicationName("foo").instanceName("quux").build();
         PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
         prepare(testApp, params);
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath);
         assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
-        assertThat(zkc.readApplicationId(), is(origId));
+        assertThat(createSessionZooKeeperClient().readApplicationId(), is(origId));
     }
 
     @Test
@@ -336,7 +336,7 @@ public class SessionPreparerTest {
         FilesApplicationPackage applicationPackage = getApplicationPackage(app);
         return preparer.prepare(new HostRegistry<>(), getLogger(), params,
                                 Optional.empty(), tenantPath, Instant.now(), applicationPackage.getAppDir(),
-                                applicationPackage, new SessionZooKeeperClient(curator, sessionsPath));
+                                applicationPackage, createSessionZooKeeperClient());
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {
@@ -358,6 +358,10 @@ public class SessionPreparerTest {
     private ApplicationId applicationId(String applicationName) {
         return ApplicationId.from(TenantName.defaultName(),
                                   ApplicationName.from(applicationName), InstanceName.defaultName());
+    }
+
+    private SessionZooKeeperClient createSessionZooKeeperClient() {
+        return new SessionZooKeeperClient(curator, configCurator, sessionsPath, ConfigUtils.getCanonicalHostName());
     }
 
     private static class FailWithTransientExceptionProvisioner implements Provisioner {

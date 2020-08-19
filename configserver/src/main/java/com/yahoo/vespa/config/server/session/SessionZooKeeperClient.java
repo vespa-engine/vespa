@@ -11,7 +11,6 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -51,12 +50,6 @@ public class SessionZooKeeperClient {
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
-
-    // Only for testing
-    // TODO: Remove, use the constructor below
-    public SessionZooKeeperClient(Curator curator, Path sessionPath) {
-        this(curator, ConfigCurator.create(curator), sessionPath, "1");
-    }
 
     public SessionZooKeeperClient(Curator curator,
                                   ConfigCurator configCurator,

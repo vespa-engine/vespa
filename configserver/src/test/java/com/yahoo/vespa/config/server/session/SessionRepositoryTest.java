@@ -11,6 +11,8 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -153,7 +155,10 @@ public class SessionRepositoryTest {
     }
 
     private void createSession(long sessionId, boolean wait, SessionRepository sessionRepository) {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionRepository.getSessionPath(sessionId));
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
+                                                                ConfigCurator.create(curator),
+                                                                sessionRepository.getSessionPath(sessionId),
+                                                                ConfigUtils.getCanonicalHostName());
         zkc.createNewSession(Instant.now());
         if (wait) {
             Curator.CompletionWaiter waiter = zkc.getUploadWaiter();
