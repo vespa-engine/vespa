@@ -108,8 +108,8 @@ public class SessionZooKeeperClientTest {
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         String path = "/" + sessionId + "/" + SessionZooKeeperClient.APPLICATION_ID_PATH;
         configCurator.putData(path, idString);
-        ApplicationId zkId = zkc.readApplicationId();
-        assertThat(zkId.serializedForm(), is(expectedIdString));
+        ApplicationId applicationId = zkc.readApplicationId().get();
+        assertThat(applicationId.serializedForm(), is(expectedIdString));
     }
 
     private SessionZooKeeperClient createSessionZKClient(String sessionId) {

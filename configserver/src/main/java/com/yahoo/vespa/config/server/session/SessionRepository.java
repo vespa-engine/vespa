@@ -181,8 +181,9 @@ public class SessionRepository {
                     deleteLocalSession(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
                     //  Sessions with state ACTIVATE, but which are not actually active
-                    ApplicationId applicationId = candidate.getApplicationId();
-                    Long activeSession = activeSessions.get(applicationId);
+                    Optional<ApplicationId> applicationId = candidate.getOptionalApplicationId();
+                    if (applicationId.isEmpty()) continue;
+                    Long activeSession = activeSessions.get(applicationId.get());
                     if (activeSession == null || activeSession != candidate.getSessionId()) {
                         deleteLocalSession(candidate);
                         log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " created " +
@@ -622,7 +623,8 @@ public class SessionRepository {
                 log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return Optional.empty();
             }
-            ApplicationId applicationId = sessionZKClient.readApplicationId();
+            ApplicationId applicationId = sessionZKClient.readApplicationId()
+                    .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.INFO, "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addLocalSession(localSession);
@@ -696,7 +698,7 @@ public class SessionRepository {
 
     public Transaction createActivateTransaction(Session session) {
         Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
-        transaction.add(applicationRepo.createPutTransaction(session.sessionZooKeeperClient.readApplicationId(), session.getSessionId()).operations());
+        transaction.add(applicationRepo.createPutTransaction(session.getApplicationId(), session.getSessionId()).operations());
         return transaction;
     }
 

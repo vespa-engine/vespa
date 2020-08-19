@@ -60,7 +60,7 @@ public class RemoteSession extends Session {
         // Read hosts allocated on the config server instance which created this
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
 
-        return ApplicationSet.fromList(applicationLoader.buildModels(sessionZooKeeperClient.readApplicationId(),
+        return ApplicationSet.fromList(applicationLoader.buildModels(getApplicationId(),
                                                                      sessionZooKeeperClient.readDockerImageRepository(),
                                                                      sessionZooKeeperClient.readVespaVersion(),
                                                                      applicationPackage,

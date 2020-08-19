@@ -201,7 +201,7 @@ public class SessionPreparerTest {
         PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
         prepare(testApp, params);
         assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
-        assertThat(createSessionZooKeeperClient().readApplicationId(), is(origId));
+        assertThat(createSessionZooKeeperClient().readApplicationId().get(), is(origId));
     }
 
     @Test

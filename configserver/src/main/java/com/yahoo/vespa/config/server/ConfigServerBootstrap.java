@@ -105,7 +105,11 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         initializing(vipStatusMode);
 
         // Run maintainers that cleans up zookeeper and disk usage before bootstrapping
-        configServerMaintenance.ifPresent(ConfigServerMaintenance::runBeforeBootstrap);
+        try {
+            configServerMaintenance.ifPresent(ConfigServerMaintenance::runBeforeBootstrap);
+        } catch (Exception e) {
+            log.log(Level.INFO, "Running maintainers before bootstrap failed, continuing with bootstrap", e);
+        }
 
         switch (mode) {
             case BOOTSTRAP_IN_SEPARATE_THREAD:
