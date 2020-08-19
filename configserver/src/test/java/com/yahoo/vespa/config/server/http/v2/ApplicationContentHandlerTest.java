@@ -45,13 +45,12 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     private final ApplicationId appId1 = new ApplicationId.Builder().tenant(tenantName1).applicationName("foo").instanceName("quux").build();
     private final ApplicationId appId2 = new ApplicationId.Builder().tenant(tenantName2).applicationName("foo").instanceName("quux").build();
 
-    private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private ApplicationHandler handler;
 
     @Before
     public void setupHandler() {
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 
@@ -106,7 +105,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
     @Test
     public void require_that_get_does_not_set_write_flag() throws IOException {
-        Tenant tenant1 = tenantRepository.getTenant(tenantName1);
+        Tenant tenant1 = applicationRepository.getTenant(appId1);
         LocalSession session = applicationRepository.getActiveLocalSession(tenant1, appId1);
         assertContent("/test.txt", "foo\n");
         assertThat(session.getStatus(), is(Session.Status.ACTIVATE));

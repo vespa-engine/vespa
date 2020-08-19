@@ -51,12 +51,6 @@ public class SessionZooKeeperClient {
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
 
-    // Only for testing
-    // TODO: Remove, use the constructor below
-    public SessionZooKeeperClient(Curator curator, Path sessionPath) {
-        this(curator, ConfigCurator.create(curator), sessionPath, "1");
-    }
-
     public SessionZooKeeperClient(Curator curator,
                                   ConfigCurator configCurator,
                                   Path sessionPath,

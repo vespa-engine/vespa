@@ -58,7 +58,6 @@ public class SessionActiveHandlerTest {
 
     private SessionHandlerTest.MockProvisioner hostProvisioner;
     private TestComponentRegistry componentRegistry;
-    private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionActiveHandler handler;
 
@@ -73,10 +72,10 @@ public class SessionActiveHandlerTest {
                 .curator(new MockCurator())
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository(tenantRepository, hostProvisioner,
                                                           new OrchestratorMock(), componentRegistry.getClock());
-        tenantRepository.addTenant(tenantName);
         handler = createHandler();
     }
 
@@ -124,7 +123,7 @@ public class SessionActiveHandlerTest {
         ApplicationMetaData getMetaData() { return metaData; }
 
         void invoke() {
-            Tenant tenant = tenantRepository.getTenant(tenantName);
+            Tenant tenant = applicationRepository.getTenant(applicationId());
             long sessionId = applicationRepository.createSession(applicationId(),
                                                                  new TimeoutBudget(componentRegistry.getClock(), Duration.ofSeconds(10)),
                                                                  testApp);
