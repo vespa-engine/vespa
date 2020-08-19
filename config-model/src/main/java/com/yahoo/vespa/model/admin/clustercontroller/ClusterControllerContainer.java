@@ -14,7 +14,6 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
 import java.util.Set;
@@ -37,10 +36,10 @@ public class ClusterControllerContainer extends Container implements
         super(parent, "" + index, index);
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
-                   "/clustercontroller-status/*");
+                   "clustercontroller-status/*");
         addHandler("clustercontroller-state-restapi-v2",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
-                   "/cluster/v2/*");
+                   "cluster/v2/*");
         if (runStandaloneZooKeeper) {
             addComponent("clustercontroller-zkrunner",
                          "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl",
@@ -78,8 +77,8 @@ public class ClusterControllerContainer extends Container implements
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
-    private void addHandler(Handler h, String path) {
-        h.addServerBindings(SystemBindingPattern.fromHttpPath(path));
+    private void addHandler(Handler h, String binding) {
+        h.addServerBindings("http://*/" + binding);
         super.addHandler(h);
     }
 
@@ -97,8 +96,9 @@ public class ClusterControllerContainer extends Container implements
         addComponent(new Component<>(createComponentModel(id, className, bundle)));
     }
 
-    private void addHandler(String id, String className, String path) {
-        addHandler(new Handler(createComponentModel(id, className, CLUSTERCONTROLLER_BUNDLE)), path);
+    private void addHandler(String id, String className, String binding) {
+        addHandler(new Handler(createComponentModel(id, className, CLUSTERCONTROLLER_BUNDLE)),
+                   binding);
     }
 
     @Override

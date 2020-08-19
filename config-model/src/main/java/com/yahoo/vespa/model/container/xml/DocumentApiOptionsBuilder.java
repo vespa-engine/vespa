@@ -6,17 +6,19 @@ import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
 /**
  * @author Einar M R Rosenvinge
+ * @since 5.1.11
  */
 public class DocumentApiOptionsBuilder {
 
     private static final Logger log = Logger.getLogger(DocumentApiOptionsBuilder.class.getName());
-
+    private static final String[] DEFAULT_BINDINGS = {"http://*/"};
 
     public static ContainerDocumentApi.Options build(Element spec) {
         return new ContainerDocumentApi.Options(getBindings(spec));
@@ -25,7 +27,8 @@ public class DocumentApiOptionsBuilder {
     private static List<String> getBindings(Element spec) {
         Collection<Element> bindingElems =  XML.getChildren(spec, "binding");
         if (bindingElems.isEmpty())
-            return List.of();
+            return Arrays.asList(DEFAULT_BINDINGS);
+
         List<String> bindings = new ArrayList<>();
         for (Element e :bindingElems) {
             String binding = getBinding(e);

@@ -1,16 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.yahoo.container.jdisc.JdiscBindingsConfig.Handlers;
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author gjoranv
+ * @since 5.1.8
  */
 public class DiscBindingsConfigGenerator {
 
@@ -29,11 +26,7 @@ public class DiscBindingsConfigGenerator {
 
         return Collections.singletonMap(handler.model.getComponentId().stringValue(),
                             new Handlers.Builder()
-                                    .serverBindings(toStrings(handler.getServerBindings()))
-                                    .clientBindings(toStrings(handler.getClientBindings())));
-    }
-
-    private static Collection<String> toStrings(Collection<BindingPattern> bindings) {
-        return bindings.stream().map(BindingPattern::patternString).collect(toList());
+                                    .serverBindings(handler.getServerBindings())
+                                    .clientBindings(handler.getClientBindings()));
     }
 }

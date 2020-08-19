@@ -2,8 +2,6 @@
 package com.yahoo.vespa.model.container.processing;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.model.container.component.BindingPattern;
-import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 
 /**
@@ -13,7 +11,7 @@ import com.yahoo.vespa.model.container.component.chain.Chains;
  */
 public class ProcessingChains extends Chains<ProcessingChain> {
 
-    public static final BindingPattern[] defaultBindings = new BindingPattern[]{SystemBindingPattern.fromHttpPath("/processing/*")};
+    public static final String[] defaultBindings = new String[] {"http://*/processing/*"};
 
 
     public ProcessingChains(AbstractConfigProducer parent, String subId) {

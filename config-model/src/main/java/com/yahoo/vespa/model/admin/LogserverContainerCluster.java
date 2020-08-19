@@ -7,7 +7,6 @@ import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 /**
  * @author hmusum
@@ -40,7 +39,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
     private void addLogHandler() {
         Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
-        logHandler.addServerBindings(SystemBindingPattern.fromHttpPath("/logs"));
+        logHandler.addServerBindings("http://*/logs");
         addComponent(logHandler);
     }
 
