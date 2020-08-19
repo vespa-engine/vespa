@@ -81,7 +81,6 @@ public:
         const std::shared_ptr<const document::DocumentTypeRepo>    &_repo;
         searchcorespi::index::IThreadingService &_writeService;
         documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
-        CommitTimeTracker                       &_commitTimeTracker;
 
         Context(const ISummaryAdapter::SP &summaryAdapter,
                 const search::index::Schema::SP &schema,
@@ -89,16 +88,14 @@ public:
                 IGidToLidChangeHandler &gidToLidChangeHandler,
                 const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                 searchcorespi::index::IThreadingService &writeService,
-                documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                CommitTimeTracker &commitTimeTracker)
+                documentmetastore::ILidReuseDelayer &lidReuseDelayer)
             : _summaryAdapter(summaryAdapter),
               _schema(schema),
               _documentMetaStoreContext(documentMetaStoreContext),
               _gidToLidChangeHandler(gidToLidChangeHandler),
               _repo(repo),
               _writeService(writeService),
-              _lidReuseDelayer(lidReuseDelayer),
-              _commitTimeTracker(commitTimeTracker)
+              _lidReuseDelayer(lidReuseDelayer)
         {}
     };
 
@@ -145,7 +142,6 @@ private:
     const std::shared_ptr<const document::DocumentTypeRepo>     _repo;
     const document::DocumentType            *_docType;
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
-    CommitTimeTracker                       &_commitTimeTracker;
     PendingLidTracker                        _pendingLidTracker;
 
 protected:
@@ -163,6 +159,7 @@ private:
     void putSummary(SerialNum serialNum,  Lid lid, DocumentSP doc, OnOperationDoneType onDone);
     void removeSummary(SerialNum serialNum,  Lid lid, OnWriteDoneType onDone);
     void heartBeatSummary(SerialNum serialNum);
+    bool needCommit() const;
 
 
     bool useDocumentStore(SerialNum replaySerialNum) const {
@@ -236,7 +233,6 @@ public:
     const IDocumentMetaStoreContext::SP &getDocumentMetaStore() const { return _documentMetaStoreContext; }
     searchcorespi::index::IThreadingService &getWriteService() { return _writeService; }
     documentmetastore::ILidReuseDelayer &getLidReuseDelayer() { return _lidReuseDelayer; }
-    CommitTimeTracker &getCommitTimeTracker() { return _commitTimeTracker; }
     IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
 
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override { return _repo; }

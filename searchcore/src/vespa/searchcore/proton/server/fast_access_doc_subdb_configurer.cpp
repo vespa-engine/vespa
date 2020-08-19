@@ -27,8 +27,7 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &
                     curr->getGidToLidChangeHandler(),
                     repo,
                     curr->getWriteService(),
-                    curr->getLidReuseDelayer(),
-                    curr->getCommitTimeTracker()),
+                    curr->getLidReuseDelayer()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(writer,curr->getDocIdLimit())));
 }

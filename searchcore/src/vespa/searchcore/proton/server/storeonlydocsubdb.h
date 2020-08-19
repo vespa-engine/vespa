@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreflushtarget.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -166,7 +165,6 @@ protected:
     const SubDbType                 _subDbType;
     StoreOnlySubDBFileHeaderContext _fileHeaderContext;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
-    CommitTimeTracker               _commitTimeTracker;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     std::shared_ptr<initializer::InitializerTask>
@@ -195,7 +193,7 @@ protected:
     void reconfigure(const search::LogDocumentStore::Config & protonConfig);
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
-    ~StoreOnlyDocSubDB();
+    ~StoreOnlyDocSubDB() override;
 
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return _subName; }

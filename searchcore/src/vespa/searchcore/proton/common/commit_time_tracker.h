@@ -13,14 +13,12 @@ class CommitTimeTracker
 private:
     vespalib::duration             _visibilityDelay;
     mutable vespalib::steady_time  _nextCommit;
-    bool                           _replayDone;
 
 public:
     CommitTimeTracker(vespalib::duration visibilityDelay);
     bool needCommit() const;
     void setVisibilityDelay(vespalib::duration visibilityDelay);
     bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
-    void setReplayDone() { _replayDone = true; }
 };
 
 } // namespace proton

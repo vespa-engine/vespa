@@ -3,7 +3,6 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
@@ -88,7 +87,6 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
                       documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                      CommitTimeTracker &commitTimeTracker,
                       const PersistentParams &params,
                       int &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
@@ -98,8 +96,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                                                      *gidToLidChangeHandler,
                                                      myGetDocumentTypeRepo(),
                                                      writeService,
-                                                     lidReuseDelayer,
-                                                     commitTimeTracker),
+                                                     lidReuseDelayer),
                           params),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
@@ -138,11 +135,10 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
                           documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                          CommitTimeTracker &commitTimeTracker,
                           const PersistentParams &params,
                           int &outstandingMoveOps_) :
             MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayer,
-                              commitTimeTracker, params, outstandingMoveOps_),
+                              params, outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
             removeAttributesCount(0),
@@ -196,7 +192,6 @@ struct FixtureBase {
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
     documentmetastore::LidReuseDelayer lidReuseDelayer;
-    CommitTimeTracker commitTimeTracker;
     typename FeedViewType::UP feedview;
  
     FixtureBase(SubDbType subDbType = SubDbType::READY)
@@ -212,14 +207,13 @@ struct FixtureBase {
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
           lidReuseDelayer(writeService, *metaStore),
-          commitTimeTracker(vespalib::duration::zero()),
           feedview()
     {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
         ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
         feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayer,
-                                                  commitTimeTracker, params, outstandingMoveOps);
+                                                  params, outstandingMoveOps);
     }
 
     ~FixtureBase() {
