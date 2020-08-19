@@ -108,17 +108,18 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     @Override
     public void prepare() {
         if (prepared) return;
-        try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.prepareMillis")) {
+        ApplicationId applicationId = session.getApplicationId();
+        try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
-            PrepareParams.Builder params = new PrepareParams.Builder().applicationId(session.getApplicationId())
+            PrepareParams.Builder params = new PrepareParams.Builder().applicationId(applicationId)
                     .timeoutBudget(timeoutBudget)
                     .ignoreValidationErrors(!validate)
                     .vespaVersion(version.toString())
                     .isBootstrap(isBootstrap);
             dockerImageRepository.ifPresent(params::dockerImageRepository);
             athenzDomain.ifPresent(params::athenzDomain);
-            Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, session.getApplicationId());
+            Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
             tenant.getSessionRepository().prepareLocalSession(session, logger, params.build(), activeApplicationSet,
                                                               tenant.getPath(), clock.instant());
             this.prepared = true;

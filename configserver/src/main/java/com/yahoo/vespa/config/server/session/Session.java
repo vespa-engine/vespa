@@ -134,7 +134,17 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeAthenzDomain(athenzDomain);
     }
 
+    /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
     public ApplicationId getApplicationId() { return sessionZooKeeperClient.readApplicationId(); }
+
+    /** Returns application id read from ZooKeeper. Will return Optional.empty() if not found */
+    public Optional<ApplicationId> getOptionalApplicationId() {
+        try {
+            return Optional.of(getApplicationId());
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
+    }
 
     public FileReference getApplicationPackageReference() {return sessionZooKeeperClient.readApplicationPackageReference(); }
 
