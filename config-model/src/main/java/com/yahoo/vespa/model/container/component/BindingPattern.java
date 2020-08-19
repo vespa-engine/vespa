@@ -46,7 +46,7 @@ public abstract class BindingPattern implements Comparable<BindingPattern> {
 
     private static String validatePath(String path) {
         Objects.requireNonNull(path, "Path must be specified");
-        if (!path.startsWith("/")) throw new IllegalArgumentException("Path must have '/' as prefix: " + path);
+        if (!path.startsWith("/")) throw new IllegalArgumentException("Path must have '/' as prefix:" + path);
         return path;
     }
 
