@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -70,7 +71,9 @@ class UriBindingsValidator extends Validator {
     }
 
     private static boolean isHostedApplication(VespaModel model, DeployState deployState) {
-        return deployState.isHosted() && model.getAdmin().getApplicationType() != HOSTED_INFRASTRUCTURE;
+        ApplicationId appId = deployState.getApplicationPackage().getApplicationId();
+        return deployState.isHosted() && model.getAdmin().getApplicationType() != HOSTED_INFRASTRUCTURE
+                && !(appId.tenant().value().equals("vespa") && appId.application().value().equals("factory")); // TODO(bjorncs): remove once factory app is no longer using illegal bindings
     }
 
     private static String createErrorMessage(BindingPattern binding, String message) {
