@@ -199,7 +199,8 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _docType(nullptr),
       _lidReuseDelayer(ctx._lidReuseDelayer),
       _commitTimeTracker(ctx._commitTimeTracker),
-      _pendingLidTracker(),
+      _pendingLidsForDocStore(),
+      _pendingLidsForCommit(),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
       _params(params),
@@ -209,7 +210,9 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
 }
 
-StoreOnlyFeedView::~StoreOnlyFeedView() = default;
+StoreOnlyFeedView::~StoreOnlyFeedView() {
+    _pendingLidsForCommit.consume(_pendingLidsForCommit.snapshot());
+}
 
 void
 StoreOnlyFeedView::sync()
@@ -220,7 +223,11 @@ StoreOnlyFeedView::sync()
 void
 StoreOnlyFeedView::forceCommit(SerialNum serialNum)
 {
-    forceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore));
+    forceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore, _pendingLidsForCommit));
+}
+
+PendingLidTracker & StoreOnlyFeedView::getUncommittedLidsTracker() {
+    return _pendingLidsForCommit;
 }
 
 void
@@ -262,6 +269,7 @@ StoreOnlyFeedView::preparePut(PutOperation &putOp)
 void
 StoreOnlyFeedView::handlePut(FeedToken token, const PutOperation &putOp)
 {
+    _pendingLidsForCommit.produce(putOp.getLid());
     internalPut(std::move(token), putOp);
 }
 
@@ -344,13 +352,14 @@ StoreOnlyFeedView::prepareUpdate(UpdateOperation &updOp)
 void
 StoreOnlyFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
 {
+    _pendingLidsForCommit.produce(updOp.getLid());
     internalUpdate(std::move(token), updOp);
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                                    FutureStream futureStream, OnOperationDoneType onDone)
 {
-    _pendingLidTracker.produce(lid);
+    _pendingLidsForDocStore.produce(lid);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
@@ -360,31 +369,31 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                 if (!os.empty()) {
                     _summaryAdapter->put(serialNum, lid, os);
                 }
-                _pendingLidTracker.consume(lid);
+                _pendingLidsForDocStore.consume(lid);
             }));
 #pragma GCC diagnostic pop
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, OnOperationDoneType onDone)
 {
-    _pendingLidTracker.produce(lid);
+    _pendingLidsForDocStore.produce(lid);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, doc = std::move(doc), onDone, lid, this] {
+            makeLambdaTask([serialNum, doc = std::move(doc), onDone = std::move(onDone), lid, this] {
                 (void) onDone;
                 _summaryAdapter->put(serialNum, lid, *doc);
-                _pendingLidTracker.consume(lid);
+                _pendingLidsForDocStore.consume(lid);
             }));
 #pragma GCC diagnostic pop
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
-    _pendingLidTracker.produce(lid);
+    _pendingLidsForDocStore.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, onDone, this] {
+            makeLambdaTask([serialNum, lid, onDone = std::move(onDone), this] {
                 (void) onDone;
                 _summaryAdapter->remove(serialNum, lid);
-                _pendingLidTracker.consume(lid);
+                _pendingLidsForDocStore.consume(lid);
             }));
 }
 void StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
@@ -449,7 +458,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         PromisedDoc promisedDoc;
         FutureDoc futureDoc = promisedDoc.get_future().share();
         onWriteDone->setDocument(futureDoc);
-        _pendingLidTracker.waitForConsumedLid(lid);
+        _pendingLidsForDocStore.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }
@@ -812,8 +821,7 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
     const SerialNum serialNum = op.getSerialNum();
     if (useDocumentMetaStore(serialNum)) {
         getDocumentMetaStore()->get().compactLidSpace(op.getLidLimit());
-        std::shared_ptr<ForceCommitContext>
-            commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore));
+        auto commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore, _pendingLidsForCommit));
         commitContext->holdUnblockShrinkLidSpace();
         forceCommit(serialNum, commitContext);
     }

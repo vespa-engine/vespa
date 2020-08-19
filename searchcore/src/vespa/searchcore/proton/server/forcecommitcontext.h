@@ -3,14 +3,13 @@
 #pragma once
 
 #include <vespa/searchlib/common/idestructorcallback.h>
-#include <memory>
-#include <cstdint>
 #include <vector>
 
 namespace vespalib { class Executor; }
 
 namespace proton {
 
+class PendingLidTracker;
 class ForceCommitDoneTask;
 struct IDocumentMetaStore;
 class DocIdLimit;
@@ -24,14 +23,15 @@ class DocIdLimit;
  */
 class ForceCommitContext : public search::IDestructorCallback
 {
-    vespalib::Executor &_executor;
-    std::unique_ptr<ForceCommitDoneTask> _task;
-    uint32_t    _committedDocIdLimit;
-    DocIdLimit *_docIdLimit;
+    vespalib::Executor                   &_executor;
+    std::unique_ptr<ForceCommitDoneTask>  _task;
+    uint32_t                              _committedDocIdLimit;
+    DocIdLimit                           *_docIdLimit;
 
 public:
     ForceCommitContext(vespalib::Executor &executor,
-                       IDocumentMetaStore &documentMetaStore);
+                       IDocumentMetaStore &documentMetaStore,
+                       PendingLidTracker & unCommittedLidsTracker);
 
     ~ForceCommitContext() override;
 

@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vector>
 
 namespace proton {
 
@@ -25,13 +25,14 @@ struct IDocumentMetaStore;
  */
 class ForceCommitDoneTask : public vespalib::Executor::Task
 {
-    std::vector<uint32_t> _lidsToReuse;
-    bool _holdUnblockShrinkLidSpace;
-    IDocumentMetaStore &_documentMetaStore;
+    std::vector<uint32_t>       _lidsToReuse;
+    PendingLidTracker::Snapshot _uncommittedLids;
+    bool                        _holdUnblockShrinkLidSpace;
+    IDocumentMetaStore         &_documentMetaStore;
+    PendingLidTracker          &_unCommittedLidsTracker;
 
 public:
-    ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore);
-
+    ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore, PendingLidTracker & uncommittedLidsTracker);
     ~ForceCommitDoneTask() override;
 
     void reuseLids(std::vector<uint32_t> &&lids);
@@ -43,7 +44,7 @@ public:
     void run() override;
 
     bool empty() const {
-        return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace;
+        return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace && _uncommittedLids.empty();
     }
 };
 

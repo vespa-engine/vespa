@@ -279,7 +279,8 @@ struct Committer : public ICommitable {
     size_t _commitAndWaitCount;
     Committer() : _commitCount(0), _commitAndWaitCount(0) { }
     void commit() override { _commitCount++; }
-    void commitAndWait() override { _commitAndWaitCount++; }
+    void commitAndWait(PendingLidTracker &, uint32_t) override { _commitAndWaitCount++; }
+    void commitAndWait(PendingLidTracker &, const std::vector<uint32_t> &) override { _commitAndWaitCount++; }
 };
 
 size_t getSize() {
@@ -497,8 +498,9 @@ TEST("require that iterator ignoring maxbytes stops at the end, and does not aut
 }
 
 void verifyReadConsistency(DocumentIterator & itr, Committer & committer) {
+    PendingLidTracker lidTracker;
     IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
-    auto commitAndWaitRetriever = std::make_shared<CommitAndWaitDocumentRetriever>(retriever, committer);
+    auto commitAndWaitRetriever = std::make_shared<CommitAndWaitDocumentRetriever>(retriever, committer, lidTracker);
     itr.add(commitAndWaitRetriever);
 
     IterateResult res = itr.iterate(largeNum);

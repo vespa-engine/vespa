@@ -386,7 +386,8 @@ public:
 
     void syncSubDBs();
     void commit() override { }
-    void commitAndWait() override { }
+    void commitAndWait(PendingLidTracker &, uint32_t) override { }
+    void commitAndWait(PendingLidTracker &, const std::vector<uint32_t> &) override { }
     void performSyncSubDBs();
     void notifyClusterStateChanged();
     void performNotifyClusterStateChanged();

@@ -146,7 +146,8 @@ private:
     const document::DocumentType            *_docType;
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
     CommitTimeTracker                       &_commitTimeTracker;
-    PendingLidTracker                        _pendingLidTracker;
+    PendingLidTracker                        _pendingLidsForDocStore;
+    PendingLidTracker                        _pendingLidsForCommit;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -265,6 +266,7 @@ public:
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    PendingLidTracker & getUncommittedLidsTracker() override;
 };
 
 }

@@ -30,10 +30,12 @@ public:
     vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
     bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
     void commit() override;
-    void commitAndWait() override;
+    void commitAndWait(PendingLidTracker & uncommittedLidTracker, uint32_t lid) override;
+    void commitAndWait(PendingLidTracker & uncommittedLidTracker, const std::vector<uint32_t> & lids) override;
 private:
     bool startCommit(const std::lock_guard<std::mutex> &unused, bool force);
     void performCommit(bool force);
+    void internalCommit(bool force);
     const IGetSerialNum  & _serial;
     IThreadingService    & _writeService;
     const FeedViewHolder & _feedView;

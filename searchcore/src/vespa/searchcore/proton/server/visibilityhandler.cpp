@@ -24,34 +24,41 @@ VisibilityHandler::VisibilityHandler(const IGetSerialNum & serial,
 
 VisibilityHandler::~VisibilityHandler() = default;
 
-void VisibilityHandler::commit()
+void
+VisibilityHandler::internalCommit(bool force)
 {
-    if (hasVisibilityDelay()) {
-        if (_writeService.master().isCurrentThread()) {
-            performCommit(true);
-        } else {
-            std::lock_guard<std::mutex> guard(_lock);
-            startCommit(guard, true);
-        }
+    if (_writeService.master().isCurrentThread()) {
+        performCommit(force);
+    } else {
+        std::lock_guard<std::mutex> guard(_lock);
+        bool wasCommitTaskSpawned = startCommit(guard, force);
+        (void) wasCommitTaskSpawned;
     }
 }
 
-void VisibilityHandler::commitAndWait()
+void
+VisibilityHandler::commit()
 {
-    if (hasVisibilityDelay()) {
-        if (_writeService.master().isCurrentThread()) {
-            performCommit(false);
-        } else {
-            std::lock_guard<std::mutex> guard(_lock);
-            if (startCommit(guard, false)) {
-                _writeService.master().sync();
-            }
-        }
+    internalCommit(true);
+
+}
+
+void
+VisibilityHandler::commitAndWait(PendingLidTracker & unCommittedLidTracker, uint32_t lid)
+{
+    if (unCommittedLidTracker.isInFlight(lid)) {
+        internalCommit(false);
+        unCommittedLidTracker.waitForConsumedLid(lid);
     }
-    // Always sync attribute writer threads so attribute vectors are
-    // properly updated when document retriver rebuilds document
-    _writeService.attributeFieldWriter().sync();
-    _writeService.summary().sync();
+}
+
+void
+VisibilityHandler::commitAndWait(PendingLidTracker & unCommittedLidTracker, const std::vector<uint32_t> & lids)
+{
+    if (unCommittedLidTracker.isInFlight(lids)) {
+        internalCommit(false);
+        unCommittedLidTracker.waitForConsumedLid(lids);
+    }
 }
 
 bool VisibilityHandler::startCommit(const std::lock_guard<std::mutex> &unused, bool force)

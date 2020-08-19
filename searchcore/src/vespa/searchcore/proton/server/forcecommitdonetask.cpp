@@ -5,16 +5,16 @@
 
 namespace proton {
 
-ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore)
+ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore, PendingLidTracker & unCommittedLidsTracker)
     : _lidsToReuse(),
+      _uncommittedLids(unCommittedLidsTracker.snapshot()),
       _holdUnblockShrinkLidSpace(false),
-      _documentMetaStore(documentMetaStore)
+      _documentMetaStore(documentMetaStore),
+      _unCommittedLidsTracker(unCommittedLidsTracker)
 {
 }
 
-ForceCommitDoneTask::~ForceCommitDoneTask()
-{
-}
+ForceCommitDoneTask::~ForceCommitDoneTask() = default;
 
 void
 ForceCommitDoneTask::reuseLids(std::vector<uint32_t> &&lids)
@@ -36,6 +36,7 @@ ForceCommitDoneTask::run()
     if (_holdUnblockShrinkLidSpace) {
         _documentMetaStore.holdUnblockShrinkLidSpace();
     }
+    _unCommittedLidsTracker.consume(std::move(_uncommittedLids));
 }
 
 }  // namespace proton

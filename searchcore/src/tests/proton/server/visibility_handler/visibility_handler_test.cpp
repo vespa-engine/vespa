@@ -39,17 +39,18 @@ class MyFeedView : public DummyFeedView
 {
     uint32_t _forceCommitCount;
     SerialNum _committedSerialNum;
-
-
 public:
+    proton::PendingLidTracker _tracker;
+
+
     MyFeedView()
         : _forceCommitCount(0u),
           _committedSerialNum(0u)
-    {
-    }
+    {}
 
     void forceCommit(SerialNum serialNum) override
     {
+        _tracker.consume(_tracker.snapshot());
         EXPECT_TRUE(serialNum >= _committedSerialNum);
         _committedSerialNum = serialNum;
         ++_forceCommitCount;
@@ -130,13 +131,18 @@ public:
     {
         _getSerialNum.setSerialNum(currSerialNum);
         _visibilityHandler.setVisibilityDelay(visibilityDelay);
+        constexpr uint32_t MY_LID=13;
+        if (currSerialNum != 0) {
+            _feedViewReal->_tracker.produce(MY_LID);
+        }
+        proton::PendingLidTracker * lidTracker = & _feedViewReal->_tracker;
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
-            auto task = makeLambdaTask([=]() { visibilityHandler->commitAndWait(); });
+            auto task = makeLambdaTask([=]() { visibilityHandler->commitAndWait(*lidTracker, MY_LID); });
             _writeService.master().execute(std::move(task));
             _writeService.master().sync();
         } else {
-            _visibilityHandler.commitAndWait();
+            _visibilityHandler.commitAndWait(*lidTracker, MY_LID);
         }
         checkCommitPostCondition(expForceCommitCount,
                                  expCommittedSerialNum,
