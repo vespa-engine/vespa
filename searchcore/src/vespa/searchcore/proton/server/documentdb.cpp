@@ -166,7 +166,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
       _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>()),
-      _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
+      _feedHandler(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsDirectWriter),
       _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
               makeSubDBConfig(protonCfg.distribution,
@@ -214,6 +214,11 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     if (_visibility.hasVisibilityDelay()) {
         _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
     }
+}
+
+vespalib::duration
+DocumentDB::getVisibilityDelay() const {
+    return _visibility.getVisibilityDelay();
 }
 
 void DocumentDB::registerReference()

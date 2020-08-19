@@ -16,6 +16,7 @@ struct IFeedHandlerOwner {
     virtual void enterRedoReprocessState() = 0;
     virtual void onPerformPrune(search::SerialNum flushedSerial) = 0;
     virtual bool getAllowPrune() const = 0;
+    virtual vespalib::duration getVisibilityDelay() const = 0;
 };
 
 } // namespace proton

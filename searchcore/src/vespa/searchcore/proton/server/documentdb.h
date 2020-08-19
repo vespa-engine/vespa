@@ -202,7 +202,7 @@ private:
      * Implements IFeedHandlerOwner
      **/
     bool getAllowPrune() const override;
-
+    vespalib::duration getVisibilityDelay() const override;
     void startTransactionLogReplay();
 
 

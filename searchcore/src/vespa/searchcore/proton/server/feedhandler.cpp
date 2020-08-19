@@ -320,14 +320,13 @@ void
 FeedHandler::changeFeedState(FeedState::SP newState, const std::lock_guard<std::mutex> &)
 {
     LOG(debug, "Change feed state from '%s' -> '%s'", _feedState->getName().c_str(), newState->getName().c_str());
-    _feedState = newState;
+    _feedState = std::move(newState);
 }
 
 
 FeedHandler::FeedHandler(IThreadingService &writeService,
                          const vespalib::string &tlsSpec,
                          const DocTypeName &docTypeName,
-                         [[maybe_unused]] DDBState &state,
                          IFeedHandlerOwner &owner,
                          const IResourceWriteFilter &writeFilter,
                          IReplayConfig &replayConfig,
@@ -394,7 +393,7 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flu
     assert(_activeFeedView);
     assert(_bucketDBHandler);
     auto state = make_shared<ReplayTransactionLogState>
-                          (getDocTypeName(), _activeFeedView, *_bucketDBHandler, _replayConfig, config_store);
+                          (getDocTypeName(), _activeFeedView, *_bucketDBHandler, _replayConfig, config_store, _owner.getVisibilityDelay());
     changeFeedState(state);
     // Resurrected attribute vector might cause oldestFlushedSerial to
     // be lower than _prunedSerialNum, so don't warn for now.
