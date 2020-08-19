@@ -29,6 +29,12 @@ class Vespa(object):
             self.end_point = str(url).rstrip("/") + ":" + str(port)
         self.search_end_point = self.end_point + "/search/"
 
+    def __repr__(self):
+        if self.port:
+            return "Vespa({}, {})".format(self.url, self.port)
+        else:
+            return "Vespa({})".format(self.url)
+
     def query(
         self,
         body: Optional[Dict] = None,
