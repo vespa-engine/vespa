@@ -8,15 +8,17 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Helper class for http access control.
@@ -24,15 +26,11 @@ import java.util.Set;
  * @author gjoranv
  * @author bjorncs
  */
-public class AccessControl {
+public final class AccessControl {
 
     public static final ComponentId ACCESS_CONTROL_CHAIN_ID = ComponentId.fromString("access-control-chain");
-    public static final ComponentId ACCESS_CONTROL_EXCLUDED_CHAIN_ID = ComponentId.fromString("access-control-excluded-chain");
 
-    private static final int HOSTED_CONTAINER_PORT = 4443;
-
-    // Handlers that are excluded from access control
-    private static final List<String> EXCLUDED_HANDLERS = List.of(
+    public static final List<String> UNPROTECTED_HANDLERS = List.of(
             FileStatusHandlerComponent.CLASS,
             ContainerCluster.APPLICATION_STATUS_HANDLER_CLASS,
             ContainerCluster.BINDINGS_OVERVIEW_HANDLER_CLASS,
@@ -42,12 +40,13 @@ public class AccessControl {
             ApplicationContainerCluster.PROMETHEUS_V1_HANDLER_CLASS
     );
 
-    public static class Builder {
-        private final String domain;
+    public static final class Builder {
+        private String domain;
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
         private final Set<BindingPattern> excludeBindings = new LinkedHashSet<>();
         private Collection<Handler<?>> handlers = Collections.emptyList();
+        private Collection<Servlet> servlets = Collections.emptyList();
 
         public Builder(String domain) {
             this.domain = domain;
@@ -58,8 +57,8 @@ public class AccessControl {
             return this;
         }
 
-        public Builder writeEnabled(boolean writeEnabled) {
-            this.writeEnabled = writeEnabled;
+        public Builder writeEnabled(boolean writeEnalbed) {
+            this.writeEnabled = writeEnalbed;
             return this;
         }
 
@@ -70,11 +69,13 @@ public class AccessControl {
 
         public Builder setHandlers(ApplicationContainerCluster cluster) {
             this.handlers = cluster.getHandlers();
+            this.servlets = cluster.getAllServlets();
             return this;
         }
 
         public AccessControl build() {
-            return new AccessControl(domain, writeEnabled, readEnabled, excludeBindings, handlers);
+            return new AccessControl(domain, writeEnabled, readEnabled,
+                                     excludeBindings, servlets, handlers);
         }
     }
 
@@ -83,83 +84,69 @@ public class AccessControl {
     public final boolean writeEnabled;
     private final Set<BindingPattern> excludedBindings;
     private final Collection<Handler<?>> handlers;
+    private final Collection<Servlet> servlets;
 
     private AccessControl(String domain,
                           boolean writeEnabled,
                           boolean readEnabled,
                           Set<BindingPattern> excludedBindings,
+                          Collection<Servlet> servlets,
                           Collection<Handler<?>> handlers) {
         this.domain = domain;
         this.readEnabled = readEnabled;
         this.writeEnabled = writeEnabled;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
         this.handlers = handlers;
+        this.servlets = servlets;
     }
 
-    public void configureHttpFilterChains(Http http) {
-        http.setAccessControl(this);
-        addAccessControlFilterChain(http);
-        addAccessControlExcludedChain(http);
-        removeDuplicateBindingsFromAccessControlChain(http);
+    public List<FilterBinding> getBindings() {
+        return Stream.concat(getHandlerBindings(), getServletBindings())
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
-        return cluster.getHandlers().stream()
-                .anyMatch(handler -> ! isExcludedHandler(handler) && hasNonMbusBinding(handler));
+        return cluster.getHandlers().stream().anyMatch(AccessControl::handlerNeedsProtection);
     }
 
-    private void addAccessControlFilterChain(Http http) {
-        http.getFilterChains().add(createChain(ACCESS_CONTROL_CHAIN_ID));
-        http.getBindings().addAll(List.of(createAccessControlBinding("/"), createAccessControlBinding("/*")));
+    private Stream<FilterBinding> getHandlerBindings() {
+        return handlers.stream()
+                        .filter(this::shouldHandlerBeProtected)
+                        .flatMap(handler -> handler.getServerBindings().stream())
+                        .map(binding -> accessControlBinding(binding));
     }
 
-    private void addAccessControlExcludedChain(Http http) {
-        http.getFilterChains().add(createChain(ACCESS_CONTROL_EXCLUDED_CHAIN_ID));
-        for (BindingPattern excludedBinding : excludedBindings) {
-            http.getBindings().add(createAccessControlExcludedBinding(excludedBinding));
-        }
-        for (Handler<?> handler : handlers) {
-            if (isExcludedHandler(handler)) {
-                for (BindingPattern binding : handler.getServerBindings()) {
-                    http.getBindings().add(createAccessControlExcludedBinding(binding));
-                }
-            }
-        }
+    private Stream<FilterBinding> getServletBindings() {
+        return servlets.stream()
+                .filter(this::shouldServletBeProtected)
+                .flatMap(AccessControl::servletBindings)
+                .map(binding -> accessControlBinding(binding));
     }
 
-    // Remove bindings from access control chain that have binding pattern as a different filter chain
-    private void removeDuplicateBindingsFromAccessControlChain(Http http) {
-        Set<FilterBinding> duplicateBindings = new HashSet<>();
-        for (FilterBinding binding : http.getBindings()) {
-            if (binding.chainId().toId().equals(ACCESS_CONTROL_CHAIN_ID)) {
-                for (FilterBinding otherBinding : http.getBindings()) {
-                    if (!binding.chainId().equals(otherBinding.chainId())
-                            && binding.binding().equals(otherBinding.binding())) {
-                        duplicateBindings.add(binding);
-                    }
-                }
-            }
-        }
-        duplicateBindings.forEach(http.getBindings()::remove);
+    private boolean shouldHandlerBeProtected(Handler<?> handler) {
+        return ! isBuiltinGetOnly(handler)
+                && handler.getServerBindings().stream().noneMatch(excludedBindings::contains);
     }
 
-    private static FilterBinding createAccessControlBinding(String path) {
-        return FilterBinding.create(
-                new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()),
-                SystemBindingPattern.fromHttpPortAndPath(Integer.toString(HOSTED_CONTAINER_PORT), path));
+    private static boolean isBuiltinGetOnly(Handler<?> handler) {
+        return UNPROTECTED_HANDLERS.contains(handler.getClassId().getName());
     }
 
-    private static FilterBinding createAccessControlExcludedBinding(BindingPattern excludedBinding) {
-        BindingPattern rewrittenBinding = SystemBindingPattern.fromHttpPortAndPath(
-                Integer.toString(HOSTED_CONTAINER_PORT), excludedBinding.path()); // only keep path from excluded binding
-        return FilterBinding.create(
-                new ComponentSpecification(ACCESS_CONTROL_EXCLUDED_CHAIN_ID.stringValue()),
-                rewrittenBinding);
+    private boolean shouldServletBeProtected(Servlet servlet) {
+        return servletBindings(servlet).noneMatch(excludedBindings::contains);
     }
 
-    private static Chain<Filter> createChain(ComponentId id) { return new Chain<>(FilterChains.emptyChainSpec(id)); }
+    private static FilterBinding accessControlBinding(BindingPattern binding) {
+        return FilterBinding.create(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding);
+    }
 
-    private static boolean isExcludedHandler(Handler<?> handler) { return EXCLUDED_HANDLERS.contains(handler.getClassId().getName()); }
+    private static Stream<BindingPattern> servletBindings(Servlet servlet) {
+        return Stream.of(SystemBindingPattern.fromHttpPath("/" + servlet.bindingPath));
+    }
+
+    private static boolean handlerNeedsProtection(Handler<?> handler) {
+        return ! isBuiltinGetOnly(handler) && hasNonMbusBinding(handler);
+    }
 
     private static boolean hasNonMbusBinding(Handler<?> handler) {
         return handler.getServerBindings().stream().anyMatch(binding -> ! binding.scheme().equals("mbus"));

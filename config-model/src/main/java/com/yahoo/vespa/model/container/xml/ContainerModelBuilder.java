@@ -61,6 +61,7 @@ import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
+import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
@@ -93,6 +94,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -369,12 +371,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (http.getAccessControl().isPresent()) return; // access control added explicitly
         AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
         if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
-        new AccessControl.Builder(tenantDomain.value())
-                .setHandlers(cluster)
-                .readEnabled(false)
-                .writeEnabled(false)
-                .build()
-                .configureHttpFilterChains(http);
+        AccessControl accessControl =
+                new AccessControl.Builder(tenantDomain.value())
+                        .setHandlers(cluster)
+                        .readEnabled(false)
+                        .writeEnabled(false)
+                        .build();
+        http.getFilterChains().add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
+        http.setAccessControl(accessControl);
+        http.getBindings().addAll(accessControl.getBindings());
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
