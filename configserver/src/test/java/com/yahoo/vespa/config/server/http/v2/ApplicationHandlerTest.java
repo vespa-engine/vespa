@@ -113,7 +113,7 @@ public class ApplicationHandlerTest {
 
         {
             applicationRepository.deploy(testApp, prepareParams(applicationId));
-            Tenant mytenant = tenantRepository.getTenant(applicationId.tenant());
+            Tenant mytenant = applicationRepository.getTenant(applicationId);
             deleteAndAssertOKResponse(mytenant, applicationId);
         }
         
@@ -301,9 +301,10 @@ public class ApplicationHandlerTest {
     }
 
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {
-        long sessionId = tenantRepository.getTenant(applicationId.tenant()).getApplicationRepo().requireActiveSessionOf(applicationId);
+        Tenant tenant = applicationRepository.getTenant(applicationId);
+        long sessionId = tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, fullAppIdInUrl);
-        assertNull(tenantRepository.getTenant(applicationId.tenant()).getSessionRepository().getLocalSession(sessionId));
+        assertNull(tenant.getSessionRepository().getLocalSession(sessionId));
     }
 
     private void deleteAndAssertOKResponse(Tenant tenant, ApplicationId applicationId) throws IOException {

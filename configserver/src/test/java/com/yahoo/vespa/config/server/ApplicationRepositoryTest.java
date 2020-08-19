@@ -157,8 +157,7 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
@@ -189,8 +188,7 @@ public class ApplicationRepositoryTest {
         long secondSessionId = result2.sessionId();
         assertNotEquals(firstSessionId, secondSessionId);
 
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         LocalSession session = tenant.getSessionRepository().getLocalSession(
                 tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
         assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
@@ -273,8 +271,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void delete() {
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         SessionRepository sessionRepository = tenant.getSessionRepository();
         {
             PrepareResult result = deployApp(testApp);
@@ -424,7 +421,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void deletesApplicationRoles() {
-        var tenant = tenantRepository.getTenant(tenant1);
+        var tenant = applicationRepository.getTenant(applicationId());
         var applicationId = applicationId(tenant1);
         var prepareParams = new PrepareParams.Builder().applicationId(applicationId)
                 .applicationRoles(ApplicationRoles.fromString("hostRole","containerRole")).build();
@@ -447,8 +444,7 @@ public class ApplicationRepositoryTest {
     public void require_that_provision_info_can_be_read() {
         prepareAndActivate(testAppJdiscOnly);
 
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
 
         List<NetworkPorts.Allocation> list = new ArrayList<>();
@@ -494,7 +490,7 @@ public class ApplicationRepositoryTest {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, timeoutBudget, false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
 
         RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
@@ -508,10 +504,10 @@ public class ApplicationRepositoryTest {
         long firstSession = result.sessionId();
 
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
-        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId, prepareParams(), clock.instant());
+        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId, prepareParams(), clock.instant());
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
 
         RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
@@ -533,10 +529,10 @@ public class ApplicationRepositoryTest {
         PrepareResult result2 = deployApp(testAppJdiscOnly);
         result2.sessionId();
 
-        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId2, prepareParams(), clock.instant());
+        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId2, prepareParams(), clock.instant());
         exceptionRule.expect(ActivationConflictException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId2, timeoutBudget, false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false);
     }
 
     @Test
@@ -546,11 +542,11 @@ public class ApplicationRepositoryTest {
 
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("Session is active: 2"));
-        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId, prepareParams(), clock.instant());
+        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId, prepareParams(), clock.instant());
 
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Session 2 is already active"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, timeoutBudget, false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
     }
 
     @Test

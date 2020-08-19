@@ -254,7 +254,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                 boolean ignoreSessionStaleFailure, Instant now) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
         activate(tenant, sessionId, prepareParams.getTimeoutBudget(), ignoreSessionStaleFailure);
         return result;
@@ -381,10 +381,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private static boolean isValidSession(Session session) {
-        return session != null;
-    }
-
     // As of now, config generation is based on session id, and config generation must be a monotonically
     // increasing number
     static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
@@ -414,7 +410,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId, Duration waitTime) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
@@ -588,7 +584,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private boolean localSessionHasBeenDeleted(ApplicationId applicationId, long sessionId, Duration waitTime) {
-        SessionRepository sessionRepository = tenantRepository.getTenant(applicationId.tenant()).getSessionRepository();
+        SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
         Instant end = Instant.now().plus(waitTime);
         do {
             if (sessionRepository.getRemoteSession(sessionId) == null) return true;
@@ -693,11 +689,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return the active session, or null if there is no active session for the given application id.
      */
     public RemoteSession getActiveSession(ApplicationId applicationId) {
-        return getActiveSession(tenantRepository.getTenant(applicationId.tenant()), applicationId);
+        return getActiveSession(getTenant(applicationId), applicationId);
     }
 
     public long getSessionIdForApplication(ApplicationId applicationId) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
         return getSessionIdForApplication(tenant, applicationId);
     }
@@ -726,7 +722,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                           DeployLogger logger,
                                           boolean internalRedeploy,
                                           TimeoutBudget timeoutBudget) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         RemoteSession fromSession = getExistingSession(tenant, applicationId);
         LocalSession session = sessionRepository.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
@@ -746,7 +742,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         tenant.getApplicationRepo().createApplication(applicationId);
         Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
         LocalSession session = tenant.getSessionRepository().createSession(applicationDirectory,
