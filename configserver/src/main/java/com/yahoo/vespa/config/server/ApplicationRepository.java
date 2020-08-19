@@ -63,6 +63,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
@@ -90,6 +91,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
@@ -594,6 +596,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } while (Instant.now().isBefore(end));
 
         return false;
+    }
+
+    public Optional<String> getApplicationPackageReference(ApplicationId applicationId) {
+        Optional<String> applicationPackage = Optional.empty();
+        RemoteSession session = getActiveSession(applicationId);
+        if (session != null) {
+            FileReference applicationPackageReference = session.getApplicationPackageReference();
+            File downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig().fileReferencesDir()));
+            if (applicationPackageReference != null && ! fileReferenceExistsOnDisk(downloadDirectory, applicationPackageReference))
+                applicationPackage = Optional.of(applicationPackageReference.value());
+        }
+        return applicationPackage;
+    }
+
+    public List<Version> getAllVersions(ApplicationId applicationId) {
+        Optional<ApplicationSet> applicationSet = getCurrentActiveApplicationSet(getTenant(applicationId), applicationId);
+        if (applicationSet.isEmpty())
+            return List.of();
+        else
+            return applicationSet.get().getAllVersions(applicationId);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
