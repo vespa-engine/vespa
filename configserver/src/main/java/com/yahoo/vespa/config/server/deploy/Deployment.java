@@ -131,11 +131,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if ( ! prepared)
             prepare();
 
-        try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.activateMillis")) {
+        validateSessionStatus(session);
+        ApplicationId applicationId = session.getApplicationId();
+        try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-            validateSessionStatus(session);
-            ApplicationId applicationId = session.getApplicationId();
-
             if ( ! timeoutBudget.hasTimeLeft()) throw new RuntimeException("Timeout exceeded when trying to activate '" + applicationId + "'");
 
             RemoteSession previousActiveSession;
@@ -148,7 +147,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 throw e;
             }
             catch (Exception e) {
-                throw new InternalServerException("Error activating application", e);
+                throw new InternalServerException("Error when activating '" + applicationId + "'", e);
             }
 
             waiter.awaitCompletion(timeoutBudget.timeLeft());
