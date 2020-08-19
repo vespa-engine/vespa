@@ -11,6 +11,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -142,8 +143,7 @@ public class SessionZooKeeperClient {
 
     public ApplicationId readApplicationId() {
         String idString = configCurator.getData(applicationIdPath());
-        if (idString == null) throw new RuntimeException("Unable to read application id at " + applicationIdPath());
-        return ApplicationId.fromSerializedForm(idString);
+        return idString == null ? null : ApplicationId.fromSerializedForm(idString);
     }
 
     void writeApplicationPackageReference(FileReference applicationPackageReference) {
