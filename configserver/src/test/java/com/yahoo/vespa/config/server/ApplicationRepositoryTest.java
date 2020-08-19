@@ -401,8 +401,8 @@ public class ApplicationRepositoryTest {
         sessionRepository.deleteLocalSession(localSession);
         assertEquals(1, sessionRepository.getLocalSessions().size());
 
-        // Create a local session without any data in zookeeper (corner case seen in production occaisonally)
-        // and check that
+        // Create a local session without any data in zookeeper (corner case seen in production occasionally)
+        // and check that expiring local sessions still work
         int sessionId = 6;
         Files.createDirectory(new TenantFileSystemDirs(serverdb, tenant1).getUserApplicationDir(sessionId).toPath());
         LocalSession localSession2 = new LocalSession(tenant1,
