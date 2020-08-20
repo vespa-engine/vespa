@@ -5,7 +5,11 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".document.fieldset.fieldsetrepo");
 
 using vespalib::StringTokenizer;
 
@@ -124,7 +128,13 @@ FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
     for (const auto & entry : documentType.getFieldSets()) {
         vespalib::string fieldSetName(documentType.getName());
         fieldSetName.append(':').append(entry.first);
-        _configuredFieldSets[fieldSetName] = parse(_doumentTyperepo, fieldSetName);
+        try {
+            auto fieldset = parse(_doumentTyperepo, fieldSetName);
+            _configuredFieldSets[fieldSetName] = std::move(fieldset);
+        } catch (const FieldNotFoundException & ex) {
+            LOG(warning, "Did not find field %s in configured fieldset %s, will default to NO fields.",ex.getFieldName().c_str(), fieldSetName.c_str());
+            _configuredFieldSets[fieldSetName] = std::make_shared<NoFields>();
+        }
     }
 }
 FieldSet::SP
@@ -133,7 +143,12 @@ FieldSetRepo::getFieldSet(vespalib::stringref fieldSetString) const {
     if (found != _configuredFieldSets.end()) {
         return found->second;
     }
-    return parse(_doumentTyperepo, fieldSetString);
+    try {
+        return parse(_doumentTyperepo, fieldSetString);
+    } catch (const FieldNotFoundException & ex) {
+        LOG(warning, "Did not find field %s in configured fieldset %s, will default to NO fields.",ex.getFieldName().c_str(), vespalib::string(fieldSetString).c_str());
+        return std::make_shared<NoFields>();
+    }
 }
 
 }
