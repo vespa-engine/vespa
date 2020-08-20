@@ -132,8 +132,7 @@ FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
             auto fieldset = parse(_doumentTyperepo, fieldSetName);
             _configuredFieldSets[fieldSetName] = std::move(fieldset);
         } catch (const FieldNotFoundException & ex) {
-            LOG(warning, "Did not find field %s in configured fieldset %s, will default to NO fields.",ex.getFieldName().c_str(), fieldSetName.c_str());
-            _configuredFieldSets[fieldSetName] = std::make_shared<NoFields>();
+            // Just silently skip it so error handling can be done when you can return proper error to user.
         }
     }
 }
@@ -143,12 +142,7 @@ FieldSetRepo::getFieldSet(vespalib::stringref fieldSetString) const {
     if (found != _configuredFieldSets.end()) {
         return found->second;
     }
-    try {
-        return parse(_doumentTyperepo, fieldSetString);
-    } catch (const FieldNotFoundException & ex) {
-        LOG(warning, "Did not find field %s in configured fieldset %s, will default to NO fields.",ex.getFieldName().c_str(), vespalib::string(fieldSetString).c_str());
-        return std::make_shared<NoFields>();
-    }
+    return parse(_doumentTyperepo, fieldSetString);
 }
 
 }
