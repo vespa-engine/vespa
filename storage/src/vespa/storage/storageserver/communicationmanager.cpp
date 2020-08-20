@@ -395,10 +395,12 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
 
         // Configure messagebus here as we for legacy reasons have
         // config here.
+        auto documentTypeRepo = _component.getTypeRepo()->documentTypeRepo;
+        auto loadTypes = _component.getLoadTypes();
         _mbus = std::make_unique<mbus::RPCMessageBus>(
                 mbus::ProtocolSet()
-                        .add(std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), _component.getTypeRepo()))
-                        .add(std::make_shared<mbusprot::StorageProtocol>(_component.getTypeRepo(), *_component.getLoadTypes())),
+                        .add(std::make_shared<documentapi::DocumentProtocol>(*loadTypes, documentTypeRepo))
+                        .add(std::make_shared<mbusprot::StorageProtocol>(documentTypeRepo, *loadTypes)),
                 params,
                 _configUri);
 

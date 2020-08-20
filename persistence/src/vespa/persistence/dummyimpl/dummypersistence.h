@@ -93,7 +93,7 @@ struct Iterator {
     using UP = std::unique_ptr<Iterator>;
     Bucket _bucket;
     std::vector<Timestamp> _leftToIterate;
-    std::unique_ptr<document::FieldSet> _fieldSet;
+    std::shared_ptr<document::FieldSet> _fieldSet;
 };
 
 class DummyPersistence;
@@ -158,11 +158,8 @@ public:
     RemoveResult remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&) override;
     UpdateResult update(const Bucket&, Timestamp, DocumentUpdateSP, Context&) override;
 
-    CreateIteratorResult createIterator(const Bucket&,
-                                        const document::FieldSet& fs,
-                                        const Selection&,
-                                        IncludedVersions,
-                                        Context&) override;
+    CreateIteratorResult
+    createIterator(const Bucket &bucket, FieldSetSP fs, const Selection &, IncludedVersions, Context &context) override;
 
     IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId, Context&) override;

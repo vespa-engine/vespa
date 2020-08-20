@@ -5,6 +5,11 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/base/exceptions.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".document.fieldset.fieldsetrepo");
 
 using vespalib::StringTokenizer;
 
@@ -12,27 +17,25 @@ namespace document {
 
 namespace {
 
-FieldSet::UP
+FieldSet::SP
 parseSpecialValues(vespalib::stringref name)
 {
-    FieldSet::UP fs;
     if ((name.size() == 4) && (name[1] == 'i') && (name[2] == 'd') && (name[3] == ']')) {
-        fs = std::make_unique<DocIdOnly>();
+        return std::make_shared<DocIdOnly>();
     } else if ((name.size() == 5) && (name[1] == 'a') && (name[2] == 'l') && (name[3] == 'l') && (name[4] == ']')) {
-        fs = std::make_unique<AllFields>();
+        return std::make_shared<AllFields>();
     } else if ((name.size() == 6) && (name[1] == 'n') && (name[2] == 'o') && (name[3] == 'n') && (name[4] == 'e') && (name[5] == ']')) {
-        fs = std::make_unique<NoFields>();
+        return std::make_shared<NoFields>();
     } else if ((name.size() == 7) && (name[1] == 'd') && (name[2] == 'o') && (name[3] == 'c') && (name[4] == 'i') && (name[5] == 'd') && (name[6] == ']')) {
-        fs = std::make_unique<DocIdOnly>();
+        return std::make_shared<DocIdOnly>();
     } else {
         throw vespalib::IllegalArgumentException(
                 "The only special names (enclosed in '[]') allowed are "
                 "id, all, none, not '" + name + "'.");
     }
-    return fs;
 }
 
-FieldSet::UP
+FieldSet::SP
 parseFieldCollection(const DocumentTypeRepo& repo,
                      vespalib::stringref docType,
                      vespalib::stringref fieldNames)
@@ -55,12 +58,12 @@ parseFieldCollection(const DocumentTypeRepo& repo,
             builder.add(&type.getField(token));
         }
     }
-    return std::make_unique<FieldCollection>(type, builder.build());
+    return std::make_shared<FieldCollection>(type, builder.build());
 }
 
 }
 
-FieldSet::UP
+FieldSet::SP
 FieldSetRepo::parse(const DocumentTypeRepo& repo, vespalib::stringref str)
 {
     if (str[0] == '[') {
@@ -108,6 +111,43 @@ FieldSetRepo::serialize(const FieldSet& fieldSet)
             return DocIdOnly::NAME;
         default:
             return "";
+    }
+}
+
+
+FieldSetRepo::FieldSetRepo(const DocumentTypeRepo& repo)
+    : _doumentTyperepo(repo),
+      _configuredFieldSets()
+{
+    repo.forEachDocumentType(*vespalib::makeClosure(this, &FieldSetRepo::configureDocumentType));
+}
+FieldSetRepo::~FieldSetRepo() = default;
+
+void
+FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
+    for (const auto & entry : documentType.getFieldSets()) {
+        vespalib::string fieldSetName(documentType.getName());
+        fieldSetName.append(':').append(entry.first);
+        try {
+            auto fieldset = parse(_doumentTyperepo, fieldSetName);
+            _configuredFieldSets[fieldSetName] = std::move(fieldset);
+        } catch (const FieldNotFoundException & ex) {
+            LOG(warning, "Did not find field %s in configured fieldset %s, will default to NO fields.",ex.getFieldName().c_str(), fieldSetName.c_str());
+            _configuredFieldSets[fieldSetName] = std::make_shared<NoFields>();
+        }
+    }
+}
+FieldSet::SP
+FieldSetRepo::getFieldSet(vespalib::stringref fieldSetString) const {
+    auto found = _configuredFieldSets.find(fieldSetString);
+    if (found != _configuredFieldSets.end()) {
+        return found->second;
+    }
+    try {
+        return parse(_doumentTyperepo, fieldSetString);
+    } catch (const FieldNotFoundException & ex) {
+        LOG(warning, "Did not find field %s in configured fieldset %s, will default to NO fields.",ex.getFieldName().c_str(), vespalib::string(fieldSetString).c_str());
+        return std::make_shared<NoFields>();
     }
 }
 

@@ -286,14 +286,14 @@ PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
     tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    document::FieldSet::UP fieldSet = document::FieldSetRepo::parse(*_env._component.getTypeRepo(), cmd.getFieldSet());
+    auto fieldSet = _env._component.getTypeRepo()->fieldSetRepo->getFieldSet(cmd.getFieldSet());
     tracker->context().setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
     spi::GetResult result =
         _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), tracker->context());
 
     if (tracker->checkForError(result)) {
         if (!result.hasDocument() && (document::FieldSet::Type::NONE != fieldSet->getType())) {
-            _env._metrics.get[cmd.getLoadType()].notFound.inc();
+            metrics.notFound.inc();
         }
         tracker->setReply(std::make_shared<api::GetReply>(cmd, result.getDocumentPtr(), result.getTimestamp(),
                                                           false, result.is_tombstone()));
@@ -455,11 +455,11 @@ MessageTracker::UP
 PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker)
 {
     tracker->setMetric(_env._metrics.createIterator);
-    document::FieldSet::UP fieldSet = document::FieldSetRepo::parse(*_env._component.getTypeRepo(), cmd.getFields());
+    document::FieldSet::SP fieldSet = _env._component.getTypeRepo()->fieldSetRepo->getFieldSet(cmd.getFields());
     tracker->context().setReadConsistency(cmd.getReadConsistency());
     spi::CreateIteratorResult result(_spi.createIterator(
-        spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
-        *fieldSet, cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
+            spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
+            std::move(fieldSet), cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
     if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<CreateIteratorReply>(cmd, spi::IteratorId(result.getIteratorId())));
     }
