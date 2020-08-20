@@ -89,7 +89,8 @@ class Vespa(object):
         end_point = "{}/document/v1/{}/{}/docid/{}".format(
             self.end_point, schema, schema, str(data_id)
         )
-        response = post(end_point, json=fields)
+        vespa_format = {"fields": fields}
+        response = post(end_point, json=vespa_format)
         return response
 
     def collect_training_data_point(
