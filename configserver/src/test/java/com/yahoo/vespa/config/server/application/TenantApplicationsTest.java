@@ -171,19 +171,21 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
+        applications = TenantApplications.create(componentRegistry, TenantName.defaultName());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
-        applications.createApplication(ApplicationId.defaultId());
-        applications.createPutTransaction(ApplicationId.defaultId(), 1).commit();
+        ApplicationId applicationId = ApplicationId.defaultId();
+        applications.createApplication(applicationId);
+        applications.createPutTransaction(applicationId, 1).commit();
         applications.reloadConfig(ApplicationSet.fromSingle(new Application(model,
                                                                             new ServerCache(),
                                                                             1,
                                                                             false,
                                                                             vespaVersion,
                                                                             MetricUpdater.createTestUpdater(),
-                                                                            ApplicationId.defaultId())));
-        Set<ConfigKey<?>> configNames = applications.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), false);
+                                                                            applicationId)));
+        Set<ConfigKey<?>> configNames = applications.listConfigs(applicationId, Optional.of(vespaVersion), false);
         assertTrue(configNames.contains(new ConfigKey<>("sentinel", "hosts", "cloud.config")));
 
         configNames = applications.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), true);

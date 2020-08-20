@@ -654,8 +654,7 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
-        Path sessionPath = getSessionPath(sessionId);
-        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), sessionPath, serverId);
+        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), tenantName, sessionId, serverId);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {

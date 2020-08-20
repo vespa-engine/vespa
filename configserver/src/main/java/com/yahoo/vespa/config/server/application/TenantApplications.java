@@ -122,7 +122,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                       .filter(applicationId -> {
                           if ( ! applicationId.tenant().equals(tenant)) {
                               log.log(Level.WARNING, "There is an application ('" + applicationId + "') with wrong tenant (should be '" +
-                                                     tenant + "') in " + applicationsPath);
+                                                     tenant + "') in " + applicationsPath + ", deleting it");
+                              curator.delete(applicationsPath.append(applicationId.serializedForm()));
                               return false;
                           } else {
                               return true;
@@ -162,6 +163,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
+        if (! id.tenant().equals(tenant))
+            throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
         try (Lock lock = lock(id)) {
             curator.create(applicationPath(id));
         }

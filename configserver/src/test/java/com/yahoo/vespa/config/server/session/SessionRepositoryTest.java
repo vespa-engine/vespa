@@ -151,13 +151,10 @@ public class SessionRepositoryTest {
     }
 
     private void createSession(long sessionId, boolean wait) {
-        createSession(sessionId, wait, sessionRepository);
-    }
-
-    private void createSession(long sessionId, boolean wait, SessionRepository sessionRepository) {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
                                                                 ConfigCurator.create(curator),
-                                                                sessionRepository.getSessionPath(sessionId),
+                                                                tenantName,
+                                                                sessionId,
                                                                 ConfigUtils.getCanonicalHostName());
         zkc.createNewSession(Instant.now());
         if (wait) {
