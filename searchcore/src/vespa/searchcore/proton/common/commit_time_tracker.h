@@ -14,11 +14,10 @@ private:
     vespalib::duration             _visibilityDelay;
     mutable vespalib::steady_time  _nextCommit;
 
+    bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
 public:
     CommitTimeTracker(vespalib::duration visibilityDelay);
     bool needCommit() const;
-    void setVisibilityDelay(vespalib::duration visibilityDelay);
-    bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
 };
 
 } // namespace proton
