@@ -1,4 +1,5 @@
 import os
+import re
 from time import sleep
 from typing import List, Mapping, Optional
 from pathlib import Path
@@ -440,8 +441,7 @@ class VespaDocker(object):
         :param disk_folder: Disk folder to save the required Vespa config files.
         :param container_memory: Docker container memory available to the application.
 
-        :return: A tuple where the first element is the deployment message and the second element is a Vespa connection
-            instance.
+        :return: a Vespa connection instance.
         """
 
         self.application_package.create_application_package_files(dir_path=disk_folder)
@@ -458,7 +458,11 @@ class VespaDocker(object):
             "bash -c '/opt/vespa/bin/vespa-deploy prepare /app/application && /opt/vespa/bin/vespa-deploy activate'"
         )
 
-        return (
-            deployment.output.decode("utf-8").split("\n"),
-            Vespa(url="http://localhost", port=8080),
+        deployment_message = deployment.output.decode("utf-8").split("\n")
+
+        if not any(re.match("Generation: [0-9]+", line) for line in deployment_message):
+            raise RuntimeError(deployment_message)
+
+        return Vespa(
+            url="http://localhost", port=8080, deployment_message=deployment_message
         )
