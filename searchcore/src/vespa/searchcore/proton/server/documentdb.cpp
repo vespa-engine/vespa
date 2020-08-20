@@ -216,11 +216,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     }
 }
 
-vespalib::duration
-DocumentDB::getVisibilityDelay() const {
-    return _visibility.getVisibilityDelay();
-}
-
 void DocumentDB::registerReference()
 {
     if (_state.getAllowReconfig()) {

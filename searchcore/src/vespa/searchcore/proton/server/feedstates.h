@@ -53,8 +53,7 @@ public:
             IFeedView *& feed_view_ptr,
             bucketdb::IBucketDBHandler &bucketDBHandler,
             IReplayConfig &replay_config,
-            FeedConfigStore &config_store,
-            vespalib::duration visibilityDelay);
+            FeedConfigStore &config_store);
 
     void handleOperation(FeedToken, FeedOperationUP op) override {
         throwExceptionInHandleOperation(_doc_type_name, *op);

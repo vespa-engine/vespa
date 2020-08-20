@@ -74,13 +74,12 @@ public:
     TransactionLogReplayPacketHandler(IFeedView *& feed_view_ptr,
                                       IBucketDBHandler &bucketDBHandler,
                                       IReplayConfig &replay_config,
-                                      FeedConfigStore &config_store,
-                                      vespalib::duration visibilityDelay)
+                                      FeedConfigStore &config_store)
         : _feed_view_ptr(feed_view_ptr),
           _bucketDBHandler(bucketDBHandler),
           _replay_config(replay_config),
           _config_store(config_store),
-          _commitTimeTracker(visibilityDelay)
+          _commitTimeTracker(100ms)
     { }
 
     void replay(const PutOperation &op) override {
@@ -148,11 +147,10 @@ ReplayTransactionLogState::ReplayTransactionLogState(
         IFeedView *& feed_view_ptr,
         IBucketDBHandler &bucketDBHandler,
         IReplayConfig &replay_config,
-        FeedConfigStore &config_store,
-        vespalib::duration visibilityDelay)
+        FeedConfigStore &config_store)
     : FeedState(REPLAY_TRANSACTION_LOG),
       _doc_type_name(name),
-      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store, visibilityDelay))
+      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store))
 { }
 
 void

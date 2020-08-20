@@ -82,7 +82,7 @@ Fixture::Fixture()
       config_store(),
       _bucketDB(),
       _bucketDBHandler(_bucketDB),
-      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, vespalib::from_s(0.1))
+      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store)
 {
 }
 Fixture::~Fixture() = default;

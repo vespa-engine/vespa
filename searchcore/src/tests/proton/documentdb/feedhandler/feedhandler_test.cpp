@@ -114,7 +114,6 @@ struct MyOwner : public IFeedHandlerOwner
     void onPerformPrune(SerialNum) override {}
 
     bool getAllowPrune() const override { return _allowPrune; }
-    vespalib::duration getVisibilityDelay() const override { return vespalib::from_s(0.0); }
 };
 
 
