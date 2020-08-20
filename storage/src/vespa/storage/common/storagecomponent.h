@@ -42,7 +42,6 @@ namespace vespa::config::content::core::internal {
 }
 namespace document {
     class DocumentTypeRepo;
-    class FieldSetRepo;
 }
 namespace documentapi {
     class LoadType;
@@ -59,14 +58,9 @@ struct StorageComponentRegister;
 
 class StorageComponent : public framework::Component {
 public:
-    struct Repos {
-        explicit Repos(std::shared_ptr<const document::DocumentTypeRepo> repo);
-        ~Repos();
-        const std::shared_ptr<const document::DocumentTypeRepo> documentTypeRepo;
-        const std::shared_ptr<const document::FieldSetRepo> fieldSetRepo;
-    };
     using UP = std::unique_ptr<StorageComponent>;
     using PriorityConfig = vespa::config::content::core::internal::InternalStorPrioritymappingType;
+    using DocumentTypeRepoSP = std::shared_ptr<const document::DocumentTypeRepo>;
     using LoadTypeSetSP = std::shared_ptr<documentapi::LoadTypeSet>;
     using DistributionSP = std::shared_ptr<lib::Distribution>;
 
@@ -74,7 +68,9 @@ public:
      * Node type is supposed to be set immediately, and never be updated.
      * Thus it does not need to be threadsafe. Should never be used before set.
      */
-    void setNodeInfo(vespalib::stringref clusterName, const lib::NodeType& nodeType, uint16_t index);
+    void setNodeInfo(vespalib::stringref clusterName,
+                     const lib::NodeType& nodeType,
+                     uint16_t index);
 
     /**
      * Node state updater is supposed to be set immediately, and never be
@@ -82,14 +78,14 @@ public:
      * before set.
      */
     void setNodeStateUpdater(NodeStateUpdater& updater);
-    void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
+    void setDocumentTypeRepo(DocumentTypeRepoSP);
     void setLoadTypes(LoadTypeSetSP);
     void setPriorityConfig(const PriorityConfig&);
     void setBucketIdFactory(const document::BucketIdFactory&);
     void setDistribution(DistributionSP);
 
     StorageComponent(StorageComponentRegister&, vespalib::stringref name);
-    ~StorageComponent() override;
+    virtual ~StorageComponent();
 
     vespalib::string getClusterName() const { return _clusterName; }
     const lib::NodeType& getNodeType() const { return *_nodeType; }
@@ -98,7 +94,7 @@ public:
 
     vespalib::string getIdentity() const;
 
-    std::shared_ptr<Repos> getTypeRepo() const;
+    DocumentTypeRepoSP getTypeRepo() const;
     LoadTypeSetSP getLoadTypes() const;
     const document::BucketIdFactory& getBucketIdFactory() const
         { return _bucketIdFactory; }
@@ -110,8 +106,7 @@ private:
     vespalib::string _clusterName;
     const lib::NodeType* _nodeType;
     uint16_t _index;
-    std::shared_ptr<Repos> _repos;
-    // TODO: move loadTypes and _distribution in to _repos so lock will only taken once and only copying one shared_ptr.
+    DocumentTypeRepoSP _docTypeRepo;
     LoadTypeSetSP _loadTypes;
     std::unique_ptr<PriorityMapper> _priorityMapper;
     document::BucketIdFactory _bucketIdFactory;

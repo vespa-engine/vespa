@@ -56,8 +56,8 @@ namespace storage::spi {
  */
 struct PersistenceProvider
 {
+    typedef std::unique_ptr<PersistenceProvider> UP;
     using BucketSpace = document::BucketSpace;
-    using FieldSetSP = std::shared_ptr<document::FieldSet>;
 
     virtual ~PersistenceProvider();
 
@@ -258,9 +258,12 @@ struct PersistenceProvider
      *   error. Identifier must be non-zero, as zero is used internally to
      *   signify an invalid iterator ID.
      */
-    virtual CreateIteratorResult
-    createIterator(const Bucket &bucket, FieldSetSP fieldSet, const Selection &selection,
-                   IncludedVersions versions, Context &context) = 0;
+    virtual CreateIteratorResult createIterator(
+            const Bucket&,
+            const document::FieldSet& fieldSet,
+            const Selection& selection, //TODO: Make AST
+            IncludedVersions versions,
+            Context&) = 0;
 
     /**
      * Iterate over a bucket's document space using a valid iterator id

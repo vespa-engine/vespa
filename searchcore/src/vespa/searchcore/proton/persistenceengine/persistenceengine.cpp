@@ -452,13 +452,13 @@ PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const 
 
 
 PersistenceEngine::CreateIteratorResult
-PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const Selection &selection,
-                                  IncludedVersions versions, Context &context)
+PersistenceEngine::createIterator(const Bucket &bucket, const document::FieldSet& fields, const Selection &selection,
+                                  IncludedVersions versions, Context & context)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     HandlerSnapshot snapshot = getHandlerSnapshot(rguard, bucket.getBucketSpace());
 
-    auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, std::move(fields), selection,
+    auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, fields, selection,
                                                  versions, _defaultSerializedSize, _ignoreMaxBytes);
     entry->bucket_guards.reserve(snapshot.size());
     for (PersistenceHandlerSequence & handlers = snapshot.handlers(); handlers.valid(); handlers.next()) {

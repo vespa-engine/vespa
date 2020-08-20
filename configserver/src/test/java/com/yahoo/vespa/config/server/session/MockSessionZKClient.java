@@ -34,7 +34,8 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
     MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, ApplicationPackage application) {
         super(curator,
               ConfigCurator.create(curator),
-              TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)),
+              tenantName,
+              sessionId,
               ConfigUtils.getCanonicalHostName());
         this.app = application;
         curator.create(TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));

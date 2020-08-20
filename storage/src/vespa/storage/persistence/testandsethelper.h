@@ -28,8 +28,8 @@ class TestAndSetHelper {
     std::unique_ptr<document::select::Node> _docSelectionUp;
     bool _missingDocumentImpliesMatch;
 
-    void getDocumentType(const document::DocumentTypeRepo & documentTypeRepo);
-    void parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo);
+    void getDocumentType();
+    void parseDocumentSelection();
     spi::GetResult retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context);
 
 public:

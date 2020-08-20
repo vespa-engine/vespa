@@ -552,6 +552,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = getRemoteSession(tenant, sessionId);
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
+        } catch (NotFoundException e) {
+            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
@@ -760,9 +763,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()
                 .forEach(sessionList -> sessionList.stream()
-                        .map(Session::getApplicationId)
-                        .filter(Objects::nonNull)
-                        .forEach(applicationIds::add));
+                        .map(Session::getOptionalApplicationId)
+                        .filter(Optional::isPresent)
+                        .forEach(appId -> applicationIds.add(appId.get())));
 
         Map<ApplicationId, Long> activeSessions = new HashMap<>();
         applicationIds.forEach(applicationId -> {

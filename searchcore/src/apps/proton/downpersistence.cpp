@@ -95,7 +95,8 @@ DownPersistence::get(const Bucket&, const document::FieldSet&, const DocumentId&
 }
 
 CreateIteratorResult
-DownPersistence::createIterator(const Bucket &, FieldSetSP, const Selection &, IncludedVersions, Context &)
+DownPersistence::createIterator(const Bucket&, const document::FieldSet&,
+                                const Selection&, IncludedVersions, Context&)
 {
     return CreateIteratorResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
