@@ -305,6 +305,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public double feedCoreThreadPoolSizeFactor() { return feedCoreThreadPoolSizeFactor; }
+
+        @Override public Quota quota() { return quota; }
     }
 
 }
