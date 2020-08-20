@@ -549,6 +549,7 @@ DocumentDB::tearDownReferences()
 void
 DocumentDB::close()
 {
+    waitForOnlineState();
     {
         lock_guard guard(_configMutex);
         _state.enterShutdownState();
