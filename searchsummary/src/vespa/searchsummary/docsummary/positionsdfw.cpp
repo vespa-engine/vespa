@@ -58,7 +58,9 @@ uint64_t
 AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
                                 const std::vector<const GeoLoc *> &locations)
 {
-    uint64_t absdist = std::numeric_limits<int64_t>::max();
+    // ensure result fits in Java "int"
+    uint64_t absdist = std::numeric_limits<int32_t>::max();
+    uint64_t sqdist = absdist*absdist;
     const auto& attribute = get_attribute(*state);
     for (auto location : locations) {
         int32_t docx = 0;
@@ -70,12 +72,12 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
             int64_t docxy(pos[i]);
             vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
             uint64_t dist2 = location->sq_distance_to(GeoLoc::Point{docx, docy});
-            if (dist2 < absdist) {
-                absdist = dist2;
+            if (dist2 < sqdist) {
+                sqdist = dist2;
             }
         }
     }
-    return (uint64_t) std::sqrt((double) absdist);
+    return (uint64_t) std::sqrt((double) sqdist);
 }
 
 void
