@@ -576,7 +576,7 @@ TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorMessageSender& s
         return true; // No condition; nothing to do here.
     }
 
-    document::select::Parser parser(*_manager.getTypeRepo(), _manager.getBucketIdFactory());
+    document::select::Parser parser(*_manager.getTypeRepo()->documentTypeRepo, _manager.getBucketIdFactory());
     std::unique_ptr<document::select::Node> selection;
     try {
          selection = parser.parse(_updateCmd->getCondition().getSelection());

@@ -111,8 +111,8 @@ ProviderErrorWrapper::get(const spi::Bucket& bucket, const document::FieldSet& f
 }
 
 spi::CreateIteratorResult
-ProviderErrorWrapper::createIterator(const spi::Bucket& bucket, const document::FieldSet& fieldSet,
-                                     const spi::Selection& selection, spi::IncludedVersions versions, spi::Context& context)
+ProviderErrorWrapper::createIterator(const spi::Bucket &bucket, FieldSetSP fieldSet, const spi::Selection &selection,
+                                     spi::IncludedVersions versions, spi::Context &context)
 {
     return checkResult(_impl.createIterator(bucket, fieldSet, selection, versions, context));
 }

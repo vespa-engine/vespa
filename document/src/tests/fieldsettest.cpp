@@ -31,7 +31,7 @@ TEST_F(FieldSetTest, testParsing)
     (void) dynamic_cast<NoFields&>(*FieldSetRepo::parse(docRepo, NoFields::NAME));
     (void) dynamic_cast<DocIdOnly&>(*FieldSetRepo::parse(docRepo, DocIdOnly::NAME));
 
-    FieldSet::UP set = FieldSetRepo::parse(docRepo, "testdoctype1:headerval,content");
+    auto set = FieldSetRepo::parse(docRepo, "testdoctype1:headerval,content");
     auto & coll = dynamic_cast<FieldCollection&>(*set);
 
     std::ostringstream ost;
@@ -46,8 +46,8 @@ namespace {
 
 bool checkContains(const DocumentTypeRepo& repo,
                    const std::string& str1, const std::string & str2) {
-    FieldSet::UP set1 = FieldSetRepo::parse(repo, str1);
-    FieldSet::UP set2 = FieldSetRepo::parse(repo, str2);
+    auto set1 = FieldSetRepo::parse(repo, str1);
+    auto set2 = FieldSetRepo::parse(repo, str2);
 
     return set1->contains(*set2);
 }
@@ -141,7 +141,7 @@ FieldSetTest::doCopyFields(const Document& src,
     if (!dest) {
         dest = &destDoc;
     }
-    FieldSet::UP fset = FieldSetRepo::parse(docRepo, fieldSetStr);
+    auto fset = FieldSetRepo::parse(docRepo, fieldSetStr);
     FieldSet::copyFields(*dest, src, *fset);
     return stringifyFields(*dest);
 }
@@ -152,7 +152,7 @@ FieldSetTest::doStripFields(const Document& doc,
                             const std::string& fieldSetStr)
 {
     Document::UP copy(doc.clone());
-    FieldSet::UP fset = FieldSetRepo::parse(docRepo, fieldSetStr);
+    auto fset = FieldSetRepo::parse(docRepo, fieldSetStr);
     FieldSet::stripFields(*copy, *fset);
     return stringifyFields(*copy);
 }
@@ -198,7 +198,7 @@ FieldSetTest::doCopyDocument(const Document& src,
                              const DocumentTypeRepo& docRepo,
                              const std::string& fieldSetStr)
 {
-    FieldSet::UP fset = FieldSetRepo::parse(docRepo, fieldSetStr);
+    auto fset = FieldSetRepo::parse(docRepo, fieldSetStr);
     Document::UP doc(FieldSet::createDocumentSubsetCopy(src, *fset));
     return stringifyFields(*doc);
 }
@@ -244,10 +244,9 @@ TEST_F(FieldSetTest, testSerialize)
         "testdoctype1:content,hstringval"
     };
 
-    FieldSetRepo repo;
     for (const char * fieldSet : fieldSets) {
-        FieldSet::UP fs = FieldSetRepo::parse(docRepo, fieldSet);
-        EXPECT_EQ(vespalib::string(fieldSet), repo.serialize(*fs));
+        auto fs = FieldSetRepo::parse(docRepo, fieldSet);
+        EXPECT_EQ(vespalib::string(fieldSet), FieldSetRepo::serialize(*fs));
     }
 }
 

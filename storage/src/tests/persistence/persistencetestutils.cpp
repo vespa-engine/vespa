@@ -231,9 +231,9 @@ PersistenceTestUtils::doGetOnDisk(
 document::DocumentUpdate::SP
 PersistenceTestUtils::createBodyUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
 {
-    const DocumentType* docType(_env->_component.getTypeRepo()->getDocumentType("testdoctype1"));
-    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_env->_component.getTypeRepo(), *docType, docId));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(updateValue));
+    const DocumentType* docType(getTypeRepo()->getDocumentType("testdoctype1"));
+    auto update = std::make_shared<document::DocumentUpdate>(*getTypeRepo(), *docType, docId);
+    auto assignUpdate = std::make_shared<document::AssignValueUpdate>(updateValue);
     document::FieldUpdate fieldUpdate(docType->getField("content"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);
@@ -243,9 +243,9 @@ PersistenceTestUtils::createBodyUpdate(const document::DocumentId& docId, const 
 document::DocumentUpdate::SP
 PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
 {
-    const DocumentType* docType(_env->_component.getTypeRepo()->getDocumentType("testdoctype1"));
-    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_env->_component.getTypeRepo(), *docType, docId));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(updateValue));
+    const DocumentType* docType(getTypeRepo()->getDocumentType("testdoctype1"));
+    auto update = std::make_shared<document::DocumentUpdate>(*getTypeRepo(), *docType, docId);
+    auto assignUpdate = std::make_shared<document::AssignValueUpdate>(updateValue);
     document::FieldUpdate fieldUpdate(docType->getField("headerval"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);
@@ -253,8 +253,7 @@ PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, cons
 }
 
 uint16_t
-PersistenceTestUtils::getDiskFromBucketDatabaseIfUnset(const document::Bucket& bucket,
-                                                       uint16_t disk)
+PersistenceTestUtils::getDiskFromBucketDatabaseIfUnset(const document::Bucket& bucket, uint16_t disk)
 {
     if (disk == 0xffff) {
         StorBucketDatabase::WrappedEntry entry(
@@ -342,7 +341,7 @@ PersistenceTestUtils::clearBody(document::Document& doc)
     //doc->getBody().clear();
     vespalib::nbostream stream;
     doc.serializeHeader(stream);
-    doc.deserialize(*_env->_component.getTypeRepo(), stream);
+    doc.deserialize(*getTypeRepo(), stream);
 }
 
 document::Document::UP
