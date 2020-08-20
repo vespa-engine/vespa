@@ -152,7 +152,8 @@ public class ApplicationRepositoryTest {
                                                           new MockLogRetriever(),
                                                           clock,
                                                           new MockTesterClient(),
-                                                          new NullMetric());
+                                                          new NullMetric(),
+                                                          flagSource);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -166,6 +167,29 @@ public class ApplicationRepositoryTest {
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
+
+        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(applicationId()).lastDeployTimestamp());
+    }
+
+    @Test
+    public void prepareAndActivateWithTenantMetaData() throws IOException {
+        FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
+        setup(flagSource);
+
+        Duration duration = Duration.ofHours(1);
+        clock.advance(duration);
+        Instant deployTime = clock.instant();
+        PrepareResult result = prepareAndActivate(testApp);
+        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
+                                                                                     .requireActiveSessionOf(applicationId()));
+        session.getAllocatedHosts();
+
+        assertEquals(deployTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(applicationId()).lastDeployTimestamp().toEpochMilli());
     }
 
     @Test
@@ -434,7 +458,8 @@ public class ApplicationRepositoryTest {
                                                           new MockLogRetriever(),
                                                           new ManualClock(),
                                                           new MockTesterClient(),
-                                                          actual);
+                                                          actual,
+                                                          new InMemoryFlagSource());
         deployApp(testAppLogServerWithContainer);
         Map<String, ?> context = Map.of("applicationId", "test1.testapp.default",
                                         "tenantName", "test1",
@@ -684,7 +709,8 @@ public class ApplicationRepositoryTest {
                                          new MockLogRetriever(),
                                          clock,
                                          new MockTesterClient(),
-                                         new NullMetric());
+                                         new NullMetric(),
+                                         new InMemoryFlagSource());
     }
 
     private PrepareResult prepareAndActivate(File application) {
