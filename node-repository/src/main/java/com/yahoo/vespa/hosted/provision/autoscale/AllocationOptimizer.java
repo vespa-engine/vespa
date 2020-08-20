@@ -30,7 +30,7 @@ public class AllocationOptimizer {
     }
 
     /**
-     * An AllocationSearcher searches the space of possible allocations given a target
+     * Searches the space of possible allocations given a target
      * and (optionally) cluster limits and returns the best alternative.
      *
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
