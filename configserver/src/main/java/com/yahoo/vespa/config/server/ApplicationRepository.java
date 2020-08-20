@@ -373,7 +373,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
 
         if (useTenantMetaData.value())
-            transaction.add(writeTenantMetaData(createMetaData(tenant), prepared.getApplicationId()).operations());
+            transaction.add(writeTenantMetaData(tenant).operations());
 
         return transaction;
     }
@@ -382,15 +382,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return new TenantMetaData(tenant.getSessionRepository().clock().instant()).asJsonString();
     }
 
-    TenantMetaData getTenantMetaData(ApplicationId applicationId) {
-        Tenant tenant = getTenant(applicationId);
+    TenantMetaData getTenantMetaData(Tenant tenant) {
         Optional<byte[]> data = tenantRepository.getCurator().getData(TenantRepository.getTenantPath(tenant.getName()));
         return data.map(bytes -> TenantMetaData.fromJsonString(Utf8.toString(bytes))).orElse(new TenantMetaData(tenant.getCreatedTime()));
     }
 
-    private Transaction writeTenantMetaData(String jsonString, ApplicationId applicationId) {
+    private Transaction writeTenantMetaData(Tenant tenant) {
+        String jsonString = createMetaData(tenant);
         return new CuratorTransaction(tenantRepository.getCurator())
-                .add(CuratorOperations.setData(TenantRepository.getTenantPath(applicationId.tenant()).getAbsolute(),
+                .add(CuratorOperations.setData(TenantRepository.getTenantPath(tenant.getName()).getAbsolute(),
                                                Utf8.toBytes(jsonString)));
     }
 

@@ -168,7 +168,7 @@ public class ApplicationRepositoryTest {
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
 
-        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(applicationId()).lastDeployTimestamp());
+        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class ApplicationRepositoryTest {
         session.getAllocatedHosts();
 
         assertEquals(deployTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(applicationId()).lastDeployTimestamp().toEpochMilli());
+                     applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
     }
 
     @Test

@@ -31,13 +31,6 @@ public class TenantMetaData {
         return lastDeployTimestamp;
     }
 
-    Slime getSlime() {
-        Slime slime = new Slime();
-        Cursor meta = slime.setObject();
-        meta.setLong("lastDeployTimestamp", lastDeployTimestamp.toEpochMilli());
-        return slime;
-    }
-
     public String asJsonString() {
         Slime slime = getSlime();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -60,6 +53,13 @@ public class TenantMetaData {
         } catch (Exception e) {
             throw new IllegalArgumentException("Error parsing json metadata", e);
         }
+    }
+
+    private Slime getSlime() {
+        Slime slime = new Slime();
+        Cursor meta = slime.setObject();
+        meta.setLong("lastDeployTimestamp", lastDeployTimestamp.toEpochMilli());
+        return slime;
     }
 
 }
