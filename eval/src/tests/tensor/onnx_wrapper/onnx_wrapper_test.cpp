@@ -19,33 +19,10 @@ std::string source_dir = get_source_dir();
 std::string vespa_dir = source_dir + "/" + "../../../../..";
 std::string simple_model = vespa_dir + "/" + "model-integration/src/test/models/onnx/simple/simple.onnx";
 
-vespalib::string to_str(const std::vector<size_t> &dim_sizes) {
-    vespalib::string res;
-    for (size_t dim_size: dim_sizes) {
-        if (dim_size == 0) {
-            res += "[]";
-        } else {
-            res += fmt("[%zu]", dim_size);
-        }
-    }
-    return res;
-}
-
-vespalib::string to_str(OnnxWrapper::TensorInfo::ElementType element_type) {
-    if (element_type == OnnxWrapper::TensorInfo::ElementType::FLOAT) {
-        return "float";
-    }
-    if (element_type == OnnxWrapper::TensorInfo::ElementType::DOUBLE) {
-        return "double";
-    }
-    return "???";
-}
-
 void dump_info(const char *ctx, const std::vector<OnnxWrapper::TensorInfo> &info) {
     fprintf(stderr, "%s:\n", ctx);
     for (size_t i = 0; i < info.size(); ++i) {
-        fprintf(stderr, "  %s[%zu]: '%s' %s%s\n", ctx, i, info[i].name.c_str(),
-                to_str(info[i].elements).c_str(),to_str(info[i].dimensions).c_str());
+        fprintf(stderr, "  %s[%zu]: '%s' %s\n", ctx, i, info[i].name.c_str(), info[i].type_as_string().c_str());
     }
 }
 
@@ -57,21 +34,17 @@ TEST(OnnxWrapperTest, onnx_model_can_be_inspected)
     ASSERT_EQ(wrapper.inputs().size(), 3);
     ASSERT_EQ(wrapper.outputs().size(), 1);
     //-------------------------------------------------------------------------
-    EXPECT_EQ(       wrapper.inputs()[0].name,        "query_tensor");
-    EXPECT_EQ(to_str(wrapper.inputs()[0].dimensions), "[1][4]");
-    EXPECT_EQ(to_str(wrapper.inputs()[0].elements),   "float");
+    EXPECT_EQ(wrapper.inputs()[0].name,             "query_tensor");
+    EXPECT_EQ(wrapper.inputs()[0].type_as_string(), "float[1][4]");
     //-------------------------------------------------------------------------
-    EXPECT_EQ(       wrapper.inputs()[1].name,        "attribute_tensor");
-    EXPECT_EQ(to_str(wrapper.inputs()[1].dimensions), "[4][1]");
-    EXPECT_EQ(to_str(wrapper.inputs()[1].elements),   "float");
+    EXPECT_EQ(wrapper.inputs()[1].name,             "attribute_tensor");
+    EXPECT_EQ(wrapper.inputs()[1].type_as_string(), "float[4][1]");
     //-------------------------------------------------------------------------
-    EXPECT_EQ(       wrapper.inputs()[2].name,        "bias_tensor");
-    EXPECT_EQ(to_str(wrapper.inputs()[2].dimensions), "[1][1]");
-    EXPECT_EQ(to_str(wrapper.inputs()[2].elements),   "float");
+    EXPECT_EQ(wrapper.inputs()[2].name,             "bias_tensor");
+    EXPECT_EQ(wrapper.inputs()[2].type_as_string(), "float[1][1]");
     //-------------------------------------------------------------------------
-    EXPECT_EQ(       wrapper.outputs()[0].name,        "output");
-    EXPECT_EQ(to_str(wrapper.outputs()[0].dimensions), "[1][1]");
-    EXPECT_EQ(to_str(wrapper.outputs()[0].elements),   "float");
+    EXPECT_EQ(wrapper.outputs()[0].name,             "output");
+    EXPECT_EQ(wrapper.outputs()[0].type_as_string(), "float[1][1]");
 }
 
 TEST(OnnxWrapperTest, onnx_model_can_be_evaluated)

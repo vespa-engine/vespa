@@ -17,6 +17,7 @@ private:
 
 public:
     MutableDenseTensorView(eval::ValueType type_in);
+    MutableDenseTensorView(MutableDenseTensorView &&) = default;
     void setCells(TypedCells cells_in) {
         initCellsRef(cells_in);
     }

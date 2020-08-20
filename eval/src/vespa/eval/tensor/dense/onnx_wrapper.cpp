@@ -18,6 +18,16 @@ namespace vespalib::tensor {
 
 namespace {
 
+vespalib::string to_str(OnnxWrapper::TensorInfo::ElementType element_type) {
+    if (element_type == OnnxWrapper::TensorInfo::ElementType::FLOAT) {
+        return "float";
+    }
+    if (element_type == OnnxWrapper::TensorInfo::ElementType::DOUBLE) {
+        return "double";
+    }
+    return "???";
+}
+
 ValueType::CellType as_cell_type(OnnxWrapper::TensorInfo::ElementType type) {
     if (type == OnnxWrapper::TensorInfo::ElementType::FLOAT) {
         return ValueType::CellType::FLOAT;
@@ -134,6 +144,20 @@ OnnxWrapper::TensorInfo::make_compatible_type() const
     return ValueType::tensor_type(std::move(dim_list), as_cell_type(elements));
 }
 
+vespalib::string
+OnnxWrapper::TensorInfo::type_as_string() const
+{
+    vespalib::string res = to_str(elements);
+    for (size_t dim_size: dimensions) {
+        if (dim_size == 0) {
+            res += "[]";
+        } else {
+            res += fmt("[%zu]", dim_size);
+        }
+    }
+    return res;
+}
+
 OnnxWrapper::TensorInfo::~TensorInfo() = default;
 
 OnnxWrapper::Shared::Shared()
@@ -222,12 +246,14 @@ OnnxWrapper::OnnxWrapper(const vespalib::string &model_file, Optimize optimize)
 OnnxWrapper::~OnnxWrapper() = default;
 
 OnnxWrapper::Result
-OnnxWrapper::eval(const Params &params)
+OnnxWrapper::eval(const Params &params) const
 {
     assert(params.values.size() == _inputs.size());
     Ort::RunOptions run_opts(nullptr);
-    return Result(_session.Run(run_opts, _input_name_refs.data(), params.values.data(), _inputs.size(),
-                               _output_name_refs.data(), _outputs.size()));
+    // NB: Run requires non-const session
+    Ort::Session &session = const_cast<Ort::Session&>(_session);
+    return Result(session.Run(run_opts, _input_name_refs.data(), params.values.data(), _inputs.size(),
+                              _output_name_refs.data(), _outputs.size()));
 }
 
 }

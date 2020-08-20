@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_spec.h"
+#include "value.h"
+#include "tensor.h"
+#include "tensor_engine.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <ostream>
@@ -92,6 +95,18 @@ TensorSpec::from_slime(const slime::Inspector &tensor)
         spec.add(address, cell["value"].asDouble());
     }
     return spec;
+}
+
+TensorSpec
+TensorSpec::from_value(const eval::Value &value)
+{
+    if (const eval::Tensor *tensor = value.as_tensor()) {
+        return tensor->engine().to_spec(*tensor);
+    }
+    if (value.is_double()) {
+        return TensorSpec("double").add({}, value.as_double());
+    }
+    return TensorSpec("error");
 }
 
 bool
