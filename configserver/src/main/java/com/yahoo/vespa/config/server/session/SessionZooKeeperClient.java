@@ -142,6 +142,8 @@ public class SessionZooKeeperClient {
     }
 
     public void writeApplicationId(ApplicationId id) {
+        if ( ! id.tenant().equals(tenantName))
+            throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenantName + "'");
         configCurator.putData(applicationIdPath(), id.serializedForm());
     }
 

@@ -163,6 +163,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
+        if (! id.tenant().equals(tenant))
+            throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
         try (Lock lock = lock(id)) {
             curator.create(applicationPath(id));
         }

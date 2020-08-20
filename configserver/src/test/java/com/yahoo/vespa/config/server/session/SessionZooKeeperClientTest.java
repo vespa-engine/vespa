@@ -12,7 +12,9 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.time.Instant;
 
@@ -29,6 +31,9 @@ public class SessionZooKeeperClientTest {
 
     private Curator curator;
     private ConfigCurator configCurator;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -84,6 +89,21 @@ public class SessionZooKeeperClientTest {
         String path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute();
         assertTrue(configCurator.exists(path));
         assertThat(configCurator.getData(path), is(id.serializedForm()));
+    }
+
+    @Test
+    public void require_that_wrong_application_gives_exception() {
+        ApplicationId id = new ApplicationId.Builder()
+                .tenant("someOtherTenant")
+                .applicationName("foo")
+                .instanceName("bim")
+                .build();
+        int sessionId = 3;
+        SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Cannot write application id 'someOtherTenant.foo.bim' for tenant 'default'");
+        zkc.writeApplicationId(id);
     }
 
     @Test

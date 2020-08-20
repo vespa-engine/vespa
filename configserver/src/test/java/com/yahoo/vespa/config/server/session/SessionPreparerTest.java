@@ -51,6 +51,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import javax.security.auth.x500.X500Principal;
@@ -98,6 +99,9 @@ public class SessionPreparerTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setUp() throws IOException {
@@ -217,6 +221,20 @@ public class SessionPreparerTest {
         int sessionId = 1;
         prepare(testApp, params);
         assertThat(createSessionZooKeeperClient(sessionId).readApplicationId().get(), is(applicationId()));
+    }
+
+    @Test
+    public void require_that_writing_wrong_application_id_fails() throws IOException {
+        TenantName tenant = TenantName.from("tenant");
+        ApplicationId origId = new ApplicationId.Builder()
+                .tenant(tenant)
+                .applicationName("foo")
+                .instanceName("quux")
+                .build();
+        PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("Error preparing session");
+        prepare(testApp, params);
     }
 
     @Test
