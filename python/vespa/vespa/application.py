@@ -9,12 +9,18 @@ from vespa.evaluation import EvalMetric
 
 
 class Vespa(object):
-    def __init__(self, url: str, port: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        url: str,
+        port: Optional[int] = None,
+        deployment_message: Optional[List[str]] = None,
+    ) -> None:
         """
         Establish a connection with a Vespa application.
 
         :param url: URL
         :param port: Port
+        :param deployment_message: Message returned by Vespa engine after deployment.
 
             >>> Vespa(url = "https://cord19.vespa.ai")
             >>> Vespa(url = "http://localhost", port = 8080)
@@ -22,6 +28,7 @@ class Vespa(object):
         """
         self.url = url
         self.port = port
+        self.deployment_message = deployment_message
 
         if port is None:
             self.end_point = self.url
