@@ -673,7 +673,7 @@ Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
     std::vector<IndexList> result;
     std::map<uint16_t, IndexList> nodes;
     for (auto node : nodeList) {
-        const Group* group(_node2Group[node]);
+        const Group* group((node < _node2Group.size()) ? _node2Group[node] : nullptr);
         if (group == nullptr) {
             LOGBP(warning, "Node %u is not assigned to a group. "
                            "Should not happen?", node);
