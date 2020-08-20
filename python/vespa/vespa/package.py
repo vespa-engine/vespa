@@ -464,5 +464,7 @@ class VespaDocker(object):
             raise RuntimeError(deployment_message)
 
         return Vespa(
-            url="http://localhost", port=8080, deployment_message=deployment_message
+            url="http://localhost",
+            port=self.local_port,
+            deployment_message=deployment_message,
         )
