@@ -5,7 +5,9 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -84,8 +86,9 @@ public class TenantRepositoryTest {
     @Test
     public void testListenersAdded() throws IOException, SAXException {
         TenantApplications applicationRepo = tenantRepository.getTenant(tenant1).getApplicationRepo();
-        applicationRepo.createApplication(ApplicationId.defaultId());
-        applicationRepo.createPutTransaction(ApplicationId.defaultId(), 4).commit();
+        ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
+        applicationRepo.createApplication(id);
+        applicationRepo.createPutTransaction(id, 4).commit();
         applicationRepo.reloadConfig(ApplicationSet.fromSingle(
                 new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                 new ServerCache(),
@@ -93,7 +96,7 @@ public class TenantRepositoryTest {
                                 false,
                                 new Version(1, 2, 3),
                                 MetricUpdater.createTestUpdater(),
-                                ApplicationId.defaultId())));
+                                id)));
         assertEquals(1, listener.reloaded.get());
     }
 

@@ -11,12 +11,14 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
@@ -47,17 +49,20 @@ public class SessionZooKeeperClient {
     private static final String ATHENZ_DOMAIN = "athenzDomain";
     private final Curator curator;
     private final ConfigCurator configCurator;
+    private final TenantName tenantName;
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
 
     public SessionZooKeeperClient(Curator curator,
                                   ConfigCurator configCurator,
-                                  Path sessionPath,
+                                  TenantName tenantName,
+                                  long sessionId,
                                   String serverId) {
         this.curator = curator;
         this.configCurator = configCurator;
-        this.sessionPath = sessionPath;
+        this.tenantName = tenantName;
+        this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
         this.sessionStatusPath = sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
     }
@@ -245,6 +250,10 @@ public class SessionZooKeeperClient {
         transaction.add(createWriteStatusTransaction(Session.Status.NEW).operations());
         transaction.add(CuratorOperations.create(getCreateTimePath(), Utf8.toBytes(String.valueOf(createTime.getEpochSecond()))));
         transaction.commit();
+    }
+
+    private static Path getSessionPath(TenantName tenantName, long sessionId) {
+        return TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId));
     }
 
 }
