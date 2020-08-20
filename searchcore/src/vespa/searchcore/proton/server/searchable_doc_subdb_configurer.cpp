@@ -39,7 +39,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const SearchView::SP &searchVi
 void
 SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexWriter,
                                                   const ISummaryAdapter::SP &summaryAdapter,
-                                                  const IAttributeWriter::SP &attrWriter,
+                                                  IAttributeWriter::SP attrWriter,
                                                   const Schema::SP &schema,
                                                   const std::shared_ptr<const DocumentTypeRepo> &repo,
                                                   const SearchView::SP &searchView)
@@ -54,7 +54,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
                     curr->getWriteService(),
                     curr->getLidReuseDelayer()),
             curr->getPersistentParams(),
-            FastAccessFeedView::Context(attrWriter, curr->getDocIdLimit()),
+            FastAccessFeedView::Context(std::move(attrWriter), curr->getDocIdLimit()),
             SearchableFeedView::Context(indexWriter)));
 }
 
@@ -258,7 +258,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         SearchableFeedView::SP curr = _feedView.get();
         reconfigureFeedView(curr->getIndexWriter(),
                             curr->getSummaryAdapter(),
-                            attrWriter,
+                            std::move(attrWriter),
                             newConfig.getSchemaSP(),
                             newConfig.getDocumentTypeRepoSP(),
                             searchView);

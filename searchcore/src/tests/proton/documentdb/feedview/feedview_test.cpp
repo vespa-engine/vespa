@@ -759,7 +759,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
     }
-    virtual IFeedView &getFeedView() override { return fv; }
+    IFeedView &getFeedView() override { return fv; }
 };
 
 void

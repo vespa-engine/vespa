@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "storeonlyfeedview.h"
 #include "forcecommitcontext.h"
 #include "ireplayconfig.h"
 #include "operationdonecontext.h"
 #include "putdonecontext.h"
 #include "remove_batch_done_context.h"
 #include "removedonecontext.h"
-#include "storeonlyfeedview.h"
 #include "updatedonecontext.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>

@@ -92,7 +92,7 @@ private:
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 
     void setupIndexManager(searchcorespi::IIndexManager::SP indexManager);
-    void initFeedView(const IAttributeWriter::SP &attrWriter, const DocumentDBConfig &configSnapshot);
+    void initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig &configSnapshot);
     void reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
 
     bool reconfigure(vespalib::Closure0<bool>::UP closure) override;
@@ -108,7 +108,7 @@ protected:
     void updateLidReuseDelayer(const LidReuseDelayerConfig &config) override;
 public:
     SearchableDocSubDB(const Config &cfg, const Context &ctx);
-    ~SearchableDocSubDB();
+    ~SearchableDocSubDB() override;
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,

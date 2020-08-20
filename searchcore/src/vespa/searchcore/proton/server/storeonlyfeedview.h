@@ -32,7 +32,6 @@ class ForceCommitContext;
 class OperationDoneContext;
 class PutDoneContext;
 class RemoveDoneContext;
-class CommitTimeTracker;
 class IGidToLidChangeHandler;
 struct IFieldUpdateCallback;
 class RemoveDocumentsOperation;

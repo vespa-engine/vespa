@@ -22,7 +22,7 @@ CommitTimeTracker::needCommit() const
         }
         return false;
     }
-    return true;
+    return false;
 }
 
 }

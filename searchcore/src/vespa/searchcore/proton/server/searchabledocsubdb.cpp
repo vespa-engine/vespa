@@ -217,7 +217,7 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     {
         std::lock_guard<std::mutex> guard(_configMutex);
-        initFeedView(attrWriter, configSnapshot);
+        initFeedView(std::move(attrWriter), configSnapshot);
     }
     if (_addMetrics) {
         reconfigureMatchingMetrics(configSnapshot.getRankProfilesConfig());
@@ -225,13 +225,13 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
 }
 
 void
-SearchableDocSubDB::initFeedView(const IAttributeWriter::SP &attrWriter,
+SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter,
                                  const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
     auto feedView = std::make_shared<SearchableFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
-            FastAccessFeedView::Context(attrWriter, _docIdLimit),
+            FastAccessFeedView::Context(std::move(attrWriter), _docIdLimit),
             SearchableFeedView::Context(getIndexWriter()));
 
     // XXX: Not exception safe.
