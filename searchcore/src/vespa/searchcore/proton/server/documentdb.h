@@ -202,7 +202,6 @@ private:
      * Implements IFeedHandlerOwner
      **/
     bool getAllowPrune() const override;
-
     void startTransactionLogReplay();
 
 

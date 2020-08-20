@@ -51,7 +51,7 @@ private:
     void
     reconfigureFeedView(const IIndexWriter::SP &indexWriter,
                         const ISummaryAdapter::SP &summaryAdapter,
-                        const IAttributeWriter::SP &attrWriter,
+                        IAttributeWriter::SP attrWriter,
                         const search::index::Schema::SP &schema,
                         const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                         const SearchView::SP &searchView);

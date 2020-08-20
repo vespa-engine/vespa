@@ -1,19 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "storeonlyfeedview.h"
 #include "forcecommitcontext.h"
 #include "ireplayconfig.h"
 #include "operationdonecontext.h"
 #include "putdonecontext.h"
 #include "remove_batch_done_context.h"
 #include "removedonecontext.h"
-#include "storeonlyfeedview.h"
 #include "updatedonecontext.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
@@ -198,7 +197,6 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _repo(ctx._repo),
       _docType(nullptr),
       _lidReuseDelayer(ctx._lidReuseDelayer),
-      _commitTimeTracker(ctx._commitTimeTracker),
       _pendingLidTracker(),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
@@ -237,7 +235,7 @@ StoreOnlyFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onComm
 void
 StoreOnlyFeedView::considerEarlyAck(FeedToken & token)
 {
-    if (_commitTimeTracker.hasVisibilityDelay() && token) {
+    if ( ! needCommit() && token) {
         token.reset();
     }
 }
@@ -288,7 +286,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
 
     if (putOp.getValidDbdId(_params._subDbId)) {
-        bool immediateCommit = _commitTimeTracker.needCommit();
+        bool immediateCommit = needCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(std::move(token), _gidToLidChangeHandler, doc, gid, putOp.getLid(), serialNum,
@@ -302,6 +300,11 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
         internalRemove(std::move(token), serialNum, std::move(pendingNotifyRemoveDone),
                        putOp.getPrevLid(), IDestructorCallback::SP());
     }
+}
+
+bool
+StoreOnlyFeedView::needCommit() const {
+    return _lidReuseDelayer.getImmediateCommit();
 }
 
 void
@@ -440,7 +443,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
     }
     considerEarlyAck(token);
 
-    bool immediateCommit = _commitTimeTracker.needCommit();
+    bool immediateCommit = needCommit();
     auto onWriteDone = createUpdateDoneContext(std::move(token), updOp.getUpdate());
     UpdateScope updateScope(*_schema, upd);
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone, updateScope);
@@ -612,7 +615,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, SerialNum serialNum,
                                           std::move(pendingNotifyRemoveDone), (explicitReuseLid ? lid : 0u),
                                           std::move(moveDoneCtx));
     removeSummary(serialNum, lid, onWriteDone);
-    bool immediateCommit = _commitTimeTracker.needCommit();
+    bool immediateCommit = needCommit();
     removeAttributes(serialNum, lid, immediateCommit, onWriteDone);
     removeIndexedFields(serialNum, lid, immediateCommit, onWriteDone);
 }
@@ -725,7 +728,7 @@ StoreOnlyFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp)
 void
 StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
 {
-    bool immediateCommit = _commitTimeTracker.needCommit();
+    bool immediateCommit = needCommit();
     size_t rm_count = removeDocuments(delOp, true, immediateCommit);
     LOG(debug, "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
         _params._docTypeName.toString().c_str(), delOp.getBucketId().toString().c_str(), rm_count);
@@ -764,7 +767,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(moveOp, docId.getGlobalId(), docId);
     bool docAlreadyExists = moveOp.getValidPrevDbdId(_params._subDbId);
     if (moveOp.getValidDbdId(_params._subDbId)) {
-        bool immediateCommit = _commitTimeTracker.needCommit();
+        bool immediateCommit = needCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(FeedToken(), _gidToLidChangeHandler, doc, gid, moveOp.getLid(), serialNum,

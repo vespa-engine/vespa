@@ -18,7 +18,7 @@ void
 FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &curr,
                                                   const Schema::SP &schema,
                                                   const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                                  const IAttributeWriter::SP &writer)
+                                                  IAttributeWriter::SP writer)
 {
     _feedView.set(std::make_shared<FastAccessFeedView>(
             StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
@@ -27,10 +27,9 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &
                     curr->getGidToLidChangeHandler(),
                     repo,
                     curr->getWriteService(),
-                    curr->getLidReuseDelayer(),
-                    curr->getCommitTimeTracker()),
+                    curr->getLidReuseDelayer()),
             curr->getPersistentParams(),
-            FastAccessFeedView::Context(writer,curr->getDocIdLimit())));
+            FastAccessFeedView::Context(std::move(writer),curr->getDocIdLimit())));
 }
 
 FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,

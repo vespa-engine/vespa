@@ -39,21 +39,21 @@ struct MyFeedView : public test::DummyFeedView {
     int remove_handled;
 
     MyFeedView();
-    ~MyFeedView();
+    ~MyFeedView() override;
 
     const std::shared_ptr<const DocumentTypeRepo> &getDocumentTypeRepo() const override { return repo_sp; }
     void handleRemove(FeedToken , const RemoveOperation &) override { ++remove_handled; }
 };
 
 MyFeedView::MyFeedView() : repo_sp(repo.getTypeRepoSp()), remove_handled(0) {}
-MyFeedView::~MyFeedView() {}
+MyFeedView::~MyFeedView() = default;
 
 struct MyReplayConfig : IReplayConfig {
-    virtual void replayConfig(SerialNum) override {}
+    void replayConfig(SerialNum) override {}
 };
 
 struct InstantExecutor : vespalib::Executor {
-    virtual Task::UP execute(Task::UP task) override {
+    Task::UP execute(Task::UP task) override {
         task->run();
         return Task::UP();
     }
@@ -95,7 +95,7 @@ struct RemoveOperationContext
     nbostream str;
     std::unique_ptr<Packet> packet;
 
-    RemoveOperationContext(search::SerialNum serial);
+    explicit RemoveOperationContext(search::SerialNum serial);
     ~RemoveOperationContext();
 };
 
@@ -106,14 +106,14 @@ RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
 {
     op.serialize(str);
     ConstBufferRef buf(str.data(), str.wp());
-    packet.reset(new Packet());
+    packet = std::make_unique<Packet>();
     packet->add(Packet::Entry(serial, FeedOperation::REMOVE, buf));
 }
 RemoveOperationContext::~RemoveOperationContext() = default;
 TEST_F("require that active FeedView can change during replay", Fixture)
 {
     RemoveOperationContext opCtx(10);
-    PacketWrapper::SP wrap(new PacketWrapper(*opCtx.packet, NULL));
+    auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, nullptr);
     InstantExecutor executor;
 
     EXPECT_EQUAL(0, f.feed_view1.remove_handled);

@@ -3,7 +3,6 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
@@ -521,7 +520,6 @@ struct FixtureBase
     ExecutorThreadingService _writeServiceReal;
     test::ThreadingServiceObserver _writeService;
     documentmetastore::LidReuseDelayer _lidReuseDelayer;
-    CommitTimeTracker     _commitTimeTracker;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
     FixtureBase(vespalib::duration visibilityDelay);
@@ -706,7 +704,6 @@ FixtureBase::FixtureBase(vespalib::duration visibilityDelay)
       _writeServiceReal(_sharedExecutor),
       _writeService(_writeServiceReal),
       _lidReuseDelayer(_writeService, _dmsc->get()),
-      _commitTimeTracker(visibilityDelay),
       serial(0),
       _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
 {
@@ -736,8 +733,7 @@ struct SearchableFeedViewFixture : public FixtureBase
                 *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
-                _lidReuseDelayer,
-                _commitTimeTracker),
+                _lidReuseDelayer),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit),
            SearchableFeedView::Context(iw))
@@ -758,13 +754,12 @@ struct FastAccessFeedViewFixture : public FixtureBase
                 *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
-                _lidReuseDelayer,
-                _commitTimeTracker),
+                _lidReuseDelayer),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
     }
-    virtual IFeedView &getFeedView() override { return fv; }
+    IFeedView &getFeedView() override { return fv; }
 };
 
 void
@@ -1229,34 +1224,9 @@ TEST_F("require that commit is not called when inside a commit interval",
                   "ack(Result(0, ))");
 }
 
-TEST_F("require that commit is called when crossing a commit interval",
+TEST_F("require that commit is not implicitly called",
        SearchableFeedViewFixture(SHORT_DELAY))
 {
-    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
-    DocumentContext dc = f.doc1();
-    f.putAndWait(dc);
-    EXPECT_EQUAL(1u, f.miw._commitCount);
-    EXPECT_EQUAL(1u, f.maw._commitCount);
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
-    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
-    f.removeAndWait(dc);
-    EXPECT_EQUAL(2u, f.miw._commitCount);
-    EXPECT_EQUAL(2u, f.maw._commitCount);
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=1),"
-                  "put(adapter=index,serialNum=1,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=1),"
-                  "ack(Result(0, )),"
-                  "remove(adapter=attribute,serialNum=2,lid=1,commit=1),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=2),"
-                  "ack(Result(0, ))");
-}
-
-
-TEST_F("require that commit is not implicitly called after handover to maintenance job",
-       SearchableFeedViewFixture(SHORT_DELAY))
-{
-    f._commitTimeTracker.setReplayDone();
     std::this_thread::sleep_for(SHORT_DELAY + 100ms);
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
@@ -1279,7 +1249,6 @@ TEST_F("require that commit is not implicitly called after handover to maintenan
 TEST_F("require that forceCommit updates docid limit",
        SearchableFeedViewFixture(LONG_DELAY))
 {
-    f._commitTimeTracker.setReplayDone();
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
     EXPECT_EQUAL(0u, f.miw._commitCount);
@@ -1298,7 +1267,6 @@ TEST_F("require that forceCommit updates docid limit",
 
 TEST_F("require that forceCommit updates docid limit during shrink", SearchableFeedViewFixture(LONG_DELAY))
 {
-    f._commitTimeTracker.setReplayDone();
     f.putAndWait(f.makeDummyDocs(0, 3, 1000));
     EXPECT_EQUAL(0u, f._docIdLimit.get());
     f.forceCommitAndWait();

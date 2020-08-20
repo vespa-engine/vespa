@@ -142,7 +142,6 @@ public:
      * @param writeService  The thread service used for all write tasks.
      * @param tlsSpec       The spec to connect to the transaction log server.
      * @param docTypeName   The name and version of the document type we are feed handler for.
-     * @param state         Document db state
      * @param owner         Reference to the owner of this feed handler.
      * @param replayConfig  Reference to interface used for replaying config changes.
      * @param writer        Inject writer for tls, or nullptr to use internal.
@@ -150,7 +149,6 @@ public:
     FeedHandler(IThreadingService &writeService,
                 const vespalib::string &tlsSpec,
                 const DocTypeName &docTypeName,
-                DDBState &state,
                 IFeedHandlerOwner &owner,
                 const IResourceWriteFilter &writerFilter,
                 IReplayConfig &replayConfig,
@@ -229,7 +227,7 @@ public:
     void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
     void heartBeat() override;
 
-    virtual void sync();
+    void sync();
     RPC::Result receive(const Packet &packet) override;
 
     void eof() override;

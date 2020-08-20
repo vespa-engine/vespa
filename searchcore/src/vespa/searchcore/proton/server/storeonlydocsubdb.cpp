@@ -123,7 +123,6 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _subDbType(cfg._subDbType),
       _fileHeaderContext(*this, ctx._fileHeaderContext, _docTypeName, _baseDir),
       _lidReuseDelayer(),
-      _commitTimeTracker(3600s),
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
 {
     vespalib::mkdir(_baseDir, false); // Assume parent is created.
@@ -195,7 +194,6 @@ StoreOnlyDocSubDB::onReplayDone()
 void
 StoreOnlyDocSubDB::onReprocessDone(SerialNum)
 {
-    _commitTimeTracker.setReplayDone();
 }
 
 
@@ -343,7 +341,7 @@ StoreOnlyDocSubDB::getStoreOnlyFeedViewContext(const DocumentDBConfig &configSna
 {
     return StoreOnlyFeedView::Context(getSummaryAdapter(), configSnapshot.getSchemaSP(), _metaStoreCtx,
                                       *_gidToLidChangeHandler, configSnapshot.getDocumentTypeRepoSP(), _writeService,
-                                      *_lidReuseDelayer, _commitTimeTracker);
+                                      *_lidReuseDelayer);
 }
 
 StoreOnlyFeedView::PersistentParams
@@ -423,7 +421,6 @@ StoreOnlyDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
      * feed view before applying the new config to the sub dbs.
      */
     _lidReuseDelayer->setImmediateCommit(immediateCommit);
-    _commitTimeTracker.setVisibilityDelay(config.visibilityDelay());
 }
 
 IReprocessingTask::List

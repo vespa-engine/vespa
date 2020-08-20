@@ -25,7 +25,7 @@ private:
     void reconfigureFeedView(const FastAccessFeedView::SP &curr,
                              const search::index::Schema::SP &schema,
                              const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             const IAttributeWriter::SP &attrWriter);
+                             IAttributeWriter::SP attrWriter);
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
