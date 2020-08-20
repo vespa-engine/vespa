@@ -122,7 +122,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                       .filter(applicationId -> {
                           if ( ! applicationId.tenant().equals(tenant)) {
                               log.log(Level.WARNING, "There is an application ('" + applicationId + "') with wrong tenant (should be '" +
-                                                     tenant + "') in " + applicationsPath);
+                                                     tenant + "') in " + applicationsPath + ", deleting it");
+                              curator.delete(applicationsPath.append(applicationId.serializedForm()));
                               return false;
                           } else {
                               return true;
