@@ -1,8 +1,9 @@
 # Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 from typing import Optional, Dict, Tuple, List
-from requests import post
 from pandas import DataFrame
+from requests import post
+from requests.models import Response
 
 from vespa.query import Query, VespaResult
 from vespa.evaluation import EvalMetric
@@ -75,6 +76,22 @@ class Vespa(object):
         else:
             r = post(self.search_end_point, json=body)
             return VespaResult(vespa_result=r.json())
+
+    def feed_data_point(self, schema: str, data_id: str, fields: Dict) -> Response:
+        """
+        Feed a data point to a Vespa app.
+
+        :param schema: The schema that we are sending data to.
+        :param data_id: Unique id associated with this data point.
+        :param fields: Dict containing all the fields required by the `schema`.
+        :return: Response of the HTTP POST request.
+        """
+        end_point = "{}/document/v1/{}/{}/docid/{}".format(
+            self.end_point, schema, schema, str(data_id)
+        )
+        vespa_format = {"fields": fields}
+        response = post(end_point, json=vespa_format)
+        return response
 
     def collect_training_data_point(
         self,
