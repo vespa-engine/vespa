@@ -44,6 +44,9 @@ struct TypedCells {
         abort();
     }
 
+    TypedCells(TypedCells &&other) = default;
+    TypedCells(const TypedCells &other) = default;
+    TypedCells & operator= (TypedCells &&other) = default;
     TypedCells & operator= (const TypedCells &other) = default;
 };
 

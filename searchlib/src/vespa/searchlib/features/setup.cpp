@@ -23,6 +23,7 @@
 #include "flow_completeness_feature.h"
 #include "foreachfeature.h"
 #include "freshnessfeature.h"
+#include "global_sequence_feature.h"
 #include "item_raw_score_feature.h"
 #include "jarowinklerdistancefeature.h"
 #include "matchcountfeature.h"
@@ -34,6 +35,7 @@
 #include "nativeproximityfeature.h"
 #include "nativerankfeature.h"
 #include "nowfeature.h"
+#include "onnx_feature.h"
 #include "proximityfeature.h"
 #include "querycompletenessfeature.h"
 #include "queryfeature.h"
@@ -53,7 +55,6 @@
 #include "termfeature.h"
 #include "terminfofeature.h"
 #include "text_similarity_feature.h"
-#include "global_sequence_feature.h"
 #include "valuefeature.h"
 
 #include "max_reduce_prod_join_replacer.h"
@@ -123,7 +124,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<TermFieldMdBlueprint>());
     registry.addPrototype(std::make_shared<ConstantBlueprint>());
     registry.addPrototype(std::make_shared<GlobalSequenceBlueprint>());
-
+    registry.addPrototype(std::make_shared<OnnxBlueprint>());
 
     // Ranking Expression
     auto replacers = std::make_unique<ListExpressionReplacer>();
