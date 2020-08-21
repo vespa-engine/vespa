@@ -8,12 +8,16 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.thread");
+
+using vespalib::make_string_short::fmt;
+using to_str = vespalib::string;
 
 namespace storage {
 
@@ -277,6 +281,20 @@ spi::ReadConsistency api_read_consistency_to_spi(api::InternalReadConsistency co
     }
 }
 
+document::FieldSet::SP
+getFieldSet(const document::FieldSetRepo & repo, vespalib::stringref name, MessageTracker & tracker) {
+    try {
+        return repo.getFieldSet(name);
+    } catch (document::FieldNotFoundException & e) {
+        tracker.fail(storage::api::ReturnCode::ILLEGAL_PARAMETERS,
+                     fmt("Field %s in fieldset %s not found in document", e.getFieldName().c_str(), to_str(name).c_str()));
+    } catch (const vespalib::Exception & e) {
+        tracker.fail(storage::api::ReturnCode::ILLEGAL_PARAMETERS,
+                     fmt("Failed parsing fieldset %s with : %s", to_str(name).c_str(), e.getMessage().c_str()));
+    }
+    return document::FieldSet::SP();
+}
+
 }
 
 MessageTracker::UP
@@ -286,7 +304,9 @@ PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
     tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    auto fieldSet = _env._component.getTypeRepo()->fieldSetRepo->getFieldSet(cmd.getFieldSet());
+    auto fieldSet = getFieldSet(*_env._component.getTypeRepo()->fieldSetRepo, cmd.getFieldSet(), *tracker);
+    if ( ! fieldSet) { return tracker; }
+
     tracker->context().setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
     spi::GetResult result =
         _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), tracker->context());
@@ -455,7 +475,9 @@ MessageTracker::UP
 PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker)
 {
     tracker->setMetric(_env._metrics.createIterator);
-    document::FieldSet::SP fieldSet = _env._component.getTypeRepo()->fieldSetRepo->getFieldSet(cmd.getFields());
+    auto fieldSet = getFieldSet(*_env._component.getTypeRepo()->fieldSetRepo, cmd.getFields(), *tracker);
+    if ( ! fieldSet) { return tracker; }
+
     tracker->context().setReadConsistency(cmd.getReadConsistency());
     spi::CreateIteratorResult result(_spi.createIterator(
             spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
@@ -514,9 +536,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
 
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     {
-        vespalib::string desc(
-                vespalib::make_string(
-                        "split(%s -> %s, %s)",
+        auto desc = fmt("split(%s -> %s, %s)",
                         cmd.getBucketId().toString().c_str(),
                         target1.getBucketId().toString().c_str(),
                         target2.getBucketId().toString().c_str()));
@@ -663,12 +683,10 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracke
 
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     {
-        vespalib::string desc(
-                vespalib::make_string(
-                        "join(%s, %s -> %s)",
+        auto desc = fmt("join(%s, %s -> %s)",
                         firstBucket.getBucketId().toString().c_str(),
                         secondBucket.getBucketId().toString().c_str(),
-                        cmd.getBucketId().toString().c_str()));
+                        cmd.getBucketId().toString().c_str());
         LOG_BUCKET_OPERATION(cmd.getBucketId(), desc);
         LOG_BUCKET_OPERATION(firstBucket.getBucketId(), desc);
         if (firstBucket != secondBucket) {
