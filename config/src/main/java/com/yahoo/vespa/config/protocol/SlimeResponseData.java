@@ -3,9 +3,8 @@ package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
+import com.yahoo.slime.SlimeUtils;
 
 /**
  * Contains response data for a slime response and methods for decoding the response data that
@@ -37,7 +36,7 @@ class SlimeResponseData {
     private Slime getData() {
         if (request.returnValues().size() > 0) {
             if (data == null) {
-                data = new JsonDecoder().decode(new Slime(), Utf8.toBytes(request.returnValues().get(0).asString()));
+                data = SlimeUtils.jsonToSlime(request.returnValues().get(0).asString());
             }
             return data;
         } else {

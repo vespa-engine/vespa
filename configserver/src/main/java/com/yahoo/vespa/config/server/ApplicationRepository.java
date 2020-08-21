@@ -378,8 +378,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return transaction;
     }
 
-    private String createMetaData(Tenant tenant) {
-        return new TenantMetaData(tenant.getSessionRepository().clock().instant()).asJsonString();
+    private byte[] createMetaData(Tenant tenant) {
+        return new TenantMetaData(tenant.getSessionRepository().clock().instant()).asJsonBytes();
     }
 
     TenantMetaData getTenantMetaData(Tenant tenant) {
@@ -388,10 +388,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Transaction writeTenantMetaData(Tenant tenant) {
-        String jsonString = createMetaData(tenant);
         return new CuratorTransaction(tenantRepository.getCurator())
                 .add(CuratorOperations.setData(TenantRepository.getTenantPath(tenant.getName()).getAbsolute(),
-                                               Utf8.toBytes(jsonString)));
+                                               createMetaData(tenant)));
     }
 
     static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {
