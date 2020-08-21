@@ -5,6 +5,7 @@
 #include "fast_access_feed_view.h"
 #include "i_attribute_writer_factory.h"
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 
 namespace proton {
 
@@ -15,7 +16,8 @@ namespace proton {
 class FastAccessDocSubDBConfigurer
 {
 public:
-    typedef vespalib::VarHolder<FastAccessFeedView::SP> FeedViewVarHolder;
+    using FeedViewVarHolder = vespalib::VarHolder<FastAccessFeedView::SP>;
+    using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
 private:
     FeedViewVarHolder           &_feedView;
@@ -25,7 +27,8 @@ private:
     void reconfigureFeedView(const FastAccessFeedView::SP &curr,
                              const search::index::Schema::SP &schema,
                              const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             IAttributeWriter::SP attrWriter);
+                             IAttributeWriter::SP attrWriter,
+                             const LidReuseDelayerConfig & lidReuseDelayerConfig);
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,

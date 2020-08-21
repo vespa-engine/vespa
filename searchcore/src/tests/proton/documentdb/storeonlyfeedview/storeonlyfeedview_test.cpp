@@ -86,7 +86,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
     MyMinimalFeedView(const ISummaryAdapter::SP &summaryAdapter,
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
-                      documentmetastore::ILidReuseDelayer &lidReuseDelayer,
+                      documentmetastore::LidReuseDelayerConfig &lidReuseDelayerConfig,
                       const PersistentParams &params,
                       int &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
@@ -96,7 +96,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                                                      *gidToLidChangeHandler,
                                                      myGetDocumentTypeRepo(),
                                                      writeService,
-                                                     lidReuseDelayer),
+                                                     lidReuseDelayerConfig),
                           params),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
@@ -134,10 +134,10 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
     MoveOperationFeedView(const ISummaryAdapter::SP &summaryAdapter,
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
-                          documentmetastore::ILidReuseDelayer &lidReuseDelayer,
+                          documentmetastore::LidReuseDelayerConfig &lidReuseDelayerConfig,
                           const PersistentParams &params,
                           int &outstandingMoveOps_) :
-            MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayer,
+            MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayerConfig,
                               params, outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
@@ -191,7 +191,7 @@ struct FixtureBase {
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
-    documentmetastore::LidReuseDelayer lidReuseDelayer;
+    documentmetastore::LidReuseDelayerConfig lidReuseDelayerConfig;
     typename FeedViewType::UP feedview;
  
     FixtureBase(SubDbType subDbType = SubDbType::READY)
@@ -206,13 +206,13 @@ struct FixtureBase {
                                           subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
-          lidReuseDelayer(writeService, *metaStore),
+          lidReuseDelayerConfig(),
           feedview()
     {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
         ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
-        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayer,
+        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayerConfig,
                                                   params, outstandingMoveOps);
     }
 

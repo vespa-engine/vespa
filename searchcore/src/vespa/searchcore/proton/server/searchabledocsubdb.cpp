@@ -146,7 +146,6 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
 {
     StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
-    updateLidReuseDelayer(&newConfigSnapshot);
     applyFlushConfig(newConfigSnapshot.getMaintenanceConfigSP()->getFlushConfig());
     if (params.shouldMatchersChange() && _addMetrics) {
         reconfigureMatchingMetrics(newConfigSnapshot.getRankProfilesConfig());
@@ -157,9 +156,8 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
         IReprocessingInitializer::UP initializer =
                 _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params, resolver);
-        if (initializer.get() != nullptr && initializer->hasReprocessors()) {
-            tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
-                    newConfigSnapshot.getDocumentTypeRepoSP()).release()));
+        if (initializer && initializer->hasReprocessors()) {
+            tasks.emplace_back(createReprocessingTask(*initializer, newConfigSnapshot.getDocumentTypeRepoSP()));
         }
         proton::IAttributeManager::SP newMgr = getAttributeManager();
         if (_addMetrics) {
@@ -261,7 +259,7 @@ reconfigure(vespalib::Closure0<bool>::UP closure)
 
     bool ret = true;
 
-    if (closure.get() != nullptr)
+    if (closure)
         ret = closure->call();  // Perform index manager reconfiguration now
     reconfigureIndexSearchable();
     return ret;
@@ -323,18 +321,6 @@ MatchingStats
 SearchableDocSubDB::getMatcherStats(const vespalib::string &rankProfile) const
 {
     return _rSearchView.get()->getMatcherStats(rankProfile);
-}
-
-void
-SearchableDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
-{
-    Parent::updateLidReuseDelayer(config);
-    /*
-     * The lid reuse delayer should not have any pending lids stored at this
-     * time, since DocumentDB::applyConfig() calls forceCommit() on the
-     * feed view before applying the new config to the sub dbs.
-     */
-    _lidReuseDelayer->setHasIndexedOrAttributeFields(config.hasIndexedOrAttributeFields());
 }
 
 void

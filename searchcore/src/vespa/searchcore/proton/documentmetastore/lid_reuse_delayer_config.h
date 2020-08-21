@@ -18,6 +18,7 @@ private:
     bool                _hasIndexedOrAttributeFields;
 public:
     LidReuseDelayerConfig();
+    LidReuseDelayerConfig(vespalib::duration visibilityDelay, bool _hasIndexedOrAttributeFields_in);
     explicit LidReuseDelayerConfig(const DocumentDBConfig &configSnapshot);
     vespalib::duration visibilityDelay() const { return _visibilityDelay; }
     bool hasIndexedOrAttributeFields() const { return _hasIndexedOrAttributeFields; }

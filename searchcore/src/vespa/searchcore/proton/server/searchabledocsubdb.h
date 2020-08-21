@@ -102,10 +102,6 @@ private:
     void propagateFlushConfig();
 protected:
     IFlushTargetList getFlushTargetsInternal() override;
-
-    using Parent::updateLidReuseDelayer;
-
-    void updateLidReuseDelayer(const LidReuseDelayerConfig &config) override;
 public:
     SearchableDocSubDB(const Config &cfg, const Context &ctx);
     ~SearchableDocSubDB() override;
@@ -120,7 +116,7 @@ public:
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
-    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
+    void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
 
     void clearViews() override;
 

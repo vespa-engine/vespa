@@ -248,7 +248,6 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
 
     reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
-    updateLidReuseDelayer(&newConfigSnapshot);
     /*
      * If attribute manager should change then document retriever
      * might have to rewrite a different set of fields.  If document
