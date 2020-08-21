@@ -18,7 +18,7 @@ struct Inspector;
 
 namespace eval {
 
-class Value;
+struct Value;
 
 /**
  * An implementation-independent specification of the type and
