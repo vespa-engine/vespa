@@ -839,11 +839,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
+        if ( ! useTenantMetaData.value()) return Set.of();
+
         return tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
                 .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
-                .filter(tenantName -> tenantRepository.getTenant(tenantName).getCreatedTime().isBefore(now.minus(ttlForUnusedTenant)))
+                .filter(tenantName -> getTenantMetaData(tenantRepository.getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttlForUnusedTenant)))
                 .peek(tenantRepository::deleteTenant)
                 .collect(Collectors.toSet());
     }
