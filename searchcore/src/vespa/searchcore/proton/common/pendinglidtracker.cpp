@@ -6,6 +6,17 @@
 
 namespace proton {
 
+PendingLidTracker::Token::Token(uint32_t lid, PendingLidTracker &tracker)
+    : _tracker(&tracker),
+      _lid(lid)
+{}
+
+PendingLidTracker::Token::~Token() {
+    if (_tracker != nullptr) {
+        _tracker->consume(_lid);
+    }
+}
+
 PendingLidTracker::PendingLidTracker()
     : _mutex(),
       _cond(),
@@ -16,10 +27,11 @@ PendingLidTracker::~PendingLidTracker() {
     assert(_pending.empty());
 }
 
-void
+PendingLidTracker::Token
 PendingLidTracker::produce(uint32_t lid) {
     std::lock_guard<std::mutex> guard(_mutex);
     _pending[lid]++;
+    return Token(lid, *this);
 }
 void
 PendingLidTracker::consume(uint32_t lid) {

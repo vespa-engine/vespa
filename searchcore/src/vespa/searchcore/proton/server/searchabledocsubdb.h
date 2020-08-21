@@ -27,6 +27,7 @@ class DocumentDBConfig;
 struct IDocumentDBReferenceResolver;
 struct MetricsWireService;
 class GidToLidChangeHandler;
+class ICommitable;
 
 /**
  * The searchable sub database supports searching and keeps all attribute fields in memory and
@@ -56,15 +57,18 @@ public:
         matching::QueryLimiter            &_queryLimiter;
         const vespalib::Clock             &_clock;
         vespalib::SyncableThreadExecutor  &_warmupExecutor;
+        ICommitable                       &_commitable;
 
         Context(const FastAccessDocSubDB::Context &fastUpdCtx,
                 matching::QueryLimiter &queryLimiter,
                 const vespalib::Clock &clock,
-                vespalib::SyncableThreadExecutor &warmupExecutor)
+                vespalib::SyncableThreadExecutor &warmupExecutor,
+                ICommitable & commitable)
             : _fastUpdCtx(fastUpdCtx),
               _queryLimiter(queryLimiter),
               _clock(clock),
-              _warmupExecutor(warmupExecutor)
+              _warmupExecutor(warmupExecutor),
+              _commitable(commitable)
         { }
     };
 
@@ -81,6 +85,7 @@ private:
     matching::ConstantValueRepo                 _constantValueRepo;
     SearchableDocSubDBConfigurer                _configurer;
     vespalib::SyncableThreadExecutor           &_warmupExecutor;
+    ICommitable                                &_commitable;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
     DocumentDBFlushConfig                       _flushConfig;
     bool                                        _nodeRetired;

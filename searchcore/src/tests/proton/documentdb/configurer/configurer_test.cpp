@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>

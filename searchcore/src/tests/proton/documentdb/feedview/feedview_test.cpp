@@ -4,7 +4,7 @@
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
@@ -739,7 +739,7 @@ struct SearchableFeedViewFixture : public FixtureBase
            SearchableFeedView::Context(iw))
     {
     }
-    virtual IFeedView &getFeedView() override { return fv; }
+    IFeedView &getFeedView() override { return fv; }
 };
 
 struct FastAccessFeedViewFixture : public FixtureBase
@@ -1221,6 +1221,7 @@ TEST_F("require that commit is not called when inside a commit interval",
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
                   "remove(adapter=index,serialNum=2,lid=1,commit=0),"
                   "ack(Result(0, ))");
+    f.forceCommitAndWait();
 }
 
 TEST_F("require that commit is not implicitly called",
@@ -1243,6 +1244,7 @@ TEST_F("require that commit is not implicitly called",
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
                   "remove(adapter=index,serialNum=2,lid=1,commit=0),"
                   "ack(Result(0, ))");
+    f.forceCommitAndWait();
 }
 
 TEST_F("require that forceCommit updates docid limit",

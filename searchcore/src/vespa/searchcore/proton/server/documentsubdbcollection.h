@@ -102,6 +102,7 @@ public:
             IDocumentSubDBOwner &owner,
             search::transactionlog::SyncProxy &tlSyncer,
             const IGetSerialNum &getSerialNum,
+            ICommitable & commitable,
             const DocTypeName &docTypeName,
             searchcorespi::index::IThreadingService &writeService,
             vespalib::SyncableThreadExecutor &warmupExecutor,

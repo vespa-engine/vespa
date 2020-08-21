@@ -32,6 +32,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         IDocumentSubDBOwner &owner,
         search::transactionlog::SyncProxy &tlSyncer,
         const IGetSerialNum &getSerialNum,
+        ICommitable & commitable,
         const DocTypeName &docTypeName,
         searchcorespi::index::IThreadingService &writeService,
         vespalib::SyncableThreadExecutor &warmupExecutor,
@@ -72,7 +73,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                     cfg.getNumSearchThreads()),
                 SearchableDocSubDB::Context(
                         FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
-                        queryLimiter, clock, warmupExecutor)));
+                        queryLimiter, clock, warmupExecutor, commitable)));
 
     _subDBs.push_back
         (new StoreOnlyDocSubDB(

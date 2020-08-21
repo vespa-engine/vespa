@@ -144,6 +144,10 @@ public:
     {
     }
 
+    ~Fixture() {
+        commit();
+    }
+
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
         test::runInMaster(_writeService, func);
