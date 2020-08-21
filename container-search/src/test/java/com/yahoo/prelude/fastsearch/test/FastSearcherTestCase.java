@@ -3,6 +3,7 @@ package com.yahoo.prelude.fastsearch.test;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
@@ -11,6 +12,7 @@ import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastSearcher;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -32,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -102,6 +105,25 @@ public class FastSearcherTestCase {
         assertForceSinglePassIs(false, q);
         fastSearcher.search(q, new Execution(Execution.Context.createContextStub()));
         assertForceSinglePassIs(true, q);
+    }
+
+    @Test
+    public void testSummaryNeedsQuery() {
+        ConfigGetter<DocumentdbInfoConfig> getter = new ConfigGetter<>(DocumentdbInfoConfig.class);
+        DocumentdbInfoConfig config = getter.getConfig("file:src/test/java/com/yahoo/prelude/fastsearch/test/documentdb-info.cfg");
+        FastSearcher backend = new FastSearcher("container.0",
+                                                MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 0))),
+                                                new SummaryParameters(null),
+                                                new ClusterParams("testhittype"),
+                                                config);
+        Query q = new Query("?query=foo");
+        Result result = doSearch(backend, q, 0, 10);
+        assertFalse(backend.summaryNeedsQuery(q));
+
+        q = new Query("?query=select+*+from+source+where+title+contains+%22foobar%22+and++geoLocation%28myfieldname%2C+63.5%2C+10.5%2C+%22999+km%22%29%3B");
+        q.getModel().setType(Query.Type.YQL);
+        result = doSearch(backend, q, 0, 10);
+        assertTrue(backend.summaryNeedsQuery(q));
     }
 
     @Test
