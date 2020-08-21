@@ -27,6 +27,7 @@ import org.junit.Test;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -84,6 +85,28 @@ public class ComponentGraphTest {
         ComponentTakingConfig instance = componentGraph.getInstance(ComponentTakingConfig.class);
         assertNotNull(instance);
         assertThat(instance.config.stringVal(), is("test-value"));
+    }
+
+    @Test
+    public void all_created_components_are_returned_in_reverse_topological_order() {
+        Node innerComponent = mockComponentNode(SimpleComponent.class);
+        Node middleComponent = mockComponentNode(ComponentTakingComponent.class);
+        Node outerComponent = mockComponentNode(ComponentTakingComponentTakingComponent.class);
+        middleComponent.inject(innerComponent);
+        outerComponent.inject(innerComponent);
+
+        ComponentGraph componentGraph = new ComponentGraph();
+        componentGraph.add(innerComponent);
+        componentGraph.add(middleComponent);
+        componentGraph.add(outerComponent);
+        componentGraph.complete();
+
+        innerComponent.constructInstance();
+        middleComponent.constructInstance();
+        outerComponent.constructInstance();
+
+        assertEquals(List.of(outerComponent.constructedInstance().get(), middleComponent.constructedInstance().get(), innerComponent.constructedInstance().get()),
+                     componentGraph.allConstructedComponentsAndProviders());
     }
 
     @Test
@@ -521,6 +544,15 @@ public class ComponentGraphTest {
         private final SimpleComponent injectedComponent;
 
         public ComponentTakingComponent(SimpleComponent injectedComponent) {
+            assertThat(injectedComponent, notNullValue());
+            this.injectedComponent = injectedComponent;
+        }
+    }
+
+    public static class ComponentTakingComponentTakingComponent extends AbstractComponent {
+        private final ComponentTakingComponent injectedComponent;
+
+        public ComponentTakingComponentTakingComponent(ComponentTakingComponent injectedComponent) {
             assertThat(injectedComponent, notNullValue());
             this.injectedComponent = injectedComponent;
         }
