@@ -51,6 +51,7 @@ using Configurer = SearchableDocSubDBConfigurer;
 using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
 using SummarySetup = SummaryManager::SummarySetup;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
+using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
 const vespalib::string BASE_DIR("baseDir");
 const vespalib::string DOC_TYPE("invalid");
@@ -95,7 +96,6 @@ struct ViewSet
     ISummaryManager::SP _summaryMgr;
     proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
-    std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     VarHolder<SearchView::SP> searchView;
     VarHolder<SearchableFeedView::SP> feedView;
     HwInfo _hwInfo;
@@ -124,7 +124,6 @@ ViewSet::ViewSet()
       _summaryMgr(),
       _dmsc(),
       _gidToLidChangeHandler(),
-      _lidReuseDelayer(),
       searchView(),
       feedView(),
       _hwInfo()
@@ -203,7 +202,6 @@ Fixture::initViewSet(ViewSet &views)
     Schema::SP schema(new Schema());
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
-    views._lidReuseDelayer = std::make_unique<documentmetastore::LidReuseDelayer>(views._writeService, metaStore->get());
     IndexSearchable::SP indexSearchable;
     auto matchView = std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit);
     views.searchView.set(SearchView::create
@@ -217,7 +215,7 @@ Fixture::initViewSet(ViewSet &views)
                             *views._gidToLidChangeHandler,
                             views.repo,
                             views._writeService,
-                            *views._lidReuseDelayer),
+                            LidReuseDelayerConfig()),
                             SearchableFeedView::PersistentParams(
                                     views.serialNum,
                                     views.serialNum,
@@ -240,7 +238,6 @@ struct MyFastAccessFeedView
 
     proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
-    std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     VarHolder<FastAccessFeedView::SP> _feedView;
 
     explicit MyFastAccessFeedView(IThreadingService &writeService)
@@ -250,7 +247,6 @@ struct MyFastAccessFeedView
           _hwInfo(),
           _dmsc(),
           _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
-          _lidReuseDelayer(),
           _feedView()
     {
         init();
@@ -262,10 +258,9 @@ struct MyFastAccessFeedView
         ISummaryAdapter::SP summaryAdapter(new MySummaryAdapter());
         Schema::SP schema(new Schema());
         _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
-        _lidReuseDelayer = std::make_unique<documentmetastore::LidReuseDelayer>(_writeService, _dmsc->get());
         std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
         StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, *_gidToLidChangeHandler, repo,
-                                                _writeService, *_lidReuseDelayer);
+                                                _writeService, LidReuseDelayerConfig());
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
         auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
                                                  _writeService.attributeFieldWriter(), _writeService.shared(), _hwInfo);

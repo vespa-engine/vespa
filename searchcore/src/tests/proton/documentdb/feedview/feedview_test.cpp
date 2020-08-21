@@ -34,6 +34,7 @@ using document::DocumentId;
 using document::DocumentUpdate;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
+using proton::documentmetastore::LidReuseDelayerConfig;
 using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
@@ -519,7 +520,7 @@ struct FixtureBase
     vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeServiceReal;
     test::ThreadingServiceObserver _writeService;
-    documentmetastore::LidReuseDelayer _lidReuseDelayer;
+    vespalib::duration             _visibilityDelay;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
     FixtureBase(vespalib::duration visibilityDelay);
@@ -703,12 +704,11 @@ FixtureBase::FixtureBase(vespalib::duration visibilityDelay)
       _sharedExecutor(1, 0x10000),
       _writeServiceReal(_sharedExecutor),
       _writeService(_writeServiceReal),
-      _lidReuseDelayer(_writeService, _dmsc->get()),
+      _visibilityDelay(visibilityDelay),
       serial(0),
       _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
 {
     _dmsc->constructFreeList();
-    _lidReuseDelayer.setImmediateCommit(visibilityDelay == vespalib::duration::zero());
 }
 
 FixtureBase::~FixtureBase() {
@@ -733,12 +733,11 @@ struct SearchableFeedViewFixture : public FixtureBase
                 *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
-                _lidReuseDelayer),
+                LidReuseDelayerConfig(_visibilityDelay, true)),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit),
            SearchableFeedView::Context(iw))
     {
-        runInMaster([&]() { _lidReuseDelayer.setHasIndexedOrAttributeFields(true); });
     }
     virtual IFeedView &getFeedView() override { return fv; }
 };
@@ -754,7 +753,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
                 *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
-                _lidReuseDelayer),
+                LidReuseDelayerConfig(_visibilityDelay, false)),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
@@ -915,14 +914,14 @@ assertThreadObserver(uint32_t masterExecuteCnt,
 TEST_F("require that remove() calls removeComplete() via delayed thread service",
         SearchableFeedViewFixture)
 {
-    EXPECT_TRUE(assertThreadObserver(1, 0, 0, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(0, 0, 0, f.writeServiceObserver()));
     f.putAndWait(f.doc1(10));
     // put index fields handled in index thread
-    EXPECT_TRUE(assertThreadObserver(2, 1, 1, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(1, 1, 1, f.writeServiceObserver()));
     f.removeAndWait(f.doc1(20));
     // remove index fields handled in index thread
     // delayed remove complete handled in same index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(4, 2, 2, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(3, 2, 2, f.writeServiceObserver()));
     EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteCnt);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteLid);
 }
@@ -1137,11 +1136,11 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
        SearchableFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(4, 3, 3, f.writeServiceObserver()));
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 5, 4, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(6, 5, 4, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1154,12 +1153,12 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
        SearchableFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(4, 3, 3, f.writeServiceObserver()));
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
     f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 4, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(5, 4, 3, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);

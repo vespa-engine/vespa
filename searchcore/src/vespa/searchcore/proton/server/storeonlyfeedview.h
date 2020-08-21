@@ -13,6 +13,8 @@
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
+#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
 #include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
@@ -37,8 +39,6 @@ struct IFieldUpdateCallback;
 class RemoveDocumentsOperation;
 class DocumentOperation;
 
-namespace documentmetastore { class ILidReuseDelayer; }
-
 /**
  * The feed view used by the store-only sub database.
  *
@@ -48,7 +48,7 @@ class StoreOnlyFeedView : public IFeedView,
                           protected FeedDebugger
 {
 protected:
-    typedef search::transactionlog::Packet Packet;
+    using Packet = search::transactionlog::Packet;
 public:
     using UP = std::unique_ptr<StoreOnlyFeedView>;
     using SP = std::shared_ptr<StoreOnlyFeedView>;
@@ -68,6 +68,8 @@ public:
     using PromisedStream = std::promise<vespalib::nbostream>;
     using DocumentSP = std::shared_ptr<Document>;
     using DocumentUpdateSP = std::shared_ptr<DocumentUpdate>;
+    using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
+    using LidReuseDelayer = documentmetastore::LidReuseDelayer;
 
     using Lid = search::DocumentIdT;
 
@@ -79,7 +81,7 @@ public:
         IGidToLidChangeHandler                  &_gidToLidChangeHandler;
         const std::shared_ptr<const document::DocumentTypeRepo>    &_repo;
         searchcorespi::index::IThreadingService &_writeService;
-        documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
+        LidReuseDelayerConfig                    _lidReuseDelayerConfig;
 
         Context(const ISummaryAdapter::SP &summaryAdapter,
                 const search::index::Schema::SP &schema,
@@ -87,14 +89,14 @@ public:
                 IGidToLidChangeHandler &gidToLidChangeHandler,
                 const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                 searchcorespi::index::IThreadingService &writeService,
-                documentmetastore::ILidReuseDelayer &lidReuseDelayer)
+                const LidReuseDelayerConfig & lidReuseDelayerConfig)
             : _summaryAdapter(summaryAdapter),
               _schema(schema),
               _documentMetaStoreContext(documentMetaStoreContext),
               _gidToLidChangeHandler(gidToLidChangeHandler),
               _repo(repo),
               _writeService(writeService),
-              _lidReuseDelayer(lidReuseDelayer)
+              _lidReuseDelayerConfig(lidReuseDelayerConfig)
         {}
     };
 
@@ -136,12 +138,12 @@ protected:
     };
 
 private:
-    const ISummaryAdapter::SP                _summaryAdapter;
-    const IDocumentMetaStoreContext::SP      _documentMetaStoreContext;
-    const std::shared_ptr<const document::DocumentTypeRepo>     _repo;
-    const document::DocumentType            *_docType;
-    documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
-    PendingLidTracker                        _pendingLidTracker;
+    const ISummaryAdapter::SP                                _summaryAdapter;
+    const IDocumentMetaStoreContext::SP                      _documentMetaStoreContext;
+    const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
+    const document::DocumentType                            *_docType;
+    LidReuseDelayer                                          _lidReuseDelayer;
+    PendingLidTracker                                        _pendingLidTracker;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -231,8 +233,8 @@ public:
     const search::IDocumentStore &getDocumentStore() const { return _summaryAdapter->getDocumentStore(); }
     const IDocumentMetaStoreContext::SP &getDocumentMetaStore() const { return _documentMetaStoreContext; }
     searchcorespi::index::IThreadingService &getWriteService() { return _writeService; }
-    documentmetastore::ILidReuseDelayer &getLidReuseDelayer() { return _lidReuseDelayer; }
     IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
+    LidReuseDelayerConfig getLidReuseDelayerConfig() const { return _lidReuseDelayer.getConfig(); }
 
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override { return _repo; }
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override;

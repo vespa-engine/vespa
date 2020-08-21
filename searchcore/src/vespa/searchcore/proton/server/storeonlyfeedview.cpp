@@ -14,7 +14,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
+#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/common/gatecallback.h>
@@ -39,6 +39,7 @@ using storage::spi::Timestamp;
 using vespalib::IllegalStateException;
 using vespalib::makeLambdaTask;
 using vespalib::make_string;
+using proton::documentmetastore::LidReuseDelayer;
 
 namespace proton {
 
@@ -196,7 +197,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _documentMetaStoreContext(ctx._documentMetaStoreContext),
       _repo(ctx._repo),
       _docType(nullptr),
-      _lidReuseDelayer(ctx._lidReuseDelayer),
+      _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get(), ctx._lidReuseDelayerConfig),
       _pendingLidTracker(),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
