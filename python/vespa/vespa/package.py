@@ -1,4 +1,5 @@
 import os
+import re
 from time import sleep
 from typing import List, Mapping, Optional
 from pathlib import Path
@@ -7,6 +8,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 import docker
 
 from vespa.json_serialization import ToJson, FromJson
+from vespa.application import Vespa
 
 
 class Field(ToJson, FromJson["Field"]):
@@ -390,6 +392,7 @@ class VespaDocker(object):
         """
         self.application_package = application_package
         self.container = None
+        self.local_port = 8080
 
     def run_vespa_engine_container(self, disk_folder: str, container_memory: str):
         """
@@ -412,7 +415,7 @@ class VespaDocker(object):
                     hostname=self.application_package.name,
                     privileged=True,
                     volumes={disk_folder: {"bind": "/app", "mode": "rw"}},
-                    ports={8080: 8080, 19112: 19112},
+                    ports={self.local_port: self.local_port, 19112: 19112},
                 )
 
     def check_configuration_server(self) -> bool:
@@ -432,6 +435,14 @@ class VespaDocker(object):
         )
 
     def deploy(self, disk_folder: str, container_memory: str = "4G"):
+        """
+        Deploy the application into a Vespa container.
+
+        :param disk_folder: Disk folder to save the required Vespa config files.
+        :param container_memory: Docker container memory available to the application.
+
+        :return: a Vespa connection instance.
+        """
 
         self.application_package.create_application_package_files(dir_path=disk_folder)
 
@@ -446,4 +457,14 @@ class VespaDocker(object):
         deployment = self.container.exec_run(
             "bash -c '/opt/vespa/bin/vespa-deploy prepare /app/application && /opt/vespa/bin/vespa-deploy activate'"
         )
-        return deployment.output.decode("utf-8").split("\n")
+
+        deployment_message = deployment.output.decode("utf-8").split("\n")
+
+        if not any(re.match("Generation: [0-9]+", line) for line in deployment_message):
+            raise RuntimeError(deployment_message)
+
+        return Vespa(
+            url="http://localhost",
+            port=self.local_port,
+            deployment_message=deployment_message,
+        )
