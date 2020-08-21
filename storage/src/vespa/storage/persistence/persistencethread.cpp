@@ -16,7 +16,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.thread");
 
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
+using to_str = vespalib::string;
 
 namespace storage {
 
@@ -286,12 +287,10 @@ getFieldSet(const document::FieldSetRepo & repo, vespalib::stringref name, Messa
         return repo.getFieldSet(name);
     } catch (document::FieldNotFoundException & e) {
         tracker.fail(storage::api::ReturnCode::ILLEGAL_PARAMETERS,
-                     make_string("Field %s not found in fieldset %s",
-                                 e.getFieldName().c_str(), vespalib::string(name).c_str()));
+                     fmt("Field %s in fieldset %s not found in document", e.getFieldName().c_str(), to_str(name).c_str()));
     } catch (const vespalib::Exception & e) {
         tracker.fail(storage::api::ReturnCode::ILLEGAL_PARAMETERS,
-                     make_string("Failed parsing fieldset %s with : %s",
-                                 vespalib::string(name).c_str(), e.getMessage().c_str()));
+                     fmt("Failed parsing fieldset %s with : %s", to_str(name).c_str(), e.getMessage().c_str()));
     }
     return document::FieldSet::SP();
 }
@@ -537,9 +536,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
 
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     {
-        vespalib::string desc(
-                vespalib::make_string(
-                        "split(%s -> %s, %s)",
+        auto desc = fmt("split(%s -> %s, %s)",
                         cmd.getBucketId().toString().c_str(),
                         target1.getBucketId().toString().c_str(),
                         target2.getBucketId().toString().c_str()));
@@ -686,12 +683,10 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracke
 
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     {
-        vespalib::string desc(
-                vespalib::make_string(
-                        "join(%s, %s -> %s)",
+        auto desc = fmt("join(%s, %s -> %s)",
                         firstBucket.getBucketId().toString().c_str(),
                         secondBucket.getBucketId().toString().c_str(),
-                        cmd.getBucketId().toString().c_str()));
+                        cmd.getBucketId().toString().c_str());
         LOG_BUCKET_OPERATION(cmd.getBucketId(), desc);
         LOG_BUCKET_OPERATION(firstBucket.getBucketId(), desc);
         if (firstBucket != secondBucket) {
