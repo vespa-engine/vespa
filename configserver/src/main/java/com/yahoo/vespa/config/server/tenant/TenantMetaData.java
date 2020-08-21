@@ -3,14 +3,10 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
-import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
+import com.yahoo.slime.SlimeUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 /**
@@ -31,12 +27,9 @@ public class TenantMetaData {
         return lastDeployTimestamp;
     }
 
-    public String asJsonString() {
-        Slime slime = getSlime();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    public byte[] asJsonBytes() {
         try {
-            new JsonFormat(false).encode(baos, slime);
-            return baos.toString(StandardCharsets.UTF_8);
+            return SlimeUtils.toJsonBytes(getSlime());
         } catch (IOException e) {
             throw new RuntimeException("Unable to encode metadata", e);
         }
@@ -44,8 +37,7 @@ public class TenantMetaData {
 
     public static TenantMetaData fromJsonString(String jsonString) {
         try {
-            Slime data = new Slime();
-            new JsonDecoder().decode(data, Utf8.toBytes(jsonString));
+            Slime data = SlimeUtils.jsonToSlime(jsonString);
             Inspector root = data.get();
             Inspector lastDeployTimestamp = root.field("lastDeployTimestamp");
 

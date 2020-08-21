@@ -4,9 +4,8 @@ package com.yahoo.vespa.config.protocol;
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.Optional;
@@ -47,7 +46,7 @@ class SlimeRequestData {
 
     private Slime getData() {
         if (data == null) {
-            data = new JsonDecoder().decode(new Slime(), Utf8.toBytes(request.parameters().get(0).asString()));
+            data = SlimeUtils.jsonToSlime(request.parameters().get(0).asString());
         }
         return data;
     }

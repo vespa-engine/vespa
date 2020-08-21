@@ -4,14 +4,11 @@ package com.yahoo.config.application.api;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
-import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Metadata about an application package.
@@ -97,8 +94,7 @@ public class ApplicationMetaData {
 
     public static ApplicationMetaData fromJsonString(String jsonString) {
         try {
-            Slime data = new Slime();
-            new JsonDecoder().decode(data, Utf8.toBytes(jsonString));
+            Slime data = SlimeUtils.jsonToSlime(jsonString);
             Inspector root = data.get();
             Inspector deploy = root.field("deploy");
             Inspector app = root.field("application");
@@ -139,11 +135,12 @@ public class ApplicationMetaData {
     }
 
     public String asJsonString() {
-        Slime slime = getSlime();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        return Utf8.toString(asJsonBytes());
+    }
+
+    public byte[] asJsonBytes() {
         try {
-            new JsonFormat(false).encode(baos, slime);
-            return baos.toString(StandardCharsets.UTF_8);
+            return SlimeUtils.toJsonBytes(getSlime());
         } catch (IOException e) {
             throw new RuntimeException("Unable to encode metadata", e);
         }

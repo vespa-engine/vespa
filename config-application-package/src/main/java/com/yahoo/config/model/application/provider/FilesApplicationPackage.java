@@ -593,7 +593,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     @Override
     public void writeMetaData() throws IOException {
         File metaFile = new File(appDir, META_FILE_NAME);
-        IOUtils.writeFile(metaFile, metaData.asJsonString(), false);
+        IOUtils.writeFile(metaFile, metaData.asJsonBytes());
     }
 
     @Override
