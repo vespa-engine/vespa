@@ -25,6 +25,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
+import com.yahoo.text.Utf8;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
@@ -60,10 +61,17 @@ import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
@@ -92,9 +100,9 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERC
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
-import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
 
@@ -122,6 +130,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
+    private final BooleanFlag useTenantMetaData;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -132,7 +141,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
                                  TesterClient testerClient,
-                                 Metric metric) {
+                                 Metric metric,
+                                 FlagSource flagSource) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -144,7 +154,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new FileDistributionStatus(),
              Clock.systemUTC(),
              testerClient,
-             metric);
+             metric,
+             flagSource);
     }
 
     // For testing
@@ -159,7 +170,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new LogRetriever(),
              clock,
              new TesterClient(),
-             new NullMetric());
+             new NullMetric(),
+             new InMemoryFlagSource());
     }
 
     // For testing
@@ -170,7 +182,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  LogRetriever logRetriever,
                                  Clock clock,
                                  TesterClient testerClient,
-                                 Metric metric) {
+                                 Metric metric,
+                                 FlagSource flagSource) {
         this(tenantRepository,
              Optional.of(hostProvisioner),
              Optional.empty(),
@@ -182,7 +195,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new FileDistributionStatus(),
              clock,
              testerClient,
-             metric);
+             metric,
+             flagSource);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -196,7 +210,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   FileDistributionStatus fileDistributionStatus,
                                   Clock clock,
                                   TesterClient testerClient,
-                                  Metric metric) {
+                                  Metric metric,
+                                  FlagSource flagSource) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
         this.infraDeployer = infraDeployer;
@@ -209,6 +224,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = clock;
         this.testerClient = testerClient;
         this.metric = metric;
+        this.useTenantMetaData = Flags.USE_TENANT_META_DATA.bindTo(flagSource);
     }
 
     public Metric metric() {
@@ -348,14 +364,34 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
-        SessionRepository sessionRepository = tenantRepository.getTenant(prepared.getTenantName()).getSessionRepository();
-        Transaction transaction = sessionRepository.createActivateTransaction(prepared);
+        Tenant tenant = tenantRepository.getTenant(prepared.getTenantName());
+        Transaction transaction = tenant.getSessionRepository().createActivateTransaction(prepared);
         if (active != null) {
             checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
             checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
             transaction.add(active.createDeactivateTransaction().operations());
         }
+
+        if (useTenantMetaData.value())
+            transaction.add(writeTenantMetaData(tenant).operations());
+
         return transaction;
+    }
+
+    private String createMetaData(Tenant tenant) {
+        return new TenantMetaData(tenant.getSessionRepository().clock().instant()).asJsonString();
+    }
+
+    TenantMetaData getTenantMetaData(Tenant tenant) {
+        Optional<byte[]> data = tenantRepository.getCurator().getData(TenantRepository.getTenantPath(tenant.getName()));
+        return data.map(bytes -> TenantMetaData.fromJsonString(Utf8.toString(bytes))).orElse(new TenantMetaData(tenant.getCreatedTime()));
+    }
+
+    private Transaction writeTenantMetaData(Tenant tenant) {
+        String jsonString = createMetaData(tenant);
+        return new CuratorTransaction(tenantRepository.getCurator())
+                .add(CuratorOperations.setData(TenantRepository.getTenantPath(tenant.getName()).getAbsolute(),
+                                               Utf8.toBytes(jsonString)));
     }
 
     static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {

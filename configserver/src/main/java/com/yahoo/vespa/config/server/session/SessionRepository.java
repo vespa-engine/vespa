@@ -691,6 +691,8 @@ public class SessionRepository {
         return curator.lock(lockPath(sessionId), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
     }
 
+    public Clock clock() { return clock; }
+
     private Path lockPath(long sessionId) {
         return locksPath.append(String.valueOf(sessionId));
     }

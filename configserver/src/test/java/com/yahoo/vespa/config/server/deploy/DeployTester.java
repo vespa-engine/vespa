@@ -43,6 +43,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 
@@ -133,7 +134,8 @@ public class DeployTester {
                                                           new LogRetriever(),
                                                           clock,
                                                           new MockTesterClient(),
-                                                          new NullMetric());
+                                                          new NullMetric(),
+                                                          new InMemoryFlagSource());
     }
 
     public Tenant tenant() {

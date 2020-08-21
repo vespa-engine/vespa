@@ -32,6 +32,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,7 +99,8 @@ public class ApplicationHandlerTest {
                                                           logRetriever,
                                                           Clock.systemUTC(),
                                                           testerClient,
-                                                          metric);
+                                                          metric,
+                                                          new InMemoryFlagSource());
     }
 
     @After
@@ -207,7 +209,8 @@ public class ApplicationHandlerTest {
                                                                                 configserverConfig,
                                                                                 orchestrator,
                                                                                 testerClient,
-                                                                                metric);
+                                                                                metric,
+                                                                                new InMemoryFlagSource());
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));

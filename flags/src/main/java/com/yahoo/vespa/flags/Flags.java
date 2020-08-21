@@ -366,6 +366,13 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag USE_TENANT_META_DATA = defineFeatureFlag(
+            "use-tenant-meta-data",
+            false,
+            "Whether config server should write and read tenant metadata",
+            "Takes effect immediately"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
