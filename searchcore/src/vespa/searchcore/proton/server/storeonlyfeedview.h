@@ -143,7 +143,8 @@ private:
     const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
     const document::DocumentType                            *_docType;
     LidReuseDelayer                                          _lidReuseDelayer;
-    PendingLidTracker                                        _pendingLidTracker;
+    PendingLidTracker                                        _pendingLidsForDocStore;
+    PendingLidTracker                                        _pendingLidsForCommit;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -262,6 +263,7 @@ public:
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    PendingLidTracker & getUncommittedLidsTracker() override;
 };
 
 }
