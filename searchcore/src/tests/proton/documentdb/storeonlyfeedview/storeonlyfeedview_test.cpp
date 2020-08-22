@@ -3,7 +3,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>

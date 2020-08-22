@@ -21,7 +21,9 @@ LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService, IStore &docume
 {
 }
 
-LidReuseDelayer::~LidReuseDelayer() = default;
+LidReuseDelayer::~LidReuseDelayer() {
+    assert(_pendingLids.empty());
+}
 
 bool
 LidReuseDelayer::delayReuse(uint32_t lid)

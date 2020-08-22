@@ -137,10 +137,9 @@ private:
     AttributeUsageFilter          _writeFilter;
     std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
     FeedHandler                   _feedHandler;
-
+    VisibilityHandler             _visibility;
     DocumentSubDBCollection       _subDBs;
     MaintenanceController         _maintenanceController;
-    VisibilityHandler             _visibility;
     ILidSpaceCompactionHandler::Vector _lidSpaceCompactionHandlers;
     DocumentDBJobTrackers         _jobTrackers;
     IBucketStateCalculator::SP    _calc;

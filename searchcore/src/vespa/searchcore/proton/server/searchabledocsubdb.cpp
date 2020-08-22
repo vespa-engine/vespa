@@ -6,6 +6,7 @@
 #include "reconfig_params.h"
 #include "i_document_subdb_owner.h"
 #include "ibucketstatecalculator.h"
+#include <vespa/searchcore/proton/common/icommitable.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
@@ -45,6 +46,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _warmupExecutor(ctx._warmupExecutor),
+      _commitable(ctx._commitable),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
       _flushConfig(),
       _nodeRetired(false)
@@ -245,8 +247,7 @@ SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter,
  * document type, flushing might occur during replay.
  */
 bool
-SearchableDocSubDB::
-reconfigure(vespalib::Closure0<bool>::UP closure)
+SearchableDocSubDB::reconfigure(vespalib::Closure0<bool>::UP closure)
 {
     assert(_writeService.master().isCurrentThread());
 
@@ -270,6 +271,7 @@ SearchableDocSubDB::reconfigureIndexSearchable()
 {
     std::lock_guard<std::mutex> guard(_configMutex);
     // Create new views as needed.
+    _commitable.commitAndWait();
     _configurer.reconfigureIndexSearchable();
     // Activate new feed view at once
     syncViews();

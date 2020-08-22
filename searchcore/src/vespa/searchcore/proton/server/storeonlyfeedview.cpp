@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/common/gatecallback.h>
@@ -354,41 +353,38 @@ StoreOnlyFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                                    FutureStream futureStream, OnOperationDoneType onDone)
 {
-    _pendingLidTracker.produce(lid);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), onDone, this] () mutable {
+            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), trackerToken = _pendingLidTracker.produce(lid), onDone, this] () mutable {
                 (void) onDone;
+                (void) trackerToken;
                 vespalib::nbostream os = futureStream.get();
                 if (!os.empty()) {
                     _summaryAdapter->put(serialNum, lid, os);
                 }
-                _pendingLidTracker.consume(lid);
             }));
 #pragma GCC diagnostic pop
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, OnOperationDoneType onDone)
 {
-    _pendingLidTracker.produce(lid);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, doc = std::move(doc), onDone, lid, this] {
+            makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidTracker.produce(lid), onDone, lid, this] {
                 (void) onDone;
+                (void) trackerToken;
                 _summaryAdapter->put(serialNum, lid, *doc);
-                _pendingLidTracker.consume(lid);
             }));
 #pragma GCC diagnostic pop
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
-    _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, onDone, this] {
+            makeLambdaTask([serialNum, lid, onDone, trackerToken = _pendingLidTracker.produce(lid), this] {
                 (void) onDone;
+                (void) trackerToken;
                 _summaryAdapter->remove(serialNum, lid);
-                _pendingLidTracker.consume(lid);
             }));
 }
 void StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
