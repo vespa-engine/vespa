@@ -15,6 +15,7 @@ public:
         Token(uint32_t lid, PendingLidTracker & tracker);
         Token(const Token &) = delete;
         Token & operator = (const Token &) = delete;
+        Token & operator = (Token &&) = delete;
         Token(Token && rhs) noexcept
             : _tracker(rhs._tracker),
               _lid(rhs._lid)
@@ -31,7 +32,6 @@ public:
     Token produce(uint32_t lid);
     void waitForConsumedLid(uint32_t lid);
 private:
-    friend Token;
     void consume(uint32_t lid);
     std::mutex _mutex;
     std::condition_variable _cond;
