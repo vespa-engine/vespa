@@ -54,10 +54,12 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          clock);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .withClock(clock)
+                .build();
 
         applicationRepository.deploy(testApp, prepareParams(appId1));
         applicationRepository.deploy(testApp2, prepareParams(appId2));

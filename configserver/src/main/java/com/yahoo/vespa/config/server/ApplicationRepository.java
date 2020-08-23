@@ -125,7 +125,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
-    private final FileDistributionStatus fileDistributionStatus;
+    private final FileDistributionStatus fileDistributionStatus = new FileDistributionStatus();
     private final Orchestrator orchestrator;
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
@@ -151,49 +151,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              configserverConfig,
              orchestrator,
              new LogRetriever(),
-             new FileDistributionStatus(),
              Clock.systemUTC(),
-             testerClient,
-             metric,
-             flagSource);
-    }
-
-    // For testing
-    public ApplicationRepository(TenantRepository tenantRepository,
-                                 Provisioner hostProvisioner,
-                                 Orchestrator orchestrator,
-                                 Clock clock) {
-        this(tenantRepository,
-             hostProvisioner,
-             orchestrator,
-             new ConfigserverConfig(new ConfigserverConfig.Builder()),
-             new LogRetriever(),
-             clock,
-             new TesterClient(),
-             new NullMetric(),
-             new InMemoryFlagSource());
-    }
-
-    // For testing
-    public ApplicationRepository(TenantRepository tenantRepository,
-                                 Provisioner hostProvisioner,
-                                 Orchestrator orchestrator,
-                                 ConfigserverConfig configserverConfig,
-                                 LogRetriever logRetriever,
-                                 Clock clock,
-                                 TesterClient testerClient,
-                                 Metric metric,
-                                 FlagSource flagSource) {
-        this(tenantRepository,
-             Optional.of(hostProvisioner),
-             Optional.empty(),
-             new ConfigConvergenceChecker(),
-             new HttpProxy(new SimpleHttpFetcher()),
-             configserverConfig,
-             orchestrator,
-             logRetriever,
-             new FileDistributionStatus(),
-             clock,
              testerClient,
              metric,
              flagSource);
@@ -207,24 +165,108 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   ConfigserverConfig configserverConfig,
                                   Orchestrator orchestrator,
                                   LogRetriever logRetriever,
-                                  FileDistributionStatus fileDistributionStatus,
                                   Clock clock,
                                   TesterClient testerClient,
                                   Metric metric,
                                   FlagSource flagSource) {
-        this.tenantRepository = tenantRepository;
-        this.hostProvisioner = hostProvisioner;
-        this.infraDeployer = infraDeployer;
-        this.convergeChecker = configConvergenceChecker;
-        this.httpProxy = httpProxy;
-        this.configserverConfig = configserverConfig;
-        this.orchestrator = orchestrator;
-        this.logRetriever = logRetriever;
-        this.fileDistributionStatus = fileDistributionStatus;
-        this.clock = clock;
-        this.testerClient = testerClient;
-        this.metric = metric;
+        this.tenantRepository = Objects.requireNonNull(tenantRepository);
+        this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
+        this.infraDeployer = Objects.requireNonNull(infraDeployer);
+        this.convergeChecker = Objects.requireNonNull(configConvergenceChecker);
+        this.httpProxy = Objects.requireNonNull(httpProxy);
+        this.configserverConfig = Objects.requireNonNull(configserverConfig);
+        this.orchestrator = Objects.requireNonNull(orchestrator);
+        this.logRetriever = Objects.requireNonNull(logRetriever);
+        this.clock = Objects.requireNonNull(clock);
+        this.testerClient = Objects.requireNonNull(testerClient);
+        this.metric = Objects.requireNonNull(metric);
         this.useTenantMetaData = Flags.USE_TENANT_META_DATA.bindTo(flagSource);
+    }
+
+    public static class Builder {
+        private TenantRepository tenantRepository;
+        private Optional<Provisioner> hostProvisioner;
+        private HttpProxy httpProxy = new HttpProxy(new SimpleHttpFetcher());
+        private Clock clock = Clock.systemUTC();
+        private ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
+        private Orchestrator orchestrator;
+        private LogRetriever logRetriever = new LogRetriever();
+        private TesterClient testerClient = new TesterClient();
+        private Metric metric = new NullMetric();
+        private FlagSource flagSource = new InMemoryFlagSource();
+
+        public Builder withTenantRepository(TenantRepository tenantRepository) {
+            this.tenantRepository = tenantRepository;
+            return this;
+        }
+
+        public Builder withClock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        public Builder withProvisioner(Provisioner provisioner) {
+            if (this.hostProvisioner != null) throw new IllegalArgumentException("provisioner already set in builder");
+            this.hostProvisioner = Optional.ofNullable(provisioner);
+            return this;
+        }
+
+        public Builder withHostProvisionerProvider(HostProvisionerProvider hostProvisionerProvider) {
+            if (this.hostProvisioner != null) throw new IllegalArgumentException("provisioner already set in builder");
+            this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
+            return this;
+        }
+
+        public Builder withHttpProxy(HttpProxy httpProxy) {
+            this.httpProxy = httpProxy;
+            return this;
+        }
+
+        public Builder withConfigserverConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
+
+        public Builder withOrchestrator(Orchestrator orchestrator) {
+            this.orchestrator = orchestrator;
+            return this;
+        }
+
+        public Builder withLogRetriever(LogRetriever logRetriever) {
+            this.logRetriever = logRetriever;
+            return this;
+        }
+
+        public Builder withTesterClient(TesterClient testerClient) {
+            this.testerClient = testerClient;
+            return this;
+        }
+
+        public Builder withFlagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
+            return this;
+        }
+
+        public Builder withMetric(Metric metric) {
+            this.metric = metric;
+            return this;
+        }
+
+        public ApplicationRepository build() {
+            return new ApplicationRepository(tenantRepository,
+                                             hostProvisioner,
+                                             InfraDeployerProvider.empty().getInfraDeployer(),
+                                             new ConfigConvergenceChecker(),
+                                             httpProxy,
+                                             configserverConfig,
+                                             orchestrator,
+                                             logRetriever,
+                                             clock,
+                                             testerClient,
+                                             metric,
+                                             flagSource);
+        }
+
     }
 
     public Metric metric() {

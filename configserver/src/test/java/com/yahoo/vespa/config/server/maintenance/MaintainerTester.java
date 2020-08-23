@@ -1,12 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockLogRetriever;
-import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -30,15 +27,14 @@ class MaintainerTester {
                 .clock(clock)
                 .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          new ConfigserverConfig.Builder().build(),
-                                                          new MockLogRetriever(),
-                                                          clock,
-                                                          new MockTesterClient(),
-                                                          new NullMetric(),
-                                                          flagSource);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .withLogRetriever(new MockLogRetriever())
+                .withFlagSource(flagSource)
+                .withClock(clock)
+                .build();
     }
 
     Curator curator() { return curator; }

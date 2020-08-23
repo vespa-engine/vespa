@@ -62,10 +62,12 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Before
     public void setupRepo() {
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          componentRegistry.getClock());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .withClock(componentRegistry.getClock())
+                .build();
         tenantRepository.addTenant(tenant);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         createdMessage = " for tenant '" + tenant + "' created.\"";
