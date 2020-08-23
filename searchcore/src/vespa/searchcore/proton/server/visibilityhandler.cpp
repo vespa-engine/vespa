@@ -24,43 +24,45 @@ VisibilityHandler::VisibilityHandler(const IGetSerialNum & serial,
 VisibilityHandler::~VisibilityHandler() = default;
 
 void
+VisibilityHandler::internalCommit(bool force)
+{
+    if (_writeService.master().isCurrentThread()) {
+        performCommit(force);
+    } else {
+        std::lock_guard<std::mutex> guard(_lock);
+        bool wasCommitTaskSpawned = startCommit(guard, force);
+        (void) wasCommitTaskSpawned;
+    }
+}
+void
 VisibilityHandler::commit()
 {
-    if (hasVisibilityDelay()) {
-        if (_writeService.master().isCurrentThread()) {
-            performCommit(true);
-        } else {
-            std::lock_guard<std::mutex> guard(_lock);
-            startCommit(guard, true);
-        }
-    }
+    internalCommit(true);
 }
 
 void
-VisibilityHandler::commitAndWait()
+VisibilityHandler::commitAndWait(IPendingLidTracker & unCommittedLidTracker)
 {
-    if (hasVisibilityDelay()) {
-        if (_writeService.master().isCurrentThread()) {
-            performCommit(false);
-        } else {
-            std::lock_guard<std::mutex> guard(_lock);
-            if (startCommit(guard, false)) {
-                _writeService.master().sync();
-            }
-        }
+    if (unCommittedLidTracker.areAnyInFlight()) {
+        internalCommit(false);
+        unCommittedLidTracker.waitForEmpty();
     }
-    // Always sync attribute writer threads so attribute vectors are
-    // properly updated when document retriver rebuilds document
-    _writeService.attributeFieldWriter().sync();
-    _writeService.summary().sync();
 }
 
 void
-VisibilityHandler::commitAndWait(IPendingLidTracker &, uint32_t ) {
-    commitAndWait();
+VisibilityHandler::commitAndWait(IPendingLidTracker & unCommittedLidTracker, uint32_t lid) {
+    if (unCommittedLidTracker.isInFlight(lid)) {
+        internalCommit(false);
+        unCommittedLidTracker.waitForConsumed(lid);
+    }
+
 }
-void VisibilityHandler::commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) {
-    commitAndWait();
+void
+VisibilityHandler::commitAndWait(IPendingLidTracker & unCommittedLidTracker, const std::vector<uint32_t> & lids) {
+    if (unCommittedLidTracker.areAnyInFlight(lids)) {
+        internalCommit(false);
+        unCommittedLidTracker.waitForConsumed(lids);
+    }
 }
 
 bool

@@ -13,7 +13,7 @@ class IPendingLidTracker;
 class ICommitable {
 public:
     virtual void commit() = 0;
-    virtual void commitAndWait() = 0;
+    virtual void commitAndWait(IPendingLidTracker & unCommittedLidTracker) = 0;
     virtual void commitAndWait(IPendingLidTracker &uncommittedLidTracker, uint32_t lid) = 0;
     virtual void commitAndWait(IPendingLidTracker &uncommittedLidTracker, const std::vector<uint32_t> & lid) = 0;
 protected:

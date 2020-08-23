@@ -2,6 +2,7 @@
 
 #include "pendinglidtracker.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <algorithm>
 #include <cassert>
 
 namespace proton {
@@ -40,13 +41,13 @@ PendingLidTracker::~PendingLidTracker() {
 
 PendingLidTracker::Token
 PendingLidTracker::produce(uint32_t lid) {
-    std::lock_guard<std::mutex> guard(_mutex);
+    std::lock_guard guard(_mutex);
     _pending[lid]++;
     return Token(lid, *this);
 }
 void
 PendingLidTracker::consume(uint32_t lid) {
-    std::lock_guard<std::mutex> guard(_mutex);
+    std::lock_guard guard(_mutex);
     auto found = _pending.find(lid);
     assert (found != _pending.end());
     assert (found->second > 0);
@@ -59,11 +60,53 @@ PendingLidTracker::consume(uint32_t lid) {
 }
 
 void
-PendingLidTracker::waitForConsumedLid(uint32_t lid) {
-    std::unique_lock<std::mutex> guard(_mutex);
+PendingLidTracker::waitFor(MonitorGuard & guard, uint32_t lid) {
     while (_pending.find(lid) != _pending.end()) {
         _cond.wait(guard);
     }
+}
+
+void
+PendingLidTracker::waitForEmpty() {
+    MonitorGuard guard(_mutex);
+    while ( ! _pending.empty() ) {
+        _cond.wait(guard);
+    }
+}
+
+void
+PendingLidTracker::waitForConsumed(uint32_t lid) {
+    MonitorGuard guard(_mutex);
+    waitFor(guard, lid);
+}
+
+void
+PendingLidTracker::waitForConsumed(const std::vector<uint32_t> & lids) {
+    MonitorGuard guard(_mutex);
+    for (uint32_t lid : lids) {
+        waitFor(guard, lid);
+    }
+}
+
+bool
+PendingLidTracker::isInFlight(uint32_t lid) {
+    MonitorGuard guard(_mutex);
+    return _pending.find(lid) != _pending.end();
+}
+
+bool
+PendingLidTracker::areAnyInFlight(const std::vector<uint32_t> & lids) {
+    MonitorGuard guard(_mutex);
+    return std::any_of(lids.begin(), lids.end(),
+                       [this](uint32_t lid) {
+                           return _pending.find(lid) == _pending.end();
+                       });
+}
+
+bool
+PendingLidTracker::areAnyInFlight() {
+    MonitorGuard guard(_mutex);
+    return !_pending.empty();
 }
 
 }

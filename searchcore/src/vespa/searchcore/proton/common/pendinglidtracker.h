@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <mutex>
 #include <condition_variable>
+#include <vector>
 
 namespace proton {
 
@@ -30,18 +31,28 @@ public:
     };
     virtual ~IPendingLidTracker() = default;
     virtual Token produce(uint32_t lid) = 0;
-    virtual void waitForConsumedLid(uint32_t lid) = 0;
+    virtual void waitForEmpty() = 0;
+    virtual void waitForConsumed(uint32_t lid) = 0;
+    virtual void waitForConsumed(const std::vector<uint32_t> & lids) = 0;
+    virtual bool isInFlight(uint32_t lid) = 0;
+    virtual bool areAnyInFlight(const std::vector<uint32_t> & lids) = 0;
+    virtual bool areAnyInFlight() = 0;
 private:
     virtual void consume(uint32_t lid) = 0;
-    std::mutex _mutex;
-    std::condition_variable _cond;
+    std::mutex                             _mutex;
+    std::condition_variable                _cond;
     vespalib::hash_map<uint32_t, uint32_t> _pending;
 };
 
 class NoopLidTracker : public IPendingLidTracker {
 public:
     Token produce(uint32_t lid) override;
-    void waitForConsumedLid(uint32_t ) override { }
+    void waitForEmpty() override { }
+    void waitForConsumed(uint32_t ) override { }
+    void waitForConsumed(const std::vector<uint32_t> & ) override { }
+    bool isInFlight(uint32_t ) override { return false; }
+    bool areAnyInFlight(const std::vector<uint32_t> & ) override { return false; }
+    bool areAnyInFlight() override { return false; }
 private:
     void consume(uint32_t ) override { }
 };
@@ -51,11 +62,18 @@ public:
     PendingLidTracker();
     ~PendingLidTracker() override;
     Token produce(uint32_t lid) override;
-    void waitForConsumedLid(uint32_t lid) override;
+    void waitForEmpty() override;
+    void waitForConsumed(uint32_t lid) override;
+    void waitForConsumed(const std::vector<uint32_t> & lids) override;
+    bool isInFlight(uint32_t lid) override;
+    bool areAnyInFlight(const std::vector<uint32_t> & lids) override;
+    bool areAnyInFlight() override;
 private:
+    using MonitorGuard = std::unique_lock<std::mutex>;
     void consume(uint32_t lid) override;
-    std::mutex _mutex;
-    std::condition_variable _cond;
+    void waitFor(MonitorGuard & guard, uint32_t lid);
+    std::mutex                             _mutex;
+    std::condition_variable                _cond;
     vespalib::hash_map<uint32_t, uint32_t> _pending;
 };
 

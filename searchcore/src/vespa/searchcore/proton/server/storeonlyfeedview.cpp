@@ -469,7 +469,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         PromisedDoc promisedDoc;
         FutureDoc futureDoc = promisedDoc.get_future().share();
         onWriteDone->setDocument(futureDoc);
-        _pendingLidsForDocStore.waitForConsumedLid(lid);
+        _pendingLidsForDocStore.waitForConsumed(lid);
         if (updateScope._indexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }

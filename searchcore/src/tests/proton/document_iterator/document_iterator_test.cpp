@@ -279,12 +279,12 @@ struct Committer : public ICommitable {
     size_t _commitAndWaitCount;
     Committer() : _commitCount(0), _commitAndWaitCount(0) { }
     void commit() override { _commitCount++; }
-    void commitAndWait() override { _commitAndWaitCount++; }
-    void commitAndWait(IPendingLidTracker &, uint32_t ) override {
-        commitAndWait();
+    void commitAndWait(IPendingLidTracker &) override { _commitAndWaitCount++; }
+    void commitAndWait(IPendingLidTracker & tracker, uint32_t ) override {
+        commitAndWait(tracker);
     }
-    void commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) override {
-        commitAndWait();
+    void commitAndWait(IPendingLidTracker & tracker, const std::vector<uint32_t> & ) override {
+        commitAndWait(tracker);
     }
 };
 
