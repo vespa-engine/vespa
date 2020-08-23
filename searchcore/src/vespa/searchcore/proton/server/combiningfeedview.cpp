@@ -233,7 +233,7 @@ CombiningFeedView::forceCommit(search::SerialNum serialNum)
     }
 }
 
-PendingLidTracker &
+IPendingLidTracker &
 CombiningFeedView::getUncommittedLidsTracker() {
     LOG_ABORT("CombiningFeedView::getUncommittedLidsTracker should never be called.");
 }

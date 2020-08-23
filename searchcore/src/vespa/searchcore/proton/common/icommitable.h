@@ -5,7 +5,7 @@
 #include <vector>
 namespace proton {
 
-class PendingLidTracker;
+class IPendingLidTracker;
 
 /**
  * Interface for anyone that needs to commit.
@@ -14,8 +14,8 @@ class ICommitable {
 public:
     virtual void commit() = 0;
     virtual void commitAndWait() = 0;
-    virtual void commitAndWait(PendingLidTracker & uncommittedLidTracker, uint32_t lid) = 0;
-    virtual void commitAndWait(PendingLidTracker & uncommittedLidTracker, const std::vector<uint32_t> & lid) = 0;
+    virtual void commitAndWait(IPendingLidTracker &uncommittedLidTracker, uint32_t lid) = 0;
+    virtual void commitAndWait(IPendingLidTracker &uncommittedLidTracker, const std::vector<uint32_t> & lid) = 0;
 protected:
     virtual ~ICommitable() = default;
 };

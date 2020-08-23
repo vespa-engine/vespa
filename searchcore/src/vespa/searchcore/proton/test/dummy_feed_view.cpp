@@ -17,8 +17,8 @@ DummyFeedView::DummyFeedView(std::shared_ptr<const document::DocumentTypeRepo> d
 
 DummyFeedView::~DummyFeedView() = default;
 
-PendingLidTracker
-&DummyFeedView::getUncommittedLidsTracker() {
+IPendingLidTracker &
+DummyFeedView::getUncommittedLidsTracker() {
     assert(false);
 }
 
