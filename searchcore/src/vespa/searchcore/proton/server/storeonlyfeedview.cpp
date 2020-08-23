@@ -197,7 +197,8 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _repo(ctx._repo),
       _docType(nullptr),
       _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get(), ctx._lidReuseDelayerConfig),
-      _pendingLidTracker(),
+      _pendingLidsForDocStore(),
+      _pendingLidsForCommit(),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
       _params(params),
@@ -215,6 +216,10 @@ StoreOnlyFeedView::sync()
     _writeService.summary().sync();
 }
 
+PendingLidTracker &
+StoreOnlyFeedView::getUncommittedLidsTracker() {
+    return _pendingLidsForCommit;
+}
 void
 StoreOnlyFeedView::forceCommit(SerialNum serialNum)
 {
@@ -356,7 +361,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), trackerToken = _pendingLidTracker.produce(lid), onDone, this] () mutable {
+            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, this] () mutable {
                 (void) onDone;
                 (void) trackerToken;
                 vespalib::nbostream os = futureStream.get();
@@ -372,7 +377,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP do
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidTracker.produce(lid), onDone, lid, this] {
+            makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, lid, this] {
                 (void) onDone;
                 (void) trackerToken;
                 _summaryAdapter->put(serialNum, lid, *doc);
@@ -381,7 +386,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP do
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, onDone, trackerToken = _pendingLidTracker.produce(lid), this] {
+            makeLambdaTask([serialNum, lid, onDone, trackerToken = _pendingLidsForDocStore.produce(lid), this] {
                 (void) onDone;
                 (void) trackerToken;
                 _summaryAdapter->remove(serialNum, lid);
@@ -449,7 +454,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         PromisedDoc promisedDoc;
         FutureDoc futureDoc = promisedDoc.get_future().share();
         onWriteDone->setDocument(futureDoc);
-        _pendingLidTracker.waitForConsumedLid(lid);
+        _pendingLidsForDocStore.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }

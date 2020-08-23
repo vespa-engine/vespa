@@ -18,8 +18,7 @@ namespace proton {
 class VisibilityHandler : public ICommitable
 {
     using IThreadingService = searchcorespi::index::IThreadingService;
-    typedef vespalib::ThreadExecutor  ThreadExecutor;
-    typedef vespalib::VarHolder<IFeedView::SP> FeedViewHolder;
+    using FeedViewHolder = vespalib::VarHolder<IFeedView::SP>;
 public:
     typedef search::SerialNum         SerialNum;
     VisibilityHandler(const IGetSerialNum &serial,
@@ -31,6 +30,8 @@ public:
     bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
     void commit() override;
     void commitAndWait() override;
+    void commitAndWait(PendingLidTracker & , uint32_t ) override;
+    void commitAndWait(PendingLidTracker & , const std::vector<uint32_t> & ) override;
 private:
     bool startCommit(const std::lock_guard<std::mutex> &unused, bool force);
     void performCommit(bool force);
