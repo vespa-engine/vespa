@@ -56,10 +56,10 @@ VisibilityHandler::commitAndWait()
 }
 
 void
-VisibilityHandler::commitAndWait(PendingLidTracker & , uint32_t ) {
+VisibilityHandler::commitAndWait(IPendingLidTracker &, uint32_t ) {
     commitAndWait();
 }
-void VisibilityHandler::commitAndWait(PendingLidTracker & , const std::vector<uint32_t> & ) {
+void VisibilityHandler::commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) {
     commitAndWait();
 }
 

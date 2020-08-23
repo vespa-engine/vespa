@@ -4,6 +4,7 @@
 
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 
 namespace document { class DocumentTypeRepo; }
 
@@ -19,7 +20,6 @@ class PruneRemovedDocumentsOperation;
 class PutOperation;
 class RemoveOperation;
 class UpdateOperation;
-class PendingLidTracker;
 
 /**
  * Interface for a feed view as seen from a feed handler.
@@ -62,7 +62,7 @@ public:
     virtual void forceCommit(search::SerialNum serialNum) = 0;
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp) = 0;
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) = 0;
-    virtual PendingLidTracker & getUncommittedLidsTracker() = 0;
+    virtual IPendingLidTracker & getUncommittedLidsTracker() = 0;
 };
 
 } // namespace proton

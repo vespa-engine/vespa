@@ -6,15 +6,26 @@
 
 namespace proton {
 
-PendingLidTracker::Token::Token(uint32_t lid, PendingLidTracker &tracker)
+IPendingLidTracker::Token::Token(uint32_t lid, IPendingLidTracker &tracker)
     : _tracker(&tracker),
       _lid(lid)
 {}
 
-PendingLidTracker::Token::~Token() {
+IPendingLidTracker::Token::Token()
+    : _tracker(nullptr),
+      _lid(0u)
+{}
+
+
+IPendingLidTracker::Token::~Token() {
     if (_tracker != nullptr) {
         _tracker->consume(_lid);
     }
+}
+
+IPendingLidTracker::Token
+NoopLidTracker::produce(uint32_t) {
+    return Token();
 }
 
 PendingLidTracker::PendingLidTracker()

@@ -387,10 +387,10 @@ public:
     void syncSubDBs();
     void commit() override { }
     void commitAndWait() override { }
-    void commitAndWait(PendingLidTracker & , uint32_t ) override {
+    void commitAndWait(IPendingLidTracker &, uint32_t ) override {
         commitAndWait();
     }
-    void commitAndWait(PendingLidTracker & , const std::vector<uint32_t> & ) override {
+    void commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) override {
         commitAndWait();
     }
     void performSyncSubDBs();
