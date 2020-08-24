@@ -13,4 +13,6 @@ StorageNodeContext::StorageNodeContext(ComponentRegister::UP compReg, framework:
     _componentRegister->setThreadPool(_threadPool);
 }
 
+StorageNodeContext::~StorageNodeContext() = default;
+
 } // storage

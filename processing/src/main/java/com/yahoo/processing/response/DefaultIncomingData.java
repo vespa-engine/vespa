@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.response;
 
-import com.google.common.util.concurrent.ExecutionList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.collections.Tuple2;
@@ -26,14 +25,10 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
 
     private List<Tuple2<Runnable,Executor>> newDataListeners = null;
 
-    /**
-     * If this is completed no more data can be added
-     */
+    /** Whether this is completed, such that no more data can be added */
     private boolean complete = false;
 
-    /**
-     * Creates an instance which must be assigned an owner after creation
-     */
+    /** Creates an instance which must be assigned an owner after creation */
     public DefaultIncomingData() {
         this(null);
     }
@@ -43,9 +38,7 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
         completionFuture = SettableFuture.create();
     }
 
-    /**
-     * Assigns the owner of this. Throws an exception if the owner is already set.
-     */
+    /** Assigns the owner of this. Throws an exception if the owner is already set. */
     public final void assignOwner(DataList<DATATYPE> owner) {
         if (this.owner != null) throw new NullPointerException("Owner of " + this + " was already assigned");
         this.owner = owner;
@@ -61,42 +54,32 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
         return completionFuture;
     }
 
-    /**
-     * Returns whether the data in this is complete
-     */
+    /** Returns whether the data in this is complete */
     @Override
     public synchronized boolean isComplete() {
         return complete;
     }
 
-    /**
-     * Add new data and mark this as completed
-     */
+    /** Adds new data and marks this as completed */
     @Override
     public synchronized void addLast(DATATYPE data) {
         addLast(Collections.singletonList(data));
     }
 
-    /**
-     * Add new data without completing this
-     */
+    /** Adds new data without completing this */
     @Override
     public synchronized void add(DATATYPE data) {
         add(Collections.singletonList(data));
     }
 
-    /**
-     * Add new data and mark this as completed
-     */
+    /** Adds new data and marks this as completed */
     @Override
     public synchronized void addLast(List<DATATYPE> data) {
         add(data);
         markComplete();
     }
 
-    /**
-     * Add new data without completing this
-     */
+    /** Adds new data without completing this */
     @Override
     public synchronized void add(List<DATATYPE> data) {
         if (complete) throw new IllegalStateException("Attempted to add data to completed " + this);
@@ -105,9 +88,7 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
         notifyDataListeners();
     }
 
-    /**
-     * Mark this as completed and notify any listeners
-     */
+    /** Marks this as completed and notify any listeners */
     @Override
     public synchronized void markComplete() {
         complete = true;
@@ -115,7 +96,7 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
     }
 
     /**
-     * Get and remove all the data currently available in this.
+     * Gets and removes all the data currently available in this.
      * The returned list is a modifiable fresh instance owned by the caller.
      */
     public synchronized List<DATATYPE> drain() {

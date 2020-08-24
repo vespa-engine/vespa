@@ -3,6 +3,8 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.collections.TinyIdentitySet;
 import com.yahoo.fs4.DocsumPacket;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -74,6 +76,19 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     protected abstract void doPartialFill(Result result, String summaryClass);
 
+    private boolean hasLocation(Item tree) {
+        if (tree instanceof GeoLocationItem) {
+            return true;
+        }
+        if (tree instanceof CompositeItem) {
+            var composite = (CompositeItem)tree;
+            for (Item child : composite.items()) {
+                if (hasLocation(child)) return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns whether we need to send the query when fetching summaries.
      * This is necessary if the query requests summary features or dynamic snippeting
@@ -86,6 +101,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         // Needed to generate a dynamic summary?
         DocsumDefinition docsumDefinition = documentDb.getDocsumDefinitionSet().getDocsum(query.getPresentation().getSummary());
         if (docsumDefinition.isDynamic()) return true;
+
+        if (hasLocation(query.getModel().getQueryTree())) return true;
 
         // Needed to generate ranking features?
         RankProfile rankProfile = documentDb.rankProfiles().get(query.getRanking().getProfile());

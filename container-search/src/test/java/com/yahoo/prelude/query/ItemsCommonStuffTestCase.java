@@ -42,7 +42,7 @@ public class ItemsCommonStuffTestCase {
         a.addItem(as);
         try {
             as.addItem(a);
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             caught = true;
         }
         assertTrue(caught);
@@ -51,7 +51,7 @@ public class ItemsCommonStuffTestCase {
         as.addItem(a);
         try {
             a.addItem(as);
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             caught = true;
         }
         assertTrue(caught);
@@ -235,21 +235,21 @@ public class ItemsCommonStuffTestCase {
         boolean caught = false;
         try {
             as.removeItem(firstItem);
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             caught = true;
         }
         assertTrue(caught);
         caught = false;
         try {
             as.addItem(new WordItem("puppy"));
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             caught= true;
         }
         assertTrue(caught);
         caught = false;
         try {
             as.addItem(1, new WordItem("kvalp"));
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             caught = true;
         }
         assertTrue(caught);

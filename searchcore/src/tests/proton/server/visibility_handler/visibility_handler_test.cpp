@@ -1,12 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("visibility_handler_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/server/visibilityhandler.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/vespalib/util/lambdatask.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("visibility_handler_test");
 
 using search::SerialNum;
 using proton::IGetSerialNum;
@@ -25,8 +28,7 @@ class MyGetSerialNum : public IGetSerialNum
 public:
     MyGetSerialNum()
         : _serialNum(0u)
-    {
-    }
+    {}
     SerialNum getSerialNum() const override { return _serialNum; }
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
 };
@@ -37,14 +39,14 @@ class MyFeedView : public DummyFeedView
 {
     uint32_t _forceCommitCount;
     SerialNum _committedSerialNum;
-
-
 public:
+    proton::PendingLidTracker _tracker;
+
+
     MyFeedView()
         : _forceCommitCount(0u),
           _committedSerialNum(0u)
-    {
-    }
+    {}
 
     void forceCommit(SerialNum serialNum) override
     {
@@ -78,8 +80,7 @@ public:
           _feedViewReal(std::make_shared<MyFeedView>()),
           _feedView(_feedViewReal),
           _visibilityHandler(_getSerialNum, _writeService, _feedView)
-    {
-    }
+    {}
 
     void
     checkCommitPostCondition(uint32_t expForceCommitCount,
@@ -129,13 +130,18 @@ public:
     {
         _getSerialNum.setSerialNum(currSerialNum);
         _visibilityHandler.setVisibilityDelay(visibilityDelay);
+        constexpr uint32_t MY_LID=13;
+        if (currSerialNum != 0) {
+            _feedViewReal->_tracker.produce(MY_LID);
+        }
+        proton::PendingLidTracker * lidTracker = & _feedViewReal->_tracker;
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
-            auto task = makeLambdaTask([=]() { visibilityHandler->commitAndWait(); });
+            auto task = makeLambdaTask([=]() { visibilityHandler->commitAndWait(*lidTracker, MY_LID); });
             _writeService.master().execute(std::move(task));
             _writeService.master().sync();
         } else {
-            _visibilityHandler.commitAndWait();
+            _visibilityHandler.commitAndWait(*lidTracker, MY_LID);
         }
         checkCommitPostCondition(expForceCommitCount,
                                  expCommittedSerialNum,

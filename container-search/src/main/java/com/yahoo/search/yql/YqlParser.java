@@ -67,6 +67,7 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.request.GroupingOperation;
@@ -318,10 +319,10 @@ public class YqlParser implements Parser {
     private void connectItems() {
         for (ConnectedItem entry : connectedItems) {
             TaggableItem to = identifiedItems.get(entry.toId);
-            Preconditions.checkNotNull(to,
-                                       "Item '%s' was specified to connect to item with ID %s, which does not "
-                                       + "exist in the query.", entry.fromItem,
-                                       entry.toId);
+            if (to == null)
+                throw new IllegalArgumentException("Item '" + entry.fromItem +
+                                                   "' was specified to connect to item with ID " + entry.toId +
+                                                   ", which does not exist in the query.");
             entry.fromItem.setConnectivity((Item) to, entry.weight);
         }
     }
@@ -782,7 +783,7 @@ public class YqlParser implements Parser {
         try {
             ast = new ProgramParser().parse("query", currentlyParsing.getQuery());
         } catch (Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalInputException(e);
         }
         assertHasOperator(ast, StatementOperator.PROGRAM);
         Preconditions.checkArgument(ast.getArguments().length == 1,

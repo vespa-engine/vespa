@@ -362,14 +362,11 @@ public:
     ~MyPersistenceFactory() override {
         clear();
     }
-    PersistenceProvider::UP getPersistenceImplementation(const std::shared_ptr<const DocumentTypeRepo> &repo,
+    std::unique_ptr<PersistenceProvider> getPersistenceImplementation(const std::shared_ptr<const DocumentTypeRepo> &repo,
                                                          const DocumenttypesConfig &typesCfg) override {
         ConfigFactory cfgFactory(repo, std::make_shared<DocumenttypesConfig>(typesCfg), _schemaFactory);
         _docDbRepo = std::make_unique<DocumentDBRepo>(cfgFactory, _docDbFactory);
-        PersistenceEngine::UP engine(new MyPersistenceEngine(_engineOwner,
-                                                             _writeFilter,
-                                                             std::move(_docDbRepo),
-                                                             _docType));
+        auto engine = std::make_unique<MyPersistenceEngine>(_engineOwner,_writeFilter,std::move(_docDbRepo), _docType);
         assert( ! _docDbRepo); // Repo should be handed over
         return engine;
     }

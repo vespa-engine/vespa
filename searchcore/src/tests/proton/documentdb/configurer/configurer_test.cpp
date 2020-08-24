@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -51,15 +51,16 @@ using Configurer = SearchableDocSubDBConfigurer;
 using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
 using SummarySetup = SummaryManager::SummarySetup;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
+using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
 const vespalib::string BASE_DIR("baseDir");
 const vespalib::string DOC_TYPE("invalid");
 
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer
 {
-    virtual bool reconfigure(vespalib::Closure0<bool>::UP closure) override {
+    bool reconfigure(vespalib::Closure0<bool>::UP closure) override {
         bool ret = true;
-        if (closure.get() != NULL)
+        if (closure)
             ret = closure->call(); // Perform index manager reconfiguration now
         return ret;
     }
@@ -95,15 +96,13 @@ struct ViewSet
     ISummaryManager::SP _summaryMgr;
     proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
-    std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
-    CommitTimeTracker _commitTimeTracker;
     VarHolder<SearchView::SP> searchView;
     VarHolder<SearchableFeedView::SP> feedView;
     HwInfo _hwInfo;
     ViewSet();
     ~ViewSet();
 
-    ViewPtrs getViewPtrs() {
+    ViewPtrs getViewPtrs() const {
         ViewPtrs ptrs;
         ptrs.sv = searchView.get();
         ptrs.fv = feedView.get();
@@ -125,8 +124,6 @@ ViewSet::ViewSet()
       _summaryMgr(),
       _dmsc(),
       _gidToLidChangeHandler(),
-      _lidReuseDelayer(),
-      _commitTimeTracker(vespalib::duration::zero()),
       searchView(),
       feedView(),
       _hwInfo()
@@ -177,8 +174,8 @@ Fixture::Fixture()
     vespalib::rmdir(BASE_DIR, true);
     vespalib::mkdir(BASE_DIR);
     initViewSet(_views);
-    _configurer.reset(new Configurer(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
-                                     _constantValueRepo, _clock, "test", 0));
+    _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
+                                     _constantValueRepo, _clock, "test", 0);
 }
 Fixture::~Fixture() = default;
 
@@ -205,9 +202,8 @@ Fixture::initViewSet(ViewSet &views)
     Schema::SP schema(new Schema());
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
-    views._lidReuseDelayer = std::make_unique<documentmetastore::LidReuseDelayer>(views._writeService, metaStore->get());
     IndexSearchable::SP indexSearchable;
-    MatchView::SP matchView(new MatchView(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit));
+    auto matchView = std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, sesMgr, metaStore, views._docIdLimit);
     views.searchView.set(SearchView::create
                                  (summaryMgr->createSummarySetup(SummaryConfig(), SummarymapConfig(),
                                                                  JuniperrcConfig(), views.repo, attrMgr),
@@ -219,8 +215,7 @@ Fixture::initViewSet(ViewSet &views)
                             *views._gidToLidChangeHandler,
                             views.repo,
                             views._writeService,
-                            *views._lidReuseDelayer,
-                            views._commitTimeTracker),
+                            LidReuseDelayerConfig()),
                             SearchableFeedView::PersistentParams(
                                     views.serialNum,
                                     views.serialNum,
@@ -243,19 +238,15 @@ struct MyFastAccessFeedView
 
     proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
-    std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
-    CommitTimeTracker                 _commitTimeTracker;
     VarHolder<FastAccessFeedView::SP> _feedView;
 
-    MyFastAccessFeedView(IThreadingService &writeService)
+    explicit MyFastAccessFeedView(IThreadingService &writeService)
         : _fileHeaderContext(),
           _docIdLimit(0),
           _writeService(writeService),
           _hwInfo(),
           _dmsc(),
           _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
-          _lidReuseDelayer(),
-          _commitTimeTracker(vespalib::duration::zero()),
           _feedView()
     {
         init();
@@ -267,16 +258,15 @@ struct MyFastAccessFeedView
         ISummaryAdapter::SP summaryAdapter(new MySummaryAdapter());
         Schema::SP schema(new Schema());
         _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
-        _lidReuseDelayer.reset(new documentmetastore::LidReuseDelayer(_writeService, _dmsc->get()));
         std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
         StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, *_gidToLidChangeHandler, repo,
-                                                _writeService, *_lidReuseDelayer, _commitTimeTracker);
+                                                _writeService, LidReuseDelayerConfig());
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
         auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
                                                  _writeService.attributeFieldWriter(), _writeService.shared(), _hwInfo);
-        IAttributeWriter::SP writer(new AttributeWriter(mgr));
+        auto writer = std::make_shared<AttributeWriter>(mgr);
         FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
-        _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(storeOnlyCtx, params, fastUpdateCtx)));;
+        _feedView.set(std::make_shared<FastAccessFeedView>(storeOnlyCtx, params, fastUpdateCtx));
     }
 };
 
@@ -370,7 +360,7 @@ SearchViewComparer::SearchViewComparer(SearchView::SP old, SearchView::SP new_)
     : _old(std::move(old)),
       _new(std::move(new_))
 {}
-SearchViewComparer::~SearchViewComparer() {}
+SearchViewComparer::~SearchViewComparer() = default;
 
 
 struct FeedViewComparer
@@ -409,7 +399,7 @@ FeedViewComparer::FeedViewComparer(SearchableFeedView::SP old, SearchableFeedVie
     : _old(std::move(old)),
       _new(std::move(new_))
 {}
-FeedViewComparer::~FeedViewComparer() {}
+FeedViewComparer::~FeedViewComparer() = default;
 
 struct FastAccessFeedViewComparer
 {
@@ -435,7 +425,7 @@ FastAccessFeedViewComparer::FastAccessFeedViewComparer(FastAccessFeedView::SP ol
     : _old(std::move(old)),
       _new(std::move(new_))
 {}
-FastAccessFeedViewComparer::~FastAccessFeedViewComparer() {}
+FastAccessFeedViewComparer::~FastAccessFeedViewComparer() = default;
 
 TEST_F("require that we can reconfigure index searchable", Fixture)
 {
@@ -467,7 +457,7 @@ TEST_F("require that we can reconfigure index searchable", Fixture)
 const AttributeManager *
 asAttributeManager(const proton::IAttributeManager::SP &attrMgr)
 {
-    const AttributeManager *result = dynamic_cast<const AttributeManager *>(attrMgr.get());
+    auto result = dynamic_cast<const AttributeManager *>(attrMgr.get());
     ASSERT_TRUE(result != nullptr);
     return result;
 }

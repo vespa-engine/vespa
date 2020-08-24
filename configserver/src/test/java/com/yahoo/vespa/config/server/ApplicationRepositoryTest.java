@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -16,10 +17,8 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
@@ -41,11 +40,13 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
+import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -61,6 +62,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -102,9 +104,10 @@ public class ApplicationRepositoryTest {
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
-    private SessionHandlerTest.MockProvisioner  provisioner;
+    private SessionHandlerTest.MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
+    private Curator curator;
     private ConfigCurator configCurator;
 
     @Rule
@@ -119,7 +122,7 @@ public class ApplicationRepositoryTest {
     }
 
     public void setup(FlagSource flagSource) throws IOException {
-        Curator curator = new MockCurator();
+        curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
@@ -140,14 +143,15 @@ public class ApplicationRepositoryTest {
         tenantRepository.addTenant(tenant3);
         orchestrator = new OrchestratorMock();
         provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          configserverConfig,
-                                                          new MockLogRetriever(),
-                                                          clock,
-                                                          new MockTesterClient(),
-                                                          new NullMetric());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withConfigserverConfig(configserverConfig)
+                .withOrchestrator(orchestrator)
+                .withFlagSource(flagSource)
+                .withLogRetriever(new MockLogRetriever())
+                .withClock(clock)
+                .build();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -157,11 +161,33 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
+
+        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp());
+    }
+
+    @Test
+    public void prepareAndActivateWithTenantMetaData() throws IOException {
+        FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
+        setup(flagSource);
+
+        Duration duration = Duration.ofHours(1);
+        clock.advance(duration);
+        Instant deployTime = clock.instant();
+        PrepareResult result = prepareAndActivate(testApp);
+        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
+                                                                                     .requireActiveSessionOf(applicationId()));
+        session.getAllocatedHosts();
+
+        assertEquals(deployTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
     }
 
     @Test
@@ -189,8 +215,7 @@ public class ApplicationRepositoryTest {
         long secondSessionId = result2.sessionId();
         assertNotEquals(firstSessionId, secondSessionId);
 
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         LocalSession session = tenant.getSessionRepository().getLocalSession(
                 tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
         assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
@@ -224,7 +249,6 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogs() {
-        applicationRepository = createApplicationRepository();
         deployApp(testAppLogServerWithContainer);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), "");
         assertEquals(200, response.getStatus());
@@ -232,7 +256,6 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogsForHostname() {
-        applicationRepository = createApplicationRepository();
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
         HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
@@ -249,8 +272,12 @@ public class ApplicationRepositoryTest {
         File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), Instant.now());
 
         tenantRepository.addTenant(tenant1);
-        Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(orchestrator)
+                .withClock(clock)
+                .build();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now
@@ -273,8 +300,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void delete() {
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         SessionRepository sessionRepository = tenant.getSessionRepository();
         {
             PrepareResult result = deployApp(testApp);
@@ -325,6 +351,10 @@ public class ApplicationRepositoryTest {
 
         {
             PrepareResult prepareResult = deployApp(testApp);
+
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            assertNotNull(sessionRepository.getLocalSession(prepareResult.sessionId()));
+
             try {
                 applicationRepository.delete(applicationId(), Duration.ZERO);
                 fail("Should have gotten an exception");
@@ -334,8 +364,7 @@ public class ApplicationRepositoryTest {
 
             // No active session or remote session (deleted in step above), but an exception was thrown above
             // A new delete should cleanup and be successful
-            RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
-            assertNull(activeSession);
+            assertNull(applicationRepository.getActiveSession(applicationId()));
             assertNull(sessionRepository.getLocalSession(prepareResult.sessionId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
@@ -344,9 +373,10 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testDeletingInactiveSessions() throws IOException {
+        File serverdb = temporaryFolder.newFolder("serverdb");
         ConfigserverConfig configserverConfig =
                 new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                                               .configServerDBDir(serverdb.getAbsolutePath())
                                                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                                .sessionLifetime(60));
         DeployTester tester = new DeployTester(configserverConfig, clock);
@@ -384,6 +414,8 @@ public class ApplicationRepositoryTest {
         // There should be no expired remote sessions in the common case
         assertEquals(0, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
 
+        assertEquals(1, sessionRepository.getLocalSessions().size());
+
         // Deploy, but do not activate
         Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
         assertTrue(deployment4.isPresent());
@@ -393,6 +425,25 @@ public class ApplicationRepositoryTest {
         sessionRepository.deleteLocalSession(localSession);
         assertEquals(1, sessionRepository.getLocalSessions().size());
 
+        // Create a local session without any data in zookeeper (corner case seen in production occasionally)
+        // and check that expiring local sessions still work
+        int sessionId = 6;
+        Files.createDirectory(new TenantFileSystemDirs(serverdb, tenant1).getUserApplicationDir(sessionId).toPath());
+        LocalSession localSession2 = new LocalSession(tenant1,
+                                                      sessionId,
+                                                      FilesApplicationPackage.fromFile(testApp),
+                                                      new SessionZooKeeperClient(curator,
+                                                                                 configCurator,
+                                                                                 tenant1,
+                                                                                 sessionId,
+                                                                                 ConfigUtils.getCanonicalHostName()));
+        sessionRepository.addLocalSession(localSession2);
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+
+        // Check that trying to expire local session when there exists a local session with no zookeeper data works
+        tester.applicationRepository().deleteExpiredLocalSessions();
+        assertEquals(1, sessionRepository.getLocalSessions().size());
+
         // Check that trying to expire when there are no active sessions works
         tester.applicationRepository().deleteExpiredLocalSessions();
     }
@@ -400,14 +451,13 @@ public class ApplicationRepositoryTest {
     @Test
     public void testMetrics() {
         MockMetric actual = new MockMetric();
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                          new MockLogRetriever(),
-                                                          new ManualClock(),
-                                                          new MockTesterClient(),
-                                                          actual);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(orchestrator)
+                .withMetric(actual)
+                .withClock(new ManualClock())
+                .build();
         deployApp(testAppLogServerWithContainer);
         Map<String, ?> context = Map.of("applicationId", "test1.testapp.default",
                                         "tenantName", "test1",
@@ -421,7 +471,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void deletesApplicationRoles() {
-        var tenant = tenantRepository.getTenant(tenant1);
+        var tenant = applicationRepository.getTenant(applicationId());
         var applicationId = applicationId(tenant1);
         var prepareParams = new PrepareParams.Builder().applicationId(applicationId)
                 .applicationRoles(ApplicationRoles.fromString("hostRole","containerRole")).build();
@@ -444,8 +494,7 @@ public class ApplicationRepositoryTest {
     public void require_that_provision_info_can_be_read() {
         prepareAndActivate(testAppJdiscOnly);
 
-        TenantName tenantName = applicationId().tenant();
-        Tenant tenant = tenantRepository.getTenant(tenantName);
+        Tenant tenant = applicationRepository.getTenant(applicationId());
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
 
         List<NetworkPorts.Allocation> list = new ArrayList<>();
@@ -491,7 +540,7 @@ public class ApplicationRepositoryTest {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, timeoutBudget, false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
 
         RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
@@ -505,10 +554,10 @@ public class ApplicationRepositoryTest {
         long firstSession = result.sessionId();
 
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
-        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId, prepareParams(), clock.instant());
+        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId, prepareParams(), clock.instant());
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
 
         RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
@@ -530,10 +579,10 @@ public class ApplicationRepositoryTest {
         PrepareResult result2 = deployApp(testAppJdiscOnly);
         result2.sessionId();
 
-        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId2, prepareParams(), clock.instant());
+        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId2, prepareParams(), clock.instant());
         exceptionRule.expect(ActivationConflictException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId2, timeoutBudget, false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false);
     }
 
     @Test
@@ -543,11 +592,11 @@ public class ApplicationRepositoryTest {
 
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("Session is active: 2"));
-        applicationRepository.prepare(tenantRepository.getTenant(tenant1), sessionId, prepareParams(), clock.instant());
+        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId, prepareParams(), clock.instant());
 
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Session 2 is already active"));
-        applicationRepository.activate(tenantRepository.getTenant(tenant1), sessionId, timeoutBudget, false);
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
     }
 
     @Test
@@ -648,17 +697,6 @@ public class ApplicationRepositoryTest {
                 .withBooleanFlag(Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.id(), true);
         setup(flagSource);
         applicationRepository.deploy(app1, prepareParams());
-    }
-
-    private ApplicationRepository createApplicationRepository() {
-        return new ApplicationRepository(tenantRepository,
-                                         provisioner,
-                                         orchestrator,
-                                         new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                         new MockLogRetriever(),
-                                         clock,
-                                         new MockTesterClient(),
-                                         new NullMetric());
     }
 
     private PrepareResult prepareAndActivate(File application) {

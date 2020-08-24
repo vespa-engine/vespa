@@ -102,7 +102,7 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
     }
 
     private void dontAdd() {
-        throw new QueryException("Tried to add item to an immutable segment.");
+        throw new IllegalArgumentException("Tried to add item to an immutable segment.");
     }
 
     public Item removeItem(int index) {
@@ -120,7 +120,7 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
     }
 
     private void dontRemove() {
-        throw new QueryException("Tried to remove an item from an immutable segment.");
+        throw new IllegalArgumentException("Tried to remove an item from an immutable segment.");
     }
 
     // TODO: Add a getItemIterator which is safe for immutability

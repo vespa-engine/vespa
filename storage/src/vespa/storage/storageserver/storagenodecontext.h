@@ -40,6 +40,8 @@ struct StorageNodeContext {
      */
     FastOS_ThreadPool& getThreadPool() { return _threadPool.getThreadPool(); }
 
+    ~StorageNodeContext();
+
 protected:
         // Initialization has been split in two as subclass needs to initialize
         // component register before sending it on.

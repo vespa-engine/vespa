@@ -144,7 +144,9 @@ private:
                 t = &builder.addSuffixTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_GEO_LOCATION_TERM) {
                 search::common::GeoLocationParser parser;
-                parser.parseOldFormat(term);
+                if (! parser.parseNoField(term)) {
+                    LOG(warning, "invalid geo location term '%s'", term.data());
+                }
                 Location loc(parser.getGeoLocation());
                 t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {

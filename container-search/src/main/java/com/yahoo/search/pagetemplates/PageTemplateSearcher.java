@@ -2,9 +2,9 @@
 package com.yahoo.search.pagetemplates;
 
 import com.google.inject.Inject;
-import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -13,8 +13,6 @@ import com.yahoo.search.pagetemplates.config.PageTemplateConfigurer;
 import com.yahoo.search.pagetemplates.engine.Organizer;
 import com.yahoo.search.pagetemplates.engine.Resolution;
 import com.yahoo.search.pagetemplates.engine.Resolver;
-import com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver;
-import com.yahoo.search.pagetemplates.engine.resolvers.RandomResolver;
 import com.yahoo.search.pagetemplates.engine.resolvers.ResolverRegistry;
 import com.yahoo.search.pagetemplates.model.Choice;
 import com.yahoo.search.pagetemplates.model.PageElement;
@@ -23,7 +21,13 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Map;
 
 /**
  * Enables page optimization templates.
@@ -107,7 +111,7 @@ public class PageTemplateSearcher extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         // Pre execution: Choose template and sources
-        List<PageElement> pages=selectPageTemplates(query);
+        List<PageElement> pages = selectPageTemplates(query);
         if (pages.isEmpty()) return execution.search(query); // Bypass if no page template chosen
         addSources(pages,query);
 
@@ -115,12 +119,12 @@ public class PageTemplateSearcher extends Searcher {
         query.properties().set(pagePageTemplateListName, pages);
 
         // Execute
-        Result result=execution.search(query);
+        Result result = execution.search(query);
 
         // Post execution: Resolve choices and organize the result as dictated by the resolved template
-        Choice pageTemplateChoice=Choice.createSingletons(pages);
-        Resolution resolution=selectResolver(query).resolve(pageTemplateChoice,query,result);
-        organizer.organize(pageTemplateChoice,resolution,result);
+        Choice pageTemplateChoice = Choice.createSingletons(pages);
+        Resolution resolution = selectResolver(query).resolve(pageTemplateChoice, query, result);
+        organizer.organize(pageTemplateChoice, resolution, result);
         return result;
     }
 
@@ -132,23 +136,23 @@ public class PageTemplateSearcher extends Searcher {
         // Determine the list of page template ids
         @SuppressWarnings("unchecked")
         List<String> pageIds = (List<String>) query.properties().get(pageIdListName);
-        if (pageIds==null) {
-            String pageIdString=query.properties().getString(pageIdName,"").trim();
-            if (pageIdString.length()>0)
-                pageIds=Arrays.asList(pageIdString.split(" "));
+        if (pageIds == null) {
+            String pageIdString = query.properties().getString(pageIdName,"").trim();
+            if (pageIdString.length() > 0)
+                pageIds = Arrays.asList(pageIdString.split(" "));
         }
 
         // If none set, just return the default or null if none
-        if (pageIds==null) {
+        if (pageIds == null) {
             PageElement defaultPage=templateRegistry.getComponent("default");
-            return (defaultPage==null ? Collections.<PageElement>emptyList() : Collections.singletonList(defaultPage));
+            return (defaultPage == null ? Collections.<PageElement>emptyList() : Collections.singletonList(defaultPage));
         }
 
         // Resolve the id list to page templates
-        List<PageElement> pages=new ArrayList<>(pageIds.size());
+        List<PageElement> pages = new ArrayList<>(pageIds.size());
         for (String pageId : pageIds) {
-            PageTemplate page=templateRegistry.getComponent(pageId);
-            if (page==null)
+            PageTemplate page = templateRegistry.getComponent(pageId);
+            if (page == null)
                 query.errors().add(ErrorMessage.createInvalidQueryParameter("Could not resolve requested page template '" +
                                                                             pageId + "'"));
             else
@@ -159,17 +163,17 @@ public class PageTemplateSearcher extends Searcher {
     }
 
     private Resolver selectResolver(Query query) {
-        String resolverId=query.properties().getString(pageResolverName);
-        if (resolverId==null) return resolverRegistry.defaultResolver();
-        Resolver resolver=resolverRegistry.getComponent(resolverId);
-        if (resolver==null) throw new IllegalArgumentException("No page template resolver '" + resolverId + "'");
+        String resolverId = query.properties().getString(pageResolverName);
+        if (resolverId == null) return resolverRegistry.defaultResolver();
+        Resolver resolver = resolverRegistry.getComponent(resolverId);
+        if (resolver == null) throw new IllegalInputException("No page template resolver '" + resolverId + "'");
         return resolver;
     }
 
     /** Sets query.getModel().getSources() to the right value and add source parameters specified in templates */
-    private void addSources(List<PageElement> pages,Query query) {
+    private void addSources(List<PageElement> pages, Query query) {
         // Determine all wanted sources
-        Set<Source> pageSources=new HashSet<>();
+        Set<Source> pageSources = new HashSet<>();
         for (PageElement page : pages)
             pageSources.addAll(((PageTemplate)page).getSources());
 
@@ -177,34 +181,34 @@ public class PageTemplateSearcher extends Searcher {
 
         if (query.getModel().getSources().size() > 0) {
             // Add properties if the source list is set explicitly, but do not modify otherwise
-            addParametersForIncludedSources(pageSources,query);
+            addParametersForIncludedSources(pageSources, query);
             return;
         }
 
         if (pageSources.contains(Source.any)) {
-            IntentModel intentModel=IntentModel.getFrom(query);
-            if (intentModel!=null) {
+            IntentModel intentModel = IntentModel.getFrom(query);
+            if (intentModel != null) {
                 query.getModel().getSources().addAll(intentModel.getSourceNames());
-                addPageTemplateSources(pageSources,query);
+                addPageTemplateSources(pageSources, query);
             }
             // otherwise leave empty to search all
         }
         else { // Let the page templates decide
-            addPageTemplateSources(pageSources,query);
+            addPageTemplateSources(pageSources, query);
         }
     }
 
     private void addPageTemplateSources(Set<Source> pageSources,Query query) {
         for (Source pageSource : pageSources) {
-            if (pageSource==Source.any) continue;
+            if (pageSource == Source.any) continue;
             query.getModel().getSources().add(pageSource.getName());
             addParameters(pageSource,query);
         }
     }
 
-    private void addParametersForIncludedSources(Set<Source> sources,Query query) {
+    private void addParametersForIncludedSources(Set<Source> sources, Query query) {
         for (Source source : sources) {
-            if (source.parameters().size()>0 && query.getModel().getSources().contains(source.getName()))
+            if (source.parameters().size() > 0 && query.getModel().getSources().contains(source.getName()))
                 addParameters(source,query);
         }
     }
@@ -220,8 +224,8 @@ public class PageTemplateSearcher extends Searcher {
      * is not supported. (Same parameter sets in multiple templates is supported,
      * and will be just one entry in this set).
      */
-    private void addErrorIfSameSourceMultipleTimes(List<PageElement> pages,Set<Source> sources,Query query) {
-        Set<String> sourceNames=new HashSet<>();
+    private void addErrorIfSameSourceMultipleTimes(List<PageElement> pages, Set<Source> sources, Query query) {
+        Set<String> sourceNames = new HashSet<>();
         for (Source source : sources) {
             if (sourceNames.contains(source.getName()))
                 query.errors().add(ErrorMessage.createInvalidQueryParameter(

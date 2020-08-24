@@ -677,7 +677,7 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
     }
     // Init based on default document type and mapping from field name to field id
     _docTypeMapping.init(_fieldSearchSpecMap.documentTypeMap().begin()->first,
-                         _fieldsUnion, *_component.getTypeRepo());
+                         _fieldsUnion, *_component.getTypeRepo()->documentTypeRepo);
     _docTypeMapping.prepareBaseDoc(_fieldPathMap);
 }
 

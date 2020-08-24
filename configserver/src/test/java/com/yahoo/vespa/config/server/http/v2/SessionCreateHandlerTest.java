@@ -12,7 +12,7 @@ import com.yahoo.vespa.config.server.application.CompressedApplicationInputStrea
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -62,10 +62,12 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Before
     public void setupRepo() {
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          componentRegistry.getClock());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .withClock(componentRegistry.getClock())
+                .build();
         tenantRepository.addTenant(tenant);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         createdMessage = " for tenant '" + tenant + "' created.\"";
@@ -135,7 +137,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_handler_unpacks_application() throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         createHandler().handle(post(outFile));
-        ApplicationFile applicationFile = applicationRepository.getApplicationFileFromSession(tenant, 2, "services.xml", LocalSession.Mode.READ);
+        ApplicationFile applicationFile = applicationRepository.getApplicationFileFromSession(tenant, 2, "services.xml", Session.Mode.READ);
         assertTrue(applicationFile.exists());
     }
 

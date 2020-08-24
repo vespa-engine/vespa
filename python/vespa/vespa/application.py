@@ -1,20 +1,27 @@
 # Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 from typing import Optional, Dict, Tuple, List
-from requests import post
 from pandas import DataFrame
+from requests import post
+from requests.models import Response
 
 from vespa.query import Query, VespaResult
 from vespa.evaluation import EvalMetric
 
 
 class Vespa(object):
-    def __init__(self, url: str, port: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        url: str,
+        port: Optional[int] = None,
+        deployment_message: Optional[List[str]] = None,
+    ) -> None:
         """
         Establish a connection with a Vespa application.
 
         :param url: URL
         :param port: Port
+        :param deployment_message: Message returned by Vespa engine after deployment.
 
             >>> Vespa(url = "https://cord19.vespa.ai")
             >>> Vespa(url = "http://localhost", port = 8080)
@@ -22,12 +29,19 @@ class Vespa(object):
         """
         self.url = url
         self.port = port
+        self.deployment_message = deployment_message
 
         if port is None:
             self.end_point = self.url
         else:
             self.end_point = str(url).rstrip("/") + ":" + str(port)
         self.search_end_point = self.end_point + "/search/"
+
+    def __repr__(self):
+        if self.port:
+            return "Vespa({}, {})".format(self.url, self.port)
+        else:
+            return "Vespa({})".format(self.url)
 
     def query(
         self,
@@ -75,6 +89,22 @@ class Vespa(object):
         else:
             r = post(self.search_end_point, json=body)
             return VespaResult(vespa_result=r.json())
+
+    def feed_data_point(self, schema: str, data_id: str, fields: Dict) -> Response:
+        """
+        Feed a data point to a Vespa app.
+
+        :param schema: The schema that we are sending data to.
+        :param data_id: Unique id associated with this data point.
+        :param fields: Dict containing all the fields required by the `schema`.
+        :return: Response of the HTTP POST request.
+        """
+        end_point = "{}/document/v1/{}/{}/docid/{}".format(
+            self.end_point, schema, schema, str(data_id)
+        )
+        vespa_format = {"fields": fields}
+        response = post(end_point, json=vespa_format)
+        return response
 
     def collect_training_data_point(
         self,

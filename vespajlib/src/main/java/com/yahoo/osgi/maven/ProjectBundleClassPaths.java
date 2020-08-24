@@ -3,9 +3,9 @@ package com.yahoo.osgi.maven;
 
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -60,9 +60,7 @@ public class ProjectBundleClassPaths {
     }
 
     static ProjectBundleClassPaths load(byte[] bytes) {
-        Slime slime = new Slime();
-        new JsonDecoder().decode(slime, bytes);
-        Inspector inspector = slime.get();
+        Inspector inspector = SlimeUtils.jsonToSlime(bytes).get();
         BundleClasspathMapping mainBundle = BundleClasspathMapping.load(inspector.field("mainBundle"));
         Inspector dependenciesInspector = inspector.field("providedDependencies");
         List<BundleClasspathMapping> providedDependencies = new ArrayList<>();

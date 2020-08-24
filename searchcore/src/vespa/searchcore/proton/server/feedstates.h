@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/server/feedhandler.h>
-#include <vespa/searchcore/proton/server/feedstate.h>
-#include <vespa/searchcore/proton/server/ireplaypackethandler.h>
+#include "feedhandler.h"
+#include "feedstate.h"
+#include "ireplaypackethandler.h"
+#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 
 namespace proton {
 

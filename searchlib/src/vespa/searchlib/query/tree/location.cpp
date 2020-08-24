@@ -100,7 +100,7 @@ Location::getJsonFormatString() const
 }
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {
-    return out << loc.getOldFormatString();
+    return out << loc.getJsonFormatString();
 }
 
 } // namespace

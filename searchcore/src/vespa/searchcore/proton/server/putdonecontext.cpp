@@ -9,11 +9,13 @@ using document::Document;
 
 namespace proton {
 
-PutDoneContext::PutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
+PutDoneContext::PutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
+                               IGidToLidChangeHandler &gidToLidChangeHandler,
                                std::shared_ptr<const Document> doc,
                                const document::GlobalId &gid, uint32_t lid,
                                search::SerialNum serialNum, bool enableNotifyPut)
     : OperationDoneContext(std::move(token)),
+      _uncommitted(std::move(uncommitted)),
       _lid(lid),
       _docIdLimit(nullptr),
       _gidToLidChangeHandler(gidToLidChangeHandler),

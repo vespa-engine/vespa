@@ -19,16 +19,16 @@ import java.util.Map;
  */
 class PlaceholderMappingVisitor extends PageTemplateVisitor {
 
-    private Map<String, MapChoice> placeholderIdToChoice=new LinkedHashMap<>();
+    private final Map<String, MapChoice> placeholderIdToChoice = new LinkedHashMap<>();
 
     @Override
     public void visit(MapChoice mapChoice) {
-        List<String> placeholderIds=mapChoice.placeholderIds();
+        List<String> placeholderIds = mapChoice.placeholderIds();
         for (String placeholderId : placeholderIds) {
-            MapChoice existingChoice=placeholderIdToChoice.put(placeholderId,mapChoice);
-            if (existingChoice!=null)
+            MapChoice existingChoice = placeholderIdToChoice.put(placeholderId,mapChoice);
+            if (existingChoice != null)
                 throw new IllegalArgumentException("placeholder id '" + placeholderId + "' is referenced by both " +
-                        mapChoice + " and " + existingChoice + ": Only one reference is allowed");
+                                                   mapChoice + " and " + existingChoice + ": Only one reference is allowed");
         }
     }
 

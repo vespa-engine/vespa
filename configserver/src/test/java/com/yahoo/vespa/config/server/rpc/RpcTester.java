@@ -34,7 +34,6 @@ import org.junit.After;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -91,10 +90,11 @@ public class RpcTester implements AutoCloseable {
                 .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenantName);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          Clock.systemUTC());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         generationCounter = new MemoryGenerationCounter();
         createAndStartRpcServer();
         assertFalse(hostLivenessTracker.lastRequestFrom(myHostname).isPresent());

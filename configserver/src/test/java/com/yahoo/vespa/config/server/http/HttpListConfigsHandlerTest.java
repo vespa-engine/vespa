@@ -21,7 +21,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,11 +62,11 @@ public class HttpListConfigsHandlerTest {
                 .build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenant);
-        ApplicationRepository applicationRepository =
-                new ApplicationRepository(tenantRepository,
-                                          new SessionHandlerTest.MockProvisioner(),
-                                          new OrchestratorMock(),
-                                          Clock.systemUTC());
+        ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         applicationRepository.deploy(testApp, prepareParams());
 
         HttpListConfigsHandler.Context ctx = HttpListConfigsHandler.testOnlyContext();

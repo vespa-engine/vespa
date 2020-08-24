@@ -110,13 +110,13 @@ FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, SerialN
 }
 
 void
-FastAccessDocSubDB::initFeedView(const IAttributeWriter::SP &writer, const DocumentDBConfig &configSnapshot)
+FastAccessDocSubDB::initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig &configSnapshot)
 {
     // Called by executor thread
     auto feedView = std::make_shared<FastAccessFeedView>(
             getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
-            FastAccessFeedView::Context(writer, _docIdLimit));
+            FastAccessFeedView::Context(std::move(writer), _docIdLimit));
 
     _fastAccessFeedView.set(feedView);
     _iFeedView.set(_fastAccessFeedView.get());
@@ -236,7 +236,7 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
     auto writer = std::make_shared<AttributeWriter>(getAndResetInitAttributeManager());
     {
         std::lock_guard<std::mutex> guard(_configMutex);
-        initFeedView(writer, configSnapshot);
+        initFeedView(std::move(writer), configSnapshot);
     }
 }
 
@@ -248,7 +248,6 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
 
     reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
-    updateLidReuseDelayer(&newConfigSnapshot);
     /*
      * If attribute manager should change then document retriever
      * might have to rewrite a different set of fields.  If document

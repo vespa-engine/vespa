@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeErrorCodeAndMessage;
@@ -39,7 +38,6 @@ public class HostHandlerTest {
     private HostHandler handler;
     private final static TenantName mytenant = TenantName.from("mytenant");
     private final static Zone zone = Zone.defaultZone();
-    private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
 
     @Before
@@ -47,12 +45,13 @@ public class HostHandlerTest {
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .zone(zone)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenant);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          Clock.systemUTC());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         handler = new HostHandler(HostHandler.testOnlyContext(), applicationRepository);
     }
 
@@ -60,7 +59,7 @@ public class HostHandlerTest {
     public void require_correct_tenant_and_application_for_hostname() throws Exception {
         ApplicationId applicationId = applicationId();
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
-        Tenant tenant = tenantRepository.getTenant(mytenant);
+        Tenant tenant = applicationRepository.getTenant(applicationId);
         String hostname = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId).get().getAllHosts().iterator().next();
         assertApplicationForHost(hostname, applicationId);
     }

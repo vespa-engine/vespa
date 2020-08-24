@@ -70,7 +70,6 @@ vespa_add_library(searchcore_server STATIC
     minimal_document_retriever.cpp
     move_operation_limiter.cpp
     operationdonecontext.cpp
-    pendinglidtracker.cpp
     persistencehandlerproxy.cpp
     prepare_restart_handler.cpp
     proton.cpp

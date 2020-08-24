@@ -76,7 +76,7 @@ GetDocsumsState::parse_locations()
     assert(_parsedLocations.empty()); // only allowed to call this once
     if (! _args.getLocation().empty()) {
         GeoLocationParser parser;
-        if (parser.parseOldFormatWithField(_args.getLocation())) {
+        if (parser.parseWithField(_args.getLocation())) {
             auto view = parser.getFieldName();
             auto attr_name = PositionDataType::getZCurveFieldName(view);
             GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
@@ -94,7 +94,7 @@ GetDocsumsState::parse_locations()
                 vespalib::string view = iterator.getIndexName();
                 vespalib::string term = iterator.getTerm();
                 GeoLocationParser parser;                
-                if (parser.parseOldFormat(term)) {
+                if (parser.parseNoField(term)) {
                     auto attr_name = PositionDataType::getZCurveFieldName(view);
                     GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
                     _parsedLocations.push_back(spec);

@@ -33,7 +33,6 @@ public class Binding implements Comparable<Binding> {
 
     private final int hashCode;
 
-    @SuppressWarnings("unchecked")
     public static final Binding nullBinding = new Binding(Integer.MAX_VALUE, Collections.<String,String>emptyMap());
 
     public static Binding createFrom(DimensionBinding dimensionBinding) {

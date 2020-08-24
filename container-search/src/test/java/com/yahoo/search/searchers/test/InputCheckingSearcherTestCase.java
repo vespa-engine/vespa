@@ -85,7 +85,7 @@ public class InputCheckingSearcherTestCase {
         assertNull(r.hits().getErrorHit());
         r = execution.search(new Query("/search/?query=%22a.b.0.0.0.0.0.0.c%22"));
         assertNotNull(r.hits().getErrorHit());
-        assertEquals("More than 5 ocurrences of term '0' in a row detected in phrase : \"a b 0 0 0 0 0 0 c\"",
+        assertEquals("More than 5 occurrences of term '0' in a row detected in phrase : \"a b 0 0 0 0 0 0 c\"",
                      r.hits().getErrorHit().errorIterator().next().getDetailedMessage());
         r = execution.search(new Query("/search/?query=a.b.0.0.0.1.0.0.0.c"));
         assertNull(r.hits().getErrorHit());
@@ -97,7 +97,7 @@ public class InputCheckingSearcherTestCase {
         assertNull(r.hits().getErrorHit());
         r = execution.search(new Query("/search/?query=%22a.b.0.0.0.0.0.0.c%22"));
         assertNotNull(r.hits().getErrorHit());
-        assertEquals("More than 5 ocurrences of term '0' in a row detected in phrase : \"a b 0 0 0 0 0 0 c\"",
+        assertEquals("More than 5 occurrences of term '0' in a row detected in phrase : \"a b 0 0 0 0 0 0 c\"",
                      r.hits().getErrorHit().errorIterator().next().getDetailedMessage());
         r = execution.search(new Query("/search/?query=%22a.b.0.0.0.1.0.0.0.c%22"));
         assertNull(r.hits().getErrorHit());

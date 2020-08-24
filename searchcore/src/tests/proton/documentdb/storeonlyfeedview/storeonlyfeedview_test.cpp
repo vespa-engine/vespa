@@ -3,8 +3,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
@@ -87,8 +86,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
     MyMinimalFeedView(const ISummaryAdapter::SP &summaryAdapter,
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
-                      documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                      CommitTimeTracker &commitTimeTracker,
+                      documentmetastore::LidReuseDelayerConfig &lidReuseDelayerConfig,
                       const PersistentParams &params,
                       int &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
@@ -98,8 +96,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                                                      *gidToLidChangeHandler,
                                                      myGetDocumentTypeRepo(),
                                                      writeService,
-                                                     lidReuseDelayer,
-                                                     commitTimeTracker),
+                                                     lidReuseDelayerConfig),
                           params),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
@@ -137,12 +134,11 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
     MoveOperationFeedView(const ISummaryAdapter::SP &summaryAdapter,
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
-                          documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                          CommitTimeTracker &commitTimeTracker,
+                          documentmetastore::LidReuseDelayerConfig &lidReuseDelayerConfig,
                           const PersistentParams &params,
                           int &outstandingMoveOps_) :
-            MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayer,
-                              commitTimeTracker, params, outstandingMoveOps_),
+            MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayerConfig,
+                              params, outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
             removeAttributesCount(0),
@@ -195,8 +191,7 @@ struct FixtureBase {
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
-    documentmetastore::LidReuseDelayer lidReuseDelayer;
-    CommitTimeTracker commitTimeTracker;
+    documentmetastore::LidReuseDelayerConfig lidReuseDelayerConfig;
     typename FeedViewType::UP feedview;
  
     FixtureBase(SubDbType subDbType = SubDbType::READY)
@@ -211,15 +206,14 @@ struct FixtureBase {
                                           subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
-          lidReuseDelayer(writeService, *metaStore),
-          commitTimeTracker(vespalib::duration::zero()),
+          lidReuseDelayerConfig(),
           feedview()
     {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
         ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
-        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayer,
-                                                  commitTimeTracker, params, outstandingMoveOps);
+        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayerConfig,
+                                                  params, outstandingMoveOps);
     }
 
     ~FixtureBase() {

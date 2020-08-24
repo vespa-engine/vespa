@@ -15,6 +15,8 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.di.componentgraph.cycle.CycleFinder;
 import com.yahoo.container.di.componentgraph.cycle.Graph;
+
+import java.util.Collections;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigKey;
 
@@ -164,8 +166,10 @@ public class ComponentGraph {
         }
     }
 
-    public Collection<Object> allConstructedComponentsAndProviders() {
-        return nodes().stream().map(node -> node.constructedInstance().get()).collect(Collectors.toList());
+    public List<Object> allConstructedComponentsAndProviders() {
+        List<Node> orderedNodes = topologicalSort(nodes());
+        Collections.reverse(orderedNodes);
+        return orderedNodes.stream().map(node -> node.constructedInstance().get()).collect(Collectors.toList());
     }
 
     private void completeComponentRegistryNode(ComponentRegistryNode registry) {

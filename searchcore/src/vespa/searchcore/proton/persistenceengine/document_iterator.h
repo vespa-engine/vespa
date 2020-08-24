@@ -19,7 +19,7 @@ private:
     const storage::spi::Bucket            _bucket;;
     const storage::spi::Selection         _selection;
     const storage::spi::IncludedVersions  _versions;
-    const document::FieldSet::UP          _fields;
+    const document::FieldSet::SP          _fields;
     const ssize_t                         _defaultSerializedSize;
     const ReadConsistency                 _readConsistency;
     const bool                            _metaOnly;
@@ -35,12 +35,12 @@ private:
     bool isWeakRead() const { return _readConsistency == ReadConsistency::WEAK; }
 
 public:
-    DocumentIterator(const storage::spi::Bucket &bucket, const document::FieldSet& fields,
+    DocumentIterator(const storage::spi::Bucket &bucket, document::FieldSet::SP fields,
                      const storage::spi::Selection &selection, storage::spi::IncludedVersions versions,
                      ssize_t defaultSerializedSize, bool ignoreMaxBytes,
                      ReadConsistency readConsistency=ReadConsistency::STRONG);
     ~DocumentIterator();
-    void add(const IDocumentRetriever::SP &retriever);
+    void add(IDocumentRetriever::SP retriever);
     storage::spi::IterateResult iterate(size_t maxBytes);
 };
 

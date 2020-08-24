@@ -4,7 +4,6 @@
 #include "forcecommitcontext.h"
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
-#include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/document/fieldvalue/document.h>

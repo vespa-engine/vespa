@@ -87,6 +87,9 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                     // Report with the assumption this will eventually succeed to avoid alerting before we're stuck
                     spareHostCapacity++;
                 }
+                else {
+                    success = false;
+                }
             }
             metric.set("spareHostCapacity", spareHostCapacity, null);
         }

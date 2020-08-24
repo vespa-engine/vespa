@@ -83,8 +83,8 @@ feature_t
 DistanceExecutor::calculateDistance(uint32_t docId)
 {
     _best_index = -1.0;
-    _best_x = 0.0;
-    _best_y = 0.0;
+    _best_x = -180.0 * 1.0e6;
+    _best_y = 90.0 * 1.0e6;
     if ((! _locations.empty()) && (_pos != nullptr)) {
         LOG(debug, "calculate 2D Z-distance from %zu locations", _locations.size());
         return calculate2DZDistance(docId);
@@ -135,8 +135,8 @@ DistanceExecutor::execute(uint32_t docId)
 {
     outputs().set_number(0, calculateDistance(docId));
     outputs().set_number(1, _best_index);
-    outputs().set_number(2, _best_y * 0.000001); // latitude
-    outputs().set_number(3, _best_x * 0.000001); // longitude
+    outputs().set_number(2, _best_y * 1.0e-6); // latitude
+    outputs().set_number(3, _best_x * 1.0e-6); // longitude
 }
 
 const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
