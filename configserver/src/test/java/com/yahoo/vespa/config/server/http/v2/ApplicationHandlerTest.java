@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
@@ -12,7 +11,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
@@ -22,7 +20,6 @@ import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
-import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -32,7 +29,6 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.util.List;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
@@ -70,15 +65,12 @@ public class ApplicationHandlerTest {
     private final static ApplicationId myTenantApplicationId = ApplicationId.from(mytenantName, ApplicationName.defaultName(), InstanceName.defaultName());
     private final static ApplicationId applicationId = ApplicationId.from(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.defaultName());
     private final static MockTesterClient testerClient = new MockTesterClient();
-    private final static NullMetric metric = new NullMetric();
-    private final static ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
     private static final MockLogRetriever logRetriever = new MockLogRetriever();
     private static final Version vespaVersion = Version.fromString("7.8.9");
 
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionHandlerTest.MockProvisioner provisioner;
-    private final MockStateApiFactory stateApiFactory = new MockStateApiFactory();
     private OrchestratorMock orchestrator;
 
     @Before
@@ -92,15 +84,14 @@ public class ApplicationHandlerTest {
         tenantRepository.addTenant(mytenantName);
         provisioner = new SessionHandlerTest.MockProvisioner();
         orchestrator = new OrchestratorMock();
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          configserverConfig,
-                                                          logRetriever,
-                                                          Clock.systemUTC(),
-                                                          testerClient,
-                                                          metric,
-                                                          new InMemoryFlagSource());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(orchestrator)
+                .withClock(componentRegistry.getClock())
+                .withTesterClient(testerClient)
+                .withLogRetriever(logRetriever)
+                .build();
     }
 
     @After
@@ -201,16 +192,13 @@ public class ApplicationHandlerTest {
         String host = "foo.yahoo.com";
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/clustercontroller/" + host + "/status/v1/clusterName1";
         HttpProxy mockHttpProxy = mock(HttpProxy.class);
-        ApplicationRepository applicationRepository = new ApplicationRepository(tenantRepository,
-                                                                                HostProvisionerProvider.withProvisioner(provisioner),
-                                                                                InfraDeployerProvider.empty(),
-                                                                                new ConfigConvergenceChecker(stateApiFactory),
-                                                                                mockHttpProxy,
-                                                                                configserverConfig,
-                                                                                orchestrator,
-                                                                                testerClient,
-                                                                                metric,
-                                                                                new InMemoryFlagSource());
+        ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withHostProvisionerProvider(HostProvisionerProvider.empty())
+                .withOrchestrator(orchestrator)
+                .withTesterClient(testerClient)
+                .withHttpProxy(mockHttpProxy)
+                .build();
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));

@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.LongPredicate;
@@ -68,10 +67,11 @@ public class SessionRepositoryTest {
                 .build();
         tenantRepository = new TenantRepository(globalComponentRegistry, false);
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          Clock.systemUTC());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
     }
 

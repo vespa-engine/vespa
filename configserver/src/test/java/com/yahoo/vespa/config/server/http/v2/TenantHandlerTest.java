@@ -44,10 +44,11 @@ public class TenantHandlerTest {
     @Before
     public void setup() {
         tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().curator(new MockCurator()).build());
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          Clock.systemUTC());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         handler = new TenantHandler(TenantHandler.testOnlyContext(), applicationRepository);
     }
 

@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
@@ -49,10 +48,11 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenantName);
 
-        ApplicationRepository applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          Clock.systemUTC());
+        ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
         Tenant tenant = applicationRepository.getTenant(applicationId());
         sessionId = applicationRepository.getActiveLocalSession(tenant, applicationId()).getSessionId();
@@ -171,10 +171,12 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     private SessionContentHandler createHandler() {
         return new SessionContentHandler(
                 SessionContentHandler.testOnlyContext(),
-                new ApplicationRepository(tenantRepository,
-                                          new SessionHandlerTest.MockProvisioner(),
-                                          new OrchestratorMock(),
-                                          componentRegistry.getClock())
+                new ApplicationRepository.Builder()
+                        .withTenantRepository(tenantRepository)
+                        .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                        .withOrchestrator(new OrchestratorMock())
+                        .withClock(componentRegistry.getClock())
+                        .build()
         );
     }
 
