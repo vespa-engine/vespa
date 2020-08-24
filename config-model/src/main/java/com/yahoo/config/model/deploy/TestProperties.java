@@ -47,7 +47,7 @@ public class TestProperties implements ModelContext.Properties {
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
-    private Quota quota;
+    private Quota quota = Quota.empty();
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
