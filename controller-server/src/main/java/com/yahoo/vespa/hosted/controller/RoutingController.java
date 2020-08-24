@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
@@ -44,7 +43,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -280,14 +278,7 @@ public class RoutingController {
         if (athenzService.isEmpty()) return false;
 
         // Check minimum required compile-version
-        var instance = application.require(deploymentId.applicationId().instance());
-        var compileVersion = Optional.ofNullable(instance.deployments().get(deploymentId.zoneId()))
-                                     .map(Deployment::applicationVersion)
-                                     // Use compile version of the deployed version
-                                     .flatMap(ApplicationVersion::compileVersion)
-                                     // ... or compile version of the last submitted application package. This is the
-                                     //     case for initial deployments.
-                                     .or(() -> application.latestVersion().flatMap(ApplicationVersion::compileVersion));
+        var compileVersion = application.latestVersion().flatMap(ApplicationVersion::compileVersion);
         if (compileVersion.isEmpty()) return false;
         if (compileVersion.get().isBefore(DIRECT_ROUTING_MIN_VERSION)) return false;
         return true;
