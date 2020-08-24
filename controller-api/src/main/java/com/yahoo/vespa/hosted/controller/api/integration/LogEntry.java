@@ -104,7 +104,7 @@ public class LogEntry {
     }
 
     public static Type typeOf(Level level) {
-        return    level.intValue() < Level.INFO.intValue() ? Type.debug
+        return    level.intValue() < Level.INFO.intValue() || level.intValue() == LogLevel.IntValEVENT ? Type.debug
                 : level.intValue() < Level.WARNING.intValue() ? Type.info
                 : level.intValue() < Level.SEVERE.intValue() ? Type.warning
                 : Type.error;
