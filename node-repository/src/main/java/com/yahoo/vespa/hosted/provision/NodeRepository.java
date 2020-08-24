@@ -697,7 +697,7 @@ public class NodeRepository extends AbstractComponent {
                 children.forEach(child -> requireRemovable(child, true, force));
                 db.removeNodes(children);
                 List<Node> removed = new ArrayList<>(children);
-                if (zone.getCloud().dynamicProvisioning())
+                if (zone.getCloud().dynamicProvisioning() || node.type() != NodeType.host)
                     db.removeNodes(List.of(node));
                 else {
                     node = node.with(IP.Config.EMPTY);
