@@ -27,6 +27,7 @@ class DocumentDBConfig;
 struct IDocumentDBReferenceResolver;
 struct MetricsWireService;
 class GidToLidChangeHandler;
+class ICommitable;
 
 /**
  * The searchable sub database supports searching and keeps all attribute fields in memory and
@@ -56,15 +57,18 @@ public:
         matching::QueryLimiter            &_queryLimiter;
         const vespalib::Clock             &_clock;
         vespalib::SyncableThreadExecutor  &_warmupExecutor;
+        ICommitable                       &_commitable;
 
         Context(const FastAccessDocSubDB::Context &fastUpdCtx,
                 matching::QueryLimiter &queryLimiter,
                 const vespalib::Clock &clock,
-                vespalib::SyncableThreadExecutor &warmupExecutor)
+                vespalib::SyncableThreadExecutor &warmupExecutor,
+                ICommitable & commitable)
             : _fastUpdCtx(fastUpdCtx),
               _queryLimiter(queryLimiter),
               _clock(clock),
-              _warmupExecutor(warmupExecutor)
+              _warmupExecutor(warmupExecutor),
+              _commitable(commitable)
         { }
     };
 
@@ -81,6 +85,7 @@ private:
     matching::ConstantValueRepo                 _constantValueRepo;
     SearchableDocSubDBConfigurer                _configurer;
     vespalib::SyncableThreadExecutor           &_warmupExecutor;
+    ICommitable                                &_commitable;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
     DocumentDBFlushConfig                       _flushConfig;
     bool                                        _nodeRetired;
@@ -92,7 +97,7 @@ private:
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 
     void setupIndexManager(searchcorespi::IIndexManager::SP indexManager);
-    void initFeedView(const IAttributeWriter::SP &attrWriter, const DocumentDBConfig &configSnapshot);
+    void initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig &configSnapshot);
     void reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
 
     bool reconfigure(vespalib::Closure0<bool>::UP closure) override;
@@ -102,13 +107,9 @@ private:
     void propagateFlushConfig();
 protected:
     IFlushTargetList getFlushTargetsInternal() override;
-
-    using Parent::updateLidReuseDelayer;
-
-    void updateLidReuseDelayer(const LidReuseDelayerConfig &config) override;
 public:
     SearchableDocSubDB(const Config &cfg, const Context &ctx);
-    ~SearchableDocSubDB();
+    ~SearchableDocSubDB() override;
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
@@ -120,7 +121,7 @@ public:
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
-    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
+    void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
 
     void clearViews() override;
 

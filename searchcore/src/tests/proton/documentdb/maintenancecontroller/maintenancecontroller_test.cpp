@@ -387,6 +387,12 @@ public:
     void syncSubDBs();
     void commit() override { }
     void commitAndWait() override { }
+    void commitAndWait(IPendingLidTracker &, uint32_t ) override {
+        commitAndWait();
+    }
+    void commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) override {
+        commitAndWait();
+    }
     void performSyncSubDBs();
     void notifyClusterStateChanged();
     void performNotifyClusterStateChanged();
@@ -404,8 +410,7 @@ public:
     void
     setPruneConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneConfig)
     {
-        DocumentDBMaintenanceConfig::SP
-            newCfg(new DocumentDBMaintenanceConfig(
+        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            pruneConfig,
                            _mcCfg->getHeartBeatConfig(),
                            _mcCfg->getSessionCachePruneInterval(),
@@ -414,7 +419,7 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig()));
+                           _mcCfg->getFlushConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -422,8 +427,7 @@ public:
     void
     setHeartBeatConfig(const DocumentDBHeartBeatConfig &heartBeatConfig)
     {
-        DocumentDBMaintenanceConfig::SP
-            newCfg(new DocumentDBMaintenanceConfig(
+        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            heartBeatConfig,
                            _mcCfg->getSessionCachePruneInterval(),
@@ -432,7 +436,7 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig()));
+                           _mcCfg->getFlushConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -440,8 +444,7 @@ public:
     void
     setGroupingSessionPruneInterval(vespalib::duration groupingSessionPruneInterval)
     {
-        DocumentDBMaintenanceConfig::SP
-            newCfg(new DocumentDBMaintenanceConfig(
+        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            _mcCfg->getHeartBeatConfig(),
                            groupingSessionPruneInterval,
@@ -450,14 +453,13 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig()));
+                           _mcCfg->getFlushConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
 
     void setLidSpaceCompactionConfig(const DocumentDBLidSpaceCompactionConfig &cfg) {
-        DocumentDBMaintenanceConfig::SP
-            newCfg(new DocumentDBMaintenanceConfig(
+        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            _mcCfg->getHeartBeatConfig(),
                            _mcCfg->getSessionCachePruneInterval(),
@@ -466,21 +468,19 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig()));
+                           _mcCfg->getFlushConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
 
     void
-    performNotifyBucketStateChanged(document::BucketId bucketId,
-                                    BucketInfo::ActiveState newState)
+    performNotifyBucketStateChanged(document::BucketId bucketId, BucketInfo::ActiveState newState)
     {
         _bucketHandler.notifyBucketStateChanged(bucketId, newState);
     }
 
     void
-    notifyBucketStateChanged(const document::BucketId &bucketId,
-                             BucketInfo::ActiveState newState)
+    notifyBucketStateChanged(const document::BucketId &bucketId, BucketInfo::ActiveState newState)
     {
         _executor.execute(makeTask(makeClosure(this,
                                                &MaintenanceControllerFixture::
@@ -494,7 +494,7 @@ public:
 MaintenanceDocumentSubDB
 MyDocumentSubDB::getSubDB()
 {
-    IDocumentRetriever::SP retriever(new MyDocumentRetriever(*this));
+    auto retriever = std::make_shared<MyDocumentRetriever>(*this);
 
     return MaintenanceDocumentSubDB("my_sub_db", _subDBId,
                                     _metaStoreSP,

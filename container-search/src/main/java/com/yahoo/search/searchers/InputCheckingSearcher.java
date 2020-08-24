@@ -19,11 +19,13 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.yolean.Exceptions;
 
 /**
  * Check whether the query tree seems to be "well formed". In other words, run heurestics against
@@ -50,10 +52,8 @@ public class InputCheckingSearcher extends Searcher {
     public Result search(Query query, Execution execution) {
         try {
             checkQuery(query);
-        } catch (IllegalArgumentException e) {
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, "Rejected query \"" + query.toString() + "\" on cause of: " + e.getMessage());
-            }
+        } catch (IllegalInputException e) {
+            log.log(Level.FINE, () -> "Rejected query '" + query.toString() + "' on cause of: " + Exceptions.toMessageString(e));
             return new Result(query, ErrorMessage.createIllegalQuery(e.getMessage()));
         }
         return execution.search(query);
@@ -92,8 +92,9 @@ public class InputCheckingSearcher extends Searcher {
                             repeatedCount++;
                             if (repeatedCount >= MAX_REPEATED_CONSECUTIVE_TERMS_IN_PHRASE) {
                                 repeatedConsecutiveTermsInPhraseRejections.add();
-                                throw new IllegalArgumentException("More than " + MAX_REPEATED_CONSECUTIVE_TERMS_IN_PHRASE +
-                                        " ocurrences of term '" + current + "' in a row detected in phrase : " + phrase.toString());
+                                throw new IllegalInputException("More than " + MAX_REPEATED_CONSECUTIVE_TERMS_IN_PHRASE +
+                                                                " occurrences of term '" + current +
+                                                                "' in a row detected in phrase : " + phrase.toString());
                             }
                         } else {
                             repeatedCount = 0;
@@ -125,8 +126,8 @@ public class InputCheckingSearcher extends Searcher {
                     if (count != null) {
                         if (count.get() >= MAX_REPEATED_TERMS_IN_PHRASE) {
                             repeatedTermsInPhraseRejections.add();
-                            throw new IllegalArgumentException("Phrase contains more than " + MAX_REPEATED_TERMS_IN_PHRASE +
-                                    " occurrences of term '" + current + "' in phrase : " + phrase.toString());
+                            throw new IllegalInputException("Phrase contains more than " + MAX_REPEATED_TERMS_IN_PHRASE +
+                                                            " occurrences of term '" + current + "' in phrase : " + phrase.toString());
                         }
                         count.inc();
                     } else {
@@ -169,8 +170,8 @@ public class InputCheckingSearcher extends Searcher {
             return;
         }
         utfRejections.add();
-        throw new IllegalArgumentException("The user input has been determined to be double encoded UTF-8."
-                                           + " Please investigate whether this is a false positive.");
+        throw new IllegalInputException("The user input has been determined to be double encoded UTF-8."
+                                        + " Please investigate whether this is a false positive.");
     }
 
     private int countSingleCharacterUserTerms(Item queryItem) {

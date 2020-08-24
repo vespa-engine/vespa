@@ -63,19 +63,6 @@ GeoLocationParser::correctDimensionalitySkip(const char * &p) {
 }
 
 bool
-GeoLocationParser::parseOldFormatWithField(const std::string &str)
-{
-     auto sep = str.find(':');
-     if (sep == std::string::npos) {
-         _parseError = "Location string lacks field specification";
-         return false;
-     }
-     _field_name = str.substr(0, sep);
-     std::string only_loc = str.substr(sep + 1);
-     return parseOldFormat(only_loc);
-}
-
-bool
 GeoLocationParser::parseOldFormat(const std::string &locStr)
 {
     bool foundBoundingBox = false;
@@ -220,8 +207,9 @@ GeoLocationParser::parseJsonFormat(const std::string &str)
     vespalib::Slime slime;
     size_t decoded = vespalib::slime::JsonFormat::decode(str, slime);
     if (decoded == 0) {
-        LOG(warning, "bad location JSON: %s\n",
-            slime.get()["error_message"].asString().data);
+        LOG(warning, "bad location JSON: %s\n>> %s <<",
+            slime.get()["error_message"].asString().make_string().c_str(),
+            str.c_str());
         _parseError = "Failed decoding JSON format location";
         return false;
     }

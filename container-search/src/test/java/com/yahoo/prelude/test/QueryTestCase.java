@@ -8,25 +8,21 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.Exceptions;
 import org.hamcrest.Matcher;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.anyOf;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * Tests for query class
@@ -376,7 +372,7 @@ public class QueryTestCase {
         try {
             newQuery(queryString);
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
             assertThat(Exceptions.toMessageString(e), expectedErrorMessage);
         }

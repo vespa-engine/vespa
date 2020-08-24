@@ -12,8 +12,8 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -67,10 +67,12 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void setupRepo() {
         tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenant);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                  new MockProvisioner(),
-                                  new OrchestratorMock(),
-                                  clock);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .withClock(clock)
+                .build();
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
@@ -285,9 +287,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private Slime getData(HttpResponse response) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        Slime data = new Slime();
-        new JsonDecoder().decode(data, baos.toByteArray());
-        return data;
+        return SlimeUtils.jsonToSlime(baos.toByteArray());
     }
 
     private static void assertResponseContains(HttpResponse response, String string) throws IOException {

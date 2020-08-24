@@ -12,7 +12,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
@@ -21,6 +21,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
@@ -55,26 +56,21 @@ public class SessionZooKeeperClient {
     private static final String QUOTA_PATH = "quota";
     private final Curator curator;
     private final ConfigCurator configCurator;
+    private final TenantName tenantName;
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
-    private final Optional<NodeFlavors> nodeFlavors;
-
-    // Only for testing when cache loader does not need cache entries.
-    public SessionZooKeeperClient(Curator curator, Path sessionPath) {
-        this(curator, ConfigCurator.create(curator), sessionPath, "1", Optional.empty());
-    }
 
     public SessionZooKeeperClient(Curator curator,
                                   ConfigCurator configCurator,
-                                  Path sessionPath,
-                                  String serverId,
-                                  Optional<NodeFlavors> nodeFlavors) {
+                                  TenantName tenantName,
+                                  long sessionId,
+                                  String serverId) {
         this.curator = curator;
         this.configCurator = configCurator;
-        this.sessionPath = sessionPath;
+        this.tenantName = tenantName;
+        this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
-        this.nodeFlavors = nodeFlavors;
         this.sessionStatusPath = sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
     }
 
@@ -100,7 +96,7 @@ public class SessionZooKeeperClient {
         return createCompletionWaiter(PREPARE_BARRIER);
     }
 
-    Curator.CompletionWaiter createActiveWaiter() {
+    public Curator.CompletionWaiter createActiveWaiter() {
         return createCompletionWaiter(ACTIVE_BARRIER);
     }
 
@@ -141,7 +137,7 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(configCurator, sessionPath, nodeFlavors);
+        return new ZKApplicationPackage(configCurator, sessionPath);
     }
 
     public ConfigDefinitionRepo getUserConfigDefinitions() {
@@ -153,12 +149,16 @@ public class SessionZooKeeperClient {
     }
 
     public void writeApplicationId(ApplicationId id) {
+        if ( ! id.tenant().equals(tenantName))
+            throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenantName + "'");
         configCurator.putData(applicationIdPath(), id.serializedForm());
     }
 
-    public ApplicationId readApplicationId() {
+    public Optional<ApplicationId> readApplicationId() {
         String idString = configCurator.getData(applicationIdPath());
-        return idString == null ? null : ApplicationId.fromSerializedForm(idString);
+        return (idString == null)
+                ? Optional.empty()
+                : Optional.of(ApplicationId.fromSerializedForm(idString));
     }
 
     void writeApplicationPackageReference(FileReference applicationPackageReference) {
@@ -277,6 +277,10 @@ public class SessionZooKeeperClient {
         transaction.add(createWriteStatusTransaction(Session.Status.NEW).operations());
         transaction.add(CuratorOperations.create(getCreateTimePath(), Utf8.toBytes(String.valueOf(createTime.getEpochSecond()))));
         transaction.commit();
+    }
+
+    private static Path getSessionPath(TenantName tenantName, long sessionId) {
+        return TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId));
     }
 
 }

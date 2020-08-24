@@ -83,7 +83,8 @@
       "public java.lang.String toString()",
       "public static com.yahoo.config.application.api.ApplicationMetaData fromJsonString(java.lang.String)",
       "public com.yahoo.slime.Slime getSlime()",
-      "public java.lang.String asJsonString()"
+      "public java.lang.String asJsonString()",
+      "public byte[] asJsonBytes()"
     ],
     "fields": []
   },

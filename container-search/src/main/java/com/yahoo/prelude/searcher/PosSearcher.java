@@ -75,7 +75,7 @@ public class PosSearcher extends Searcher {
         loc.setAttribute(posAttribute);
 
         try {
-            if (ll == null && xy == null && bb != null) {
+            if (ll == null && xy == null) {
                 parseBoundingBox(bb, loc);
             } else {
                 if (ll != null && xy != null) {

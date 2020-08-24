@@ -83,7 +83,7 @@ GeoLocationSpec parse_location_string(string str) {
         return empty;
     }
     GeoLocationParser parser;
-    if (parser.parseOldFormatWithField(str)) {
+    if (parser.parseWithField(str)) {
         auto attr_name = PositionDataType::getZCurveFieldName(parser.getFieldName());
         return GeoLocationSpec{attr_name, parser.getGeoLocation()};
     } else {

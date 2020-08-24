@@ -11,6 +11,8 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -20,7 +22,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.LongPredicate;
@@ -66,10 +67,11 @@ public class SessionRepositoryTest {
                 .build();
         tenantRepository = new TenantRepository(globalComponentRegistry, false);
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new SessionHandlerTest.MockProvisioner(),
-                                                          new OrchestratorMock(),
-                                                          Clock.systemUTC());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
     }
 
@@ -149,11 +151,11 @@ public class SessionRepositoryTest {
     }
 
     private void createSession(long sessionId, boolean wait) {
-        createSession(sessionId, wait, sessionRepository);
-    }
-
-    private void createSession(long sessionId, boolean wait, SessionRepository sessionRepository) {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionRepository.getSessionPath(sessionId));
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
+                                                                ConfigCurator.create(curator),
+                                                                tenantName,
+                                                                sessionId,
+                                                                ConfigUtils.getCanonicalHostName());
         zkc.createNewSession(Instant.now());
         if (wait) {
             Curator.CompletionWaiter waiter = zkc.getUploadWaiter();

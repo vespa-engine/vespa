@@ -14,6 +14,7 @@ import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.errorhandling.Results;
 import com.yahoo.errorhandling.Results.Builder;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -545,8 +546,8 @@ public class FederationSearcher extends ForkingSearcher {
     private ComponentSpecification asSourceSpec(String source) {
         try {
             return new ComponentSpecification(source);
-        } catch(Exception e) {
-            throw new IllegalArgumentException("The source ref '" + source + "' used for federation is not valid.", e);
+        } catch (Exception e) {
+            throw new IllegalInputException("The source ref '" + source + "' used for federation is not valid.", e);
         }
     }
 

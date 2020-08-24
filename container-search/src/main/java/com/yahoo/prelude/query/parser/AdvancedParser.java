@@ -206,7 +206,7 @@ public class AdvancedParser extends StructuredParser {
         if (!tokens.currentIs(LBRACE)) return 0;
         tokens.skip(LBRACE);
         if (!tokens.currentIsNoIgnore(NUMBER)) throw new IllegalArgumentException("Expected an integer argument");
-        int distance=Integer.valueOf(tokens.next().image);
+        int distance = Integer.valueOf(tokens.next().image);
         if (!tokens.skip(Token.Kind.RBRACE)) throw new IllegalArgumentException("Expected a right brace following the argument");
         return distance;
     }

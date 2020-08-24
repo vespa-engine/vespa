@@ -710,3 +710,23 @@ endfunction()
 function(vespa_install_empty_tmp_dir TARGET)
 install(DIRECTORY DESTINATION ${TARGET} DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_WRITE WORLD_EXECUTE SETGID)
 endfunction()
+
+function(vespa_suppress_warnings_for_protobuf_sources)
+    cmake_parse_arguments(
+        ARG
+        ""
+        ""
+        "SOURCES"
+        ${ARGN}
+    )
+  # protoc-generated files emit compiler warnings that we normally treat as errors.
+  # Instead of rolling our own compiler plugin we'll pragmatically disable the noise.
+  if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+    if(Protobuf_VERSION VERSION_LESS "3.7.0")
+      set(VESPA_DISABLE_UNUSED_WARNING "-Wno-unused-parameter")
+    else()
+      unset(VESPA_DISABLE_UNUSED_WARNING)
+    endif()
+    set_source_files_properties(${ARG_SOURCES} PROPERTIES COMPILE_FLAGS "-Wno-array-bounds -Wno-suggest-override -Wno-inline ${VESPA_DISABLE_UNUSED_WARNING}")
+  endif()
+endfunction()

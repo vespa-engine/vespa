@@ -452,20 +452,20 @@ PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const 
 
 
 PersistenceEngine::CreateIteratorResult
-PersistenceEngine::createIterator(const Bucket &bucket, const document::FieldSet& fields, const Selection &selection,
-                                  IncludedVersions versions, Context & context)
+PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const Selection &selection,
+                                  IncludedVersions versions, Context &context)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
     HandlerSnapshot snapshot = getHandlerSnapshot(rguard, bucket.getBucketSpace());
 
-    auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, fields, selection,
+    auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, std::move(fields), selection,
                                                  versions, _defaultSerializedSize, _ignoreMaxBytes);
     entry->bucket_guards.reserve(snapshot.size());
     for (PersistenceHandlerSequence & handlers = snapshot.handlers(); handlers.valid(); handlers.next()) {
         entry->bucket_guards.push_back(handlers.get()->lockBucket(bucket));
         IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers(context.getReadConsistency());
-        for (size_t i = 0; i < retrievers->size(); ++i) {
-            entry->it.add((*retrievers)[i]);
+        for (const auto & retriever : *retrievers) {
+            entry->it.add(retriever);
         }
     }
     entry->handler_sequence = HandlerSnapshot::release(std::move(snapshot));

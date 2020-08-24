@@ -17,14 +17,8 @@ using Aspect = search::common::GeoLocation::Aspect;
 
 constexpr int32_t plus_inf = std::numeric_limits<int32_t>::max();
 constexpr int32_t minus_inf = std::numeric_limits<int32_t>::min();
-constexpr uint32_t u32_inf = std::numeric_limits<uint32_t>::max();
 
-bool is_parseable(const char *str) {
-    GeoLocationParser parser;
-    return parser.parseOldFormat(str);
-}
-
-bool is_parseable_new(const char *str, bool with_field = false) {
+bool is_parseable(const char *str, bool with_field = false) {
     GeoLocationParser parser;
     if (with_field) {
         return parser.parseWithField(str);
@@ -32,13 +26,7 @@ bool is_parseable_new(const char *str, bool with_field = false) {
     return parser.parseNoField(str);
 }
 
-GeoLocation parse(const char *str) {
-    GeoLocationParser parser;
-    EXPECT_TRUE(parser.parseOldFormat(str));
-    return parser.getGeoLocation();
-}
-
-GeoLocation parse_new(const std::string &str, bool with_field = false) {
+GeoLocation parse(const std::string &str, bool with_field = false) {
     GeoLocationParser parser;
     if (with_field) {
         EXPECT_TRUE(parser.parseWithField(str));
@@ -60,12 +48,12 @@ TEST(GeoLocationParserTest, malformed_bounding_boxes_are_not_parseable) {
 }
 
 TEST(GeoLocationParserTest, new_bounding_box_formats) {
-    EXPECT_TRUE(is_parseable_new("{b:{x:[10,30],y:[20,40]}}"));
-    EXPECT_TRUE(is_parseable_new("{b:{}}"));
-    EXPECT_TRUE(is_parseable_new("{b:[]}"));
-    EXPECT_TRUE(is_parseable_new("{b:10,b:20}"));
-    EXPECT_TRUE(is_parseable_new("{b:[10, 20, 30, 40]}"));
-    EXPECT_FALSE(is_parseable_new("{b:{x:[10,30],y:[20,40]}"));
+    EXPECT_TRUE(is_parseable("{b:{x:[10,30],y:[20,40]}}"));
+    EXPECT_TRUE(is_parseable("{b:{}}"));
+    EXPECT_TRUE(is_parseable("{b:[]}"));
+    EXPECT_TRUE(is_parseable("{b:10,b:20}"));
+    EXPECT_TRUE(is_parseable("{b:[10, 20, 30, 40]}"));
+    EXPECT_FALSE(is_parseable("{b:{x:[10,30],y:[20,40]}"));
 }
 
 TEST(GeoLocationParserTest, malformed_circles_are_not_parseable) {
@@ -81,23 +69,23 @@ TEST(GeoLocationParserTest, malformed_circles_are_not_parseable) {
 }
 
 TEST(GeoLocationParserTest, new_circle_formats) {
-    EXPECT_TRUE(is_parseable_new("{p:{x:10,y:20}}"));
-    EXPECT_TRUE(is_parseable_new("{p:{x:10,y:20},r:5}"));
-    EXPECT_TRUE(is_parseable_new("{p:{x:10, y:10}, r:5}"));
-    EXPECT_TRUE(is_parseable_new("{'p':{y:20,x:10},'r':5}"));
-    EXPECT_TRUE(is_parseable_new("{\n \"p\": { \"x\": 10, \"y\": 20},\n \"r\": 5\n}"));
+    EXPECT_TRUE(is_parseable("{p:{x:10,y:20}}"));
+    EXPECT_TRUE(is_parseable("{p:{x:10,y:20},r:5}"));
+    EXPECT_TRUE(is_parseable("{p:{x:10, y:10}, r:5}"));
+    EXPECT_TRUE(is_parseable("{'p':{y:20,x:10},'r':5}"));
+    EXPECT_TRUE(is_parseable("{\n \"p\": { \"x\": 10, \"y\": 20},\n \"r\": 5\n}"));
     // json demands colon:
-    EXPECT_FALSE(is_parseable_new("{p:{x:10,y:10},r=5}"));
+    EXPECT_FALSE(is_parseable("{p:{x:10,y:10},r=5}"));
     // missing y -> 0 default:
-    EXPECT_TRUE(is_parseable_new("{p:{x:10},r:5}"));
+    EXPECT_TRUE(is_parseable("{p:{x:10},r:5}"));
     // unused extra fields are ignored:
-    EXPECT_TRUE(is_parseable_new("{p:{x:10,y:10,z:10},r:5,c:1,d:17}"));
+    EXPECT_TRUE(is_parseable("{p:{x:10,y:10,z:10},r:5,c:1,d:17}"));
 }
 
 TEST(GeoLocationParserTest, bounding_boxes_can_be_parsed) {
     for (const auto & loc : {
         parse("[2,10,20,30,40]"),
-        parse_new("{b:{x:[10,30],y:[20,40]}}")
+        parse("{b:{x:[10,30],y:[20,40]}}")
     }) {
         EXPECT_EQ(false, loc.has_point);
         EXPECT_EQ(true, loc.bounding_box.active());
@@ -115,7 +103,7 @@ TEST(GeoLocationParserTest, bounding_boxes_can_be_parsed) {
 TEST(GeoLocationParserTest, circles_can_be_parsed) {
     for (const auto & loc : {
         parse("(2,10,20,5,0,0,0)"),
-        parse_new("{p:{x:10,y:20},r:5}")
+        parse("{p:{x:10,y:20},r:5}")
     }) {
         EXPECT_EQ(true, loc.has_point);
         EXPECT_EQ(true, loc.bounding_box.active());
@@ -133,7 +121,7 @@ TEST(GeoLocationParserTest, circles_can_be_parsed) {
 TEST(GeoLocationParserTest, circles_can_have_aspect_ratio) {
     for (const auto & loc : {
         parse("(2,10,20,5,0,0,0,2147483648)"),
-        parse_new("{p:{x:10,y:20},r:5,a:2147483648}")
+        parse("{p:{x:10,y:20},r:5,a:2147483648}")
     }) {
         EXPECT_EQ(true, loc.has_point);
         EXPECT_EQ(true, loc.bounding_box.active());
@@ -146,14 +134,14 @@ TEST(GeoLocationParserTest, circles_can_have_aspect_ratio) {
         EXPECT_EQ(21, loc.bounding_box.x.high);
         EXPECT_EQ(25, loc.bounding_box.y.high);
     }
-    auto loc2 = parse_new("{p:{x:10,y:10},a:3123456789}");
+    auto loc2 = parse("{p:{x:10,y:10},a:3123456789}");
     EXPECT_EQ(3123456789, loc2.x_aspect.multiplier);
 }
 
 TEST(GeoLocationParserTest, bounding_box_can_be_specified_after_circle) {
     for (const auto & loc : {
         parse("(2,10,20,5,0,0,0)[2,10,20,30,40]"),
-        parse_new("{p:{x:10,y:20},r:5,b:{x:[10,30],y:[20,40]}}")
+        parse("{p:{x:10,y:20},r:5,b:{x:[10,30],y:[20,40]}}")
     }) {
         EXPECT_EQ(true, loc.has_point);
         EXPECT_EQ(true, loc.bounding_box.active());
@@ -171,7 +159,7 @@ TEST(GeoLocationParserTest, bounding_box_can_be_specified_after_circle) {
 TEST(GeoLocationParserTest, circles_can_be_specified_after_bounding_box) {
     for (const auto & loc : {
         parse("[2,10,20,30,40](2,10,20,5,0,0,0)"),
-        parse_new("{b:{x:[10,30],y:[20,40]},p:{x:10,y:20},r:5}")
+        parse("{b:{x:[10,30],y:[20,40]},p:{x:10,y:20},r:5}")
     }) {
         EXPECT_EQ(true, loc.has_point);
         EXPECT_EQ(true, loc.bounding_box.active());
@@ -184,7 +172,7 @@ TEST(GeoLocationParserTest, circles_can_be_specified_after_bounding_box) {
         EXPECT_EQ(15, loc.bounding_box.x.high);
         EXPECT_EQ(25, loc.bounding_box.y.high);    
     }
-    const auto &loc = parse_new("{a:12345,b:{x:[8,10],y:[8,10]},p:{x:10,y:10},r:3}");
+    const auto &loc = parse("{a:12345,b:{x:[8,10],y:[8,10]},p:{x:10,y:10},r:3}");
     EXPECT_EQ(true, loc.has_point);
     EXPECT_EQ(10, loc.point.x);
     EXPECT_EQ(10, loc.point.y);
@@ -194,7 +182,7 @@ TEST(GeoLocationParserTest, circles_can_be_specified_after_bounding_box) {
 TEST(GeoLocationParserTest, santa_search_gives_non_wrapped_bounding_box) {
     for (const auto & loc : {
         parse("(2,122163600,89998536,290112,4,2000,0,109704)"),
-        parse_new("{p:{x:122163600,y:89998536},r:290112,a:109704}")
+        parse("{p:{x:122163600,y:89998536},r:290112,a:109704}")
     }) {
         EXPECT_GE(loc.bounding_box.x.high, loc.bounding_box.x.low);
         EXPECT_GE(loc.bounding_box.y.high, loc.bounding_box.y.low);
@@ -204,7 +192,7 @@ TEST(GeoLocationParserTest, santa_search_gives_non_wrapped_bounding_box) {
 TEST(GeoLocationParserTest, near_boundary_search_gives_non_wrapped_bounding_box) {
     for (const auto & loc1 : {
         parse("(2,2000000000,2000000000,3000000000,0,1,0)"),
-        parse_new("{p:{x:2000000000,y:2000000000},r:3000000000}")
+        parse("{p:{x:2000000000,y:2000000000},r:3000000000}")
     }) {
         EXPECT_GE(loc1.bounding_box.x.high, loc1.bounding_box.x.low);
         EXPECT_GE(loc1.bounding_box.y.high, loc1.bounding_box.y.low);
@@ -214,7 +202,7 @@ TEST(GeoLocationParserTest, near_boundary_search_gives_non_wrapped_bounding_box)
     
     for (const auto & loc2 : {
         parse("(2,-2000000000,-2000000000,3000000000,0,1,0)"),
-        parse_new("{p:{x:-2000000000,y:-2000000000},r:3000000000}")
+        parse("{p:{x:-2000000000,y:-2000000000},r:3000000000}")
     }) {
         EXPECT_GE(loc2.bounding_box.x.high, loc2.bounding_box.x.low);
         EXPECT_GE(loc2.bounding_box.y.high, loc2.bounding_box.y.low);
@@ -480,7 +468,7 @@ TEST(GeoLocationParserTest, can_parse_what_query_tree_produces) {
 
     search::query::Location loc_1(point_1);
     std::string str_1 = loc_1.getJsonFormatString();
-    auto result_1 = parse_new(str_1);
+    auto result_1 = parse(str_1);
 
     EXPECT_EQ(true, result_1.has_point);
     EXPECT_EQ(false, result_1.has_radius());
@@ -491,7 +479,7 @@ TEST(GeoLocationParserTest, can_parse_what_query_tree_produces) {
 
     search::query::Location loc_1b(point_1, distance, aspect_ratio);
     std::string str_1b = loc_1b.getJsonFormatString();
-    auto result_1b = parse_new(str_1b);
+    auto result_1b = parse(str_1b);
 
     EXPECT_EQ(true, result_1b.has_point);
     EXPECT_EQ(true, result_1b.has_radius());
@@ -506,7 +494,7 @@ TEST(GeoLocationParserTest, can_parse_what_query_tree_produces) {
 
     search::query::Location loc_2(rectangle_1);
     std::string str_2 = loc_2.getJsonFormatString();
-    auto result_2 = parse_new(str_2);
+    auto result_2 = parse(str_2);
 
     EXPECT_EQ(false, result_2.has_point);
     EXPECT_EQ(false, result_2.has_radius());
@@ -519,7 +507,7 @@ TEST(GeoLocationParserTest, can_parse_what_query_tree_produces) {
 
     search::query::Location loc_3(rectangle_1, point_1, distance, aspect_ratio);
     std::string str_3 = loc_3.getJsonFormatString();
-    auto result_3 = parse_new(str_3);
+    auto result_3 = parse(str_3);
 
     EXPECT_EQ(true, result_3.has_point);
     EXPECT_EQ(true, result_3.has_radius());

@@ -30,9 +30,9 @@ import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
 
 /**
  * Runs JDisc security filters for Servlets
- * This component is split in two due to external dependencies:
+ * This component is split in two:
  *   1) JDiscFilterInvokerFilter, which uses package private methods to support JDisc APIs
- *   2) SecurityFilterInvoker, which uses Security filter classes and therefore must reside in jdisc_http_filters
+ *   2) SecurityFilterInvoker, which is intended for use in a servlet context.
  *
  * @author Tony Vaagenes
  */

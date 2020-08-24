@@ -3,9 +3,8 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
@@ -35,6 +34,7 @@ using document::DocumentId;
 using document::DocumentUpdate;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
+using proton::documentmetastore::LidReuseDelayerConfig;
 using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
@@ -520,8 +520,7 @@ struct FixtureBase
     vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeServiceReal;
     test::ThreadingServiceObserver _writeService;
-    documentmetastore::LidReuseDelayer _lidReuseDelayer;
-    CommitTimeTracker     _commitTimeTracker;
+    vespalib::duration             _visibilityDelay;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
     FixtureBase(vespalib::duration visibilityDelay);
@@ -705,13 +704,11 @@ FixtureBase::FixtureBase(vespalib::duration visibilityDelay)
       _sharedExecutor(1, 0x10000),
       _writeServiceReal(_sharedExecutor),
       _writeService(_writeServiceReal),
-      _lidReuseDelayer(_writeService, _dmsc->get()),
-      _commitTimeTracker(visibilityDelay),
+      _visibilityDelay(visibilityDelay),
       serial(0),
       _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
 {
     _dmsc->constructFreeList();
-    _lidReuseDelayer.setImmediateCommit(visibilityDelay == vespalib::duration::zero());
 }
 
 FixtureBase::~FixtureBase() {
@@ -736,15 +733,13 @@ struct SearchableFeedViewFixture : public FixtureBase
                 *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
-                _lidReuseDelayer,
-                _commitTimeTracker),
+                LidReuseDelayerConfig(_visibilityDelay, true)),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit),
            SearchableFeedView::Context(iw))
     {
-        runInMaster([&]() { _lidReuseDelayer.setHasIndexedOrAttributeFields(true); });
     }
-    virtual IFeedView &getFeedView() override { return fv; }
+    IFeedView &getFeedView() override { return fv; }
 };
 
 struct FastAccessFeedViewFixture : public FixtureBase
@@ -758,13 +753,12 @@ struct FastAccessFeedViewFixture : public FixtureBase
                 *_gidToLidChangeHandler,
                 sc.getRepo(),
                 _writeService,
-                _lidReuseDelayer,
-                _commitTimeTracker),
+                LidReuseDelayerConfig(_visibilityDelay, false)),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
     }
-    virtual IFeedView &getFeedView() override { return fv; }
+    IFeedView &getFeedView() override { return fv; }
 };
 
 void
@@ -920,14 +914,14 @@ assertThreadObserver(uint32_t masterExecuteCnt,
 TEST_F("require that remove() calls removeComplete() via delayed thread service",
         SearchableFeedViewFixture)
 {
-    EXPECT_TRUE(assertThreadObserver(1, 0, 0, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(0, 0, 0, f.writeServiceObserver()));
     f.putAndWait(f.doc1(10));
     // put index fields handled in index thread
-    EXPECT_TRUE(assertThreadObserver(2, 1, 1, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(1, 1, 1, f.writeServiceObserver()));
     f.removeAndWait(f.doc1(20));
     // remove index fields handled in index thread
     // delayed remove complete handled in same index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(4, 2, 2, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(3, 2, 2, f.writeServiceObserver()));
     EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteCnt);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteLid);
 }
@@ -1142,11 +1136,11 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
        SearchableFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(4, 3, 3, f.writeServiceObserver()));
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 5, 4, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(6, 5, 4, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1159,12 +1153,12 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
        SearchableFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(4, 3, 3, f.writeServiceObserver()));
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
     f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 4, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(5, 4, 3, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1227,36 +1221,12 @@ TEST_F("require that commit is not called when inside a commit interval",
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
                   "remove(adapter=index,serialNum=2,lid=1,commit=0),"
                   "ack(Result(0, ))");
+    f.forceCommitAndWait();
 }
 
-TEST_F("require that commit is called when crossing a commit interval",
+TEST_F("require that commit is not implicitly called",
        SearchableFeedViewFixture(SHORT_DELAY))
 {
-    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
-    DocumentContext dc = f.doc1();
-    f.putAndWait(dc);
-    EXPECT_EQUAL(1u, f.miw._commitCount);
-    EXPECT_EQUAL(1u, f.maw._commitCount);
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
-    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
-    f.removeAndWait(dc);
-    EXPECT_EQUAL(2u, f.miw._commitCount);
-    EXPECT_EQUAL(2u, f.maw._commitCount);
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=1),"
-                  "put(adapter=index,serialNum=1,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=1),"
-                  "ack(Result(0, )),"
-                  "remove(adapter=attribute,serialNum=2,lid=1,commit=1),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=2),"
-                  "ack(Result(0, ))");
-}
-
-
-TEST_F("require that commit is not implicitly called after handover to maintenance job",
-       SearchableFeedViewFixture(SHORT_DELAY))
-{
-    f._commitTimeTracker.setReplayDone();
     std::this_thread::sleep_for(SHORT_DELAY + 100ms);
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
@@ -1274,12 +1244,12 @@ TEST_F("require that commit is not implicitly called after handover to maintenan
                   "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
                   "remove(adapter=index,serialNum=2,lid=1,commit=0),"
                   "ack(Result(0, ))");
+    f.forceCommitAndWait();
 }
 
 TEST_F("require that forceCommit updates docid limit",
        SearchableFeedViewFixture(LONG_DELAY))
 {
-    f._commitTimeTracker.setReplayDone();
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
     EXPECT_EQUAL(0u, f.miw._commitCount);
@@ -1298,7 +1268,6 @@ TEST_F("require that forceCommit updates docid limit",
 
 TEST_F("require that forceCommit updates docid limit during shrink", SearchableFeedViewFixture(LONG_DELAY))
 {
-    f._commitTimeTracker.setReplayDone();
     f.putAndWait(f.makeDummyDocs(0, 3, 1000));
     EXPECT_EQUAL(0u, f._docIdLimit.get());
     f.forceCommitAndWait();

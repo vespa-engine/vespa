@@ -2,6 +2,7 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.properties.PropertyMap;
 import com.yahoo.protect.Validator;
@@ -107,7 +108,7 @@ public class QueryProfileProperties extends Properties {
                     String localName = name.get(i);
                     FieldDescription fieldDescription = type.getField(localName);
                     if (fieldDescription == null && type.isStrict())
-                        throw new IllegalArgumentException("'" + localName + "' is not declared in " + type + ", and the type is strict");
+                        throw new IllegalInputException("'" + localName + "' is not declared in " + type + ", and the type is strict");
 
                     // TODO: In addition to strictness, check legality along the way
 
@@ -115,7 +116,7 @@ public class QueryProfileProperties extends Properties {
                         if (i == name.size() - 1) { // at the end of the path, check the assignment type
                             value = fieldDescription.getType().convertFrom(value, profile.getRegistry());
                             if (value == null)
-                                throw new IllegalArgumentException("'" + value + "' is not a " +
+                                throw new IllegalInputException("'" + value + "' is not a " +
                                                                    fieldDescription.getType().toInstanceDescription());
                         }
                         else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
@@ -129,12 +130,12 @@ public class QueryProfileProperties extends Properties {
 
             if (value instanceof String && value.toString().startsWith("ref:")) {
                 if (profile.getRegistry() == null)
-                    throw new IllegalArgumentException("Runtime query profile references does not work when the " +
+                    throw new IllegalInputException("Runtime query profile references does not work when the " +
                                                        "QueryProfileProperties are constructed without a registry");
                 String queryProfileId = value.toString().substring(4);
                 value = profile.getRegistry().findQueryProfile(queryProfileId);
                 if (value == null)
-                    throw new IllegalArgumentException("Query profile '" + queryProfileId + "' is not found");
+                    throw new IllegalInputException("Query profile '" + queryProfileId + "' is not found");
             }
 
             if (value instanceof CompiledQueryProfile) { // this will be due to one of the two clauses above
@@ -149,7 +150,7 @@ public class QueryProfileProperties extends Properties {
             }
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "'", e);
+            throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
         }
     }
 

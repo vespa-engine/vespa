@@ -11,7 +11,7 @@ public class ResourceTarget {
 
     private final boolean adjustForRedundancy;
 
-    /** The target resources per node, assuming the node assignment where this was decided */
+    /** The target real resources per node, assuming the node assignment where this was decided */
     private final double cpu, memory, disk;
 
     private ResourceTarget(double cpu, double memory, double disk, boolean adjustForRedundancy) {

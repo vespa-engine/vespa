@@ -6,6 +6,8 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 
 import java.util.Optional;
@@ -30,7 +32,11 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
     }
 
     MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, ApplicationPackage application) {
-        super(curator, TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
+        super(curator,
+              ConfigCurator.create(curator),
+              tenantName,
+              sessionId,
+              ConfigUtils.getCanonicalHostName());
         this.app = application;
         curator.create(TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
     }

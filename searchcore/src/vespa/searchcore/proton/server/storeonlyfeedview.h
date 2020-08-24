@@ -7,12 +7,14 @@
 #include "isummaryadapter.h"
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
-#include "pendinglidtracker.h"
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
+#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
 #include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
@@ -32,13 +34,10 @@ class ForceCommitContext;
 class OperationDoneContext;
 class PutDoneContext;
 class RemoveDoneContext;
-class CommitTimeTracker;
 class IGidToLidChangeHandler;
 struct IFieldUpdateCallback;
 class RemoveDocumentsOperation;
 class DocumentOperation;
-
-namespace documentmetastore { class ILidReuseDelayer; }
 
 /**
  * The feed view used by the store-only sub database.
@@ -49,7 +48,7 @@ class StoreOnlyFeedView : public IFeedView,
                           protected FeedDebugger
 {
 protected:
-    typedef search::transactionlog::Packet Packet;
+    using Packet = search::transactionlog::Packet;
 public:
     using UP = std::unique_ptr<StoreOnlyFeedView>;
     using SP = std::shared_ptr<StoreOnlyFeedView>;
@@ -69,6 +68,8 @@ public:
     using PromisedStream = std::promise<vespalib::nbostream>;
     using DocumentSP = std::shared_ptr<Document>;
     using DocumentUpdateSP = std::shared_ptr<DocumentUpdate>;
+    using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
+    using LidReuseDelayer = documentmetastore::LidReuseDelayer;
 
     using Lid = search::DocumentIdT;
 
@@ -80,8 +81,7 @@ public:
         IGidToLidChangeHandler                  &_gidToLidChangeHandler;
         const std::shared_ptr<const document::DocumentTypeRepo>    &_repo;
         searchcorespi::index::IThreadingService &_writeService;
-        documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
-        CommitTimeTracker                       &_commitTimeTracker;
+        LidReuseDelayerConfig                    _lidReuseDelayerConfig;
 
         Context(const ISummaryAdapter::SP &summaryAdapter,
                 const search::index::Schema::SP &schema,
@@ -89,16 +89,14 @@ public:
                 IGidToLidChangeHandler &gidToLidChangeHandler,
                 const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                 searchcorespi::index::IThreadingService &writeService,
-                documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                CommitTimeTracker &commitTimeTracker)
+                const LidReuseDelayerConfig & lidReuseDelayerConfig)
             : _summaryAdapter(summaryAdapter),
               _schema(schema),
               _documentMetaStoreContext(documentMetaStoreContext),
               _gidToLidChangeHandler(gidToLidChangeHandler),
               _repo(repo),
               _writeService(writeService),
-              _lidReuseDelayer(lidReuseDelayer),
-              _commitTimeTracker(commitTimeTracker)
+              _lidReuseDelayerConfig(lidReuseDelayerConfig)
         {}
     };
 
@@ -140,13 +138,13 @@ protected:
     };
 
 private:
-    const ISummaryAdapter::SP                _summaryAdapter;
-    const IDocumentMetaStoreContext::SP      _documentMetaStoreContext;
-    const std::shared_ptr<const document::DocumentTypeRepo>     _repo;
-    const document::DocumentType            *_docType;
-    documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
-    CommitTimeTracker                       &_commitTimeTracker;
-    PendingLidTracker                        _pendingLidTracker;
+    const ISummaryAdapter::SP                                _summaryAdapter;
+    const IDocumentMetaStoreContext::SP                      _documentMetaStoreContext;
+    const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
+    const document::DocumentType                            *_docType;
+    LidReuseDelayer                                          _lidReuseDelayer;
+    PendingLidTracker                                        _pendingLidsForDocStore;
+    std::unique_ptr<IPendingLidTracker>                      _pendingLidsForCommit;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -163,6 +161,7 @@ private:
     void putSummary(SerialNum serialNum,  Lid lid, DocumentSP doc, OnOperationDoneType onDone);
     void removeSummary(SerialNum serialNum,  Lid lid, OnWriteDoneType onDone);
     void heartBeatSummary(SerialNum serialNum);
+    bool needCommit() const;
 
 
     bool useDocumentStore(SerialNum replaySerialNum) const {
@@ -235,9 +234,8 @@ public:
     const search::IDocumentStore &getDocumentStore() const { return _summaryAdapter->getDocumentStore(); }
     const IDocumentMetaStoreContext::SP &getDocumentMetaStore() const { return _documentMetaStoreContext; }
     searchcorespi::index::IThreadingService &getWriteService() { return _writeService; }
-    documentmetastore::ILidReuseDelayer &getLidReuseDelayer() { return _lidReuseDelayer; }
-    CommitTimeTracker &getCommitTimeTracker() { return _commitTimeTracker; }
     IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
+    LidReuseDelayerConfig getLidReuseDelayerConfig() const { return _lidReuseDelayer.getConfig(); }
 
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override { return _repo; }
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override;
@@ -265,6 +263,7 @@ public:
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    IPendingLidTracker & getUncommittedLidsTracker() override;
 };
 
 }

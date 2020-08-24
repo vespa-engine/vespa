@@ -22,11 +22,10 @@ public:
 
     struct Context
     {
-        const IAttributeWriter::SP &_attrWriter;
+        const IAttributeWriter::SP   _attrWriter;
         DocIdLimit                  &_docIdLimit;
-        Context(const IAttributeWriter::SP &attrWriter,
-                DocIdLimit &docIdLimit)
-            : _attrWriter(attrWriter),
+        Context(IAttributeWriter::SP attrWriter, DocIdLimit &docIdLimit)
+            : _attrWriter(std::move(attrWriter)),
               _docIdLimit(docIdLimit)
         { }
     };

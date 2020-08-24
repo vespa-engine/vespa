@@ -2,6 +2,7 @@
 package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.geo.DistanceParser;
 import com.yahoo.geo.ParsedDegree;
@@ -27,7 +28,6 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PredicateQueryItem;
 import com.yahoo.prelude.query.PrefixItem;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
@@ -72,10 +72,6 @@ import static com.yahoo.search.yql.YqlParser.AND_SEGMENTING;
 import static com.yahoo.search.yql.YqlParser.ANNOTATIONS;
 import static com.yahoo.search.yql.YqlParser.APPROXIMATE;
 import static com.yahoo.search.yql.YqlParser.ASCENDING_HITS_ORDER;
-import static com.yahoo.search.yql.YqlParser.BOUNDS;
-import static com.yahoo.search.yql.YqlParser.BOUNDS_LEFT_OPEN;
-import static com.yahoo.search.yql.YqlParser.BOUNDS_OPEN;
-import static com.yahoo.search.yql.YqlParser.BOUNDS_RIGHT_OPEN;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
@@ -83,7 +79,6 @@ import static com.yahoo.search.yql.YqlParser.DEFAULT_TARGET_NUM_HITS;
 import static com.yahoo.search.yql.YqlParser.DESCENDING_HITS_ORDER;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
-import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
 import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
@@ -109,7 +104,6 @@ import static com.yahoo.search.yql.YqlParser.RANKED;
 import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
 import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
-import static com.yahoo.search.yql.YqlParser.START_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
@@ -117,7 +111,6 @@ import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
-import static com.yahoo.search.yql.YqlParser.URI;
 import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
 import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
 import static com.yahoo.search.yql.YqlParser.WAND;
@@ -169,13 +162,18 @@ public class SelectParser implements Parser {
     private QueryTree buildTree() {
         Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString()).get();
         if (inspector.field("error_message").valid()) {
-            throw new QueryException("Illegal query: " + inspector.field("error_message").asString() +
+            throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() +
                                      " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
         }
 
-        Item root = walkJson(inspector);
-        connectItems();
-        return new QueryTree(root);
+        try {
+            Item root = walkJson(inspector);
+            connectItems();
+            return new QueryTree(root);
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalInputException("Illegal JSON query", e);
+        }
     }
 
     private Item walkJson(Inspector inspector) {
@@ -229,8 +227,8 @@ public class SelectParser implements Parser {
     private List<String> toGroupingRequests(String groupingJson) {
         Inspector inspector = SlimeUtils.jsonToSlime(groupingJson).get();
         if (inspector.field("error_message").valid()) {
-            throw new QueryException("Illegal query: " + inspector.field("error_message").asString() +
-                                     " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+            throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() +
+                                            " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
         }
 
         List<String> operations = new ArrayList<>();
@@ -1199,9 +1197,10 @@ public class SelectParser implements Parser {
     private void connectItems() {
         for (ConnectedItem entry : connectedItems) {
             TaggableItem to = identifiedItems.get(entry.toId);
-            Preconditions.checkNotNull(to,
-                    "Item '%s' was specified to connect to item with ID %s, which does not "
-                            + "exist in the query.", entry.fromItem, entry.toId);
+            if (to == null)
+                throw new IllegalArgumentException("Item '" + entry.fromItem +
+                                                   "' was specified to connect to item with ID " + entry.toId +
+                                                   ", which does not exist in the query.");
             entry.fromItem.setConnectivity((Item) to, entry.weight);
         }
     }

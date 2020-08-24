@@ -76,9 +76,8 @@ public class GenericExpansionRewriter extends QueryRewriteSearcher {
                              HashMap<String, File> fileList) {
         logger = Logger.getLogger(GenericExpansionRewriter.class.getName());
         FSA fsa = (FSA)rewriterDicts.get(GENERIC_EXPAND_DICT);
-        if(fsa==null) {
-            RewriterUtils.error(logger, "Error retrieving FSA dictionary: " +
-                                              GENERIC_EXPAND_DICT);
+        if (fsa==null) {
+            RewriterUtils.error(logger, "Error retrieving FSA dictionary: " + GENERIC_EXPAND_DICT);
             return false;
         }
         // Create Phrase Matcher

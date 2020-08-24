@@ -166,15 +166,15 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
       _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>()),
-      _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
-      _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
+      _feedHandler(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsDirectWriter),
+      _visibility(_feedHandler, _writeService, _feedView),
+      _subDBs(*this, *this, _feedHandler, _visibility, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
               makeSubDBConfig(protonCfg.distribution,
                               findDocumentDB(protonCfg.documentdb, docTypeName.getName())->allocation,
                               protonCfg.numsearcherthreads),
               hwInfo),
       _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
-      _visibility(_feedHandler, _writeService, _feedView),
       _lidSpaceCompactionHandlers(),
       _jobTrackers(),
       _calc(),
@@ -549,6 +549,7 @@ DocumentDB::tearDownReferences()
 void
 DocumentDB::close()
 {
+    waitForOnlineState();
     {
         lock_guard guard(_configMutex);
         _state.enterShutdownState();
@@ -736,18 +737,7 @@ BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
 std::shared_ptr<std::vector<IDocumentRetriever::SP> >
 DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistency)
 {
-    std::shared_ptr<std::vector<IDocumentRetriever::SP> > list = _subDBs.getRetrievers();
-
-    if (consistency == IDocumentRetriever::ReadConsistency::STRONG) {
-        std::shared_ptr<std::vector<IDocumentRetriever::SP> > wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
-        wrappedList->reserve(list->size());
-        for (const IDocumentRetriever::SP & retriever : *list) {
-            wrappedList->push_back(std::make_shared<CommitAndWaitDocumentRetriever>(retriever, _visibility));
-        }
-        return wrappedList;
-    } else {
-        return list;
-    }
+    return _subDBs.getRetrievers(consistency, _visibility);
 }
 
 SerialNum

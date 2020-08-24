@@ -2,9 +2,7 @@
 package com.yahoo.search.query.profile.types.test;
 
 import com.yahoo.component.ComponentId;
-import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
@@ -434,7 +432,7 @@ public class QueryProfileTypeTestCase {
                                                     com.yahoo.jdisc.http.HttpRequest.Method.GET),
                       profile.compile(null));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
             assertThat(Exceptions.toMessageString(e),
                        containsString("Could not set 'myUserQueryProfile.nondeclared' to 'someValue': 'nondeclared' is not declared in query profile type 'userStrict', and the type is strict"));
@@ -549,7 +547,7 @@ public class QueryProfileTypeTestCase {
                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET),
                     cRegistry.getComponent("topMap"));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
             assertThat(Exceptions.toMessageString(e),
                        containsString("Could not set 'subMap.typeProfile.someValue' to 'value': 'someValue' is not declared in query profile type 'testtypeStrict', and the type is strict"));

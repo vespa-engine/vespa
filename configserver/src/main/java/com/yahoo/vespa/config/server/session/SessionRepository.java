@@ -9,7 +9,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -166,7 +165,7 @@ public class SessionRepository {
                                                               getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
-        session.setPrepared();
+        setPrepared(session);
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
     }
@@ -183,8 +182,9 @@ public class SessionRepository {
                     deleteLocalSession(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
                     //  Sessions with state ACTIVATE, but which are not actually active
-                    ApplicationId applicationId = candidate.getApplicationId();
-                    Long activeSession = activeSessions.get(applicationId);
+                    Optional<ApplicationId> applicationId = candidate.getOptionalApplicationId();
+                    if (applicationId.isEmpty()) continue;
+                    Long activeSession = activeSessions.get(applicationId.get());
                     if (activeSession == null || activeSession != candidate.getSessionId()) {
                         deleteLocalSession(candidate);
                         log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " created " +
@@ -489,7 +489,7 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
     }
@@ -547,7 +547,7 @@ public class SessionRepository {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
             SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient, applicationRepo);
+            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -596,7 +596,7 @@ public class SessionRepository {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient, applicationRepo);
+        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
     }
 
     /**
@@ -624,7 +624,8 @@ public class SessionRepository {
                 log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return Optional.empty();
             }
-            ApplicationId applicationId = sessionZKClient.readApplicationId();
+            ApplicationId applicationId = sessionZKClient.readApplicationId()
+                    .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.INFO, "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addLocalSession(localSession);
@@ -654,9 +655,7 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
-        Optional<NodeFlavors> nodeFlavors = componentRegistry.getZone().nodeFlavors();
-        Path sessionPath = getSessionPath(sessionId);
-        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), sessionPath, serverId, nodeFlavors);
+        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), tenantName, sessionId, serverId);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {
@@ -693,8 +692,24 @@ public class SessionRepository {
         return curator.lock(lockPath(sessionId), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
     }
 
+    public Clock clock() { return clock; }
+
     private Path lockPath(long sessionId) {
         return locksPath.append(String.valueOf(sessionId));
+    }
+
+    public Transaction createActivateTransaction(Session session) {
+        Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
+        transaction.add(applicationRepo.createPutTransaction(session.getApplicationId(), session.getSessionId()).operations());
+        return transaction;
+    }
+
+    private Transaction createSetStatusTransaction(Session session, Session.Status status) {
+        return session.sessionZooKeeperClient.createWriteStatusTransaction(status);
+    }
+
+    void setPrepared(Session session) {
+        session.setStatus(Session.Status.PREPARE);
     }
 
     private static class FileTransaction extends AbstractTransaction {

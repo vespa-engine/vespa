@@ -25,6 +25,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
+import com.yahoo.text.Utf8;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
@@ -60,9 +61,17 @@ import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
@@ -90,8 +99,10 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
 
@@ -114,11 +125,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
-    private final FileDistributionStatus fileDistributionStatus;
+    private final FileDistributionStatus fileDistributionStatus = new FileDistributionStatus();
     private final Orchestrator orchestrator;
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
+    private final BooleanFlag useTenantMetaData;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -129,7 +141,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
                                  TesterClient testerClient,
-                                 Metric metric) {
+                                 Metric metric,
+                                 FlagSource flagSource) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -138,48 +151,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              configserverConfig,
              orchestrator,
              new LogRetriever(),
-             new FileDistributionStatus(),
              Clock.systemUTC(),
              testerClient,
-             metric);
-    }
-
-    // For testing
-    public ApplicationRepository(TenantRepository tenantRepository,
-                                 Provisioner hostProvisioner,
-                                 Orchestrator orchestrator,
-                                 Clock clock) {
-        this(tenantRepository,
-             hostProvisioner,
-             orchestrator,
-             new ConfigserverConfig(new ConfigserverConfig.Builder()),
-             new LogRetriever(),
-             clock,
-             new TesterClient(),
-             new NullMetric());
-    }
-
-    // For testing
-    public ApplicationRepository(TenantRepository tenantRepository,
-                                 Provisioner hostProvisioner,
-                                 Orchestrator orchestrator,
-                                 ConfigserverConfig configserverConfig,
-                                 LogRetriever logRetriever,
-                                 Clock clock,
-                                 TesterClient testerClient,
-                                 Metric metric) {
-        this(tenantRepository,
-             Optional.of(hostProvisioner),
-             Optional.empty(),
-             new ConfigConvergenceChecker(),
-             new HttpProxy(new SimpleHttpFetcher()),
-             configserverConfig,
-             orchestrator,
-             logRetriever,
-             new FileDistributionStatus(),
-             clock,
-             testerClient,
-             metric);
+             metric,
+             flagSource);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -190,22 +165,108 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   ConfigserverConfig configserverConfig,
                                   Orchestrator orchestrator,
                                   LogRetriever logRetriever,
-                                  FileDistributionStatus fileDistributionStatus,
                                   Clock clock,
                                   TesterClient testerClient,
-                                  Metric metric) {
-        this.tenantRepository = tenantRepository;
-        this.hostProvisioner = hostProvisioner;
-        this.infraDeployer = infraDeployer;
-        this.convergeChecker = configConvergenceChecker;
-        this.httpProxy = httpProxy;
-        this.configserverConfig = configserverConfig;
-        this.orchestrator = orchestrator;
-        this.logRetriever = logRetriever;
-        this.fileDistributionStatus = fileDistributionStatus;
-        this.clock = clock;
-        this.testerClient = testerClient;
-        this.metric = metric;
+                                  Metric metric,
+                                  FlagSource flagSource) {
+        this.tenantRepository = Objects.requireNonNull(tenantRepository);
+        this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
+        this.infraDeployer = Objects.requireNonNull(infraDeployer);
+        this.convergeChecker = Objects.requireNonNull(configConvergenceChecker);
+        this.httpProxy = Objects.requireNonNull(httpProxy);
+        this.configserverConfig = Objects.requireNonNull(configserverConfig);
+        this.orchestrator = Objects.requireNonNull(orchestrator);
+        this.logRetriever = Objects.requireNonNull(logRetriever);
+        this.clock = Objects.requireNonNull(clock);
+        this.testerClient = Objects.requireNonNull(testerClient);
+        this.metric = Objects.requireNonNull(metric);
+        this.useTenantMetaData = Flags.USE_TENANT_META_DATA.bindTo(flagSource);
+    }
+
+    public static class Builder {
+        private TenantRepository tenantRepository;
+        private Optional<Provisioner> hostProvisioner;
+        private HttpProxy httpProxy = new HttpProxy(new SimpleHttpFetcher());
+        private Clock clock = Clock.systemUTC();
+        private ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
+        private Orchestrator orchestrator;
+        private LogRetriever logRetriever = new LogRetriever();
+        private TesterClient testerClient = new TesterClient();
+        private Metric metric = new NullMetric();
+        private FlagSource flagSource = new InMemoryFlagSource();
+
+        public Builder withTenantRepository(TenantRepository tenantRepository) {
+            this.tenantRepository = tenantRepository;
+            return this;
+        }
+
+        public Builder withClock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        public Builder withProvisioner(Provisioner provisioner) {
+            if (this.hostProvisioner != null) throw new IllegalArgumentException("provisioner already set in builder");
+            this.hostProvisioner = Optional.ofNullable(provisioner);
+            return this;
+        }
+
+        public Builder withHostProvisionerProvider(HostProvisionerProvider hostProvisionerProvider) {
+            if (this.hostProvisioner != null) throw new IllegalArgumentException("provisioner already set in builder");
+            this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
+            return this;
+        }
+
+        public Builder withHttpProxy(HttpProxy httpProxy) {
+            this.httpProxy = httpProxy;
+            return this;
+        }
+
+        public Builder withConfigserverConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
+
+        public Builder withOrchestrator(Orchestrator orchestrator) {
+            this.orchestrator = orchestrator;
+            return this;
+        }
+
+        public Builder withLogRetriever(LogRetriever logRetriever) {
+            this.logRetriever = logRetriever;
+            return this;
+        }
+
+        public Builder withTesterClient(TesterClient testerClient) {
+            this.testerClient = testerClient;
+            return this;
+        }
+
+        public Builder withFlagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
+            return this;
+        }
+
+        public Builder withMetric(Metric metric) {
+            this.metric = metric;
+            return this;
+        }
+
+        public ApplicationRepository build() {
+            return new ApplicationRepository(tenantRepository,
+                                             hostProvisioner,
+                                             InfraDeployerProvider.empty().getInfraDeployer(),
+                                             new ConfigConvergenceChecker(),
+                                             httpProxy,
+                                             configserverConfig,
+                                             orchestrator,
+                                             logRetriever,
+                                             clock,
+                                             testerClient,
+                                             metric,
+                                             flagSource);
+        }
+
     }
 
     public Metric metric() {
@@ -251,7 +312,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                 boolean ignoreSessionStaleFailure, Instant now) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
         activate(tenant, sessionId, prepareParams.getTimeoutBudget(), ignoreSessionStaleFailure);
         return result;
@@ -344,6 +405,69 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false);
     }
 
+    public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
+        Tenant tenant = tenantRepository.getTenant(prepared.getTenantName());
+        Transaction transaction = tenant.getSessionRepository().createActivateTransaction(prepared);
+        if (active != null) {
+            checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
+            checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
+            transaction.add(active.createDeactivateTransaction().operations());
+        }
+
+        if (useTenantMetaData.value())
+            transaction.add(writeTenantMetaData(tenant).operations());
+
+        return transaction;
+    }
+
+    private byte[] createMetaData(Tenant tenant) {
+        return new TenantMetaData(tenant.getSessionRepository().clock().instant()).asJsonBytes();
+    }
+
+    TenantMetaData getTenantMetaData(Tenant tenant) {
+        Optional<byte[]> data = tenantRepository.getCurator().getData(TenantRepository.getTenantPath(tenant.getName()));
+        return data.map(bytes -> TenantMetaData.fromJsonString(Utf8.toString(bytes))).orElse(new TenantMetaData(tenant.getCreatedTime()));
+    }
+
+    private Transaction writeTenantMetaData(Tenant tenant) {
+        return new CuratorTransaction(tenantRepository.getCurator())
+                .add(CuratorOperations.setData(TenantRepository.getTenantPath(tenant.getName()).getAbsolute(),
+                                               createMetaData(tenant)));
+    }
+
+    static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {
+        long activeSessionAtCreate = session.getActiveSessionAtCreate();
+        log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        if (activeSessionAtCreate == 0) return; // No active session at create
+
+        long sessionId = session.getSessionId();
+        long currentActiveSessionSessionId = currentActiveSession.getSessionId();
+        log.log(Level.FINE, currentActiveSession.logPre() + "sessionId=" + sessionId +
+                            ", current active session=" + currentActiveSessionSessionId);
+        if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
+            currentActiveSessionSessionId != sessionId) {
+            String errMsg = currentActiveSession.logPre() + "Cannot activate session " +
+                            sessionId + " because the currently active session (" +
+                            currentActiveSessionSessionId + ") has changed since session " + sessionId +
+                            " was created (was " + activeSessionAtCreate + " at creation time)";
+            if (ignoreStaleSessionFailure) {
+                log.warning(errMsg + " (Continuing because of force.)");
+            } else {
+                throw new ActivationConflictException(errMsg);
+            }
+        }
+    }
+
+    // As of now, config generation is based on session id, and config generation must be a monotonically
+    // increasing number
+    static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
+        if (sessionId < currentActiveSessionId) {
+            throw new ActivationConflictException("It is not possible to activate session " + sessionId +
+                                                  ", because it is older than current active session (" +
+                                                  currentActiveSessionId + ")");
+        }
+    }
+
     // ---------------- Application operations ----------------------------------------------------------------
 
     /**
@@ -363,7 +487,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId, Duration waitTime) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
@@ -505,6 +629,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = getRemoteSession(tenant, sessionId);
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
+        } catch (NotFoundException e) {
+            log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
@@ -537,7 +664,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private boolean localSessionHasBeenDeleted(ApplicationId applicationId, long sessionId, Duration waitTime) {
-        SessionRepository sessionRepository = tenantRepository.getTenant(applicationId.tenant()).getSessionRepository();
+        SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
         Instant end = Instant.now().plus(waitTime);
         do {
             if (sessionRepository.getRemoteSession(sessionId) == null) return true;
@@ -545,6 +672,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } while (Instant.now().isBefore(end));
 
         return false;
+    }
+
+    public Optional<String> getApplicationPackageReference(ApplicationId applicationId) {
+        Optional<String> applicationPackage = Optional.empty();
+        RemoteSession session = getActiveSession(applicationId);
+        if (session != null) {
+            FileReference applicationPackageReference = session.getApplicationPackageReference();
+            File downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig().fileReferencesDir()));
+            if (applicationPackageReference != null && ! fileReferenceExistsOnDisk(downloadDirectory, applicationPackageReference))
+                applicationPackage = Optional.of(applicationPackageReference.value());
+        }
+        return applicationPackage;
+    }
+
+    public List<Version> getAllVersions(ApplicationId applicationId) {
+        Optional<ApplicationSet> applicationSet = getCurrentActiveApplicationSet(getTenant(applicationId), applicationId);
+        if (applicationSet.isEmpty())
+            return List.of();
+        else
+            return applicationSet.get().getAllVersions(applicationId);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
@@ -605,17 +752,28 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
+
+
+    public CompletionWaiter activate(LocalSession session, Session previousActiveSession, ApplicationId applicationId, boolean ignoreSessionStaleFailure) {
+        CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
+        NestedTransaction transaction = new NestedTransaction();
+        transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, ignoreSessionStaleFailure));
+        hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
+        transaction.commit();
+        return waiter;
+    }
+
     /**
      * Gets the active Session for the given application id.
      *
      * @return the active session, or null if there is no active session for the given application id.
      */
     public RemoteSession getActiveSession(ApplicationId applicationId) {
-        return getActiveSession(tenantRepository.getTenant(applicationId.tenant()), applicationId);
+        return getActiveSession(getTenant(applicationId), applicationId);
     }
 
     public long getSessionIdForApplication(ApplicationId applicationId) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
         return getSessionIdForApplication(tenant, applicationId);
     }
@@ -644,7 +802,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                           DeployLogger logger,
                                           boolean internalRedeploy,
                                           TimeoutBudget timeoutBudget) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         RemoteSession fromSession = getExistingSession(tenant, applicationId);
         LocalSession session = sessionRepository.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
@@ -664,7 +822,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
-        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        Tenant tenant = getTenant(applicationId);
         tenant.getApplicationRepo().createApplication(applicationId);
         Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
         LocalSession session = tenant.getSessionRepository().createSession(applicationDirectory,
@@ -682,9 +840,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()
                 .forEach(sessionList -> sessionList.stream()
-                        .map(Session::getApplicationId)
-                        .filter(Objects::nonNull)
-                        .forEach(applicationIds::add));
+                        .map(Session::getOptionalApplicationId)
+                        .filter(Optional::isPresent)
+                        .forEach(appId -> applicationIds.add(appId.get())));
 
         Map<ApplicationId, Long> activeSessions = new HashMap<>();
         applicationIds.forEach(applicationId -> {
@@ -723,11 +881,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
+        if ( ! useTenantMetaData.value()) return Set.of();
+
         return tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
                 .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
-                .filter(tenantName -> tenantRepository.getTenant(tenantName).getCreatedTime().isBefore(now.minus(ttlForUnusedTenant)))
+                .filter(tenantName -> getTenantMetaData(tenantRepository.getTenant(tenantName)).lastDeployTimestamp().isBefore(now.minus(ttlForUnusedTenant)))
                 .peek(tenantRepository::deleteTenant)
                 .collect(Collectors.toSet());
     }

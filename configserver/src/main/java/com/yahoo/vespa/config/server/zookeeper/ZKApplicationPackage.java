@@ -13,7 +13,6 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -52,17 +51,17 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public static final String allocatedHostsNode = "allocatedHosts";
     private final ApplicationMetaData metaData;
 
-    public ZKApplicationPackage(ConfigCurator zk, Path sessionPath, Optional<NodeFlavors> nodeFlavors) {
+    public ZKApplicationPackage(ConfigCurator zk, Path sessionPath) {
         verifyAppPath(zk, sessionPath);
         zkApplication = new ZKApplication(zk, sessionPath);
         metaData = readMetaDataFromLiveApp(zkApplication);
         importFileRegistries();
-        allocatedHosts = importAllocatedHosts(nodeFlavors);
+        allocatedHosts = importAllocatedHosts();
     }
 
-    private Optional<AllocatedHosts> importAllocatedHosts(Optional<NodeFlavors> nodeFlavors) {
+    private Optional<AllocatedHosts> importAllocatedHosts() {
         if ( ! zkApplication.exists(ZKApplicationPackage.allocatedHostsNode)) return Optional.empty();
-        return Optional.of(readAllocatedHosts(nodeFlavors));
+        return Optional.of(readAllocatedHosts());
     }
 
     /**
@@ -70,9 +69,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
      *
      * @return the allocated hosts at this node or empty if there is no data at this path
      */
-    private AllocatedHosts readAllocatedHosts(Optional<NodeFlavors> nodeFlavors) {
+    private AllocatedHosts readAllocatedHosts() {
         try {
-            return AllocatedHostsSerializer.fromJson(zkApplication.getBytes(ZKApplicationPackage.allocatedHostsNode), nodeFlavors);
+            return AllocatedHostsSerializer.fromJson(zkApplication.getBytes(ZKApplicationPackage.allocatedHostsNode));
         } catch (Exception e) {
             throw new RuntimeException("Unable to read allocated hosts", e);
         }

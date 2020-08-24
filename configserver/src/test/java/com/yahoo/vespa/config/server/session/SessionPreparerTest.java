@@ -42,13 +42,16 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import javax.security.auth.x500.X500Principal;
@@ -80,7 +83,6 @@ import static org.junit.Assert.assertTrue;
 public class SessionPreparerTest {
 
     private static final Path tenantPath = Path.createRoot();
-    private static final Path sessionsPath = tenantPath.append("sessions").append("testapp");
     private static final File testApp = new File("src/test/apps/app");
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
     private static final Version version123 = new Version(1, 2, 3);
@@ -97,6 +99,9 @@ public class SessionPreparerTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setUp() throws IOException {
@@ -145,25 +150,44 @@ public class SessionPreparerTest {
 
     @Test
     public void require_that_application_validation_exception_is_ignored_if_forced() throws IOException {
-        prepare(invalidTestApp, new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).timeoutBudget(TimeoutBudgetTest.day()).build());
+        prepare(invalidTestApp,
+                new PrepareParams.Builder()
+                        .applicationId(applicationId())
+                        .ignoreValidationErrors(true)
+                        .timeoutBudget(TimeoutBudgetTest.day())
+                        .build(),
+                1);
     }
 
     @Test
     public void require_that_zookeeper_is_not_written_to_if_dryrun() throws IOException {
-        prepare(testApp, new PrepareParams.Builder().applicationId(applicationId()).dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build());
-        assertFalse(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
+        long sessionId = 1;
+        prepare(testApp,
+                new PrepareParams.Builder()
+                .applicationId(applicationId())
+                        .dryRun(true)
+                        .timeoutBudget(TimeoutBudgetTest.day())
+                        .build(),
+                1);
+        Path sessionPath = sessionPath(sessionId);
+        assertFalse(configCurator.exists(sessionPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
-        PrepareResult result = prepare(testApp, new PrepareParams.Builder().applicationId(applicationId()).dryRun(true).build());
+        PrepareResult result = prepare(testApp,
+                                       new PrepareParams.Builder()
+                                               .applicationId(applicationId())
+                                               .dryRun(true)
+                                               .build(),
+                                       1);
         assertTrue(result.getFileRegistries().get(version321).export().isEmpty());
     }
 
     @Test
     public void require_that_application_is_prepared() throws Exception {
         prepare(testApp);
-        assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
+        assertTrue(configCurator.exists(sessionPath(1).append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -172,7 +196,7 @@ public class SessionPreparerTest {
         HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
         hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().applicationId(applicationId("default")).build(),
-                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, new SessionZooKeeperClient(curator, sessionsPath));
+                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
     }
     
     @Test
@@ -187,28 +211,37 @@ public class SessionPreparerTest {
         hostValidator.update(applicationId, Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
                          Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app,
-                         new SessionZooKeeperClient(curator, sessionsPath));
+                         createSessionZooKeeperClient());
         assertEquals(logged.toString(), "");
     }
 
     @Test
     public void require_that_application_id_is_written_in_prepare() throws IOException {
+        PrepareParams params = new PrepareParams.Builder().applicationId(applicationId()).build();
+        int sessionId = 1;
+        prepare(testApp, params);
+        assertThat(createSessionZooKeeperClient(sessionId).readApplicationId().get(), is(applicationId()));
+    }
+
+    @Test
+    public void require_that_writing_wrong_application_id_fails() throws IOException {
         TenantName tenant = TenantName.from("tenant");
         ApplicationId origId = new ApplicationId.Builder()
-                               .tenant(tenant)
-                               .applicationName("foo").instanceName("quux").build();
+                .tenant(tenant)
+                .applicationName("foo")
+                .instanceName("quux")
+                .build();
         PrepareParams params = new PrepareParams.Builder().applicationId(origId).build();
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("Error preparing session");
         prepare(testApp, params);
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, sessionsPath);
-        assertTrue(configCurator.exists(sessionsPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
-        assertThat(zkc.readApplicationId(), is(origId));
     }
 
     @Test
     public void require_that_file_reference_of_application_package_is_written_to_zk() throws Exception {
         flagSource.withBooleanFlag(Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.id(), true);
         prepare(testApp);
-        assertTrue(configCurator.exists(sessionsPath.append(APPLICATION_PACKAGE_REFERENCE_PATH).getAbsolute()));
+        assertTrue(configCurator.exists(sessionPath(1).append(APPLICATION_PACKAGE_REFERENCE_PATH).getAbsolute()));
     }
 
     @Test
@@ -333,10 +366,14 @@ public class SessionPreparerTest {
     }
 
     private PrepareResult prepare(File app, PrepareParams params) throws IOException {
+        return prepare(app, params, 1);
+    }
+
+    private PrepareResult prepare(File app, PrepareParams params, long sessionId) throws IOException {
         FilesApplicationPackage applicationPackage = getApplicationPackage(app);
         return preparer.prepare(new HostRegistry<>(), getLogger(), params,
                                 Optional.empty(), tenantPath, Instant.now(), applicationPackage.getAppDir(),
-                                applicationPackage, new SessionZooKeeperClient(curator, sessionsPath));
+                                applicationPackage, createSessionZooKeeperClient(sessionId));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {
@@ -358,6 +395,18 @@ public class SessionPreparerTest {
     private ApplicationId applicationId(String applicationName) {
         return ApplicationId.from(TenantName.defaultName(),
                                   ApplicationName.from(applicationName), InstanceName.defaultName());
+    }
+
+    private SessionZooKeeperClient createSessionZooKeeperClient() {
+        return createSessionZooKeeperClient(1);
+    }
+
+    private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
+        return new SessionZooKeeperClient(curator, configCurator, applicationId().tenant(), sessionId, ConfigUtils.getCanonicalHostName());
+    }
+
+    private Path sessionPath(long sessionId) {
+        return TenantRepository.getSessionsPath(applicationId().tenant()).append(String.valueOf(sessionId));
     }
 
     private static class FailWithTransientExceptionProvisioner implements Provisioner {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "operationdonecontext.h"
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/serialnum.h>
 
@@ -22,16 +23,17 @@ class IGidToLidChangeHandler;
  */
 class PutDoneContext : public OperationDoneContext
 {
-    uint32_t                _lid;
-    DocIdLimit             *_docIdLimit;
-    IGidToLidChangeHandler &_gidToLidChangeHandler;
-    document::GlobalId      _gid;
-    search::SerialNum       _serialNum;
-    bool                    _enableNotifyPut;
+    IPendingLidTracker::Token _uncommitted;
+    uint32_t                  _lid;
+    DocIdLimit               *_docIdLimit;
+    IGidToLidChangeHandler   &_gidToLidChangeHandler;
+    document::GlobalId        _gid;
+    search::SerialNum         _serialNum;
+    bool                      _enableNotifyPut;
     std::shared_ptr<const document::Document> _doc;
 
 public:
-    PutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
+    PutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, IGidToLidChangeHandler &gidToLidChangeHandler,
                    std::shared_ptr<const document::Document> doc,
                    const document::GlobalId &gid, uint32_t lid, search::SerialNum serialNum, bool enableNotifyPut);
     ~PutDoneContext() override;

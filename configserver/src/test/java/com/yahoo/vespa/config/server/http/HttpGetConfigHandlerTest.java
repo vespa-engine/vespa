@@ -19,7 +19,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 import java.util.Collections;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -58,11 +57,11 @@ public class HttpGetConfigHandlerTest {
                 .build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenant);
-        ApplicationRepository applicationRepository =
-                new ApplicationRepository(tenantRepository,
-                                          new SessionHandlerTest.MockProvisioner(),
-                                          new OrchestratorMock(),
-                                          Clock.systemUTC());
+        ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         handler = new HttpGetConfigHandler(HttpGetConfigHandler.testOnlyContext(), tenantRepository);
         applicationRepository.deploy(testApp, prepareParams());
     }

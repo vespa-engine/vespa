@@ -275,7 +275,7 @@ public class ZooKeeperClient {
      * @param metaData The application metadata.
      */
     private void write(ApplicationMetaData metaData) {
-        configCurator.putData(getZooKeeperAppPath(ConfigCurator.META_ZK_PATH).getAbsolute(), metaData.asJsonString());
+        configCurator.putData(getZooKeeperAppPath(ConfigCurator.META_ZK_PATH).getAbsolute(), metaData.asJsonBytes());
     }
 
     void cleanupZooKeeper() {

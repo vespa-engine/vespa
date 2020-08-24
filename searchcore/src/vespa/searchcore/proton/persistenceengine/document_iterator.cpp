@@ -66,7 +66,7 @@ DocumentIterator::checkMeta(const search::DocumentMetaData &meta) const
 }
 
 DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
-                                   const document::FieldSet& fields,
+                                   document::FieldSet::SP fields,
                                    const storage::spi::Selection &selection,
                                    storage::spi::IncludedVersions versions,
                                    ssize_t defaultSerializedSize,
@@ -75,10 +75,10 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
     : _bucket(bucket),
       _selection(selection),
       _versions(versions),
-      _fields(fields.clone()),
+      _fields(std::move(fields)),
       _defaultSerializedSize((readConsistency == ReadConsistency::WEAK) ? defaultSerializedSize : -1),
       _readConsistency(readConsistency),
-      _metaOnly(fields.getType() == document::FieldSet::Type::NONE),
+      _metaOnly(_fields->getType() == document::FieldSet::Type::NONE),
       _ignoreMaxBytes((readConsistency == ReadConsistency::WEAK) && ignoreMaxBytes),
       _fetchedData(false),
       _sources(),
@@ -90,9 +90,9 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
 DocumentIterator::~DocumentIterator() = default;
 
 void
-DocumentIterator::add(const IDocumentRetriever::SP &retriever)
+DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    _sources.push_back(retriever);
+    _sources.push_back(std::move(retriever));
 }
 
 IterateResult

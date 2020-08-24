@@ -39,8 +39,9 @@ public:
     UpdateResult update(const Bucket&, Timestamp timestamp, DocumentUpdateSP update, Context&) override;
     GetResult get(const Bucket&, const document::FieldSet& fieldSet, const DocumentId& id, Context&) const override;
 
-    CreateIteratorResult createIterator(const Bucket&, const document::FieldSet& fieldSet,
-                                        const Selection& selection, IncludedVersions versions, Context&) override;
+    CreateIteratorResult
+    createIterator(const Bucket &bucket, FieldSetSP fieldSet, const Selection &selection, IncludedVersions versions,
+                   Context &context) override;
 
     IterateResult iterate(IteratorId id, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId id, Context&) override;

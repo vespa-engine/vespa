@@ -163,7 +163,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                                       query.toString(), elapsedMillis / 1000.0)));
             }
             return new Result(query, ErrorMessage.createTimeout(e.getMessage()));
-        } catch (InterruptedException|IllegalArgumentException e) {
+        } catch (InterruptedException | IllegalArgumentException e) {
             return new Result(query, ErrorMessage.createBackendCommunicationError(e.getMessage()));
         }
 
