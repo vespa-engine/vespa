@@ -178,7 +178,7 @@ public class TestRunner implements LegacyTestRunner {
                 exception.printStackTrace(file);
             }
             catch (IOException ignored) { }
-            status = Status.ERROR;
+            status = exception instanceof NoTestsException ? Status.FAILURE : Status.ERROR;
             return;
         }
         status = success ? Status.SUCCESS : Status.FAILURE;
@@ -187,7 +187,7 @@ public class TestRunner implements LegacyTestRunner {
     private void writeTestApplicationPom(TestProfile testProfile) throws IOException {
         List<Path> files = listFiles(artifactsPath);
         Path testJar = files.stream().filter(file -> file.toString().endsWith("tests.jar")).findFirst()
-                       .orElseThrow(() -> new IllegalStateException("No file ending with 'tests.jar' found under '" + artifactsPath + "'!"));
+                       .orElseThrow(() -> new NoTestsException("No file ending with 'tests.jar' found under '" + artifactsPath + "'!"));
         String pomXml = PomXmlGenerator.generatePomXml(testProfile, files, testJar);
         testPath.toFile().mkdirs();
         Files.write(testPath.resolve("pom.xml"), pomXml.getBytes());
@@ -202,6 +202,11 @@ public class TestRunner implements LegacyTestRunner {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to list files under " + directory, e);
         }
+    }
+
+
+    static class NoTestsException extends RuntimeException {
+        private NoTestsException(String message) { super(message); }
     }
 
 }
