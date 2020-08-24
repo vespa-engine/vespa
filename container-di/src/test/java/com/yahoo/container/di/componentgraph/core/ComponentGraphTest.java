@@ -89,24 +89,24 @@ public class ComponentGraphTest {
 
     @Test
     public void all_created_components_are_returned_in_reverse_topological_order() {
-        Node innerComponent = mockComponentNode(SimpleComponent.class);
-        Node middleComponent = mockComponentNode(ComponentTakingComponent.class);
-        Node outerComponent = mockComponentNode(ComponentTakingComponentTakingComponent.class);
-        middleComponent.inject(innerComponent);
-        outerComponent.inject(innerComponent);
+        for (int i = 0; i < 10; i++) {
+            Node innerComponent = mockComponentNode(SimpleComponent.class);
+            Node middleComponent = mockComponentNode(ComponentTakingComponent.class);
+            Node outerComponent = mockComponentNode(ComponentTakingComponentTakingComponent.class);
 
-        ComponentGraph componentGraph = new ComponentGraph();
-        componentGraph.add(innerComponent);
-        componentGraph.add(middleComponent);
-        componentGraph.add(outerComponent);
-        componentGraph.complete();
+            ComponentGraph componentGraph = new ComponentGraph();
+            componentGraph.add(innerComponent);
+            componentGraph.add(middleComponent);
+            componentGraph.add(outerComponent);
+            componentGraph.complete();
 
-        innerComponent.constructInstance();
-        middleComponent.constructInstance();
-        outerComponent.constructInstance();
+            innerComponent.constructInstance();
+            middleComponent.constructInstance();
+            outerComponent.constructInstance();
 
-        assertEquals(List.of(outerComponent.constructedInstance().get(), middleComponent.constructedInstance().get(), innerComponent.constructedInstance().get()),
-                     componentGraph.allConstructedComponentsAndProviders());
+            assertEquals(List.of(outerComponent.constructedInstance().get(), middleComponent.constructedInstance().get(), innerComponent.constructedInstance().get()),
+                         componentGraph.allConstructedComponentsAndProviders());
+        }
     }
 
     @Test
