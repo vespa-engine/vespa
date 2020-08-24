@@ -55,6 +55,7 @@ protected:
         : _typeRef(type_in),
           _cellsRef()
     {}
+    DenseTensorView(const DenseTensorView &rhs) : DenseTensorView(rhs._typeRef, rhs._cellsRef) {}
 
     void initCellsRef(TypedCells cells_in) {
         assert(_typeRef.cell_type() == cells_in.type);

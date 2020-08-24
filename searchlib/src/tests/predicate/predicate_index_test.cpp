@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_index_test");

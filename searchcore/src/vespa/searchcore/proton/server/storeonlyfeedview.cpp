@@ -1,21 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "storeonlyfeedview.h"
 #include "forcecommitcontext.h"
 #include "ireplayconfig.h"
 #include "operationdonecontext.h"
 #include "putdonecontext.h"
 #include "remove_batch_done_context.h"
 #include "removedonecontext.h"
-#include "storeonlyfeedview.h"
 #include "updatedonecontext.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/common/gatecallback.h>
@@ -40,6 +38,7 @@ using storage::spi::Timestamp;
 using vespalib::IllegalStateException;
 using vespalib::makeLambdaTask;
 using vespalib::make_string;
+using proton::documentmetastore::LidReuseDelayer;
 
 namespace proton {
 
@@ -50,18 +49,19 @@ private:
     IDestructorCallback::SP _moveDoneCtx;
 
 public:
-    PutDoneContextForMove(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
+    PutDoneContextForMove(FeedToken token, IPendingLidTracker::Token uncommitted,
+                          IGidToLidChangeHandler &gidToLidChangeHandler,
                           std::shared_ptr<const Document> doc,
                           const document::GlobalId &gid, uint32_t lid, search::SerialNum serialNum,
                           bool enableNotifyPut, IDestructorCallback::SP moveDoneCtx)
-        : PutDoneContext(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut),
+        : PutDoneContext(std::move(token), std::move(uncommitted), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut),
           _moveDoneCtx(std::move(moveDoneCtx))
     {}
     ~PutDoneContextForMove() override = default;
 };
 
 std::shared_ptr<PutDoneContext>
-createPutDoneContext(FeedToken token,
+createPutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
                      IGidToLidChangeHandler &gidToLidChangeHandler,
                      std::shared_ptr<const Document> doc,
                      const document::GlobalId &gid, uint32_t lid,
@@ -70,25 +70,29 @@ createPutDoneContext(FeedToken token,
 {
     std::shared_ptr<PutDoneContext> result;
     if (moveDoneCtx) {
-        result = std::make_shared<PutDoneContextForMove>(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut, std::move(moveDoneCtx));
+        result = std::make_shared<PutDoneContextForMove>(std::move(token), std::move(uncommitted), gidToLidChangeHandler,
+                                                         std::move(doc), gid, lid, serialNum, enableNotifyPut, std::move(moveDoneCtx));
     } else {
-        result = std::make_shared<PutDoneContext>(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut);
+        result = std::make_shared<PutDoneContext>(std::move(token), std::move(uncommitted), gidToLidChangeHandler,
+                                                  std::move(doc), gid, lid, serialNum, enableNotifyPut);
     }
     return result;
 }
 
 std::shared_ptr<PutDoneContext>
-createPutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
+createPutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
+                     IGidToLidChangeHandler &gidToLidChangeHandler,
                      std::shared_ptr<const Document> doc,
                      const document::GlobalId &gid, uint32_t lid, SerialNum serialNum, bool enableNotifyPut)
 {
-    return createPutDoneContext(std::move(token), gidToLidChangeHandler, std::move(doc), gid, lid, serialNum, enableNotifyPut, IDestructorCallback::SP());
+    return createPutDoneContext(std::move(token), std::move(uncommitted), gidToLidChangeHandler, std::move(doc), gid,
+                                lid, serialNum, enableNotifyPut, IDestructorCallback::SP());
 }
 
 std::shared_ptr<UpdateDoneContext>
-createUpdateDoneContext(FeedToken token, const DocumentUpdate::SP &upd)
+createUpdateDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, const DocumentUpdate::SP &upd)
 {
-    return std::make_shared<UpdateDoneContext>(std::move(token), upd);
+    return std::make_shared<UpdateDoneContext>(std::move(token), std::move(uncommitted), upd);
 }
 
 void setPrev(DocumentOperation &op, const documentmetastore::IStore::Result &result,
@@ -188,6 +192,15 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
     meta_store.move(op.getPrevLid(), op.getLid());
 }
 
+std::unique_ptr<IPendingLidTracker>
+createUncommitedLidTracker(bool needImmediateCommit) {
+    if (needImmediateCommit) {
+        return std::make_unique<NoopLidTracker>();
+    } else {
+        return std::make_unique<PendingLidTracker>();
+    }
+}
+
 }  // namespace
 
 StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams &params)
@@ -197,9 +210,9 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _documentMetaStoreContext(ctx._documentMetaStoreContext),
       _repo(ctx._repo),
       _docType(nullptr),
-      _lidReuseDelayer(ctx._lidReuseDelayer),
-      _commitTimeTracker(ctx._commitTimeTracker),
-      _pendingLidTracker(),
+      _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get(), ctx._lidReuseDelayerConfig),
+      _pendingLidsForDocStore(),
+      _pendingLidsForCommit(createUncommitedLidTracker(_lidReuseDelayer.getImmediateCommit())),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
       _params(params),
@@ -217,6 +230,10 @@ StoreOnlyFeedView::sync()
     _writeService.summary().sync();
 }
 
+IPendingLidTracker &
+StoreOnlyFeedView::getUncommittedLidsTracker() {
+    return *_pendingLidsForCommit;
+}
 void
 StoreOnlyFeedView::forceCommit(SerialNum serialNum)
 {
@@ -237,7 +254,7 @@ StoreOnlyFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onComm
 void
 StoreOnlyFeedView::considerEarlyAck(FeedToken & token)
 {
-    if (_commitTimeTracker.hasVisibilityDelay() && token) {
+    if ( ! needCommit() && token) {
         token.reset();
     }
 }
@@ -288,10 +305,11 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
 
     if (putOp.getValidDbdId(_params._subDbId)) {
-        bool immediateCommit = _commitTimeTracker.needCommit();
+        bool immediateCommit = needCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(std::move(token), _gidToLidChangeHandler, doc, gid, putOp.getLid(), serialNum,
+            createPutDoneContext(std::move(token), _pendingLidsForCommit->produce(putOp.getLid()),
+                                 _gidToLidChangeHandler, doc, gid, putOp.getLid(), serialNum,
                                  putOp.changedDbdId() && useDocumentMetaStore(serialNum));
         putSummary(serialNum, putOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, putOp.getLid(), *doc, immediateCommit, onWriteDone);
@@ -302,6 +320,11 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
         internalRemove(std::move(token), serialNum, std::move(pendingNotifyRemoveDone),
                        putOp.getPrevLid(), IDestructorCallback::SP());
     }
+}
+
+bool
+StoreOnlyFeedView::needCommit() const {
+    return _lidReuseDelayer.getImmediateCommit();
 }
 
 void
@@ -350,41 +373,38 @@ StoreOnlyFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                                    FutureStream futureStream, OnOperationDoneType onDone)
 {
-    _pendingLidTracker.produce(lid);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), onDone, this] () mutable {
+            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, this] () mutable {
                 (void) onDone;
+                (void) trackerToken;
                 vespalib::nbostream os = futureStream.get();
                 if (!os.empty()) {
                     _summaryAdapter->put(serialNum, lid, os);
                 }
-                _pendingLidTracker.consume(lid);
             }));
 #pragma GCC diagnostic pop
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, OnOperationDoneType onDone)
 {
-    _pendingLidTracker.produce(lid);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, doc = std::move(doc), onDone, lid, this] {
+            makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, lid, this] {
                 (void) onDone;
+                (void) trackerToken;
                 _summaryAdapter->put(serialNum, lid, *doc);
-                _pendingLidTracker.consume(lid);
             }));
 #pragma GCC diagnostic pop
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
-    _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, onDone, this] {
+            makeLambdaTask([serialNum, lid, onDone, trackerToken = _pendingLidsForDocStore.produce(lid), this] {
                 (void) onDone;
+                (void) trackerToken;
                 _summaryAdapter->remove(serialNum, lid);
-                _pendingLidTracker.consume(lid);
             }));
 }
 void StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
@@ -440,8 +460,8 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
     }
     considerEarlyAck(token);
 
-    bool immediateCommit = _commitTimeTracker.needCommit();
-    auto onWriteDone = createUpdateDoneContext(std::move(token), updOp.getUpdate());
+    bool immediateCommit = needCommit();
+    auto onWriteDone = createUpdateDoneContext(std::move(token), _pendingLidsForCommit->produce(updOp.getLid()), updOp.getUpdate());
     UpdateScope updateScope(*_schema, upd);
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone, updateScope);
 
@@ -449,7 +469,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         PromisedDoc promisedDoc;
         FutureDoc futureDoc = promisedDoc.get_future().share();
         onWriteDone->setDocument(futureDoc);
-        _pendingLidTracker.waitForConsumedLid(lid);
+        _pendingLidsForDocStore.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }
@@ -612,7 +632,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, SerialNum serialNum,
                                           std::move(pendingNotifyRemoveDone), (explicitReuseLid ? lid : 0u),
                                           std::move(moveDoneCtx));
     removeSummary(serialNum, lid, onWriteDone);
-    bool immediateCommit = _commitTimeTracker.needCommit();
+    bool immediateCommit = needCommit();
     removeAttributes(serialNum, lid, immediateCommit, onWriteDone);
     removeIndexedFields(serialNum, lid, immediateCommit, onWriteDone);
 }
@@ -725,7 +745,7 @@ StoreOnlyFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp)
 void
 StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
 {
-    bool immediateCommit = _commitTimeTracker.needCommit();
+    bool immediateCommit = needCommit();
     size_t rm_count = removeDocuments(delOp, true, immediateCommit);
     LOG(debug, "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
         _params._docTypeName.toString().c_str(), delOp.getBucketId().toString().c_str(), rm_count);
@@ -764,10 +784,11 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(moveOp, docId.getGlobalId(), docId);
     bool docAlreadyExists = moveOp.getValidPrevDbdId(_params._subDbId);
     if (moveOp.getValidDbdId(_params._subDbId)) {
-        bool immediateCommit = _commitTimeTracker.needCommit();
+        bool immediateCommit = needCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(FeedToken(), _gidToLidChangeHandler, doc, gid, moveOp.getLid(), serialNum,
+            createPutDoneContext(FeedToken(), _pendingLidsForCommit->produce(moveOp.getLid()),
+                                 _gidToLidChangeHandler, doc, gid, moveOp.getLid(), serialNum,
                                  moveOp.changedDbdId() && useDocumentMetaStore(serialNum), doneCtx);
         putSummary(serialNum, moveOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, moveOp.getLid(), *doc, immediateCommit, onWriteDone);

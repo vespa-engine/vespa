@@ -32,6 +32,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         IDocumentSubDBOwner &owner,
         search::transactionlog::SyncProxy &tlSyncer,
         const IGetSerialNum &getSerialNum,
+        ICommitable & commitable,
         const DocTypeName &docTypeName,
         searchcorespi::index::IThreadingService &writeService,
         vespalib::SyncableThreadExecutor &warmupExecutor,
@@ -72,7 +73,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                     cfg.getNumSearchThreads()),
                 SearchableDocSubDB::Context(
                         FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
-                        queryLimiter, clock, warmupExecutor)));
+                        queryLimiter, clock, warmupExecutor, commitable)));
 
     _subDBs.push_back
         (new StoreOnlyDocSubDB(
@@ -129,9 +130,9 @@ DocumentSubDBCollection::createRetrievers()
 namespace {
 
 IDocumentRetriever::SP
-wrapRetriever(IDocumentRetriever::SP retriever, ICommitable &commit)
+wrapRetriever(IDocumentRetriever::SP retriever, ICommitable &commit, IPendingLidTracker & unCommitedLidsTracker)
 {
-    return std::make_shared<CommitAndWaitDocumentRetriever>(std::move(retriever), commit);
+    return std::make_shared<CommitAndWaitDocumentRetriever>(std::move(retriever), commit, unCommitedLidsTracker);
 }
 
 }
@@ -144,9 +145,11 @@ DocumentSubDBCollection::getRetrievers(IDocumentRetriever::ReadConsistency consi
         auto wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
         wrappedList->reserve(list->size());
         assert(list->size() == 3);
-        wrappedList->push_back(wrapRetriever((*list)[_readySubDbId], visibilityHandler));
+        wrappedList->push_back(wrapRetriever((*list)[_readySubDbId], visibilityHandler,
+                                             getReadySubDB()->getFeedView()->getUncommittedLidsTracker()));
         wrappedList->push_back((*list)[_remSubDbId]);
-        wrappedList->push_back(wrapRetriever((*list)[_notReadySubDbId], visibilityHandler));
+        wrappedList->push_back(wrapRetriever((*list)[_notReadySubDbId], visibilityHandler,
+                                             getNotReadySubDB()->getFeedView()->getUncommittedLidsTracker()));
         return wrappedList;
     } else {
         return list;
@@ -158,7 +161,8 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommit
     MaintenanceDocumentSubDB readySubDB(getReadySubDB()->getName(),
                                         _readySubDbId,
                                         getReadySubDB()->getDocumentMetaStoreContext().getSP(),
-                                        wrapRetriever((*retrievers)[_readySubDbId], commit),
+                                        wrapRetriever((*retrievers)[_readySubDbId], commit,
+                                                      getReadySubDB()->getFeedView()->getUncommittedLidsTracker()),
                                         getReadySubDB()->getFeedView());
     MaintenanceDocumentSubDB remSubDB(getRemSubDB()->getName(),
                                       _remSubDbId,
@@ -168,7 +172,8 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommit
     MaintenanceDocumentSubDB notReadySubDB(getNotReadySubDB()->getName(),
                                            _notReadySubDbId,
                                            getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
-                                           wrapRetriever((*retrievers)[_notReadySubDbId], commit),
+                                           wrapRetriever((*retrievers)[_notReadySubDbId], commit,
+                                                         getNotReadySubDB()->getFeedView()->getUncommittedLidsTracker()),
                                            getNotReadySubDB()->getFeedView());
     mc.syncSubDBs(readySubDB, remSubDB, notReadySubDB);
 }

@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
+import java.time.Clock;
 import java.time.Duration;
 
 /**
@@ -20,7 +21,7 @@ import java.time.Duration;
  */
 public class ConfigServerMaintenance extends AbstractComponent {
 
-    //private final TenantsMaintainer tenantsMaintainer;
+    private final TenantsMaintainer tenantsMaintainer;
     private final FileDistributionMaintainer fileDistributionMaintainer;
     private final SessionsMaintainer sessionsMaintainer;
     private final ApplicationPackageMaintainer applicationPackageMaintainer;
@@ -32,8 +33,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
                                    FlagSource flagSource,
                                    Metric metric) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
-        // TODO: Disabled until we have application metadata per tenant
-        //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
+        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, flagSource, defaults.defaultInterval, Clock.systemUTC());
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofMinutes(1), flagSource);
         applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofMinutes(1), flagSource);
@@ -44,6 +44,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         fileDistributionMaintainer.close();
         sessionsMaintainer.close();
         applicationPackageMaintainer.close();
+        tenantsMaintainer.close();
     }
 
     /*

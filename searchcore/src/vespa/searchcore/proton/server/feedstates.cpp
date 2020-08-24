@@ -10,7 +10,7 @@
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/util/closuretask.h>
-
+#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedstates");
@@ -20,6 +20,7 @@ using search::transactionlog::RPC;
 using search::SerialNum;
 using vespalib::Executor;
 using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 using vespalib::makeTask;
 using vespalib::make_string;
 using proton::bucketdb::IBucketDBHandler;
@@ -47,19 +48,19 @@ handleProgress(TlsReplayProgress &progress, SerialNum currentSerial)
 }
 
 void
-handlePacket(PacketWrapper::SP wrap, EntryHandler entryHandler)
+handlePacket(PacketWrapper & wrap, EntryHandler entryHandler)
 {
-    vespalib::nbostream_longlivedbuf handle(wrap->packet.getHandle().data(), wrap->packet.getHandle().size());
-    while (handle.size() > 0) {
+    vespalib::nbostream_longlivedbuf handle(wrap.packet.getHandle().data(), wrap.packet.getHandle().size());
+    while ( !handle.empty() ) {
         Packet::Entry entry;
         entry.deserialize(handle);
         entryHandler->call(entry);
-        if (wrap->progress != nullptr) {
-            handleProgress(*wrap->progress, entry.serial());
+        if (wrap.progress != nullptr) {
+            handleProgress(*wrap.progress, entry.serial());
         }
     }
-    wrap->result = RPC::OK;
-    wrap->gate.countDown();
+    wrap.result = RPC::OK;
+    wrap.gate.countDown();
 }
 
 class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
@@ -67,6 +68,7 @@ class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
     IBucketDBHandler &_bucketDBHandler;
     IReplayConfig &_replay_config;
     FeedConfigStore &_config_store;
+    CommitTimeTracker _commitTimeTracker;
 
 public:
     TransactionLogReplayPacketHandler(IFeedView *& feed_view_ptr,
@@ -76,8 +78,9 @@ public:
         : _feed_view_ptr(feed_view_ptr),
           _bucketDBHandler(bucketDBHandler),
           _replay_config(replay_config),
-          _config_store(config_store) {
-    }
+          _config_store(config_store),
+          _commitTimeTracker(100ms)
+    { }
 
     void replay(const PutOperation &op) override {
         _feed_view_ptr->handlePut(FeedToken(), op);
@@ -121,16 +124,20 @@ public:
     const document::DocumentTypeRepo &getDeserializeRepo() override {
         return *_feed_view_ptr->getDocumentTypeRepo();
     }
+    void optionalCommit(search::SerialNum serialNum) override {
+        if (_commitTimeTracker.needCommit()) {
+            _feed_view_ptr->forceCommit(serialNum);
+        }
+    }
 };
 
 void startDispatch(IReplayPacketHandler *packet_handler, const Packet::Entry &entry) {
     // Called by handlePacket() in executor thread.
-    LOG(spam,
-        "replay packet entry: entrySerial(%" PRIu64 "), entryType(%u)",
-        entry.serial(), entry.type());
+    LOG(spam, "replay packet entry: entrySerial(%" PRIu64 "), entryType(%u)", entry.serial(), entry.type());
 
     ReplayPacketDispatcher dispatcher(*packet_handler);
     dispatcher.replayEntry(entry);
+    packet_handler->optionalCommit(entry.serial());
 }
 
 }  // namespace
@@ -143,14 +150,13 @@ ReplayTransactionLogState::ReplayTransactionLogState(
         FeedConfigStore &config_store)
     : FeedState(REPLAY_TRANSACTION_LOG),
       _doc_type_name(name),
-      _packet_handler(new TransactionLogReplayPacketHandler(
-                      feed_view_ptr, bucketDBHandler,
-                      replay_config, config_store)) {
-}
+      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store))
+{ }
 
-void ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap, Executor &executor) {
+void
+ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap, Executor &executor) {
     EntryHandler closure = makeClosure(&startDispatch, _packet_handler.get());
-    executor.execute(makeTask(makeClosure(&handlePacket, wrap, std::move(closure))));
+    executor.execute(makeLambdaTask([wrap = wrap, dispatch = std::move(closure)] () mutable { handlePacket(*wrap, std::move(dispatch)); }));
 }
 
 }  // namespace proton

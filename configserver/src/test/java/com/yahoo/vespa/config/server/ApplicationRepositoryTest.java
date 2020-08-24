@@ -17,10 +17,8 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
@@ -106,7 +104,7 @@ public class ApplicationRepositoryTest {
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
-    private SessionHandlerTest.MockProvisioner  provisioner;
+    private SessionHandlerTest.MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
     private Curator curator;
@@ -145,14 +143,15 @@ public class ApplicationRepositoryTest {
         tenantRepository.addTenant(tenant3);
         orchestrator = new OrchestratorMock();
         provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          configserverConfig,
-                                                          new MockLogRetriever(),
-                                                          clock,
-                                                          new MockTesterClient(),
-                                                          new NullMetric());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withConfigserverConfig(configserverConfig)
+                .withOrchestrator(orchestrator)
+                .withFlagSource(flagSource)
+                .withLogRetriever(new MockLogRetriever())
+                .withClock(clock)
+                .build();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -166,6 +165,29 @@ public class ApplicationRepositoryTest {
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
+
+        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp());
+    }
+
+    @Test
+    public void prepareAndActivateWithTenantMetaData() throws IOException {
+        FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
+        setup(flagSource);
+
+        Duration duration = Duration.ofHours(1);
+        clock.advance(duration);
+        Instant deployTime = clock.instant();
+        PrepareResult result = prepareAndActivate(testApp);
+        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
+                                                                                     .requireActiveSessionOf(applicationId()));
+        session.getAllocatedHosts();
+
+        assertEquals(deployTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
     }
 
     @Test
@@ -227,7 +249,6 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogs() {
-        applicationRepository = createApplicationRepository();
         deployApp(testAppLogServerWithContainer);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), "");
         assertEquals(200, response.getStatus());
@@ -235,7 +256,6 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogsForHostname() {
-        applicationRepository = createApplicationRepository();
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
         HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
@@ -252,8 +272,12 @@ public class ApplicationRepositoryTest {
         File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), Instant.now());
 
         tenantRepository.addTenant(tenant1);
-        Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(orchestrator)
+                .withClock(clock)
+                .build();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now
@@ -427,14 +451,13 @@ public class ApplicationRepositoryTest {
     @Test
     public void testMetrics() {
         MockMetric actual = new MockMetric();
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                          new MockLogRetriever(),
-                                                          new ManualClock(),
-                                                          new MockTesterClient(),
-                                                          actual);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(orchestrator)
+                .withMetric(actual)
+                .withClock(new ManualClock())
+                .build();
         deployApp(testAppLogServerWithContainer);
         Map<String, ?> context = Map.of("applicationId", "test1.testapp.default",
                                         "tenantName", "test1",
@@ -674,17 +697,6 @@ public class ApplicationRepositoryTest {
                 .withBooleanFlag(Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.id(), true);
         setup(flagSource);
         applicationRepository.deploy(app1, prepareParams());
-    }
-
-    private ApplicationRepository createApplicationRepository() {
-        return new ApplicationRepository(tenantRepository,
-                                         provisioner,
-                                         orchestrator,
-                                         new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                         new MockLogRetriever(),
-                                         clock,
-                                         new MockTesterClient(),
-                                         new NullMetric());
     }
 
     private PrepareResult prepareAndActivate(File application) {

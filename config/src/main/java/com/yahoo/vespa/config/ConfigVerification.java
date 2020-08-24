@@ -3,10 +3,8 @@ package com.yahoo.vespa.config;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
+import com.yahoo.slime.SlimeUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -49,14 +47,9 @@ public class ConfigVerification {
 
         Map<String, Stack<String>> recurseMappings = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : outputs.entrySet()) {
-            Slime slime = new JsonDecoder().decode(new Slime(), Utf8.toBytes(entry.getValue()));
+            Slime slime = SlimeUtils.jsonToSlime(entry.getValue());
             final List<String> list = new ArrayList<>();
-            slime.get().field("configs").traverse(new ArrayTraverser() {
-                @Override
-                public void entry(int idx, Inspector inspector) {
-                    list.add(inspector.asString());
-                }
-            });
+            slime.get().field("configs").traverse((ArrayTraverser) (idx, inspector) -> list.add(inspector.asString()));
             Stack<String> stack = new Stack<>();
             Collections.sort(list);
             stack.addAll(list);

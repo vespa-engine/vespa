@@ -1,9 +1,9 @@
 # Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 from typing import Optional, Dict, Tuple, List
-from requests import post
 from pandas import DataFrame
 from requests import post
+from requests.models import Response
 
 from vespa.query import Query, VespaResult
 from vespa.evaluation import EvalMetric
@@ -90,7 +90,7 @@ class Vespa(object):
             r = post(self.search_end_point, json=body)
             return VespaResult(vespa_result=r.json())
 
-    def feed_data_point(self, schema: str, data_id: str, fields: Dict):
+    def feed_data_point(self, schema: str, data_id: str, fields: Dict) -> Response:
         """
         Feed a data point to a Vespa app.
 

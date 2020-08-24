@@ -28,6 +28,7 @@ public:
         ElementType elements;
         bool is_compatible(const eval::ValueType &type) const;
         eval::ValueType make_compatible_type() const;
+        vespalib::string type_as_string() const;
         ~TensorInfo();
     };
 
@@ -48,6 +49,7 @@ public:
         std::vector<Ort::Value> values;
         Result(std::vector<Ort::Value> values_in) : values(std::move(values_in)) {}
     public:
+        static Result make_empty() { return Result({}); }
         size_t num_values() const { return values.size(); }
         void get(size_t idx, MutableDenseTensorView &dst);
     };
@@ -78,7 +80,7 @@ public:
     ~OnnxWrapper();
     const std::vector<TensorInfo> &inputs() const { return _inputs; }
     const std::vector<TensorInfo> &outputs() const { return _outputs; }
-    Result eval(const Params &params); // NB: Run requires non-const session
+    Result eval(const Params &params) const;
 };
 
 }

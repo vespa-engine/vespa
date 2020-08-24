@@ -5,6 +5,7 @@
 LOG_SETUP("predicate_range_term_expander_test");
 
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
+#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using search::predicate::PredicateRangeTermExpander;

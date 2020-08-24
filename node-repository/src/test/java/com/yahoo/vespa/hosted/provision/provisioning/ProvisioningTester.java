@@ -266,7 +266,13 @@ public class ProvisioningTester {
         for (Node node : nodeList) {
             var expected = new NodeResources(vcpu, memory, disk, bandwidth, diskSpeed, storageType);
             assertTrue(explanation + ": Resources: Expected " + expected + " but was " + node.resources(),
-                       expected.compatibleWith(node.resources()));
+                       expected.justNonNumbers().compatibleWith(node.resources().justNonNumbers()));
+            assertEquals(explanation + ": Vcpu: Expected " + expected.vcpu() + " but was " + node.resources().vcpu(),
+                         expected.vcpu(), node.resources().vcpu(), 0.05);
+            assertEquals(explanation + ": Memory: Expected " + expected.memoryGb() + " but was " + node.resources().memoryGb(),
+                         expected.memoryGb(), node.resources().memoryGb(), 0.05);
+            assertEquals(explanation + ": Disk: Expected " + expected.diskGb() + " but was " + node.resources().diskGb(),
+                         expected.diskGb(), node.resources().diskGb(), 0.05);
         }
     }
 

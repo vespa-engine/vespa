@@ -26,12 +26,13 @@ namespace storage::spi {
 class ConformanceTest : public ::testing::Test {
 
 public:
+    using PersistenceProviderUP = std::unique_ptr<PersistenceProvider>;
     struct PersistenceFactory {
         typedef std::unique_ptr<PersistenceFactory> UP;
         using DocumenttypesConfig = const document::internal::InternalDocumenttypesType;
 
-        virtual ~PersistenceFactory() {}
-        virtual PersistenceProvider::UP getPersistenceImplementation(
+        virtual ~PersistenceFactory() = default;
+        virtual PersistenceProviderUP getPersistenceImplementation(
                 const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                 const DocumenttypesConfig &typesCfg) = 0;
 
@@ -74,19 +75,19 @@ protected:
                         document::TestDocMan& testDocMan);
 
     void
-    testDeleteBucketPostCondition(const PersistenceProvider::UP &spi,
+    testDeleteBucketPostCondition(const PersistenceProvider &spi,
                                   const Bucket &bucket,
                                   const Document &doc1);
 
     void
-    testSplitNormalCasePostCondition(const PersistenceProvider::UP &spi,
+    testSplitNormalCasePostCondition(const PersistenceProvider &spi,
                                      const Bucket &bucketA,
                                      const Bucket &bucketB,
                                      const Bucket &bucketC,
                                      document::TestDocMan &testDocMan);
 
     void
-    testSplitTargetExistsPostCondition(const PersistenceProvider::UP &spi,
+    testSplitTargetExistsPostCondition(const PersistenceProvider &spi,
                                        const Bucket &bucketA,
                                        const Bucket &bucketB,
                                        const Bucket &bucketC,
@@ -94,7 +95,7 @@ protected:
 
     void
     testSplitSingleDocumentInSourcePostCondition(
-            const PersistenceProvider::UP& spi,
+            const PersistenceProvider& spi,
             const Bucket& source,
             const Bucket& target1,
             const Bucket& target2,
@@ -113,21 +114,21 @@ protected:
                          const Bucket& target);
 
     void
-    testJoinNormalCasePostCondition(const PersistenceProvider::UP &spi,
+    testJoinNormalCasePostCondition(const PersistenceProvider &spi,
                                     const Bucket &bucketA,
                                     const Bucket &bucketB,
                                     const Bucket &bucketC,
                                     document::TestDocMan &testDocMan);
 
     void
-    testJoinTargetExistsPostCondition(const PersistenceProvider::UP &spi,
+    testJoinTargetExistsPostCondition(const PersistenceProvider &spi,
                                       const Bucket &bucketA,
                                       const Bucket &bucketB,
                                       const Bucket &bucketC,
                                       document::TestDocMan &testDocMan);
 
     void
-    testJoinOneBucketPostCondition(const PersistenceProvider::UP &spi,
+    testJoinOneBucketPostCondition(const PersistenceProvider &spi,
                                    const Bucket &bucketA,
                                    const Bucket &bucketC,
                                    document::TestDocMan &testDocMan);
@@ -138,7 +139,7 @@ protected:
 
     void
     testJoinSameSourceBucketsPostCondition(
-            const PersistenceProvider::UP& spi,
+            const PersistenceProvider& spi,
             const Bucket& source,
             const Bucket& target,
             document::TestDocMan& testDocMan);

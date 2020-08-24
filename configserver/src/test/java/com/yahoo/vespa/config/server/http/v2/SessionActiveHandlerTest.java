@@ -74,8 +74,12 @@ public class SessionActiveHandlerTest {
                 .build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(tenantName);
-        applicationRepository = new ApplicationRepository(tenantRepository, hostProvisioner,
-                                                          new OrchestratorMock(), componentRegistry.getClock());
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(hostProvisioner)
+                .withOrchestrator(new OrchestratorMock())
+                .withClock(componentRegistry.getClock())
+                .build();
         handler = createHandler();
     }
 

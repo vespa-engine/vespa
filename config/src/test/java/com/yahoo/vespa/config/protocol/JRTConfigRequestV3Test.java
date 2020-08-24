@@ -6,16 +6,19 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
+import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.config.subscription.impl.MockConnection;
 import com.yahoo.foo.SimpletypesConfig;
-import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
-import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,15 +39,15 @@ import static org.junit.Assert.assertTrue;
 public class JRTConfigRequestV3Test {
 
     private final Optional<VespaVersion> vespaVersion = Optional.of(VespaVersion.fromString("5.38.24"));
-    private String defName = "mydef";
-    private String defNamespace = "my.name.space";
-    private String hostname = "myhost";
-    private String configId = "config/id";
-    private String defMd5 = "595f44fec1e92a71d3e9e77456ba80d1";
-    private long currentGeneration = 3;
-    private long timeout = 5000;
+    private final String defName = "mydef";
+    private final String defNamespace = "my.name.space";
+    private final String hostname = "myhost";
+    private final String configId = "config/id";
+    private final String defMd5 = "595f44fec1e92a71d3e9e77456ba80d1";
+    private final long currentGeneration = 3;
+    private final long timeout = 5000;
     private Trace trace ;
-    private String configMd5 = ConfigUtils.getMd5(createPayload().getData());
+    private final String configMd5 = ConfigUtils.getMd5(createPayload().getData());
     private JRTClientConfigRequest clientReq;
     private JRTServerConfigRequest serverReq;
 
@@ -118,8 +121,7 @@ public class JRTConfigRequestV3Test {
     public void error_response_adds_common_elements() {
         serverReq.addErrorResponse(ErrorCode.APPLICATION_NOT_LOADED, ErrorCode.getName(ErrorCode.APPLICATION_NOT_LOADED));
         assertThat(serverReq.getRequest().returnValues().size(), is(1));
-        Slime data = new JsonDecoder().decode(new Slime(), Utf8.toBytes(serverReq.getRequest().returnValues().get(0).asString()));
-        Inspector response = data.get();
+        Inspector response = SlimeUtils.jsonToSlime(serverReq.getRequest().returnValues().get(0).asString()).get();
         assertThat(response.field(SlimeResponseData.RESPONSE_DEF_NAME).asString(), is(defName));
         assertThat(response.field(SlimeResponseData.RESPONSE_DEF_NAMESPACE).asString(), is(defNamespace));
         assertThat(response.field(SlimeResponseData.RESPONSE_DEF_MD5).asString(), is(defMd5));

@@ -204,6 +204,7 @@ public:
     document::DocumentTypeRepo &getDeserializeRepo() override {
         return _repo;
     }
+    void optionalCommit(search::SerialNum) override { }
 };
 
 

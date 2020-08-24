@@ -61,12 +61,10 @@ public:
 
     DocumentType();
     DocumentType(vespalib::stringref name, int32_t id);
-    DocumentType(vespalib::stringref name, int32_t id,
-                 const StructDataType& fields);
+    DocumentType(vespalib::stringref name, int32_t id, const StructDataType& fields);
 
     explicit DocumentType(vespalib::stringref name);
-    DocumentType(vespalib::stringref name,
-                 const StructDataType& fields);
+    DocumentType(vespalib::stringref name, const StructDataType& fields);
 
     ~DocumentType() override;
 
@@ -101,6 +99,7 @@ public:
 
     DocumentType & addFieldSet(const vespalib::string & name, FieldSet::Fields fields);
     const FieldSet * getFieldSet(const vespalib::string & name) const;
+    const FieldSetMap & getFieldSets() const { return _fieldSets; }
 
     const ImportedFieldNames& imported_field_names() const noexcept {
         return _imported_field_names;

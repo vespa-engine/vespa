@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visibilityhandler.h"
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/closuretask.h>
 
@@ -24,7 +23,8 @@ VisibilityHandler::VisibilityHandler(const IGetSerialNum & serial,
 
 VisibilityHandler::~VisibilityHandler() = default;
 
-void VisibilityHandler::commit()
+void
+VisibilityHandler::commit()
 {
     if (hasVisibilityDelay()) {
         if (_writeService.master().isCurrentThread()) {
@@ -36,7 +36,8 @@ void VisibilityHandler::commit()
     }
 }
 
-void VisibilityHandler::commitAndWait()
+void
+VisibilityHandler::commitAndWait()
 {
     if (hasVisibilityDelay()) {
         if (_writeService.master().isCurrentThread()) {
@@ -54,7 +55,16 @@ void VisibilityHandler::commitAndWait()
     _writeService.summary().sync();
 }
 
-bool VisibilityHandler::startCommit(const std::lock_guard<std::mutex> &unused, bool force)
+void
+VisibilityHandler::commitAndWait(IPendingLidTracker &, uint32_t ) {
+    commitAndWait();
+}
+void VisibilityHandler::commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) {
+    commitAndWait();
+}
+
+bool
+VisibilityHandler::startCommit(const std::lock_guard<std::mutex> &unused, bool force)
 {
     (void) unused;
     SerialNum current = _serial.getSerialNum();
@@ -66,7 +76,8 @@ bool VisibilityHandler::startCommit(const std::lock_guard<std::mutex> &unused, b
     return false;
 }
 
-void VisibilityHandler::performCommit(bool force)
+void
+VisibilityHandler::performCommit(bool force)
 {
     // Called by master thread
     SerialNum current = _serial.getSerialNum();

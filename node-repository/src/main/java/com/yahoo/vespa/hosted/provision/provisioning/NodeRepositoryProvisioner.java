@@ -158,19 +158,26 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    .not().retired()
                                    .not().removable()
                                    .asList();
+        boolean firstDeployment = nodes.isEmpty();
         AllocatableClusterResources currentResources =
-                nodes.isEmpty() ? new AllocatableClusterResources(requested.minResources(),
-                                                                  clusterSpec.type(),
-                                                                  nodeRepository) // new deployment: Use min
-                                : new AllocatableClusterResources(nodes, nodeRepository);
-        return within(Limits.of(requested), clusterSpec.isExclusive(), currentResources);
+                firstDeployment // start at min, preserve current resources otherwise
+                ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type(), nodeRepository)
+                : new AllocatableClusterResources(nodes, nodeRepository);
+        return within(Limits.of(requested), clusterSpec.isExclusive(), currentResources, firstDeployment);
     }
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
-    private ClusterResources within(Limits limits, boolean exclusive, AllocatableClusterResources current) {
-        if (limits.isEmpty()) return current.toAdvertisedClusterResources();
+    private ClusterResources within(Limits limits,
+                                    boolean exclusive,
+                                    AllocatableClusterResources current,
+                                    boolean firstDeployment) {
         if (limits.min().equals(limits.max())) return limits.min();
 
+        // Don't change current deployments that are still legal
+        var currentAsAdvertised = current.toAdvertisedClusterResources();
+        if (! firstDeployment && currentAsAdvertised.isWithin(limits.min(), limits.max())) return currentAsAdvertised;
+
+        // Otherwise, find an allocation that preserves the current resources as well as possible
         return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits, exclusive)
                                   .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
                                   .toAdvertisedClusterResources();

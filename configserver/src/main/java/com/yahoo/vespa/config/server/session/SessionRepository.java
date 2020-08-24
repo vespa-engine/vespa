@@ -46,6 +46,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -316,7 +317,8 @@ public class SessionRepository {
         getRemoteSessions().forEach(this::sessionAdded);
     }
 
-    private synchronized void sessionsChanged(List<Long> sessions) throws NumberFormatException {
+    private synchronized void sessionsChanged() throws NumberFormatException {
+        List<Long> sessions = getSessionListFromDirectoryCache(directoryCache.getCurrentData());
         checkForRemovedSessions(sessions);
         checkForAddedSessions(sessions);
     }
@@ -416,15 +418,14 @@ public class SessionRepository {
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
             log.log(Level.FINE, () -> "Got child event: " + event);
-            List<Long> sessions = getSessionListFromDirectoryCache(directoryCache.getCurrentData());
             switch (event.getType()) {
                 case CHILD_ADDED:
-                    sessionsChanged(sessions);
-                    synchronizeOnNew(sessions);
+                    sessionsChanged();
+                    synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
                     break;
                 case CHILD_REMOVED:
                 case CONNECTION_RECONNECTED:
-                    sessionsChanged(sessions);
+                    sessionsChanged();
                     break;
             }
         });
@@ -690,6 +691,8 @@ public class SessionRepository {
     public Lock lock(long sessionId) {
         return curator.lock(lockPath(sessionId), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
     }
+
+    public Clock clock() { return clock; }
 
     private Path lockPath(long sessionId) {
         return locksPath.append(String.valueOf(sessionId));

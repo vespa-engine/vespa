@@ -11,78 +11,53 @@ using searchcorespi::index::IThreadingService;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 
-LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService,
-                                 IStore &documentMetaStore)
+LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService, IStore &documentMetaStore,
+                                 const LidReuseDelayerConfig & config)
     : _writeService(writeService),
       _documentMetaStore(documentMetaStore),
-      _immediateCommit(true),
-      _hasIndexedOrAttributeFields(false),
+      _immediateCommit(config.visibilityDelay() == vespalib::duration::zero()),
+      _config(config),
       _pendingLids()
 {
 }
 
-
-LidReuseDelayer::~LidReuseDelayer() = default;
-
+LidReuseDelayer::~LidReuseDelayer() {
+    assert(_pendingLids.empty());
+}
 
 bool
 LidReuseDelayer::delayReuse(uint32_t lid)
 {
     assert(_writeService.master().isCurrentThread());
-    if (!_documentMetaStore.getFreeListActive())
+    if ( ! _documentMetaStore.getFreeListActive())
         return false;
-    if (!_immediateCommit) {
+    if ( ! _immediateCommit) {
         _pendingLids.push_back(lid);
         return false;
     }
-    if (!_hasIndexedOrAttributeFields) {
+    if ( ! _config.hasIndexedOrAttributeFields() ) {
         _documentMetaStore.removeComplete(lid);
         return false;
     }
     return true;
 }
 
-
 bool
 LidReuseDelayer::delayReuse(const std::vector<uint32_t> &lids)
 {
     assert(_writeService.master().isCurrentThread());
-    if (!_documentMetaStore.getFreeListActive() || lids.empty())
+    if ( ! _documentMetaStore.getFreeListActive() || lids.empty())
         return false;
-    if (!_immediateCommit) {
+    if ( ! _immediateCommit) {
         _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
         return false;
     }
-    if (!_hasIndexedOrAttributeFields) {
+    if ( ! _config.hasIndexedOrAttributeFields()) {
         _documentMetaStore.removeBatchComplete(lids);
         return false;
     }
     return true;
 }
-
-
-void
-LidReuseDelayer::setImmediateCommit(bool immediateCommit)
-{
-    assert(_pendingLids.empty());
-    _immediateCommit = immediateCommit;
-}
-
-
-bool
-LidReuseDelayer::getImmediateCommit() const
-{
-    return _immediateCommit;
-}
-
-
-void
-LidReuseDelayer::setHasIndexedOrAttributeFields(bool hasIndexedOrAttributeFields)
-{
-    assert(_pendingLids.empty());
-    _hasIndexedOrAttributeFields = hasIndexedOrAttributeFields;
-}
-
 
 std::vector<uint32_t>
 LidReuseDelayer::getReuseLids()
@@ -93,7 +68,6 @@ LidReuseDelayer::getReuseLids()
     _pendingLids.clear();
     return result;
 }
-
 
 }
 

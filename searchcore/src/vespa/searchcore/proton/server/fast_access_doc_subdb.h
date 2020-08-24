@@ -74,7 +74,7 @@ private:
                                       std::shared_ptr<AttributeManager::SP> attrMgrResult) const;
 
     void setupAttributeManager(AttributeManager::SP attrMgrResult);
-    void initFeedView(const IAttributeWriter::SP &writer, const DocumentDBConfig &configSnapshot);
+    void initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig &configSnapshot);
 
 protected:
     using Parent = StoreOnlyDocSubDB;

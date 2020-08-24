@@ -66,11 +66,11 @@ public class HttpGetConfigHandlerTest {
                 .build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenant);
-        ApplicationRepository applicationRepository =
-                new ApplicationRepository(tenantRepository,
-                                          new SessionHandlerTest.MockProvisioner(),
-                                          new OrchestratorMock(),
-                                          Clock.systemUTC());
+        ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .build();
         handler = new HttpGetConfigHandler(HttpGetConfigHandler.testOnlyContext(), tenantRepository);
         applicationRepository.deploy(testApp, prepareParams());
     }

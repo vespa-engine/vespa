@@ -147,11 +147,9 @@ PersistenceProviderWrapper::get(const spi::Bucket& bucket,
 }
 
 spi::CreateIteratorResult
-PersistenceProviderWrapper::createIterator(const spi::Bucket& bucket,
-                                           const document::FieldSet& fields,
-                                           const spi::Selection& sel,
+PersistenceProviderWrapper::createIterator(const spi::Bucket &bucket, FieldSetSP fields, const spi::Selection &sel,
                                            spi::IncludedVersions versions,
-                                           spi::Context& context)
+                                           spi::Context &context)
 {
     // TODO: proper printing of FieldSet and Selection
 

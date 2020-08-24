@@ -1152,7 +1152,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 synchronized (completionMonitor) {
                     // If we are destroying the session before it has completed (e.g. because
                     // waitUntilDone timed out or an interactive visiting was interrupted)
-                    // set us to aborted state so that we'll seize sending new visitors.
+                    // set us to aborted state so that we'll cease sending new visitors.
                     if (!done) {
                         transitionTo(new StateDescription(State.ABORTED, "Session explicitly destroyed before completion"));
                     }
