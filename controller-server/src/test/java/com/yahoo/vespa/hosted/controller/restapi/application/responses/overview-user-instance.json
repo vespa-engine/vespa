@@ -1,70 +1,16 @@
 {
-  "lastVersions": {
-    "platform": {
-      "platform": "7.1",
-      "at": 0,
-      "completed": "0 of 0 complete"
-    },
-    "application": {
-      "application": {
-        "hash": "1.0.3-commit1",
-        "build": 3,
-        "source": {
-          "gitRepository": "repository1",
-          "gitBranch": "master",
-          "gitCommit": "commit1"
-        },
-        "sourceUrl": "repository1/tree/commit1",
-        "commit": "commit1"
-      },
-      "at": 1000,
-      "completed": "0 of 0 complete"
-    }
-  },
-  "deploying": {},
-  "deployments": [],
-  "jobs": {},
-  "devJobs": {
-    "dev-aws-us-east-2a": {
-      "runs": [
-        {
-          "id": 1,
-          "status": "success",
-          "start": 7303000,
-          "end": 7303000,
-          "wantedPlatform": "7.1",
-          "wantedApplication": {
-            "hash": "unknown"
-          },
-          "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
-            "copyVespaLogs": "succeeded"
-          },
-          "tasks": {
-            "deploy": "succeeded",
-            "install": "succeeded"
-          },
-          "log": "https://some.url:43/root/dev-aws-us-east-2a/run/1"
-        }
-      ],
-      "url": "https://some.url:43/root/dev-aws-us-east-2a"
-    }
-  },
   "deployment": [
     {
       "jobName": "dev-aws-us-east-2a",
       "runs": [
         {
-          "id": 1,
-          "url": "https://some.url:43/root//run/1",
+          "versions": {
+            "targetApplication": {},
+            "targetPlatform": "7.1.0"
+          },
           "start": 7303000,
           "end": 7303000,
-          "status": "success",
-          "versions": {
-            "targetPlatform": "7.1.0",
-            "targetApplication": {}
-          },
+          "id": 1,
           "steps": [
             {
               "name": "deployReal",
@@ -78,7 +24,9 @@
               "name": "copyVespaLogs",
               "status": "succeeded"
             }
-          ]
+          ],
+          "url": "https://some.url:43/root//run/1",
+          "status": "success"
         }
       ]
     }
