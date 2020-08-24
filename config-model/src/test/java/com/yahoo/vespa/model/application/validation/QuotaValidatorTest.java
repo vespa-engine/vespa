@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.api.Quota;
@@ -10,6 +11,9 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+/**
+ * @author ogronnesby
+ */
 public class QuotaValidatorTest {
 
     private final Quota quota = new Quota(Optional.of(5), Optional.empty());

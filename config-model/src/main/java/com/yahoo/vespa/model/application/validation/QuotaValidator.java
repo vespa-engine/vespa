@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -6,6 +7,11 @@ import com.yahoo.vespa.model.VespaModel;
 
 import java.util.stream.Collectors;
 
+/**
+ * Checks that the generated model does not have resources that exceeds the given quota.
+ *
+ * @author ogronnesby
+ */
 public class QuotaValidator extends Validator {
     @Override
     public void validate(VespaModel model, DeployState deployState) {
@@ -13,6 +19,7 @@ public class QuotaValidator extends Validator {
         quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, model));
     }
 
+    /** Check that all clusters in the application do not exceed the quota max cluster size. */
     private void validateMaxClusterSize(int maxClusterSize, VespaModel model) {
         var invalidClusters = model.allClusters().stream()
                 .filter(clusterId -> {
@@ -24,9 +31,8 @@ public class QuotaValidator extends Validator {
                 .collect(Collectors.toList());
 
         if (!invalidClusters.isEmpty()) {
-            // TODO(ogronnesby): Find better exception
             var clusterNames = String.join(", ", invalidClusters);
-            throw new RuntimeException("Clusters " + clusterNames + " exceeded max cluster size of " + maxClusterSize);
+            throw new IllegalArgumentException("Clusters " + clusterNames + " exceeded max cluster size of " + maxClusterSize);
         }
     }
 }

@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
 import com.yahoo.slime.Inspector;
@@ -7,6 +8,11 @@ import com.yahoo.slime.SlimeUtils;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Quota for the application deployed.  If the application exceeds this quota, deployment will fail.
+ *
+ * @author ogronnesby
+ */
 public class Quota {
     private final Optional<Integer> maxClusterSize;
     private final Optional<Integer> budget;
