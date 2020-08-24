@@ -124,7 +124,8 @@ public class AbstractComponent implements Component {
      * <p>
      * All other calls to this component is completed before this method is called.
      * It will only be called once. It should block while doing cleanup tasks and return when
-     * this class is ready for garbage collection.
+     * this class is ready for garbage collection. This method is called in reverse dependency order,
+     * so a component will be deconstructed after any other components it is injected into.
      * <p>
      * This default implementation does nothing.
      */
