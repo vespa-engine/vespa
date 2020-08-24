@@ -31,7 +31,7 @@ public class DeploymentData {
     private final Optional<DockerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<ApplicationRoles> applicationRoles;
-    private final Quota quota;
+    private final Optional<Quota> quota;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
@@ -39,7 +39,7 @@ public class DeploymentData {
                           Optional<DockerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles,
-                          Quota quota) {
+                          Optional<Quota> quota) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
@@ -88,7 +88,7 @@ public class DeploymentData {
         return applicationRoles;
     }
 
-    public Quota quota() {
+    public Optional<Quota> quota() {
         return quota;
     }
 }

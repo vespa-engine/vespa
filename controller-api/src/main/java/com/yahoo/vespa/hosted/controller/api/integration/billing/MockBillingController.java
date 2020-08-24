@@ -31,8 +31,8 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public Quota getQuota(TenantName tenant) {
-        return new Quota(5);
+    public Optional<Quota> getQuota(TenantName tenant) {
+        return Optional.of(new Quota(5));
     }
 
     @Override

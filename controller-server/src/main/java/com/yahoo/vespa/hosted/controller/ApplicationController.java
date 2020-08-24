@@ -525,7 +525,7 @@ public class ApplicationController {
                     .filter(tenant-> tenant instanceof AthenzTenant)
                     .map(tenant -> ((AthenzTenant)tenant).domain());
 
-            Quota quota = billingController.getQuota(application.tenant());
+            Optional<Quota> quota = billingController.getQuota(application.tenant());
 
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
