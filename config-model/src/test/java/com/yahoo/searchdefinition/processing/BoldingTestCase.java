@@ -1,33 +1,62 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
-import java.io.IOException;
-
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * @author Mathias Mølster Lidal
+ * @author bratseth
  */
 public class BoldingTestCase extends SchemaTestCase {
 
+    private final String boldonnonstring =
+            "search boldnonstring {\n" +
+            "    document boldnonstring {\n" +
+            "        field title type string {\n" +
+            "            indexing: summary | index\n" +
+            "        }\n" +
+            "\n" +
+            "        field year4 type int {\n" +
+            "            indexing: summary | attribute\n" +
+            "            bolding: on\n" +
+            "        }\n" +
+            "    }\n" +
+            "}\n";
+
     @Test
-    public void testBoldingNonString() throws IOException, ParseException {
+    public void testBoldOnNonString() throws ParseException {
         try {
-            Search search = SearchBuilder.buildFromFile("src/test/processing/boldnonstring.sd");
-            new Bolding(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
-            fail();
+            SearchBuilder.createFromString(boldonnonstring);
+            fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("'bolding: on' for non-text field"));
+            assertEquals("'bolding: on' for non-text field 'year4' (datatype int (code: 0)) is not allowed",
+                         e.getMessage());
+        }
+    }
+
+    private final String boldonarray =
+            "search boldonarray {\n" +
+            "    document boldonarray {\n" +
+            "        field myarray type array<string> {\n" +
+            "            indexing: summary | index\n" +
+            "            bolding: on\n" +
+            "        }\n" +
+            "    }\n" +
+            "}\n";
+
+    @Test
+    public void testBoldOnArray() throws ParseException {
+        try {
+            SearchBuilder.createFromString(boldonarray);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("'bolding: on' for non-text field 'myarray' (datatype Array<string> (code: -1486737430)) is not allowed",
+                         e.getMessage());
         }
     }
 
