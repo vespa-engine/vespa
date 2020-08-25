@@ -184,7 +184,8 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedToken token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
+    void internalRemove(FeedToken token, IPendingLidTracker::Token uncommitted, SerialNum serialNum,
+                        PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
                         Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
