@@ -1955,7 +1955,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private static Map<String, byte[]> parseDataParts(HttpRequest request) {
-        String contentHash = request.getHeader("x-Content-Hash");
+        String contentHash = request.getHeader("X-Content-Hash");
         if (contentHash == null)
             return new MultipartParser().parse(request);
 
