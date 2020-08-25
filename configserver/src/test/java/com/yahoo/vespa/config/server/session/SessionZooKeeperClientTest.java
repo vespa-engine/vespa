@@ -143,7 +143,7 @@ public class SessionZooKeeperClientTest {
     @Test
     public void require_quota_written_and_parsed() {
         var quota = Optional.of(new Quota(Optional.of(23), Optional.of(32)));
-        var zkc = createSessionZKClient("4");
+        var zkc = createSessionZKClient(4);
         zkc.writeQuota(quota);
         assertEquals(quota, zkc.readQuota());
     }
