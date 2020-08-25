@@ -32,7 +32,7 @@ public class AccessControl {
     private static final int HOSTED_CONTAINER_PORT = 4443;
 
     // Handlers that are excluded from access control
-    private static final List<String> EXCLUDED_HANDLERS = List.of(
+    public static final List<String> EXCLUDED_HANDLERS = List.of(
             FileStatusHandlerComponent.CLASS,
             ContainerCluster.APPLICATION_STATUS_HANDLER_CLASS,
             ContainerCluster.BINDINGS_OVERVIEW_HANDLER_CLASS,
@@ -102,6 +102,12 @@ public class AccessControl {
         addAccessControlExcludedChain(http);
         removeDuplicateBindingsFromAccessControlChain(http);
     }
+
+    /** returns the excluded bindings as specified in 'access-control' in services.xml **/
+    public Set<BindingPattern> excludedBindings() { return excludedBindings; }
+
+    /** all handlers (that are known by the access control components) **/
+    public Collection<Handler<?>> handlers() { return handlers; }
 
     public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
         return cluster.getHandlers().stream()
