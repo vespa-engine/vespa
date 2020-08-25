@@ -90,7 +90,7 @@ public:
     Token produce(uint32_t lid) override;
     Snapshot produceSnapshot() override;
 private:
-    using List = std::vector<std::pair<uint32_t, uint32_t>>;
+    using List = std::vector<uint32_t>;
     class CommitList : public Payload {
     public:
         CommitList(List lids, TwoPhasePendingLidTracker & tracker);
@@ -113,11 +113,11 @@ private:
     std::mutex                             _mutex;
     std::condition_variable                _cond;
     struct Counters {
-        Counters() : feed(0), commit(0), done(0) {}
-        bool empty() const { return (feed == 0) && (commit == 0) && (done == 0); }
-        uint32_t feed;
-        uint32_t commit;
-        uint32_t done;
+        Counters() : inflight_feed(0), inflight_commit(0), need_commit(false) {}
+        bool empty() const { return (inflight_feed == 0) && ! need_commit && (inflight_commit == 0); }
+        uint32_t inflight_feed;
+        uint32_t inflight_commit;
+        bool need_commit;
     };
     vespalib::hash_map<uint32_t, Counters> _pending;
 };

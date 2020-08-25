@@ -130,7 +130,7 @@ TwoPhasePendingLidTracker::~TwoPhasePendingLidTracker() {
 IPendingLidTracker::Token
 TwoPhasePendingLidTracker::produce(uint32_t lid) {
     std::lock_guard guard(_mutex);
-    _pending[lid].feed++;
+    _pending[lid].inflight_feed++;
     return Token(lid, *this);
 }
 void
@@ -138,15 +138,15 @@ TwoPhasePendingLidTracker::consume(uint32_t lid) {
     std::lock_guard guard(_mutex);
     auto found = _pending.find(lid);
     assert (found != _pending.end());
-    assert (found->second.feed > 0);
-    found->second.feed--;
-    found->second.commit++;
+    assert (found->second.inflight_feed > 0);
+    found->second.inflight_feed--;
+    found->second.need_commit = true;
 }
 
 ILidCommitState::State
 TwoPhasePendingLidTracker::waitFor(MonitorGuard & guard, State state, uint32_t lid) {
     for (auto found = _pending.find(lid); found != _pending.end(); found = _pending.find(lid)) {
-        if ((state == State::NEED_COMMIT) && ((found->second.feed + found->second.commit) > 0)) {
+        if ((state == State::NEED_COMMIT) && ((found->second.inflight_feed > 0) || found->second.need_commit)) {
             return State::NEED_COMMIT;
         }
         _cond.wait(guard);
@@ -189,10 +189,10 @@ TwoPhasePendingLidTracker::produceSnapshot() {
     List toCommit;
     MonitorGuard guard(_mutex);
     for (auto & entry : _pending) {
-        if (entry.second.commit > 0) {
-            toCommit.emplace_back(entry.first, entry.second.commit);
-            entry.second.done += entry.second.commit;
-            entry.second.commit = 0;
+        if (entry.second.need_commit) {
+            toCommit.emplace_back(entry.first);
+            entry.second.inflight_commit ++;
+            entry.second.need_commit = false;
         }
     }
     return std::make_unique<CommitList>(std::move(toCommit), *this);
@@ -201,11 +201,11 @@ TwoPhasePendingLidTracker::produceSnapshot() {
 void
 TwoPhasePendingLidTracker::consumeSnapshot(List committed) {
     MonitorGuard guard(_mutex);
-    for (const auto & entry : committed) {
-        auto found = _pending.find(entry.first);
+    for (const auto & lid : committed) {
+        auto found = _pending.find(lid);
         assert(found != _pending.end());
-        assert(found->second.done >= entry.second);
-        found->second.done -= entry.second;
+        assert(found->second.inflight_commit >= 1);
+        found->second.inflight_commit --;
         if (found->second.empty()) {
             _pending.erase(found);
         }
