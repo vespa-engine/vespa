@@ -5,6 +5,7 @@
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>

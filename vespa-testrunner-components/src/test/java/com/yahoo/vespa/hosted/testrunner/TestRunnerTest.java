@@ -15,7 +15,6 @@ import java.util.Iterator;
 import java.util.logging.LogRecord;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -62,7 +61,8 @@ public class TestRunnerTest {
     }
 
     @Test
-    public void errorLeadsToError() throws InterruptedException {
+    public void noTestJarIsAFailure() throws InterruptedException, IOException {
+        Files.delete(artifactsPath.resolve("my-tests.jar"));
         TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
                                            __ -> new ProcessBuilder("This is a command that doesn't exist, for sure!"));
         runner.test(TestProfile.SYSTEM_TEST, new byte[0]);
@@ -73,8 +73,20 @@ public class TestRunnerTest {
         log.next();
         LogRecord record = log.next();
         assertEquals("Failed to execute maven command: This is a command that doesn't exist, for sure!", record.getMessage());
-        assertNotNull(record.getThrown());
-        assertEquals(TestRunner.Status.ERROR, runner.getStatus());
+        assertTrue(record.getThrown() instanceof TestRunner.NoTestsException);
+        assertEquals(TestRunner.Status.FAILURE, runner.getStatus());
+    }
+
+    @Test
+    public void errorLeadsToError() throws InterruptedException {
+        TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
+                                           __ -> new ProcessBuilder("false"));
+        runner.test(TestProfile.SYSTEM_TEST, new byte[0]);
+        while (runner.getStatus() == TestRunner.Status.RUNNING) {
+            Thread.sleep(10);
+        }
+        assertEquals(1, runner.getLog(-1).size());
+        assertEquals(TestRunner.Status.FAILURE, runner.getStatus());
     }
 
     @Test

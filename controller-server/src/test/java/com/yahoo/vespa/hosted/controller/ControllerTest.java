@@ -873,20 +873,21 @@ public class ControllerTest {
         context.submit(applicationPackageBuilder.build()).deploy();
         assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
 
-        // Without satisfying Athenz service requirement
-        context.submit(applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION).build())
-               .deploy();
+        // Without satisfying version requirement
+        applicationPackageBuilder = applicationPackageBuilder.athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"));
+        context.submit(applicationPackageBuilder.build()).deploy();
         assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
 
-        // Satisfying all requirements
-        context.submit(applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
-                                                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                                                .build()).deploy();
-        assertEquals(Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4), routingMethods.get());
+        // Package satisfying all requirements is submitted, but not deployed yet
+        applicationPackageBuilder = applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
+        var context2 = context.submit(applicationPackageBuilder.build());
+        assertEquals("Direct routing endpoint is available after submission and before deploy",
+                     Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4), routingMethods.get());
+        context2.deploy();
 
-        // Global endpoint is configured and includes directly routed endpoint name
+        // Global endpoint is added and includes directly routed endpoint name
         applicationPackageBuilder = applicationPackageBuilder.endpoint("default", "default");
-        context.submit(applicationPackageBuilder.build()).deploy();
+        context2.submit(applicationPackageBuilder.build()).deploy();
         for (var zone : List.of(zone1, zone2)) {
             assertEquals(Set.of("rotation-id-01",
                                 "application.tenant.global.vespa.oath.cloud",

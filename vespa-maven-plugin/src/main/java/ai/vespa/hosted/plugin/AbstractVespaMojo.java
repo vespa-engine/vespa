@@ -76,7 +76,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     protected void setup() {
         tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));
         application = firstNonBlank(application, project.getProperties().getProperty("application"));
-        instance = firstNonBlank(instance, project.getProperties().getProperty("instance", Properties.user()));
+        instance = firstNonBlank(instance, project.getProperties().getProperty("instance"), Properties.user());
         id = ApplicationId.from(tenant, application, instance);
 
         if (apiKey != null) {

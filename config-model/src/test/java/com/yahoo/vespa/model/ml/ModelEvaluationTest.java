@@ -142,8 +142,15 @@ public class ModelEvaluationTest {
         assertNotNull(onnx_mnist_softmax.evaluatorOf("default"));
         assertNotNull(onnx_mnist_softmax.evaluatorOf("default", "add"));
         assertNotNull(onnx_mnist_softmax.evaluatorOf("default.add"));
+        assertNotNull(onnx_mnist_softmax.evaluatorOf("add"));
+        assertNotNull(onnx_mnist_softmax.evaluatorOf("serving_default"));
+        assertNotNull(onnx_mnist_softmax.evaluatorOf("serving_default", "add"));
+        assertNotNull(onnx_mnist_softmax.evaluatorOf("serving_default.add"));
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default.add"));
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default", "add"));
+        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "add"));
+        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "serving_default.add"));
+        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "serving_default", "add"));
         assertEquals(TensorType.fromSpec("tensor<float>(d0[],d1[784])"), onnx_mnist_softmax.functions().get(0).argumentTypes().get("Placeholder"));
 
         Model tensorflow_mnist_softmax = evaluator.models().get("mnist_softmax_saved");
