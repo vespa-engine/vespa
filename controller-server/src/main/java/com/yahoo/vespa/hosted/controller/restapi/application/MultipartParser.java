@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.ParameterParser;
 
@@ -38,8 +39,10 @@ public class MultipartParser {
         try {
             ParameterParser parameterParser = new ParameterParser();
             Map<String, String> contentType = parameterParser.parse(contentTypeHeader, ';');
+            if (contentType.containsKey("application/zip"))
+                return Map.of(EnvironmentResource.APPLICATION_ZIP, data.readAllBytes());
             if ( ! contentType.containsKey("multipart/form-data"))
-                throw new IllegalArgumentException("Expected a multipart message, but got Content-Type: " + contentTypeHeader);
+                throw new IllegalArgumentException("Expected a multipart or application/zip message, but got Content-Type: " + contentTypeHeader);
             String boundary = contentType.get("boundary");
             if (boundary == null)
                 throw new IllegalArgumentException("Missing boundary property in Content-Type header");

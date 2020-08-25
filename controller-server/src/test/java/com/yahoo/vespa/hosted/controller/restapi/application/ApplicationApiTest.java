@@ -1367,7 +1367,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .userIdentity(userId),
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.new-user. This may take about 15 minutes the first time.\",\"run\":1}");
-
     }
 
     @Test
@@ -1426,6 +1425,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 "{\"message\":\"Deployment started in run 2 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":2}",
                 200);
 
+
+        // POST (deploy) an application package as content type application/zip — not multipart
+        tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
+                                      .data(applicationPackageInstance1.zippedContent())
+                                      .contentType("application/zip")
+                                      .userIdentity(developer2),
+                              "{\"message\":\"Deployment started in run 3 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":3}");
+
+        // POST (deploy) an application package not as content type application/zip — not multipart — is disallowed
+        tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
+                                      .data(applicationPackageInstance1.zippedContent())
+                                      .contentType("application/gzip")
+                                      .userIdentity(developer2),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Expected a multipart or application/zip message, but got Content-Type: application/gzip\"}", 400);
     }
 
     @Test
