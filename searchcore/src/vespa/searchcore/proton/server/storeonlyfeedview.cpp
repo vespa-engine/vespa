@@ -301,6 +301,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
          _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(putOp, docId.getGlobalId(), docId);
+    auto commitToken = _pendingLidsForCommit->produce(putOp.getLid());
     considerEarlyAck(token);
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
@@ -309,7 +310,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
         bool immediateCommit = needCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(std::move(token), _pendingLidsForCommit->produce(putOp.getLid()),
+            createPutDoneContext(std::move(token), std::move(commitToken),
                                  _gidToLidChangeHandler, doc, gid, putOp.getLid(), serialNum,
                                  putOp.changedDbdId() && useDocumentMetaStore(serialNum));
         putSummary(serialNum, putOp.getLid(), doc, onWriteDone);
@@ -459,10 +460,11 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         (void) updateOk;
         _metaStore.commit(serialNum, serialNum);
     }
+    auto commitToken = _pendingLidsForCommit->produce(updOp.getLid());
     considerEarlyAck(token);
 
     bool immediateCommit = needCommit();
-    auto onWriteDone = createUpdateDoneContext(std::move(token), _pendingLidsForCommit->produce(updOp.getLid()), updOp.getUpdate());
+    auto onWriteDone = createUpdateDoneContext(std::move(token), std::move(commitToken), updOp.getUpdate());
     UpdateScope updateScope(*_schema, upd);
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone, updateScope);
 
