@@ -401,7 +401,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.multi_value.average"));
-        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.last"));
+        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.last")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.max"));
 
         // transaction log
         metrics.add(new Metric("content.proton.transactionlog.entries.average"));
