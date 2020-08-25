@@ -37,31 +37,33 @@ VisibilityHandler::internalCommit(bool force)
 void
 VisibilityHandler::commit()
 {
-    internalCommit(true);
+    if (hasVisibilityDelay()) {
+        internalCommit(true);
+    }
 }
 
 void
-VisibilityHandler::commitAndWait(IPendingLidTracker & unCommittedLidTracker)
+VisibilityHandler::commitAndWait(ILidCommitState & unCommittedLidTracker)
 {
-    if (unCommittedLidTracker.areAnyInFlight()) {
+    if (unCommittedLidTracker.needCommit()) {
         internalCommit(false);
-        unCommittedLidTracker.waitForEmpty();
+        unCommittedLidTracker.waitComplete();
     }
 }
 
 void
-VisibilityHandler::commitAndWait(IPendingLidTracker & unCommittedLidTracker, uint32_t lid) {
-    if (unCommittedLidTracker.isInFlight(lid)) {
+VisibilityHandler::commitAndWait(ILidCommitState & unCommittedLidTracker, uint32_t lid) {
+    if (unCommittedLidTracker.needCommit(lid)) {
         internalCommit(false);
-        unCommittedLidTracker.waitForConsumed(lid);
+        unCommittedLidTracker.waitComplete(lid);
     }
 
 }
 void
-VisibilityHandler::commitAndWait(IPendingLidTracker & unCommittedLidTracker, const std::vector<uint32_t> & lids) {
-    if (unCommittedLidTracker.areAnyInFlight(lids)) {
+VisibilityHandler::commitAndWait(ILidCommitState & unCommittedLidTracker, const std::vector<uint32_t> & lids) {
+    if (unCommittedLidTracker.needCommit(lids)) {
         internalCommit(false);
-        unCommittedLidTracker.waitForConsumed(lids);
+        unCommittedLidTracker.waitComplete(lids);
     }
 }
 

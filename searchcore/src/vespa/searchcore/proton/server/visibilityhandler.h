@@ -29,9 +29,9 @@ public:
     vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
     bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
     void commit() override;
-    void commitAndWait(IPendingLidTracker & unCommittedLidTracker) override;
-    void commitAndWait(IPendingLidTracker &, uint32_t ) override;
-    void commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) override;
+    void commitAndWait(ILidCommitState & unCommittedLidTracker) override;
+    void commitAndWait(ILidCommitState &, uint32_t ) override;
+    void commitAndWait(ILidCommitState &, const std::vector<uint32_t> & ) override;
 private:
     bool startCommit(const std::lock_guard<std::mutex> &unused, bool force);
     void performCommit(bool force);

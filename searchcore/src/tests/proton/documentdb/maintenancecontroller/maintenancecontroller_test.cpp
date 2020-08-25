@@ -386,11 +386,11 @@ public:
 
     void syncSubDBs();
     void commit() override { }
-    void commitAndWait(IPendingLidTracker & ) override { }
-    void commitAndWait(IPendingLidTracker & tracker, uint32_t ) override {
+    void commitAndWait(ILidCommitState & ) override { }
+    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
         commitAndWait(tracker);
     }
-    void commitAndWait(IPendingLidTracker & tracker, const std::vector<uint32_t> & ) override {
+    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
         commitAndWait(tracker);
     }
     void performSyncSubDBs();

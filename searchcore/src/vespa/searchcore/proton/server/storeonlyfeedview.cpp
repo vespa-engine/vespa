@@ -192,12 +192,12 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
     meta_store.move(op.getPrevLid(), op.getLid());
 }
 
-std::unique_ptr<IPendingLidTracker>
+std::unique_ptr<PendingLidTrackerBase>
 createUncommitedLidTracker(bool needImmediateCommit) {
     if (needImmediateCommit) {
-        return std::make_unique<NoopLidTracker>();
-    } else {
         return std::make_unique<PendingLidTracker>();
+    } else {
+        return std::make_unique<TwoPhasePendingLidTracker>();
     }
 }
 
@@ -230,14 +230,15 @@ StoreOnlyFeedView::sync()
     _writeService.summary().sync();
 }
 
-IPendingLidTracker &
+ILidCommitState &
 StoreOnlyFeedView::getUncommittedLidsTracker() {
     return *_pendingLidsForCommit;
 }
 void
 StoreOnlyFeedView::forceCommit(SerialNum serialNum)
 {
-    forceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore));
+    forceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
+                                                                _pendingLidsForCommit->produceSnapshot()));
 }
 
 void
@@ -469,7 +470,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         PromisedDoc promisedDoc;
         FutureDoc futureDoc = promisedDoc.get_future().share();
         onWriteDone->setDocument(futureDoc);
-        _pendingLidsForDocStore.waitForConsumed(lid);
+        _pendingLidsForDocStore.waitComplete(lid);
         if (updateScope._indexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }
@@ -833,8 +834,8 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
     const SerialNum serialNum = op.getSerialNum();
     if (useDocumentMetaStore(serialNum)) {
         getDocumentMetaStore()->get().compactLidSpace(op.getLidLimit());
-        std::shared_ptr<ForceCommitContext>
-            commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore));
+        auto commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
+                                                                _pendingLidsForCommit->produceSnapshot()));
         commitContext->holdUnblockShrinkLidSpace();
         forceCommit(serialNum, commitContext);
     }

@@ -144,7 +144,7 @@ private:
     const document::DocumentType                            *_docType;
     LidReuseDelayer                                          _lidReuseDelayer;
     PendingLidTracker                                        _pendingLidsForDocStore;
-    std::unique_ptr<IPendingLidTracker>                      _pendingLidsForCommit;
+    std::unique_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -263,7 +263,7 @@ public:
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-    IPendingLidTracker & getUncommittedLidsTracker() override;
+    ILidCommitState & getUncommittedLidsTracker() override;
 };
 
 }

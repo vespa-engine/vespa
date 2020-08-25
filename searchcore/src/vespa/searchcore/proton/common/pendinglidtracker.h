@@ -19,8 +19,8 @@ public:
         Token & operator = (const Token &) = delete;
         Token & operator = (Token &&) = delete;
         Token(Token && rhs) noexcept
-                : _tracker(rhs._tracker),
-                  _lid(rhs._lid)
+            : _tracker(rhs._tracker),
+              _lid(rhs._lid)
         {
             rhs._tracker = nullptr;
         }
@@ -31,50 +31,95 @@ public:
     };
     virtual ~IPendingLidTracker() = default;
     virtual Token produce(uint32_t lid) = 0;
-    virtual void waitForEmpty() = 0;
-    virtual void waitForConsumed(uint32_t lid) = 0;
-    virtual void waitForConsumed(const std::vector<uint32_t> & lids) = 0;
-    virtual bool isInFlight(uint32_t lid) = 0;
-    virtual bool areAnyInFlight(const std::vector<uint32_t> & lids) = 0;
-    virtual bool areAnyInFlight() = 0;
 private:
     virtual void consume(uint32_t lid) = 0;
-    std::mutex                             _mutex;
-    std::condition_variable                _cond;
-    vespalib::hash_map<uint32_t, uint32_t> _pending;
 };
 
-class NoopLidTracker : public IPendingLidTracker {
+class ILidCommitState {
 public:
-    Token produce(uint32_t lid) override;
-    void waitForEmpty() override { }
-    void waitForConsumed(uint32_t ) override { }
-    void waitForConsumed(const std::vector<uint32_t> & ) override { }
-    bool isInFlight(uint32_t ) override { return false; }
-    bool areAnyInFlight(const std::vector<uint32_t> & ) override { return false; }
-    bool areAnyInFlight() override { return false; }
-private:
-    void consume(uint32_t ) override { }
+    virtual ~ILidCommitState() = default;
+    bool needCommit(uint32_t lid);
+    bool needCommit(const std::vector<uint32_t> & lids);
+    bool needCommit();
+    void waitComplete(uint32_t lid);
+    void waitComplete(const std::vector<uint32_t> & lids);
+    void waitComplete();
+protected:
+    enum class State {NEED_COMMIT, COMPLETE};
+    virtual State waitState(State state, uint32_t lid) = 0;
+    virtual State waitState(State state, const std::vector<uint32_t> & lids) = 0;
+    virtual State waitState(State state) = 0;
 };
 
-class PendingLidTracker : public IPendingLidTracker {
+class PendingLidTrackerBase : public IPendingLidTracker,
+                              public ILidCommitState
+{
+public:
+    struct Payload {
+        virtual ~Payload() = default;
+    };
+    using Snapshot = std::unique_ptr<Payload>;
+    virtual Snapshot produceSnapshot() = 0;
+private:
+};
+
+class PendingLidTracker : public PendingLidTrackerBase
+{
 public:
     PendingLidTracker();
     ~PendingLidTracker() override;
     Token produce(uint32_t lid) override;
-    void waitForEmpty() override;
-    void waitForConsumed(uint32_t lid) override;
-    void waitForConsumed(const std::vector<uint32_t> & lids) override;
-    bool isInFlight(uint32_t lid) override;
-    bool areAnyInFlight(const std::vector<uint32_t> & lids) override;
-    bool areAnyInFlight() override;
+    Snapshot produceSnapshot() override;
 private:
-    using MonitorGuard = std::unique_lock<std::mutex>;
+    State waitState(State state) override;
+    State waitState(State state, uint32_t lid) override;
+    State waitState(State state, const std::vector<uint32_t> & lids) override;
     void consume(uint32_t lid) override;
-    void waitFor(MonitorGuard & guard, uint32_t lid);
+    using MonitorGuard = std::unique_lock<std::mutex>;
+    State waitFor(MonitorGuard & guard, State state, uint32_t lid);
     std::mutex                             _mutex;
     std::condition_variable                _cond;
     vespalib::hash_map<uint32_t, uint32_t> _pending;
+};
+
+class TwoPhasePendingLidTracker : public PendingLidTrackerBase
+{
+public:
+    TwoPhasePendingLidTracker();
+    ~TwoPhasePendingLidTracker() override;
+    Token produce(uint32_t lid) override;
+    Snapshot produceSnapshot() override;
+private:
+    using List = std::vector<std::pair<uint32_t, uint32_t>>;
+    class CommitList : public Payload {
+    public:
+        CommitList(List lids, TwoPhasePendingLidTracker & tracker);
+        CommitList(const CommitList &) = delete;
+        CommitList & operator = (const CommitList &) = delete;
+        CommitList & operator = (CommitList &&) = delete;
+        CommitList(CommitList && rhs) noexcept;
+        ~CommitList() override;
+    private:
+        TwoPhasePendingLidTracker * _tracker;
+        List                        _lids;
+    };
+    using MonitorGuard = std::unique_lock<std::mutex>;
+    State waitState(State state) override;
+    State waitState(State state, uint32_t lid) override;
+    State waitState(State state, const std::vector<uint32_t> & lids) override;
+    void consume(uint32_t lid) override;
+    void consumeSnapshot(List);
+    State waitFor(MonitorGuard & guard, State state, uint32_t lid);
+    std::mutex                             _mutex;
+    std::condition_variable                _cond;
+    struct Counters {
+        Counters() : feed(0), commit(0), done(0) {}
+        bool empty() const { return (feed == 0) && (commit == 0) && (done == 0); }
+        uint32_t feed;
+        uint32_t commit;
+        uint32_t done;
+    };
+    vespalib::hash_map<uint32_t, Counters> _pending;
 };
 
 }
