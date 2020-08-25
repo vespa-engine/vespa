@@ -87,7 +87,7 @@ private:
     static void setupForDistanceTest(FtFeatureTest & ft, const vespalib::string & attrName,
                                      const std::vector<std::pair<int32_t, int32_t> > & positions, bool zcurve);
     void assert2DZDistance(feature_t exp, const vespalib::string & positions,
-                           int32_t xquery, int32_t yquery, uint32_t xAspect = 0);
+                           int32_t xquery, int32_t yquery, uint32_t xAspect = 0, uint32_t hit_index = 0);
     void assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos, const vespalib::string &path,
                               feature_t distance = search::features::DistanceToPathExecutor::DEFAULT_DISTANCE,
                               feature_t traveled = 1, feature_t product = 0);
