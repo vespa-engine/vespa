@@ -45,6 +45,8 @@ public class FilesArchived {
 
     private void run() {
         try {
+            // Sleep some time before first maintenance, unit test depend on files not being removed immediately
+            Thread.sleep(1000);
             while (true) {
                 maintenance();
                 waitForTrigger(2000);
