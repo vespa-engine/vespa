@@ -55,6 +55,11 @@ public class UriBindingsValidatorTest {
     }
 
     @Test
+    public void allows_user_binding_with_wildcard_port() throws IOException, SAXException {
+        runUriBindingValidator(true, createServicesXmlWithHandler("http://*:*/my-handler"));
+    }
+
+    @Test
     public void only_restricts_user_bindings_on_hosted() throws IOException, SAXException {
         runUriBindingValidator(false, createServicesXmlWithRequestFilterChain("https://*:4443/my-request-filer-chain"));
     }

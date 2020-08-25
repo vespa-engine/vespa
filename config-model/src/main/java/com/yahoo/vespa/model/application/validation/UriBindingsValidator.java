@@ -58,7 +58,7 @@ class UriBindingsValidator extends Validator {
         // bindings produced by the hosted config model amender will violate some of the rules below
         if (binding instanceof SystemBindingPattern) return;
 
-        if (binding.port().isPresent()) {
+        if (binding.port().isPresent() && !binding.port().get().equals(BindingPattern.WILDCARD_PATTERN)) {
             throw new IllegalArgumentException(createErrorMessage(binding, "binding with port is not allowed"));
         }
         if (!binding.host().equals(BindingPattern.WILDCARD_PATTERN)) {
