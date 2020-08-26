@@ -52,6 +52,7 @@ def get_target_version():
 setuptools.setup(
     name=cfg["lib_name"],
     version=get_target_version(),
+    description='Python API to vespa.ai',
     license=lic[0],
     classifiers=[
         "Development Status :: " + statuses[int(cfg["status"])],
