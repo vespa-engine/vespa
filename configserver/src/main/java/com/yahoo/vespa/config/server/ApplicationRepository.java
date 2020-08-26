@@ -25,7 +25,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
@@ -65,8 +64,6 @@ import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.transaction.CuratorOperations;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -415,24 +412,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
 
         if (useTenantMetaData.value())
-            transaction.add(writeTenantMetaData(tenant).operations());
+            transaction.add(updateMetaDataWithDeployTimestamp(tenant, clock.instant()));
 
         return transaction;
     }
 
-    private byte[] createMetaData(Tenant tenant) {
-        return new TenantMetaData(tenant.getSessionRepository().clock().instant()).asJsonBytes();
+    private List<Transaction.Operation> updateMetaDataWithDeployTimestamp(Tenant tenant, Instant deployTimestamp) {
+        TenantMetaData tenantMetaData = getTenantMetaData(tenant).withLastDeployTimestamp(deployTimestamp);
+        return tenantRepository.createWriteTenantMetaDataTransaction(tenantMetaData).operations();
     }
 
     TenantMetaData getTenantMetaData(Tenant tenant) {
-        Optional<byte[]> data = tenantRepository.getCurator().getData(TenantRepository.getTenantPath(tenant.getName()));
-        return data.map(bytes -> TenantMetaData.fromJsonString(Utf8.toString(bytes))).orElse(new TenantMetaData(tenant.getCreatedTime()));
-    }
-
-    private Transaction writeTenantMetaData(Tenant tenant) {
-        return new CuratorTransaction(tenantRepository.getCurator())
-                .add(CuratorOperations.setData(TenantRepository.getTenantPath(tenant.getName()).getAbsolute(),
-                                               createMetaData(tenant)));
+        return tenantRepository.getTenantMetaData(tenant);
     }
 
     static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {
