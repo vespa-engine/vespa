@@ -145,9 +145,9 @@ public class TenantRepository {
         }
     }
 
-    public synchronized void addTenant(TenantName tenantName) {
+    public synchronized Tenant addTenant(TenantName tenantName) {
         writeTenantPath(tenantName);
-        createTenant(tenantName, componentRegistry.getClock().instant());
+        return createTenant(tenantName, componentRegistry.getClock().instant());
     }
 
     public void createAndWriteTenantMetaData(Tenant tenant) {
@@ -242,8 +242,14 @@ public class TenantRepository {
     }
 
     // Creates tenant and all its dependencies. This also includes loading active applications
-    private void createTenant(TenantName tenantName, Instant created) {
-        if (tenants.containsKey(tenantName)) return;
+    private Tenant createTenant(TenantName tenantName, Instant created) {
+        if (tenants.containsKey(tenantName)) {
+            Tenant tenant = getTenant(tenantName);
+            if (useTenantMetaData.value())
+                createAndWriteTenantMetaData(tenant);
+
+            return tenant;
+        }
 
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
@@ -266,6 +272,7 @@ public class TenantRepository {
         tenants.putIfAbsent(tenantName, tenant);
         if (useTenantMetaData.value())
             createAndWriteTenantMetaData(tenant);
+        return tenant;
     }
 
     /**

@@ -172,10 +172,18 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void prepareAndActivateWithTenantMetaData() throws IOException {
-        FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
+        InMemoryFlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), false);
         setup(flagSource);
 
-        Instant startTime = clock.instant();
+        // Tenants created when flag is false has EPOCH as metadata values
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        assertEquals(Instant.EPOCH.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
+        assertEquals(Instant.EPOCH.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
+
+        // Change flag value to true
+        flagSource.withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
         Duration duration = Duration.ofHours(1);
         clock.advance(duration);
         Instant deployTime = clock.instant();
@@ -183,15 +191,24 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
-        Tenant tenant = applicationRepository.getTenant(applicationId());
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
                                                                                      .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
 
+        // Only last deploy timestamp updated
+        assertEquals(Instant.EPOCH.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
         assertEquals(deployTime.toEpochMilli(),
                      applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
-        assertEquals(startTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
+
+        // Creating a new tenant will have metadata with timestamp equal to current time
+        clock.advance(duration);
+        Instant createTenantTime = clock.instant();
+        Tenant fooTenant = tenantRepository.addTenant(TenantName.from("foo"));
+        assertEquals(createTenantTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(fooTenant).createdTimestamp().toEpochMilli());
+        assertEquals(createTenantTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(fooTenant).lastDeployTimestamp().toEpochMilli());
     }
 
     @Test
