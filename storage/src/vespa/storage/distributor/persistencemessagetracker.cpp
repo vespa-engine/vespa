@@ -2,7 +2,6 @@
 
 #include "persistencemessagetracker.h"
 #include <vespa/storage/common/vectorprinter.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
@@ -24,6 +23,8 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
       _manager(link),
       _revertTimestamp(revertTimestamp),
       _requestTimer(link.getClock()),
+      _n_persistence_replies_total(0),
+      _n_successful_persistence_replies(0),
       _priority(_reply->getPriority()),
       _success(true)
 {
@@ -204,9 +205,28 @@ PersistenceMessageTrackerImpl::shouldRevert() const
             &&  !_revertNodes.empty() && !_success && _reply;
 }
 
+bool PersistenceMessageTrackerImpl::has_majority_successful_replies() const noexcept {
+    // FIXME this has questionable interaction with early client ACK since we only count
+    // the number of observed replies rather than the number of total requests sent.
+    // ... but the early ACK-feature dearly needs a redesign anyway.
+    return (_n_successful_persistence_replies >= (_n_persistence_replies_total / 2 + 1));
+}
+
+bool PersistenceMessageTrackerImpl::has_minority_test_and_set_failure() const noexcept {
+    return ((_reply->getResult().getResult() == api::ReturnCode::TEST_AND_SET_CONDITION_FAILED)
+            && has_majority_successful_replies());
+}
+
 void
 PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
 {
+    // If we've observed _partial_ TaS failures but have had a majority of good ACKs,
+    // treat the reply as successful. This is because the ACKed write(s) will eventually
+    // become visible across all nodes.
+    if (has_minority_test_and_set_failure()) {
+        _reply->setResult(api::ReturnCode());
+    }
+
     updateMetrics();
     _trace.setStrict(false);
     if ( ! _trace.isEmpty()) {
@@ -245,11 +265,6 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(
     {
         LOG(spam, "Create bucket reply failed, so deleting it from bucket db");
         _manager.removeNodeFromDB(reply.getBucket(), node);
-        LOG_BUCKET_OPERATION_NO_LOCK(
-                reply.getBucketId(),
-                vespalib::make_string(
-                    "Deleted bucket on node %u due to failing create bucket %s",
-                    node, reply.getResult().toString().c_str()));
     }
 }
 
@@ -258,12 +273,14 @@ PersistenceMessageTrackerImpl::handlePersistenceReply(
         api::BucketInfoReply& reply,
         uint16_t node)
 {
+    ++_n_persistence_replies_total;
     if (reply.getBucketInfo().valid()) {
         addBucketInfoFromReply(node, reply);
     }
     if (reply.getResult().success()) {
         logSuccessfulReply(node, reply);
         _revertNodes.emplace_back(reply.getBucket(), node);
+        ++_n_successful_persistence_replies;
     } else if (!hasSentReply()) {
         updateFailureResult(reply);
     }
