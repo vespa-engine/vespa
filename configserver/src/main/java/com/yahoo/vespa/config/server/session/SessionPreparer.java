@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -216,7 +217,8 @@ public class SessionPreparer {
                                                               currentActiveApplicationSet.isEmpty(),
                                                               flagSource,
                                                               endpointCertificateSecrets,
-                                                              athenzDomain, applicationRoles);
+                                                              athenzDomain, applicationRoles,
+                                                              params.quota());
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
@@ -286,7 +288,8 @@ public class SessionPreparer {
                                   logger,
                                   prepareResult.getFileRegistries(), 
                                   prepareResult.allocatedHosts(),
-                                  athenzDomain);
+                                  athenzDomain,
+                                  params.quota());
             checkTimeout("write state to zookeeper");
         }
 
@@ -335,7 +338,8 @@ public class SessionPreparer {
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
                                        AllocatedHosts allocatedHosts,
-                                       Optional<AthenzDomain> athenzDomain) {
+                                       Optional<AthenzDomain> athenzDomain,
+                                       Optional<Quota> quota) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -345,6 +349,7 @@ public class SessionPreparer {
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
             zooKeeperClient.writeAthenzDomain(athenzDomain);
+            zooKeeperClient.writeQuota(quota);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

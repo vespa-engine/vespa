@@ -63,6 +63,7 @@ public class ModelContextImplTest {
                         flagSource,
                         null,
                         Optional.empty(),
+                        Optional.empty(),
                         Optional.empty()),
                 Optional.empty(),
                 Optional.empty(),

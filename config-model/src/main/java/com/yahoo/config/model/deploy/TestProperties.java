@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.HostName;
@@ -46,6 +47,7 @@ public class TestProperties implements ModelContext.Properties {
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
+    private Quota quota = Quota.empty();
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -78,6 +80,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean skipCommunicationManagerThread() { return false; }
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
+    @Override public Quota quota() { return quota; }
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
@@ -161,6 +164,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setApplicationRoles(ApplicationRoles applicationRoles) {
         this.applicationRoles = applicationRoles;
+        return this;
+    }
+
+    public TestProperties setQuota(Quota quota) {
+        this.quota = quota;
         return this;
     }
 
