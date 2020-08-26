@@ -10,7 +10,7 @@ config = ConfigParser(delimiters=["="])
 config.read("settings.ini")
 cfg = config["DEFAULT"]
 
-cfg_keys = "description keywords author author_email".split()
+cfg_keys = "keywords author author_email".split()
 expected = (
     cfg_keys
     + "lib_name user branch license status min_python audience language".split()
@@ -52,6 +52,7 @@ def get_target_version():
 setuptools.setup(
     name=cfg["lib_name"],
     version=get_target_version(),
+    description="Python API for vespa.ai",
     license=lic[0],
     classifiers=[
         "Development Status :: " + statuses[int(cfg["status"])],
