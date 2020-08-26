@@ -57,7 +57,6 @@ setuptools.setup(
     include_package_data=True,
     install_requires=["requests", "pandas", "docker", "jinja2"],
     python_requires=">=3.6",
-    long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     zip_safe=False,
     data_files=[
