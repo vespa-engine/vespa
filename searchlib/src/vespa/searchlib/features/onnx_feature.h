@@ -3,8 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-
-namespace vespalib::tensor { class OnnxWrapper; }
+#include <vespa/eval/tensor/dense/onnx_wrapper.h>
 
 namespace search::features {
 
@@ -13,7 +12,9 @@ namespace search::features {
  **/
 class OnnxBlueprint : public fef::Blueprint {
 private:
-    std::unique_ptr<vespalib::tensor::OnnxWrapper> _model;
+    using Onnx = vespalib::tensor::Onnx;
+    std::unique_ptr<Onnx> _model;
+    Onnx::WireInfo _wire_info;
 public:
     OnnxBlueprint();
     ~OnnxBlueprint() override;
