@@ -72,11 +72,11 @@ public:
     }
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
-        op.reset(new PutOperation(getExternalOperationHandler(),
-                                  getDistributorBucketSpace(),
-                                  msg,
-                                  getDistributor().getMetrics().
-                                  puts[msg->getLoadType()]));
+        op = std::make_unique<PutOperation>(getExternalOperationHandler(),
+                                            getDistributorBucketSpace(),
+                                            msg,
+                                            getDistributor().getMetrics().
+                                            puts[msg->getLoadType()]);
         op->start(_sender, framework::MilliSecTime(0));
     }
 
@@ -88,9 +88,11 @@ public:
         return std::make_shared<Document>(doc_type(), DocumentId(vespalib::make_string("id:%s:testdoctype1::%s", ns, id)));
     }
 
-    std::shared_ptr<api::PutCommand> createPut(Document::SP doc) const {
+    static std::shared_ptr<api::PutCommand> createPut(Document::SP doc) {
         return std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), std::move(doc), 100);
     }
+
+    void set_up_3_nodes_and_send_put_with_create_bucket_acks();
 };
 
 PutOperationTest::~PutOperationTest() = default;
@@ -622,6 +624,62 @@ TEST_F(PutOperationTest, replica_implicitly_activated_when_activation_is_not_dis
 
 TEST_F(PutOperationTest, replica_not_implicitly_activated_when_activation_is_disabled) {
     do_test_creation_with_bucket_activation_disabled(true);
+}
+
+void PutOperationTest::set_up_3_nodes_and_send_put_with_create_bucket_acks() {
+    setupDistributor(3, 3, "storage:3 distributor:1");
+
+    Document::SP doc(createDummyDocument("test", "test"));
+    sendPut(createPut(doc));
+
+    // Include CreateBucket to ensure we don't count it towards Put ACK majorities
+    ASSERT_EQ("Create bucket => 2,Create bucket => 1,Create bucket => 0,"
+              "Put => 2,Put => 1,Put => 0",
+              _sender.getCommands(true));
+
+    // ACK all CreateBuckets
+    for (uint32_t i = 0;  i < 3; ++i) {
+        sendReply(i);
+    }
+}
+
+TEST_F(PutOperationTest, majority_ack_with_minority_tas_failure_returns_success) {
+    ASSERT_NO_FATAL_FAILURE(set_up_3_nodes_and_send_put_with_create_bucket_acks());
+    // Majority ACK, minority NACK
+    sendReply(3);
+    sendReply(4, api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+    sendReply(5);
+
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply());
+}
+
+TEST_F(PutOperationTest, minority_ack_with_majority_tas_failure_returns_tas_failure) {
+    ASSERT_NO_FATAL_FAILURE(set_up_3_nodes_and_send_put_with_create_bucket_acks());
+    // Minority ACK, majority NACK
+    sendReply(3);
+    sendReply(4, api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+    sendReply(5, api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(TEST_AND_SET_CONDITION_FAILED)",
+              _sender.getLastReply());
+}
+
+TEST_F(PutOperationTest, minority_failure_override_not_in_effect_for_non_tas_errors) {
+    ASSERT_NO_FATAL_FAILURE(set_up_3_nodes_and_send_put_with_create_bucket_acks());
+    // Minority ACK, majority NACK. But non-TaS failure.
+    sendReply(3);
+    sendReply(4, api::ReturnCode::ABORTED);
+    sendReply(5);
+
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(ABORTED)",
+              _sender.getLastReply());
 }
 
 }
