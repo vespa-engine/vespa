@@ -170,8 +170,14 @@ public class TenantRepository {
 
     public TenantMetaData getTenantMetaData(Tenant tenant) {
         Optional<byte[]> data = getCurator().getData(TenantRepository.getTenantPath(tenant.getName()));
-        return data.map(bytes -> TenantMetaData.fromJsonString(tenant.getName(), Utf8.toString(bytes)))
-                .orElse(new TenantMetaData(tenant.getName(), tenant.getCreatedTime(), tenant.getCreatedTime()));
+        Optional<TenantMetaData> metaData;
+        try {
+            metaData = data.map(bytes -> TenantMetaData.fromJsonString(tenant.getName(), Utf8.toString(bytes)));
+        } catch (IllegalArgumentException e) {
+            // If no data or illegal data
+            metaData = Optional.empty();
+        }
+        return metaData.orElse(new TenantMetaData(tenant.getName(), tenant.getCreatedTime(), tenant.getCreatedTime()));
     }
 
      private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
