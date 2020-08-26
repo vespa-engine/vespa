@@ -9,6 +9,7 @@
 
 namespace proton {
 
+/** Interface for tracking lids in the feed pipeline */
 class IPendingLidTracker {
 public:
     class Token {
@@ -35,34 +36,56 @@ private:
     virtual void consume(uint32_t lid) = 0;
 };
 
+/**
+ * This is an interface for checking/waiting the state of a lid in the feedpipeline
+ */
 class ILidCommitState {
 public:
+    enum class State {NEED_COMMIT, WAITING, COMPLETED};
+    using LidList = std::vector<uint32_t>;
     virtual ~ILidCommitState() = default;
-    bool needCommit(uint32_t lid);
-    bool needCommit(const std::vector<uint32_t> & lids);
-    bool needCommit();
-    void waitComplete(uint32_t lid);
-    void waitComplete(const std::vector<uint32_t> & lids);
-    void waitComplete();
-protected:
-    enum class State {NEED_COMMIT, COMPLETE};
-    virtual State waitState(State state, uint32_t lid) = 0;
-    virtual State waitState(State state, const std::vector<uint32_t> & lids) = 0;
-    virtual State waitState(State state) = 0;
+    State getState() const { return waitState(State::NEED_COMMIT); }
+    State getState(uint32_t lid) const { return waitState(State::NEED_COMMIT, lid); }
+    State getState(const LidList & lids) const { return waitState(State::NEED_COMMIT, lids); }
+    void waitComplete(uint32_t lid) const;
+    void waitComplete(const LidList & lids) const;
+    void waitComplete() const;
+private:
+    virtual State waitState(State state, uint32_t lid) const = 0;
+    virtual State waitState(State state, const LidList & lids) const = 0;
+    virtual State waitState(State state) const = 0;
 };
 
+/**
+ * Base class for doing 2 phase lidtracking.
+ */
 class PendingLidTrackerBase : public IPendingLidTracker,
                               public ILidCommitState
 {
 public:
+    ~PendingLidTrackerBase();
     struct Payload {
         virtual ~Payload() = default;
     };
     using Snapshot = std::unique_ptr<Payload>;
     virtual Snapshot produceSnapshot() = 0;
-private:
+
+    State waitState(State state) const override;
+    State waitState(State state, uint32_t lid) const override;
+    State waitState(State state, const LidList & lids) const override;
+protected:
+    using MonitorGuard = std::unique_lock<std::mutex>;
+    PendingLidTrackerBase();
+    virtual LidList pendingLids() const = 0;
+    virtual State waitFor(MonitorGuard & guard, State state, uint32_t lid) const = 0;
+    MonitorGuard getGuard() { return MonitorGuard(_mutex); }
+    mutable std::mutex                     _mutex;
+    mutable std::condition_variable        _cond;
 };
 
+/**
+ * Use for tracking lids in a single phase.
+ */
 class PendingLidTracker : public PendingLidTrackerBase
 {
 public:
@@ -71,17 +94,19 @@ public:
     Token produce(uint32_t lid) override;
     Snapshot produceSnapshot() override;
 private:
-    State waitState(State state) override;
-    State waitState(State state, uint32_t lid) override;
-    State waitState(State state, const std::vector<uint32_t> & lids) override;
+    LidList pendingLids() const override;
     void consume(uint32_t lid) override;
-    using MonitorGuard = std::unique_lock<std::mutex>;
-    State waitFor(MonitorGuard & guard, State state, uint32_t lid);
-    std::mutex                             _mutex;
-    std::condition_variable                _cond;
+    State waitFor(MonitorGuard & guard, State state, uint32_t lid) const override;
+
     vespalib::hash_map<uint32_t, uint32_t> _pending;
 };
 
+namespace common::internal {
+    class CommitList;
+}
+/**
+ * Use for tracking lids in 2 phases.
+ */
 class TwoPhasePendingLidTracker : public PendingLidTrackerBase
 {
 public:
@@ -90,28 +115,11 @@ public:
     Token produce(uint32_t lid) override;
     Snapshot produceSnapshot() override;
 private:
-    using List = std::vector<uint32_t>;
-    class CommitList : public Payload {
-    public:
-        CommitList(List lids, TwoPhasePendingLidTracker & tracker);
-        CommitList(const CommitList &) = delete;
-        CommitList & operator = (const CommitList &) = delete;
-        CommitList & operator = (CommitList &&) = delete;
-        CommitList(CommitList && rhs) noexcept;
-        ~CommitList() override;
-    private:
-        TwoPhasePendingLidTracker * _tracker;
-        List                        _lids;
-    };
-    using MonitorGuard = std::unique_lock<std::mutex>;
-    State waitState(State state) override;
-    State waitState(State state, uint32_t lid) override;
-    State waitState(State state, const std::vector<uint32_t> & lids) override;
+    friend common::internal::CommitList;
     void consume(uint32_t lid) override;
-    void consumeSnapshot(List);
-    State waitFor(MonitorGuard & guard, State state, uint32_t lid);
-    std::mutex                             _mutex;
-    std::condition_variable                _cond;
+    void consumeSnapshot(LidList lids);
+    LidList pendingLids() const override;
+    State waitFor(MonitorGuard & guard, State state, uint32_t lid) const override;
     struct Counters {
         Counters() : inflight_feed(0), inflight_commit(0), need_commit(false) {}
         bool empty() const { return (inflight_feed == 0) && ! need_commit && (inflight_commit == 0); }

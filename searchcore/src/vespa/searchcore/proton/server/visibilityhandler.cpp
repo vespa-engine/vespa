@@ -45,24 +45,32 @@ VisibilityHandler::commit()
 void
 VisibilityHandler::commitAndWait(ILidCommitState & unCommittedLidTracker)
 {
-    if (unCommittedLidTracker.needCommit()) {
+    ILidCommitState::State state = unCommittedLidTracker.getState();
+    if (state == ILidCommitState::State::NEED_COMMIT) {
         internalCommit(false);
+    }
+    if (state != ILidCommitState::State::COMPLETED) {
         unCommittedLidTracker.waitComplete();
     }
 }
 
 void
 VisibilityHandler::commitAndWait(ILidCommitState & unCommittedLidTracker, uint32_t lid) {
-    if (unCommittedLidTracker.needCommit(lid)) {
+    ILidCommitState::State state = unCommittedLidTracker.getState(lid);
+    if (state == ILidCommitState::State::NEED_COMMIT) {
         internalCommit(false);
+    }
+    if (state != ILidCommitState::State::COMPLETED) {
         unCommittedLidTracker.waitComplete(lid);
     }
-
 }
 void
 VisibilityHandler::commitAndWait(ILidCommitState & unCommittedLidTracker, const std::vector<uint32_t> & lids) {
-    if (unCommittedLidTracker.needCommit(lids)) {
+    ILidCommitState::State state = unCommittedLidTracker.getState(lids);
+    if (state == ILidCommitState::State::NEED_COMMIT) {
         internalCommit(false);
+    }
+    if (state != ILidCommitState::State::COMPLETED) {
         unCommittedLidTracker.waitComplete(lids);
     }
 }

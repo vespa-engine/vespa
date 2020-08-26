@@ -22,37 +22,49 @@ IPendingLidTracker::Token::~Token() {
     }
 }
 
-bool
-ILidCommitState::needCommit(uint32_t lid) {
-    return waitState(State::NEED_COMMIT, lid) == State::NEED_COMMIT;
+void
+ILidCommitState::waitComplete(uint32_t lid) const {
+    waitState(State::COMPLETED, lid);
 }
-bool
-ILidCommitState::needCommit(const std::vector<uint32_t> & lids) {
-    return waitState(State::NEED_COMMIT, lids) == State::NEED_COMMIT;
+void
+ILidCommitState::waitComplete(const LidList & lids) const {
+    waitState(State::COMPLETED, lids);
 }
-bool
-ILidCommitState::needCommit() {
-    return waitState(State::NEED_COMMIT) == State::NEED_COMMIT;
+void
+ILidCommitState::waitComplete() const {
+    waitState(State::COMPLETED);
 }
 
-void
-ILidCommitState::waitComplete(uint32_t lid) {
-    waitState(State::COMPLETE, lid);
-}
-void
-ILidCommitState::waitComplete(const std::vector<uint32_t> & lids) {
-    waitState(State::COMPLETE, lids);
-}
-void
-ILidCommitState::waitComplete() {
-    waitState(State::COMPLETE);
+PendingLidTrackerBase::PendingLidTrackerBase() = default;
+PendingLidTrackerBase::~PendingLidTrackerBase() = default;
+
+ILidCommitState::State
+PendingLidTrackerBase::waitState(State state) const {
+    auto pending = pendingLids();
+    return waitState(state, pending);
 }
 
-PendingLidTracker::PendingLidTracker()
-    : _mutex(),
-      _cond(),
-      _pending()
-{}
+ILidCommitState::State
+PendingLidTrackerBase::waitState(State state, uint32_t lid) const {
+    MonitorGuard guard(_mutex);
+    return waitFor(guard, state, lid);
+}
+
+ILidCommitState::State
+PendingLidTrackerBase::waitState(State state, const LidList & lids) const {
+    MonitorGuard guard(_mutex);
+    State lowest = State::COMPLETED;
+    for (uint32_t lid : lids) {
+        State next = waitFor(guard, state, lid);
+        if ((state == State::NEED_COMMIT) && next == state) {
+            return next;
+        }
+        lowest = std::min(next, lowest);
+    }
+    return lowest;
+}
+
+PendingLidTracker::PendingLidTracker() = default;
 
 PendingLidTracker::~PendingLidTracker() {
     assert(_pending.empty());
@@ -79,37 +91,14 @@ PendingLidTracker::consume(uint32_t lid) {
 }
 
 ILidCommitState::State
-PendingLidTracker::waitFor(MonitorGuard & guard, State, uint32_t lid) {
-    while (_pending.find(lid) != _pending.end()) {
-        _cond.wait(guard);
-    }
-    return State::COMPLETE;
-}
-
-ILidCommitState::State
-PendingLidTracker::waitState(State) {
-    MonitorGuard guard(_mutex);
-    while ( ! _pending.empty() ) {
-        _cond.wait(guard);
-    }
-    return State::COMPLETE;
-}
-
-ILidCommitState::State
-PendingLidTracker::waitState(State state, uint32_t lid) {
-    MonitorGuard guard(_mutex);
-    return waitFor(guard, state, lid);
-}
-
-ILidCommitState::State
-PendingLidTracker::waitState(State state, const std::vector<uint32_t> & lids) {
-    MonitorGuard guard(_mutex);
-    for (uint32_t lid : lids) {
-        if ((waitFor(guard, state, lid) == state) && (state == State::NEED_COMMIT)) {
-            return State::NEED_COMMIT;
+PendingLidTracker::waitFor(MonitorGuard & guard, State state, uint32_t lid) const {
+    for (auto found = _pending.find(lid); found != _pending.end(); found = _pending.find(lid)) {
+        if (state == State::NEED_COMMIT) {
+            return State::WAITING;
         }
+        _cond.wait(guard);
     }
-    return State::COMPLETE;
+    return State::COMPLETED;
 }
 
 PendingLidTrackerBase::Snapshot
@@ -117,11 +106,18 @@ PendingLidTracker::produceSnapshot() {
     return Snapshot();
 }
 
-TwoPhasePendingLidTracker::TwoPhasePendingLidTracker()
-    : _mutex(),
-      _cond(),
-      _pending()
-{}
+ILidCommitState::LidList
+PendingLidTracker::pendingLids() const {
+    MonitorGuard guard(_mutex);
+    LidList lids;
+    lids.reserve(_pending.size());
+    for (const auto & entry : _pending) {
+        lids.push_back(entry.first);
+    }
+    return lids;
+}
+
+TwoPhasePendingLidTracker::TwoPhasePendingLidTracker() = default;
 
 TwoPhasePendingLidTracker::~TwoPhasePendingLidTracker() {
     assert(_pending.empty());
@@ -144,62 +140,21 @@ TwoPhasePendingLidTracker::consume(uint32_t lid) {
 }
 
 ILidCommitState::State
-TwoPhasePendingLidTracker::waitFor(MonitorGuard & guard, State state, uint32_t lid) {
+TwoPhasePendingLidTracker::waitFor(MonitorGuard & guard, State state, uint32_t lid) const {
     for (auto found = _pending.find(lid); found != _pending.end(); found = _pending.find(lid)) {
-        if ((state == State::NEED_COMMIT) && ((found->second.inflight_feed > 0) || found->second.need_commit)) {
-            return State::NEED_COMMIT;
+        if (state == State::NEED_COMMIT) {
+            if ((found->second.inflight_feed > 0) || found->second.need_commit) {
+                return State::NEED_COMMIT;
+            }
+            return State::WAITING;
         }
         _cond.wait(guard);
     }
-    return State::COMPLETE;
-}
-
-ILidCommitState::State
-TwoPhasePendingLidTracker::waitState(State state) {
-    MonitorGuard guard(_mutex);
-    while ( ! _pending.empty() ) {
-        for (const auto & entry : _pending) {
-            if ((waitFor(guard, state, entry.first) == state) && (state == State::NEED_COMMIT)) {
-                return State::NEED_COMMIT;
-            }
-        }
-    }
-    return State::COMPLETE;
-}
-
-ILidCommitState::State
-TwoPhasePendingLidTracker::waitState(State state, uint32_t lid) {
-    MonitorGuard guard(_mutex);
-    return waitFor(guard, state, lid);
-}
-
-ILidCommitState::State
-TwoPhasePendingLidTracker::waitState(State state, const std::vector<uint32_t> & lids) {
-    MonitorGuard guard(_mutex);
-    for (uint32_t lid : lids) {
-        if ((waitFor(guard, state, lid) == state) && (state == State::NEED_COMMIT)) {
-            return State::NEED_COMMIT;
-        }
-    }
-    return State::COMPLETE;
-}
-
-PendingLidTrackerBase::Snapshot
-TwoPhasePendingLidTracker::produceSnapshot() {
-    List toCommit;
-    MonitorGuard guard(_mutex);
-    for (auto & entry : _pending) {
-        if (entry.second.need_commit) {
-            toCommit.emplace_back(entry.first);
-            entry.second.inflight_commit ++;
-            entry.second.need_commit = false;
-        }
-    }
-    return std::make_unique<CommitList>(std::move(toCommit), *this);
+    return State::COMPLETED;
 }
 
 void
-TwoPhasePendingLidTracker::consumeSnapshot(List committed) {
+TwoPhasePendingLidTracker::consumeSnapshot(LidList committed) {
     MonitorGuard guard(_mutex);
     for (const auto & lid : committed) {
         auto found = _pending.find(lid);
@@ -213,21 +168,59 @@ TwoPhasePendingLidTracker::consumeSnapshot(List committed) {
     _cond.notify_all();
 }
 
-TwoPhasePendingLidTracker::CommitList::CommitList(List lids, TwoPhasePendingLidTracker & tracker)
-    : _tracker(&tracker),
-      _lids(std::move(lids))
-{ }
-TwoPhasePendingLidTracker::CommitList::CommitList(CommitList && rhs) noexcept
-    : _tracker(rhs._tracker),
-      _lids(std::move(rhs._lids))
-{
-    rhs._tracker = nullptr;
-}
-TwoPhasePendingLidTracker::CommitList::~CommitList() {
-    if (_tracker != nullptr) {
-        _tracker->consumeSnapshot(std::move(_lids));
+ILidCommitState::LidList
+TwoPhasePendingLidTracker::pendingLids() const {
+    MonitorGuard guard(_mutex);
+    LidList lids;
+    lids.reserve(_pending.size());
+    for (const auto & entry : _pending) {
+        lids.push_back(entry.first);
     }
+    return lids;
 }
 
+namespace common::internal {
+
+class CommitList : public PendingLidTrackerBase::Payload {
+public:
+    using LidList = ILidCommitState::LidList;
+    CommitList(LidList lids, TwoPhasePendingLidTracker & tracker)
+        : _tracker(&tracker),
+          _lids(std::move(lids))
+    { }
+    CommitList(const CommitList &) = delete;
+    CommitList & operator = (const CommitList &) = delete;
+    CommitList & operator = (CommitList &&) = delete;
+    CommitList(CommitList && rhs) noexcept
+        : _tracker(rhs._tracker),
+          _lids(std::move(rhs._lids))
+    {
+        rhs._tracker = nullptr;
+    }
+    ~CommitList() override {
+        if (_tracker != nullptr) {
+            _tracker->consumeSnapshot(std::move(_lids));
+        }
+    }
+private:
+    TwoPhasePendingLidTracker * _tracker;
+    LidList                     _lids;
+};
+
+}
+
+PendingLidTrackerBase::Snapshot
+TwoPhasePendingLidTracker::produceSnapshot() {
+    LidList toCommit;
+    MonitorGuard guard(_mutex);
+    for (auto & entry : _pending) {
+        if (entry.second.need_commit) {
+            toCommit.emplace_back(entry.first);
+            entry.second.inflight_commit ++;
+            entry.second.need_commit = false;
+        }
+    }
+    return std::make_unique<common::internal::CommitList>(std::move(toCommit), *this);
+}
 
 }
