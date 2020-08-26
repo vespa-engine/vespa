@@ -8,7 +8,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Rank settings
@@ -32,6 +34,29 @@ public class IndexSettingsTestCase extends SchemaTestCase {
 
         SDField multiStemmed=(SDField) search.getDocument().getField("multiplestems");
         assertEquals(Stemming.MULTIPLE, multiStemmed.getStemming(search));
+    }
+
+    @Test
+    public void requireThatInterlavedFeaturesAreSetOnExtraField() throws ParseException {
+        SearchBuilder builder = SearchBuilder.createFromString(joinLines(
+                "search test {",
+                "  document test {",
+                "    field content type string {",
+                "      indexing: index | summary",
+                "      index: enable-bm25",
+                "    }",
+                "  }",
+                "  field extra type string {",
+                "    indexing: input content | index | summary",
+                "    index: enable-bm25",
+                "  }",
+                "}"
+        ));
+        Search search = builder.getSearch();
+        Index contentIndex = search.getIndex("content");
+        assertTrue(contentIndex.useInterleavedFeatures());
+        Index extraIndex = search.getIndex("extra");
+        assertTrue(extraIndex.useInterleavedFeatures());
     }
 
 }
