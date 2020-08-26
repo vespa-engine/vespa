@@ -30,7 +30,9 @@ public class QuotaValidator extends Validator {
                 .reduce(Double::sum);
 
         if(spend.isPresent() && spend.get() > budget)
-            throw new IllegalArgumentException("Hourly spend for maximum specified resources ($"+(int)Math.ceil(spend.get())+") exceeds budget from quota ($"+budget+")!");
+            throw new IllegalArgumentException(
+                    String.format("Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%d)!",
+                            spend.get(), budget));
     }
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */
