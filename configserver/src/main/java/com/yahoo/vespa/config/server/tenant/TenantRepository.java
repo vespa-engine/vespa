@@ -8,12 +8,18 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -82,6 +88,7 @@ public class TenantRepository {
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Optional<Curator.DirectoryCache> directoryCache;
+    private final BooleanFlag useTenantMetaData;
 
     /**
      * Creates a new tenant repository
@@ -109,6 +116,7 @@ public class TenantRepository {
         this.tenantListeners.add(componentRegistry.getTenantListener());
         this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
         this.zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
+        this.useTenantMetaData = Flags.USE_TENANT_META_DATA.bindTo(componentRegistry.getFlagSource());
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -140,6 +148,30 @@ public class TenantRepository {
     public synchronized void addTenant(TenantName tenantName) {
         writeTenantPath(tenantName);
         createTenant(tenantName, componentRegistry.getClock().instant());
+    }
+
+    public void createAndWriteTenantMetaData(Tenant tenant) {
+        createWriteTenantMetaDataTransaction(createMetaData(tenant)).commit();
+    }
+
+    public Transaction createWriteTenantMetaDataTransaction(TenantMetaData tenantMetaData) {
+        return new CuratorTransaction(curator).add(
+                CuratorOperations.setData(TenantRepository.getTenantPath(tenantMetaData.tenantName()).getAbsolute(),
+                                          tenantMetaData.asJsonBytes()));
+    }
+
+    private TenantMetaData createMetaData(Tenant tenant) {
+        Instant deployTime = tenant.getSessionRepository().clock().instant();
+        Instant createdTime = getTenantMetaData(tenant).createdTimestamp();
+        if (createdTime.equals(Instant.EPOCH))
+            createdTime = deployTime;
+        return new TenantMetaData(tenant.getName(), deployTime, createdTime);
+    }
+
+    public TenantMetaData getTenantMetaData(Tenant tenant) {
+        Optional<byte[]> data = getCurator().getData(TenantRepository.getTenantPath(tenant.getName()));
+        return data.map(bytes -> TenantMetaData.fromJsonString(tenant.getName(), Utf8.toString(bytes)))
+                .orElse(new TenantMetaData(tenant.getName(), tenant.getCreatedTime(), tenant.getCreatedTime()));
     }
 
      private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
@@ -226,6 +258,8 @@ public class TenantRepository {
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
+        if (useTenantMetaData.value())
+            createAndWriteTenantMetaData(tenant);
     }
 
     /**
