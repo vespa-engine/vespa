@@ -31,11 +31,6 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public Optional<Quota> getQuota(TenantName tenant) {
-        return Optional.of(new Quota(5));
-    }
-
-    @Override
     public PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments) {
         plans.put(tenant, planId);
         return PlanResult.success();

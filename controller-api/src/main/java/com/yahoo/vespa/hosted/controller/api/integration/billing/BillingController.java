@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 
 import java.math.BigDecimal;
@@ -15,8 +16,6 @@ import java.util.Set;
 public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
-
-    Optional<Quota> getQuota(TenantName tenant);
 
     /**
      * @return String containing error message if something went wrong. Empty otherwise
