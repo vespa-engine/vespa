@@ -167,6 +167,7 @@ public class ApplicationRepositoryTest {
         session.getAllocatedHosts();
 
         assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp());
+        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(tenant).createdTimestamp());
     }
 
     @Test
@@ -174,6 +175,7 @@ public class ApplicationRepositoryTest {
         FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
         setup(flagSource);
 
+        Instant startTime = clock.instant();
         Duration duration = Duration.ofHours(1);
         clock.advance(duration);
         Instant deployTime = clock.instant();
@@ -188,6 +190,8 @@ public class ApplicationRepositoryTest {
 
         assertEquals(deployTime.toEpochMilli(),
                      applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
+        assertEquals(startTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
     }
 
     @Test
