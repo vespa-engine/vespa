@@ -2,9 +2,11 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -17,6 +19,18 @@ public class QuotaValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         var quota = deployState.getProperties().quota();
         quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, model));
+        quota.budget().ifPresent(budget -> validateBudget(budget, model));
+    }
+
+    private void validateBudget(int budget, VespaModel model) {
+        Optional<Double> spend = model.allClusters().stream()
+                .map(clusterId -> model.provisioned().all().get(clusterId))
+                .map(Capacity::maxResources)
+                .map(clusterCapacity -> clusterCapacity.nodeResources().cost() * clusterCapacity.nodes())
+                .reduce(Double::sum);
+
+        if(spend.isPresent() && spend.get() > budget)
+            throw new IllegalArgumentException("Hourly spend for maximum specified resources ($"+(int)Math.ceil(spend.get())+") exceeds budget from quota ($"+budget+")!");
     }
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */
