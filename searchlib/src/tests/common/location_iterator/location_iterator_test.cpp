@@ -105,8 +105,8 @@ public:
             double sq_distance = dx*dx + dy*dy;
             double dist = std::sqrt(sq_distance);
             double score = 1.0 / (1.0 + (udeg_to_km * dist));
-            LOG(info, "rawscore[%u] = %.6f / expected %.6f",
-                d, _tfmd.getRawScore(), score);
+            LOG(info, "distance[%u] = %.2f, rawscore = %.6f / expected %.6f",
+                d, dist, _tfmd.getRawScore(), score);
             EXPECT_DOUBLE_EQ(_tfmd.getRawScore(), score);
         }
         EXPECT_EQ(hits, hit_vector.cend());
@@ -124,33 +124,6 @@ TEST_F(SingleIteratorTest, finds_locations_sets_rawscore) {
 
     GeoLocation close({-30300, 35400}, 2000);
     expect_hits(close, {7});
-}
-
-// maybe test array later:
-
-void set_doc(IntegerAttribute *ia, uint32_t docid, const Positions &values) {
-    ia->clearDoc(docid);
-    for (const auto & p : values) {
-        int64_t value = vespalib::geo::ZCurve::encode(p.first, p.second);
-        LOG(info, "array: value for docid %u is %zd", docid, value);
-        ia->append(docid, value, 0);
-    }
-    ia->commit();
-}
-
-void populate_array(IntegerAttribute *ia) {
-    set_doc(ia, 1, {Position(0, 0),
-                    Position(10000, 12000)});
-    set_doc(ia, 2, Positions());
-    set_doc(ia, 4, {Position(-50000, -52000),
-                    Position(-60000, -62000),
-                    Position(-70000, -72000)});
-    set_doc(ia, 5, {Position(20000, -22000),
-                    Position(40000, -42000),
-                    Position(60000, -62000)});
-    set_doc(ia, 6, Positions());
-    set_doc(ia, 7, {Position(-30000, 32000),
-                    Position(-90000, 92000)} );
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
