@@ -42,7 +42,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 public class ApacheGatewayConnectionTest {
 
     @Rule
@@ -50,20 +49,18 @@ public class ApacheGatewayConnectionTest {
 
     @Test
     public void testProtocolV3() throws Exception {
-        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
-        final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
-        final String clusterSpecificRoute = "";
-        final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .build();
-        final List<Document> documents = new ArrayList<>();
+        Endpoint endpoint = Endpoint.create("localhost", 666, false);
+        FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
+        String clusterSpecificRoute = "";
+        ConnectionParams connectionParams = new ConnectionParams.Builder().build();
+        List<Document> documents = new ArrayList<>();
 
-        final String vespaDocContent = "Hello, I a JSON doc.";
-        final String docId = "42";
+        String vespaDocContent = "Hello, I a JSON doc.";
+        String docId = "42";
 
-        final AtomicInteger requestsReceived = new AtomicInteger(0);
         // This is the fake server, takes header client ID and uses this as session Id.
         ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> {
-            final Header clientIdHeader = post.getFirstHeader(Headers.CLIENT_ID);
+            Header clientIdHeader = post.getFirstHeader(Headers.CLIENT_ID);
             return httpResponse(clientIdHeader.getValue(), "3");
         });
 

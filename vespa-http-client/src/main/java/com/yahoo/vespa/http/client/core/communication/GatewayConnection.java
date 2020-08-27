@@ -6,9 +6,13 @@ import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.ServerResponseException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.List;
 
 public interface GatewayConnection {
+
+    /** Returns the time this connected over the network, or null if not connected yet */
+    Instant connectionTime();
 
     InputStream writeOperations(List<Document> docs) throws ServerResponseException, IOException;
 

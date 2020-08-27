@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,6 +64,7 @@ class ApacheGatewayConnection implements GatewayConnection {
     private final String clusterSpecificRoute;
     private final ConnectionParams connectionParams;
     private HttpClient httpClient;
+    private Instant connectionTime = null;
     private String sessionId;
     private final String clientId;
     private int negotiatedVersion = -1;
@@ -108,8 +111,12 @@ class ApacheGatewayConnection implements GatewayConnection {
         if (httpClient != null)
             log.log(Level.WARNING, "Previous httpClient still exists.");
         httpClient = httpClientFactory.createClient();
+        connectionTime = Clock.systemUTC().instant();
         return httpClient != null;
     }
+
+    @Override
+    public Instant connectionTime() { return connectionTime; }
 
     // Protected for easier testing only.
     protected static InputStreamEntity zipAndCreateEntity(final InputStream inputStream) throws IOException {

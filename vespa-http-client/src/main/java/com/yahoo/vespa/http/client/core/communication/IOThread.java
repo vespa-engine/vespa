@@ -33,7 +33,7 @@ class IOThread implements Runnable, AutoCloseable {
 
     private static final Logger log = Logger.getLogger(IOThread.class.getName());
     private final Endpoint endpoint;
-    private final GatewayConnection currentClient;
+    private final GatewayConnection currentConnection;
     private final DocumentQueue documentQueue;
     private final EndpointResultQueue resultQueue;
     private final Thread thread;
@@ -71,7 +71,7 @@ class IOThread implements Runnable, AutoCloseable {
              double idlePollFrequency) {
         this.endpoint = endpoint;
         this.documentQueue = documentQueue;
-        this.currentClient = connectionFactory.newConnection();
+        this.currentConnection = connectionFactory.newConnection();
         this.resultQueue = endpointResultQueue;
         this.clusterId = clusterId;
         this.maxChunkSizeBytes = maxChunkSizeBytes;
@@ -152,14 +152,14 @@ class IOThread implements Runnable, AutoCloseable {
         if (size > 0) {
             log.info("We have outstanding operations (" + size + ") , trying to fetch responses.");
             try {
-                processResponse(currentClient.drain());
+                processResponse(currentConnection.drain());
             } catch (Throwable e) {
                 log.log(Level.SEVERE, "Some failures while trying to get latest responses from vespa.", e);
             }
         }
 
         try {
-            currentClient.close();
+            currentConnection.close();
         } finally {
             // If there is still documents in the queue, fail them.
             drainDocumentQueueWhenFailingPermanently(new Exception(
@@ -236,7 +236,7 @@ class IOThread implements Runnable, AutoCloseable {
     private InputStream sendAndReceive(List<Document> docs) throws IOException, ServerResponseException {
         try {
             // Post the new docs and get async responses for other posts.
-            return currentClient.writeOperations(docs);
+            return currentConnection.writeOperations(docs);
         } catch (ServerResponseException ser) {
             markDocumentAsFailed(docs, ser);
             throw ser;
@@ -314,7 +314,7 @@ class IOThread implements Runnable, AutoCloseable {
         switch(threadState) {
             case DISCONNECTED:
                 try {
-                    if (! currentClient.connect()) {
+                    if (! currentConnection.connect()) {
                         log.log(Level.WARNING, "Could not connect to endpoint: '" + endpoint + "'. Will re-try.");
                         drainFirstDocumentsInQueueIfOld();
                         return ThreadState.DISCONNECTED;
@@ -330,7 +330,7 @@ class IOThread implements Runnable, AutoCloseable {
                 }
             case CONNECTED:
                 try {
-                    currentClient.handshake();
+                    currentConnection.handshake();
                     successfulHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
 
@@ -347,7 +347,7 @@ class IOThread implements Runnable, AutoCloseable {
                     log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint
                             + "' failed. Will re-try handshake. Failed with '" + Exceptions.toMessageString(throwable) + "'",throwable);
                     drainFirstDocumentsInQueueIfOld();
-                    currentClient.close();
+                    currentConnection.close();
                     return ThreadState.DISCONNECTED;
                 }
                 return ThreadState.SESSION_SYNCED;
@@ -365,13 +365,13 @@ class IOThread implements Runnable, AutoCloseable {
                 catch (Throwable e) { // Covers IOException as well
                     log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint
                             + "'. Will re-try. Connection level error. Failed with '" + Exceptions.toMessageString(e) + "'", e);
-                    currentClient.close();
+                    currentConnection.close();
                     return ThreadState.DISCONNECTED;
                 }
                 return ThreadState.SESSION_SYNCED;
             default: {
                 log.severe("Should never get here.");
-                currentClient.close();
+                currentConnection.close();
                 return ThreadState.DISCONNECTED;
             }
         }

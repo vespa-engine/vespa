@@ -11,6 +11,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +24,7 @@ import java.util.List;
 public class DryRunGatewayConnection implements GatewayConnection {
 
     private final Endpoint endpoint;
+    private Instant connectionTime = null;
 
     public DryRunGatewayConnection(Endpoint endpoint) {
         this.endpoint = endpoint;
@@ -44,8 +47,12 @@ public class DryRunGatewayConnection implements GatewayConnection {
 
     @Override
     public boolean connect() {
+        connectionTime = Clock.systemUTC().instant();
         return true;
     }
+
+    @Override
+    public Instant connectionTime() { return connectionTime; }
 
     @Override
     public Endpoint getEndpoint() {
