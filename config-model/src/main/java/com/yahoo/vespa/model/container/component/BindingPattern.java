@@ -66,6 +66,9 @@ public abstract class BindingPattern implements Comparable<BindingPattern> {
     /** Compares the underlying pattern string for equality */
     public boolean hasSamePattern(BindingPattern other) { return this.patternString().equals(other.patternString()); }
 
+    /** Returns true if pattern will match any port (if present) in uri **/
+    public boolean matchesAnyPort() { return port().filter(p -> !p.equals(WILDCARD_PATTERN)).isEmpty(); }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
