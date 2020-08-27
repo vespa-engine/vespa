@@ -43,6 +43,9 @@ public:
     Tensor::UP clone() const override;
     eval::TensorSpec toSpec() const override;
     void accept(TensorVisitor &visitor) const override;
+    size_t count_memory_used() const override {
+        return sizeof(DenseTensorView);
+    }
 
     template <typename T> static ConstArrayRef<T> typify_cells(const eval::Value &self) {
         return static_cast<const DenseTensorView &>(self).cellsRef().typify<T>();
