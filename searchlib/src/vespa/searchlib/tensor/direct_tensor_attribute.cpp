@@ -6,6 +6,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/vespalib/util/array.h>
 
 #include "tensor_reader.h"
 #include "tensor_deserialize.h"
@@ -26,11 +27,13 @@ DirectTensorAttribute::onLoad()
     setCreateSerialNum(tensorReader.getCreateSerialNum());
     assert(tensorReader.getVersion() == TENSOR_ATTRIBUTE_VERSION);
     uint32_t numDocs = tensorReader.getDocIdLimit();
-    std::vector<char> buffer;
+    vespalib::Array<char> buffer(1024);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
         uint32_t tensorSize = tensorReader.getNextTensorSize();
         if (tensorSize != 0) {
-            buffer.reserve(tensorSize);
+            if (tensorSize > buffer.size()) {
+                buffer.resize(tensorSize + 1024);
+            }
             tensorReader.readTensor(&buffer[0], tensorSize);
             setTensor(lid, deserialize_tensor(&buffer[0], tensorSize));
         }
