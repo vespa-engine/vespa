@@ -27,6 +27,11 @@ namespace search::transactionlog {
 
 namespace {
 
+enum Crc {
+    ccitt_crc32=1,
+    xxh64=2
+};
+
 void
 handleSync(FastOS_FileInterface &file) __attribute__ ((noinline));
 
@@ -176,6 +181,20 @@ handleReadError(const char *text,
     return retval;
 }
 
+int32_t
+calcCrc(Crc version, const void * buf, size_t sz)
+{
+    if (version == xxh64) {
+        return static_cast<int32_t>(XXH64(buf, sz, 0ll));
+    } else if (version == ccitt_crc32) {
+        vespalib::crc_32_type calculator;
+        calculator.process_bytes(buf, sz);
+        return calculator.checksum();
+    } else {
+        LOG_ABORT("should not be reached");
+    }
+}
+
 }
 
 int64_t
@@ -265,22 +284,23 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     return currPos;
 }
 
-DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Crc defaultCrc,
-                       const FileHeaderContext &fileHeaderContext, bool allowTruncate) :
-    _defaultCrc(defaultCrc),
-    _lock(),
-    _fileLock(),
-    _range(s),
-    _sz(0),
-    _byteSize(0),
-    _packets(),
-    _fileName(make_string("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
-    _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
-    _skipList(),
-    _headerLen(0),
-    _writeLock(),
-    _writtenSerial(0),
-    _syncedSerial(0)
+DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding encoding,
+                       uint8_t compressionLevel, const FileHeaderContext &fileHeaderContext, bool allowTruncate)
+    : _encoding(encoding),
+      _compressionLevel(compressionLevel),
+      _lock(),
+      _fileLock(),
+      _range(s),
+      _sz(0),
+      _byteSize(0),
+      _packets(),
+      _fileName(make_string("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
+      _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
+      _skipList(),
+      _headerLen(0),
+      _writeLock(),
+      _writtenSerial(0),
+      _syncedSerial(0)
 {
     if (_transLog->OpenReadOnly()) {
         int64_t currPos = buildPacketMapping(allowTruncate);
@@ -582,12 +602,12 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
     int32_t crc(0);
     uint32_t len(entry.serializedSize() + sizeof(crc));
     nbostream os;
-    os << static_cast<uint8_t>(_defaultCrc);
+    os << static_cast<uint8_t>(Crc::xxh64);
     os << len;
     size_t start(os.size());
     entry.serialize(os);
     size_t end(os.size());
-    crc = calcCrc(_defaultCrc, os.data() + start, end - start);
+    crc = calcCrc(Crc::xxh64, os.data() + start, end - start);
     os << crc;
     size_t osSize = os.size();
     assert(osSize == len + sizeof(len) + sizeof(uint8_t));
@@ -653,19 +673,6 @@ DomainPart::read(FastOS_FileInterface &file,
         }
     }
     return retval;
-}
-
-int32_t DomainPart::calcCrc(Crc version, const void * buf, size_t sz)
-{
-    if (version == xxh64) {
-        return static_cast<int32_t>(XXH64(buf, sz, 0ll));
-    } else if (version == ccitt_crc32) {
-        vespalib::crc_32_type calculator;
-        calculator.process_bytes(buf, sz);
-        return calculator.checksum();
-    } else {
-        LOG_ABORT("should not be reached");
-    }
 }
 
 }

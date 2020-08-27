@@ -4,11 +4,14 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
 
 #include <vespa/log/log.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
 LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
@@ -20,29 +23,43 @@ using vespalib::Monitor;
 using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
 using std::runtime_error;
-using namespace std::chrono_literals;
+using std::make_shared;
 
 namespace search::transactionlog {
 
-Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
-               Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
-               const FileHeaderContext &fileHeaderContext) :
-    _defaultCrcType(defaultCrcType),
-    _commitExecutor(commitExecutor),
-    _sessionExecutor(sessionExecutor),
-    _sessionId(1),
-    _syncMonitor(),
-    _pendingSync(false),
-    _name(domainName),
-    _domainPartSize(domainPartSize),
-    _parts(),
-    _lock(),
-    _sessionLock(),
-    _sessions(),
-    _maxSessionRunTime(),
-    _baseDir(baseDir),
-    _fileHeaderContext(fileHeaderContext),
-    _markedDeleted(false)
+VESPA_THREAD_STACK_TAG(domain_commit_executor);
+
+DomainConfig::DomainConfig()
+    : _encoding(Encoding::Crc::xxh64, Encoding::Compression::none),
+      _compressionLevel(9),
+      _partSizeLimit(0x10000000), // 256M
+      _chunkSizeLimit(0x40000),   // 256k
+      _chunkAgeLimit(10ms)
+{ }
+
+Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPool & threadPool,
+               Executor & commitExecutor, Executor & sessionExecutor, const DomainConfig & cfg,
+               const FileHeaderContext &fileHeaderContext)
+    : _config(cfg),
+      _lastSerial(0),
+      _threadPool(threadPool),
+      _singleCommiter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128*1024)),
+      _commitExecutor(commitExecutor),
+      _sessionExecutor(sessionExecutor),
+      _sessionId(1),
+      _syncMonitor(),
+      _pendingSync(false),
+      _name(domainName),
+      _parts(),
+      _lock(),
+      _currentChunkMonitor(),
+      _sessionLock(),
+      _sessions(),
+      _maxSessionRunTime(),
+      _baseDir(baseDir),
+      _fileHeaderContext(fileHeaderContext),
+      _markedDeleted(false),
+      _self(nullptr)
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
@@ -60,13 +77,22 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
     }
     _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false);
+        _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _config.getEncoding(),
+                                                        _config.getCompressionlevel(), _fileHeaderContext, false);
         vespalib::File::sync(dir());
     }
+    _lastSerial = end();
+}
+
+Domain &
+Domain::setConfig(const DomainConfig & cfg) {
+    _config = cfg;
+    return *this;
 }
 
 void Domain::addPart(int64_t partId, bool isLastPart) {
-    auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart);
+    auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _config.getEncoding(),
+                                           _config.getCompressionlevel(), _fileHeaderContext, isLastPart);
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -285,18 +311,21 @@ waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
-void Domain::commit(const Packet & packet)
+void
+Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
 {
+    (void) onDone;
     DomainPart::SP dp(_parts.rbegin()->second);
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
-    if (dp->byteSize() > _domainPartSize) {
+    if (dp->byteSize() > _config.getPartSizeLimit()) {
         waitPendingSync(_syncMonitor, _pendingSync);
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false);
+        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _config.getPartSizeLimit(),
+                                          _config.getCompressionlevel(), _fileHeaderContext, false);
         {
             LockGuard guard(_lock);
             _parts[entry.serial()] = dp;
