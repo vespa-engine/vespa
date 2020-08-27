@@ -11,8 +11,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Document queue that only gives you document operations on documents for which there are no
- * already in flight operations for.
+ * Shared document queue that gives clients operations on documents which do not have operations already in flight.
+ * This is multithread safe.
  *
  * @author dybis
  */

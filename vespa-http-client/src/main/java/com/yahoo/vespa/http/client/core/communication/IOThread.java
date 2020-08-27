@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 class IOThread implements Runnable, AutoCloseable {
 
-    private static Logger log = Logger.getLogger(IOThread.class.getName());
+    private static final Logger log = Logger.getLogger(IOThread.class.getName());
     private final Endpoint endpoint;
     private final GatewayConnection client;
     private final DocumentQueue documentQueue;
@@ -76,8 +76,7 @@ class IOThread implements Runnable, AutoCloseable {
         this.maxChunkSizeBytes = maxChunkSizeBytes;
         this.maxInFlightRequests = maxInFlightRequests;
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
-        //Ensure that pollInterval is in the range [1us, 10s]
-        this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency)));
+        this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1us, 10s]
         this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
         thread.setDaemon(true);
         this.localQueueTimeOut = localQueueTimeOut;
@@ -417,7 +416,7 @@ class IOThread implements Runnable, AutoCloseable {
     }
 
     private void drainDocumentQueueWhenFailingPermanently(Exception exception) {
-        //first, clear sentOperations:
+        // first, clear sentOperations:
         resultQueue.failPending(exception);
 
         for (Document document : documentQueue.removeAllDocuments()) {

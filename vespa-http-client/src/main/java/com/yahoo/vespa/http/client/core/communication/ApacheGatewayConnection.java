@@ -49,7 +49,7 @@ import java.util.zip.GZIPOutputStream;
  */
 class ApacheGatewayConnection implements GatewayConnection {
 
-    private static Logger log = Logger.getLogger(ApacheGatewayConnection.class.getName());
+    private static final Logger log = Logger.getLogger(ApacheGatewayConnection.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String PATH = "/reserved-for-internal-use/feedapi?";
     private final List<Integer> SUPPORTED_VERSIONS = new ArrayList<>();
@@ -114,15 +114,14 @@ class ApacheGatewayConnection implements GatewayConnection {
 
     @Override
     public InputStream drain() throws ServerResponseException, IOException {
-        return write(Collections.<Document>emptyList(), true /* drain */, false /* use compression */);
+        return write(Collections.<Document>emptyList(), true, false);
     }
 
     @Override
     public boolean connect() {
-        log.fine("Attempting to connect to " + endpoint);
-        if (httpClient != null) {
+        log.fine(() -> "Attempting to connect to " + endpoint);
+        if (httpClient != null)
             log.log(Level.WARNING, "Previous httpClient still exists.");
-        }
         httpClient = httpClientFactory.createClient();
         return httpClient != null;
     }
@@ -246,13 +245,9 @@ class ApacheGatewayConnection implements GatewayConnection {
     private InputStream executePost(HttpPost httpPost) throws ServerResponseException, IOException {
         HttpResponse response;
         try {
-            if (httpClient == null) {
+            if (httpClient == null)
                 throw new IOException("Trying to executePost while not having a connection/http client");
-            }
             response = httpClient.execute(httpPost);
-        } catch (IOException e) {
-            httpPost.abort();
-            throw e;
         } catch (Exception e) {
             httpPost.abort();
             throw e;
@@ -432,8 +427,6 @@ class ApacheGatewayConnection implements GatewayConnection {
             clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
             clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
             clientBuilder.disableContentCompression();
-            // Try to disable the disabling to see if system tests become stable again.
-            // clientBuilder.disableAutomaticRetries();
             RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
             requestConfigBuilder.setSocketTimeout(0);
             if (connectionParams.getProxyHost() != null) {
@@ -441,17 +434,16 @@ class ApacheGatewayConnection implements GatewayConnection {
             }
             clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
 
-            log.fine("Creating HttpClient: " + " ConnectionTimeout "
-                            + " SocketTimeout 0 secs "
-                            + " proxyhost (can be null) " + connectionParams.getProxyHost()
-                            + ":" + connectionParams.getProxyPort()
+            log.fine(() -> "Creating HttpClient:" +
+                           " ConnectionTimeout " + connectionParams.getConnectionTimeToLive().getSeconds() + " seconds" +
+                           " proxyhost (can be null) " + connectionParams.getProxyHost() + ":" + connectionParams.getProxyPort()
                             + (useSsl ? " using ssl " : " not using ssl")
             );
             return clientBuilder.build();
         }
     }
 
-    // Note: Using deprecated setSslcontext() to allow httpclient 4.4 on classpath (e.g unexpected Maven dependency resolution for test classpath)
+    // Note: Using deprecated setSslContext() to allow httpclient 4.4 on classpath (e.g unexpected Maven dependency resolution for test classpath)
     @SuppressWarnings("deprecation")
     private static void setSslContext(HttpClientBuilder builder, SSLContext sslContext) {
         builder.setSslcontext(sslContext);

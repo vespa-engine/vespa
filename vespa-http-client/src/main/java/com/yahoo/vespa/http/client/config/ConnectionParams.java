@@ -330,6 +330,7 @@ public final class ConnectionParams {
         public Path getCertificate() { return certificate; }
         public Path getCaCertificates() { return caCertificates; }
     }
+
     private final SSLContext sslContext;
     private final Path privateKey;
     private final Path certificate;

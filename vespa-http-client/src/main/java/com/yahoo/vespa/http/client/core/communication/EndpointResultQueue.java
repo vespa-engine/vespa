@@ -15,13 +15,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
+ * The shared queue of operation results.
+ * This is multithread safe.
+ *
  * @author Einar M R Rosenvinge
  */
 class EndpointResultQueue {
 
-    private static Logger log = Logger.getLogger(EndpointResultQueue.class.getName());
+    private static final Logger log = Logger.getLogger(EndpointResultQueue.class.getName());
     private final OperationProcessor operationProcessor;
+
+    /** The currently in flight operations */
     private final Map<String, TimerFuture> futureByOperation = new HashMap<>();
+
     private final Endpoint endpoint;
     private final int clusterId;
     private final ScheduledThreadPoolExecutor timer;
@@ -64,25 +70,23 @@ class EndpointResultQueue {
         TimerFuture timerFuture = futureByOperation.remove(result.getOperationId());
         if (timerFuture == null) {
             if (duplicateGivesWarning) {
-                log.warning(
-                        "Result for ID '" + result.getOperationId() + "' received from '" + endpoint
-                         + "', but we have no record of a sent operation. Either something is wrong on the server side "
-                         + "(bad VIP usage?), or we have somehow received duplicate results, "
-                         + "or operation was received _after_ client-side timeout.");
+                log.warning("Result for ID '" + result.getOperationId() + "' received from '" + endpoint +
+                            "', but we have no record of a sent operation. Either something is wrong on the server side " +
+                            "(bad VIP usage?), or we have somehow received duplicate results, " +
+                            "or operation was received _after_ client-side timeout.");
             }
             return;
         }
         timerFuture.getFuture().cancel(false);
     }
 
-    //Called only from ScheduledThreadPoolExecutor thread in DocumentTimerTask.run(), see below
+    /** Called only from ScheduledThreadPoolExecutor thread in DocumentTimerTask.run(), see below */
     private synchronized void timeout(String operationId) {
         TimerFuture timerFuture = futureByOperation.remove(operationId);
         if (timerFuture == null) {
-            log.finer(
-                    "Timeout of operation '" + operationId + "', but operation "
-                    + "not found in map. Result was probably received just-in-time from server, while timeout "
-                    + "task could not be cancelled.");
+            log.finer("Timeout of operation '" + operationId + "', but operation " +
+                      "not found in map. Result was probably received just-in-time from server, while timeout " +
+                      "task could not be cancelled.");
             return;
         }
         EndpointResult endpointResult = EndPointResultFactory.createTransientError(
@@ -108,6 +112,7 @@ class EndpointResultQueue {
     }
 
     private class DocumentTimerTask implements Runnable {
+
         private final String operationId;
 
         private DocumentTimerTask(String operationId) {
@@ -118,17 +123,21 @@ class EndpointResultQueue {
         public void run() {
             timeout(operationId);
         }
+
     }
 
-    private class TimerFuture {
+    private static class TimerFuture {
+
         private final ScheduledFuture<?> future;
 
         public TimerFuture(ScheduledFuture<?> future) {
             this.future = future;
         }
+
         private ScheduledFuture<?> getFuture() {
             return future;
         }
+
     }
 
 }
