@@ -4,11 +4,18 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -17,16 +24,20 @@ import java.util.stream.Collectors;
  */
 public class CapacityChecker {
 
-    private List<Node> hosts;
-    Map<String, Node> nodeMap;
-    private Map<Node, List<Node>> nodeChildren;
-    private Map<Node, AllocationResources> availableResources;
+    // We only care about nodes in one of these states.
+    private static final Set<Node.State> relevantNodeStates = EnumSet.of(
+            Node.State.active, Node.State.inactive, Node.State.dirty, Node.State.provisioned, Node.State.ready, Node.State.reserved);
+
+    private final List<Node> hosts;
+    private final Map<String, Node> nodeMap;
+    private final Map<Node, List<Node>> nodeChildren;
+    private final Map<Node, AllocationResources> availableResources;
 
     public AllocationHistory allocationHistory = null;
 
-    public CapacityChecker(NodeRepository nodeRepository) {
-        this.hosts = getHosts(nodeRepository);
-        List<Node> tenants = getTenants(nodeRepository, hosts);
+    public CapacityChecker(NodeList allNodes) {
+        this.hosts = allNodes.hosts().state(relevantNodeStates).asList();
+        List<Node> tenants = getTenants(allNodes, hosts);
         nodeMap = constructHostnameToNodeMap(hosts);
         this.nodeChildren = constructNodeChildrenMap(tenants, hosts, nodeMap);
         this.availableResources = constructAvailableResourcesMap(hosts, nodeChildren);
@@ -61,31 +72,13 @@ public class CapacityChecker {
     }
 
     public Optional<HostFailurePath> findHostRemovalFailure(List<Node> hostsToRemove) {
-        var removal = findHostRemovalFailure(hostsToRemove, hosts, nodeChildren, availableResources);
-        if (removal.isEmpty()) return Optional.empty();
-        HostFailurePath failurePath = new HostFailurePath();
-        failurePath.hostsCausingFailure = hostsToRemove;
-        failurePath.failureReason = removal.get();
-        return Optional.of(failurePath);
+        return findHostRemovalFailure(hostsToRemove, hosts, nodeChildren, availableResources)
+                .map(removal -> new HostFailurePath(hostsToRemove, removal));
     }
 
-    // We only care about nodes in one of these states.
-    private static Node.State[] relevantNodeStates = {
-            Node.State.active,
-            Node.State.inactive,
-            Node.State.dirty,
-            Node.State.provisioned,
-            Node.State.ready,
-            Node.State.reserved
-    };
-
-    private List<Node> getHosts(NodeRepository nodeRepository) {
-        return nodeRepository.getNodes(NodeType.host, relevantNodeStates);
-    }
-
-    private List<Node> getTenants(NodeRepository nodeRepository, List<Node> hosts) {
+    private List<Node> getTenants(NodeList allNodes, List<Node> hosts) {
         var parentNames = hosts.stream().map(Node::hostname).collect(Collectors.toSet());
-        return nodeRepository.getNodes(NodeType.tenant, relevantNodeStates).stream()
+        return allNodes.nodeType(NodeType.tenant).state(relevantNodeStates).stream()
                 .filter(t -> parentNames.contains(t.parentHostname().orElse("")))
                 .collect(Collectors.toList());
     }
@@ -104,9 +97,7 @@ public class CapacityChecker {
             List<Node> hostsToRemove = parentRemovalPriorityList.subList(0, i);
             var hostRemovalFailure = findHostRemovalFailure(hostsToRemove, hosts, nodeChildren, availableResources);
             if (hostRemovalFailure.isPresent()) {
-                HostFailurePath failurePath = new HostFailurePath();
-                failurePath.hostsCausingFailure = hostsToRemove;
-                failurePath.failureReason = hostRemovalFailure.get();
+                HostFailurePath failurePath = new HostFailurePath(hostsToRemove, hostRemovalFailure.get());
                 return Optional.of(failurePath);
             }
         }
@@ -341,8 +332,13 @@ public class CapacityChecker {
      */
     public static class HostFailurePath {
 
-        public List<Node> hostsCausingFailure;
-        public HostRemovalFailure failureReason;
+        public final List<Node> hostsCausingFailure;
+        public final HostRemovalFailure failureReason;
+
+        public HostFailurePath(List<Node> hostsCausingFailure, HostRemovalFailure failureReason) {
+            this.hostsCausingFailure = hostsCausingFailure;
+            this.failureReason = failureReason;
+        }
 
         @Override
         public String toString() {
@@ -358,9 +354,9 @@ public class CapacityChecker {
      */
     public static class HostRemovalFailure {
 
-        public Optional<Node> host;
-        public Optional<Node> tenant;
-        public AllocationFailureReasonList allocationFailures;
+        public final Optional<Node> host;
+        public final Optional<Node> tenant;
+        public final AllocationFailureReasonList allocationFailures;
 
         public static HostRemovalFailure none() {
             return new HostRemovalFailure(Optional.empty(),
@@ -399,8 +395,8 @@ public class CapacityChecker {
     /** Used to describe the resources required for a tenant, and available to a host. */
     private static class AllocationResources {
 
-        NodeResources nodeResources;
-        int availableIPs;
+        private final NodeResources nodeResources;
+        private final int availableIPs;
 
         public static AllocationResources from(Node node) {
             if (node.allocation().isPresent())
@@ -434,7 +430,7 @@ public class CapacityChecker {
      */
     private static class AllocationFailureReason {
 
-        Node host;
+        private final Node host;
         public AllocationFailureReason (Node host) {
             this.host = host;
         }
@@ -478,7 +474,7 @@ public class CapacityChecker {
      */
     public static class AllocationFailureReasonList {
 
-        private List<AllocationFailureReason> allocationFailureReasons;
+        private final List<AllocationFailureReason> allocationFailureReasons;
 
         public AllocationFailureReasonList(List<AllocationFailureReason> allocationFailureReasons) {
             this.allocationFailureReasons = allocationFailureReasons;
@@ -515,9 +511,9 @@ public class CapacityChecker {
     public static class AllocationHistory {
 
         public static class Entry {
-            public Node tenant;
-            public Node newParent;
-            public long eligibleParents;
+            public final Node tenant;
+            public final Node newParent;
+            public final long eligibleParents;
 
             public Entry(Node tenant, Node newParent, long eligibleParents) {
                 this.tenant = tenant;
@@ -536,7 +532,7 @@ public class CapacityChecker {
             }
         }
 
-        public List<Entry> historyEntries;
+        public final List<Entry> historyEntries;
 
         public AllocationHistory() {
             this.historyEntries = new ArrayList<>();

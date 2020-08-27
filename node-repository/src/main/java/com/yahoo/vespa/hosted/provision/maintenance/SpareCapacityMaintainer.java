@@ -67,7 +67,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         boolean success = true;
         if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return success;
 
-        CapacityChecker capacityChecker = new CapacityChecker(nodeRepository());
+        CapacityChecker capacityChecker = new CapacityChecker(nodeRepository().list());
 
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
         if (overcommittedHosts.size() != 0) {
