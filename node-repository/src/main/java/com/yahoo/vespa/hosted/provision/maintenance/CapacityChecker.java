@@ -48,17 +48,24 @@ public class CapacityChecker {
     }
 
     public Optional<HostFailurePath> worstCaseHostLossLeadingToFailure() {
-        Map<Node, Integer> timesNodeCanBeRemoved = computeMaximalRepeatedRemovals(hosts, nodeChildren, availableResources);
-        return greedyHeuristicFindFailurePath(timesNodeCanBeRemoved, hosts, nodeChildren, availableResources);
+        Map<Node, Integer> timesNodeCanBeRemoved = computeMaximalRepeatedRemovals();
+        return greedyHeuristicFindFailurePath(timesNodeCanBeRemoved);
     }
 
     protected List<Node> findOvercommittedHosts() {
-        return findOvercommittedNodes(availableResources);
+        List<Node> overcommittedNodes = new ArrayList<>();
+        for (var entry : availableResources.entrySet()) {
+            var resources = entry.getValue().nodeResources;
+            if (resources.vcpu() < 0 || resources.memoryGb() < 0 || resources.diskGb() < 0) {
+                overcommittedNodes.add(entry.getKey());
+            }
+        }
+        return overcommittedNodes;
     }
 
     public List<Node> nodesFromHostnames(List<String> hostnames) {
-        List<Node> nodes = hostnames.stream().filter(h -> nodeMap.containsKey(h))
-                                    .map(h -> nodeMap.get(h))
+        List<Node> nodes = hostnames.stream().filter(nodeMap::containsKey)
+                                    .map(nodeMap::get)
                                     .collect(Collectors.toList());
 
         if (nodes.size() != hostnames.size()) {
@@ -83,9 +90,7 @@ public class CapacityChecker {
                 .collect(Collectors.toList());
     }
 
-    private Optional<HostFailurePath> greedyHeuristicFindFailurePath(Map<Node, Integer> heuristic, List<Node> hosts,
-                                                                     Map<Node, List<Node>> nodeChildren,
-                                                                     Map<Node, AllocationResources> availableResources) {
+    private Optional<HostFailurePath> greedyHeuristicFindFailurePath(Map<Node, Integer> heuristic) {
         if (hosts.size() == 0) return Optional.empty();
 
         List<Node> parentRemovalPriorityList = heuristic.entrySet().stream()
@@ -95,11 +100,8 @@ public class CapacityChecker {
 
         for (int i = 1; i <= parentRemovalPriorityList.size(); i++) {
             List<Node> hostsToRemove = parentRemovalPriorityList.subList(0, i);
-            var hostRemovalFailure = findHostRemovalFailure(hostsToRemove, hosts, nodeChildren, availableResources);
-            if (hostRemovalFailure.isPresent()) {
-                HostFailurePath failurePath = new HostFailurePath(hostsToRemove, hostRemovalFailure.get());
-                return Optional.of(failurePath);
-            }
+            var hostRemovalFailure = findHostRemovalFailure(hostsToRemove);
+            if (hostRemovalFailure.isPresent()) return hostRemovalFailure;
         }
 
         throw new IllegalStateException("No path to failure found. This should be impossible!");
@@ -148,9 +150,7 @@ public class CapacityChecker {
      * Computes a heuristic for each host, with a lower score indicating a higher perceived likelihood that removing
      * the host causes an unrecoverable state
      */
-    private Map<Node, Integer> computeMaximalRepeatedRemovals(List<Node> hosts,
-                                                              Map<Node, List<Node>> nodeChildren,
-                                                              Map<Node, AllocationResources> availableResources) {
+    private Map<Node, Integer> computeMaximalRepeatedRemovals() {
         Map<Node, Integer> timesNodeCanBeRemoved = hosts.stream().collect(Collectors.toMap(Function.identity(),
                                                                                            __ -> Integer.MAX_VALUE));
         for (Node host : hosts) {
@@ -171,17 +171,6 @@ public class CapacityChecker {
         }
 
         return timesNodeCanBeRemoved;
-    }
-
-    private List<Node> findOvercommittedNodes(Map<Node, AllocationResources> availableResources) {
-        List<Node> overcommittedNodes = new ArrayList<>();
-        for (var entry : availableResources.entrySet()) {
-            var resources = entry.getValue().nodeResources;
-            if (resources.vcpu() < 0 || resources.memoryGb() < 0 || resources.diskGb() < 0) {
-                overcommittedNodes.add(entry.getKey());
-            }
-        }
-        return overcommittedNodes;
     }
 
     private Map<Node, List<Allocation>> collateAllocations(Map<Node, List<Node>> nodeChildren) {
