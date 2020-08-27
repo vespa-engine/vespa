@@ -62,6 +62,7 @@ public class Validation {
         new CloudWatchValidator().validate(model, deployState);
         new AwsAccessControlValidator().validate(model, deployState);
         new QuotaValidator().validate(model, deployState);
+        new UriBindingsValidator().validate(model, deployState);
 
         List<ConfigChangeAction> result = Collections.emptyList();
         if (deployState.getProperties().isFirstTimeDeployment()) {

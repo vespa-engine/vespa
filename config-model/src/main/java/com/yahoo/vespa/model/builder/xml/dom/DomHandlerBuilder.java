@@ -8,8 +8,10 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
@@ -27,11 +29,14 @@ import static java.util.logging.Level.INFO;
  */
 public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
 
-    private static final Set<String> reservedBindings = Set.of(METRICS_V2_HANDLER_BINDING_1,
-                                                               METRICS_V2_HANDLER_BINDING_2,
-                                                               STATE_HANDLER_BINDING_1,
-                                                               STATE_HANDLER_BINDING_2,
-                                                               VIP_HANDLER_BINDING);
+    private static final Set<BindingPattern> reservedBindings =
+            Set.of(
+                    METRICS_V2_HANDLER_BINDING_1,
+                    METRICS_V2_HANDLER_BINDING_2,
+                    STATE_HANDLER_BINDING_1,
+                    STATE_HANDLER_BINDING_2,
+                    VIP_HANDLER_BINDING);
+
     private final ApplicationContainerCluster cluster;
 
     public DomHandlerBuilder(ApplicationContainerCluster cluster) {
@@ -43,10 +48,10 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         Handler<? super Component<?, ?>> handler = createHandler(handlerElement);
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))
-            addServerBinding(handler, XML.getValue(binding), deployState.getDeployLogger());
+            addServerBinding(handler, UserBindingPattern.fromPattern(XML.getValue(binding)), deployState.getDeployLogger());
 
         for (Element clientBinding : XML.getChildren(handlerElement, "clientBinding"))
-            handler.addClientBindings(XML.getValue(clientBinding));
+            handler.addClientBindings(UserBindingPattern.fromPattern(XML.getValue(clientBinding)));
 
         DomComponentBuilder.addChildren(deployState, parent, handlerElement, handler);
 
@@ -58,27 +63,30 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         return new Handler<>(new ComponentModel(bundleSpec));
     }
 
-    private void addServerBinding(Handler<? super Component<?, ?>> handler, String binding, DeployLogger log) {
+    private void addServerBinding(Handler<? super Component<?, ?>> handler, BindingPattern binding, DeployLogger log) {
         throwIfBindingIsReserved(binding, handler);
         handler.addServerBindings(binding);
         removeExistingServerBinding(binding, handler, log);
     }
 
-    private void throwIfBindingIsReserved(String binding, Handler<?> newHandler) {
+    private void throwIfBindingIsReserved(BindingPattern binding, Handler<?> newHandler) {
         for (var reserved : reservedBindings) {
-            if (binding.equals(reserved)) {
-                throw new IllegalArgumentException("Binding '" + binding + "' is a reserved Vespa binding and " +
+            if (binding.hasSamePattern(reserved)) {
+                throw new IllegalArgumentException("Binding '" + binding.patternString() + "' is a reserved Vespa binding and " +
                                                            "cannot be used by handler: " + newHandler.getComponentId());
             }
         }
     }
 
-    private void removeExistingServerBinding(String binding, Handler<?> newHandler, DeployLogger log) {
+    private void removeExistingServerBinding(BindingPattern binding, Handler<?> newHandler, DeployLogger log) {
         for (var handler : cluster.getHandlers()) {
-            if (handler.getServerBindings().contains(binding)) {
-                handler.removeServerBinding(binding);
-                log.log(INFO, "Binding '" + binding + "' was already in use by handler '" +
-                        handler.getComponentId() + "', but will now be taken over by handler: " + newHandler.getComponentId());
+            for (BindingPattern serverBinding : handler.getServerBindings()) {
+                if (serverBinding.hasSamePattern(binding)) {
+                    handler.removeServerBinding(serverBinding);
+                    log.log(INFO, "Binding '" + binding.patternString() + "' was already in use by handler '" +
+                            handler.getComponentId() + "', but will now be taken over by handler: " + newHandler.getComponentId());
+
+                }
             }
         }
     }
