@@ -527,7 +527,7 @@ class VespaCloud(object):
 
     @staticmethod
     def create_certificate_pair() -> (ec.EllipticCurvePrivateKey, x509.Certificate):
-        key = ec.generate_private_key(ec.SECP521R1, default_backend())
+        key = ec.generate_private_key(ec.SECP384R1, default_backend())
         name = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, u'localhost')])
         certificate = x509.CertificateBuilder() \
             .subject_name(name) \
