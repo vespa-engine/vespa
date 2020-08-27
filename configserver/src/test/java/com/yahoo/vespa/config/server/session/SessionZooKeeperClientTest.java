@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -17,8 +18,10 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -135,6 +138,14 @@ public class SessionZooKeeperClientTest {
         SessionZooKeeperClient zkc = createSessionZKClient(3);
         zkc.writeApplicationPackageReference(testRef);
         assertThat(zkc.readApplicationPackageReference(), is(testRef));
+    }
+
+    @Test
+    public void require_quota_written_and_parsed() {
+        var quota = Optional.of(new Quota(Optional.of(23), Optional.of(32)));
+        var zkc = createSessionZKClient(4);
+        zkc.writeQuota(quota);
+        assertEquals(quota, zkc.readQuota());
     }
 
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {

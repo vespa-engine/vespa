@@ -84,6 +84,15 @@ public class PrepareParamsTest {
         assertEquals("containerRole", applicationRoles.get().applicationContainerRole());
     }
 
+    @Test
+    public void testQuotaParsing() {
+        var quotaParam = "{\"clusterSize\": 23, \"budget\": 23232323}";
+        var quotaEncoded = URLEncoder.encode(quotaParam, StandardCharsets.UTF_8);
+        var prepareParams = createParams(request + "&" + PrepareParams.QUOTA_PARAM_NAME + "=" + quotaEncoded, TenantName.from("foo"));
+        assertEquals(23, (int) prepareParams.quota().get().maxClusterSize().get());
+        assertEquals(23232323, (int) prepareParams.quota().get().budget().get());
+    }
+
     // Create PrepareParams from a request (based on uri and tenant name)
     private static PrepareParams createParams(String uri, TenantName tenantName) {
         return PrepareParams.fromHttpRequest(

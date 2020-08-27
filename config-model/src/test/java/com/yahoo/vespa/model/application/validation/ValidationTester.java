@@ -31,6 +31,7 @@ import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SEARCHDEF
  */
 public class ValidationTester {
 
+    private final TestProperties properties;
     private final InMemoryProvisioner hostProvisioner;
 
     /** Creates a validation tester with 1 node available */
@@ -38,14 +39,25 @@ public class ValidationTester {
         this(1);
     }
 
-    /** Creates a validation tester with a number of nodes available */
-    public ValidationTester(int nodeCount) {
-        this(new InMemoryProvisioner(nodeCount));
+    /** Creates a validation tester with number of nodes available and the given test properties */
+    public ValidationTester(int nodeCount, TestProperties properties) {
+        this(new InMemoryProvisioner(nodeCount), properties);
     }
 
     /** Creates a validation tester with a given host provisioner */
     public ValidationTester(InMemoryProvisioner hostProvisioner) {
+        this(hostProvisioner, new TestProperties().setHostedVespa(true));
+    }
+
+    /** Creates a validation tester with a number of nodes available */
+    public ValidationTester(int nodeCount) {
+        this(new InMemoryProvisioner(nodeCount), new TestProperties().setHostedVespa(true));
+    }
+
+    /** Creates a validation tester with a given host provisioner */
+    public ValidationTester(InMemoryProvisioner hostProvisioner, TestProperties testProperties) {
         this.hostProvisioner = hostProvisioner;
+        this.properties = testProperties;
     }
 
     /**
@@ -74,7 +86,7 @@ public class ValidationTester {
                                                                             environment,
                                                                             RegionName.defaultName()))
                                                              .applicationPackage(newApp)
-                                                             .properties(new TestProperties().setHostedVespa(true))
+                                                             .properties(properties)
                                                              .modelHostProvisioner(hostProvisioner)
                                                              .provisioned(provisioned)
                                                              .now(now);

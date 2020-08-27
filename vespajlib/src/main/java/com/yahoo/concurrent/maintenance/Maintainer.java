@@ -74,7 +74,7 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
     @Override
     public final String toString() { return name(); }
 
-    /** Called once each time this maintenance job should run. Returns whether the maintenance run was succesful */
+    /** Called once each time this maintenance job should run. Returns whether the maintenance run was successful */
     protected abstract boolean maintain();
 
     /** Returns the interval at which this job is set to run */

@@ -121,6 +121,11 @@ public interface ModelContext {
 
         // TODO(bjorncs): Temporary feature flag
         default double feedCoreThreadPoolSizeFactor() { return 1.0; }
+
+        default Quota quota() {
+            return Quota.empty();
+        }
+
     }
 
 }

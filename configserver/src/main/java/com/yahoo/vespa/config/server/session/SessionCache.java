@@ -20,8 +20,6 @@ public class SessionCache<SESSIONTYPE extends Session> {
     }
 
     synchronized void removeSession(long id) {
-        if ( ! sessions.containsKey(id))
-            throw new IllegalArgumentException("No session with id '" + id + "' exists");
         sessions.remove(id);
     }
 
