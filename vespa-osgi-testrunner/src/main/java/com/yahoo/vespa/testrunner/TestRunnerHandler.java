@@ -5,6 +5,7 @@ import ai.vespa.hosted.api.TestDescriptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
+import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -12,6 +13,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import com.yahoo.yolean.Exceptions;
@@ -20,12 +22,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.Response.Status;
 
@@ -38,12 +42,12 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     private static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
 
-    private final JunitRunner junitRunner;
+    private final TestRunner junitRunner;
     private final LegacyTestRunner testRunner;
     private final boolean useOsgiMode;
 
     @Inject
-    public TestRunnerHandler(Executor executor, AccessLog accessLog, JunitRunner junitRunner, LegacyTestRunner testRunner) {
+    public TestRunnerHandler(Executor executor, AccessLog accessLog, TestRunner junitRunner, LegacyTestRunner testRunner) {
         super(executor, accessLog);
         this.junitRunner = junitRunner;
         this.testRunner = testRunner;
@@ -71,12 +75,14 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         if (path.equals("/tester/v1/log")) {
             if (useOsgiMode) {
-                // TODO (mortent): Handle case where log is returned multiple times
-                String report = junitRunner.getReportAsJson();
-                List<LogRecord> logRecords = new ArrayList<>();
-                if (!report.isBlank()) {
-                    logRecords.add(new LogRecord(Level.INFO, report));
-                }
+                TestReport report = junitRunner.getReport();
+                Instant fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
+                        .map(Long::parseLong)
+                        .map(Instant::ofEpochSecond)
+                        .orElse(Instant.EPOCH);
+                List<LogRecord> logRecords = report.logLines().stream()
+                        .filter(record -> record.getInstant().isAfter(fetchRecordsAfter))
+                        .collect(Collectors.toList());
                 return new SlimeJsonResponse(logToSlime(logRecords));
             } else {
                 return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
@@ -90,6 +96,13 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             } else {
                 log.info("Responding with status " + testRunner.getStatus());
                 return new Response(testRunner.getStatus().name());
+            }
+        } else if (path.equals("/tester/v1/report")) {
+            if (useOsgiMode) {
+                String report = junitRunner.getReportAsJson();
+                return new SlimeJsonResponse(SlimeUtils.jsonToSlime(report));
+            } else {
+                return new EmptyResponse(200);
             }
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
