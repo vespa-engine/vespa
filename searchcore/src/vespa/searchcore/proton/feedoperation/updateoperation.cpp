@@ -2,7 +2,6 @@
 #include "updateoperation.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <cassert>
 
 #include <vespa/log/log.h>

@@ -45,8 +45,11 @@ private:
     SerialNum _serialNum;
 
 public:
-    FeedOperation(Type type);
-    virtual ~FeedOperation() {}
+    FeedOperation(Type type) noexcept
+        : _type(type),
+          _serialNum(0)
+    { }
+    virtual ~FeedOperation() = default;
     Type getType() const { return _type; }
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
     SerialNum getSerialNum() const { return _serialNum; }

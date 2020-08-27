@@ -11,7 +11,8 @@ using namespace std::string_literals;
 
 namespace storage {
 
-void TestAndSetHelper::getDocumentType(const document::DocumentTypeRepo & documentTypeRepo) {
+void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo & documentTypeRepo) {
+    if (_docTypePtr != nullptr) return;
     if (!_docId.hasDocType()) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Document id has no doctype"));
     }
@@ -46,11 +47,11 @@ TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAn
       _component(thread._env._component),
       _cmd(cmd),
       _docId(cmd.getDocumentId()),
-      _docTypePtr(nullptr),
+      _docTypePtr(_cmd.getDocumentType()),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
     auto docTypeRepo = _component.getTypeRepo()->documentTypeRepo;
-    getDocumentType(*docTypeRepo);
+    resolveDocumentType(*docTypeRepo);
     parseDocumentSelection(*docTypeRepo);
 }
 
