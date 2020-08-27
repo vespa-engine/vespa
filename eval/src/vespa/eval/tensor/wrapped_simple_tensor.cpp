@@ -59,8 +59,7 @@ WrappedSimpleTensor::count_memory_used() const
 {
     size_t result = sizeof(WrappedSimpleTensor);
     if (_space) {
-        result += sizeof(SimpleTensor);
-        result += _tensor.cells().size() * sizeof(SimpleTensor::Cell);
+        result += _space->count_memory_used();
     }
     return result;
 }
