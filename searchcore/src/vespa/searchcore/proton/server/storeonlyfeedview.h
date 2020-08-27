@@ -144,7 +144,7 @@ private:
     const document::DocumentType                            *_docType;
     LidReuseDelayer                                          _lidReuseDelayer;
     PendingLidTracker                                        _pendingLidsForDocStore;
-    std::unique_ptr<IPendingLidTracker>                      _pendingLidsForCommit;
+    std::unique_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -184,7 +184,8 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedToken token, SerialNum serialNum, PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
+    void internalRemove(FeedToken token, IPendingLidTracker::Token uncommitted, SerialNum serialNum,
+                        PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
                         Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
@@ -263,7 +264,7 @@ public:
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-    IPendingLidTracker & getUncommittedLidsTracker() override;
+    ILidCommitState & getUncommittedLidsTracker() override;
 };
 
 }

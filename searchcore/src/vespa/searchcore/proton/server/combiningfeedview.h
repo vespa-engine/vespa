@@ -77,7 +77,7 @@ public:
     void sync() override;
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-    IPendingLidTracker & getUncommittedLidsTracker() override;
+    ILidCommitState & getUncommittedLidsTracker() override;
 
     // Called by document db executor
     void setCalculator(const IBucketStateCalculator::SP &newCalc);
