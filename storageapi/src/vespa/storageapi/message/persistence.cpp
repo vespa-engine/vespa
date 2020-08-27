@@ -43,6 +43,11 @@ PutCommand::getDocumentId() const {
     return _doc->getId();
 }
 
+const document::DocumentType *
+PutCommand::getDocumentType() const {
+    return &_doc->getType();
+}
+
 vespalib::string
 PutCommand::getSummary() const
 {
@@ -107,6 +112,11 @@ UpdateCommand::UpdateCommand(const document::Bucket &bucket, const document::Doc
     if ( ! _update) {
         throw vespalib::IllegalArgumentException("Cannot update a null update", VESPA_STRLOC);
     }
+}
+
+const document::DocumentType *
+UpdateCommand::getDocumentType() const {
+    return &_update->getType();
 }
 
 UpdateCommand::~UpdateCommand() = default;

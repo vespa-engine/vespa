@@ -20,9 +20,9 @@ protected:
     storage::spi::Timestamp _prevTimestamp;
     mutable uint32_t        _serializedDocSize; // Set by serialize()/deserialize()
 
-    DocumentOperation(Type type);
+    DocumentOperation(Type type) noexcept;
 
-    DocumentOperation(Type type, document::BucketId bucketId, storage::spi::Timestamp timestamp);
+    DocumentOperation(Type type, document::BucketId bucketId, storage::spi::Timestamp timestamp) noexcept;
 
     void assertValidBucketId(const document::DocumentId &docId) const;
     void assertValidBucketId(const document::GlobalId &docId) const;

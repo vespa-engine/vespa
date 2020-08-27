@@ -34,6 +34,7 @@ public:
      * Used by test and set to retrieve already existing document
      */
     virtual const document::DocumentId & getDocumentId() const = 0;
+    virtual const document::DocumentType * getDocumentType() const { return nullptr; }
 };
 
 /**
@@ -64,6 +65,7 @@ public:
     const DocumentSP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const override;
     Timestamp getTimestamp() const { return _timestamp; }
+    const document::DocumentType * getDocumentType() const override;
 
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -125,6 +127,7 @@ public:
     Timestamp getTimestamp() const { return _timestamp; }
     Timestamp getOldTimestamp() const { return _oldTimestamp; }
 
+    const document::DocumentType * getDocumentType() const override;
     vespalib::string getSummary() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
