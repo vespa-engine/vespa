@@ -521,7 +521,7 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void below_resource_limit() {
+    public void below_memory_resource_limit() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = tester.makeApplicationId();
@@ -531,7 +531,22 @@ public class ProvisioningTest {
                     new NodeResources(2, 2, 10, 2), tester);
         }
         catch (IllegalArgumentException e) {
-            assertEquals("container cluster 'container0': Min memory size is 2.00 Gb but must be at least 4.00 Gb", e.getMessage());
+            assertEquals("container cluster 'container0': Min memoryGb size is 2.00 Gb but must be at least 4.00 Gb", e.getMessage());
+        }
+    }
+
+    @Test
+    public void below_vcpu_resource_limit() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+
+        ApplicationId application = tester.makeApplicationId();
+        tester.makeReadyHosts(10, defaultResources).deployZoneApp();
+        try {
+            prepare(application, 2, 2, 3, 3,
+                    new NodeResources(0.4, 4, 10, 2), tester);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("container cluster 'container0': Min vcpu size is 0.40 but must be at least 0.50", e.getMessage());
         }
     }
 
