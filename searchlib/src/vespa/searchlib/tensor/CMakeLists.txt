@@ -5,6 +5,7 @@ vespa_add_library(searchlib_tensor OBJECT
     dense_tensor_attribute.cpp
     dense_tensor_attribute_saver.cpp
     dense_tensor_store.cpp
+    direct_tensor_attribute.cpp
     distance_function_factory.cpp
     distance_functions.cpp
     generic_tensor_attribute.cpp
@@ -20,6 +21,7 @@ vespa_add_library(searchlib_tensor OBJECT
     nearest_neighbor_index.cpp
     nearest_neighbor_index_saver.cpp
     tensor_attribute.cpp
+    tensor_deserialize.cpp
     tensor_store.cpp
     DEPENDS
 )
