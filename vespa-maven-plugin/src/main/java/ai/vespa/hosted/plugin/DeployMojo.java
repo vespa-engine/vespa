@@ -50,7 +50,7 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
         loggable = DeploymentLog.Level.valueOf(vespaLogLevel);
         Deployment deployment = Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip,
                                                                              projectPathOf("target", "application.zip"))));
-        if (vespaVersion != null) deployment = deployment.atVersion(vespaVersion);
+        if (!isNullOrBlank(vespaVersion)) deployment = deployment.atVersion(vespaVersion);
 
         ZoneId zone = zoneOf(environment, region);
         DeploymentResult result = controller.deploy(deployment, id, zone);
