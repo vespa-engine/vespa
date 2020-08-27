@@ -48,11 +48,18 @@ int32_t StructuredDataType::createId(vespalib::stringref name)
     // ASCII characters. Probably screwed up otherwise, but generated ids
     // should only be used in testing anyways. In production this will be
     // set from the document manager config.
-    char *bufOnStack = static_cast<char *>(alloca(name.size() + 2));
-    memcpy(bufOnStack, name.data(), name.size());
-    bufOnStack[name.size()] = '.';
-    bufOnStack[name.size() + 1] = '0';
-    return crappyJavaStringHash(vespalib::stringref(bufOnStack, name.size() + 2));
+    constexpr size_t BUFFER_SIZE = 1024;
+    if ((name.size() + 2) < BUFFER_SIZE) {
+        char buf[BUFFER_SIZE];
+        memcpy(buf, name.data(), name.size());
+        buf[name.size()] = '.';
+        buf[name.size() + 1] = '0';
+        return crappyJavaStringHash(vespalib::stringref(buf, name.size() + 2));
+    } else {
+        vespalib::asciistream ost;
+        ost << name << ".0";  // Hardcode version 0 (version is not supported).
+        return crappyJavaStringHash(ost.str());
+    }
 }
 
 void
