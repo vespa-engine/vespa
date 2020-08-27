@@ -97,7 +97,7 @@ protected:
 };
 
 /**
- * Use for tracking lids whenn visibility-delay is zero and commit is implicit.
+ * Use for tracking lids when visibility-delay is zero and commit is implicit.
  * In this case lids go directly to WAITING and the second phase is a noop.
  */
 class PendingLidTracker : public PendingLidTrackerBase

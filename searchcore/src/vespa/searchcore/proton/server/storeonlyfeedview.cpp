@@ -318,7 +318,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
          _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(putOp, docId.getGlobalId(), docId);
-    auto unconmitted = _pendingLidsForCommit->produce(putOp.getLid());
+    auto uncommitted = _pendingLidsForCommit->produce(putOp.getLid());
     considerEarlyAck(token);
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
