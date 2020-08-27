@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyvespa's documentation!
-===================================
+pyvespa: Vespa.ai python API
+============================
 
 .. toctree::
    :maxdepth: 2
@@ -14,6 +14,8 @@ Welcome to pyvespa's documentation!
    connect-to-vespa-instance
    reference-api
 
+``pyvespa`` provides a python API to [vespa.ai](vespa.ai). It allow us to create, modify, deploy and interact with
+running Vespa instances. The main goal of the library is to allow for faster prototyping and ML experimentation.
 
 Indices and tables
 ==================
