@@ -7,6 +7,7 @@ pyvespa: Vespa.ai python API
 ============================
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
    :caption: Contents:
 
