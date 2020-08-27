@@ -11,6 +11,7 @@ Welcome to pyvespa's documentation!
    :caption: Contents:
 
    install
+   connect-to-vespa-instance
    reference-api
 
 
