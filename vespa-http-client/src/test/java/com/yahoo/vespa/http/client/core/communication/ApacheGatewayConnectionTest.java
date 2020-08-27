@@ -106,26 +106,6 @@ public class ApacheGatewayConnectionTest {
         apacheGatewayConnection.writeOperations(documents);
     }
 
-    @Test(expected=RuntimeException.class)
-    public void testBadConfigParameters() throws Exception {
-            final Endpoint endpoint = Endpoint.create("localhost", 666, false);
-        final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
-        final String clusterSpecificRoute = "";
-        final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .build();
-
-        final ApacheGatewayConnection.HttpClientFactory mockFactory =
-                mock(ApacheGatewayConnection.HttpClientFactory.class);
-
-        new ApacheGatewayConnection(
-                endpoint,
-                feedParams,
-                clusterSpecificRoute,
-                connectionParams,
-                mockFactory,
-                null);
-    }
-
     @Test
     public void testJsonDocumentHeader() throws Exception {
         final Endpoint endpoint = Endpoint.create("localhost", 666, false);

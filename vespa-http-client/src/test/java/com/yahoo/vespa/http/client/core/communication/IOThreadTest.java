@@ -62,15 +62,12 @@ public class IOThreadTest {
      * @param isTransient checked on failure, if different, the mock will fail.
      * @param expectedException checked on failure, if exception toString is different, the mock will fail.
      */
-    void setupEndpointResultQueueMock(String expectedDocIdFail, String expectedDocIdOk,boolean isTransient, String expectedException) {
-
+    void setupEndpointResultQueueMock(String expectedDocIdFail, String expectedDocIdOk, boolean isTransient, String expectedException) {
         doAnswer(invocation -> {
             EndpointResult endpointResult = (EndpointResult) invocation.getArguments()[0];
             assertThat(endpointResult.getOperationId(), is(expectedDocIdFail));
-            assertThat(endpointResult.getDetail().getException().toString(),
-                    containsString(expectedException));
-            assertThat(endpointResult.getDetail().getResultType(), is(
-                    isTransient ? Result.ResultType.TRANSITIVE_ERROR : Result.ResultType.FATAL_ERROR));
+            assertThat(endpointResult.getDetail().getException().toString(), containsString(expectedException));
+            assertThat(endpointResult.getDetail().getResultType(), is(isTransient ? Result.ResultType.TRANSITIVE_ERROR : Result.ResultType.FATAL_ERROR));
 
             latch.countDown();
             return null;
@@ -86,7 +83,17 @@ public class IOThreadTest {
     }
 
     private IOThread createIOThread(int maxInFlightRequests, long localQueueTimeOut) {
-        return new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, maxInFlightRequests, localQueueTimeOut, documentQueue, 0, 10);
+        return new IOThread(null,
+                            ENDPOINT,
+                            endpointResultQueue,
+                            new SingletonGatewayConnectionFactory(apacheGatewayConnection),
+                            0,
+                            0,
+                            maxInFlightRequests,
+                            localQueueTimeOut,
+                            documentQueue,
+                            0,
+                            10);
     }
 
     @Test
@@ -196,6 +203,19 @@ public class IOThreadTest {
             return null;
         }).when(endpointResultQueue).onEndpointError(any());
         return futureResult;
+    }
+
+    private static final class SingletonGatewayConnectionFactory implements GatewayConnectionFactory {
+
+        private final GatewayConnection singletonConnection;
+
+        SingletonGatewayConnectionFactory(GatewayConnection singletonConnection) {
+            this.singletonConnection = singletonConnection;
+        }
+
+        @Override
+        public GatewayConnection newConnection() { return singletonConnection; }
+
     }
 
 }

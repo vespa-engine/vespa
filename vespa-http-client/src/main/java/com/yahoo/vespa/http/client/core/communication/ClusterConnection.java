@@ -66,21 +66,22 @@ public class ClusterConnection implements AutoCloseable {
                                                                               timeoutExecutor,
                                                                               feedParams.getServerTimeout(TimeUnit.MILLISECONDS) + feedParams.getClientTimeout(TimeUnit.MILLISECONDS));
             for (int i = 0; i < connectionParams.getNumPersistentConnectionsPerEndpoint(); i++) {
-                GatewayConnection gatewayConnection;
+                GatewayConnectionFactory connectionFactory;
                 if (connectionParams.isDryRun()) {
-                    gatewayConnection = new DryRunGatewayConnection(endpoint);
+                    connectionFactory = new DryRunGatewayConnectionFactory(endpoint);
                 } else {
-                    gatewayConnection = new ApacheGatewayConnection(endpoint,
-                                                                    feedParams,
-                                                                    cluster.getRoute(),
-                                                                    connectionParams,
-                                                                    new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
-                                                                    operationProcessor.getClientId()
+                    connectionFactory = new ApacheGatewayConnectionFactory(endpoint,
+                                                                           feedParams,
+                                                                           cluster.getRoute(),
+                                                                           connectionParams,
+                                                                           new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
+                                                                           operationProcessor.getClientId()
                     );
                 }
                 IOThread ioThread = new IOThread(operationProcessor.getIoThreadGroup(),
+                                                 endpoint,
                                                  endpointResultQueue,
-                                                 gatewayConnection,
+                                                 connectionFactory,
                                                  clusterId,
                                                  feedParams.getMaxChunkSizeBytes(),
                                                  maxInFlightPerSession,

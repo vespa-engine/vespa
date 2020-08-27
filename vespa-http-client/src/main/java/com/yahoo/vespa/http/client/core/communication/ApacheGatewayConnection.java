@@ -28,8 +28,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -70,40 +68,27 @@ class ApacheGatewayConnection implements GatewayConnection {
     private final HttpClientFactory httpClientFactory;
     private final String shardingKey = UUID.randomUUID().toString().substring(0, 5);
 
-    ApacheGatewayConnection(
-            Endpoint endpoint,
-            FeedParams feedParams,
-            String clusterSpecificRoute,
-            ConnectionParams connectionParams,
-            HttpClientFactory httpClientFactory,
-            String clientId) {
+    ApacheGatewayConnection(Endpoint endpoint,
+                            FeedParams feedParams,
+                            String clusterSpecificRoute,
+                            ConnectionParams connectionParams,
+                            HttpClientFactory httpClientFactory,
+                            String clientId) {
         SUPPORTED_VERSIONS.add(3);
-        this.endpoint = validate(endpoint);
+        this.endpoint = endpoint;
         this.feedParams = feedParams;
         this.clusterSpecificRoute = clusterSpecificRoute;
         this.httpClientFactory = httpClientFactory;
         this.connectionParams = connectionParams;
         this.httpClient = null;
-        boolean isJson = feedParams.getDataFormat() == FeedParams.DataFormat.JSON_UTF8;
-        if (isJson) {
+        this.clientId = clientId;
+
+        if (feedParams.getDataFormat() == FeedParams.DataFormat.JSON_UTF8) {
             startOfFeed = START_OF_FEED_JSON;
             endOfFeed = END_OF_FEED_JSON;
         } else {
             startOfFeed = START_OF_FEED_XML;
             endOfFeed = END_OF_FEED_XML;
-        }
-        this.clientId = clientId;
-        if (this.clientId == null)
-            throw new IllegalArgumentException("Got no client Id.");
-    }
-
-    private static Endpoint validate(Endpoint endpoint) {
-        try {
-            InetAddress.getByName(endpoint.getHostname());
-            return endpoint;
-        }
-        catch (UnknownHostException e) {
-            throw new IllegalArgumentException("Unknown host: " + endpoint);
         }
     }
 
