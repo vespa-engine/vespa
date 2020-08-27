@@ -16,7 +16,7 @@ import static org.junit.Assert.fail;
  */
 public class QuotaValidatorTest {
 
-    private final Quota quota = new Quota(Optional.of(5), Optional.empty());
+    private final Quota quota = new Quota(Optional.of(10), Optional.of(1));
 
     @Test
     public void test_deploy_under_quota() {
@@ -25,13 +25,24 @@ public class QuotaValidatorTest {
     }
 
     @Test
-    public void test_deploy_above_quota() {
-        var tester = new ValidationTester(6, new TestProperties().setHostedVespa(true).setQuota(quota));
+    public void test_deploy_above_quota_clustersize() {
+        var tester = new ValidationTester(11, new TestProperties().setHostedVespa(true).setQuota(quota));
         try {
-            tester.deploy(null, getServices("testCluster", 6), Environment.prod, null);
+            tester.deploy(null, getServices("testCluster", 11), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Clusters testCluster exceeded max cluster size of 5", e.getMessage());
+            assertEquals("Clusters testCluster exceeded max cluster size of 10", e.getMessage());
+        }
+    }
+
+    @Test
+    public void test_deploy_above_quota_budget() {
+        var tester = new ValidationTester(10, new TestProperties().setHostedVespa(true).setQuota(quota));
+        try {
+            tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals("Hourly spend for maximum specified resources ($1.60) exceeds budget from quota ($1)!", e.getMessage());
         }
     }
 
@@ -45,7 +56,9 @@ public class QuotaValidatorTest {
                 "    <documents>" +
                 "      <document type='music' mode='index'/>" +
                 "    </documents>" +
-                "    <nodes count='" + nodeCount + "'/>" +
+                "    <nodes count='" + nodeCount + "'>" +
+                "      <resources vcpu=\"[0.5, 1]\" memory=\"[1Gb, 3Gb]\" disk=\"[1Gb, 9Gb]\"/>\n" +
+                "    </nodes>" +
                 "   </content>" +
                 "</services>";
     }

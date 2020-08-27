@@ -6,6 +6,8 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -24,7 +26,7 @@ public class ContainerDocumentApi {
     }
 
     private void setupHandlers(ContainerCluster cluster) {
-        cluster.addComponent(newVespaClientHandler("com.yahoo.document.restapi.resource.RestApi", "document/v1/*"));
+        cluster.addComponent(newVespaClientHandler("com.yahoo.document.restapi.resource.RestApi", "/document/v1/*"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"));
     }
 
@@ -32,9 +34,18 @@ public class ContainerDocumentApi {
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(componentId, null, vespaClientBundleSpecification), ""));
 
-        for (String rootBinding : options.bindings) {
-            handler.addServerBindings(rootBinding + bindingSuffix,
-                    rootBinding + bindingSuffix + '/');
+        if (options.bindings.isEmpty()) {
+            handler.addServerBindings(
+                    SystemBindingPattern.fromHttpPath(bindingSuffix),
+                    SystemBindingPattern.fromHttpPath(bindingSuffix + '/'));
+        } else {
+            for (String rootBinding : options.bindings) {
+                String pathWithoutLeadingSlash = bindingSuffix.substring(1);
+                handler.addServerBindings(
+                        UserBindingPattern.fromPattern(rootBinding + pathWithoutLeadingSlash),
+                        UserBindingPattern.fromPattern(rootBinding + pathWithoutLeadingSlash + '/'));
+            }
+
         }
         return handler;
     }
