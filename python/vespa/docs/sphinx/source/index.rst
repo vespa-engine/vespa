@@ -8,7 +8,9 @@ Welcome to pyvespa's documentation!
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
 
+   install
 
 
 Indices and tables
