@@ -105,6 +105,7 @@ vespa_define_module(
     src/tests/bytecomplens
     src/tests/common/bitvector
     src/tests/common/location
+    src/tests/common/location_iterator
     src/tests/common/matching_elements
     src/tests/common/matching_elements_fields
     src/tests/common/resultset

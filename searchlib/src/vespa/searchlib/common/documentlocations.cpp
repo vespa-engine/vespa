@@ -8,18 +8,11 @@ namespace search {
 namespace common {
 
 DocumentLocations::DocumentLocations()
-    : _vec_guard(new AttributeGuard),
-      _vec(NULL)
+    : _vec(NULL)
 {
 }
 
 DocumentLocations::~DocumentLocations() { }
-
-void
-DocumentLocations::setVecGuard(std::unique_ptr<search::AttributeGuard> guard) {
-    _vec_guard = std::move(guard);
-    setVec(*_vec_guard.get()->get());
-}
 
 DocumentLocations::DocumentLocations(DocumentLocations &&) = default;
 DocumentLocations & DocumentLocations::operator = (DocumentLocations &&) = default;
