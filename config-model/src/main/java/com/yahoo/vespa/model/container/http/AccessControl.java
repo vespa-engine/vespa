@@ -135,12 +135,17 @@ public class AccessControl {
 
     // Remove bindings from access control chain that have binding pattern as a different filter chain
     private void removeDuplicateBindingsFromAccessControlChain(Http http) {
+        removeDuplicateBindingsFromChain(http, ACCESS_CONTROL_CHAIN_ID);
+        removeDuplicateBindingsFromChain(http, ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
+    }
+
+    private void removeDuplicateBindingsFromChain(Http http, ComponentId chainId) {
         Set<FilterBinding> duplicateBindings = new HashSet<>();
         for (FilterBinding binding : http.getBindings()) {
-            if (binding.chainId().toId().equals(ACCESS_CONTROL_CHAIN_ID)) {
+            if (binding.chainId().toId().equals(chainId)) {
                 for (FilterBinding otherBinding : http.getBindings()) {
                     if (!binding.chainId().equals(otherBinding.chainId())
-                            && binding.binding().equals(otherBinding.binding())) {
+                            && effectivelyDuplicateOf(binding.binding(), otherBinding.binding())) {
                         duplicateBindings.add(binding);
                     }
                 }
@@ -148,6 +153,12 @@ public class AccessControl {
         }
         duplicateBindings.forEach(http.getBindings()::remove);
     }
+
+    private static boolean effectivelyDuplicateOf(BindingPattern accessControlBinding, BindingPattern other) {
+        return accessControlBinding.equals(other)
+                || (accessControlBinding.path().equals(other.path()) && other.matchesAnyPort());
+    }
+
 
     private static FilterBinding createAccessControlBinding(String path) {
         return FilterBinding.create(

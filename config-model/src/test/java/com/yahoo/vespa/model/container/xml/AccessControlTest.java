@@ -191,6 +191,42 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertThat(http.getFilterChains().hasChain(ComponentId.fromString("myChain")), is(true));
     }
 
+    @Test
+    public void access_control_chains_does_not_contain_duplicate_bindings_to_user_filter_chain() {
+        Http http = createModelAndGetHttp(
+                "  <http>",
+                "    <handler id='custom.Handler'>",
+                "      <binding>http://*/custom-handler/*</binding>",
+                "      <binding>http://*/</binding>",
+                "    </handler>",
+                "    <filtering>",
+                "      <access-control/>",
+                "      <request-chain id='my-custom-request-chain'>",
+                "        <filter id='my-custom-request-filter' />",
+                "        <binding>http://*/custom-handler/*</binding>",
+                "        <binding>http://*/</binding>",
+                "      </request-chain>",
+                "    </filtering>",
+                "  </http>");
+
+        Set<String> actualExcludeBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
+        assertThat(actualExcludeBindings, containsInAnyOrder(
+                "http://*:4443/ApplicationStatus",
+                "http://*:4443/status.html",
+                "http://*:4443/state/v1",
+                "http://*:4443/state/v1/*",
+                "http://*:4443/prometheus/v1",
+                "http://*:4443/prometheus/v1/*",
+                "http://*:4443/metrics/v2",
+                "http://*:4443/metrics/v2/*"));
+
+        Set<String> actualAccessControlBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_CHAIN_ID);
+        assertThat(actualAccessControlBindings, containsInAnyOrder("http://*:4443/*"));
+
+        Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-request-chain"));
+        assertThat(actualCustomChainBindings, containsInAnyOrder("http://*/custom-handler/*", "http://*/"));
+    }
+
     private Http createModelAndGetHttp(String... httpElement) {
         List<String> servicesXml = new ArrayList<>();
         servicesXml.add("<container version='1.0'>");
