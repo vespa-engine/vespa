@@ -1,5 +1,5 @@
-pyvespa package
-===============
+Reference API
+=============
 
 vespa.application module
 ------------------------
