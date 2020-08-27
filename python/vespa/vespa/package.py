@@ -630,13 +630,21 @@ class VespaCloud(object):
 
         :return: a Vespa connection instance.
         """
-
         region = self.get_dev_region()
         job = 'dev-' + region
         run = self.start_deployment(instance, job, application_package)
         self.follow_deployment(instance, job, run)
         endpoint_url = self.get_endpoint(instance, region)
         return Vespa(url = endpoint_url, cert = self.data_cert_file.name)
+
+    def delete(self, instance: str):
+        """
+        Delete the specified instance from the dev environment in the Vespa Cloud.
+        :param instance: Name of the instance to delete.
+        :return:
+        """
+        print(self.request('DELETE', '/application/v4/tenant/{}/application/{}/instance/{}/environment/dev/region/{}' \
+                           .format(self.tenant, self.application, instance, self.get_dev_region()))['message'])
 
     def close(self):
         self.connection.close()
