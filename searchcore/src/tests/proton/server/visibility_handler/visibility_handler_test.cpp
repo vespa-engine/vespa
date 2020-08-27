@@ -40,7 +40,7 @@ class MyFeedView : public DummyFeedView
     uint32_t _forceCommitCount;
     SerialNum _committedSerialNum;
 public:
-    std::unique_ptr<proton::PendingLidTrackerBase> _tracker;
+    proton::PendingLidTracker _tracker;
 
 
     MyFeedView()
@@ -48,20 +48,11 @@ public:
           _committedSerialNum(0u)
     {}
 
-    void setTracker(vespalib::duration visibilityDelay) {
-        if (visibilityDelay == vespalib::duration::zero()) {
-            _tracker = std::make_unique<proton::PendingLidTracker>();
-        } else {
-            _tracker = std::make_unique<proton::TwoPhasePendingLidTracker>();
-        }
-    }
-
     void forceCommit(SerialNum serialNum) override
     {
         EXPECT_TRUE(serialNum >= _committedSerialNum);
         _committedSerialNum = serialNum;
         ++_forceCommitCount;
-        _tracker->produceSnapshot();
     }
 
     uint32_t getForceCommitCount() const { return _forceCommitCount; }
@@ -94,22 +85,25 @@ public:
     void
     checkCommitPostCondition(uint32_t expForceCommitCount,
                              SerialNum expCommittedSerialNum,
-                             uint32_t expMasterExecuteCnt)
+                             uint32_t expMasterExecuteCnt,
+                             uint32_t expAttributeFieldWriterSyncCnt)
     {
         EXPECT_EQUAL(expForceCommitCount, _feedViewReal->getForceCommitCount());
         EXPECT_EQUAL(expCommittedSerialNum,
                      _feedViewReal->getCommittedSerialNum());
         EXPECT_EQUAL(expMasterExecuteCnt,
                      _writeService.masterObserver().getExecuteCnt());
+        EXPECT_EQUAL(expAttributeFieldWriterSyncCnt,
+                     _writeService.attributeFieldWriterObserver().getSyncCnt());
     }
 
     void
     testCommit(vespalib::duration visibilityDelay, bool internal,
                uint32_t expForceCommitCount, SerialNum expCommittedSerialNum,
                uint32_t expMasterExecuteCnt,
+               uint32_t expAttributeFieldWriterSyncCnt,
                SerialNum currSerialNum = 10u)
     {
-        _feedViewReal->setTracker(visibilityDelay);
         _getSerialNum.setSerialNum(currSerialNum);
         _visibilityHandler.setVisibilityDelay(visibilityDelay);
         if (internal) {
@@ -122,16 +116,8 @@ public:
         _writeService.master().sync();
         checkCommitPostCondition(expForceCommitCount,
                                  expCommittedSerialNum,
-                                 expMasterExecuteCnt);
-    }
-
-    proton::PendingLidTracker::Token
-    createToken(proton::PendingLidTrackerBase & tracker, SerialNum serialNum, uint32_t lid) {
-        if (serialNum == 0) {
-            return proton::PendingLidTracker::Token();
-        } else {
-            return tracker.produce(lid);;
-        }
+                                 expMasterExecuteCnt,
+                                 expAttributeFieldWriterSyncCnt);
     }
 
     void
@@ -139,16 +125,16 @@ public:
                       uint32_t expForceCommitCount,
                       SerialNum expCommittedSerialNum,
                       uint32_t expMasterExecuteCnt,
+                      uint32_t expAttributeFieldWriterSyncCnt,
                       SerialNum currSerialNum = 10u)
     {
-        _feedViewReal->setTracker(visibilityDelay);
         _getSerialNum.setSerialNum(currSerialNum);
         _visibilityHandler.setVisibilityDelay(visibilityDelay);
         constexpr uint32_t MY_LID=13;
-        proton::PendingLidTrackerBase * lidTracker = _feedViewReal->_tracker.get();
-        {
-            proton::PendingLidTracker::Token token = createToken(*lidTracker, currSerialNum, MY_LID);
+        if (currSerialNum != 0) {
+            _feedViewReal->_tracker.produce(MY_LID);
         }
+        proton::PendingLidTracker * lidTracker = & _feedViewReal->_tracker;
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
             auto task = makeLambdaTask([=]() { visibilityHandler->commitAndWait(*lidTracker, MY_LID); });
@@ -159,7 +145,8 @@ public:
         }
         checkCommitPostCondition(expForceCommitCount,
                                  expCommittedSerialNum,
-                                 expMasterExecuteCnt);
+                                 expMasterExecuteCnt,
+                                 expAttributeFieldWriterSyncCnt);
     }
 };
 
@@ -167,62 +154,62 @@ public:
 
 TEST_F("Check external commit with zero visibility delay", Fixture)
 {
-    f.testCommit(0s, false, 0u, 0u, 0u);
+    f.testCommit(0s, false, 0u, 0u, 0u, 0u);
 }
 
 TEST_F("Check external commit with nonzero visibility delay", Fixture)
 {
-    f.testCommit(1s, false, 1u, 10u, 1u);
+    f.testCommit(1s, false, 1u, 10u, 1u, 0u);
 }
 
 TEST_F("Check external commit with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommit(1s, false, 1u, 0u, 1u, 0u);
+    f.testCommit(1s, false, 1u, 0u, 1u, 0u, 0u);
 }
 
 TEST_F("Check internal commit with zero visibility delay", Fixture)
 {
-    f.testCommit(0s, true, 0u, 0u, 1u);
+    f.testCommit(0s, true, 0u, 0u, 1u, 0u);
 }
 
 TEST_F("Check internal commit with nonzero visibility delay", Fixture)
 {
-    f.testCommit(1s, true, 1u, 10u, 1u);
+    f.testCommit(1s, true, 1u, 10u, 1u, 0u);
 }
 
 TEST_F("Check internal commit with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommit(1s, true, 1u, 0u, 1u, 0u);
+    f.testCommit(1s, true, 1u, 0u, 1u, 0u, 0u);
 }
 
 TEST_F("Check external commitAndWait with zero visibility delay", Fixture)
 {
-    f.testCommitAndWait(0s, false, 0u, 0u, 0u);
+    f.testCommitAndWait(0s, false, 0u, 0u, 0u, 1u);
 }
 
 TEST_F("Check external commitAndWait with nonzero visibility delay", Fixture)
 {
-    f.testCommitAndWait(1s, false, 1u, 10u, 1u);
+    f.testCommitAndWait(1s, false, 1u, 10u, 1u, 1u);
 }
 
 TEST_F("Check external commitAndWait with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommitAndWait(1s, false, 0u, 0u, 0u, 0u);
+    f.testCommitAndWait(1s, false, 0u, 0u, 0u, 1u, 0u);
 }
 
 TEST_F("Check internal commitAndWait with zero visibility delay", Fixture)
 {
-    f.testCommitAndWait(0s, true, 0u, 0u, 1u);
+    f.testCommitAndWait(0s, true, 0u, 0u, 1u, 1u);
 }
 
 TEST_F("Check internal commitAndWait with nonzero visibility delay", Fixture)
 {
-    f.testCommitAndWait(1s, true, 1u, 10u, 1u);
+    f.testCommitAndWait(1s, true, 1u, 10u, 1u, 1u);
 }
 
 TEST_F("Check internal commitAndWait with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommitAndWait(1s, true, 0u, 0u, 1u, 0u);
+    f.testCommitAndWait(1s, true, 0u, 0u, 1u, 1u, 0u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

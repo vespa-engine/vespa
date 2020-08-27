@@ -271,7 +271,7 @@ SearchableDocSubDB::reconfigureIndexSearchable()
 {
     std::lock_guard<std::mutex> guard(_configMutex);
     // Create new views as needed.
-    _commitable.commitAndWait(_iFeedView.get()->getUncommittedLidsTracker());
+    _commitable.commitAndWait();
     _configurer.reconfigureIndexSearchable();
     // Activate new feed view at once
     syncViews();

@@ -386,12 +386,12 @@ public:
 
     void syncSubDBs();
     void commit() override { }
-    void commitAndWait(ILidCommitState & ) override { }
-    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
-        commitAndWait(tracker);
+    void commitAndWait() override { }
+    void commitAndWait(IPendingLidTracker &, uint32_t ) override {
+        commitAndWait();
     }
-    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
-        commitAndWait(tracker);
+    void commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) override {
+        commitAndWait();
     }
     void performSyncSubDBs();
     void notifyClusterStateChanged();

@@ -15,10 +15,3 @@ vespa_add_executable(searchcore_cachedselect_test_app TEST
     searchlib_test
 )
 vespa_add_test(NAME searchcore_cachedselect_test_app COMMAND searchcore_cachedselect_test_app)
-vespa_add_executable(pendinglidtracker_test_app TEST
-    SOURCES
-    pendinglidtracker_test.cpp
-    DEPENDS
-    searchcore_pcommon
-)
-vespa_add_test(NAME pendinglidtracker_test_app COMMAND pendinglidtracker_test_app)

@@ -8,10 +8,9 @@
 namespace proton {
 
 ForceCommitContext::ForceCommitContext(vespalib::Executor &executor,
-                                       IDocumentMetaStore &documentMetaStore,
-                                       PendingLidTrackerBase::Snapshot lidsToCommit)
+                                       IDocumentMetaStore &documentMetaStore)
     : _executor(executor),
-      _task(std::make_unique<ForceCommitDoneTask>(documentMetaStore, std::move(lidsToCommit))),
+      _task(std::make_unique<ForceCommitDoneTask>(documentMetaStore)),
       _committedDocIdLimit(0u),
       _docIdLimit(nullptr)
 {
