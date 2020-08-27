@@ -9,7 +9,11 @@
 
 namespace proton {
 
-/** Interface for tracking lids in the feed pipeline */
+/** Interface for tracking lids in the feed pipeline.
+ * A token is created with produce(lid).
+ * Once the token goes out of scope the lid is then consumed.
+ * This is used to track which lids are inflight in the feed pipeline.
+ */
 class IPendingLidTracker {
 public:
     class Token {
@@ -37,7 +41,11 @@ private:
 };
 
 /**
- * This is an interface for checking/waiting the state of a lid in the feedpipeline
+ * This is an interface for checking/waiting the state of a lid in the feed pipeline
+ * The lid might need a commit (NEED_COMMIT), but if visibility-delay is zero it will go directly to WAITING
+ * as no explicit commit is needed.
+ * After a commit has been started the lid is transferred to WAITING.
+ * Once the commit has gone through the lid is in state COMPLETED.
  */
 class ILidCommitState {
 public:
@@ -57,7 +65,12 @@ private:
 };
 
 /**
- * Base class for doing 2 phase lidtracking.
+ * Base class for doing 2 phased lid tracking. The first phase is from when the feed operation
+ * is in progress and lasts until the OperationDoneContext goes out of scope. This might include commit
+ * when visibility-delay is zero.
+ * When a commit is started a snapshot containing all lids in state NEED_COMMIT are taken,
+ * while also moving the lids to WAITING. Once the snapshot goes out of scope when the commit is complete,
+ * it will cleanup and move all lids from WAITING to COMPLETE.
  */
 class PendingLidTrackerBase : public IPendingLidTracker,
                               public ILidCommitState
@@ -84,7 +97,8 @@ protected:
 };
 
 /**
- * Use for tracking lids in a single phase.
+ * Use for tracking lids whenn visibility-delay is zero and commit is implicit.
+ * In this case lids go directly to WAITING and the second phase is a noop.
  */
 class PendingLidTracker : public PendingLidTrackerBase
 {
@@ -105,7 +119,8 @@ namespace common::internal {
     class CommitList;
 }
 /**
- * Use for tracking lids in 2 phases.
+ * Use for tracking lids in 2 phases which is needed when visibility-delay is non-zero.
+ * It tracks lids that are in feed pipeline, lids where commit has been started and when they fully complete.
  */
 class TwoPhasePendingLidTracker : public PendingLidTrackerBase
 {
