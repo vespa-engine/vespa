@@ -15,6 +15,7 @@ class Vespa(object):
         url: str,
         port: Optional[int] = None,
         deployment_message: Optional[List[str]] = None,
+        cert: Optional[str] = None,
     ) -> None:
         """
         Establish a connection with a Vespa application.
@@ -22,6 +23,7 @@ class Vespa(object):
         :param url: URL
         :param port: Port
         :param deployment_message: Message returned by Vespa engine after deployment.
+        :param cert: Certificate and key pair used for mTLS.
 
             >>> Vespa(url = "https://cord19.vespa.ai")
             >>> Vespa(url = "http://localhost", port = 8080)
@@ -30,6 +32,7 @@ class Vespa(object):
         self.url = url
         self.port = port
         self.deployment_message = deployment_message
+        self.cert = cert
 
         if port is None:
             self.end_point = self.url
@@ -87,7 +90,7 @@ class Vespa(object):
         if debug_request:
             return VespaResult(vespa_result={}, request_body=body)
         else:
-            r = post(self.search_end_point, json=body)
+            r = post(self.search_end_point, json=body, cert=self.cert)
             return VespaResult(vespa_result=r.json())
 
     def feed_data_point(self, schema: str, data_id: str, fields: Dict) -> Response:
@@ -103,7 +106,7 @@ class Vespa(object):
             self.end_point, schema, schema, str(data_id)
         )
         vespa_format = {"fields": fields}
-        response = post(end_point, json=vespa_format)
+        response = post(end_point, json=vespa_format, cert=self.cert)
         return response
 
     def collect_training_data_point(
