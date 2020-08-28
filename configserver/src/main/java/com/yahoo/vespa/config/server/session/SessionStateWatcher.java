@@ -55,7 +55,7 @@ public class SessionStateWatcher {
                 break;
             case PREPARE:
                 createLocalSession(sessionId);
-                sessionRepository.prepare(remoteSession);
+                sessionRepository.prepareRemoteSession(remoteSession);
                 break;
             case ACTIVATE:
                 createLocalSession(sessionId);
@@ -65,7 +65,7 @@ public class SessionStateWatcher {
                 sessionRepository.deactivate(remoteSession);
                 break;
             case DELETE:
-                sessionRepository.delete(remoteSession, localSession);
+                sessionRepository.deleteSession(remoteSession, localSession);
                 break;
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
