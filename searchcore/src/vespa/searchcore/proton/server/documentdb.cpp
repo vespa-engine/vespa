@@ -564,6 +564,9 @@ DocumentDB::close()
     // Abort any ongoing maintenance
     stopMaintenance();
 
+    _visibility.commit();
+    _writeService.sync();
+
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetrics();
     _metricsWireService.cleanAttributes(metrics.ready.attributes);
@@ -905,6 +908,10 @@ DocumentDB::syncFeedView()
         return;
     IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
+
+    _visibility.commit();
+    _writeService.sync();
+
     _feedView.set(newFeedView);
     _feedHandler.setActiveFeedView(newFeedView.get());
     _subDBs.createRetrievers();

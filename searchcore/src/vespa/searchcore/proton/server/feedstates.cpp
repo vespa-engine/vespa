@@ -82,6 +82,8 @@ public:
           _commitTimeTracker(100ms)
     { }
 
+    ~TransactionLogReplayPacketHandler() override = default;
+
     void replay(const PutOperation &op) override {
         _feed_view_ptr->handlePut(FeedToken(), op);
     }
@@ -152,6 +154,8 @@ ReplayTransactionLogState::ReplayTransactionLogState(
       _doc_type_name(name),
       _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store))
 { }
+
+ReplayTransactionLogState::~ReplayTransactionLogState() = default;
 
 void
 ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap, Executor &executor) {
