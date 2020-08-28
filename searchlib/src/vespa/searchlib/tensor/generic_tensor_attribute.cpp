@@ -3,7 +3,7 @@
 #include "generic_tensor_attribute.h"
 #include "generic_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
-#include "tensor_reader.h"
+#include "blob_sequence_reader.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
@@ -64,7 +64,7 @@ GenericTensorAttribute::getTensor(DocId, vespalib::tensor::MutableDenseTensorVie
 bool
 GenericTensorAttribute::onLoad()
 {
-    TensorReader tensorReader(*this);
+    BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {
         return false;
     }
@@ -74,10 +74,10 @@ GenericTensorAttribute::onLoad()
     _refVector.reset();
     _refVector.unsafe_reserve(numDocs);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
-        uint32_t tensorSize = tensorReader.getNextTensorSize();
+        uint32_t tensorSize = tensorReader.getNextSize();
         auto raw = _genericTensorStore.allocRawBuffer(tensorSize);
         if (tensorSize != 0) {
-            tensorReader.readTensor(raw.data, tensorSize);
+            tensorReader.readBlob(raw.data, tensorSize);
         }
         _refVector.push_back(raw.ref);
     }

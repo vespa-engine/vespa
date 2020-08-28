@@ -30,26 +30,26 @@ namespace {
 constexpr uint32_t DENSE_TENSOR_ATTRIBUTE_VERSION = 1;
 const vespalib::string tensorTypeTag("tensortype");
 
-class TensorReader : public ReaderBase
+class BlobSequenceReader : public ReaderBase
 {
 private:
     static constexpr uint8_t tensorIsNotPresent = 0;
     static constexpr uint8_t tensorIsPresent = 1;
 public:
-    TensorReader(AttributeVector &attr);
-    ~TensorReader();
+    BlobSequenceReader(AttributeVector &attr);
+    ~BlobSequenceReader();
     bool is_present();
     void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
 };
 
-TensorReader::TensorReader(AttributeVector &attr)
+BlobSequenceReader::BlobSequenceReader(AttributeVector &attr)
     : ReaderBase(attr)
 {
 }
-TensorReader::~TensorReader() = default;
+BlobSequenceReader::~BlobSequenceReader() = default;
 
 bool
-TensorReader::is_present() {
+BlobSequenceReader::is_present() {
     unsigned char detect;
     _datFile->ReadBuf(&detect, sizeof(detect));
     if (detect == tensorIsNotPresent) {
@@ -190,7 +190,7 @@ DenseTensorAttribute::getTensor(DocId docId, MutableDenseTensorView &tensor) con
 bool
 DenseTensorAttribute::onLoad()
 {
-    TensorReader tensorReader(*this);
+    BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {
         return false;
     }

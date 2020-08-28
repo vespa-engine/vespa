@@ -8,7 +8,7 @@
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/util/array.h>
 
-#include "tensor_reader.h"
+#include "blob_sequence_reader.h"
 #include "tensor_deserialize.h"
 
 using vespalib::tensor::Tensor;
@@ -20,7 +20,7 @@ constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 bool
 DirectTensorAttribute::onLoad()
 {
-    TensorReader tensorReader(*this);
+    BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {
         return false;
     }
@@ -29,12 +29,12 @@ DirectTensorAttribute::onLoad()
     uint32_t numDocs = tensorReader.getDocIdLimit();
     vespalib::Array<char> buffer(1024);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
-        uint32_t tensorSize = tensorReader.getNextTensorSize();
+        uint32_t tensorSize = tensorReader.getNextSize();
         if (tensorSize != 0) {
             if (tensorSize > buffer.size()) {
                 buffer.resize(tensorSize + 1024);
             }
-            tensorReader.readTensor(&buffer[0], tensorSize);
+            tensorReader.readBlob(&buffer[0], tensorSize);
             setTensor(lid, deserialize_tensor(&buffer[0], tensorSize));
         }
     }
