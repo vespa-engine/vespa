@@ -47,11 +47,15 @@ public class IOThreadTest {
     CountDownLatch latch = new CountDownLatch(1);
     String docId1 = V3HttpAPITest.documents.get(0).getDocumentId();
     Document doc1 = new Document(V3HttpAPITest.documents.get(0).getDocumentId(),
-            V3HttpAPITest.documents.get(0).getContents(), null /* context */);
+                                 V3HttpAPITest.documents.get(0).getContents(),
+                                 null,
+                                 Clock.systemUTC().instant());
     String docId2 = V3HttpAPITest.documents.get(1).getDocumentId();
     Document doc2 = new Document(V3HttpAPITest.documents.get(1).getDocumentId(),
-            V3HttpAPITest.documents.get(1).getContents(), null /* context */);
-    DocumentQueue documentQueue = new DocumentQueue(4);
+                                 V3HttpAPITest.documents.get(1).getContents(),
+                                 null,
+                                 Clock.systemUTC().instant());
+    DocumentQueue documentQueue = new DocumentQueue(4, Clock.systemUTC());
 
     public IOThreadTest() {
         when(apacheGatewayConnection.getEndpoint()).thenReturn(ENDPOINT);

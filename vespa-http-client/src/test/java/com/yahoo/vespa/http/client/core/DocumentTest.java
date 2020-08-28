@@ -5,9 +5,9 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.time.Clock;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class DocumentTest {
 
@@ -15,25 +15,25 @@ public class DocumentTest {
     public void simpleCaseOk() {
         String docId = "doc id";
         String docContent = "foo";
-        Document document = new Document(docId, docContent.getBytes(), null);
-        assertThat(document.getDocumentId(), is(docId));
-        assertThat(document.getData(), is(ByteBuffer.wrap(docContent.getBytes())));
-        assertThat(document.getDataAsString().toString(), is(docContent));
+        Document document = new Document(docId, docContent.getBytes(), null, Clock.systemUTC().instant());
+        assertEquals(docId, document.getDocumentId());
+        assertEquals(ByteBuffer.wrap(docContent.getBytes()), document.getData());
+        assertEquals(docContent, document.getDataAsString().toString());
         // Make sure that data is not modified on retrieval.
-        assertThat(document.getDataAsString().toString(), is(docContent));
-        assertThat(document.getData(), is(ByteBuffer.wrap(docContent.getBytes())));
-        assertThat(document.getDocumentId(), is(docId));
+        assertEquals(docContent, document.getDataAsString().toString());
+        assertEquals(ByteBuffer.wrap(docContent.getBytes()), document.getData());
+        assertEquals(docId, document.getDocumentId());
     }
 
     @Test(expected = ReadOnlyBufferException.class)
     public void notMutablePutTest() {
-        Document document = new Document("id", null, "data", null /* context */);
+        Document document = new Document("id", null, "data", null, Clock.systemUTC().instant());
         document.getData().put("a".getBytes());
     }
 
     @Test(expected = ReadOnlyBufferException.class)
     public void notMutableCompactTest() {
-        Document document = new Document("id", null, "data", null /* context */);
+        Document document = new Document("id", null, "data", null, Clock.systemUTC().instant());
         document.getData().compact();
     }
 

@@ -56,6 +56,7 @@ public class OperationProcessor {
     private final boolean traceToStderr;
     private final ThreadGroup ioThreadGroup;
     private final String clientId = new BigInteger(130, random).toString(32);
+    private final Clock clock;
 
     public OperationProcessor(IncompleteResultsThrottler incompleteResultsThrottler,
                               FeedClient.ResultCallback resultCallback,
@@ -67,6 +68,7 @@ public class OperationProcessor {
         this.incompleteResultsThrottler = incompleteResultsThrottler;
         this.timeoutExecutor = timeoutExecutor;
         this.ioThreadGroup = new ThreadGroup("operationprocessor");
+        this.clock = clock;
 
         if (sessionParams.getClusters().isEmpty())
             throw new IllegalArgumentException("Cannot feed to 0 clusters.");
@@ -184,7 +186,7 @@ public class OperationProcessor {
             }
         }
         if (blockedDocumentToSend != null) {
-            sendToClusters(blockedDocumentToSend);
+            sendToClusters(blockedDocumentToSend, clock);
         }
         return result;
     }
@@ -228,13 +230,13 @@ public class OperationProcessor {
             inflightDocumentIds.add(document.getDocumentId());
         }
 
-        sendToClusters(document);
+        sendToClusters(document, clock);
     }
 
-    private void sendToClusters(Document document) {
+    private void sendToClusters(Document document, Clock clock) {
         synchronized (monitor) {
             boolean traceThisDoc = traceEveryXOperation > 0 && traceCounter++ % traceEveryXOperation == 0;
-            docSendInfoByOperationId.put(document.getOperationId(), new DocumentSendInfo(document, traceThisDoc));
+            docSendInfoByOperationId.put(document.getOperationId(), new DocumentSendInfo(document, traceThisDoc, clock));
         }
 
         for (ClusterConnection clusterConnection : clusters) {

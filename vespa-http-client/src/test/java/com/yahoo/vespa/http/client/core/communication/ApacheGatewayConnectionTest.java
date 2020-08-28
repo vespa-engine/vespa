@@ -33,8 +33,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.any;
@@ -83,11 +81,10 @@ public class ApacheGatewayConnectionTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testServerReturnsBadSessionInV3() throws Exception {
-        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
-        final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
-        final String clusterSpecificRoute = "";
-        final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .build();
+        Endpoint endpoint = Endpoint.create("localhost", 666, false);
+        FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
+        String clusterSpecificRoute = "";
+        ConnectionParams connectionParams = new ConnectionParams.Builder().build();
 
         // This is the fake server, returns wrong session Id.
         ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> httpResponse("Wrong Id from server", "3"));
@@ -102,35 +99,33 @@ public class ApacheGatewayConnectionTest {
                         "clientId",
                         Clock.systemUTC());
         apacheGatewayConnection.connect();
-        final List<Document> documents = new ArrayList<>();
+        List<Document> documents = new ArrayList<>();
         apacheGatewayConnection.write(documents);
     }
 
     @Test
     public void testJsonDocumentHeader() throws Exception {
-        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
-        final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
-        final String clusterSpecificRoute = "";
-        final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setUseCompression(true)
-                .build();
-        final List<Document> documents = new ArrayList<>();
+        Endpoint endpoint = Endpoint.create("localhost", 666, false);
+        FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
+        String clusterSpecificRoute = "";
+        ConnectionParams connectionParams = new ConnectionParams.Builder().setUseCompression(true).build();
+        List<Document> documents = new ArrayList<>();
 
-        final String vespaDocContent ="Hello, I a JSON doc.";
-        final String docId = "42";
+        String vespaDocContent ="Hello, I a JSON doc.";
+        String docId = "42";
 
-        final AtomicInteger requestsReceived = new AtomicInteger(0);
+        AtomicInteger requestsReceived = new AtomicInteger(0);
 
         // This is the fake server, checks that DATA_FORMAT header is set properly.
         ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> {
-            final Header header = post.getFirstHeader(Headers.DATA_FORMAT);
+            Header header = post.getFirstHeader(Headers.DATA_FORMAT);
             if (requestsReceived.incrementAndGet() == 1) {
                 // This is handshake, it is not json.
                 assert (header == null);
                 return httpResponse("clientId", "3");
             }
             assertNotNull(header);
-            assertThat(header.getValue(), is(FeedParams.DataFormat.JSON_UTF8.name()));
+            assertEquals(FeedParams.DataFormat.JSON_UTF8.name(), header.getValue());
             // Test is done.
             return httpResponse("clientId", "3");
         });
@@ -154,13 +149,13 @@ public class ApacheGatewayConnectionTest {
 
     @Test
     public void testZipAndCreateEntity() throws IOException {
-        final String testString = "Hello world";
+        String testString = "Hello world";
         InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
         // Send in test data to method.
         InputStreamEntity inputStreamEntity = ApacheGatewayConnection.zipAndCreateEntity(stream);
         // Verify zipped data by comparing unzipped data with test data.
-        final String rawContent = TestUtils.zipStreamToString(inputStreamEntity.getContent());
-        assert(testString.equals(rawContent));
+        String rawContent = TestUtils.zipStreamToString(inputStreamEntity.getContent());
+        assertEquals(testString, rawContent);
     }
 
     /**
@@ -168,32 +163,28 @@ public class ApacheGatewayConnectionTest {
      */
     @Test
     public void testCompressedWriteOperations() throws Exception {
-        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
-        final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.XML_UTF8).build();
-        final String clusterSpecificRoute = "";
-        final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setUseCompression(true)
-                .build();
-        final List<Document> documents = new ArrayList<>();
+        Endpoint endpoint = Endpoint.create("localhost", 666, false);
+        FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.XML_UTF8).build();
+        String clusterSpecificRoute = "";
+        ConnectionParams connectionParams = new ConnectionParams.Builder().setUseCompression(true).build();
+        List<Document> documents = new ArrayList<>();
 
-        final String vespaDocContent ="Hello, I am the document data.";
-        final String docId = "42";
+        String vespaDocContent ="Hello, I am the document data.";
+        String docId = "42";
 
-        final Document doc = createDoc(docId, vespaDocContent, false);
+        Document doc = createDoc(docId, vespaDocContent, false);
 
         // When sending data on http client, check if it is compressed. If compressed, unzip, check result,
         // and count down latch.
         ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> {
-            final Header header = post.getFirstHeader("Content-Encoding");
+            Header header = post.getFirstHeader("Content-Encoding");
             if (header != null && header.getValue().equals("gzip")) {
                 final String rawContent = TestUtils.zipStreamToString(post.getEntity().getContent());
                 final String vespaHeaderText = "<vespafeed>\n";
                 final String vespaFooterText = "</vespafeed>\n";
 
-                assertThat(rawContent, is(
-                        doc.getOperationId() + " 38\n" + vespaHeaderText + vespaDocContent + "\n"
-                                + vespaFooterText));
-
+                assertEquals(doc.getOperationId() + " 38\n" + vespaHeaderText + vespaDocContent + "\n" + vespaFooterText,
+                             rawContent);
             }
             return httpResponse("clientId", "3");
         });
@@ -301,16 +292,12 @@ public class ApacheGatewayConnectionTest {
         HttpResponse execute(HttpPost httpPost) throws IOException;
     }
 
-    private Document createDoc(final String docId, final String content, boolean useJson) throws IOException {
-        return new Document(docId, content.getBytes(), null /* context */);
+    private Document createDoc(String docId, String content, boolean useJson) {
+        return new Document(docId, content.getBytes(), null, Clock.systemUTC().instant());
     }
 
-    private void addMockedHeader(
-            final HttpResponse httpResponseMock,
-            final String name,
-            final String value,
-            HeaderElement[] elements) {
-        final Header header = new Header() {
+    private void addMockedHeader(HttpResponse httpResponseMock, String name, String value, HeaderElement[] elements) {
+        Header header = new Header() {
             @Override
             public String getName() {
                 return name;
@@ -328,7 +315,7 @@ public class ApacheGatewayConnectionTest {
     }
 
     private HttpResponse httpResponse(String sessionIdInResult, String version) throws IOException {
-        final HttpResponse httpResponseMock = mock(HttpResponse.class);
+        HttpResponse httpResponseMock = mock(HttpResponse.class);
 
         StatusLine statusLineMock = mock(StatusLine.class);
         when(httpResponseMock.getStatusLine()).thenReturn(statusLineMock);

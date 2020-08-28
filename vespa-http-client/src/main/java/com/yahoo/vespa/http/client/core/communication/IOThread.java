@@ -263,11 +263,11 @@ class IOThread implements Runnable, AutoCloseable {
     private ProcessResponse feedDocumentAndProcessResults(List<Document> docs)
             throws ServerResponseException, IOException {
         addDocumentsToResultQueue(docs);
-        long startTime = System.currentTimeMillis();
+        long startTime = clock.millis();
         InputStream serverResponse = sendAndReceive(docs);
 
         ProcessResponse processResponse = processResponse(serverResponse);
-        lastGatewayProcessTimeMillis.set((int) (System.currentTimeMillis() - startTime));
+        lastGatewayProcessTimeMillis.set((int) (clock.millis() - startTime));
         return processResponse;
     }
 
@@ -418,7 +418,7 @@ class IOThread implements Runnable, AutoCloseable {
             EndpointResult endpointResult = EndPointResultFactory.createTransientError(
                     endpoint, document.get().getOperationId(),
                     new Exception("Not sending document operation, timed out in queue after " +
-                                  document.get().timeInQueueMillis() + " ms."));
+                                  (clock.millis() - document.get().getQueueInsertTime().toEpochMilli()) + " ms."));
             resultQueue.failOperation(endpointResult, clusterId);
         }
     }
@@ -467,7 +467,7 @@ class IOThread implements Runnable, AutoCloseable {
         if (connection.lastPollTime() == null) return true;
 
         // Poll less the closer the connection comes to closing time
-        double newness = ( closingTime(connection).toEpochMilli() - clock.instant().toEpochMilli() ) /
+        double newness = ( closingTime(connection).toEpochMilli() - clock.millis() ) /
                          (double)localQueueTimeOut.toMillis();
         if (newness < 0) return true; // connection retired prematurely
         if (newness > 1) return false; // closing time reached

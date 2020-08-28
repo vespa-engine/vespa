@@ -24,14 +24,15 @@ public class SessionImpl implements com.yahoo.vespa.http.client.Session {
 
     private final OperationProcessor operationProcessor;
     private final BlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
-
+    private final Clock clock;
 
     public SessionImpl(SessionParams sessionParams, ScheduledThreadPoolExecutor timeoutExecutor, Clock clock) {
+        this.clock = clock;
         this.operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(
                         sessionParams.getThrottlerMinSize(),
                         sessionParams.getClientQueueSize(),
-                        ()->System.currentTimeMillis(),
+                        clock,
                         new ThrottlePolicy()),
                 new FeedClient.ResultCallback() {
                     @Override
@@ -46,7 +47,7 @@ public class SessionImpl implements com.yahoo.vespa.http.client.Session {
 
     @Override
     public OutputStream stream(CharSequence documentId) {
-        return new MultiClusterSessionOutputStream(documentId, operationProcessor, null);
+        return new MultiClusterSessionOutputStream(documentId, operationProcessor, null, clock);
     }
 
     @Override

@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class FeedClientImpl implements FeedClient {
 
+    private final Clock clock;
     private final OperationProcessor operationProcessor;
     private final long closeTimeoutMs;
     private final long sleepTimeMs = 500;
@@ -32,15 +33,15 @@ public class FeedClientImpl implements FeedClient {
                           ResultCallback resultCallback,
                           ScheduledThreadPoolExecutor timeoutExecutor,
                           Clock clock) {
-        this.closeTimeoutMs = (10 + 3 * sessionParams.getConnectionParams().getMaxRetries()) * (
-                sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
-                sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS));
+        this.clock = clock;
+        this.closeTimeoutMs = (10 + 3 * sessionParams.getConnectionParams().getMaxRetries()) *
+                              (sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
+                               sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS));
         this.operationProcessor = new OperationProcessor(
-                new IncompleteResultsThrottler(
-                        sessionParams.getThrottlerMinSize(),
-                        sessionParams.getClientQueueSize(),
-                        ()->System.currentTimeMillis(),
-                        new ThrottlePolicy()),
+                new IncompleteResultsThrottler(sessionParams.getThrottlerMinSize(),
+                                               sessionParams.getClientQueueSize(),
+                                               clock,
+                                               new ThrottlePolicy()),
                 resultCallback,
                 sessionParams,
                 timeoutExecutor,
@@ -53,7 +54,7 @@ public class FeedClientImpl implements FeedClient {
         charsetEncoder.onMalformedInput(CodingErrorAction.REPORT);
         charsetEncoder.onUnmappableCharacter(CodingErrorAction.REPORT);
 
-        Document document = new Document(documentId, operationId, documentData, context);
+        Document document = new Document(documentId, operationId, documentData, context, clock.instant());
         operationProcessor.sendDocument(document);
     }
 

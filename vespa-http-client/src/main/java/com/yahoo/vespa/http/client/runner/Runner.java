@@ -10,6 +10,7 @@ import com.yahoo.vespa.http.client.core.XmlFeedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -34,11 +35,11 @@ public class Runner {
                             boolean isJson,
                             AtomicInteger numSent,
                             boolean verbose) {
-
+        Clock clock = Clock.systemUTC();
         if (verbose)
             System.err.println("Now sending data.");
 
-        long sendStartTime = System.currentTimeMillis();
+        long sendStartTime = clock.millis();
         if (isJson) {
             JsonReader.read(inputStream, feedClient, numSent);
         } else {
@@ -49,7 +50,7 @@ public class Runner {
             }
         }
 
-        long sendTotalTime = System.currentTimeMillis() - sendStartTime;
+        long sendTotalTime = clock.millis() - sendStartTime;
 
         if (verbose)
             System.err.println("Waiting for all results, sent " + numSent.get() + " docs.");

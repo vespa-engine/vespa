@@ -1,9 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.operationProcessor;
 
+import com.yahoo.vespa.http.client.ManualClock;
 import com.yahoo.vespa.http.client.core.ThrottlePolicy;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -12,6 +15,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -42,14 +46,14 @@ public class IncompleteResultsThrottlerTest {
      * @return median queue length.
      */
    int getAverageQueue(int clientCount, int breakPoint, int simulationTimeMs) {
-       final AtomicLong timeMs = new AtomicLong(0);
+       ManualClock clock = new ManualClock(Instant.ofEpochMilli(0));
 
        ArrayList<IncompleteResultsThrottler> incompleteResultsThrottlers = new ArrayList<>();
 
        MockServer mockServer = new MockServer(breakPoint);
        for (int x = 0; x < clientCount; x++) {
            IncompleteResultsThrottler incompleteResultsThrottler =
-                   new IncompleteResultsThrottler(10, 50000, () -> timeMs.get(), new ThrottlePolicy());
+                   new IncompleteResultsThrottler(10, 50000, clock, new ThrottlePolicy());
            incompleteResultsThrottlers.add(incompleteResultsThrottler);
        }
        long sum = 0;
@@ -68,8 +72,8 @@ public class IncompleteResultsThrottlerTest {
            if (fastForward) {
                time = mockServer.nextRequestFinished();
            }
-           timeMs.set(time);
-           mockServer.moveTime(timeMs.get());
+           clock.setInstant(Instant.ofEpochMilli(time));
+           mockServer.moveTime(clock.instant().toEpochMilli());
            for (int y = 0; y < clientCount; y++) {
                // Fill up, but don't block as that would stop the simulation.
                while (incompleteResultsThrottlers.get(y).availableCapacity() > 0) {
@@ -140,45 +144,46 @@ public class IncompleteResultsThrottlerTest {
         }
     }
 
-    private void moveToNextCycle(final IncompleteResultsThrottler throttler, AtomicLong timeMs)
+    private void moveToNextCycle(final IncompleteResultsThrottler throttler, ManualClock clock)
             throws InterruptedException {
         waitForThreads();
         // Enter an adaption phase, we don't care about this phase.
-        timeMs.addAndGet(throttler.phaseSizeMs);
+        clock.advance(Duration.ofMillis(throttler.phaseSizeMs));
         throttler.operationStart();
         throttler.resultReady(false);
         // Now enter the real next phase.
-        timeMs.addAndGet(throttler.phaseSizeMs);
+        clock.advance(Duration.ofMillis(throttler.phaseSizeMs));
         throttler.operationStart();
         throttler.resultReady(false);
     }
 
     @Test
     public void testInteractionWithPolicyByMockingPolicy() throws InterruptedException {
+        ManualClock clock = new ManualClock(Instant.ofEpochMilli(0));
         final int MAX_SIZE = 1000;
         final int MORE_THAN_MAX_SIZE = MAX_SIZE + 20;
         final int SIZE_AFTER_CYCLE_FIRST = 30;
         final int SIZE_AFTER_CYCLE_SECOND = 5000;
         ThrottlePolicy policy = mock(ThrottlePolicy.class);
-        final AtomicLong timeMs = new AtomicLong(0);
         IncompleteResultsThrottler incompleteResultsThrottler =
-                new IncompleteResultsThrottler(2, MAX_SIZE, ()->timeMs.get(), policy);
+                new IncompleteResultsThrottler(2, MAX_SIZE, clock, policy);
         long bucketSizeMs = incompleteResultsThrottler.phaseSizeMs;
 
         // Cycle 1 - Algorithm has fixed value for max-in-flight: INITIAL_MAX_IN_FLIGHT_VALUE.
         // We post a few operations, not all finishing in this cycle. We explicitly do not fill the window
         // size to test the argument about any requests blocked.
-        assertThat(incompleteResultsThrottler.availableCapacity(),
-                is(IncompleteResultsThrottler.INITIAL_MAX_IN_FLIGHT_VALUE));
+        assertEquals(IncompleteResultsThrottler.INITIAL_MAX_IN_FLIGHT_VALUE,
+                     incompleteResultsThrottler.availableCapacity());
         postOperations(20, incompleteResultsThrottler);
         postSuccesses(15, incompleteResultsThrottler);
-        moveToNextCycle(incompleteResultsThrottler, timeMs);
+        moveToNextCycle(incompleteResultsThrottler, clock);
 
 
         // Cycle 2 - Algorithm has fixed value also for second iteration: SECOND_MAX_IN_FLIGHT_VALUE.
         // Test verifies that this value is used, and insert a value to be used for next phase SIZE_AFTER_CYCLE_FIRST.
-        assertThat(incompleteResultsThrottler.availableCapacity(),
-                is(IncompleteResultsThrottler.SECOND_MAX_IN_FLIGHT_VALUE - 5)); // 5 slots already taken earlier
+        assertEquals("5 slots already taken earlier",
+                     IncompleteResultsThrottler.SECOND_MAX_IN_FLIGHT_VALUE - 5,
+                     incompleteResultsThrottler.availableCapacity());
         postSuccesses(5, incompleteResultsThrottler);
         when(policy.calcNewMaxInFlight(
                 anyDouble(),  // Max performance change
@@ -188,12 +193,11 @@ public class IncompleteResultsThrottlerTest {
                 eq(IncompleteResultsThrottler.SECOND_MAX_IN_FLIGHT_VALUE),  // current size
                 eq(false)))  // is any request blocked, should be false since we only posted 20 docs.
                 .thenReturn(SIZE_AFTER_CYCLE_FIRST);
-        moveToNextCycle(incompleteResultsThrottler, timeMs);
+        moveToNextCycle(incompleteResultsThrottler, clock);
 
         // Cycle 3 - Test that value set in previous phase is used. Now return a very large number.
         // However, this number should be cropped by the system (tested in next cycle).
-        assertThat(incompleteResultsThrottler.availableCapacity(),
-                is(SIZE_AFTER_CYCLE_FIRST));
+        assertEquals(SIZE_AFTER_CYCLE_FIRST, incompleteResultsThrottler.availableCapacity());
         postOperations(MORE_THAN_MAX_SIZE, incompleteResultsThrottler);
         postSuccesses(MORE_THAN_MAX_SIZE, incompleteResultsThrottler);
         when(policy.calcNewMaxInFlight(
@@ -204,11 +208,10 @@ public class IncompleteResultsThrottlerTest {
                 eq(SIZE_AFTER_CYCLE_FIRST),// current size
                 eq(true))) // is any request blocked, should be true since we posted MORE_THAN_MAX_SIZE docs.
                 .thenReturn(SIZE_AFTER_CYCLE_SECOND);
-        moveToNextCycle(incompleteResultsThrottler, timeMs);
+        moveToNextCycle(incompleteResultsThrottler, clock);
 
         // Cycle 4 - Test that the large number from previous cycle is cropped and that max value is used instead.
-        assertThat(incompleteResultsThrottler.availableCapacity(),
-                is(MAX_SIZE));
+        assertEquals(MAX_SIZE, incompleteResultsThrottler.availableCapacity());
     }
 
     private long inversesU(int size, int sweetSpot) {

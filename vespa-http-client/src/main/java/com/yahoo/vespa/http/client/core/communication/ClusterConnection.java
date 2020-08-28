@@ -56,7 +56,7 @@ public class ClusterConnection implements AutoCloseable {
             throw new IllegalArgumentException("At least 1 persistent connection per endpoint is required in " + cluster);
         int maxInFlightPerSession = Math.max(1, feedParams.getMaxInFlightRequests() / totalNumberOfEndpointsInThisCluster);
 
-        documentQueue = new DocumentQueue(clientQueueSizePerCluster);
+        documentQueue = new DocumentQueue(clientQueueSizePerCluster, clock);
         ioThreadGroup = operationProcessor.getIoThreadGroup();
         singleEndpoint = cluster.getEndpoints().size() == 1 ? cluster.getEndpoints().get(0) : null;
         Double idlePollFrequency = feedParams.getIdlePollFrequency();

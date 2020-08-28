@@ -33,10 +33,10 @@ import static org.mockito.Mockito.when;
 public class OperationProcessorTest {
 
     final Queue<Result> queue = new ArrayDeque<>();
-    final Document doc1 = new Document("id:a:type::b", null, "data doc 1", null);
-    final Document doc1b = new Document("id:a:type::b", null, "data doc 1b", null);
-    final Document doc2 = new Document("id:a:type::b2", null, "data doc 2", null);
-    final Document doc3 = new Document("id:a:type::b3", null, "data doc 3", null);
+    final Document doc1 = new Document("id:a:type::b", null, "data doc 1", null, Clock.systemUTC().instant());
+    final Document doc1b = new Document("id:a:type::b", null, "data doc 1b", null, Clock.systemUTC().instant());
+    final Document doc2 = new Document("id:a:type::b2", null, "data doc 2", null, Clock.systemUTC().instant());
+    final Document doc3 = new Document("id:a:type::b3", null, "data doc 3", null, Clock.systemUTC().instant());
 
     @Test
     public void testBasic() {
@@ -203,7 +203,7 @@ public class OperationProcessorTest {
 
         Queue<Document> documentQueue = new ArrayDeque<>();
         for (int x = 0; x < 100; x++) {
-            Document document = new Document("id:a:type::b", null, String.valueOf(x), null);
+            Document document = new Document("id:a:type::b", null, String.valueOf(x), null, Clock.systemUTC().instant());
             operationProcessor.sendDocument(document);
             documentQueue.add(document);
         }
