@@ -107,9 +107,8 @@ public class HandlersConfigurerDi {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
 
-            OsgiImpl osgi = new OsgiImpl(osgiFramework);
-            applicationBundleLoader = new ApplicationBundleLoader(osgi, new FileAcquirerBundleInstaller(fileAcquirer));
-            platformBundleLoader = new PlatformBundleLoader(osgi);
+            applicationBundleLoader = new ApplicationBundleLoader(this, new FileAcquirerBundleInstaller(fileAcquirer));
+            platformBundleLoader = new PlatformBundleLoader(this);
         }
 
 
