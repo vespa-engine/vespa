@@ -772,7 +772,7 @@ SimpleTensor::decode(nbostream &input)
 size_t
 SimpleTensor::count_memory_used() const {
     size_t result = sizeof(SimpleTensor);
-    size_t addr_size = sizeof(Address) * _type.dimensions().size();
+    size_t addr_size = sizeof(Label) * _type.dimensions().size();
     size_t cell_size = sizeof(Cell) + addr_size;
     result += _cells.size() * cell_size;
     return result;
