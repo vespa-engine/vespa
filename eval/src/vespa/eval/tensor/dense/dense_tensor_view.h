@@ -18,6 +18,7 @@ public:
     using CellsIterator = DenseTensorCellsIterator;
     using Address = std::vector<eval::ValueType::Dimension::size_type>;
 
+    DenseTensorView(const DenseTensorView &rhs) : DenseTensorView(rhs._typeRef, rhs._cellsRef) {}
     DenseTensorView(const eval::ValueType &type_in, TypedCells cells_in)
         : _typeRef(type_in),
           _cellsRef(cells_in)
@@ -55,7 +56,6 @@ protected:
         : _typeRef(type_in),
           _cellsRef()
     {}
-    DenseTensorView(const DenseTensorView &rhs) : DenseTensorView(rhs._typeRef, rhs._cellsRef) {}
 
     void initCellsRef(TypedCells cells_in) {
         assert(_typeRef.cell_type() == cells_in.type);
