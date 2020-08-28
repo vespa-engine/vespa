@@ -26,7 +26,7 @@ struct IDocumentWeightAttribute
     };
     virtual vespalib::datastore::EntryRef get_dictionary_snapshot() const = 0;
     virtual LookupResult lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const = 0;
-    virtual void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback)const = 0;
+    virtual void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const = 0;
     virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const = 0;
     virtual DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const = 0;
     virtual ~IDocumentWeightAttribute() {}
