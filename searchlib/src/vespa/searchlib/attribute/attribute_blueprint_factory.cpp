@@ -322,6 +322,7 @@ private:
     std::vector<int32_t>                                _weights;
     std::vector<IDocumentWeightAttribute::LookupResult> _terms;
     const IDocumentWeightAttribute                     &_attr;
+    vespalib::datastore::EntryRef                       _dictionary_snapshot;
 
 public:
     DirectWeightedSetBlueprint(const FieldSpec &field, const IDocumentWeightAttribute &attr, size_t size_hint)
@@ -329,7 +330,8 @@ public:
           _estimate(),
           _weights(),
           _terms(),
-          _attr(attr)
+          _attr(attr),
+          _dictionary_snapshot(_attr.get_dictionary_snapshot())
     {
         set_allow_termwise_eval(true);
         _weights.reserve(size_hint);
@@ -337,7 +339,7 @@ public:
     }
 
     void addTerm(const vespalib::string &term, int32_t weight) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term);
+        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
             if (_estimate.empty) {
@@ -394,6 +396,7 @@ private:
     std::vector<int32_t>                                _weights;
     std::vector<IDocumentWeightAttribute::LookupResult> _terms;
     const IDocumentWeightAttribute                     &_attr;
+    vespalib::datastore::EntryRef                       _dictionary_snapshot;
 
 public:
     DirectWandBlueprint(const FieldSpec &field, const IDocumentWeightAttribute &attr, uint32_t scoresToTrack,
@@ -406,14 +409,16 @@ public:
           _scoresAdjustFrequency(queryeval::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
           _weights(),
           _terms(),
-          _attr(attr)
+          _attr(attr),
+          _dictionary_snapshot(_attr.get_dictionary_snapshot())
+        
     {
         _weights.reserve(size_hint);
         _terms.reserve(size_hint);
     }
 
     void addTerm(const vespalib::string &term, int32_t weight) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term);
+        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
             if (_estimate.empty) {
@@ -464,6 +469,7 @@ class DirectAttributeBlueprint : public queryeval::SimpleLeafBlueprint
 private:
     vespalib::string                        _attrName;
     const IDocumentWeightAttribute         &_attr;
+    vespalib::datastore::EntryRef           _dictionary_snapshot;
     IDocumentWeightAttribute::LookupResult  _dict_entry;
 
 public:
@@ -472,7 +478,8 @@ public:
         : SimpleLeafBlueprint(field),
           _attrName(name),
           _attr(attr),
-          _dict_entry(_attr.lookup(term))
+          _dictionary_snapshot(_attr.get_dictionary_snapshot()),
+          _dict_entry(_attr.lookup(term, _dictionary_snapshot))
     {
         setEstimate(HitEstimate(_dict_entry.posting_size, (_dict_entry.posting_size == 0)));
     }

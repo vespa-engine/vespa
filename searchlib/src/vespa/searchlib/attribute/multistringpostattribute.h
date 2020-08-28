@@ -33,7 +33,9 @@ private:
     struct DocumentWeightAttributeAdapter : IDocumentWeightAttribute {
         const MultiValueStringPostingAttributeT &self;
         DocumentWeightAttributeAdapter(const MultiValueStringPostingAttributeT &self_in) : self(self_in) {}
-        virtual LookupResult lookup(const vespalib::string &term) const override final;
+        virtual vespalib::datastore::EntryRef get_dictionary_snapshot() const override final;
+        virtual LookupResult lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const override final;
+        virtual void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback)const override final;
         virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override final;
         virtual DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const override final;
     };
