@@ -43,6 +43,11 @@ public class OsVersion {
         return wanted.isPresent() && !current.equals(wanted);
     }
 
+    /** Returns whether this is before the given version */
+    public boolean isBefore(Version version) {
+        return current.isEmpty() || current.get().isBefore(version);
+    }
+
     /** Returns whether current version matches given version */
     public boolean matches(Version version) {
         return current.isPresent() && current.get().equals(version);

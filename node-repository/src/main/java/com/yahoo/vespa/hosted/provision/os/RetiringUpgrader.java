@@ -46,7 +46,7 @@ public class RetiringUpgrader implements Upgrader {
         Instant retiredAt = target.lastRetiredAt().orElse(Instant.EPOCH);
         if (now.isBefore(retiredAt.plus(nodeBudget))) return; // Budget has not been spent yet
 
-        activeNodes.not().onOsVersion(target.version())
+        activeNodes.osVersionIsBefore(target.version())
                    .not().deprovisioning()
                    .byIncreasingOsVersion()
                    .first(1)
