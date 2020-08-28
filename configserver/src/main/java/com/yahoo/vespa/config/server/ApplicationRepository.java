@@ -618,6 +618,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             Tenant tenant = getTenant(applicationId);
             if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
             RemoteSession session = getActiveSession(applicationId);
+            if (session == null) throw new NotFoundException("No active session found for '" + applicationId + "'");
             SessionRepository sessionRepository = tenant.getSessionRepository();
             return sessionRepository.ensureApplicationLoaded(session).getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
