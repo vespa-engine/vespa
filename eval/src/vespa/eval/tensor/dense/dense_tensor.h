@@ -21,6 +21,11 @@ public:
     // for unit tests
     template <typename RCT>
     bool operator==(const DenseTensor<RCT> &rhs) const;
+
+    size_t count_memory_used() const override {
+        return sizeof(DenseTensor) + (sizeof(CT) * _cells.size());
+    }
+    
 private:
     eval::ValueType _type;
     std::vector<CT> _cells;

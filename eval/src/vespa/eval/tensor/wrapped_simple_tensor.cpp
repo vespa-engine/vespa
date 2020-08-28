@@ -54,6 +54,16 @@ WrappedSimpleTensor::accept(TensorVisitor &visitor) const
     }
 }
 
+size_t
+WrappedSimpleTensor::count_memory_used() const
+{
+    size_t result = sizeof(WrappedSimpleTensor);
+    if (_space) {
+        result += _space->count_memory_used();
+    }
+    return result;
+}
+
 Tensor::UP
 WrappedSimpleTensor::clone() const
 {

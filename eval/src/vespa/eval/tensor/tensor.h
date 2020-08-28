@@ -59,6 +59,7 @@ public:
     virtual Tensor::UP clone() const = 0; // want to remove, but needed by document
     virtual eval::TensorSpec toSpec() const = 0;
     virtual void accept(TensorVisitor &visitor) const = 0;
+    virtual size_t count_memory_used() const = 0;
 
     using TypeList = std::initializer_list<std::reference_wrapper<const eval::ValueType>>;
     static bool supported(TypeList types);
