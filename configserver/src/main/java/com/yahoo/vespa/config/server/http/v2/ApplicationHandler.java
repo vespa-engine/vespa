@@ -152,6 +152,8 @@ public class ApplicationHandler extends HttpHandler {
                     return applicationRepository.getTesterLog(applicationId, after);
                 case "ready":
                     return applicationRepository.isTesterReady(applicationId);
+                case "report":
+                    return applicationRepository.getTestReport(applicationId);
                 default:
                     throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
             }
