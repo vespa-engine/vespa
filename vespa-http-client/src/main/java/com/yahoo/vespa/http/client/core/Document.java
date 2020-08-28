@@ -10,6 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * A document operation
+ *
  * @author Einar M R Rosenvinge
  */
 final public class Document {

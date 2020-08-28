@@ -24,6 +24,7 @@ import static com.yahoo.vespa.http.client.TestUtils.writeDocument;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -249,12 +250,12 @@ public class QueueBoundsTest {
                 }
                 int errors = 0;
                 for (Result result : session.results()) {
-                    assertThat(result.getDetails().size(), is(1));
+                    assertEquals(1, result.getDetails().size());
                     if (! result.isSuccess()) {
                         errors++;
                     }
                 }
-                assertThat(errors, is(1));
+                assertEquals(1, errors);
             } finally {
                 feeder.stop();
             }

@@ -517,11 +517,9 @@ public class HttpRequest {
     }
 
     /**
-     * Access an HTTP header in the request. Multi-value headers are not
-     * supported.
+     * Access an HTTP header in the request. Multi-value headers are not supported.
      *
-     * @param name
-     *            the name of an HTTP header
+     * @param name the name of an HTTP header
      * @return the first pertinent value
      */
     public String getHeader(String name) {
@@ -530,20 +528,12 @@ public class HttpRequest {
         return parentRequest.headers().get(name).get(0);
     }
 
-    /**
-     * Get the host segment of the URI of this request.
-     *
-     * @return the host name from the URI
-     */
+    /** Get the host segment of the URI of this request. */
     public String getHost() {
         return getUri().getHost();
     }
 
-    /**
-     * The port of the URI of this request.
-     *
-     * @return the port number of the URI
-     */
+    /** The port of the URI of this request. */
     public int getPort() {
         return getUri().getPort();
     }

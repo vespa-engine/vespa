@@ -3,6 +3,7 @@ package com.yahoo.vespa.http.client.core.communication;
 
 import com.yahoo.vespa.http.client.core.Document;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -106,13 +107,13 @@ class DocumentQueue {
         return previousState;
     }
 
-    Optional<Document> pollDocumentIfTimedoutInQueue(long localQueueTimeOut) {
+    Optional<Document> pollDocumentIfTimedoutInQueue(Duration localQueueTimeOut) {
         synchronized (queue) {
             if (queue.isEmpty()) {
                 return Optional.empty();
             }
             Document document = queue.peek();
-            if (document.timeInQueueMillis() > localQueueTimeOut) {
+            if (document.timeInQueueMillis() > localQueueTimeOut.toMillis()) {
                 return Optional.of(queue.poll());
             }
             return Optional.empty();

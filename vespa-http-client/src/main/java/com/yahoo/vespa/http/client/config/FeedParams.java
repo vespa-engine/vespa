@@ -172,6 +172,10 @@ public final class FeedParams {
             return this;
         }
 
+        /**
+         * Sets the number of milliseconds until we respond with a timeout for a document operation
+         * if we still have not received a response.
+         */
         public Builder setLocalQueueTimeOut(long timeOutMs) {
             this.localQueueTimeOut = timeOutMs;
             return this;

@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -90,9 +91,10 @@ public class IOThreadTest {
                             0,
                             0,
                             maxInFlightRequests,
-                            localQueueTimeOut,
+                            Duration.ofMillis(localQueueTimeOut),
                             documentQueue,
                             0,
+                            Duration.ofSeconds(15),
                             10);
     }
 
@@ -101,7 +103,7 @@ public class IOThreadTest {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         InputStream serverResponse = new ByteArrayInputStream(
                 (docId1 + " OK Doc{20}fed").getBytes(StandardCharsets.UTF_8));
-        when(apacheGatewayConnection.writeOperations(any())).thenReturn(serverResponse);
+        when(apacheGatewayConnection.write(any())).thenReturn(serverResponse);
         setupEndpointResultQueueMock( "nope", docId1, true, exceptionMessage);
         try (IOThread ioThread = createIOThread(10000, 10000)) {
             ioThread.post(doc1);
@@ -112,7 +114,7 @@ public class IOThreadTest {
     @Test
     public void requireThatSingleDocumentWriteErrorIsHandledProperly() throws Exception {
         when(apacheGatewayConnection.connect()).thenReturn(true);
-        when(apacheGatewayConnection.writeOperations(any())).thenThrow(new IOException(exceptionMessage));
+        when(apacheGatewayConnection.write(any())).thenThrow(new IOException(exceptionMessage));
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true, exceptionMessage);
         try (IOThread ioThread = createIOThread(10000, 10000)) {
             ioThread.post(doc1);
@@ -125,7 +127,7 @@ public class IOThreadTest {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         InputStream serverResponse = new ByteArrayInputStream(
                 (docId2 + " OK Doc{20}fed").getBytes(StandardCharsets.UTF_8));
-        when(apacheGatewayConnection.writeOperations(any()))
+        when(apacheGatewayConnection.write(any()))
                 .thenThrow(new IOException(exceptionMessage))
                 .thenReturn(serverResponse);
         latch = new CountDownLatch(2);
@@ -143,7 +145,7 @@ public class IOThreadTest {
         when(apacheGatewayConnection.connect()).thenReturn(false);
         InputStream serverResponse = new ByteArrayInputStream(
                 ("").getBytes(StandardCharsets.UTF_8));
-        when(apacheGatewayConnection.writeOperations(any()))
+        when(apacheGatewayConnection.write(any()))
                 .thenReturn(serverResponse);
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true,
                 "java.lang.Exception: Not sending document operation, timed out in queue after");

@@ -14,6 +14,7 @@ import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -85,9 +86,10 @@ public class ClusterConnection implements AutoCloseable {
                                                  clusterId,
                                                  feedParams.getMaxChunkSizeBytes(),
                                                  maxInFlightPerSession,
-                                                 feedParams.getLocalQueueTimeOut(),
+                                                 Duration.ofMillis(feedParams.getLocalQueueTimeOut()),
                                                  documentQueue,
                                                  feedParams.getMaxSleepTimeMs(),
+                                                 connectionParams.getConnectionTimeToLive(),
                                                  idlePollFrequency);
                 ioThreads.add(ioThread);
             }

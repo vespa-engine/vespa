@@ -76,7 +76,7 @@ public class ApacheGatewayConnectionTest {
         apacheGatewayConnection.handshake();
         documents.add(createDoc(docId, vespaDocContent, true));
 
-        apacheGatewayConnection.writeOperations(documents);
+        apacheGatewayConnection.write(documents);
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -100,7 +100,7 @@ public class ApacheGatewayConnectionTest {
                         "clientId");
         apacheGatewayConnection.connect();
         final List<Document> documents = new ArrayList<>();
-        apacheGatewayConnection.writeOperations(documents);
+        apacheGatewayConnection.write(documents);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class ApacheGatewayConnectionTest {
 
         documents.add(createDoc(docId, vespaDocContent, true));
 
-        apacheGatewayConnection.writeOperations(documents);
+        apacheGatewayConnection.write(documents);
     }
 
     @Test
@@ -210,7 +210,7 @@ public class ApacheGatewayConnectionTest {
 
         documents.add(doc);
 
-        apacheGatewayConnection.writeOperations(documents);
+        apacheGatewayConnection.write(documents);
     }
 
     @Test
@@ -248,8 +248,8 @@ public class ApacheGatewayConnectionTest {
 
         List<Document> documents = new ArrayList<>();
         documents.add(createDoc("42", "content", true));
-        apacheGatewayConnection.writeOperations(documents);
-        apacheGatewayConnection.writeOperations(documents);
+        apacheGatewayConnection.write(documents);
+        apacheGatewayConnection.write(documents);
 
         verify(headerProvider, times(3)).getHeaderValue(); // 1x connect(), 2x writeOperations()
     }
@@ -274,7 +274,7 @@ public class ApacheGatewayConnectionTest {
         apacheGatewayConnection.connect();
         apacheGatewayConnection.handshake();
 
-        apacheGatewayConnection.writeOperations(Collections.singletonList(createDoc("42", "content", true)));
+        apacheGatewayConnection.write(Collections.singletonList(createDoc("42", "content", true)));
     }
 
     private static ApacheGatewayConnection.HttpClientFactory mockHttpClientFactory(HttpExecuteMock httpExecuteMock) throws IOException {

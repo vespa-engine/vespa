@@ -21,7 +21,11 @@ import static com.yahoo.vespa.http.client.TestUtils.getResults;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -79,16 +83,15 @@ public class V3HttpAPITest {
 
             writeDocument(session);
             Map<String, Result> results = getResults(session, 1);
-            assertThat(results.size(), is(1));
+            assertEquals(1, results.size());
 
             TestDocument document = documents.get(0);
             Result r = results.remove(document.getDocumentId());
-            assertThat(r, not(nullValue()));
-            if (conditionNotMet) {
-                assertThat(r.getDetails().iterator().next().getResultType(), is(Result.ResultType.CONDITION_NOT_MET));
-            }
-            assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
-            assertThat(results.isEmpty(), is(true));
+            assertNotNull(r);
+            if (conditionNotMet)
+                assertEquals(Result.ResultType.CONDITION_NOT_MET, r.getDetails().iterator().next().getResultType());
+            assertFalse(r.getDetails().toString(), r.isSuccess());
+            assertTrue(results.isEmpty());
         }
     }
 
@@ -99,14 +102,14 @@ public class V3HttpAPITest {
 
             writeDocuments(session);
             Map<String, Result> results = getResults(session, documents.size());
-            assertThat(results.size(), is(documents.size()));
+            assertEquals(documents.size(), results.size());
 
             for (TestDocument document : documents) {
                 Result r = results.remove(document.getDocumentId());
                 assertThat(r, not(nullValue()));
                 assertThat(r.getDetails().toString(), r.isSuccess(), is(true));
             }
-            assertThat(results.isEmpty(), is(true));
+            assertTrue(results.isEmpty());
         }
     }
 
@@ -169,15 +172,15 @@ public class V3HttpAPITest {
             writeDocuments(session);
 
             Map<String, Result> results = getResults(session, documents.size());
-            assertThat(results.size(), is(documents.size()));
+            assertEquals(documents.size(), results.size());
 
             for (TestDocument document : documents) {
                 Result r = results.remove(document.getDocumentId());
-                assertThat(r, not(nullValue()));
-                assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
-                assertThat(r.getDetails().iterator().next().getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertNotNull(r);
+                assertFalse(r.getDetails().toString(), r.isSuccess());
+                assertEquals(Result.ResultType.TRANSITIVE_ERROR, r.getDetails().iterator().next().getResultType());
             }
-            assertThat(results.isEmpty(), is(true));
+            assertTrue(results.isEmpty());
         }
     }
 

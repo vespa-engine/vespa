@@ -14,8 +14,15 @@ public interface GatewayConnection {
     /** Returns the time this connected over the network, or null if not connected yet */
     Instant connectionTime();
 
-    InputStream writeOperations(List<Document> docs) throws ServerResponseException, IOException;
+    /** Returns the last time poll was called on this, or null if never */
+    Instant lastPollTime();
 
+    InputStream write(List<Document> docs) throws ServerResponseException, IOException;
+
+    /** Returns any operation results that are ready now */
+    InputStream poll() throws ServerResponseException, IOException;
+
+    /** Attempt to drain all outstanding operations, even if this leads to blocking */
     InputStream drain() throws ServerResponseException, IOException;
 
     boolean connect();

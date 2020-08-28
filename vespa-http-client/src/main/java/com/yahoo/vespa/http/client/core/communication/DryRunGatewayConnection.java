@@ -5,10 +5,8 @@ import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.OperationStatus;
-import com.yahoo.vespa.http.client.core.ServerResponseException;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -25,13 +23,14 @@ public class DryRunGatewayConnection implements GatewayConnection {
 
     private final Endpoint endpoint;
     private Instant connectionTime = null;
+    private Instant lastPollTime = null;
 
     public DryRunGatewayConnection(Endpoint endpoint) {
         this.endpoint = endpoint;
     }
 
     @Override
-    public InputStream writeOperations(List<Document> docs) throws ServerResponseException, IOException {
+    public InputStream write(List<Document> docs) {
         StringBuilder result = new StringBuilder();
         for (Document doc : docs) {
             OperationStatus operationStatus = new OperationStatus("ok", doc.getOperationId(), ErrorCode.OK, false, "");
@@ -41,8 +40,17 @@ public class DryRunGatewayConnection implements GatewayConnection {
     }
 
     @Override
-    public InputStream drain() throws ServerResponseException, IOException {
-        return writeOperations(new ArrayList<Document>());
+    public InputStream poll() {
+        lastPollTime = Clock.systemUTC().instant();
+        return write(new ArrayList<>());
+    }
+
+    @Override
+    public Instant lastPollTime() { return lastPollTime; }
+
+    @Override
+    public InputStream drain() {
+        return write(new ArrayList<>());
     }
 
     @Override
@@ -60,7 +68,7 @@ public class DryRunGatewayConnection implements GatewayConnection {
     }
 
     @Override
-    public void handshake() throws ServerResponseException, IOException { }
+    public void handshake() { }
 
     @Override
     public void close() { }

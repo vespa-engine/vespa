@@ -65,6 +65,7 @@ class ApacheGatewayConnection implements GatewayConnection {
     private final ConnectionParams connectionParams;
     private HttpClient httpClient;
     private Instant connectionTime = null;
+    private Instant lastPollTime = null;
     private String sessionId;
     private final String clientId;
     private int negotiatedVersion = -1;
@@ -96,9 +97,18 @@ class ApacheGatewayConnection implements GatewayConnection {
     }
 
     @Override
-    public InputStream writeOperations(List<Document> docs) throws ServerResponseException, IOException {
+    public InputStream write(List<Document> docs) throws ServerResponseException, IOException {
         return write(docs, false, connectionParams.getUseCompression());
     }
+
+    @Override
+    public InputStream poll() throws ServerResponseException, IOException {
+        lastPollTime = Clock.systemUTC().instant();
+        return write(Collections.<Document>emptyList(), false, false);
+    }
+
+    @Override
+    public Instant lastPollTime() { return lastPollTime; }
 
     @Override
     public InputStream drain() throws ServerResponseException, IOException {
@@ -185,11 +195,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             httpPost.setHeader(Headers.CLIENT_ID, clientId);
         }
         httpPost.setHeader(Headers.SHARDING_KEY, shardingKey);
-        if (drain) {
-            httpPost.setHeader(Headers.DRAIN, "true");
-        } else {
-            httpPost.setHeader(Headers.DRAIN, "false");
-        }
+        httpPost.setHeader(Headers.DRAIN, drain ? "true" : "false");
         if (clusterSpecificRoute != null) {
             httpPost.setHeader(Headers.ROUTE, feedParams.getRoute());
         } else {
@@ -257,18 +263,14 @@ class ApacheGatewayConnection implements GatewayConnection {
 
     private void verifyServerResponseCode(HttpResponse response) throws ServerResponseException {
         StatusLine statusLine = response.getStatusLine();
+        int statusCode = statusLine.getStatusCode();
+
         // We use code 261-299 to report errors related to internal transitive errors that the tenants should not care
         // about to avoid masking more serious errors.
-        int statusCode = statusLine.getStatusCode();
-        if (statusCode > 199 && statusCode < 260) {
-            return;
-        }
-        if (statusCode == 299) {
-            throw new ServerResponseException(429, "Too  many requests.");
-        }
-        String message = tryGetDetailedErrorMessage(response)
-                .orElseGet(statusLine::getReasonPhrase);
-        throw new ServerResponseException(statusLine.getStatusCode(), message);
+        if (statusCode > 199 && statusCode < 260) return;
+        if (statusCode == 299) throw new ServerResponseException(429, "Too  many requests.");
+        throw new ServerResponseException(statusCode,
+                                          tryGetDetailedErrorMessage(response).orElseGet(statusLine::getReasonPhrase));
     }
 
     private static Optional<String> tryGetDetailedErrorMessage(HttpResponse response) {
@@ -292,7 +294,7 @@ class ApacheGatewayConnection implements GatewayConnection {
         if (negotiatedVersion == 3) {
             if (clientId == null || !clientId.equals(serverHeaderVal)) {
                 String message = "Running using v3. However, server responds with different session " +
-                        "than client has set; " + serverHeaderVal + " vs client code " + clientId;
+                                 "than client has set; " + serverHeaderVal + " vs client code " + clientId;
                 log.severe(message);
                 throw new ServerResponseException(message);
             }
@@ -301,14 +303,12 @@ class ApacheGatewayConnection implements GatewayConnection {
         if (sessionId == null) { //this must be the first request
             log.finer("Got session ID from server: " + serverHeaderVal);
             this.sessionId = serverHeaderVal;
-            return;
         } else {
             if (!sessionId.equals(serverHeaderVal)) {
-                log.info("Request has been routed to a server which does not recognize the client session."
-                        + " Most likely cause is upgrading of cluster, transitive error.");
-                throw new ServerResponseException(
-                        "Session ID received from server ('" + serverHeaderVal
-                        + "') does not match cached session ID ('" + sessionId + "')");
+                log.info("Request has been routed to a server which does not recognize the client session." +
+                         " Most likely cause is upgrading of cluster, transitive error.");
+                throw new ServerResponseException("Session ID received from server ('" + serverHeaderVal +
+                                                  "') does not match cached session ID ('" + sessionId + "')");
             }
         }
     }
@@ -415,7 +415,6 @@ class ApacheGatewayConnection implements GatewayConnection {
             }
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
-            clientBuilder.setConnectionTimeToLive(connectionParams.getConnectionTimeToLive().getSeconds(), TimeUnit.SECONDS);
             clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
             clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
             clientBuilder.disableContentCompression();
