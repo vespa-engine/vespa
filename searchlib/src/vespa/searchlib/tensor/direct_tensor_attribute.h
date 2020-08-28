@@ -3,12 +3,13 @@
 #pragma once
 
 #include "tensor_attribute.h"
+#include "direct_tensor_store.h"
 
 namespace search::tensor {
 
 class DirectTensorAttribute : public TensorAttribute
 {
-    // XXX must have some sort of TensorStore here
+    DirectTensorStore _direct_store;
 public:
     DirectTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~DirectTensorAttribute();
@@ -19,7 +20,8 @@ public:
     virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual void compactWorst() override;
 
-    void setTensor(DocId docId, std::unique_ptr<Tensor> tensor);
+    void set_tensor(DocId docId, std::unique_ptr<Tensor> tensor);
+    const Tensor &get_tensor_ref(DocId docId) const;
 };
 
 }  // namespace search::tensor

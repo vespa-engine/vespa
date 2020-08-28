@@ -23,6 +23,7 @@ private:
 
 public:
     DirectTensorStore();
+    using RefType = DataStoreType::RefType;
 
     const Tensor* get_tensor(EntryRef ref) const;
     EntryRef set_tensor(std::unique_ptr<Tensor> tensor);
