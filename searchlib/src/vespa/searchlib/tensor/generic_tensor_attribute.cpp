@@ -3,6 +3,7 @@
 #include "generic_tensor_attribute.h"
 #include "generic_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
+#include "blob_sequence_reader.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
@@ -17,19 +18,6 @@ namespace search::tensor {
 namespace {
 
 constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
-
-class TensorReader : public ReaderBase
-{
-private:
-    FileReader<uint32_t> _tensorSizeReader;
-public:
-    TensorReader(AttributeVector &attr)
-        : ReaderBase(attr),
-          _tensorSizeReader(*_datFile)
-    { }
-    uint32_t getNextTensorSize() { return _tensorSizeReader.readHostOrder(); }
-    void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
-};
 
 }
 
@@ -76,7 +64,7 @@ GenericTensorAttribute::getTensor(DocId, vespalib::tensor::MutableDenseTensorVie
 bool
 GenericTensorAttribute::onLoad()
 {
-    TensorReader tensorReader(*this);
+    BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {
         return false;
     }
@@ -86,10 +74,10 @@ GenericTensorAttribute::onLoad()
     _refVector.reset();
     _refVector.unsafe_reserve(numDocs);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
-        uint32_t tensorSize = tensorReader.getNextTensorSize();
+        uint32_t tensorSize = tensorReader.getNextSize();
         auto raw = _genericTensorStore.allocRawBuffer(tensorSize);
         if (tensorSize != 0) {
-            tensorReader.readTensor(raw.data, tensorSize);
+            tensorReader.readBlob(raw.data, tensorSize);
         }
         _refVector.push_back(raw.ref);
     }
