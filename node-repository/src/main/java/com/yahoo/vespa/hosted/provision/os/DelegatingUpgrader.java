@@ -38,7 +38,7 @@ public class DelegatingUpgrader implements Upgrader {
         NodeList activeNodes = nodeRepository.list().nodeType(target.nodeType()).state(Node.State.active);
         int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(target.version()).size());
         NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
-                                             .not().onOsVersion(target.version())
+                                             .osVersionIsBefore(target.version())
                                              .byIncreasingOsVersion()
                                              .first(numberToUpgrade);
         if (nodesToUpgrade.size() == 0) return;

@@ -38,7 +38,7 @@ public class OsVersionsTest {
     private final ApplicationId infraApplication = ApplicationId.from("hosted-vespa", "infra", "default");
 
     @Test
-    public void versions() {
+    public void upgrade() {
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         provisionInfraApplication(10);
         Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().getNodes(NodeType.host);
@@ -50,18 +50,28 @@ public class OsVersionsTest {
         assertEquals(version1, versions.targetFor(NodeType.host).get());
         assertTrue("Per-node wanted OS version remains unset", hostNodes.get().stream().allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
+        // One host upgrades to a later version outside the control of orchestration
+        Node hostOnLaterVersion = hostNodes.get().get(0);
+        setCurrentVersion(List.of(hostOnLaterVersion), Version.fromString("8.1"));
+
         // Upgrade OS again
         var version2 = Version.fromString("7.2");
         versions.setTarget(NodeType.host, version2, Optional.empty(), false);
         assertEquals(version2, versions.targetFor(NodeType.host).get());
 
-        // Target can be (de)activated
+        // Resume upgrade
         versions.resumeUpgradeOf(NodeType.host, true);
-        assertTrue("Target version activated", hostNodes.get().stream()
-                                                        .allMatch(node -> node.status().osVersion().wanted().isPresent()));
+        List<Node> allHosts = hostNodes.get();
+        assertTrue("Wanted version is set", allHosts.stream()
+                                                       .filter(node -> !node.equals(hostOnLaterVersion))
+                                                       .allMatch(node -> node.status().osVersion().wanted().isPresent()));
+        assertTrue("Wanted version is not set for host on later version",
+                   allHosts.get(0).status().osVersion().wanted().isEmpty());
+
+        // Halt upgrade
         versions.resumeUpgradeOf(NodeType.host, false);
-        assertTrue("Target version deactivated", hostNodes.get().stream()
-                                                          .allMatch(node -> node.status().osVersion().wanted().isEmpty()));
+        assertTrue("Wanted version is unset", hostNodes.get().stream()
+                                                       .allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
         // Downgrading fails
         try {

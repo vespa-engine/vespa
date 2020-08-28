@@ -96,6 +96,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                                                          .orElse(Version.emptyVersion)));
     }
 
+    /** Returns the subset of nodes that are currently on a lower version than the given version */
+    public NodeList osVersionIsBefore(Version version) {
+        return matching(node -> node.status().osVersion().isBefore(version));
+    }
+
     /** Returns the subset of nodes that are currently on the given OS version */
     public NodeList onOsVersion(Version version) {
         return matching(node -> node.status().osVersion().matches(version));
