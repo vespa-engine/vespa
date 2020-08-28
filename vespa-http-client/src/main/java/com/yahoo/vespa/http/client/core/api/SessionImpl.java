@@ -9,6 +9,7 @@ import com.yahoo.vespa.http.client.core.operationProcessor.IncompleteResultsThro
 import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
 import java.io.OutputStream;
+import java.time.Clock;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -25,7 +26,7 @@ public class SessionImpl implements com.yahoo.vespa.http.client.Session {
     private final BlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
 
 
-    public SessionImpl(SessionParams sessionParams, ScheduledThreadPoolExecutor timeoutExecutor) {
+    public SessionImpl(SessionParams sessionParams, ScheduledThreadPoolExecutor timeoutExecutor, Clock clock) {
         this.operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(
                         sessionParams.getThrottlerMinSize(),
@@ -39,7 +40,8 @@ public class SessionImpl implements com.yahoo.vespa.http.client.Session {
                     }
                 },
                 sessionParams,
-                timeoutExecutor);
+                timeoutExecutor,
+                clock);
     }
 
     @Override

@@ -52,11 +52,12 @@ class ApacheGatewayConnection implements GatewayConnection {
     private static final Logger log = Logger.getLogger(ApacheGatewayConnection.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String PATH = "/reserved-for-internal-use/feedapi?";
-    private final List<Integer> SUPPORTED_VERSIONS = new ArrayList<>();
     private static final byte[] START_OF_FEED_XML = "<vespafeed>\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] END_OF_FEED_XML = "\n</vespafeed>\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] START_OF_FEED_JSON = "[".getBytes(StandardCharsets.UTF_8);
     private static final byte[] END_OF_FEED_JSON = "]".getBytes(StandardCharsets.UTF_8);
+
+    private final List<Integer> supportedVersions = new ArrayList<>();
     private final byte[] startOfFeed;
     private final byte[] endOfFeed;
     private final Endpoint endpoint;
@@ -71,14 +72,16 @@ class ApacheGatewayConnection implements GatewayConnection {
     private int negotiatedVersion = -1;
     private final HttpClientFactory httpClientFactory;
     private final String shardingKey = UUID.randomUUID().toString().substring(0, 5);
+    private final Clock clock;
 
     ApacheGatewayConnection(Endpoint endpoint,
                             FeedParams feedParams,
                             String clusterSpecificRoute,
                             ConnectionParams connectionParams,
                             HttpClientFactory httpClientFactory,
-                            String clientId) {
-        SUPPORTED_VERSIONS.add(3);
+                            String clientId,
+                            Clock clock) {
+        supportedVersions.add(3);
         this.endpoint = endpoint;
         this.feedParams = feedParams;
         this.clusterSpecificRoute = clusterSpecificRoute;
@@ -86,6 +89,7 @@ class ApacheGatewayConnection implements GatewayConnection {
         this.connectionParams = connectionParams;
         this.httpClient = null;
         this.clientId = clientId;
+        this.clock = clock;
 
         if (feedParams.getDataFormat() == FeedParams.DataFormat.JSON_UTF8) {
             startOfFeed = START_OF_FEED_JSON;
@@ -103,7 +107,7 @@ class ApacheGatewayConnection implements GatewayConnection {
 
     @Override
     public InputStream poll() throws ServerResponseException, IOException {
-        lastPollTime = Clock.systemUTC().instant();
+        lastPollTime = clock.instant();
         return write(Collections.<Document>emptyList(), false, false);
     }
 
@@ -121,7 +125,7 @@ class ApacheGatewayConnection implements GatewayConnection {
         if (httpClient != null)
             log.log(Level.WARNING, "Previous httpClient still exists.");
         httpClient = httpClientFactory.createClient();
-        connectionTime = Clock.systemUTC().instant();
+        connectionTime = clock.instant();
         return httpClient != null;
     }
 
@@ -185,7 +189,7 @@ class ApacheGatewayConnection implements GatewayConnection {
     private HttpPost createPost(boolean drain, boolean useCompression, boolean isHandshake) {
         HttpPost httpPost = new HttpPost(createUri());
 
-        for (int v : SUPPORTED_VERSIONS) {
+        for (int v : supportedVersions) {
             httpPost.addHeader(Headers.VERSION, "" + v);
         }
         if (sessionId != null) {
@@ -323,9 +327,9 @@ class ApacheGatewayConnection implements GatewayConnection {
         } catch (NumberFormatException nfe) {
             throw new ServerResponseException("Got bad protocol version from server: " + nfe.getMessage());
         }
-        if (!SUPPORTED_VERSIONS.contains(serverVersion)) {
+        if (!supportedVersions.contains(serverVersion)) {
             throw new ServerResponseException("Unsupported version: " + serverVersion
-                    + ". Supported versions: " + SUPPORTED_VERSIONS);
+                                              + ". Supported versions: " + supportedVersions);
         }
         if (negotiatedVersion == -1) {
             if (log.isLoggable(Level.FINE)) {

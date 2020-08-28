@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -95,7 +96,8 @@ public class IOThreadTest {
                             documentQueue,
                             0,
                             Duration.ofSeconds(15),
-                            10);
+                            10,
+                            Clock.systemUTC());
     }
 
     @Test

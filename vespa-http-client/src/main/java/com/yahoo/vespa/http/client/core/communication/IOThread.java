@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 class IOThread implements Runnable, AutoCloseable {
 
     private static final Logger log = Logger.getLogger(IOThread.class.getName());
+
     private final Endpoint endpoint;
     private final GatewayConnectionFactory connectionFactory;
     private final DocumentQueue documentQueue;
@@ -51,6 +52,7 @@ class IOThread implements Runnable, AutoCloseable {
     private final GatewayThrottler gatewayThrottler;
     private final Duration connectionTimeToLive;
     private final long pollIntervalUS;
+    private final Clock clock;
     private final Random random = new Random();
 
     private GatewayConnection currentConnection;
@@ -85,7 +87,8 @@ class IOThread implements Runnable, AutoCloseable {
              DocumentQueue documentQueue,
              long maxSleepTimeMs,
              Duration connectionTimeToLive,
-             double idlePollFrequency) {
+             double idlePollFrequency,
+             Clock clock) {
         this.endpoint = endpoint;
         this.documentQueue = documentQueue;
         this.connectionFactory = connectionFactory;
@@ -97,6 +100,7 @@ class IOThread implements Runnable, AutoCloseable {
         this.connectionTimeToLive = connectionTimeToLive;
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
         this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1us, 10s]
+        this.clock = clock;
         this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
         thread.setDaemon(true);
         this.localQueueTimeOut = localQueueTimeOut;
@@ -369,7 +373,7 @@ class IOThread implements Runnable, AutoCloseable {
 
     private boolean isStale(GatewayConnection connection) {
         return connection.connectionTime() != null
-               && connection.connectionTime().plus(connectionTimeToLive).isBefore(Clock.systemUTC().instant());
+               && connection.connectionTime().plus(connectionTimeToLive).isBefore(clock.instant());
     }
 
     private ConnectionState refreshConnection(ConnectionState currentConnectionState) {
@@ -439,7 +443,7 @@ class IOThread implements Runnable, AutoCloseable {
 
         for (Iterator<GatewayConnection> i = oldConnections.iterator(); i.hasNext(); ) {
             GatewayConnection connection = i.next();
-            if (closingTime(connection).isBefore(Clock.systemUTC().instant())) {
+            if (closingTime(connection).isBefore(clock.instant())) {
                 connection.close();
                 i.remove();;
             }
@@ -463,13 +467,13 @@ class IOThread implements Runnable, AutoCloseable {
         if (connection.lastPollTime() == null) return true;
 
         // Poll less the closer the connection comes to closing time
-        double newness = ( closingTime(connection).toEpochMilli() - Clock.systemUTC().instant().toEpochMilli() ) /
+        double newness = ( closingTime(connection).toEpochMilli() - clock.instant().toEpochMilli() ) /
                          (double)localQueueTimeOut.toMillis();
         if (newness < 0) return true; // connection retired prematurely
         if (newness > 1) return false; // closing time reached
         Duration pollInterval = Duration.ofMillis(pollIntervalUS * 1000 +
                                                   (long)(newness * ( maxOldConnectionPollInterval.toMillis() - pollIntervalUS * 1000)));
-        return connection.lastPollTime().plus(pollInterval).isBefore(Clock.systemUTC().instant());
+        return connection.lastPollTime().plus(pollInterval).isBefore(clock.instant());
     }
 
     public static class ConnectionStats {

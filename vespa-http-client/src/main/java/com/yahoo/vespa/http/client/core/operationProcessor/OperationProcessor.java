@@ -15,6 +15,7 @@ import com.yahoo.vespa.http.client.core.communication.ClusterConnection;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -59,7 +60,8 @@ public class OperationProcessor {
     public OperationProcessor(IncompleteResultsThrottler incompleteResultsThrottler,
                               FeedClient.ResultCallback resultCallback,
                               SessionParams sessionParams,
-                              ScheduledThreadPoolExecutor timeoutExecutor) {
+                              ScheduledThreadPoolExecutor timeoutExecutor,
+                              Clock clock) {
         this.numDestinations = sessionParams.getClusters().size();
         this.resultCallback = resultCallback;
         this.incompleteResultsThrottler = incompleteResultsThrottler;
@@ -82,7 +84,8 @@ public class OperationProcessor {
                                                cluster,
                                                i,
                                                sessionParams.getClientQueueSize() / sessionParams.getClusters().size(),
-                                               timeoutExecutor));
+                                               timeoutExecutor,
+                                               clock));
         }
         operationStats = new OperationStats(sessionParams, clusters, incompleteResultsThrottler);
         maxRetries = sessionParams.getConnectionParams().getMaxRetries();

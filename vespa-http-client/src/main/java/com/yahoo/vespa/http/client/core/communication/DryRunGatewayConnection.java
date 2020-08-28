@@ -22,11 +22,13 @@ import java.util.List;
 public class DryRunGatewayConnection implements GatewayConnection {
 
     private final Endpoint endpoint;
+    private final Clock clock;
     private Instant connectionTime = null;
     private Instant lastPollTime = null;
 
-    public DryRunGatewayConnection(Endpoint endpoint) {
+    public DryRunGatewayConnection(Endpoint endpoint, Clock clock) {
         this.endpoint = endpoint;
+        this.clock = clock;
     }
 
     @Override
@@ -41,7 +43,7 @@ public class DryRunGatewayConnection implements GatewayConnection {
 
     @Override
     public InputStream poll() {
-        lastPollTime = Clock.systemUTC().instant();
+        lastPollTime = clock.instant();
         return write(new ArrayList<>());
     }
 
@@ -55,7 +57,7 @@ public class DryRunGatewayConnection implements GatewayConnection {
 
     @Override
     public boolean connect() {
-        connectionTime = Clock.systemUTC().instant();
+        connectionTime = clock.instant();
         return true;
     }
 

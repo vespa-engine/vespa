@@ -11,6 +11,7 @@ import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -29,7 +30,8 @@ public class FeedClientImpl implements FeedClient {
 
     public FeedClientImpl(SessionParams sessionParams,
                           ResultCallback resultCallback,
-                          ScheduledThreadPoolExecutor timeoutExecutor) {
+                          ScheduledThreadPoolExecutor timeoutExecutor,
+                          Clock clock) {
         this.closeTimeoutMs = (10 + 3 * sessionParams.getConnectionParams().getMaxRetries()) * (
                 sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
                 sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS));
@@ -41,7 +43,8 @@ public class FeedClientImpl implements FeedClient {
                         new ThrottlePolicy()),
                 resultCallback,
                 sessionParams,
-                timeoutExecutor);
+                timeoutExecutor,
+                clock);
     }
 
     @Override

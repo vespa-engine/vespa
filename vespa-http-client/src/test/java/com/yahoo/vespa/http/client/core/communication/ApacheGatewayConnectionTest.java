@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,7 +72,8 @@ public class ApacheGatewayConnectionTest {
                         clusterSpecificRoute,
                         connectionParams,
                         mockFactory,
-                        "clientId");
+                        "clientId",
+                        Clock.systemUTC());
         apacheGatewayConnection.connect();
         apacheGatewayConnection.handshake();
         documents.add(createDoc(docId, vespaDocContent, true));
@@ -97,7 +99,8 @@ public class ApacheGatewayConnectionTest {
                         clusterSpecificRoute,
                         connectionParams,
                         mockFactory,
-                        "clientId");
+                        "clientId",
+                        Clock.systemUTC());
         apacheGatewayConnection.connect();
         final List<Document> documents = new ArrayList<>();
         apacheGatewayConnection.write(documents);
@@ -139,7 +142,8 @@ public class ApacheGatewayConnectionTest {
                         clusterSpecificRoute,
                         connectionParams,
                         mockFactory,
-                        "clientId");
+                        "clientId",
+                        Clock.systemUTC());
         apacheGatewayConnection.connect();
         apacheGatewayConnection.handshake();
 
@@ -204,7 +208,8 @@ public class ApacheGatewayConnectionTest {
                         clusterSpecificRoute,
                         connectionParams,
                         mockFactory,
-                        "clientId");
+                        "clientId",
+                        Clock.systemUTC());
         apacheGatewayConnection.connect();
         apacheGatewayConnection.handshake();
 
@@ -242,7 +247,8 @@ public class ApacheGatewayConnectionTest {
                     "",
                     connectionParams,
                     mockFactory,
-                    "clientId");
+                    "clientId",
+                    Clock.systemUTC());
         apacheGatewayConnection.connect();
         apacheGatewayConnection.handshake();
 
@@ -270,7 +276,8 @@ public class ApacheGatewayConnectionTest {
                     "",
                     new ConnectionParams.Builder().build(),
                     mockFactory,
-                    "clientId");
+                    "clientId",
+                    Clock.systemUTC());
         apacheGatewayConnection.connect();
         apacheGatewayConnection.handshake();
 

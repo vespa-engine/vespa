@@ -7,6 +7,7 @@ import com.yahoo.vespa.http.client.config.FeedParams;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Clock;
 import java.util.Objects;
 
 /**
@@ -20,19 +21,22 @@ public class ApacheGatewayConnectionFactory implements GatewayConnectionFactory 
     private final ConnectionParams connectionParams;
     private final ApacheGatewayConnection.HttpClientFactory httpClientFactory;
     private final String clientId;
+    private final Clock clock;
 
     public ApacheGatewayConnectionFactory(Endpoint endpoint,
                                           FeedParams feedParams,
                                           String clusterSpecificRoute,
                                           ConnectionParams connectionParams,
                                           ApacheGatewayConnection.HttpClientFactory httpClientFactory,
-                                          String clientId) {
+                                          String clientId,
+                                          Clock clock) {
         this.endpoint = validate(endpoint);
         this.feedParams = feedParams;
         this.clusterSpecificRoute = clusterSpecificRoute;
         this.httpClientFactory = httpClientFactory;
         this.connectionParams = connectionParams;
         this.clientId = Objects.requireNonNull(clientId, "clientId cannot be null");
+        this.clock = clock;
     }
 
     private static Endpoint validate(Endpoint endpoint) {
@@ -52,7 +56,8 @@ public class ApacheGatewayConnectionFactory implements GatewayConnectionFactory 
                                            clusterSpecificRoute,
                                            connectionParams,
                                            httpClientFactory,
-                                           clientId);
+                                           clientId,
+                                           clock);
     }
 
 }

@@ -14,6 +14,7 @@ import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,8 @@ public class ClusterConnection implements AutoCloseable {
                              Cluster cluster,
                              int clusterId,
                              int clientQueueSizePerCluster,
-                             ScheduledThreadPoolExecutor timeoutExecutor) {
+                             ScheduledThreadPoolExecutor timeoutExecutor,
+                             Clock clock) {
         if (cluster.getEndpoints().isEmpty())
             throw new IllegalArgumentException("At least a single endpoint is required in " + cluster);
 
@@ -69,14 +71,15 @@ public class ClusterConnection implements AutoCloseable {
             for (int i = 0; i < connectionParams.getNumPersistentConnectionsPerEndpoint(); i++) {
                 GatewayConnectionFactory connectionFactory;
                 if (connectionParams.isDryRun()) {
-                    connectionFactory = new DryRunGatewayConnectionFactory(endpoint);
+                    connectionFactory = new DryRunGatewayConnectionFactory(endpoint, clock);
                 } else {
                     connectionFactory = new ApacheGatewayConnectionFactory(endpoint,
                                                                            feedParams,
                                                                            cluster.getRoute(),
                                                                            connectionParams,
                                                                            new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
-                                                                           operationProcessor.getClientId()
+                                                                           operationProcessor.getClientId(),
+                                                                           clock
                     );
                 }
                 IOThread ioThread = new IOThread(operationProcessor.getIoThreadGroup(),
@@ -90,7 +93,8 @@ public class ClusterConnection implements AutoCloseable {
                                                  documentQueue,
                                                  feedParams.getMaxSleepTimeMs(),
                                                  connectionParams.getConnectionTimeToLive(),
-                                                 idlePollFrequency);
+                                                 idlePollFrequency,
+                                                 clock);
                 ioThreads.add(ioThread);
             }
         }
