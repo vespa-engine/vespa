@@ -55,6 +55,7 @@ public:
             IReplayConfig &replay_config,
             FeedConfigStore &config_store);
 
+    ~ReplayTransactionLogState() override;
     void handleOperation(FeedToken, FeedOperationUP op) override {
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }

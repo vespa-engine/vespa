@@ -2,10 +2,9 @@
 
 #include "visibilityhandler.h"
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
-using vespalib::makeTask;
-using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -81,8 +80,7 @@ VisibilityHandler::startCommit(const std::lock_guard<std::mutex> &unused, bool f
     (void) unused;
     SerialNum current = _serial.getSerialNum();
     if ((current > _lastCommitSerialNum) || force) {
-        _writeService.master().execute(makeTask(makeClosure(this,
-             &VisibilityHandler::performCommit, force)));
+        _writeService.master().execute(makeLambdaTask([this, force]() { performCommit(force);}));
         return true;
     }
     return false;
@@ -95,8 +93,10 @@ VisibilityHandler::performCommit(bool force)
     SerialNum current = _serial.getSerialNum();
     if ((current > _lastCommitSerialNum) || force) {
         IFeedView::SP feedView(_feedView.get());
-        feedView->forceCommit(current);
-        _lastCommitSerialNum = current;
+        if (feedView) {
+            feedView->forceCommit(current);
+            _lastCommitSerialNum = current;
+        }
     }
 }
 
