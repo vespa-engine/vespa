@@ -21,11 +21,11 @@ public abstract class AbstractVespaDeploymentMojo extends AbstractVespaMojo {
     protected String region;
 
     protected ZoneId zoneOf(String environment, String region) {
-        if (region == null)
-            return zone = controller.defaultZone(environment != null ? Environment.from(environment)
-                                                                     : Environment.dev);
+        if (isNullOrBlank(region))
+            return zone = controller.defaultZone(isNullOrBlank(environment) ? Environment.dev
+                                                                            : Environment.from(environment));
 
-        if (environment == null)
+        if (isNullOrBlank(environment))
             throw new IllegalArgumentException("Environment must be specified if region is specified");
 
         return zone = ZoneId.from(environment, region);

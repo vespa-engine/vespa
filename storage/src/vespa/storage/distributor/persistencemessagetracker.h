@@ -12,8 +12,8 @@
 namespace storage::distributor {
 
 struct PersistenceMessageTracker {
-    virtual ~PersistenceMessageTracker() { }
-    typedef MessageTracker::ToSend ToSend;
+    virtual ~PersistenceMessageTracker() = default;
+    using ToSend = MessageTracker::ToSend;
 
     virtual void fail(MessageSender&, const api::ReturnCode&) = 0;
     virtual void queueMessageBatch(const std::vector<ToSend>&) = 0;
@@ -29,7 +29,7 @@ class PersistenceMessageTrackerImpl : public PersistenceMessageTracker,
                                       public MessageTracker
 {
 private:
-    typedef std::map<document::Bucket, std::vector<BucketCopy> > BucketInfoMap;
+    using BucketInfoMap = std::map<document::Bucket, std::vector<BucketCopy>>;
     BucketInfoMap _remapBucketInfo;
     BucketInfoMap _bucketInfo;
 
@@ -38,7 +38,7 @@ public:
                                   std::shared_ptr<api::BucketInfoReply> reply,
                                   DistributorComponent&,
                                   api::Timestamp revertTimestamp = 0);
-    ~PersistenceMessageTrackerImpl();
+    ~PersistenceMessageTrackerImpl() override;
 
     void updateDB();
     void updateMetrics();
@@ -52,7 +52,7 @@ public:
     void updateFromReply(MessageSender& sender, api::BucketInfoReply& reply, uint16_t node) override;
     std::shared_ptr<api::BucketInfoReply>& getReply() override { return _reply; }
 
-    typedef std::pair<document::Bucket, uint16_t> BucketNodePair;
+    using BucketNodePair = std::pair<document::Bucket, uint16_t>;
 
     void revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes);
 
@@ -65,7 +65,7 @@ public:
     void queueMessageBatch(const std::vector<MessageTracker::ToSend>& messages) override;
 
 private:
-    typedef std::vector<uint64_t> MessageBatch;
+    using MessageBatch = std::vector<uint64_t>;
     std::vector<MessageBatch> _messageBatches;
 
     PersistenceOperationMetricSet& _metric;
@@ -75,14 +75,18 @@ private:
     std::vector<BucketNodePair> _revertNodes;
     mbus::TraceNode _trace;
     framework::MilliSecTimer _requestTimer;
+    uint32_t _n_persistence_replies_total;
+    uint32_t _n_successful_persistence_replies;
     uint8_t _priority;
     bool _success;
 
     bool canSendReplyEarly() const;
     void addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply);
     void logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const;
-    bool hasSentReply() const { return _reply.get() == 0; }
+    bool hasSentReply() const noexcept { return !_reply; }
     bool shouldRevert() const;
+    bool has_majority_successful_replies() const noexcept;
+    bool has_minority_test_and_set_failure() const noexcept;
     void sendReply(MessageSender& sender);
     void updateFailureResult(const api::BucketInfoReply& reply);
     void handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node);

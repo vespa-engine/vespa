@@ -394,6 +394,9 @@ public class Search implements ImmutableSearch {
             if (current.isPrefix()) {
                 consolidated.setPrefix(true);
             }
+            if (current.useInterleavedFeatures()) {
+                consolidated.setInterleavedFeatures(true);
+            }
 
             if (consolidated.getRankType() == null) {
                 consolidated.setRankType(current.getRankType());

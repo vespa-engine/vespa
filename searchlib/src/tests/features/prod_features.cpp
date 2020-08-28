@@ -847,12 +847,22 @@ Test::testDistance()
 
         { // test 2D multi location (zcurve)
             vespalib::string positions = "5:-5,35:0,5:40,35:-40";
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  10,  20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  10, -20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -10, -20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -10,  20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, -20, 0x80000000); // 2^31
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, -20, 0x80000000); // 2^31
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  10,  20, 0, 2);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  10, -20, 0, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -10, -20, 0, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -10,  20, 0, 2);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, -20, 0x80000000, 0); // 2^31
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, -20, 0x80000000, 1); // 2^31
+        }
+
+        { // test geo multi location (zcurve)
+            vespalib::string positions = "0:0,100:100,-200:200,-300:-300,400:-400";
+            assert2DZDistance(static_cast<feature_t>(0.0f),  positions,    0,    0, 0x40000000, 0);
+            assert2DZDistance(static_cast<feature_t>(1.0f),  positions,  100,  101, 0x40000000, 1);
+            assert2DZDistance(static_cast<feature_t>(0.0f),  positions, -200,  200, 0x40000000, 2);
+            assert2DZDistance(static_cast<feature_t>(13.0f), positions, -320, -312, 0x40000000, 3);
+            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  416, -403, 0x40000000, 4);
+            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  112,  104, 0x40000000, 1);
         }
 
         { // test default distance
@@ -934,9 +944,10 @@ Test::setupForDistanceTest(FtFeatureTest &ft, const vespalib::string & attrName,
 
 void
 Test::assert2DZDistance(feature_t exp, const vespalib::string & positions,
-                        int32_t xquery, int32_t yquery, uint32_t xAspect)
+                        int32_t xquery, int32_t yquery, uint32_t xAspect,
+                        uint32_t hit_index)
 {
-    LOG(info, "assert2DZDistance(%g, %s, %d, %d, %u)", exp, positions.c_str(), xquery, yquery, xAspect);
+    LOG(info, "assert2DZDistance(%g, %s, %d, %d, %u, %u)", exp, positions.c_str(), xquery, yquery, xAspect, hit_index);
     FtFeatureTest ft(_factory, "distance(pos)");
     std::vector<vespalib::string> ta = FtUtil::tokenize(positions, ",");
     std::vector<std::pair<int32_t, int32_t> > pos;
@@ -953,6 +964,12 @@ Test::assert2DZDistance(feature_t exp, const vespalib::string & positions,
     ASSERT_TRUE(ft.setup());
     ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
                            addScore("distance(pos)", exp)));
+    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-30).
+                           addScore("distance(pos).index", hit_index)));
+    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
+                           addScore("distance(pos).latitude", pos[hit_index].second * 1e-6)));
+    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
+                           addScore("distance(pos).longitude", pos[hit_index].first * 1e-6)));
 }
 
 void

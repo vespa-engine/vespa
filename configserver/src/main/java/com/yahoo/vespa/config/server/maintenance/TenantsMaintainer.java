@@ -32,6 +32,8 @@ public class TenantsMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected boolean maintain() {
+        if ( ! applicationRepository.configserverConfig().hostedVespa()) return true;
+
         Set<TenantName> tenants = applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, clock.instant());
         if (tenants.size() > 0) log.log(Level.INFO, "Deleted tenants " + tenants);
         return true;

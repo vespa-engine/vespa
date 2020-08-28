@@ -10,9 +10,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -79,10 +77,10 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
         instance = firstNonBlank(instance, project.getProperties().getProperty("instance"), Properties.user());
         id = ApplicationId.from(tenant, application, instance);
 
-        if (apiKey != null) {
+        if (!isNullOrBlank(apiKey)) {
             controller = ControllerHttpClient.withSignatureKey(URI.create(endpoint), apiKey, id);
-        } else if (apiKeyFile != null) {
-            controller = apiCertificateFile == null
+        } else if (!isNullOrBlank(apiKeyFile)) {
+            controller = isNullOrBlank(apiCertificateFile)
                     ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(apiKeyFile), id)
                     : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(apiKeyFile), Paths.get(apiCertificateFile));
         } else {
@@ -114,4 +112,9 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
                        .map(mapper);
     }
 
+    protected static boolean isNullOrBlank(String value) {
+        return Optional.ofNullable(value)
+                .filter(s -> !s.isBlank())
+                .isEmpty();
+    }
 }

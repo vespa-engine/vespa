@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,7 +39,7 @@ import java.util.stream.Stream;
 /**
  * @author mortent
  */
-public class JunitRunner extends AbstractComponent {
+public class JunitRunner extends AbstractComponent implements TestRunner {
     private static final Logger logger = Logger.getLogger(JunitRunner.class.getName());
 
     private final BundleContext bundleContext;
@@ -77,6 +78,7 @@ public class JunitRunner extends AbstractComponent {
         System.setProperty("vespa.test.credentials.root", credentialsRoot);
     }
 
+    @Override
     public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
         if (execution != null && !execution.isDone()) {
             throw new IllegalStateException("Test execution already in progress");
@@ -96,6 +98,7 @@ public class JunitRunner extends AbstractComponent {
         execution =  CompletableFuture.supplyAsync(() -> launchJunit(testClasses));
     }
 
+    @Override
     public boolean isSupported() {
         return findTestBundle().isPresent();
     }
@@ -157,7 +160,7 @@ public class JunitRunner extends AbstractComponent {
         Launcher launcher = LauncherFactory.create(launcherConfig);
 
         // Create log listener:
-        var logLines = new ArrayList<String>();
+        var logLines = new ArrayList<LogRecord>();
         var logListener = LoggingListener.forBiConsumer((t, m) -> log(logLines, m.get(), t));
         // Create a summary listener:
         var summaryListener = new SummaryGeneratingListener();
@@ -166,17 +169,23 @@ public class JunitRunner extends AbstractComponent {
         // Execute request
         launcher.execute(discoveryRequest);
         var report = summaryListener.getSummary();
-        return new TestReport(report, logLines);
+        var failures = report.getFailures().stream()
+                .map(failure -> new TestReport.Failure(failure.getTestIdentifier().getUniqueId(), failure.getException()))
+                .collect(Collectors.toList());
+        return TestReport.builder()
+                .withSuccessCount(report.getTestsSucceededCount())
+                .withAbortedCount(report.getTestsAbortedCount())
+                .withIgnoredCount(report.getTestsSkippedCount())
+                .withFailedCount(report.getTestsFailedCount())
+                .withFailures(failures)
+                .withLogs(logLines)
+                .build();
     }
 
-    private void log(List<String> logs, String message, Throwable t) {
-        logs.add(message);
-        if(t != null) {
-            logs.add(t.getMessage());
-            List.of(t.getStackTrace()).stream()
-                    .map(StackTraceElement::toString)
-                    .forEach(logs::add);
-        }
+    private void log(List<LogRecord> logs, String message, Throwable t) {
+        LogRecord logRecord = new LogRecord(Level.INFO, message);
+        Optional.ofNullable(t).ifPresent(logRecord::setThrown);
+        logs.add(logRecord);
     }
 
     @Override
@@ -184,6 +193,7 @@ public class JunitRunner extends AbstractComponent {
         super.deconstruct();
     }
 
+    @Override
     public LegacyTestRunner.Status getStatus() {
         if (execution == null) return LegacyTestRunner.Status.NOT_STARTED;
         if (!execution.isDone()) return LegacyTestRunner.Status.RUNNING;
@@ -200,16 +210,24 @@ public class JunitRunner extends AbstractComponent {
         }
     }
 
-    public String getReportAsJson() {
+    @Override
+    public TestReport getReport() {
         if (execution.isDone()) {
             try {
-                return execution.get().toJson();
+                return execution.get();
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error getting test report", e);
-                return "";
+                return null;
             }
         } else {
-            return "";
+            return null;
         }
+    }
+
+    @Override
+    public String getReportAsJson() {
+        return Optional.ofNullable(getReport())
+                .map(TestReport::toJson)
+                .orElse("");
     }
 }
