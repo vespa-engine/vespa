@@ -49,7 +49,7 @@ public class RemoteSession extends Session {
         return applicationSet;
     }
 
-    public synchronized RemoteSession deactivate() {
+    public synchronized RemoteSession deactivated() {
         return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.empty());
     }
 
