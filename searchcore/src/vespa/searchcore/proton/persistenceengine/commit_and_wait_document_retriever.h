@@ -17,10 +17,10 @@ class CommitAndWaitDocumentRetriever : public IDocumentRetriever
 {
     IDocumentRetriever::SP _retriever;
     ICommitable           &_commit;
-    IPendingLidTracker    &_uncommittedLidsTracker;
+    ILidCommitState    &_uncommittedLidsTracker;
     using Bucket = storage::spi::Bucket;
 public:
-    CommitAndWaitDocumentRetriever(IDocumentRetriever::SP retriever, ICommitable &commit, IPendingLidTracker & unCommittedLidTracker);
+    CommitAndWaitDocumentRetriever(IDocumentRetriever::SP retriever, ICommitable &commit, ILidCommitState & unCommittedLidTracker);
     ~CommitAndWaitDocumentRetriever() override;
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override;
