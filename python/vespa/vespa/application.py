@@ -23,10 +23,11 @@ class Vespa(object):
         :param url: URL
         :param port: Port
         :param deployment_message: Message returned by Vespa engine after deployment.
-        :param cert: Certificate and key pair used for mTLS.
+        :param cert: Path to certificate and key file
 
             >>> Vespa(url = "https://cord19.vespa.ai")
             >>> Vespa(url = "http://localhost", port = 8080)
+            >>> Vespa(url = "https://api.vespa-external.aws.oath.cloud", port = 4443, cert = "/path/to/cert-and-key.pem")
 
         """
         self.url = url
