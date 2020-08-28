@@ -79,6 +79,22 @@ public class TestRunnerHandlerTest {
     }
 
     @Test
+    public void returnsEmptyLogWhenReportNotReady() throws IOException {
+        TestRunner testRunner = mock(TestRunner.class);
+        when(testRunner.isSupported()).thenReturn(true);
+        when(testRunner.getReport()).thenReturn(null);
+        testRunnerHandler = new TestRunnerHandler(
+                Executors.newSingleThreadExecutor(),
+                AccessLog.voidAccessLog(),
+                testRunner, null);
+
+        HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        response.render(out);
+        assertEquals("{\"logRecords\":[]}", new String(out.toByteArray()));
+    }
+
+    @Test
     public void usesLegacyTestRunnerWhenNotSupported() throws IOException {
         TestRunner testRunner = mock(TestRunner.class);
         when(testRunner.isSupported()).thenReturn(false);
