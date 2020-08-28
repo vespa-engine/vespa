@@ -22,7 +22,8 @@ int makeDirectory(const char * dir)
     return retval;
 }
 
-int64_t SerialNumRange::cmp(const SerialNumRange & b) const
+int64_t
+SerialNumRange::cmp(const SerialNumRange & b) const
 {
     int64_t diff(0);
     if ( ! (contains(b) || b.contains(*this)) ) {
@@ -71,7 +72,8 @@ nbostream & Packet::Entry::deserialize(nbostream & os)
     return os;
 }
 
-nbostream & Packet::Entry::serialize(nbostream & os) const
+nbostream &
+Packet::Entry::serialize(nbostream & os) const
 {
     os << _unique << _type << static_cast<uint32_t>(_data.size());
     os.write(_data.c_str(), _data.size());
