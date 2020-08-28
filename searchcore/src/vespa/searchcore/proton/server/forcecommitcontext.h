@@ -26,6 +26,7 @@ class ForceCommitContext : public search::IDestructorCallback
     std::unique_ptr<ForceCommitDoneTask>  _task;
     uint32_t                              _committedDocIdLimit;
     DocIdLimit                           *_docIdLimit;
+    PendingLidTrackerBase::Snapshot       _lidsToCommit;
 
 public:
     ForceCommitContext(vespalib::Executor &executor,

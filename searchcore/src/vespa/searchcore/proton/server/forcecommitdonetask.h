@@ -26,12 +26,11 @@ struct IDocumentMetaStore;
 class ForceCommitDoneTask : public vespalib::Executor::Task
 {
     std::vector<uint32_t>           _lidsToReuse;
-    PendingLidTrackerBase::Snapshot _lidsToCommit;
     bool                             _holdUnblockShrinkLidSpace;
     IDocumentMetaStore              &_documentMetaStore;
 
 public:
-    ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore, PendingLidTrackerBase::Snapshot lidsToCommit);
+    ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore);
     ~ForceCommitDoneTask() override;
 
     void reuseLids(std::vector<uint32_t> &&lids);
@@ -43,7 +42,7 @@ public:
     void run() override;
 
     bool empty() const {
-        return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace && !_lidsToCommit;
+        return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace;
     }
 };
 

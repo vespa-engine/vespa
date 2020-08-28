@@ -11,9 +11,10 @@ ForceCommitContext::ForceCommitContext(vespalib::Executor &executor,
                                        IDocumentMetaStore &documentMetaStore,
                                        PendingLidTrackerBase::Snapshot lidsToCommit)
     : _executor(executor),
-      _task(std::make_unique<ForceCommitDoneTask>(documentMetaStore, std::move(lidsToCommit))),
+      _task(std::make_unique<ForceCommitDoneTask>(documentMetaStore)),
       _committedDocIdLimit(0u),
-      _docIdLimit(nullptr)
+      _docIdLimit(nullptr),
+      _lidsToCommit(std::move(lidsToCommit))
 {
 }
 
@@ -41,8 +42,7 @@ ForceCommitContext::holdUnblockShrinkLidSpace()
 }
 
 void
-ForceCommitContext::registerCommittedDocIdLimit(uint32_t committedDocIdLimit,
-                                                DocIdLimit *docIdLimit)
+ForceCommitContext::registerCommittedDocIdLimit(uint32_t committedDocIdLimit, DocIdLimit *docIdLimit)
 {
     _committedDocIdLimit = committedDocIdLimit;
     _docIdLimit = docIdLimit;
