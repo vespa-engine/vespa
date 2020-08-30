@@ -98,7 +98,7 @@ BuildRequires: gmock-devel
 %if 0%{?fc33}
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 11.0.0
-BuildRequires: boost-devel >= 1.69
+BuildRequires: boost-devel >= 1.73
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
