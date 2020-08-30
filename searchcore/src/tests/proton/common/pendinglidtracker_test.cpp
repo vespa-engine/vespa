@@ -12,6 +12,8 @@ constexpr uint32_t LID_1 = 1u;
 const std::vector<uint32_t> LIDV_2_1_3({2u, LID_1, 3u});
 const std::vector<uint32_t> LIDV_2_3({2u, 3u});
 
+namespace proton {
+
 std::ostream &
 operator << (std::ostream & os, ILidCommitState::State state) {
     switch (state) {
@@ -26,6 +28,8 @@ operator << (std::ostream & os, ILidCommitState::State state) {
         break;
     }
     return os;
+}
+
 }
 
 void
