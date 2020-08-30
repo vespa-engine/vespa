@@ -909,6 +909,7 @@ DocumentDB::syncFeedView()
     IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
+    _writeService.sync();
     _visibility.commit();
     _writeService.sync();
 
