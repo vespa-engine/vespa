@@ -102,6 +102,13 @@ BuildRequires: boost-devel >= 1.73
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
+%if 0%{?fc34}
+BuildRequires: protobuf-devel
+BuildRequires: llvm-devel >= 11.0.0
+BuildRequires: boost-devel >= 1.73
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
 %endif
 BuildRequires: xxhash-devel >= 0.7.3
 BuildRequires: openblas-devel
@@ -199,6 +206,11 @@ Requires: llvm-libs >= 10.0.0
 %define _vespa_llvm_version 10
 %endif
 %if 0%{?fc33}
+Requires: protobuf
+Requires: llvm-libs >= 11.0.0
+%define _vespa_llvm_version 11
+%endif
+%if 0%{?fc34}
 Requires: protobuf
 Requires: llvm-libs >= 11.0.0
 %define _vespa_llvm_version 11
