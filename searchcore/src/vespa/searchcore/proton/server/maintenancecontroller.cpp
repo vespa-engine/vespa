@@ -6,6 +6,7 @@
 #include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
 
 #include <vespa/log/log.h>
@@ -15,6 +16,7 @@ using document::BucketId;
 using vespalib::Executor;
 using vespalib::makeClosure;
 using vespalib::makeTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -84,8 +86,8 @@ MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
 void
 MaintenanceController::killJobs()
 {
-    // Called by master write thread during start/reconfig
-    // Called by other thread during stop
+    // Called by master write thread
+    assert(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
     _periodicTimer.reset();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
@@ -94,24 +96,13 @@ MaintenanceController::killJobs()
     }
     _defaultExecutor.sync();
     _defaultExecutor.sync();
-    if (_masterThread.isCurrentThread()) {
-        JobList tmpJobs = _jobs;
-        {
-            Guard guard(_jobsLock);
-            _jobs.clear();
-        }
-        // Hold jobs until existing tasks have been drained
-        _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performHoldJobs, tmpJobs)));
-    } else {
-        // Wait for all tasks to be finished.
-        // NOTE: We must sync 2 times as a task currently being executed can add a new
-        // task to the executor as it might not see the new value of the stopped flag.
-        _masterThread.sync();
-        _masterThread.sync();
-        // Clear jobs in master write thread, to avoid races
-        _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performClearJobs)));
-        _masterThread.sync();
+    JobList tmpJobs = _jobs;
+    {
+        Guard guard(_jobsLock);
+        _jobs.clear();
     }
+    // Hold jobs until existing tasks have been drained
+    _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performHoldJobs, tmpJobs)));
 }
 
 void
@@ -123,21 +114,12 @@ MaintenanceController::performHoldJobs(JobList jobs)
 }
 
 void
-MaintenanceController::performClearJobs()
-{
-    // Called by master write thread
-    LOG(debug, "performClearJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
-    Guard guard(_jobsLock);
-    _jobs.clear();
-}
-
-
-void
 MaintenanceController::stop()
 {
     assert(!_masterThread.isCurrentThread());
-    _stopping = true;
-    killJobs();
+    _masterThread.execute(makeLambdaTask([this]() { _stopping = true; killJobs(); }));
+    _masterThread.sync();  // Wait for killJobs()
+    _masterThread.sync();  // Wait for already scheduled maintenance jobs and performHoldJobs
 }
 
 void

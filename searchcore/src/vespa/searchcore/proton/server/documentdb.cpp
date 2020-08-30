@@ -987,6 +987,7 @@ void
 DocumentDB::stopMaintenance()
 {
     _maintenanceController.stop();
+    _writeService.sync();
 }
 
 void
