@@ -9,7 +9,7 @@
 #include <vector>
 #include <map>
 
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace vespalib::tensor {
 
