@@ -1,10 +1,18 @@
 #!/bin/sh
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 unset VESPA_LOG_TARGET
-CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/linguistics/target/linguistics.jar
-CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/vespajlib/target/vespajlib.jar
+
+if [ -n $VESPA_CPP_TEST_JARS ]; then
+  CLASSPATH=$CLASSPATH:$VESPA_CPP_TEST_JARS/linguistics.jar
+  CLASSPATH=$CLASSPATH:$VESPA_CPP_TEST_JARS/vespajlib.jar
+else
+  CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/linguistics/target/linguistics.jar
+  CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/vespajlib/target/vespajlib.jar
+fi
+
 CLASSPATH=$CLASSPATH:@CMAKE_CURRENT_SOURCE_DIR@/../java/lowercasing_test.jar
 CLASSPATH=$CLASSPATH:.
+
 if [ $# -lt 1 ]; then
   echo "usage: compilejava file ..."
   exit 1
