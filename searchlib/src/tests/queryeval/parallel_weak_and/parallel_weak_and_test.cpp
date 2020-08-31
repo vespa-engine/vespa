@@ -674,7 +674,7 @@ private:
         MatchParams match_params(_dummy_heap, _dummy_heap.getMinScore(), 1.0, 1);
         std::vector<IDocumentWeightAttribute::LookupResult> dict_entries;
         for (size_t i = 0; i < _num_children; ++i) {
-            dict_entries.push_back(_helper.dwa().lookup(vespalib::make_string("%zu", i).c_str()));
+            dict_entries.push_back(_helper.dwa().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dwa().get_dictionary_snapshot()));
         }
         return create_wand(_use_dwa, _tfmd, match_params, _weights, dict_entries, _helper.dwa(), strict);
     }

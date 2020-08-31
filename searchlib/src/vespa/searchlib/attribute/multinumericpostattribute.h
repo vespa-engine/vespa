@@ -32,12 +32,14 @@ public:
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
-    struct DocumentWeightAttributeAdapter : IDocumentWeightAttribute {
+    struct DocumentWeightAttributeAdapter final : IDocumentWeightAttribute {
         const MultiValueNumericPostingAttribute &self;
         DocumentWeightAttributeAdapter(const MultiValueNumericPostingAttribute &self_in) : self(self_in) {}
-        virtual LookupResult lookup(const vespalib::string &term) const override final;
-        virtual void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override final;
-        virtual DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const override final;
+        vespalib::datastore::EntryRef get_dictionary_snapshot() const override;
+        LookupResult lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const override;
+        void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
+        void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override;
+        DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const override;
     };
     DocumentWeightAttributeAdapter _document_weight_attribute_adapter;
 
