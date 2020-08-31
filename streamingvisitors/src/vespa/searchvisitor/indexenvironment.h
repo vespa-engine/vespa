@@ -73,6 +73,10 @@ public:
         return vespalib::eval::ConstantValue::UP();
     }
 
+    std::optional<vespalib::string> getOnnxModelFullPath(const vespalib::string &) const override {
+        return std::nullopt;
+    }
+
     bool addField(const vespalib::string & name, bool isAttribute);
 
     search::fef::Properties & getProperties() { return _properties; }

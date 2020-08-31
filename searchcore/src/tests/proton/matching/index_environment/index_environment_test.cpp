@@ -14,6 +14,13 @@ using search::index::schema::DataType;
 using vespalib::eval::ConstantValue;
 using SIAF = Schema::ImportedAttributeField;
 
+OnnxModels make_models() {
+    OnnxModels::Vector list;
+    list.emplace_back("model1", "path1");
+    list.emplace_back("model2", "path2");
+    return OnnxModels(list);
+}
+
 struct MyConstantValueRepo : public IConstantValueRepo {
     virtual ConstantValue::UP getConstant(const vespalib::string &) const override {
         return ConstantValue::UP();
@@ -42,7 +49,7 @@ struct Fixture {
     Fixture(Schema::UP schema_)
         : repo(),
           schema(std::move(schema_)),
-          env(7, *schema, Properties(), repo)
+          env(7, *schema, Properties(), repo, make_models())
     {
     }
     const FieldInfo *assertField(size_t idx,
@@ -95,6 +102,12 @@ TEST_F("require that imported attribute fields are extracted in index environmen
     TEST_DO(f.assertAttributeField(0, "imported_a", DataType::INT32, CollectionType::SINGLE));
     TEST_DO(f.assertAttributeField(1, "imported_b", DataType::STRING, CollectionType::ARRAY));
     EXPECT_EQUAL("[documentmetastore]", f.env.getField(2)->name());
+}
+
+TEST_F("require that onnx model paths can be obtained", Fixture(buildEmptySchema())) {
+    EXPECT_EQUAL(f1.env.getOnnxModelFullPath("model1").value(), vespalib::string("path1"));
+    EXPECT_EQUAL(f1.env.getOnnxModelFullPath("model2").value(), vespalib::string("path2"));
+    EXPECT_FALSE(f1.env.getOnnxModelFullPath("model3").has_value());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

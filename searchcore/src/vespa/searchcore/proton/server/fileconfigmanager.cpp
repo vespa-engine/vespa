@@ -345,6 +345,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     config::DirSpec spec(snapDir);
 
     addEmptyFile(snapDir, "ranking-constants.cfg");
+    addEmptyFile(snapDir, "onnx-models.cfg");
     addEmptyFile(snapDir, "imported-fields.cfg");
 
     DocumentDBConfigHelper dbc(spec, _docTypeName);

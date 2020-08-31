@@ -47,6 +47,7 @@ public:
     };
 
     using ConstantsMap = std::map<vespalib::string, Constant>;
+    using ModelMap = std::map<vespalib::string, vespalib::string>;
 
     IndexEnvironment();
     ~IndexEnvironment();
@@ -83,6 +84,9 @@ public:
                           vespalib::eval::ValueType type,
                           std::unique_ptr<vespalib::eval::Value> value);
 
+    std::optional<vespalib::string> getOnnxModelFullPath(const vespalib::string &name) const override;
+    void addOnnxModel(const vespalib::string &name, const vespalib::string &path);
+
 private:
     IndexEnvironment(const IndexEnvironment &);             // hide
     IndexEnvironment & operator=(const IndexEnvironment &); // hide
@@ -93,6 +97,7 @@ private:
     AttributeMap           _attrMap;
     TableManager           _tableMan;
     ConstantsMap           _constants;
+    ModelMap               _models;
 };
 
 }

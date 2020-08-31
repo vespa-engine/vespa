@@ -66,15 +66,14 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
     auto optimize = (env.getFeatureMotivation() == env.FeatureMotivation::VERIFY_SETUP)
                     ? Onnx::Optimize::DISABLE
                     : Onnx::Optimize::ENABLE;
-
-    // Note: Using the fileref property with the model name as
-    // fallback to get a file name. This needs to be replaced with an
-    // actual file reference obtained through config when available.
-    vespalib::string file_name = env.getProperties().lookup(getName(), "fileref").get(params[0].getValue());
+    auto file_name = env.getOnnxModelFullPath(params[0].getValue());
+    if (!file_name.has_value()) {
+        return fail("no model with name '%s' found", params[0].getValue().c_str());
+    }
     try {
-        _model = std::make_unique<Onnx>(file_name, optimize);
+        _model = std::make_unique<Onnx>(file_name.value(), optimize);
     } catch (std::exception &ex) {
-        return fail("Model setup failed: %s", ex.what());
+        return fail("model setup failed: %s", ex.what());
     }
     Onnx::WirePlanner planner;
     for (size_t i = 0; i < _model->inputs().size(); ++i) {

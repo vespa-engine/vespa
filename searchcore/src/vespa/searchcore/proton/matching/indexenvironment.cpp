@@ -64,13 +64,15 @@ IndexEnvironment::insertField(const search::fef::FieldInfo &field)
 IndexEnvironment::IndexEnvironment(uint32_t distributionKey,
                                    const search::index::Schema &schema,
                                    const search::fef::Properties &props,
-                                   const IConstantValueRepo &constantValueRepo)
+                                   const IConstantValueRepo &constantValueRepo,
+                                   OnnxModels onnxModels)
     : _tableManager(),
       _properties(props),
       _fieldNames(),
       _fields(),
       _motivation(UNKNOWN),
       _constantValueRepo(constantValueRepo),
+      _onnxModels(std::move(onnxModels)),
       _distributionKey(distributionKey)
 {
     _tableManager.addFactory(std::make_shared<search::fef::FunctionTableFactory>(256));
@@ -128,6 +130,15 @@ IndexEnvironment::hintFieldAccess(uint32_t ) const { }
 
 void
 IndexEnvironment::hintAttributeAccess(const string &) const { }
+
+std::optional<vespalib::string>
+IndexEnvironment::getOnnxModelFullPath(const vespalib::string &name) const
+{
+    if (const auto model = _onnxModels.getModel(name)) {
+        return model->filePath;
+    }
+    return std::nullopt;
+}
 
 IndexEnvironment::~IndexEnvironment() = default;
 
