@@ -64,7 +64,7 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
             }
             // If some are missing, quorum is enough
             if (respondents.size() >= barrierMemberCount()) {
-                log.log(Level.INFO, barrierCompletedMessage(respondents, startTime));
+                log.log(Level.FINE, barrierCompletedMessage(respondents, startTime));
                 break;
             }
 

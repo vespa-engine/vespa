@@ -85,9 +85,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Override
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested,
                                   ProvisionLogger logger) {
-        log.log(zone.system().isCd() ? Level.INFO : Level.FINE,
-                () -> "Received deploy prepare request for " + requested +
-                      " for application " + application + ", cluster " + cluster);
+        log.log(Level.FINE, () -> "Received deploy prepare request for " + requested +
+                                  " for application " + application + ", cluster " + cluster);
 
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
