@@ -361,34 +361,6 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
             document_name=self.schema.name,
         )
 
-    def create_application_package_files(self, dir_path):
-        Path(os.path.join(dir_path, "application/schemas")).mkdir(
-            parents=True, exist_ok=True
-        )
-        with open(
-            os.path.join(
-                dir_path, "application/schemas/{}.sd".format(self.schema.name)
-            ),
-            "w",
-        ) as f:
-            f.write(self.schema_to_text)
-        with open(os.path.join(dir_path, "application/hosts.xml"), "w") as f:
-            f.write(self.hosts_to_text)
-        with open(os.path.join(dir_path, "application/services.xml"), "w") as f:
-            f.write(self.services_to_text)
-
-    def to_application_zip(self, extras: dict = {}) -> BytesIO:
-        buffer = BytesIO()
-        with zipfile.ZipFile(buffer, "a") as zip_archive:
-            zip_archive.writestr(
-                "application/schemas/{}.sd".format(self.schema.name),
-                self.schema_to_text,
-            )
-            zip_archive.writestr("application/services.xml", self.services_to_text)
-            for name, value in extras.items():
-                zip_archive.writestr(name, value)
-        return buffer
-
     @staticmethod
     def from_dict(mapping: Mapping) -> "ApplicationPackage":
         schema = mapping.get("schema", None)
@@ -465,6 +437,25 @@ class VespaDocker(object):
             == "HTTP/1.1 200 OK"
         )
 
+    def create_application_package_files(self, dir_path):
+        Path(os.path.join(dir_path, "application/schemas")).mkdir(
+            parents=True, exist_ok=True
+        )
+        with open(
+            os.path.join(
+                dir_path,
+                "application/schemas/{}.sd".format(
+                    self.application_package.schema.name
+                ),
+            ),
+            "w",
+        ) as f:
+            f.write(self.application_package.schema_to_text)
+        with open(os.path.join(dir_path, "application/hosts.xml"), "w") as f:
+            f.write(self.application_package.hosts_to_text)
+        with open(os.path.join(dir_path, "application/services.xml"), "w") as f:
+            f.write(self.application_package.services_to_text)
+
     def deploy(self, disk_folder: str, container_memory: str = "4G"):
         """
         Deploy the application into a Vespa container.
@@ -475,7 +466,7 @@ class VespaDocker(object):
         :return: a Vespa connection instance.
         """
 
-        self.application_package.create_application_package_files(dir_path=disk_folder)
+        self.create_application_package_files(dir_path=disk_folder)
 
         self.run_vespa_engine_container(
             disk_folder=disk_folder, container_memory=container_memory
@@ -502,16 +493,24 @@ class VespaDocker(object):
 
 
 class VespaCloud(object):
-    def __init__(self, tenant: str, application: str, key_location: str) -> None:
+    def __init__(
+        self,
+        tenant: str,
+        application: str,
+        key_location: str,
+        application_package: ApplicationPackage,
+    ) -> None:
         """
         Deploy application to the Vespa Cloud (cloud.vespa.ai)
 
         :param tenant: Tenant name registered in the Vespa Cloud.
         :param application: Application name registered in the Vespa Cloud.
         :param key_location: Location of the private key used for signing HTTP requests to the Vespa Cloud.
+        :param application_package: ApplicationPackage to be deployed.
         """
         self.tenant = tenant
         self.application = application
+        self.application_package = application_package
         self.api_key = self.read_private_key(key_location)
         self.api_public_key_bytes = standard_b64encode(
             self.api_key.public_key().public_bytes(
@@ -520,9 +519,7 @@ class VespaCloud(object):
             )
         )
         self.data_key, self.data_certificate = self.create_certificate_pair()
-        self.data_cert_file = self.write_private_key_and_cert(
-            self.data_key, self.data_certificate
-        )
+        self.private_cert_file_name = "private_cert.txt"
         self.connection = http.client.HTTPSConnection(
             "api.vespa-external.aws.oath.cloud", 4443
         )
@@ -539,21 +536,19 @@ class VespaCloud(object):
                 )
             return key
 
-    @staticmethod
     def write_private_key_and_cert(
-        key: ec.EllipticCurvePrivateKey, cert: x509.Certificate
-    ) -> (str, str):
-        cert_file = tempfile.NamedTemporaryFile("wt")
-        cert_file.write(
-            key.private_bytes(
-                serialization.Encoding.PEM,
-                serialization.PrivateFormat.TraditionalOpenSSL,
-                serialization.NoEncryption(),
-            ).decode("UTF-8")
-        )
-        cert_file.write(cert.public_bytes(serialization.Encoding.PEM).decode("UTF-8"))
-        cert_file.flush()
-        return cert_file
+        self, key: ec.EllipticCurvePrivateKey, cert: x509.Certificate, disk_folder: str
+    ) -> None:
+        cert_file = os.path.join(disk_folder, self.private_cert_file_name)
+        with open(cert_file, "w+") as file:
+            file.write(
+                key.private_bytes(
+                    serialization.Encoding.PEM,
+                    serialization.PrivateFormat.TraditionalOpenSSL,
+                    serialization.NoEncryption(),
+                ).decode("UTF-8")
+            )
+            file.write(cert.public_bytes(serialization.Encoding.PEM).decode("UTF-8"))
 
     @staticmethod
     def create_certificate_pair() -> (ec.EllipticCurvePrivateKey, x509.Certificate):
@@ -635,21 +630,40 @@ class VespaCloud(object):
             raise RuntimeError("No endpoints found for container 'test_app_container'")
         return container_url[0]
 
-    def start_deployment(
-        self, instance: str, job: str, application_package: ApplicationPackage
-    ) -> int:
+    def to_application_zip(self) -> BytesIO:
+        buffer = BytesIO()
+        with zipfile.ZipFile(buffer, "a") as zip_archive:
+            zip_archive.writestr(
+                "application/schemas/{}.sd".format(
+                    self.application_package.schema.name
+                ),
+                self.application_package.schema_to_text,
+            )
+            zip_archive.writestr(
+                "application/services.xml", self.application_package.services_to_text
+            )
+            zip_archive.writestr(
+                "application/security/clients.pem",
+                self.data_certificate.public_bytes(serialization.Encoding.PEM),
+            )
+
+        return buffer
+
+    def start_deployment(self, instance: str, job: str, disk_folder: str) -> int:
         deploy_path = (
             "/application/v4/tenant/{}/application/{}/instance/{}/deploy/{}".format(
                 self.tenant, self.application, instance, job
             )
         )
-        application_zip_bytes = application_package.to_application_zip(
-            {
-                "application/security/clients.pem": self.data_certificate.public_bytes(
-                    serialization.Encoding.PEM
-                )
-            }
+
+        application_zip_bytes = self.to_application_zip()
+
+        self.write_private_key_and_cert(
+            self.data_key, self.data_certificate, disk_folder
         )
+        with open(os.path.join(disk_folder, "application.zip"), "wb") as zipfile:
+            zipfile.write(application_zip_bytes.getvalue())
+
         response = self.request(
             "POST",
             deploy_path,
@@ -716,25 +730,28 @@ class VespaCloud(object):
         if step != "copyVespaLogs" or entry["type"] == "error":
             print("{:<7} [{}]  {}".format(entry["type"].upper(), timestamp, message))
 
-    def deploy(self, instance: str, application_package: ApplicationPackage) -> Vespa:
+    def deploy(self, instance: str, disk_folder: str) -> Vespa:
         """
         Deploy the given application package as the given instance in the Vespa Cloud dev environment.
 
         :param instance: Name of this instance of the application, in the Vespa Cloud.
-        :param application_package: ApplicationPackage to be deployed.
+        :param disk_folder: Disk folder to save the required Vespa config files.
 
         :return: a Vespa connection instance.
         """
         region = self.get_dev_region()
         job = "dev-" + region
-        run = self.start_deployment(instance, job, application_package)
+        run = self.start_deployment(instance, job, disk_folder)
         self.follow_deployment(instance, job, run)
         endpoint_url = self.get_endpoint(
             instance=instance,
             region=region,
-            application_package_name=application_package.name,
+            application_package_name=self.application_package.name,
         )
-        return Vespa(url=endpoint_url, cert=self.data_cert_file.name)
+        return Vespa(
+            url=endpoint_url,
+            cert=os.path.join(disk_folder, self.private_cert_file_name),
+        )
 
     def delete(self, instance: str):
         """
@@ -753,7 +770,6 @@ class VespaCloud(object):
 
     def close(self):
         self.connection.close()
-        self.data_cert_file.close()
 
     def __enter__(self):
         return self
