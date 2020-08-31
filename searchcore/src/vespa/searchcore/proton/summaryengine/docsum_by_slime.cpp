@@ -20,7 +20,6 @@ using vespalib::Memory;
 using vespalib::slime::Symbol;
 using vespalib::slime::BinaryFormat;
 using vespalib::slime::ArrayTraverser;
-using vespalib::SimpleBuffer;
 using vespalib::DataBuffer;
 using vespalib::ConstBufferRef;
 using vespalib::compression::CompressionConfig;

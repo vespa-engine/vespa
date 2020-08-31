@@ -7,6 +7,7 @@
 #include <vespa/fnet/frt/frt.h>
 #include "config-my.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/log/log.h>
 LOG_SETUP("failover");
 

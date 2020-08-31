@@ -112,13 +112,14 @@ ReferenceAttribute::buildReverseMapping(EntryRef newRef, const std::vector<Rever
 void
 ReferenceAttribute::buildReverseMapping()
 {
-    std::vector<std::pair<EntryRef, uint32_t>> indices;
+    using EntryPair = std::pair<EntryRef, uint32_t>;
+    std::vector<EntryPair, vespalib::allocator_large<EntryPair>> indices;
     uint32_t numDocs = _indices.size();
     indices.reserve(numDocs);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
         EntryRef ref = _indices[lid];
         if (ref.valid()) {
-            indices.push_back(std::make_pair(ref, lid));
+            indices.emplace_back(ref, lid);
         }
     }
     std::sort(indices.begin(), indices.end());
@@ -200,8 +201,7 @@ ReferenceAttribute::onUpdateStat()
 std::unique_ptr<AttributeSaver>
 ReferenceAttribute::onInitSave(vespalib::stringref fileName)
 {
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
-                                             takeGuard());
+    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<ReferenceAttributeSaver>
         (std::move(guard),
          createAttributeHeader(fileName),
@@ -221,8 +221,7 @@ ReferenceAttribute::onLoad()
     assert(attrReader.getEnumerated());
     assert(!attrReader.hasIdx());
     size_t numDocs(0);
-    uint64_t numValues(0);
-    numValues = attrReader.getEnumCount();
+    uint64_t numValues = attrReader.getEnumCount();
     numDocs = numValues;
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     const GenericHeader &header = udatBuffer->getHeader();
@@ -367,13 +366,13 @@ class TargetLidPopulator : public IGidToLidMapperVisitor
 {
     ReferenceAttribute &_attr;
 public:
-    TargetLidPopulator(ReferenceAttribute &attr)
+    explicit TargetLidPopulator(ReferenceAttribute &attr)
         : IGidToLidMapperVisitor(),
           _attr(attr)
     {
     }
-    virtual ~TargetLidPopulator() override { }
-    virtual void visit(const document::GlobalId &gid, uint32_t lid) const override {
+    ~TargetLidPopulator() override = default;
+    void visit(const document::GlobalId &gid, uint32_t lid) const override {
         _attr.notifyReferencedPutNoCommit(gid, lid);
     }
 };

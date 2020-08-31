@@ -4,6 +4,7 @@
 
 #include "input.h"
 #include "output.h"
+#include <vespa/vespalib/stllike/allocator.h>
 #include <iosfwd>
 #include <vector>
 
@@ -20,7 +21,7 @@ class SimpleBuffer : public Input,
                      public Output
 {
 private:
-    std::vector<char> _data;
+    std::vector<char, allocator_large<char>> _data;
     size_t            _used;
 
 public:

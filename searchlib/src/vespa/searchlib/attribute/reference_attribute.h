@@ -7,6 +7,7 @@
 #include "reference_mappings.h"
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/stllike/allocator.h>
 
 namespace search { class IGidToLidMapperFactory; }
 
@@ -28,7 +29,7 @@ public:
     using GlobalId = document::GlobalId;
     using ReferenceStore = vespalib::datastore::UniqueStore<Reference>;
     using ReferenceStoreIndices = vespalib::RcuVectorBase<EntryRef>;
-    using IndicesCopyVector = vespalib::Array<EntryRef>;
+    using IndicesCopyVector = std::vector<EntryRef, vespalib::allocator_large<EntryRef>>;
     // Class used to map from target lid to source lids
     using ReverseMapping = vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData,
                                              vespalib::btree::NoAggregated,
@@ -45,14 +46,14 @@ private:
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 
-    virtual void onAddDocs(DocId docIdLimit) override;
-    virtual void removeOldGenerations(generation_t firstUsed) override;
-    virtual void onGenerationChange(generation_t generation) override;
-    virtual void onCommit() override;
-    virtual void onUpdateStat() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    virtual bool onLoad() override;
-    virtual uint64_t getUniqueValueCount() const override;
+    void onAddDocs(DocId docIdLimit) override;
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
+    void onCommit() override;
+    void onUpdateStat() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    bool onLoad() override;
+    uint64_t getUniqueValueCount() const override;
 
     bool considerCompact(const CompactionStrategy &compactionStrategy);
     void compactWorst();

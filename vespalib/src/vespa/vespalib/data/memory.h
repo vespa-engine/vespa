@@ -15,14 +15,14 @@ struct Memory
     const char *data;
     size_t      size;
 
-    Memory() : data(nullptr), size(0) {}
-    Memory(const char *d, size_t s) : data(d), size(s) {}
-    Memory(const char *str) : data(str), size(strlen(str)) {}
-    Memory(const std::string &str)
+    Memory() noexcept : data(nullptr), size(0) {}
+    Memory(const char *d, size_t s) noexcept : data(d), size(s) {}
+    Memory(const char *str) noexcept : data(str), size(strlen(str)) {}
+    Memory(const std::string &str) noexcept
         : data(str.data()), size(str.size()) {}
-    Memory(const vespalib::string &str)
+    Memory(const vespalib::string &str) noexcept
         : data(str.data()), size(str.size()) {}
-    Memory(vespalib::stringref str_ref)
+    Memory(vespalib::stringref str_ref) noexcept
         : data(str_ref.data()), size(str_ref.size()) {}
     vespalib::string make_string() const;
     vespalib::stringref make_stringref() const { return stringref(data, size); }
