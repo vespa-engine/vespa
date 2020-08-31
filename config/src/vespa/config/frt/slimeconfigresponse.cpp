@@ -22,6 +22,8 @@ SlimeConfigResponse::SlimeConfigResponse(FRT_RPCRequest * request)
 {
 }
 
+SlimeConfigResponse::~SlimeConfigResponse() = default;
+
 void
 SlimeConfigResponse::fill()
 {
@@ -30,9 +32,9 @@ SlimeConfigResponse::fill()
         return;
     }
     Memory json((*_returnValues)[0]._string._str);
-    Slime * data = new Slime();
+    auto data = std::make_unique<Slime>();
     JsonFormat::decode(json, *data);
-    _data.reset(data);
+    _data = std::move(data);
     _key = readKey();
     _state = readState();
     _value = readConfigValue();
@@ -50,7 +52,7 @@ SlimeConfigResponse::readTrace()
     _trace.deserialize(root[RESPONSE_TRACE]);
 }
 
-const ConfigKey
+ConfigKey
 SlimeConfigResponse::readKey() const
 {
     Inspector & root(_data->get());
@@ -60,7 +62,7 @@ SlimeConfigResponse::readKey() const
                      root[RESPONSE_DEF_MD5].asString().make_string());
 }
 
-const ConfigState
+ConfigState
 SlimeConfigResponse::readState() const
 {
     const Slime & data(*_data);

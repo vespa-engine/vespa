@@ -22,7 +22,7 @@ int readTraceLevel();
 CompressionType readProtocolCompressionType();
 
 struct Payload {
-    virtual ~Payload() {}
+    virtual ~Payload() = default;
     virtual const vespalib::slime::Inspector & getSlimePayload() const = 0;
 };
 

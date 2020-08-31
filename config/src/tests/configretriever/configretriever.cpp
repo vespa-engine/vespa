@@ -145,9 +145,9 @@ private:
 
 ConfigValue createKeyValueV2(const vespalib::string & key, const vespalib::string & value)
 {
-    FixedPayload * payload = new FixedPayload();
+    auto payload = std::make_unique<FixedPayload>();
     payload->getData().setObject().setString(key, Memory(value));
-    return ConfigValue(PayloadPtr(payload), "");
+    return ConfigValue(std::move(payload), "");
 }
 
 
