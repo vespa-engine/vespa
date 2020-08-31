@@ -14,9 +14,10 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.junit.Rule;
 import org.junit.Test;
@@ -278,7 +279,7 @@ public class ApacheGatewayConnectionTest {
     private static ApacheGatewayConnection.HttpClientFactory mockHttpClientFactory(HttpExecuteMock httpExecuteMock) throws IOException {
         ApacheGatewayConnection.HttpClientFactory mockFactory =
                 mock(ApacheGatewayConnection.HttpClientFactory.class);
-        HttpClient httpClientMock = mock(HttpClient.class);
+        CloseableHttpClient httpClientMock = mock(CloseableHttpClient.class);
         when(mockFactory.createClient()).thenReturn(httpClientMock);
         when(httpClientMock.execute(any())).thenAnswer((Answer) invocation -> {
             Object[] args = invocation.getArguments();
@@ -315,7 +316,7 @@ public class ApacheGatewayConnectionTest {
     }
 
     private HttpResponse httpResponse(String sessionIdInResult, String version) throws IOException {
-        HttpResponse httpResponseMock = mock(HttpResponse.class);
+        CloseableHttpResponse httpResponseMock = mock(CloseableHttpResponse.class);
 
         StatusLine statusLineMock = mock(StatusLine.class);
         when(httpResponseMock.getStatusLine()).thenReturn(statusLineMock);
@@ -336,7 +337,7 @@ public class ApacheGatewayConnectionTest {
     }
 
     private static HttpResponse createErrorHttpResponse(int statusCode, String reasonPhrase, String message) throws IOException {
-        HttpResponse response = mock(HttpResponse.class);
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
 
         StatusLine statusLine = mock(StatusLine.class);
         when(statusLine.getStatusCode()).thenReturn(statusCode);

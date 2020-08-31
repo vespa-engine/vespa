@@ -153,6 +153,8 @@ class IOThread implements Runnable, AutoCloseable {
         if (size > 0) {
             log.info("We have outstanding operations (" + size + ") , trying to fetch responses.");
             try {
+                for (GatewayConnection oldConnection : oldConnections)
+                    processResponse(oldConnection.drain());
                 processResponse(currentConnection.drain());
             } catch (Throwable e) {
                 log.log(Level.SEVERE, "Some failures while trying to get latest responses from vespa.", e);
@@ -160,11 +162,12 @@ class IOThread implements Runnable, AutoCloseable {
         }
 
         try {
+            for (GatewayConnection oldConnection : oldConnections)
+                oldConnection.close();
             currentConnection.close();
         } finally {
             // If there is still documents in the queue, fail them.
-            drainDocumentQueueWhenFailingPermanently(new Exception(
-                    "Closed call, did not manage to process everything so failing this document."));
+            drainDocumentQueueWhenFailingPermanently(new Exception("Closed call, did not manage to process everything so failing this document."));
         }
 
         log.fine("Session to " + endpoint + " closed.");

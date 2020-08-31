@@ -20,6 +20,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
 
@@ -64,7 +65,7 @@ class ApacheGatewayConnection implements GatewayConnection {
     private final FeedParams feedParams;
     private final String clusterSpecificRoute;
     private final ConnectionParams connectionParams;
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
     private Instant connectionTime = null;
     private Instant lastPollTime = null;
     private String sessionId;
@@ -378,6 +379,13 @@ class ApacheGatewayConnection implements GatewayConnection {
 
     @Override
     public void close() {
+        try {
+            if (httpClient != null)
+                httpClient.close();
+        }
+        catch (IOException e) {
+            log.log(Level.WARNING, "Failed closing HTTP client", e);
+        }
         httpClient = null;
     }
 
@@ -394,7 +402,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             this.useSsl = useSsl;
         }
 
-        public HttpClient createClient() {
+        public CloseableHttpClient createClient() {
             HttpClientBuilder clientBuilder;
             if (connectionParams.useTlsConfigFromEnvironment()) {
                 clientBuilder = VespaHttpClientBuilder.create();
