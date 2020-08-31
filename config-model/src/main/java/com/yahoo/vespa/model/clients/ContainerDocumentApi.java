@@ -101,12 +101,12 @@ public class ContainerDocumentApi {
                 .collect(Collectors.toList());
         // We can only use host resource for calculation if all container nodes in the cluster are homogeneous (in terms of vcpu)
         if (vcpus.size() != 1 || vcpus.get(0) == 0) return FALLBACK_MAX_POOL_SIZE;
-        return (int)Math.ceil(vcpus.get(0));
+        return Math.max(2, (int)Math.ceil(vcpus.get(0)));
     }
 
     private static int corePoolSize(int maxPoolSize, Options options) {
         if (maxPoolSize == FALLBACK_MAX_POOL_SIZE) return FALLBACK_CORE_POOL_SIZE;
-        return (int) Math.ceil(options.feedCoreThreadPoolSizeFactor * maxPoolSize);
+        return Math.max(1, (int)Math.ceil(options.feedCoreThreadPoolSizeFactor * maxPoolSize));
     }
 
     public static final class Options {
