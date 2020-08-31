@@ -53,11 +53,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     public void close() throws IOException {
         // the endpoint is closed in a finally{} block inside AbstractHttpRequestHandler
         // this class should be possible to close willynilly as it is exposed to plug-ins
-        try {
-            buffer.flush();
-        } catch (RuntimeException e) {
-            throw new IOException(Exceptions.toMessageString(e), e);
-        }
+        flush();
     }
 
     /**
