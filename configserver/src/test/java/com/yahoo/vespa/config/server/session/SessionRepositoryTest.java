@@ -65,7 +65,7 @@ public class SessionRepositoryTest {
                                             .build())
                 .flagSource(flagSource)
                 .build();
-        tenantRepository = new TenantRepository(globalComponentRegistry, false);
+        tenantRepository = new TenantRepository(globalComponentRegistry);
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

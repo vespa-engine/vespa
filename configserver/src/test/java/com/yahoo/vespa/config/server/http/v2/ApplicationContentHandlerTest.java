@@ -50,7 +50,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
     @Before
     public void setupHandler() {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 

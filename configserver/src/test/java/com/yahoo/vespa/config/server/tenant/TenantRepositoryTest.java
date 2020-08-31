@@ -202,7 +202,7 @@ public class TenantRepositoryTest {
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
         public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry) {
-            super(globalComponentRegistry, false);
+            super(globalComponentRegistry);
         }
 
         @Override

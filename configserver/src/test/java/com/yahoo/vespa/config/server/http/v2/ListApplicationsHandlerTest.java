@@ -41,7 +41,7 @@ public class ListApplicationsHandlerTest {
 
     @Before
     public void setup() {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenant);
         tenantRepository.addTenant(foobar);
         applicationRepo = tenantRepository.getTenant(mytenant).getApplicationRepo();
