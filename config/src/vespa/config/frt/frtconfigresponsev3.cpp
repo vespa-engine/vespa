@@ -2,6 +2,7 @@
 #include "frtconfigresponsev3.h"
 #include "compressioninfo.h"
 #include <vespa/fnet/frt/frt.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconfigresponsev3");

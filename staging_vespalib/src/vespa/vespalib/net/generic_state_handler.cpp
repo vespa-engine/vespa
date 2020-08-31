@@ -2,6 +2,7 @@
 
 #include "generic_state_handler.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 
 namespace vespalib {
 

@@ -3,6 +3,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/input.h>
 #include <vespa/vespalib/data/memory_input.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <iostream>
 #include <fstream>
 

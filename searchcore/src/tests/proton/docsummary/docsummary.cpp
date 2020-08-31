@@ -31,6 +31,7 @@
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/testapp.h>

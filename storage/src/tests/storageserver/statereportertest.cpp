@@ -10,8 +10,8 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 
 #include <vespa/log/log.h>

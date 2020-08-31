@@ -7,6 +7,8 @@
 #include <vespa/config/common/configdefinition.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/config/common/vespa_version.h>
+#include <vespa/vespalib/data/simple_buffer.h>
+
 
 using namespace vespalib;
 using namespace vespalib::slime;
