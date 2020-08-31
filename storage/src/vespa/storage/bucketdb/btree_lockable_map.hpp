@@ -34,6 +34,9 @@ struct BTreeLockableMap<T>::ValueTraits {
     using ConstValueRef = const T&;
     using DataStoreType = vespalib::datastore::DataStore<ValueType>;
 
+    static void init_data_store(DataStoreType& store) {
+        store.enableFreeLists();
+    }
     static EntryRef entry_ref_from_value(uint64_t value) {
         return EntryRef(value & 0xffffffffULL);
     }
