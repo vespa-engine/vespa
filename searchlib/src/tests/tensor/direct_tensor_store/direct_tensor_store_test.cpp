@@ -5,9 +5,6 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("direct_tensor_store_test");
-
 using namespace search::tensor;
 
 using vespalib::datastore::EntryRef;
@@ -47,7 +44,6 @@ public:
         const auto* act = store.get_tensor(ref);
         ASSERT_TRUE(act);
         EXPECT_EQ(exp, act);
-        EXPECT_EQ(*exp, *act);
     }
 };
 
