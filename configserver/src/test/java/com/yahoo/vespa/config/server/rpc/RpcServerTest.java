@@ -64,8 +64,7 @@ public class RpcServerTest {
             ApplicationRepository applicationRepository = tester.applicationRepository();
             applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
             TenantApplications applicationRepo = tester.tenant().getApplicationRepo();
-            ApplicationSet applicationSet = tester.tenant().getSessionRepository().ensureApplicationLoaded(applicationRepository.getActiveSession(applicationId));
-            applicationRepo.reloadConfig(applicationSet);
+            applicationRepo.reloadConfig(applicationRepository.getActiveSession(applicationId).ensureApplicationLoaded());
             testPrintStatistics(tester);
             testGetConfig(tester);
             testEnabled(tester);
