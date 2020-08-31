@@ -66,13 +66,13 @@ class TensorConverter {
     }
 
     private static class RawBoolValues extends RawValues {
-        private final IntBuffer values;
+        private final ByteString values;
         private final int size;
         RawBoolValues(Onnx.TensorProto tensorProto) {
-            values = bytes(tensorProto).asIntBuffer();
-            size = values.remaining();
+            values = tensorProto.getRawData();
+            size = values.size();
         }
-        @Override double get(int i) { return values.get(i); }
+        @Override double get(int i) { return values.byteAt(i) == 0 ? 0.0 : 1.0; }
         @Override int size() { return size; }
     }
 
