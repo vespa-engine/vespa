@@ -80,7 +80,7 @@ public class ApplicationHandlerTest {
                 .provisioner(provisioner)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenantName);
         provisioner = new SessionHandlerTest.MockProvisioner();
         orchestrator = new OrchestratorMock();

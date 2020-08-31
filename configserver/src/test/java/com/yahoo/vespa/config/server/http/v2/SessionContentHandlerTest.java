@@ -45,7 +45,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
 
     @Before
     public void setupHandler() {
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName);
 
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

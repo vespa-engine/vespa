@@ -75,7 +75,7 @@ public class TenantApplicationsTest {
                 .modelFactoryRegistry(createRegistry())
                 .reloadListener(listener)
                 .build();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
         applications = TenantApplications.create(componentRegistry, tenantName);

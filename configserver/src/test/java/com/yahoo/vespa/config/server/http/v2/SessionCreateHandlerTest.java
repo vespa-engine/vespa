@@ -61,7 +61,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setupRepo() {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new SessionHandlerTest.MockProvisioner())

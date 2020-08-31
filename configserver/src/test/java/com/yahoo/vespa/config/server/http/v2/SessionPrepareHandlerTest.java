@@ -65,7 +65,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setupRepo() {
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenant);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

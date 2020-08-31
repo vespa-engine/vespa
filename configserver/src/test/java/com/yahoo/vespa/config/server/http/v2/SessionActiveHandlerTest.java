@@ -72,7 +72,7 @@ public class SessionActiveHandlerTest {
                 .curator(new MockCurator())
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .build();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
