@@ -5,13 +5,14 @@ import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.OperationStatus;
-import com.yahoo.vespa.http.client.core.ServerResponseException;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,30 +23,61 @@ import java.util.List;
 public class DryRunGatewayConnection implements GatewayConnection {
 
     private final Endpoint endpoint;
+    private final Clock clock;
+    private Instant connectionTime = null;
+    private Instant lastPollTime = null;
 
-    public DryRunGatewayConnection(Endpoint endpoint) {
+    /** Set to true to hold off responding with a result to any incoming operations until this is set false */
+    private boolean hold = false;
+    private List<Document> held = new ArrayList<>();
+
+    public DryRunGatewayConnection(Endpoint endpoint, Clock clock) {
         this.endpoint = endpoint;
+        this.clock = clock;
     }
 
     @Override
-    public InputStream writeOperations(List<Document> docs) throws ServerResponseException, IOException {
+    public InputStream write(List<Document> docs) {
         StringBuilder result = new StringBuilder();
-        for (Document doc : docs) {
-            OperationStatus operationStatus = new OperationStatus("ok", doc.getOperationId(), ErrorCode.OK, false, "");
-            result.append(operationStatus.render());
+        if (hold) {
+            held.addAll(docs);
+        }
+        else {
+            for (Document doc : held)
+                result.append(okResponse(doc).render());
+            held.clear();
+            for (Document doc : docs)
+                result.append(okResponse(doc).render());
         }
         return new ByteArrayInputStream(result.toString().getBytes(StandardCharsets.UTF_8));
     }
 
+    public void hold(boolean hold) {
+        this.hold = hold;
+    }
+
     @Override
-    public InputStream drain() throws ServerResponseException, IOException {
-        return writeOperations(new ArrayList<Document>());
+    public InputStream poll() {
+        lastPollTime = clock.instant();
+        return write(new ArrayList<>());
+    }
+
+    @Override
+    public Instant lastPollTime() { return lastPollTime; }
+
+    @Override
+    public InputStream drain() {
+        return write(new ArrayList<>());
     }
 
     @Override
     public boolean connect() {
+        connectionTime = clock.instant();
         return true;
     }
+
+    @Override
+    public Instant connectionTime() { return connectionTime; }
 
     @Override
     public Endpoint getEndpoint() {
@@ -53,9 +85,16 @@ public class DryRunGatewayConnection implements GatewayConnection {
     }
 
     @Override
-    public void handshake() throws ServerResponseException, IOException { }
+    public void handshake() { }
 
     @Override
     public void close() { }
+
+    /** Returns the document currently held in this */
+    public List<Document> held() { return Collections.unmodifiableList(held); }
+
+    private OperationStatus okResponse(Document document) {
+        return new OperationStatus("ok", document.getOperationId(), ErrorCode.OK, false, "");
+    }
 
 }

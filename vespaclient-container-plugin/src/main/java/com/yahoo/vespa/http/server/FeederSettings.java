@@ -6,6 +6,8 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.vespa.http.client.config.FeedParams.DataFormat;
 import com.yahoo.vespa.http.client.core.Headers;
 
+import java.util.Optional;
+
 /**
  * Wrapper for the feed feederSettings read from HTTP request.
  *
@@ -14,7 +16,7 @@ import com.yahoo.vespa.http.client.core.Headers;
 public class FeederSettings {
 
     private static final Route DEFAULT_ROUTE = Route.parse("default");
-    public final boolean drain;
+    public final boolean drain; // TODO: Implement drain=true
     public final Route route;
     public final boolean denyIfBusy;
     public final DataFormat dataFormat;
@@ -22,55 +24,13 @@ public class FeederSettings {
     public final Integer traceLevel;
 
     public FeederSettings(HttpRequest request) {
-        {
-            String tmpDrain = request.getHeader(Headers.DRAIN);
-            if (tmpDrain != null) {
-                drain = Boolean.parseBoolean(tmpDrain);
-            } else {
-                drain = false;
-            }
-        }
-        {
-            String tmpRoute = request.getHeader(Headers.ROUTE);
-            if (tmpRoute != null) {
-                route = Route.parse(tmpRoute);
-            } else {
-                route = DEFAULT_ROUTE;
-            }
-        }
-        {
-            String tmpDenyIfBusy = request.getHeader(Headers.DENY_IF_BUSY);
-            if (tmpDenyIfBusy != null) {
-                denyIfBusy = Boolean.parseBoolean(tmpDenyIfBusy);
-            } else {
-                denyIfBusy = false;
-            }
-        }
-        {
-            // TODO: Change default to JSON on Vespa 8
-            String tmpDataFormat = request.getHeader(Headers.DATA_FORMAT);
-            if (tmpDataFormat != null) {
-                dataFormat = DataFormat.valueOf(tmpDataFormat);
-            } else {
-                dataFormat = DataFormat.XML_UTF8;
-            }
-        }
-        {
-            String tmpDataFormat = request.getHeader(Headers.PRIORITY);
-            if (tmpDataFormat != null) {
-                priority = tmpDataFormat;
-            } else {
-                priority = null;
-            }
-        }
-        {
-            String tmpDataFormat = request.getHeader(Headers.TRACE_LEVEL);
-            if (tmpDataFormat != null) {
-                traceLevel = Integer.valueOf(tmpDataFormat);
-            } else {
-                traceLevel = null;
-            }
-        }
+        this.drain = Optional.ofNullable(request.getHeader(Headers.DRAIN)).map(Boolean::parseBoolean).orElse(false);
+        this.route = Optional.ofNullable(request.getHeader(Headers.ROUTE)).map(Route::parse).orElse(DEFAULT_ROUTE);
+        this.denyIfBusy = Optional.ofNullable(request.getHeader(Headers.DENY_IF_BUSY)).map(Boolean::parseBoolean).orElse(false);
+        // TODO: Change default to JSON on Vespa 8:
+        this.dataFormat = Optional.ofNullable(request.getHeader(Headers.DATA_FORMAT)).map(DataFormat::valueOf).orElse(DataFormat.XML_UTF8);
+        this.priority = request.getHeader(Headers.PRIORITY);
+        this.traceLevel = Optional.ofNullable(request.getHeader(Headers.TRACE_LEVEL)).map(Integer::valueOf).orElse(null);
     }
 
 }

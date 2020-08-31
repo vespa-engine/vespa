@@ -13,8 +13,13 @@ import com.yahoo.vespa.http.client.core.ServerResponseException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -31,23 +36,40 @@ import java.util.logging.Logger;
  */
 class IOThread implements Runnable, AutoCloseable {
 
-    private static Logger log = Logger.getLogger(IOThread.class.getName());
+    private static final Logger log = Logger.getLogger(IOThread.class.getName());
+
     private final Endpoint endpoint;
-    private final GatewayConnection client;
+    private final GatewayConnectionFactory connectionFactory;
     private final DocumentQueue documentQueue;
     private final EndpointResultQueue resultQueue;
+
+    /** The thread running this, or null if it does not run a thread (meaning tick() must be called from the outside) */
     private final Thread thread;
     private final int clusterId;
     private final CountDownLatch running = new CountDownLatch(1);
     private final CountDownLatch stopSignal = new CountDownLatch(1);
     private final int maxChunkSizeBytes;
     private final int maxInFlightRequests;
-    private final long localQueueTimeOut;
+    private final Duration localQueueTimeOut;
+    private final Duration maxOldConnectionPollInterval;
     private final GatewayThrottler gatewayThrottler;
+    private final Duration connectionTimeToLive;
     private final long pollIntervalUS;
+    private final Clock clock;
     private final Random random = new Random();
 
-    private enum ThreadState { DISCONNECTED, CONNECTED, SESSION_SYNCED };
+    private GatewayConnection currentConnection;
+    private ConnectionState connectionState = ConnectionState.DISCONNECTED;
+
+    /**
+     * Previous connections on which we have sent operations and are still waiting for the result
+     * (so all connections in this are in state SESSION_SYNCED).
+     * We need to drain results on the connection where they were sent to make sure we request results on
+     * the node which received the operation also when going through a VIP.
+     */
+    private final List<GatewayConnection> oldConnections = new ArrayList<>();
+
+    private enum ConnectionState { DISCONNECTED, CONNECTED, SESSION_SYNCED };
     private final AtomicInteger wrongSessionDetectedCounter = new AtomicInteger(0);
     private final AtomicInteger wrongVersionDetectedCounter = new AtomicInteger(0);
     private final AtomicInteger problemStatusCodeFromServerCounter = new AtomicInteger(0);
@@ -59,68 +81,47 @@ class IOThread implements Runnable, AutoCloseable {
     private final AtomicInteger lastGatewayProcessTimeMillis = new AtomicInteger(0);
 
     IOThread(ThreadGroup ioThreadGroup,
+             Endpoint endpoint,
              EndpointResultQueue endpointResultQueue,
-             GatewayConnection client,
+             GatewayConnectionFactory connectionFactory,
              int clusterId,
              int maxChunkSizeBytes,
              int maxInFlightRequests,
-             long localQueueTimeOut,
+             Duration localQueueTimeOut,
              DocumentQueue documentQueue,
              long maxSleepTimeMs,
-             double idlePollFrequency) {
+             Duration connectionTimeToLive,
+             boolean runThreads,
+             double idlePollFrequency,
+             Clock clock) {
+        this.endpoint = endpoint;
         this.documentQueue = documentQueue;
-        this.endpoint = client.getEndpoint();
-        this.client = client;
+        this.connectionFactory = connectionFactory;
+        this.currentConnection = connectionFactory.newConnection();
         this.resultQueue = endpointResultQueue;
         this.clusterId = clusterId;
         this.maxChunkSizeBytes = maxChunkSizeBytes;
         this.maxInFlightRequests = maxInFlightRequests;
+        this.connectionTimeToLive = connectionTimeToLive;
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
-        //Ensure that pollInterval is in the range [1us, 10s]
-        this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency)));
-        this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
-        thread.setDaemon(true);
+        this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1us, 10s]
+        this.clock = clock;
         this.localQueueTimeOut = localQueueTimeOut;
-        thread.start();
+        this.maxOldConnectionPollInterval = localQueueTimeOut.dividedBy(10).toMillis() > pollIntervalUS / 1000
+                                            ? localQueueTimeOut.dividedBy(10)
+                                            : Duration.ofMillis(pollIntervalUS / 1000);
+        if (runThreads) {
+            this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
+            thread.setDaemon(true);
+            thread.start();
+        }
+        else {
+            this.thread = null;
+        }
     }
 
     public Endpoint getEndpoint() {
         return endpoint;
-    }
-
-    public static class ConnectionStats {
-
-        // NOTE: These fields are accessed by reflection in JSON serialization
-
-        public final int wrongSessionDetectedCounter;
-        public final int wrongVersionDetectedCounter;
-        public final int problemStatusCodeFromServerCounter;
-        public final int executeProblemsCounter;
-        public final int docsReceivedCounter;
-        public final int statusReceivedCounter;
-        public final int pendingDocumentStatusCount;
-        public final int successfullHandshakes;
-        public final int lastGatewayProcessTimeMillis;
-
-        ConnectionStats(int wrongSessionDetectedCounter,
-                        int wrongVersionDetectedCounter,
-                        int problemStatusCodeFromServerCounter,
-                        int executeProblemsCounter,
-                        int docsReceivedCounter,
-                        int statusReceivedCounter,
-                        int pendingDocumentStatusCount,
-                        int successfullHandshakes,
-                        int lastGatewayProcessTimeMillis) {
-            this.wrongSessionDetectedCounter = wrongSessionDetectedCounter;
-            this.wrongVersionDetectedCounter = wrongVersionDetectedCounter;
-            this.problemStatusCodeFromServerCounter = problemStatusCodeFromServerCounter;
-            this.executeProblemsCounter = executeProblemsCounter;
-            this.docsReceivedCounter = docsReceivedCounter;
-            this.statusReceivedCounter = statusReceivedCounter;
-            this.pendingDocumentStatusCount = pendingDocumentStatusCount;
-            this.successfullHandshakes = successfullHandshakes;
-            this.lastGatewayProcessTimeMillis = lastGatewayProcessTimeMillis;
-        }
     }
 
     /**
@@ -152,18 +153,21 @@ class IOThread implements Runnable, AutoCloseable {
         if (size > 0) {
             log.info("We have outstanding operations (" + size + ") , trying to fetch responses.");
             try {
-                processResponse(client.drain());
+                for (GatewayConnection oldConnection : oldConnections)
+                    processResponse(oldConnection.drain());
+                processResponse(currentConnection.drain());
             } catch (Throwable e) {
                 log.log(Level.SEVERE, "Some failures while trying to get latest responses from vespa.", e);
             }
         }
 
         try {
-            client.close();
+            for (GatewayConnection oldConnection : oldConnections)
+                oldConnection.close();
+            currentConnection.close();
         } finally {
             // If there is still documents in the queue, fail them.
-            drainDocumentQueueWhenFailingPermanently(new Exception(
-                    "Closed call, did not manage to process everything so failing this document."));
+            drainDocumentQueueWhenFailingPermanently(new Exception("Closed call, did not manage to process everything so failing this document."));
         }
 
         log.fine("Session to " + endpoint + " closed.");
@@ -184,7 +188,7 @@ class IOThread implements Runnable, AutoCloseable {
         int chunkSizeBytes = 0;
         try {
             drainFirstDocumentsInQueueIfOld();
-            Document doc = documentQueue.poll(maxWaitUnits, timeUnit);
+            Document doc = thread != null ? documentQueue.poll(maxWaitUnits, timeUnit) : documentQueue.poll();
             if (doc != null) {
                 docsForSendChunk.add(doc);
                 chunkSizeBytes = doc.size();
@@ -236,12 +240,12 @@ class IOThread implements Runnable, AutoCloseable {
     private InputStream sendAndReceive(List<Document> docs) throws IOException, ServerResponseException {
         try {
             // Post the new docs and get async responses for other posts.
-            return client.writeOperations(docs);
+            return currentConnection.write(docs);
         } catch (ServerResponseException ser) {
             markDocumentAsFailed(docs, ser);
             throw ser;
         } catch (Exception e) {
-            markDocumentAsFailed(docs, new ServerResponseException(e.getMessage()));
+            markDocumentAsFailed(docs, new ServerResponseException(Exceptions.toMessageString(e)));
             throw e;
         }
     }
@@ -274,11 +278,11 @@ class IOThread implements Runnable, AutoCloseable {
     private ProcessResponse feedDocumentAndProcessResults(List<Document> docs)
             throws ServerResponseException, IOException {
         addDocumentsToResultQueue(docs);
-        long startTime = System.currentTimeMillis();
+        long startTime = clock.millis();
         InputStream serverResponse = sendAndReceive(docs);
 
         ProcessResponse processResponse = processResponse(serverResponse);
-        lastGatewayProcessTimeMillis.set((int) (System.currentTimeMillis() - startTime));
+        lastGatewayProcessTimeMillis.set((int) (clock.millis() - startTime));
         return processResponse;
     }
 
@@ -309,28 +313,30 @@ class IOThread implements Runnable, AutoCloseable {
         return processResponse;
     }
 
-    /** Given a current thread state, take the appropriate action and return the resulting new thread state */
-    private ThreadState cycle(ThreadState threadState) {
-        switch(threadState) {
+    /** Given a current connection state, take the appropriate action and return the resulting new connection state */
+    private ConnectionState cycle(ConnectionState connectionState) {
+        switch(connectionState) {
             case DISCONNECTED:
                 try {
-                    if (! client.connect()) {
+                    if (! currentConnection.connect()) {
                         log.log(Level.WARNING, "Could not connect to endpoint: '" + endpoint + "'. Will re-try.");
                         drainFirstDocumentsInQueueIfOld();
-                        return ThreadState.DISCONNECTED;
+                        return ConnectionState.DISCONNECTED;
                     }
-                    return ThreadState.CONNECTED;
+                    return ConnectionState.CONNECTED;
                 } catch (Throwable throwable1) {
                     drainFirstDocumentsInQueueIfOld();
 
                     log.log(Level.INFO, "Failed connecting to endpoint: '" + endpoint
                             + "'. Will re-try connecting. Failed with '" + Exceptions.toMessageString(throwable1) + "'",throwable1);
                     executeProblemsCounter.incrementAndGet();
-                    return ThreadState.DISCONNECTED;
+                    return ConnectionState.DISCONNECTED;
                 }
             case CONNECTED:
                 try {
-                    client.handshake();
+                    if (isStale(currentConnection))
+                        return refreshConnection(connectionState);
+                    currentConnection.handshake();
                     successfulHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
 
@@ -340,46 +346,49 @@ class IOThread implements Runnable, AutoCloseable {
 
                     drainFirstDocumentsInQueueIfOld();
                     resultQueue.onEndpointError(new FeedProtocolException(ser.getResponseCode(), ser.getResponseString(), ser, endpoint));
-                    return ThreadState.CONNECTED;
+                    return ConnectionState.CONNECTED;
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
                     resultQueue.onEndpointError(new FeedConnectException(throwable, endpoint));
                     log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint
                             + "' failed. Will re-try handshake. Failed with '" + Exceptions.toMessageString(throwable) + "'",throwable);
                     drainFirstDocumentsInQueueIfOld();
-                    client.close();
-                    return ThreadState.DISCONNECTED;
+                    currentConnection.close();
+                    return ConnectionState.DISCONNECTED;
                 }
-                return ThreadState.SESSION_SYNCED;
+                return ConnectionState.SESSION_SYNCED;
             case SESSION_SYNCED:
                 try {
+                    if (isStale(currentConnection))
+                        return refreshConnection(connectionState);
                     ProcessResponse processResponse = pullAndProcessData(pollIntervalUS);
                     gatewayThrottler.handleCall(processResponse.transitiveErrorCount);
                 }
                 catch (ServerResponseException ser) {
-                    log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint
-                            + "'. Will re-try. Endpoint responded with an unexpected HTTP response code. '"
-                            + Exceptions.toMessageString(ser) + "'",ser);
-                    return ThreadState.CONNECTED;
+                    log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint +
+                                        "'. Will re-try. Endpoint responded with an unexpected HTTP response code. '"
+                                        + Exceptions.toMessageString(ser) + "'",ser);
+                    return ConnectionState.CONNECTED;
                 }
-                catch (Throwable e) { // Covers IOException as well
-                    log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint
-                            + "'. Will re-try. Connection level error. Failed with '" + Exceptions.toMessageString(e) + "'", e);
-                    client.close();
-                    return ThreadState.DISCONNECTED;
+                catch (Throwable e) {
+                    log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint +
+                                        "'. Will re-try. Connection level error. Failed with '" +
+                                        Exceptions.toMessageString(e) + "'", e);
+                    currentConnection.close();
+                    return ConnectionState.DISCONNECTED;
                 }
-                return ThreadState.SESSION_SYNCED;
+                return ConnectionState.SESSION_SYNCED;
             default: {
                 log.severe("Should never get here.");
-                client.close();
-                return ThreadState.DISCONNECTED;
+                currentConnection.close();
+                return ConnectionState.DISCONNECTED;
             }
         }
     }
 
-    private void sleepIfProblemsGettingSyncedConnection(ThreadState newState, ThreadState oldState) {
-        if (newState == ThreadState.SESSION_SYNCED) return;
-        if (newState == ThreadState.CONNECTED && oldState == ThreadState.DISCONNECTED) return;
+    private void sleepIfProblemsGettingSyncedConnection(ConnectionState newState, ConnectionState oldState) {
+        if (newState == ConnectionState.SESSION_SYNCED) return;
+        if (newState == ConnectionState.CONNECTED && oldState == ConnectionState.DISCONNECTED) return;
         try {
             // Take it easy we have problems getting a connection up.
             if (stopSignal.getCount() > 0 || !documentQueue.isEmpty()) {
@@ -391,16 +400,19 @@ class IOThread implements Runnable, AutoCloseable {
 
     @Override
     public void run() {
-        ThreadState threadState = ThreadState.DISCONNECTED;
-        while (stopSignal.getCount() > 0 || !documentQueue.isEmpty()) {
-            ThreadState oldState = threadState;
-            threadState = cycle(threadState);
-            sleepIfProblemsGettingSyncedConnection(threadState, oldState);
-
-        }
+        while (stopSignal.getCount() > 0 || !documentQueue.isEmpty())
+            tick();
         log.finer(toString() + " exiting, documentQueue.size()=" + documentQueue.size());
         running.countDown();
+    }
 
+    /** Do one iteration of work. Should be called from the single worker thread of this. */
+    public void tick() {
+        ConnectionState oldState = connectionState;
+        connectionState = cycle(connectionState);
+        checkOldConnections();
+        if (thread != null)
+            sleepIfProblemsGettingSyncedConnection(connectionState, oldState);
     }
 
     private void drainFirstDocumentsInQueueIfOld() {
@@ -410,14 +422,14 @@ class IOThread implements Runnable, AutoCloseable {
 
             EndpointResult endpointResult = EndPointResultFactory.createTransientError(
                     endpoint, document.get().getOperationId(),
-                    new Exception("Not sending document operation, timed out in queue after "
-                                  + document.get().timeInQueueMillis() + " ms."));
+                    new Exception("Not sending document operation, timed out in queue after " +
+                                  (clock.millis() - document.get().getQueueInsertTime().toEpochMilli()) + " ms."));
             resultQueue.failOperation(endpointResult, clusterId);
         }
     }
 
     private void drainDocumentQueueWhenFailingPermanently(Exception exception) {
-        //first, clear sentOperations:
+        // first, clear sentOperations:
         resultQueue.failPending(exception);
 
         for (Document document : documentQueue.removeAllDocuments()) {
@@ -426,5 +438,93 @@ class IOThread implements Runnable, AutoCloseable {
             resultQueue.failOperation(endpointResult, clusterId);
         }
     }
+
+    private boolean isStale(GatewayConnection connection) {
+        return connection.connectionTime() != null
+               && connection.connectionTime().plus(connectionTimeToLive).isBefore(clock.instant());
+    }
+
+    private ConnectionState refreshConnection(ConnectionState currentConnectionState) {
+        if (currentConnectionState == ConnectionState.SESSION_SYNCED)
+            oldConnections.add(currentConnection);
+        currentConnection = connectionFactory.newConnection();
+        return ConnectionState.DISCONNECTED;
+    }
+
+    private void checkOldConnections() {
+        for (Iterator<GatewayConnection> i = oldConnections.iterator(); i.hasNext(); ) {
+            GatewayConnection connection = i.next();
+            if (closingTime(connection).isBefore(clock.instant())) {
+                connection.close();
+                i.remove();
+            }
+            else if (timeToPoll(connection)) {
+                try {
+                    processResponse(connection.poll());
+                }
+                catch (Exception e) {
+                    // Old connection; best effort
+                }
+            }
+        }
+    }
+
+    private Instant closingTime(GatewayConnection connection) {
+        return connection.connectionTime().plus(connectionTimeToLive).plus(localQueueTimeOut);
+    }
+
+    private boolean timeToPoll(GatewayConnection connection) {
+        if (connection.lastPollTime() == null) return true;
+
+        // Poll less the closer the connection comes to closing time
+        double newness = ( closingTime(connection).toEpochMilli() - clock.millis() ) /
+                         (double)localQueueTimeOut.toMillis();
+        if (newness < 0) return true; // connection retired prematurely
+        if (newness > 1) return false; // closing time reached
+        Duration pollInterval = Duration.ofMillis(pollIntervalUS / 1000 +
+                                                  (long)((1 - newness) * ( maxOldConnectionPollInterval.toMillis() - pollIntervalUS / 1000)));
+        return connection.lastPollTime().plus(pollInterval).isBefore(clock.instant());
+    }
+
+    public static class ConnectionStats {
+
+        // NOTE: These fields are accessed by reflection in JSON serialization
+
+        public final int wrongSessionDetectedCounter;
+        public final int wrongVersionDetectedCounter;
+        public final int problemStatusCodeFromServerCounter;
+        public final int executeProblemsCounter;
+        public final int docsReceivedCounter;
+        public final int statusReceivedCounter;
+        public final int pendingDocumentStatusCount;
+        public final int successfullHandshakes;
+        public final int lastGatewayProcessTimeMillis;
+
+        ConnectionStats(int wrongSessionDetectedCounter,
+                        int wrongVersionDetectedCounter,
+                        int problemStatusCodeFromServerCounter,
+                        int executeProblemsCounter,
+                        int docsReceivedCounter,
+                        int statusReceivedCounter,
+                        int pendingDocumentStatusCount,
+                        int successfullHandshakes,
+                        int lastGatewayProcessTimeMillis) {
+            this.wrongSessionDetectedCounter = wrongSessionDetectedCounter;
+            this.wrongVersionDetectedCounter = wrongVersionDetectedCounter;
+            this.problemStatusCodeFromServerCounter = problemStatusCodeFromServerCounter;
+            this.executeProblemsCounter = executeProblemsCounter;
+            this.docsReceivedCounter = docsReceivedCounter;
+            this.statusReceivedCounter = statusReceivedCounter;
+            this.pendingDocumentStatusCount = pendingDocumentStatusCount;
+            this.successfullHandshakes = successfullHandshakes;
+            this.lastGatewayProcessTimeMillis = lastGatewayProcessTimeMillis;
+        }
+    }
+
+    /** For testing. Returns the current connection of this. Not thread safe. */
+    public GatewayConnection currentConnection() { return currentConnection; }
+
+    /** For testing. Returns a snapshot of the old connections of this. Not thread safe. */
+    public List<GatewayConnection> oldConnections() { return new ArrayList<>(oldConnections); }
 
 }

@@ -7,53 +7,53 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * A document operation
+ *
  * @author Einar M R Rosenvinge
  */
 final public class Document {
 
     private final String documentId;
     private final ByteBuffer data;
-    private final long createTimeMillis = System.currentTimeMillis();
-    // This is initialized lazily to reduce work on calling thread (which is the thread calling the API).
+    private final Instant createTime;
+    // This is initialized lazily to reduce work on calling thread (which is the thread calling the API)
     private String operationId = null;
     private final Object context;
-    private long queueInsertTimestampMillis;
+    private Instant queueInsertTime;
 
-    public Document(String documentId, byte[] data, Object context) {
-        this.documentId = documentId;
-        this.context = context;
-        this.data = ByteBuffer.wrap(data);
+    public Document(String documentId, byte[] data, Object context, Instant createTime) {
+        this(documentId, null, ByteBuffer.wrap(data), context, createTime);
     }
 
-    public Document(String documentId, String operationId, CharSequence data, Object context) {
+    public Document(String documentId, String operationId, CharSequence data, Object context, Instant createTime) {
+        this(documentId, operationId, encode(data, documentId), context, createTime);
+    }
+
+    private Document(String documentId, String operationId, ByteBuffer data, Object context, Instant createTime) {
         this.documentId = documentId;
         this.operationId = operationId;
+        this.data = data;
         this.context = context;
-        try {
-            this.data = StandardCharsets.UTF_8.newEncoder().encode(CharBuffer.wrap(data));
-        } catch (CharacterCodingException e) {
-            throw new RuntimeException("Error encoding document data into UTF8 " + documentId, e);
-        }
+        this.createTime = Objects.requireNonNull(createTime, "createTime cannot be null");
+        this.queueInsertTime = createTime;
     }
 
-    public void resetQueueTime() {
-        queueInsertTimestampMillis = System.currentTimeMillis();
+    public void setQueueInsertTime(Instant queueInsertTime) {
+        this.queueInsertTime = queueInsertTime;
     }
 
-    public long timeInQueueMillis() {
-        return System.currentTimeMillis() - queueInsertTimestampMillis;
-    }
+    public Instant getQueueInsertTime() { return queueInsertTime; }
 
     public CharSequence getDataAsString() {
         return StandardCharsets.UTF_8.decode(data.asReadOnlyBuffer());
     }
 
-    public Object getContext() {
-        return context;
-    }
+    public Object getContext() { return context; }
 
     public static class DocumentException extends IOException {
         private static final long serialVersionUID = 29832833292L;
@@ -63,9 +63,7 @@ final public class Document {
         }
     }
 
-    public String getDocumentId() {
-        return documentId;
-    }
+    public String getDocumentId() { return documentId; }
 
     public ByteBuffer getData() {
         return data.asReadOnlyBuffer();
@@ -75,9 +73,7 @@ final public class Document {
         return data.remaining();
     }
 
-    public long createTimeMillis() {
-        return createTimeMillis;
-    }
+    public Instant createTime() { return createTime; }
 
     public String getOperationId() {
         if (operationId == null) {
@@ -88,5 +84,13 @@ final public class Document {
 
     @Override
     public String toString() { return "document '" + documentId + "'"; }
+
+    private static ByteBuffer encode(CharSequence data, String documentId) {
+        try {
+            return StandardCharsets.UTF_8.newEncoder().encode(CharBuffer.wrap(data));
+        } catch (CharacterCodingException e) {
+            throw new RuntimeException("Error encoding document data into UTF8 " + documentId, e);
+        }
+    }
 
 }
