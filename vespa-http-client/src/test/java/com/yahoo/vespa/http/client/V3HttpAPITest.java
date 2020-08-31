@@ -18,13 +18,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.vespa.http.client.TestUtils.getResults;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -96,9 +92,9 @@ public class V3HttpAPITest {
     }
 
     @Test
-    public void requireThatSingleDestinationWorks() throws Exception {
+    public void testSingleDestination() throws Exception {
         try (Server server = new Server(new V3MockParsingRequestHandler(), 0);
-             Session session = SessionFactory.create(Endpoint.create("localhost", server.getPort(), false))) {
+            Session session = SessionFactory.create(Endpoint.create("localhost", server.getPort(), false))) {
 
             writeDocuments(session);
             Map<String, Result> results = getResults(session, documents.size());
@@ -106,8 +102,8 @@ public class V3HttpAPITest {
 
             for (TestDocument document : documents) {
                 Result r = results.remove(document.getDocumentId());
-                assertThat(r, not(nullValue()));
-                assertThat(r.getDetails().toString(), r.isSuccess(), is(true));
+                assertNotNull(r);
+                assertTrue(r.getDetails().toString(), r.isSuccess());
             }
             assertTrue(results.isEmpty());
         }

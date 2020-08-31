@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -26,6 +27,10 @@ public class DryRunGatewayConnection implements GatewayConnection {
     private Instant connectionTime = null;
     private Instant lastPollTime = null;
 
+    /** Set to true to hold off responding with a result to any incoming operations until this is set false */
+    private boolean hold = false;
+    private List<Document> held = new ArrayList<>();
+
     public DryRunGatewayConnection(Endpoint endpoint, Clock clock) {
         this.endpoint = endpoint;
         this.clock = clock;
@@ -34,11 +39,21 @@ public class DryRunGatewayConnection implements GatewayConnection {
     @Override
     public InputStream write(List<Document> docs) {
         StringBuilder result = new StringBuilder();
-        for (Document doc : docs) {
-            OperationStatus operationStatus = new OperationStatus("ok", doc.getOperationId(), ErrorCode.OK, false, "");
-            result.append(operationStatus.render());
+        if (hold) {
+            held.addAll(docs);
+        }
+        else {
+            for (Document doc : held)
+                result.append(okResponse(doc).render());
+            held.clear();
+            for (Document doc : docs)
+                result.append(okResponse(doc).render());
         }
         return new ByteArrayInputStream(result.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public void hold(boolean hold) {
+        this.hold = hold;
     }
 
     @Override
@@ -74,5 +89,12 @@ public class DryRunGatewayConnection implements GatewayConnection {
 
     @Override
     public void close() { }
+
+    /** Returns the document currently held in this */
+    public List<Document> held() { return Collections.unmodifiableList(held); }
+
+    private OperationStatus okResponse(Document document) {
+        return new OperationStatus("ok", document.getOperationId(), ErrorCode.OK, false, "");
+    }
 
 }

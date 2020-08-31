@@ -42,6 +42,7 @@ public final class ConnectionParams {
         private int maxRetries = 100;
         private long minTimeBetweenRetriesMs = 700;
         private boolean dryRun = false;
+        private boolean runThreads = true;
         private int traceLevel = 0;
         private int traceEveryXOperation = 0;
         private boolean printTraceToStdErr = true;
@@ -191,13 +192,20 @@ public final class ConnectionParams {
         }
 
         /**
-         * Don't send data to gateway, just pretend that everything is fine.
-         *
-         * @param dryRun true if enabled.
-         * @return pointer to builder.
+         * Set to true to skip making network connections and instead
+         * let requests complete successfully with no effect.
          */
         public Builder setDryRun(boolean dryRun) {
             this.dryRun = dryRun;
+            return this;
+        }
+
+        /**
+         * Set to false to skip starting io threads, such that any operation must be driven by a calling thread.
+         * Useful for testing.
+         */
+        public Builder setRunThreads(boolean runThreads) {
+            this.runThreads = runThreads;
             return this;
         }
 
@@ -274,6 +282,7 @@ public final class ConnectionParams {
                     maxRetries,
                     minTimeBetweenRetriesMs,
                     dryRun,
+                    runThreads,
                     traceLevel,
                     traceEveryXOperation,
                     printTraceToStdErr,
@@ -292,6 +301,8 @@ public final class ConnectionParams {
         public boolean isDryRun() {
             return dryRun;
         }
+
+        public boolean runThreads() { return runThreads; }
 
         public int getMaxRetries() {
             return maxRetries;
@@ -345,6 +356,7 @@ public final class ConnectionParams {
     private final int maxRetries;
     private final long minTimeBetweenRetriesMs;
     private final boolean dryRun;
+    private final boolean runThreads;
     private final int traceLevel;
     private final int traceEveryXOperation;
     private final boolean printTraceToStdErr;
@@ -364,6 +376,7 @@ public final class ConnectionParams {
             int maxRetries,
             long minTimeBetweenRetriesMs,
             boolean dryRun,
+            boolean runThreads,
             int traceLevel,
             int traceEveryXOperation,
             boolean printTraceToStdErr,
@@ -385,6 +398,7 @@ public final class ConnectionParams {
         this.maxRetries = maxRetries;
         this.minTimeBetweenRetriesMs = minTimeBetweenRetriesMs;
         this.dryRun = dryRun;
+        this.runThreads = runThreads;
         this.traceLevel = traceLevel;
         this.traceEveryXOperation = traceEveryXOperation;
         this.printTraceToStdErr = printTraceToStdErr;
@@ -435,6 +449,8 @@ public final class ConnectionParams {
     public boolean isDryRun() {
         return dryRun;
     }
+
+    public boolean runThreads() { return runThreads; }
 
     public int getTraceLevel() {
         return traceLevel;

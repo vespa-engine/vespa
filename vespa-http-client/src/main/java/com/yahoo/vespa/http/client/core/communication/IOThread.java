@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,8 @@ class IOThread implements Runnable, AutoCloseable {
     private final GatewayConnectionFactory connectionFactory;
     private final DocumentQueue documentQueue;
     private final EndpointResultQueue resultQueue;
+
+    /** The thread running this, or null if it does not run a thread (meaning tick() must be called from the outside) */
     private final Thread thread;
     private final int clusterId;
     private final CountDownLatch running = new CountDownLatch(1);
@@ -56,6 +59,7 @@ class IOThread implements Runnable, AutoCloseable {
     private final Random random = new Random();
 
     private GatewayConnection currentConnection;
+    private ConnectionState connectionState = ConnectionState.DISCONNECTED;
 
     /**
      * Previous connections on which we have sent operations and are still waiting for the result
@@ -87,6 +91,7 @@ class IOThread implements Runnable, AutoCloseable {
              DocumentQueue documentQueue,
              long maxSleepTimeMs,
              Duration connectionTimeToLive,
+             boolean runThreads,
              double idlePollFrequency,
              Clock clock) {
         this.endpoint = endpoint;
@@ -101,11 +106,18 @@ class IOThread implements Runnable, AutoCloseable {
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
         this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1us, 10s]
         this.clock = clock;
-        this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
-        thread.setDaemon(true);
         this.localQueueTimeOut = localQueueTimeOut;
-        this.maxOldConnectionPollInterval = localQueueTimeOut.dividedBy(10);
-        thread.start();
+        this.maxOldConnectionPollInterval = localQueueTimeOut.dividedBy(10).toMillis() > pollIntervalUS / 1000
+                                            ? localQueueTimeOut.dividedBy(10)
+                                            : Duration.ofMillis(pollIntervalUS / 1000);
+        if (runThreads) {
+            this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
+            thread.setDaemon(true);
+            thread.start();
+        }
+        else {
+            this.thread = null;
+        }
     }
 
     public Endpoint getEndpoint() {
@@ -173,7 +185,7 @@ class IOThread implements Runnable, AutoCloseable {
         int chunkSizeBytes = 0;
         try {
             drainFirstDocumentsInQueueIfOld();
-            Document doc = documentQueue.poll(maxWaitUnits, timeUnit);
+            Document doc = thread != null ? documentQueue.poll(maxWaitUnits, timeUnit) : documentQueue.poll();
             if (doc != null) {
                 docsForSendChunk.add(doc);
                 chunkSizeBytes = doc.size();
@@ -371,18 +383,6 @@ class IOThread implements Runnable, AutoCloseable {
         }
     }
 
-    private boolean isStale(GatewayConnection connection) {
-        return connection.connectionTime() != null
-               && connection.connectionTime().plus(connectionTimeToLive).isBefore(clock.instant());
-    }
-
-    private ConnectionState refreshConnection(ConnectionState currentConnectionState) {
-        if (currentConnectionState == ConnectionState.SESSION_SYNCED)
-            oldConnections.add(currentConnection);
-        currentConnection = connectionFactory.newConnection();
-        return ConnectionState.DISCONNECTED;
-    }
-
     private void sleepIfProblemsGettingSyncedConnection(ConnectionState newState, ConnectionState oldState) {
         if (newState == ConnectionState.SESSION_SYNCED) return;
         if (newState == ConnectionState.CONNECTED && oldState == ConnectionState.DISCONNECTED) return;
@@ -397,17 +397,19 @@ class IOThread implements Runnable, AutoCloseable {
 
     @Override
     public void run() {
-        ConnectionState connectionState = ConnectionState.DISCONNECTED;
-        while (stopSignal.getCount() > 0 || !documentQueue.isEmpty()) {
-            ConnectionState oldState = connectionState;
-            connectionState = cycle(connectionState);
-            checkOldConnections();
-            sleepIfProblemsGettingSyncedConnection(connectionState, oldState);
-
-        }
+        while (stopSignal.getCount() > 0 || !documentQueue.isEmpty())
+            tick();
         log.finer(toString() + " exiting, documentQueue.size()=" + documentQueue.size());
         running.countDown();
+    }
 
+    /** Do one iteration of work. Should be called from the single worker thread of this. */
+    public void tick() {
+        ConnectionState oldState = connectionState;
+        connectionState = cycle(connectionState);
+        checkOldConnections();
+        if (thread != null)
+            sleepIfProblemsGettingSyncedConnection(connectionState, oldState);
     }
 
     private void drainFirstDocumentsInQueueIfOld() {
@@ -434,28 +436,33 @@ class IOThread implements Runnable, AutoCloseable {
         }
     }
 
-    private void checkOldConnections() {
-        if (resultQueue.getPendingSize() == 0) {
-            oldConnections.forEach(c -> c.close());
-            oldConnections.clear();
-            return;
-        }
+    private boolean isStale(GatewayConnection connection) {
+        return connection.connectionTime() != null
+               && connection.connectionTime().plus(connectionTimeToLive).isBefore(clock.instant());
+    }
 
+    private ConnectionState refreshConnection(ConnectionState currentConnectionState) {
+        if (currentConnectionState == ConnectionState.SESSION_SYNCED)
+            oldConnections.add(currentConnection);
+        currentConnection = connectionFactory.newConnection();
+        return ConnectionState.DISCONNECTED;
+    }
+
+    private void checkOldConnections() {
         for (Iterator<GatewayConnection> i = oldConnections.iterator(); i.hasNext(); ) {
             GatewayConnection connection = i.next();
             if (closingTime(connection).isBefore(clock.instant())) {
                 connection.close();
-                i.remove();;
+                i.remove();
             }
             else if (timeToPoll(connection)) {
                 try {
                     processResponse(connection.poll());
                 }
                 catch (Exception e) {
-                    // Old connection; this may be ok
+                    // Old connection; best effort
                 }
             }
-
         }
     }
 
@@ -471,8 +478,8 @@ class IOThread implements Runnable, AutoCloseable {
                          (double)localQueueTimeOut.toMillis();
         if (newness < 0) return true; // connection retired prematurely
         if (newness > 1) return false; // closing time reached
-        Duration pollInterval = Duration.ofMillis(pollIntervalUS * 1000 +
-                                                  (long)(newness * ( maxOldConnectionPollInterval.toMillis() - pollIntervalUS * 1000)));
+        Duration pollInterval = Duration.ofMillis(pollIntervalUS / 1000 +
+                                                  (long)((1 - newness) * ( maxOldConnectionPollInterval.toMillis() - pollIntervalUS / 1000)));
         return connection.lastPollTime().plus(pollInterval).isBefore(clock.instant());
     }
 
@@ -510,5 +517,11 @@ class IOThread implements Runnable, AutoCloseable {
             this.lastGatewayProcessTimeMillis = lastGatewayProcessTimeMillis;
         }
     }
+
+    /** For testing. Returns the current connection of this. Not thread safe. */
+    public GatewayConnection currentConnection() { return currentConnection; }
+
+    /** For testing. Returns a snapshot of the old connections of this. Not thread safe. */
+    public List<GatewayConnection> oldConnections() { return new ArrayList<>(oldConnections); }
 
 }

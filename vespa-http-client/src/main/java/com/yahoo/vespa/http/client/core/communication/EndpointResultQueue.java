@@ -33,12 +33,11 @@ class EndpointResultQueue {
     private final ScheduledThreadPoolExecutor timer;
     private final long totalTimeoutMs;
 
-    EndpointResultQueue(
-            OperationProcessor operationProcessor,
-            Endpoint endpoint,
-            int clusterId,
-            ScheduledThreadPoolExecutor timer,
-            long totalTimeoutMs) {
+    EndpointResultQueue(OperationProcessor operationProcessor,
+                        Endpoint endpoint,
+                        int clusterId,
+                        ScheduledThreadPoolExecutor timer,
+                        long totalTimeoutMs) {
         this.operationProcessor = operationProcessor;
         this.endpoint = endpoint;
         this.clusterId = clusterId;

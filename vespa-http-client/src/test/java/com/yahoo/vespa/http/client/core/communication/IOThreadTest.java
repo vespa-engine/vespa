@@ -4,6 +4,7 @@ package com.yahoo.vespa.http.client.core.communication;
 import com.yahoo.vespa.http.client.FeedConnectException;
 import com.yahoo.vespa.http.client.FeedEndpointException;
 import com.yahoo.vespa.http.client.FeedProtocolException;
+import com.yahoo.vespa.http.client.ManualClock;
 import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.V3HttpAPITest;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -37,10 +38,12 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+// DO NOT ADD TESTS HERE, add to NewIOThreadTest
 public class IOThreadTest {
 
     private static final Endpoint ENDPOINT = Endpoint.create("myhost");
 
+    final Clock clock = Clock.systemUTC();
     final EndpointResultQueue endpointResultQueue = mock(EndpointResultQueue.class);
     final ApacheGatewayConnection apacheGatewayConnection = mock(ApacheGatewayConnection.class);
     final String exceptionMessage = "SOME EXCEPTION FOO";
@@ -49,13 +52,13 @@ public class IOThreadTest {
     Document doc1 = new Document(V3HttpAPITest.documents.get(0).getDocumentId(),
                                  V3HttpAPITest.documents.get(0).getContents(),
                                  null,
-                                 Clock.systemUTC().instant());
+                                 clock.instant());
     String docId2 = V3HttpAPITest.documents.get(1).getDocumentId();
     Document doc2 = new Document(V3HttpAPITest.documents.get(1).getDocumentId(),
                                  V3HttpAPITest.documents.get(1).getContents(),
                                  null,
-                                 Clock.systemUTC().instant());
-    DocumentQueue documentQueue = new DocumentQueue(4, Clock.systemUTC());
+                                 clock.instant());
+    DocumentQueue documentQueue = new DocumentQueue(4, clock);
 
     public IOThreadTest() {
         when(apacheGatewayConnection.getEndpoint()).thenReturn(ENDPOINT);
@@ -63,6 +66,7 @@ public class IOThreadTest {
 
     /**
      * Set up mock so that it can handle both failDocument() and resultReceived().
+     *
      * @param expectedDocIdFail on failure, this has to be the doc id, or the mock will fail.
      * @param expectedDocIdOk on ok, this has to be the doc id, or the mock will fail.
      * @param isTransient checked on failure, if different, the mock will fail.
@@ -100,8 +104,9 @@ public class IOThreadTest {
                             documentQueue,
                             0,
                             Duration.ofSeconds(15),
+                            true,
                             10,
-                            Clock.systemUTC());
+                            clock);
     }
 
     @Test
@@ -118,7 +123,7 @@ public class IOThreadTest {
     }
 
     @Test
-    public void requireThatSingleDocumentWriteErrorIsHandledProperly() throws Exception {
+    public void testDocumentWriteError() throws Exception {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         when(apacheGatewayConnection.write(any())).thenThrow(new IOException(exceptionMessage));
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true, exceptionMessage);
@@ -129,7 +134,7 @@ public class IOThreadTest {
     }
 
     @Test
-    public void requireThatTwoDocumentsFirstWriteErrorSecondOkIsHandledProperly() throws Exception {
+    public void testTwoDocumentsFirstWriteErrorSecondOk() throws Exception {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         InputStream serverResponse = new ByteArrayInputStream(
                 (docId2 + " OK Doc{20}fed").getBytes(StandardCharsets.UTF_8));
@@ -149,10 +154,8 @@ public class IOThreadTest {
     @Test
     public void testQueueTimeOutNoNoConnectionToServer() throws Exception {
         when(apacheGatewayConnection.connect()).thenReturn(false);
-        InputStream serverResponse = new ByteArrayInputStream(
-                ("").getBytes(StandardCharsets.UTF_8));
-        when(apacheGatewayConnection.write(any()))
-                .thenReturn(serverResponse);
+        InputStream serverResponse = new ByteArrayInputStream(("").getBytes(StandardCharsets.UTF_8));
+        when(apacheGatewayConnection.write(any())).thenReturn(serverResponse);
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true,
                 "java.lang.Exception: Not sending document operation, timed out in queue after");
         try (IOThread ioThread = createIOThread(10, 10)) {
@@ -162,7 +165,7 @@ public class IOThreadTest {
     }
 
     @Test
-    public void requireThatEndpointProtocolExceptionsArePropagated()
+    public void testEndpointProtocolExceptionPropagation()
             throws IOException, ServerResponseException, InterruptedException, TimeoutException, ExecutionException {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         int errorCode = 403;
@@ -183,7 +186,7 @@ public class IOThreadTest {
     }
 
     @Test
-    public void requireThatEndpointConnectExceptionsArePropagated()
+    public void testEndpointConnectExceptionsPropagation()
             throws IOException, ServerResponseException, InterruptedException, TimeoutException, ExecutionException {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         String errorMessage = "generic error message";

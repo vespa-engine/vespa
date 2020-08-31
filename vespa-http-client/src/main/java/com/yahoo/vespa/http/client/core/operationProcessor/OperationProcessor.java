@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -254,6 +255,8 @@ public class OperationProcessor {
                                                              clusterConnection.getClusterId());
         }
     }
+
+    public List<ClusterConnection> clusters() { return Collections.unmodifiableList(clusters); }
 
     public String getStatsAsJson() {
         return operationStats.getStatsAsJson();

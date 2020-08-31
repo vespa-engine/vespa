@@ -17,6 +17,7 @@ import java.io.StringWriter;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +94,7 @@ public class ClusterConnection implements AutoCloseable {
                                                  documentQueue,
                                                  feedParams.getMaxSleepTimeMs(),
                                                  connectionParams.getConnectionTimeToLive(),
+                                                 connectionParams.runThreads(),
                                                  idlePollFrequency,
                                                  clock);
                 ioThreads.add(ioThread);
@@ -165,6 +167,10 @@ public class ClusterConnection implements AutoCloseable {
         jsonGenerator.writeEndObject();
         jsonGenerator.close();
         return stringWriter.toString();
+    }
+
+    public List<IOThread> ioThreads() {
+        return Collections.unmodifiableList(ioThreads);
     }
 
     @Override
