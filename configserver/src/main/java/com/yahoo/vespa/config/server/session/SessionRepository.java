@@ -171,11 +171,11 @@ public class SessionRepository {
     }
 
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
-        log.log(Level.FINE, "Purging old sessions for tenant '" + tenantName + "'");
+        log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         try {
             for (LocalSession candidate : localSessionCache.getSessions()) {
                 Instant createTime = candidate.getCreateTime();
-                log.log(Level.FINE, "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
+                log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
                 // Sessions with state other than ACTIVATE
                 if (hasExpired(candidate) && !isActiveSession(candidate)) {
@@ -196,7 +196,7 @@ public class SessionRepository {
         } catch (Throwable e) {
             log.log(Level.WARNING, "Error when purging old sessions ", e);
         }
-        log.log(Level.FINE, "Done purging old sessions");
+        log.log(Level.FINE, () -> "Done purging old sessions");
     }
 
     private boolean hasExpired(LocalSession candidate) {
@@ -210,7 +210,7 @@ public class SessionRepository {
     public void deleteLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
         try (Lock lock = lock(sessionId)) {
-            log.log(Level.FINE, "Deleting local session " + sessionId);
+            log.log(Level.FINE, () -> "Deleting local session " + sessionId);
             SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
             if (watcher != null) watcher.close();
             localSessionCache.removeSession(sessionId);
@@ -274,7 +274,7 @@ public class SessionRepository {
             if (session == null) continue; // Internal sessions not in synch with zk, continue
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
-                log.log(Level.FINE, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
+                log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 session.delete();
                 deleted++;
             }
@@ -287,7 +287,7 @@ public class SessionRepository {
         for (var lock : curator.getChildren(locksPath)) {
             Path path = locksPath.append(lock);
             if (zooKeeperNodeCreated(path).orElse(clock.instant()).isBefore(clock.instant().minus(expiryTime))) {
-                log.log(Level.FINE, "Lock  " + path + " has expired, deleting it");
+                log.log(Level.FINE, () -> "Lock  " + path + " has expired, deleting it");
                 curator.delete(path);
                 deleted++;
             }
@@ -485,7 +485,7 @@ public class SessionRepository {
                                                       long sessionId,
                                                       TimeoutBudget timeoutBudget,
                                                       Clock clock) {
-        log.log(Level.FINE, TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
+        log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
@@ -605,13 +605,13 @@ public class SessionRepository {
      */
     public Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.hasLocalSession(sessionId)) {
-            log.log(Level.FINE, "Local session for session id " + sessionId + " already exists");
+            log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
             return Optional.of(createSessionFromId(sessionId));
         }
 
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
-        log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference);
+        log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
             File rootDir = new File(Defaults.getDefaults().underVespaHome(componentRegistry.getConfigserverConfig().fileReferencesDir()));
             File sessionDir;
@@ -626,7 +626,7 @@ public class SessionRepository {
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
-            log.log(Level.INFO, "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
+            log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addLocalSession(localSession);
             return Optional.of(localSession);
