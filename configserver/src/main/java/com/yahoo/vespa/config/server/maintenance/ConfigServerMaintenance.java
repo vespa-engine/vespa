@@ -61,8 +61,8 @@ public class ConfigServerMaintenance extends AbstractComponent {
     }
 
     public void runBeforeBootstrap() {
-        fileDistributionMaintainer.maintain();
-        sessionsMaintainer.maintain();
+        fileDistributionMaintainer.lockAndMaintain();
+        sessionsMaintainer.lockAndMaintain();
     }
 
 }
