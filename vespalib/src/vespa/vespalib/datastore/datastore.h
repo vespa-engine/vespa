@@ -106,6 +106,7 @@ public:
     DataStore(const DataStore &rhs) = delete;
     DataStore &operator=(const DataStore &rhs) = delete;
     DataStore();
+    DataStore(uint32_t min_arrays);
     ~DataStore();
 
     EntryRef addEntry(const EntryType &e);
