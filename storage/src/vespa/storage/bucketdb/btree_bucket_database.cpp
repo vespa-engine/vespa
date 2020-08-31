@@ -69,6 +69,9 @@ struct BTreeBucketDatabase::ReplicaValueTraits {
     using ConstValueRef = ConstEntryRef;
     using DataStoreType = vespalib::datastore::ArrayStore<BucketCopy>;
 
+    static void init_data_store(DataStoreType&) {
+        // No-op; initialized via config provided to ArrayStore constructor.
+    }
     static ValueType make_invalid_value() {
         return Entry::createInvalid();
     }
