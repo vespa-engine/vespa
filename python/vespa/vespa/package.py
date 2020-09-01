@@ -662,8 +662,6 @@ class VespaCloud(object):
         self._write_private_key_and_cert(
             self.data_key, self.data_certificate, disk_folder
         )
-        with open(os.path.join(disk_folder, "application.zip"), "wb") as zipfile:
-            zipfile.write(application_zip_bytes.getvalue())
 
         response = self._request(
             "POST",
