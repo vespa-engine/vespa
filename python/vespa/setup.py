@@ -23,7 +23,7 @@ setuptools.setup(
     ),
     packages=setuptools.find_packages(),
     include_package_data=True,
-    install_requires=["requests", "pandas", "docker", "jinja2"],
+    install_requires=["requests", "pandas", "docker", "jinja2", "cryptography"],
     python_requires=">=3.6",
     zip_safe=False,
     data_files=[
