@@ -132,17 +132,13 @@ public:
 private:
     friend common::internal::CommitList;
     void consume(uint32_t lid) override;
-    void consumeSnapshot(LidList lids);
+    void consumeSnapshot(uint64_t sequenceIdWhenStarted);
     LidList pendingLids() const override;
     State waitFor(MonitorGuard & guard, State state, uint32_t lid) const override;
-    struct Counters {
-        Counters() : inflight_feed(0), inflight_commit(0), need_commit(false) {}
-        bool empty() const { return (inflight_feed == 0) && ! need_commit && (inflight_commit == 0); }
-        uint32_t inflight_feed;
-        uint32_t inflight_commit;
-        bool need_commit;
-    };
-    vespalib::hash_map<uint32_t, Counters> _pending;
+    uint64_t _sequenceId;
+    uint64_t _lastCommitStarted;
+    uint64_t _lastCommitCompleted;
+    vespalib::hash_map<uint32_t, uint64_t> _pending;
 };
 
 }
