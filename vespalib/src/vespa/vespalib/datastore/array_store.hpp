@@ -84,7 +84,7 @@ EntryRef
 ArrayStore<EntryT, RefT>::addSmallArray(const ConstArrayRef &array)
 {
     uint32_t typeId = getTypeId(array.size());
-    using NoOpReclaimer = btree::DefaultReclaimer<EntryT>;
+    using NoOpReclaimer = DefaultReclaimer<EntryT>;
     return _store.template freeListAllocator<EntryT, NoOpReclaimer>(typeId).allocArray(array).ref;
 }
 
@@ -92,7 +92,7 @@ template <typename EntryT, typename RefT>
 EntryRef
 ArrayStore<EntryT, RefT>::addLargeArray(const ConstArrayRef &array)
 {
-    using NoOpReclaimer = btree::DefaultReclaimer<LargeArray>;
+    using NoOpReclaimer = DefaultReclaimer<LargeArray>;
     auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId)
             .alloc(array.cbegin(), array.cend());
     auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
