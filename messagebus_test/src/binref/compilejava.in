@@ -2,7 +2,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 unset VESPA_LOG_TARGET
 
-if [ -n $VESPA_CPP_TEST_JARS ]; then
+if [ -n "$VESPA_CPP_TEST_JARS" ]; then
   CLASSPATH=$VESPA_CPP_TEST_JARS/messagebus-jar-with-dependencies.jar
   CLASSPATH=$CLASSPATH:$VESPA_CPP_TEST_JARS/component.jar
 else

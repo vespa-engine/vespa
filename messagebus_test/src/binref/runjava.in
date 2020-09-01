@@ -3,7 +3,7 @@
 unset VESPA_LOG_TARGET
 unset LD_PRELOAD
 
-if [ -n $VESPA_CPP_TEST_JARS ]; then
+if [ -n "$VESPA_CPP_TEST_JARS" ]; then
   CLASSPATH=$VESPA_CPP_TEST_JARS/messagebus-jar-with-dependencies.jar
   CLASSPATH=$CLASSPATH:$VESPA_CPP_TEST_JARS/component.jar
 else
