@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * @author bratseth
  * @author bjorncs
  */
-public class ContainerThreadPool extends AbstractComponent implements AutoCloseable {
+public class ContainerThreadPool extends AbstractComponent implements AutoCloseable, Executor {
 
     private final ExecutorServiceWrapper threadpool;
 
@@ -50,6 +50,7 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
     }
 
     public Executor executor() { return threadpool; }
+    @Override public void execute(Runnable runnable) { threadpool.execute(runnable); }
     @Override public void close() { closeInternal(); }
     @Override public void deconstruct() { closeInternal(); super.deconstruct(); }
 
