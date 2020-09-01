@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from time import sleep, strftime, gmtime
-from typing import List, Mapping, Optional
+from typing import List, Mapping, Optional, IO
 
 import docker
 from cryptography import x509
@@ -387,16 +387,21 @@ class ApplicationPackage(ToJson, FromJson["ApplicationPackage"]):
 
 
 class VespaDocker(object):
-    def __init__(self, application_package: ApplicationPackage) -> None:
+    def __init__(
+        self,
+        application_package: ApplicationPackage,
+        output_file: IO = sys.stdout,
+    ) -> None:
         """
         Deploy application to a Vespa container
 
         :param application_package: ApplicationPackage to be deployed.
+        :param output_file: Output file to write output messages.
         """
         self.application_package = application_package
         self.container = None
         self.local_port = 8080
-        self.output = sys.stdout
+        self.output = output_file
 
     def _run_vespa_engine_container(self, disk_folder: str, container_memory: str):
         """
@@ -500,6 +505,7 @@ class VespaCloud(object):
         application: str,
         key_location: str,
         application_package: ApplicationPackage,
+        output_file: IO = sys.stdout,
     ) -> None:
         """
         Deploy application to the Vespa Cloud (cloud.vespa.ai)
@@ -508,6 +514,7 @@ class VespaCloud(object):
         :param application: Application name registered in the Vespa Cloud.
         :param key_location: Location of the private key used for signing HTTP requests to the Vespa Cloud.
         :param application_package: ApplicationPackage to be deployed.
+        :param output_file: Output file to write output messages.
         """
         self.tenant = tenant
         self.application = application
@@ -524,7 +531,7 @@ class VespaCloud(object):
         self.connection = http.client.HTTPSConnection(
             "api.vespa-external.aws.oath.cloud", 4443
         )
-        self.output = sys.stdout
+        self.output = output_file
 
     @staticmethod
     def _read_private_key(key_location: str) -> ec.EllipticCurvePrivateKey:
