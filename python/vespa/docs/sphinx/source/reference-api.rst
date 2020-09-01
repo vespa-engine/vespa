@@ -4,10 +4,11 @@ Reference API
 vespa.application module
 ------------------------
 
-.. _vespa-class:
-
-.. autoclass:: vespa.application.Vespa
+.. automodule:: vespa.application
    :members:
+   :undoc-members:
+   :show-inheritance:
+   :special-members: __init__
 
 vespa.evaluation module
 -----------------------
