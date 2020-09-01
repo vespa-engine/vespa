@@ -13,10 +13,11 @@ Vespa.ai python API
    connect-to-vespa-instance
    reference-api
 
-``pyvespa`` provides a python API to `vespa.ai. It allow us to create, modify, deploy and interact with
+``pyvespa`` provides a python API to vespa.ai_. It allow us to create, modify, deploy and interact with
 running Vespa instances. The main goal of the library is to allow for faster prototyping and ML experimentation.
 
-<https://vespa.ai/>`_
+.. _vespa.ai: https://vespa.ai/
+
 
 
 Indices and tables
