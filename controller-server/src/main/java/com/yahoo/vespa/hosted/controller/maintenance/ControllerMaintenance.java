@@ -44,7 +44,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final RotationStatusUpdater rotationStatusUpdater;
     private final ResourceTagMaintainer resourceTagMaintainer;
     private final SystemRoutingPolicyMaintainer systemRoutingPolicyMaintainer;
-    private final ApplicationMetaDataGarbageCollector applicationMetaDataGarbageCollector;
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -74,7 +73,6 @@ public class ControllerMaintenance extends AbstractComponent {
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval);
         resourceTagMaintainer = new ResourceTagMaintainer(controller, Duration.ofMinutes(30), controller.serviceRegistry().resourceTagger());
         systemRoutingPolicyMaintainer = new SystemRoutingPolicyMaintainer(controller, Duration.ofMinutes(10));
-        applicationMetaDataGarbageCollector = new ApplicationMetaDataGarbageCollector(controller, Duration.ofHours(12));
     }
 
     public Upgrader upgrader() { return upgrader; }
