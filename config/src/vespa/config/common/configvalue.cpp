@@ -18,8 +18,8 @@ ConfigValue::ConfigValue()
       _md5sum()
 { }
 
-ConfigValue::ConfigValue(const PayloadPtr & payload, const vespalib::string & md5)
-    : _payload(payload),
+ConfigValue::ConfigValue(PayloadPtr payload, const vespalib::string & md5)
+    : _payload(std::move(payload)),
       _lines(),
       _md5sum(md5)
 { }
@@ -27,7 +27,7 @@ ConfigValue::ConfigValue(const PayloadPtr & payload, const vespalib::string & md
 ConfigValue::ConfigValue(const ConfigValue &) = default;
 ConfigValue & ConfigValue::operator = (const ConfigValue &) = default;
 
-ConfigValue::~ConfigValue() { }
+ConfigValue::~ConfigValue() = default;
 
 int
 ConfigValue::operator==(const ConfigValue & rhs) const

@@ -22,7 +22,7 @@ public:
 private:
     static const vespalib::string RESPONSE_TYPES;
     const vespalib::string & getResponseTypes() const override;
-    const ConfigValue readConfigValue() const override;
+    ConfigValue readConfigValue() const override;
 };
 
 } // namespace config
