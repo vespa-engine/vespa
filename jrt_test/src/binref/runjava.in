@@ -5,7 +5,7 @@ unset VESPA_LOG_TARGET
 if [ -n $VESPA_CPP_TEST_JARS ]; then
   CLASSPATH=$VESPA_CPP_TEST_JARS/jrt.jar
   CLASSPATH=$CLASSPATH:$VESPA_CPP_TEST_JARS/vespajlib.jar
-  CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/security-utils/target/security-utils.jar
+  CLASSPATH=$CLASSPATH:$VESPA_CPP_TEST_JARS/security-utils.jar
 else
   CLASSPATH=@PROJECT_SOURCE_DIR@/jrt/target/jrt.jar
   CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/vespajlib/target/vespajlib.jar
