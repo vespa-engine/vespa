@@ -28,6 +28,17 @@ You can install ``pyvespa`` via ``pip``:
 
 	pip install pyvespa
 
+Connecting to a running Vespa instance
+++++++++++++++++++++++++++++++++++++++
+
+If you have a running Vespa instance that you would like to experiment with, you connect to it with :ref:`vespa-class`.
+
+.. code-block:: python
+
+   from vespa.application import Vespa
+   app = Vespa(url = "https://api.cord19.vespa.ai")
+
+
 
 Indices and tables
 ==================
