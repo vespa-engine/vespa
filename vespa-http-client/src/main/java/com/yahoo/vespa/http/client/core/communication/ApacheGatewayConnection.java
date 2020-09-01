@@ -8,6 +8,7 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
+import com.yahoo.vespa.http.client.core.Vtag;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.Encoder;
 import com.yahoo.vespa.http.client.core.Headers;
@@ -16,7 +17,6 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
@@ -427,8 +427,8 @@ class ApacheGatewayConnection implements GatewayConnection {
             }
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
-            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
-            clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
+            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.V_TAG_COMPONENT));
+            clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.V_TAG_COMPONENT)));
             clientBuilder.disableContentCompression();
             RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
             requestConfigBuilder.setSocketTimeout(0);
