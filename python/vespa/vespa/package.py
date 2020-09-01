@@ -396,7 +396,7 @@ class VespaDocker(object):
         self.container = None
         self.local_port = 8080
 
-    def run_vespa_engine_container(self, disk_folder: str, container_memory: str):
+    def _run_vespa_engine_container(self, disk_folder: str, container_memory: str):
         """
         Run a vespa container.
 
@@ -420,7 +420,7 @@ class VespaDocker(object):
                     ports={self.local_port: self.local_port, 19112: 19112},
                 )
 
-    def check_configuration_server(self) -> bool:
+    def _check_configuration_server(self) -> bool:
         """
         Check if configuration server is running and ready for deployment
 
@@ -436,7 +436,7 @@ class VespaDocker(object):
             == "HTTP/1.1 200 OK"
         )
 
-    def create_application_package_files(self, dir_path):
+    def _create_application_package_files(self, dir_path):
         Path(os.path.join(dir_path, "application/schemas")).mkdir(
             parents=True, exist_ok=True
         )
@@ -465,13 +465,13 @@ class VespaDocker(object):
         :return: a Vespa connection instance.
         """
 
-        self.create_application_package_files(dir_path=disk_folder)
+        self._create_application_package_files(dir_path=disk_folder)
 
-        self.run_vespa_engine_container(
+        self._run_vespa_engine_container(
             disk_folder=disk_folder, container_memory=container_memory
         )
 
-        while not self.check_configuration_server():
+        while not self._check_configuration_server():
             print("Waiting for configuration server.")
             sleep(5)
 
@@ -510,21 +510,21 @@ class VespaCloud(object):
         self.tenant = tenant
         self.application = application
         self.application_package = application_package
-        self.api_key = self.read_private_key(key_location)
+        self.api_key = self._read_private_key(key_location)
         self.api_public_key_bytes = standard_b64encode(
             self.api_key.public_key().public_bytes(
                 serialization.Encoding.PEM,
                 serialization.PublicFormat.SubjectPublicKeyInfo,
             )
         )
-        self.data_key, self.data_certificate = self.create_certificate_pair()
+        self.data_key, self.data_certificate = self._create_certificate_pair()
         self.private_cert_file_name = "private_cert.txt"
         self.connection = http.client.HTTPSConnection(
             "api.vespa-external.aws.oath.cloud", 4443
         )
 
     @staticmethod
-    def read_private_key(key_location: str) -> ec.EllipticCurvePrivateKey:
+    def _read_private_key(key_location: str) -> ec.EllipticCurvePrivateKey:
         with open(key_location, "rb") as key_data:
             key = serialization.load_pem_private_key(
                 key_data.read(), None, default_backend()
@@ -535,7 +535,7 @@ class VespaCloud(object):
                 )
             return key
 
-    def write_private_key_and_cert(
+    def _write_private_key_and_cert(
         self, key: ec.EllipticCurvePrivateKey, cert: x509.Certificate, disk_folder: str
     ) -> None:
         cert_file = os.path.join(disk_folder, self.private_cert_file_name)
@@ -550,7 +550,7 @@ class VespaCloud(object):
             file.write(cert.public_bytes(serialization.Encoding.PEM).decode("UTF-8"))
 
     @staticmethod
-    def create_certificate_pair() -> (ec.EllipticCurvePrivateKey, x509.Certificate):
+    def _create_certificate_pair() -> (ec.EllipticCurvePrivateKey, x509.Certificate):
         key = ec.generate_private_key(ec.SECP384R1, default_backend())
         name = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, u"localhost")])
         certificate = (
@@ -565,7 +565,7 @@ class VespaCloud(object):
         )
         return (key, certificate)
 
-    def request(
+    def _request(
         self, method: str, path: str, body: BytesIO = BytesIO(), headers={}
     ) -> dict:
         digest = hashes.Hash(hashes.SHA256(), default_backend())
@@ -608,11 +608,11 @@ class VespaCloud(object):
                 )
             return parsed
 
-    def get_dev_region(self) -> str:
-        return self.request("GET", "/zone/v1/environment/dev/default")["name"]
+    def _get_dev_region(self) -> str:
+        return self._request("GET", "/zone/v1/environment/dev/default")["name"]
 
-    def get_endpoint(self, instance: str, region: str) -> str:
-        endpoints = self.request(
+    def _get_endpoint(self, instance: str, region: str) -> str:
+        endpoints = self._request(
             "GET",
             "/application/v4/tenant/{}/application/{}/instance/{}/environment/dev/region/{}".format(
                 self.tenant, self.application, instance, region
@@ -628,7 +628,7 @@ class VespaCloud(object):
             raise RuntimeError("No endpoints found for container 'test_app_container'")
         return container_url[0]
 
-    def to_application_zip(self) -> BytesIO:
+    def _to_application_zip(self) -> BytesIO:
         buffer = BytesIO()
         with zipfile.ZipFile(buffer, "a") as zip_archive:
             zip_archive.writestr(
@@ -647,22 +647,22 @@ class VespaCloud(object):
 
         return buffer
 
-    def start_deployment(self, instance: str, job: str, disk_folder: str) -> int:
+    def _start_deployment(self, instance: str, job: str, disk_folder: str) -> int:
         deploy_path = (
             "/application/v4/tenant/{}/application/{}/instance/{}/deploy/{}".format(
                 self.tenant, self.application, instance, job
             )
         )
 
-        application_zip_bytes = self.to_application_zip()
+        application_zip_bytes = self._to_application_zip()
 
-        self.write_private_key_and_cert(
+        self._write_private_key_and_cert(
             self.data_key, self.data_certificate, disk_folder
         )
         with open(os.path.join(disk_folder, "application.zip"), "wb") as zipfile:
             zipfile.write(application_zip_bytes.getvalue())
 
-        response = self.request(
+        response = self._request(
             "POST",
             deploy_path,
             application_zip_bytes,
@@ -671,10 +671,10 @@ class VespaCloud(object):
         print(response["message"])
         return response["run"]
 
-    def follow_deployment(self, instance: str, job: str, run: int):
+    def _follow_deployment(self, instance: str, job: str, run: int):
         last = -1
         while True:
-            update = self.request(
+            update = self._request(
                 "GET",
                 "/application/v4/tenant/{}/application/{}/instance/{}/job/{}/run/{}?after={}".format(
                     self.tenant, self.application, instance, job, run, last
@@ -683,7 +683,7 @@ class VespaCloud(object):
 
             for step, entries in update["log"].items():
                 for entry in entries:
-                    self.print_log_entry(step, entry)
+                    self._print_log_entry(step, entry)
             last = update.get("lastId", last)
 
             if update["active"]:
@@ -722,7 +722,7 @@ class VespaCloud(object):
                     raise RuntimeError("Unexpected status '" + status + "'")
 
     @staticmethod
-    def print_log_entry(step: str, entry: dict):
+    def _print_log_entry(step: str, entry: dict):
         timestamp = strftime("%H:%M:%S", gmtime(entry["at"] / 1e3))
         message = entry["message"].replace("\n", "\n" + " " * 23)
         if step != "copyVespaLogs" or entry["type"] == "error":
@@ -737,11 +737,11 @@ class VespaCloud(object):
 
         :return: a Vespa connection instance.
         """
-        region = self.get_dev_region()
+        region = self._get_dev_region()
         job = "dev-" + region
-        run = self.start_deployment(instance, job, disk_folder)
-        self.follow_deployment(instance, job, run)
-        endpoint_url = self.get_endpoint(instance=instance, region=region)
+        run = self._start_deployment(instance, job, disk_folder)
+        self._follow_deployment(instance, job, run)
+        endpoint_url = self._get_endpoint(instance=instance, region=region)
         return Vespa(
             url=endpoint_url,
             cert=os.path.join(disk_folder, self.private_cert_file_name),
@@ -754,10 +754,10 @@ class VespaCloud(object):
         :return:
         """
         print(
-            self.request(
+            self._request(
                 "DELETE",
                 "/application/v4/tenant/{}/application/{}/instance/{}/environment/dev/region/{}".format(
-                    self.tenant, self.application, instance, self.get_dev_region()
+                    self.tenant, self.application, instance, self._get_dev_region()
                 ),
             )["message"]
         )
