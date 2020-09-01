@@ -65,7 +65,6 @@ class EndpointResultQueue {
 
     private synchronized void resultReceived(EndpointResult result, int clusterId, boolean duplicateGivesWarning) {
         operationProcessor.resultReceived(result, clusterId);
-
         TimerFuture timerFuture = futureByOperation.remove(result.getOperationId());
         if (timerFuture == null) {
             if (duplicateGivesWarning) {
