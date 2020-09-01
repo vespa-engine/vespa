@@ -109,7 +109,7 @@ public:
 
     BitVectorRefPair allocBitVector() {
         return _store.template freeListAllocator<BitVectorEntry,
-            vespalib::btree::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
+            vespalib::datastore::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
     }
 
     /*

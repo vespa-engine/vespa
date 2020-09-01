@@ -8,18 +8,17 @@
 #include "free_list_raw_allocator.h"
 #include "raw_allocator.h"
 
-namespace vespalib::btree {
+namespace vespalib::datastore {
 
+/**
+ * Default noop reclaimer used together with datastore allocators.
+ */
 template<typename EntryType>
 struct DefaultReclaimer {
     static void reclaim(EntryType *entry) {
         (void) entry;
     }
 };
-
-}
-
-namespace vespalib::datastore {
 
 /**
  * Concrete data store using the given EntryRef type to reference stored data.
