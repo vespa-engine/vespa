@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -50,5 +52,14 @@ public interface ApplicationStore {
 
     /** Returns the development package for the given application and zone. */
     byte[] getDev(ApplicationId application, ZoneId zone);
+
+    /** Stores the given application meta data with the current time as part of the path. */
+    void putMeta(TenantName tenant, ApplicationName application, Instant now, byte[] metaZip);
+
+    /** Marks the given application as deleted, and eligible for meta data GC at a later time. */
+    void putMetaTombstone(TenantName tenant, ApplicationName application, Instant now);
+
+    /** Prunes meta data such that only what was active at the given instant, and anything newer, is retained. */
+    void pruneMeta(Instant oldest);
 
 }

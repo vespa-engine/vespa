@@ -414,6 +414,10 @@ public class JobController {
                                                                    id.application(),
                                                                    version.get(),
                                                                    testPackageBytes);
+            controller.applications().applicationStore().putMeta(id.tenant(),
+                                                                 id.application(),
+                                                                 controller.clock().instant(),
+                                                                 applicationPackage.metaDataZip());
 
             prunePackages(id);
             controller.applications().storeWithUpdatedConfig(application, applicationPackage);
