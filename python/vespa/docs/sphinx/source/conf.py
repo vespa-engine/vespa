@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.abspath("../../.."))
 # -- Project information -----------------------------------------------------
 
 project = "pyvespa"
-copyright = "2020, Thiago G. Martins"
-author = "Thiago G. Martins"
+copyright = "Copyright Verizon Media 2020 Licensed under Apache License 2.0"
+author = "Vespa team"
 
 
 # -- General configuration ---------------------------------------------------
