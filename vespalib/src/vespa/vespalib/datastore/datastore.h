@@ -110,9 +110,6 @@ public:
 
     EntryRef addEntry(const EntryType &e);
     const EntryType &getEntry(EntryRef ref) const;
-
-    template <typename ReclaimerT>
-    FreeListAllocator<EntryType, RefT, ReclaimerT> freeListAllocator();
 };
 
 extern template class DataStoreT<EntryRefT<22> >;
