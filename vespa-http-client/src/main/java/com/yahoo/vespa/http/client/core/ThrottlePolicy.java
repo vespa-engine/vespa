@@ -7,6 +7,7 @@ import static java.lang.Math.min;
 
 /**
  * Class that has a method for finding next maxInFlight.
+ *
  * @author dybis
  */
 public class ThrottlePolicy {
@@ -16,6 +17,7 @@ public class ThrottlePolicy {
 
     /**
      * Generate nex in-flight value for throttling.
+     *
      * @param maxPerformanceChange This value limit the dynamics of the algorithm.
      * @param numOk number of success in last phase
      * @param previousNumOk number of success in previous (before last) phase.
@@ -27,8 +29,7 @@ public class ThrottlePolicy {
     public int calcNewMaxInFlight(double maxPerformanceChange, int numOk, int previousNumOk, int previousMaxInFlight,
                                   int maxInFlightNow, boolean messagesQueued) {
 
-        double difference = calculateRuleBasedDifference(
-                maxPerformanceChange, numOk, previousNumOk, previousMaxInFlight, maxInFlightNow);
+        double difference = calculateRuleBasedDifference(maxPerformanceChange, numOk, previousNumOk, previousMaxInFlight, maxInFlightNow);
         boolean previousRunWasBetter = numOk < previousNumOk;
         boolean previousRunHadLessInFlight = previousMaxInFlight < maxInFlightNow;
 

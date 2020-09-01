@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * 
  * @author Einar M R Rosenvinge
  */
-class IOThread implements Runnable, AutoCloseable {
+public class IOThread implements Runnable, AutoCloseable {
 
     private static final Logger log = Logger.getLogger(IOThread.class.getName());
 
