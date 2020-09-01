@@ -51,7 +51,7 @@ TEST_F(DirectTensorStoreTest, can_set_and_get_tensor)
 {
     auto t = make_tensor(5);
     auto* exp = t.get();
-    auto ref = store.set_tensor(std::move(t));
+    auto ref = store.store_tensor(std::move(t));
     expect_tensor(exp, ref);
 }
 
@@ -63,7 +63,7 @@ TEST_F(DirectTensorStoreTest, invalid_ref_returns_nullptr)
 
 TEST_F(DirectTensorStoreTest, hold_adds_entry_to_hold_list)
 {
-    auto ref = store.set_tensor(make_tensor(5));
+    auto ref = store.store_tensor(make_tensor(5));
     auto mem_1 = store.getMemoryUsage();
     store.holdTensor(ref);
     auto mem_2 = store.getMemoryUsage();
@@ -74,7 +74,7 @@ TEST_F(DirectTensorStoreTest, move_allocates_new_entry_and_puts_old_entry_on_hol
 {
     auto t = make_tensor(5);
     auto* exp = t.get();
-    auto ref_1 = store.set_tensor(std::move(t));
+    auto ref_1 = store.store_tensor(std::move(t));
     auto mem_1 = store.getMemoryUsage();
 
     auto ref_2 = store.move(ref_1);

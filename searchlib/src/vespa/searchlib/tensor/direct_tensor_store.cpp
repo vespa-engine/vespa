@@ -28,7 +28,7 @@ DirectTensorStore::get_tensor(EntryRef ref) const
 }
 
 EntryRef
-DirectTensorStore::set_tensor(std::unique_ptr<Tensor> tensor)
+DirectTensorStore::store_tensor(std::unique_ptr<Tensor> tensor)
 {
     assert(tensor);
     // TODO: Account for heap allocated memory
