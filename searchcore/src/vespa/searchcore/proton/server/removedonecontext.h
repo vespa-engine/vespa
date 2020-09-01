@@ -4,7 +4,7 @@
 
 #include "operationdonecontext.h"
 #include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/serialnum.h>
