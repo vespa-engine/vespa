@@ -26,11 +26,15 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -46,11 +50,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class ApplicationPackage {
 
     private static final String trustedCertificatesFile = "security/clients.pem";
+    private static final String buildMetaFile = "build-meta.json";
+    private static final String deploymentFile = "deployment.xml";
+    private static final String validationOverridesFile = "validation-overrides.xml";
+    private static final String servicesFile = "services.xml";
 
     private final String contentHash;
     private final byte[] zippedContent;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
+    private final Files files;
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
     private final List<X509Certificate> trustedCertificates;
@@ -73,18 +82,18 @@ public class ApplicationPackage {
     public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
         this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
-        Files files = Files.extract(Set.of("deployment.xml", "validation-overrides.xml", "build-meta.json", trustedCertificatesFile), zippedContent);
+        this.files = Files.extract(Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile), zippedContent);
 
-        Optional<DeploymentSpec> deploymentSpec = files.getAsReader("deployment.xml").map(DeploymentSpec::fromXml);
+        Optional<DeploymentSpec> deploymentSpec = files.getAsReader(deploymentFile).map(DeploymentSpec::fromXml);
         if (requireFiles && deploymentSpec.isEmpty())
-            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
+            throw new IllegalArgumentException("Missing required file '" + deploymentFile + "'");
         this.deploymentSpec = deploymentSpec.orElse(DeploymentSpec.empty);
 
-        this.validationOverrides = files.getAsReader("validation-overrides.xml").map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
+        this.validationOverrides = files.getAsReader(validationOverridesFile).map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
 
-        Optional<Inspector> buildMetaObject = files.get("build-meta.json").map(SlimeUtils::jsonToSlime).map(Slime::get);
+        Optional<Inspector> buildMetaObject = files.get(buildMetaFile).map(SlimeUtils::jsonToSlime).map(Slime::get);
         if (requireFiles && buildMetaObject.isEmpty())
-            throw new IllegalArgumentException("Missing required file 'build-meta.json'");
+            throw new IllegalArgumentException("Missing required file '" + buildMetaFile + "'");
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
 
@@ -133,12 +142,12 @@ public class ApplicationPackage {
 
     private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
         if ( ! buildMetaObject.field(fieldName).valid())
-            throw new IllegalArgumentException("Missing value '" + fieldName + "' in 'build-meta.json'");
+            throw new IllegalArgumentException("Missing value '" + fieldName + "' in '" + buildMetaFile + "'");
         try {
             return Optional.of(mapper.apply(buildMetaObject.field(fieldName)));
         }
         catch (RuntimeException e) {
-            throw new IllegalArgumentException("Failed parsing \"" + fieldName + "\" in 'build-meta.json': " + Exceptions.toMessageString(e));
+            throw new IllegalArgumentException("Failed parsing \"" + fieldName + "\" in '" + buildMetaFile + "': " + Exceptions.toMessageString(e));
         }
     }
 
@@ -191,14 +200,23 @@ public class ApplicationPackage {
 
     /** Creates a valid application package that will remove all application's deployments */
     public static ApplicationPackage deploymentRemoval() {
-        DeploymentSpec deploymentSpec = DeploymentSpec.empty;
-        ValidationOverrides validationOverrides = allValidationOverrides();
-        try (ZipBuilder zipBuilder = new ZipBuilder(deploymentSpec.xmlForm().length() + validationOverrides.xmlForm().length() + 500)) {
-            zipBuilder.add("validation-overrides.xml", validationOverrides.xmlForm().getBytes(UTF_8));
-            zipBuilder.add("deployment.xml", deploymentSpec.xmlForm().getBytes(UTF_8));
+        return new ApplicationPackage(filesZip(Map.of(validationOverridesFile, allValidationOverrides().xmlForm().getBytes(UTF_8),
+                                                      deploymentFile, DeploymentSpec.empty.xmlForm().getBytes(UTF_8))));
+    }
 
+    /** Returns a zip containing only services.xml and deployment.xml files of this. */
+    public byte[] metaDataZip() {
+        return filesZip(Stream.of(deploymentFile, servicesFile)
+                              .filter(name -> files.files.containsKey(name))
+                              .collect(Collectors.toMap(name -> name,
+                                                        name -> files.files.get(name))));
+    }
+
+    private static byte[] filesZip(Map<String, byte[]> files) {
+        try (ZipBuilder zipBuilder = new ZipBuilder(files.values().stream().mapToInt(bytes -> bytes.length).sum() + 512)) {
+            files.forEach(zipBuilder::add);
             zipBuilder.close();
-            return new ApplicationPackage(zipBuilder.toByteArray());
+            return zipBuilder.toByteArray();
         }
     }
 
@@ -212,4 +230,5 @@ public class ApplicationPackage {
 
         return ValidationOverrides.fromXml(validationOverridesContents.toString());
     }
+
 }

@@ -613,6 +613,7 @@ public class ApplicationController {
 
             applicationStore.removeAll(id.tenant(), id.application());
             applicationStore.removeAllTesters(id.tenant(), id.application());
+            applicationStore.putMetaTombstone(id.tenant(), id.application(), clock.instant());
 
             accessControl.deleteApplication(id, credentials);
             curator.removeApplication(id);
