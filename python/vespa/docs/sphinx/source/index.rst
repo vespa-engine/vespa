@@ -10,7 +10,6 @@ Vespa python API
    :hidden:
 
    install
-   connect-to-vespa-instance
    reference-api
 
 ``pyvespa`` provides a python API to vespa.ai_. It allow us to create, modify, deploy and interact with
@@ -31,7 +30,8 @@ You can install ``pyvespa`` via ``pip``:
 Connecting to a running Vespa instance
 ++++++++++++++++++++++++++++++++++++++
 
-If you have a running Vespa instance that you would like to experiment with, you connect to it with :ref:`vespa-class`.
+If you have a running Vespa instance that you would like to experiment with, you connect to it with :class:`vespa.application.Vespa`
+
 
 .. code-block:: python
 
