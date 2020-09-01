@@ -64,10 +64,9 @@ public class ContainerDocumentApi {
     }
 
     private static ThreadPoolExecutorComponent newExecutorComponent(String name, ContainerCluster<?> cluster, Options options) {
-        int maxPoolSize = maxPoolSize(cluster);
         return new ThreadPoolExecutorComponent.Builder(name)
-                .maxPoolSize(maxPoolSize)
-                .corePoolSize(corePoolSize(maxPoolSize, options))
+                .maxPoolSize(maxPoolSize(cluster, options))
+                .corePoolSize(corePoolSize(cluster, options))
                 .queueSize(500)
                 .build();
     }
@@ -93,29 +92,36 @@ public class ContainerDocumentApi {
         return handler;
     }
 
-    private static int maxPoolSize(ContainerCluster<?> cluster) {
+    private static int maxPoolSize(ContainerCluster<?> cluster, Options options) {
+        double vcpu = vcpu(cluster);
+        if (vcpu == 0) return FALLBACK_MAX_POOL_SIZE;
+        return Math.max(2, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactory));
+    }
+
+    private static int corePoolSize(ContainerCluster<?> cluster, Options options) {
+        double vcpu = vcpu(cluster);
+        if (vcpu == 0) return FALLBACK_CORE_POOL_SIZE;
+        return Math.max(1, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactory * 0.5));
+    }
+
+    private static double vcpu(ContainerCluster<?> cluster) {
         List<Double> vcpus = cluster.getContainers().stream()
                 .filter(c -> c.getHostResource() != null && c.getHostResource().realResources() != null)
                 .map(c -> c.getHostResource().realResources().vcpu())
                 .distinct()
                 .collect(Collectors.toList());
         // We can only use host resource for calculation if all container nodes in the cluster are homogeneous (in terms of vcpu)
-        if (vcpus.size() != 1 || vcpus.get(0) == 0) return FALLBACK_MAX_POOL_SIZE;
-        return Math.max(2, (int)Math.ceil(vcpus.get(0)));
-    }
-
-    private static int corePoolSize(int maxPoolSize, Options options) {
-        if (maxPoolSize == FALLBACK_MAX_POOL_SIZE) return FALLBACK_CORE_POOL_SIZE;
-        return Math.max(1, (int)Math.ceil(options.feedCoreThreadPoolSizeFactor * maxPoolSize));
+        if (vcpus.size() != 1 || vcpus.get(0) == 0) return 0;
+        return vcpus.get(0);
     }
 
     public static final class Options {
         private final Collection<String> bindings;
-        private final double feedCoreThreadPoolSizeFactor;
+        private final double feedThreadPoolSizeFactory;
 
-        public Options(Collection<String> bindings, double feedCoreThreadPoolSizeFactor) {
+        public Options(Collection<String> bindings, double feedThreadPoolSizeFactory) {
             this.bindings = Collections.unmodifiableCollection(bindings);
-            this.feedCoreThreadPoolSizeFactor = feedCoreThreadPoolSizeFactor;
+            this.feedThreadPoolSizeFactory = feedThreadPoolSizeFactory;
         }
     }
 
