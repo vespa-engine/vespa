@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;

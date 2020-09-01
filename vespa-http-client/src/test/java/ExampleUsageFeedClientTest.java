@@ -28,12 +28,10 @@ public class ExampleUsageFeedClientTest {
         Server serverB =
                 new Server(new V3MockParsingRequestHandler(200, V3MockParsingRequestHandler.Scenario.ALL_OK), 0);
 
-
         exampleCode("localhost", serverA.getPort(), "localhost", serverB.getPort());
         serverA.close();
         serverB.close();
     }
-
 
     private static CharSequence generateDocument(String docId) {
         // Just a dummy example of an update document operation.
