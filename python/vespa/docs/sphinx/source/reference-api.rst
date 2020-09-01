@@ -9,12 +9,6 @@ vespa.application module
 .. autoclass:: vespa.application.Vespa
    :members:
 
-
-.. automodule:: vespa.application
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 vespa.evaluation module
 -----------------------
 
