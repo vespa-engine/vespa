@@ -119,6 +119,10 @@
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>abi-check-plugin</artifactId>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+        </plugin>
       </plugins>
   </build>
 </project>
