@@ -3,6 +3,7 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
@@ -22,6 +23,7 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_weight_iterator_test");
@@ -124,17 +126,17 @@ void verify_invalid_lookup(IDocumentWeightAttribute::LookupResult result) {
 }
 
 TEST_F("require that integer lookup works correctly", LongFixture) {
-    verify_valid_lookup(f1.api->lookup("111"));
-    verify_invalid_lookup(f1.api->lookup("222"));
+    verify_valid_lookup(f1.api->lookup("111", f1.api->get_dictionary_snapshot()));
+    verify_invalid_lookup(f1.api->lookup("222", f1.api->get_dictionary_snapshot()));
 }
 
 TEST_F("require string lookup works correctly", StringFixture) {
-    verify_valid_lookup(f1.api->lookup("foo"));
-    verify_invalid_lookup(f1.api->lookup("bar"));
+    verify_valid_lookup(f1.api->lookup("foo", f1.api->get_dictionary_snapshot()));
+    verify_invalid_lookup(f1.api->lookup("bar", f1.api->get_dictionary_snapshot()));
 }
 
 void verify_posting(const IDocumentWeightAttribute &api, const char *term) {
-    auto result = api.lookup(term);
+    auto result = api.lookup(term, api.get_dictionary_snapshot());
     ASSERT_TRUE(result.posting_idx.valid());
     std::vector<DocumentWeightIterator> itr_store;
     api.create(result.posting_idx, itr_store);
@@ -168,6 +170,53 @@ TEST_F("require that string iterators are created correctly", StringFixture) {
     verify_posting(*f1.api, "foo");
 }
 
+TEST_F("require that dictionary snapshot works", LongFixture)
+{
+    auto read_guard = f1.attr->makeReadGuard(false);
+    auto dictionary_snapshot = f1.api->get_dictionary_snapshot();
+    auto lookup1 = f1.api->lookup("111", dictionary_snapshot);
+    EXPECT_TRUE(lookup1.enum_idx.valid());
+    f1.attr->clearDoc(1);
+    f1.attr->clearDoc(5);
+    f1.attr->clearDoc(7);
+    f1.attr->commit();
+    auto lookup2 = f1.api->lookup("111", f1.api->get_dictionary_snapshot());
+    EXPECT_FALSE(lookup2.enum_idx.valid());
+    auto lookup3 = f1.api->lookup("111", dictionary_snapshot);
+    EXPECT_TRUE(lookup3.enum_idx.valid());
+    EXPECT_EQUAL(lookup1.enum_idx.ref(), lookup3.enum_idx.ref());
+}
+
+TEST_F("require that collect_folded works for string", StringFixture)
+{
+    StringAttribute *attr = static_cast<StringAttribute *>(f1.attr.get());
+    set_doc(attr, 2, "bar", 30);
+    attr->commit();
+    set_doc(attr, 3, "FOO", 30);
+    attr->commit();
+    auto dictionary_snapshot = f1.api->get_dictionary_snapshot();
+    auto lookup1 = f1.api->lookup("foo", dictionary_snapshot);
+    std::vector<vespalib::string> folded;
+    std::function<void(vespalib::datastore::EntryRef)> save_folded = [&folded,attr](vespalib::datastore::EntryRef enum_idx) { folded.emplace_back(attr->getFromEnum(enum_idx.ref())); };
+    f1.api->collect_folded(lookup1.enum_idx, dictionary_snapshot, save_folded);
+    std::vector<vespalib::string> expected_folded{"FOO", "foo"};
+    EXPECT_EQUAL(expected_folded, folded);
+}
+
+TEST_F("require that collect_folded works for integers", LongFixture)
+{
+    IntegerAttributeTemplate<int64_t> *attr = dynamic_cast<IntegerAttributeTemplate<int64_t> *>(f1.attr.get());
+    set_doc(attr, 2, int64_t(112), 30);
+    attr->commit();
+    auto dictionary_snapshot = f1.api->get_dictionary_snapshot();
+    auto lookup1 = f1.api->lookup("111", dictionary_snapshot);
+    std::vector<int64_t> folded;
+    std::function<void(vespalib::datastore::EntryRef)> save_folded = [&folded,attr](vespalib::datastore::EntryRef enum_idx) { folded.emplace_back(attr->getFromEnum(enum_idx.ref())); };
+    f1.api->collect_folded(lookup1.enum_idx, dictionary_snapshot, save_folded);
+    std::vector<int64_t> expected_folded{int64_t(111)};
+    EXPECT_EQUAL(expected_folded, folded);
+}
+
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
     Verifier();
@@ -176,7 +225,7 @@ public:
         (void) strict;
         const IDocumentWeightAttribute *api(_attr->asDocumentWeightAttribute());
         ASSERT_TRUE(api != nullptr);
-        auto dict_entry = api->lookup("123");
+        auto dict_entry = api->lookup("123", api->get_dictionary_snapshot());
         ASSERT_TRUE(dict_entry.posting_idx.valid());
         return std::make_unique<queryeval::DocumentWeightSearchIterator>(_tfmd, *api, dict_entry);
     }

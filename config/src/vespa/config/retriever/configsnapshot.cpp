@@ -248,10 +248,9 @@ ConfigSnapshot::deserializeValueV2(Inspector & inspector) const
 {
     int64_t lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
     vespalib::string md5(inspector["md5"].asString().make_string());
-    FixedPayload * payload = new FixedPayload();
-    PayloadPtr data(payload);
+    auto payload = std::make_unique<FixedPayload>();
     copySlimeObject(inspector["payload"], payload->getData().setObject());
-    return Value(lastChanged, ConfigValue(data, md5));
+    return Value(lastChanged, ConfigValue(std::move(payload) , md5));
 }
 
 }

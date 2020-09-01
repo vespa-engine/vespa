@@ -5,7 +5,6 @@ vespa_add_library(searchcore_feedoperation STATIC
     createbucketoperation.cpp
     deletebucketoperation.cpp
     documentoperation.cpp
-    feedoperation.cpp
     joinbucketsoperation.cpp
     lidvectorcontext.cpp
     moveoperation.cpp

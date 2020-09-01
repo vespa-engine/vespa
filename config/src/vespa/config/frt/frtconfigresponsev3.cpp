@@ -2,6 +2,7 @@
 #include "frtconfigresponsev3.h"
 #include "compressioninfo.h"
 #include <vespa/fnet/frt/frt.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconfigresponsev3");
@@ -24,8 +25,8 @@ std::string make_json(const Slime &slime, bool compact) {
 class V3Payload : public Payload
 {
 public:
-    V3Payload(const SlimePtr & data)
-        : _data(data)
+    explicit V3Payload(Slime::UP data)
+        : _data(std::move(data))
     {
     }
 
@@ -33,7 +34,7 @@ public:
         return _data->get();
     }
 private:
-    SlimePtr _data;
+    Slime::UP _data;
 };
 
 const vespalib::string FRTConfigResponseV3::RESPONSE_TYPES = "sx";
@@ -49,19 +50,18 @@ FRTConfigResponseV3::getResponseTypes() const
     return RESPONSE_TYPES;
 }
 
-const ConfigValue
+ConfigValue
 FRTConfigResponseV3::readConfigValue() const
 {
     vespalib::string md5(_data->get()[RESPONSE_CONFIG_MD5].asString().make_string());
     CompressionInfo info;
     info.deserialize(_data->get()[RESPONSE_COMPRESSION_INFO]);
-    Slime * rawData = new Slime();
-    SlimePtr payloadData(rawData);
+    auto slime = std::make_unique<Slime>();
     DecompressedData data(decompress(((*_returnValues)[1]._data._buf), ((*_returnValues)[1]._data._len), info.compressionType, info.uncompressedSize));
     if (data.memRef.size > 0) {
-        size_t consumedSize = JsonFormat::decode(data.memRef, *rawData);
+        size_t consumedSize = JsonFormat::decode(data.memRef, *slime);
         if (consumedSize == 0) {
-            std::string json(make_json(*payloadData, true));
+            std::string json(make_json(*slime, true));
             LOG(error, "Error decoding JSON. Consumed size: %lu, uncompressed size: %u, compression type: %s, assumed uncompressed size(%u), compressed size: %u, slime(%s)", consumedSize, data.size, compressionTypeToString(info.compressionType).c_str(), info.uncompressedSize, ((*_returnValues)[1]._data._len), json.c_str());
             LOG_ABORT("Error decoding JSON");
         }
@@ -69,7 +69,7 @@ FRTConfigResponseV3::readConfigValue() const
     if (LOG_WOULD_LOG(spam)) {
         LOG(spam, "read config value md5(%s), payload size: %lu", md5.c_str(), data.memRef.size);
     }
-    return ConfigValue(PayloadPtr(new V3Payload(payloadData)), md5);
+    return ConfigValue(std::make_shared<V3Payload>(std::move(slime)), md5);
 }
 
 } // namespace config

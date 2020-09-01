@@ -22,7 +22,7 @@ private:
     SlimeConfigResponse& operator=(const SlimeConfigResponse&);
 public:
     SlimeConfigResponse(FRT_RPCRequest * request);
-    ~SlimeConfigResponse() {}
+    ~SlimeConfigResponse() override;
 
     const ConfigKey & getKey() const override { return _key; }
     const ConfigValue & getValue() const override { return _value; }
@@ -35,7 +35,7 @@ public:
     void fill() override;
 
 protected:
-    virtual const ConfigValue readConfigValue() const = 0;
+    virtual ConfigValue readConfigValue() const = 0;
 
 private:
     ConfigKey _key;
@@ -44,8 +44,8 @@ private:
     Trace _trace;
     bool _filled;
 
-    const ConfigKey readKey() const;
-    const ConfigState readState() const;
+    ConfigKey readKey() const;
+    ConfigState readState() const;
     void readTrace();
 
 protected:

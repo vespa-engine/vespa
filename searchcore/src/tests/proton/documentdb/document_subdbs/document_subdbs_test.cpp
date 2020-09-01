@@ -147,8 +147,7 @@ struct MyStoreOnlyContext
     StoreOnlyContext _ctx;
     MyStoreOnlyContext(IThreadingService &writeService,
                        std::shared_ptr<BucketDBOwner> bucketDB,
-                       IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
-                       ICommitable & commitable);
+                       IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MyStoreOnlyContext();
     const MySubDBOwner &getOwner() const {
         return _owner;
@@ -157,8 +156,7 @@ struct MyStoreOnlyContext
 
 MyStoreOnlyContext::MyStoreOnlyContext(IThreadingService &writeService,
                                        std::shared_ptr<BucketDBOwner> bucketDB,
-                                       IBucketDBHandlerInitializer &bucketDBHandlerInitializer,
-                                       ICommitable &)
+                                       IBucketDBHandlerInitializer &bucketDBHandlerInitializer)
     : _owner(), _syncProxy(), _getSerialNum(), _fileHeader(),
       _metrics(DOCTYPE_NAME, 1), _configMutex(), _hwInfo(),
       _ctx(_owner, _syncProxy, _getSerialNum, _fileHeader, writeService, bucketDB,
@@ -185,8 +183,7 @@ struct MyFastAccessContext
     FastAccessContext _ctx;
     MyFastAccessContext(IThreadingService &writeService,
                         std::shared_ptr<BucketDBOwner> bucketDB,
-                        IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
-                        ICommitable & commitable);
+                        IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MyFastAccessContext();
     const MyMetricsWireService &getWireService() const {
         return _wireService;
@@ -198,9 +195,8 @@ struct MyFastAccessContext
 
 MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService,
                                          std::shared_ptr<BucketDBOwner> bucketDB,
-                                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
-                                         ICommitable & commitable)
-    : _storeOnlyCtx(writeService, bucketDB, bucketDBHandlerInitializer, commitable),
+                                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
+    : _storeOnlyCtx(writeService, bucketDB, bucketDBHandlerInitializer),
       _attributeMetrics(nullptr),
       _wireService(),
       _ctx(_storeOnlyCtx._ctx, _attributeMetrics, _wireService)
@@ -224,8 +220,7 @@ struct MySearchableContext
     SearchableContext _ctx;
     MySearchableContext(IThreadingService &writeService,
                         std::shared_ptr<BucketDBOwner> bucketDB,
-                        IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
-                        ICommitable & commitable);
+                        IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MySearchableContext();
     const MyMetricsWireService &getWireService() const {
         return _fastUpdCtx.getWireService();
@@ -238,13 +233,11 @@ struct MySearchableContext
 
 MySearchableContext::MySearchableContext(IThreadingService &writeService,
                                          std::shared_ptr<BucketDBOwner> bucketDB,
-                                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
-                                         ICommitable & commitable)
-    : _fastUpdCtx(writeService, bucketDB, bucketDBHandlerInitializer, commitable),
+                                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
+    : _fastUpdCtx(writeService, bucketDB, bucketDBHandlerInitializer),
       _queryLimiter(), _clock(),
       _ctx(_fastUpdCtx._ctx, _queryLimiter,
-           _clock, dynamic_cast<vespalib::SyncableThreadExecutor &>(writeService.shared()),
-           commitable)
+           _clock, dynamic_cast<vespalib::SyncableThreadExecutor &>(writeService.shared()))
 {}
 MySearchableContext::~MySearchableContext() = default;
 
@@ -267,12 +260,12 @@ struct Committer : public ICommitable {
     size_t _commitAndWaitCount;
     Committer() : _commitCount(0), _commitAndWaitCount(0) { }
     void commit() override { _commitCount++; }
-    void commitAndWait() override { _commitAndWaitCount++; }
-    void commitAndWait(IPendingLidTracker &, uint32_t ) override {
-        commitAndWait();
+    void commitAndWait(ILidCommitState & ) override { _commitAndWaitCount++; }
+    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
+        commitAndWait(tracker);
     }
-    void commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) override {
-        commitAndWait();
+    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
+        commitAndWait(tracker);
     }
 };
 
@@ -314,7 +307,6 @@ struct FixtureBase
     typename Traits::Config _cfg;
     std::shared_ptr<BucketDBOwner> _bucketDB;
     BucketDBHandler _bucketDBHandler;
-    Committer       _committer;
     typename Traits::Context _ctx;
     typename Traits::Schema _baseSchema;
     MyConfigSnapshot::UP _snapshot;
@@ -327,7 +319,7 @@ struct FixtureBase
           _cfg(),
           _bucketDB(std::make_shared<BucketDBOwner>()),
           _bucketDBHandler(*_bucketDB),
-          _ctx(_writeService, _bucketDB, _bucketDBHandler, _committer),
+          _ctx(_writeService, _bucketDB, _bucketDBHandler),
           _baseSchema(),
           _snapshot(new MyConfigSnapshot(_baseSchema, Traits::ConfigDir::dir())),
           _baseDir(BASE_DIR + "/" + SUB_NAME, BASE_DIR),

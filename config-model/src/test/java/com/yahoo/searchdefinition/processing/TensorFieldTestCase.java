@@ -46,7 +46,7 @@ public class TensorFieldTestCase {
     @Test
     public void requireThatTensorAttributeCannotBeFastSearch() throws ParseException {
         try {
-            createFromString(getSd("field f1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }"));
+            createFromString(getSd("field f1 type tensor(x[3]) { indexing: attribute \n attribute: fast-search }"));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {

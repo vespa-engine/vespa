@@ -12,9 +12,7 @@ ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore)
 {
 }
 
-ForceCommitDoneTask::~ForceCommitDoneTask()
-{
-}
+ForceCommitDoneTask::~ForceCommitDoneTask() = default;
 
 void
 ForceCommitDoneTask::reuseLids(std::vector<uint32_t> &&lids)

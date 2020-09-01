@@ -26,8 +26,8 @@ public class OsUpgradeActivator extends NodeRepositoryMaintainer {
     protected boolean maintain() {
         for (var nodeType : NodeType.values()) {
             if (!nodeType.isHost()) continue;
-            var active = canUpgradeOsOf(nodeType);
-            nodeRepository().osVersions().resumeUpgradeOf(nodeType, active);
+            boolean resume = canUpgradeOsOf(nodeType);
+            nodeRepository().osVersions().resumeUpgradeOf(nodeType, resume);
         }
         return true;
     }

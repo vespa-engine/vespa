@@ -11,7 +11,7 @@ SimpleBuffer::SimpleBuffer()
 {
 }
 
-SimpleBuffer::~SimpleBuffer() { }
+SimpleBuffer::~SimpleBuffer() = default;
 
 Memory
 SimpleBuffer::obtain()

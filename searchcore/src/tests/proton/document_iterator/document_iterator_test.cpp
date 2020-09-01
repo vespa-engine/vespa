@@ -9,6 +9,7 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -279,12 +280,12 @@ struct Committer : public ICommitable {
     size_t _commitAndWaitCount;
     Committer() : _commitCount(0), _commitAndWaitCount(0) { }
     void commit() override { _commitCount++; }
-    void commitAndWait() override { _commitAndWaitCount++; }
-    void commitAndWait(IPendingLidTracker &, uint32_t ) override {
-        commitAndWait();
+    void commitAndWait(ILidCommitState &) override { _commitAndWaitCount++; }
+    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
+        commitAndWait(tracker);
     }
-    void commitAndWait(IPendingLidTracker &, const std::vector<uint32_t> & ) override {
-        commitAndWait();
+    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
+        commitAndWait(tracker);
     }
 };
 

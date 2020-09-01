@@ -80,7 +80,7 @@ public class ApplicationHandlerTest {
                 .provisioner(provisioner)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, false);
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenantName);
         provisioner = new SessionHandlerTest.MockProvisioner();
         orchestrator = new OrchestratorMock();
@@ -283,6 +283,17 @@ public class ApplicationHandlerTest {
         HttpRequest testRequest = HttpRequest.createTestRequest(url, GET);
         HttpResponse response = mockHandler.handle(testRequest);
         assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    public void testGetTestReport() throws IOException {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/report";
+        ApplicationHandler mockHandler = createApplicationHandler();
+        HttpRequest testRequest = HttpRequest.createTestRequest(url, GET);
+        HttpResponse response = mockHandler.handle(testRequest);
+        assertEquals(200, response.getStatus());
+        assertEquals("report", getRenderedString(response));
     }
 
     private void assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {

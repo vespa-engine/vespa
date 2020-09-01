@@ -6,7 +6,7 @@
 namespace proton {
 
 CommitAndWaitDocumentRetriever::CommitAndWaitDocumentRetriever(IDocumentRetriever::SP retriever, ICommitable &commit,
-                                                               IPendingLidTracker & unCommittedLidTracker)
+                                                               ILidCommitState & unCommittedLidTracker)
     : _retriever(std::move(retriever)),
       _commit(commit),
       _uncommittedLidsTracker(unCommittedLidTracker)

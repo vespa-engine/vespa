@@ -156,45 +156,38 @@ class ClientFeederV3 {
     }
 
     private int getOverloadReturnCode(HttpRequest request) {
-        if (request.getHeader(Headers.SILENTUPGRADE) != null ) {
-            return 299;
-        }
+        if (request.getHeader(Headers.SILENTUPGRADE) != null ) return 299;
         return 429;
     }
 
-    private Optional<DocumentOperationMessageV3> pullMessageFromRequest(
-            FeederSettings settings, InputStream requestInputStream, BlockingQueue<OperationStatus> repliesFromOldMessages) {
+    private Optional<DocumentOperationMessageV3> pullMessageFromRequest(FeederSettings settings,
+                                                                        InputStream requestInputStream,
+                                                                        BlockingQueue<OperationStatus> repliesFromOldMessages) {
         while (true) {
             Optional<String> operationId;
             try {
                 operationId = streamReaderV3.getNextOperationId(requestInputStream);
+                if (operationId.isEmpty()) return Optional.empty();
             } catch (IOException ioe) {
-                if (log.isLoggable(Level.FINE)) {
-                    log.log(Level.FINE, Exceptions.toMessageString(ioe), ioe);
-                }
-                return Optional.empty();
-            }
-            if (! operationId.isPresent()) {
+                log.log(Level.FINE, () -> Exceptions.toMessageString(ioe));
                 return Optional.empty();
             }
 
-            DocumentOperationMessageV3 message;
             try {
-                message = getNextMessage(operationId.get(), requestInputStream, settings);
+                DocumentOperationMessageV3 message = getNextMessage(operationId.get(), requestInputStream, settings);
+                if (message != null)
+                    setRoute(message, settings);
+                return Optional.ofNullable(message);
             } catch (Exception e) {
-                if (log.isLoggable(Level.WARNING)) {
-                    log.log(Level.WARNING, Exceptions.toMessageString(e));
-                }
+                log.log(Level.WARNING, () -> Exceptions.toMessageString(e));
                 metric.add(MetricNames.PARSE_ERROR, 1, null);
 
-                repliesFromOldMessages.add(new OperationStatus(
-                        Exceptions.toMessageString(e), operationId.get(), ErrorCode.ERROR, false, ""));
-
-                continue;
+                repliesFromOldMessages.add(new OperationStatus(Exceptions.toMessageString(e),
+                                                               operationId.get(),
+                                                               ErrorCode.ERROR,
+                                                               false,
+                                                               ""));
             }
-            if (message != null)
-                setRoute(message, settings);
-            return Optional.ofNullable(message);
         }
     }
 
@@ -223,47 +216,45 @@ class ClientFeederV3 {
                       BlockingQueue<OperationStatus> repliesFromOldMessages,
                       AtomicInteger threadsAvailableForFeeding) throws InterruptedException {
         while (true) {
-            Optional<DocumentOperationMessageV3> msg = pullMessageFromRequest(settings, requestInputStream, repliesFromOldMessages);
+            Optional<DocumentOperationMessageV3> message = pullMessageFromRequest(settings,
+                                                                                  requestInputStream,
+                                                                                  repliesFromOldMessages);
 
-            if (! msg.isPresent()) {
-                break;
-            }
-            setMessageParameters(msg.get(), settings);
+            if (message.isEmpty()) break;
+            setMessageParameters(message.get(), settings);
 
             Result result;
             try {
-                result = sendMessage(settings, msg.get(), threadsAvailableForFeeding);
+                result = sendMessage(settings, message.get(), threadsAvailableForFeeding);
 
             } catch  (RuntimeException e) {
-                repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
+                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
                                                                  Exceptions.toMessageString(e),
                                                                  ErrorCode.ERROR,
                                                                  false,
-                                                                 msg.get().getMessage()));
+                                                                 message.get().getMessage()));
                 continue;
             }
 
             if (result.isAccepted()) {
                 outstandingOperations.incrementAndGet();
                 updateOpsPerSec();
-                log(Level.FINE, "Sent message successfully, document id: ", msg.get().getOperationId());
+                log(Level.FINE, "Sent message successfully, document id: ", message.get().getOperationId());
             } else if (!result.getError().isFatal()) {
-                repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
+                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
                                                                  result.getError().getMessage(),
                                                                  ErrorCode.TRANSIENT_ERROR,
                                                                  false,
-                                                                 msg.get().getMessage()));
-                continue;
+                                                                 message.get().getMessage()));
             } else {
                 // should probably not happen, but everybody knows stuff that
                 // shouldn't happen, happens all the time
                 boolean isConditionNotMet = result.getError().getCode() == DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
-                repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
+                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
                                                                  result.getError().getMessage(),
                                                                  ErrorCode.ERROR,
                                                                  isConditionNotMet,
-                                                                 msg.get().getMessage()));
-                continue;
+                                                                 message.get().getMessage()));
             }
         }
     }
@@ -326,17 +317,11 @@ class ClientFeederV3 {
     }
 
     protected final void log(Level level, Object... msgParts) {
-        StringBuilder s;
+        if (!log.isLoggable(level)) return;
 
-        if (!log.isLoggable(level)) {
-            return;
-        }
-
-        s = new StringBuilder();
-        for (Object part : msgParts) {
+        StringBuilder s = new StringBuilder();
+        for (Object part : msgParts)
             s.append(part.toString());
-        }
-
         log.log(level, s.toString());
     }
 

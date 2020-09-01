@@ -20,8 +20,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.22
+ * @author Einar M R Rosenvinge
  */
 public class EndpointResultQueueTest {
 

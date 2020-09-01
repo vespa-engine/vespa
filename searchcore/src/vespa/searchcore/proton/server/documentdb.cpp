@@ -168,7 +168,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>()),
       _feedHandler(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsDirectWriter),
       _visibility(_feedHandler, _writeService, _feedView),
-      _subDBs(*this, *this, _feedHandler, _visibility, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
+      _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
               makeSubDBConfig(protonCfg.distribution,
                               findDocumentDB(protonCfg.documentdb, docTypeName.getName())->allocation,
@@ -564,6 +564,9 @@ DocumentDB::close()
     // Abort any ongoing maintenance
     stopMaintenance();
 
+    _visibility.commit();
+    _writeService.sync();
+
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetrics();
     _metricsWireService.cleanAttributes(metrics.ready.attributes);
@@ -905,6 +908,11 @@ DocumentDB::syncFeedView()
         return;
     IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
+
+    _writeService.sync();
+    _visibility.commit();
+    _writeService.sync();
+
     _feedView.set(newFeedView);
     _feedHandler.setActiveFeedView(newFeedView.get());
     _subDBs.createRetrievers();
@@ -980,6 +988,7 @@ void
 DocumentDB::stopMaintenance()
 {
     _maintenanceController.stop();
+    _writeService.sync();
 }
 
 void

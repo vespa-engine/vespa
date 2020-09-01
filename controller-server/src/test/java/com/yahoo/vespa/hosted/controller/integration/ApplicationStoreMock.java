@@ -10,9 +10,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationS
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import static java.util.Objects.requireNonNull;
 
@@ -23,8 +27,11 @@ import static java.util.Objects.requireNonNull;
  */
 public class ApplicationStoreMock implements ApplicationStore {
 
+    private static final byte[] tombstone = new byte[0];
+
     private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
     private final Map<ApplicationId, Map<ZoneId, byte[]>> devStore = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, NavigableMap<Instant, byte[]>> meta = new ConcurrentHashMap<>();
 
     private static ApplicationId appId(TenantName tenant, ApplicationName application) {
         return ApplicationId.from(tenant, application, InstanceName.defaultName());
@@ -99,6 +106,28 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public byte[] getDev(ApplicationId application, ZoneId zone) {
         return requireNonNull(devStore.get(application).get(zone));
+    }
+
+    @Override
+    public void putMeta(TenantName tenant, ApplicationName application, Instant now, byte[] metaZip) {
+        meta.putIfAbsent(appId(tenant, application), new ConcurrentSkipListMap<>());
+        meta.get(appId(tenant, application)).put(now, metaZip);
+    }
+
+    @Override
+    public void putMetaTombstone(TenantName tenant, ApplicationName application, Instant now) {
+        putMeta(tenant, application, now, tombstone);
+    }
+
+    @Override
+    public void pruneMeta(Instant oldest) {
+        for (ApplicationId id : meta.keySet()) {
+            Instant activeAtOldest = meta.get(id).lowerKey(oldest);
+            if (activeAtOldest != null)
+                meta.get(id).headMap(activeAtOldest).clear();
+            if (meta.get(id).lastKey().isBefore(oldest) && meta.get(id).lastEntry().getValue() == tombstone)
+                meta.remove(id);
+        }
     }
 
 }

@@ -90,7 +90,6 @@ private:
     void addJobsToPeriodicTimer();
     void restart();
     void notifyThawedBucket(const document::BucketId &bucket) override;
-    void performClearJobs();
     void performHoldJobs(JobList jobs);
     void registerJob(vespalib::Executor & executor, IMaintenanceJob::UP job);
 };

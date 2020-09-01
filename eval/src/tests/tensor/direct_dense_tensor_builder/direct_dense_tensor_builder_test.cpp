@@ -174,4 +174,20 @@ TEST("require that dense tensor cells iterator works for 2d tensor") {
     EXPECT_FALSE(itr.valid());
 }
 
+TEST("require that memory used count is reasonable") {
+    Tensor::UP full = build2DTensor();
+    const DenseTensorView &full_view = dynamic_cast<const DenseTensorView &>(*full);
+    DenseTensorView ref_view(full_view.fast_type(), full_view.cellsRef());
+
+    size_t full_sz = full->count_memory_used();
+    size_t view_sz = full_view.count_memory_used();
+    size_t ref_sz = ref_view.count_memory_used();
+
+    EXPECT_EQUAL(ref_sz, sizeof(DenseTensorView));
+    EXPECT_LESS(ref_sz, full_sz);
+    EXPECT_EQUAL(full_sz, view_sz);
+    EXPECT_LESS(full_sz, 10000u);
+    EXPECT_GREATER(full_sz, sizeof(DenseTensor<double>));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

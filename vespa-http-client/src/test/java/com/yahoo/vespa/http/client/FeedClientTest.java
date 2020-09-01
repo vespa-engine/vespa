@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -41,7 +42,7 @@ public class FeedClientTest {
         resultsReceived.incrementAndGet();
     };
 
-    FeedClient feedClient = new FeedClientImpl(sessionParams, resultCallback, FeedClientFactory.createTimeoutExecutor());
+    FeedClient feedClient = new FeedClientImpl(sessionParams, resultCallback, FeedClientFactory.createTimeoutExecutor(), Clock.systemUTC());
 
     @Test
     public void testStreamAndClose() {

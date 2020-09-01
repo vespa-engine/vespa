@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.http;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
-import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -15,6 +14,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -56,6 +56,11 @@ public class TesterClient {
         URI testerUri = createURI(testerHostname, port, "/status.html");
 
         return execute(new HttpGet(testerUri), "/status.html did not return 200 OK");
+    }
+
+    public HttpResponse getReport(String testerHostname, int port) {
+        URI testerUri = createURI(testerHostname, port, "/tester/v1/report");
+        return execute(new HttpGet(testerUri), "Failed to get test report");
     }
 
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {

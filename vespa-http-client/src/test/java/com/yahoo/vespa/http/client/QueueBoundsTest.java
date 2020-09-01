@@ -12,6 +12,7 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import static com.yahoo.vespa.http.client.TestUtils.writeDocument;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -78,7 +80,8 @@ public class QueueBoundsTest {
                                                                   .build())
                                      .setClientQueueSize(2)
                                      .build(),
-                             SessionFactory.createTimeoutExecutor())) {
+                             SessionFactory.createTimeoutExecutor(),
+                             Clock.systemUTC())) {
             FeederThread feeder = new FeederThread(session);
             try {
                 feeder.start();
@@ -122,7 +125,8 @@ public class QueueBoundsTest {
                                                           .setNumPersistentConnectionsPerEndpoint(1)
                                                           .build())
                              .setClientQueueSize(6)  //3  per cluster
-                             .build(), SessionFactory.createTimeoutExecutor())) {
+                             .build(), SessionFactory.createTimeoutExecutor(),
+                     Clock.systemUTC())) {
 
             FeederThread feeder = new FeederThread(session);
             try {
@@ -210,22 +214,23 @@ public class QueueBoundsTest {
                                              .build())
                                      .setClientQueueSize(1)
                                      .build(),
-                             SessionFactory.createTimeoutExecutor())) {
+                             SessionFactory.createTimeoutExecutor(),
+                             Clock.systemUTC())) {
             FeederThread feeder = new FeederThread(session);
             feeder.start();
             try {
                 {
                     System.out.println("We start with failed connection, post a document.");
                     assertFeedNotBlocking(feeder, 0);
-                    assertThat(session.results().size(), is(0));
+                    assertEquals(0, session.results().size());
 
                     CountDownLatch lastPostFeed = assertFeedBlocking(feeder, 1);
                     System.out.println("No result so far.");
-                    assertThat(session.results().size(), is(0));
+                    assertEquals(0, session.results().size());
                     System.out.println("Make connection ok.");
                     mockXmlParsingRequestHandler.setScenario(V3MockParsingRequestHandler.Scenario.ALL_OK);
                     assert(lastPostFeed.await(120, TimeUnit.SECONDS));
-                    assertThat(lastPostFeed.getCount(), equalTo(0L));
+                    assertEquals(0L, lastPostFeed.getCount());
                     assertResultQueueSize(session, 2, 120, TimeUnit.SECONDS);
                 }
 
@@ -235,7 +240,7 @@ public class QueueBoundsTest {
                 {
                     assertFeedNotBlocking(feeder, 2);
                     System.out.println("Fed one document, fit in queue.");
-                    assertThat(session.results().size(), is(2));
+                    assertEquals(2, session.results().size());
                     System.out.println("Fed one document more, wait for failure.");
 
                     assertFeedNotBlocking(feeder, 3);
@@ -249,12 +254,12 @@ public class QueueBoundsTest {
                 }
                 int errors = 0;
                 for (Result result : session.results()) {
-                    assertThat(result.getDetails().size(), is(1));
+                    assertEquals(1, result.getDetails().size());
                     if (! result.isSuccess()) {
                         errors++;
                     }
                 }
-                assertThat(errors, is(1));
+                assertEquals(1, errors);
             } finally {
                 feeder.stop();
             }

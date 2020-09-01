@@ -83,11 +83,18 @@ MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
 }
 
 template <typename B, typename M>
-IDocumentWeightAttribute::LookupResult
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term) const
+vespalib::datastore::EntryRef
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::get_dictionary_snapshot() const
 {
     const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
-    const FrozenDictionary frozenDictionary(dictionary.getFrozenView());
+    return dictionary.getFrozenView().getRoot();
+}
+
+template <typename B, typename M>
+IDocumentWeightAttribute::LookupResult
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const
+{
+    const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
     DictionaryConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
 
     char *end = nullptr;
@@ -95,17 +102,25 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
     if (*end == '\0') {
         auto comp = self._enumStore.make_comparator(int_term);
 
-        dictItr.lower_bound(frozenDictionary.getRoot(), EnumIndex(), comp);
+        dictItr.lower_bound(dictionary_snapshot, EnumIndex(), comp);
         if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {
             vespalib::datastore::EntryRef pidx(dictItr.getData());
             if (pidx.valid()) {
                 const PostingList &plist = self.getPostingList();
                 auto minmax = plist.getAggregated(pidx);
-                return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax());
+                return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), dictItr.getKey());
             }
         }
     }
     return LookupResult();
+}
+
+template <typename B, typename M>
+void
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback)const
+{
+    (void) dictionary_snapshot;
+    callback(enum_idx);
 }
 
 template <typename B, typename M>

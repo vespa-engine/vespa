@@ -78,7 +78,6 @@ public class Result {
         private final Endpoint endpoint;
         private final Exception exception;
         private final String traceMessage;
-        private final long timeStampMillis = System.currentTimeMillis();
 
         public Detail(Endpoint endpoint, ResultType resultType, String traceMessage, Exception e) {
             this.endpoint = endpoint;
@@ -133,7 +132,6 @@ public class Result {
                 b.append(" trace='").append(traceMessage).append("'");
             if (endpoint != null)
                 b.append(" endpoint=").append(endpoint);
-            b.append(" resultTimeLocally=").append(timeStampMillis).append("\n");
             return b.toString();
         }
 

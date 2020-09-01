@@ -18,6 +18,9 @@ using vespalib::make_string;
 using vespalib::stringref;
 using vespalib::IllegalArgumentException;
 using search::common::FileHeaderContext;
+using std::make_shared;
+using std::runtime_error;
+using namespace std::chrono_literals;
 
 namespace search::transactionlog {
 
@@ -31,10 +34,10 @@ class SyncHandler : public FNET_Task
     SerialNum                   _syncTo;
     
 public:
-    SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req,const Domain::SP &domain,
+    SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
                 const TransLogServer::Session::SP &session, SerialNum syncTo);
 
-    ~SyncHandler();
+    ~SyncHandler() override;
     void PerformTask() override;
 };
 
@@ -157,17 +160,17 @@ bool
 TransLogServer::onStop()
 {
     LOG(info, "Stopping TLS");
-    _reqQ.push(NULL);
+    _reqQ.push(nullptr);
     return true;
 }
 
 void
 TransLogServer::run()
 {
-    FRT_RPCRequest *req(NULL);
+    FRT_RPCRequest *req(nullptr);
     bool hasPacket(false);
     do {
-        for (req = NULL; (hasPacket = _reqQ.pop(req, 60000)) && (req != NULL); req = NULL) {
+        for (req = nullptr; (hasPacket = _reqQ.pop(req, 60000)) && (req != nullptr); req = nullptr) {
             bool immediate = true;
             if (strcmp(req->GetMethodName(), "domainSessionClose") == 0) {
                 domainSessionClose(req);
@@ -675,7 +678,7 @@ TransLogServer::finiSession(FRT_RPCRequest *req)
 {
     FNET_Connection *conn = req->GetConnection();
     void *vctx = conn->GetContext()._value.VOIDP;
-    conn->GetContextPT()->_value.VOIDP = NULL;
+    conn->GetContextPT()->_value.VOIDP = nullptr;
     Session::SP *sessionspp = static_cast<Session::SP *>(vctx);
     delete sessionspp;
 }
@@ -696,7 +699,7 @@ TransLogServer::domainSync(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     Session::SP session(getSession(req));
 
-    if (domain.get() == nullptr) {
+    if ( ! domain) {
         FRT_Values &rvals = *req->GetReturn();
         rvals.AddInt32(0);
         rvals.AddInt64(0);

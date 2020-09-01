@@ -97,8 +97,30 @@
     </dependency>
 
   </dependencies>
+
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>generate-simplified-vtag</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>src/main/bin/versiontagger.sh</executable>
+              <arguments>
+                <argument>${project.basedir}/../dist/vtag.map</argument>
+                <argument>${project.build.directory}/generated-sources/vtag/com/yahoo/vespa/http/client/core/Vtag.java</argument>
+              </arguments>
+              <sourceRoot>${project.build.directory}/generated-sources/vtag</sourceRoot>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>

@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 
@@ -125,4 +126,11 @@ public class BufferedLogStore {
                                       after);
     }
 
+    public Optional<String> readTestReport(RunId id) {
+        return store.getTestReport(id).map(String::new);
+    }
+
+    public void writeTestReport(RunId id, TestReport report) {
+        store.putTestReport(id, report.toJson().getBytes());
+    }
 }

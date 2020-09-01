@@ -133,8 +133,14 @@ DataStoreT<RefT>::freeListRawAllocator(uint32_t typeId)
 
 template <typename EntryType, typename RefT>
 DataStore<EntryType, RefT>::DataStore()
+    : DataStore(RefType::offsetSize())
+{
+}
+
+template <typename EntryType, typename RefT>
+DataStore<EntryType, RefT>::DataStore(uint32_t min_arrays)
     : ParentType(),
-      _type(1, RefType::offsetSize(), RefType::offsetSize())
+      _type(1, min_arrays, RefType::offsetSize())
 {
     addType(&_type);
     initActiveBuffers();
@@ -150,15 +156,9 @@ template <typename EntryType, typename RefT>
 EntryRef
 DataStore<EntryType, RefT>::addEntry(const EntryType &e)
 {
-    ensureBufferCapacity(0, 1);
-    uint32_t activeBufferId = _activeBufferIds[0];
-    BufferState &state = this->getBufferState(activeBufferId);
-    size_t oldSize = state.size();
-    EntryType *be = static_cast<EntryType *>(this->getBuffer(activeBufferId)) + oldSize;
-    new (static_cast<void *>(be)) EntryType(e);
-    RefType ref(oldSize, activeBufferId);
-    state.pushed_back(1);
-    return ref;
+    using NoOpReclaimer = DefaultReclaimer<EntryType>;
+    // Note: This will fallback to regular allocation if free lists are not enabled.
+    return FreeListAllocator<EntryType, RefT, NoOpReclaimer>(*this, 0).alloc(e).ref;
 }
 
 template <typename EntryType, typename RefT>
@@ -168,14 +168,6 @@ DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
     RefType intRef(ref);
     const EntryType *be = this->template getEntry<EntryType>(intRef);
     return *be;
-}
-
-template <typename EntryType, typename RefT>
-template <typename ReclaimerT>
-FreeListAllocator<EntryType, RefT, ReclaimerT>
-DataStore<EntryType, RefT>::freeListAllocator()
-{
-    return FreeListAllocator<EntryType, RefT, ReclaimerT>(*this, 0);
 }
 
 extern template class DataStoreT<EntryRefT<22> >;

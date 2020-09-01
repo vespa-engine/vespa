@@ -1,0 +1,27 @@
+
+dynamic.py:¦
+0
+query_tensor
+attribute_tensormatmul"MatMul
+-
+bias_tensorreduce"	ReduceSum*
+axes@ 
+
+matmul
+reduceoutput"Adddynamic_scoringZ#
+query_tensor
+
+batch
+Z"
+attribute_tensor
+
+
+Z+
+bias_tensor
+
+batch
+ÿÿÿÿÿÿÿÿÿb
+output
+
+batch
+B

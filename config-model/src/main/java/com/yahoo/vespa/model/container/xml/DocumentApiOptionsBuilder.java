@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import org.w3c.dom.Element;
@@ -18,8 +19,8 @@ public class DocumentApiOptionsBuilder {
     private static final Logger log = Logger.getLogger(DocumentApiOptionsBuilder.class.getName());
 
 
-    public static ContainerDocumentApi.Options build(Element spec) {
-        return new ContainerDocumentApi.Options(getBindings(spec));
+    public static ContainerDocumentApi.Options build(DeployState deployState, Element spec) {
+        return new ContainerDocumentApi.Options(getBindings(spec), deployState.getProperties().feedCoreThreadPoolSizeFactor());
     }
 
     private static List<String> getBindings(Element spec) {

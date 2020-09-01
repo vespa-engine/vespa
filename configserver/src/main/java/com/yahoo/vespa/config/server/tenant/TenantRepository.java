@@ -97,17 +97,6 @@ public class TenantRepository {
      */
     @Inject
     public TenantRepository(GlobalComponentRegistry componentRegistry) {
-        this(componentRegistry, true);
-    }
-
-    /**
-     * Creates a new tenant repository
-     *
-     * @param componentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
-     * @param useZooKeeperWatchForTenantChanges set to false for tests where you want to control adding and deleting
-     *                                          tenants yourself
-     */
-    public TenantRepository(GlobalComponentRegistry componentRegistry, boolean useZooKeeperWatchForTenantChanges) {
         this.componentRegistry = componentRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders());
@@ -124,13 +113,9 @@ public class TenantRepository {
         createSystemTenants(configserverConfig);
         curator.create(vespaPath);
 
-        if (useZooKeeperWatchForTenantChanges) {
-            this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
-            this.directoryCache.get().addListener(this::childEvent);
-            this.directoryCache.get().start();
-        } else {
-            this.directoryCache = Optional.empty();
-        }
+        this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
+        this.directoryCache.get().addListener(this::childEvent);
+        this.directoryCache.get().start();
         bootstrapTenants();
         notifyTenantsLoaded();
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,

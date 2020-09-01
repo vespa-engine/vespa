@@ -640,12 +640,14 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.empty();
             case FAILURE:
                 logger.log("Tests failed.");
+                controller.jobController().updateTestReport(id);
                 return Optional.of(testFailure);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
                 return Optional.of(error);
             case SUCCESS:
                 logger.log("Tests completed successfully.");
+                controller.jobController().updateTestReport(id);
                 return Optional.of(running);
             default:
                 throw new IllegalStateException("Unknown status '" + testStatus + "'!");

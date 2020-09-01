@@ -21,12 +21,11 @@ import java.util.logging.Logger;
  */
 public final class EndPointResultFactory {
 
-    private static Logger log = Logger.getLogger(EndPointResultFactory.class.getName());
-
+    private static final Logger log = Logger.getLogger(EndPointResultFactory.class.getName());
     private static final String EMPTY_MESSAGE = "-";
 
-    public static Collection<EndpointResult> createResult(
-            Endpoint endpoint, InputStream inputStream) throws IOException {
+    public static Collection<EndpointResult> createResult(Endpoint endpoint,
+                                                          InputStream inputStream) throws IOException {
         List<EndpointResult> results = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(inputStream, StandardCharsets.US_ASCII))) {
@@ -82,9 +81,9 @@ public final class EndPointResultFactory {
             return new EndpointResult(
                     reply.operationId,
                     new Result.Detail(endpoint,
-                            replyToResultType(reply),
-                            reply.traceMessage,
-                            exception));
+                                      replyToResultType(reply),
+                                      reply.traceMessage,
+                                      exception));
         } catch (Throwable t) {
             throw new IllegalArgumentException("Bad result line from server: '" + line + "'", t);
         }

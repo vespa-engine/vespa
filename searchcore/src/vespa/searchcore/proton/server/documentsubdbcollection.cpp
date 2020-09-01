@@ -32,7 +32,6 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         IDocumentSubDBOwner &owner,
         search::transactionlog::SyncProxy &tlSyncer,
         const IGetSerialNum &getSerialNum,
-        ICommitable & commitable,
         const DocTypeName &docTypeName,
         searchcorespi::index::IThreadingService &writeService,
         vespalib::SyncableThreadExecutor &warmupExecutor,
@@ -73,7 +72,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                     cfg.getNumSearchThreads()),
                 SearchableDocSubDB::Context(
                         FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
-                        queryLimiter, clock, warmupExecutor, commitable)));
+                        queryLimiter, clock, warmupExecutor)));
 
     _subDBs.push_back
         (new StoreOnlyDocSubDB(
@@ -130,7 +129,7 @@ DocumentSubDBCollection::createRetrievers()
 namespace {
 
 IDocumentRetriever::SP
-wrapRetriever(IDocumentRetriever::SP retriever, ICommitable &commit, IPendingLidTracker & unCommitedLidsTracker)
+wrapRetriever(IDocumentRetriever::SP retriever, ICommitable &commit, ILidCommitState & unCommitedLidsTracker)
 {
     return std::make_shared<CommitAndWaitDocumentRetriever>(std::move(retriever), commit, unCommitedLidsTracker);
 }
@@ -147,7 +146,8 @@ DocumentSubDBCollection::getRetrievers(IDocumentRetriever::ReadConsistency consi
         assert(list->size() == 3);
         wrappedList->push_back(wrapRetriever((*list)[_readySubDbId], visibilityHandler,
                                              getReadySubDB()->getFeedView()->getUncommittedLidsTracker()));
-        wrappedList->push_back((*list)[_remSubDbId]);
+        wrappedList->push_back(wrapRetriever((*list)[_remSubDbId], visibilityHandler,
+                                             getRemSubDB()->getFeedView()->getUncommittedLidsTracker()));
         wrappedList->push_back(wrapRetriever((*list)[_notReadySubDbId], visibilityHandler,
                                              getNotReadySubDB()->getFeedView()->getUncommittedLidsTracker()));
         return wrappedList;
@@ -167,7 +167,7 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommit
     MaintenanceDocumentSubDB remSubDB(getRemSubDB()->getName(),
                                       _remSubDbId,
                                       getRemSubDB()->getDocumentMetaStoreContext().getSP(),
-                                      (*retrievers)[_remSubDbId],
+                                      wrapRetriever((*retrievers)[_remSubDbId], commit, getRemSubDB()->getFeedView()->getUncommittedLidsTracker()),
                                       getRemSubDB()->getFeedView());
     MaintenanceDocumentSubDB notReadySubDB(getNotReadySubDB()->getName(),
                                            _notReadySubDbId,

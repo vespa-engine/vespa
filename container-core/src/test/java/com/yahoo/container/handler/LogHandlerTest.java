@@ -1,17 +1,19 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import com.yahoo.container.jdisc.AsyncHttpResponse;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.jdisc.handler.ReadableContentChannel;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -24,20 +26,20 @@ public class LogHandlerTest {
 
         {
             String uri = "http://myhost.com:1111/logs?from=1000&to=2000";
-            HttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            response.render(bos);
+            AsyncHttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+            ReadableContentChannel out = new ReadableContentChannel();
+            new Thread(() -> Exceptions.uncheck(() -> response.render(null, out, null))).start();
             String expectedResponse = "newer log";
-            assertEquals(expectedResponse, bos.toString());
+            assertEquals(expectedResponse, new String(out.toStream().readAllBytes(), UTF_8));
         }
 
         {
             String uri = "http://myhost.com:1111/logs?from=0&to=1000";
-            HttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            response.render(bos);
+            AsyncHttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+            ReadableContentChannel out = new ReadableContentChannel();
+            new Thread(() -> Exceptions.uncheck(() -> response.render(null, out, null))).start();
             String expectedResponse = "older log";
-            assertEquals(expectedResponse, bos.toString());
+            assertEquals(expectedResponse, new String(out.toStream().readAllBytes(), UTF_8));
         }
 
     }

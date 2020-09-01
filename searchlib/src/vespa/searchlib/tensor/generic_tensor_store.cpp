@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generic_tensor_store.h"
+#include "tensor_deserialize.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/macro.h>
 
-using document::DeserializeException;
 using vespalib::datastore::Handle;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedBinaryFormat;
@@ -95,14 +94,7 @@ GenericTensorStore::getTensor(EntryRef ref) const
     if (raw.second == 0u) {
         return std::unique_ptr<Tensor>();
     }
-    vespalib::nbostream wrapStream(raw.first, raw.second);
-    auto tensor = TypedBinaryFormat::deserialize(wrapStream);
-    if (wrapStream.size() != 0) {
-        throw DeserializeException("Leftover bytes deserializing "
-                                   "tensor attribute value.",
-                                   VESPA_STRLOC);
-    }
-    return tensor;
+    return deserialize_tensor(raw.first, raw.second);
 }
 
 TensorStore::EntryRef

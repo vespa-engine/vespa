@@ -133,7 +133,7 @@ public:
 
     BTreeTypeRefPair
     allocBTreeCopy(const BTreeType &rhs) {
-        return _store.freeListAllocator<BTreeType, DefaultReclaimer<BTreeType> >(BUFFERTYPE_BTREE).alloc(rhs);
+        return _store.freeListAllocator<BTreeType, datastore::DefaultReclaimer<BTreeType> >(BUFFERTYPE_BTREE).alloc(rhs);
     }
 
     KeyDataTypeRefPair

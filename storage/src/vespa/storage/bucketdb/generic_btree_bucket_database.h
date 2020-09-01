@@ -64,7 +64,9 @@ public:
     template <typename... DataStoreArgs>
     explicit GenericBTreeBucketDatabase(DataStoreArgs&&... data_store_args)
         : _store(std::forward<DataStoreArgs>(data_store_args)...)
-    {}
+    {
+        DataStoreTraitsT::init_data_store(_store);
+    }
 
     GenericBTreeBucketDatabase(const GenericBTreeBucketDatabase&) = delete;
     GenericBTreeBucketDatabase& operator=(const GenericBTreeBucketDatabase&) = delete;

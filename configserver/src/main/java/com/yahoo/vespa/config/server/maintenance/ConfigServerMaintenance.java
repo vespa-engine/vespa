@@ -35,8 +35,8 @@ public class ConfigServerMaintenance extends AbstractComponent {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
         tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, flagSource, defaults.defaultInterval, Clock.systemUTC());
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
-        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofMinutes(1), flagSource);
-        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofMinutes(1), flagSource);
+        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
+        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
     }
 
     @Override
@@ -61,8 +61,8 @@ public class ConfigServerMaintenance extends AbstractComponent {
     }
 
     public void runBeforeBootstrap() {
-        fileDistributionMaintainer.maintain();
-        sessionsMaintainer.maintain();
+        fileDistributionMaintainer.lockAndMaintain();
+        sessionsMaintainer.lockAndMaintain();
     }
 
 }

@@ -57,6 +57,16 @@ public class TensorFieldProcessor extends Processor {
         return false;
     }
 
+    private boolean isTensorTypeThatSupportsDirectStore(ImmutableSDField field) {
+        var type = ((TensorDataType)field.getDataType()).getTensorType();
+        // Tensors with only sparse dimensions can be "direct"
+        // (currenty triggered by fast-search flag)
+        for (var dim : type.dimensions()) {
+            if (dim.isIndexed()) return false;
+        }
+        return true;
+    }
+
     private String tensorTypeToString(ImmutableSDField field) {
         return ((TensorDataType)field.getDataType()).getTensorType().toString();
     }
@@ -65,7 +75,9 @@ public class TensorFieldProcessor extends Processor {
         if (field.doesAttributing()) {
             var attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.isFastSearch()) {
-                fail(search, field, "An attribute of type 'tensor' cannot be 'fast-search'.");
+                if (! isTensorTypeThatSupportsDirectStore(field)) {
+                    fail(search, field, "An attribute of type 'tensor' cannot be 'fast-search'.");
+                }
             }
         }
     }

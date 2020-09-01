@@ -32,7 +32,7 @@ public class TenantTest {
     }
 
     private Tenant createTenant(String name) {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         TenantName tenantName = TenantName.from(name);
         tenantRepository.addTenant(tenantName);
         return tenantRepository.getTenant(tenantName);

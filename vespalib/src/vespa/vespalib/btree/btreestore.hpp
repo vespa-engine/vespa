@@ -85,7 +85,7 @@ allocKeyData(uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.freeListAllocator<KeyDataType, DefaultReclaimer<KeyDataType>>(typeId).allocArray(clusterSize);
+    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).allocArray(clusterSize);
 }
 
 
@@ -111,7 +111,7 @@ allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.freeListAllocator<KeyDataType, DefaultReclaimer<KeyDataType>>(typeId).
+    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).
             allocArray(vespalib::ConstArrayRef<KeyDataType>(rhs, clusterSize));
 }
 

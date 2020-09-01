@@ -83,7 +83,7 @@ case "$MODE" in
         ;;
     full)
 	echo "Building full set of dependencies."
-        mvn_install -am -pl jrt,linguistics,messagebus
+        mvn_install -am -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -pl jrt,linguistics,messagebus
         ;;
     default)
 	echo "Building default set of dependencies."

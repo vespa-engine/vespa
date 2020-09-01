@@ -46,7 +46,6 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _warmupExecutor(ctx._warmupExecutor),
-      _commitable(ctx._commitable),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
       _flushConfig(),
       _nodeRetired(false)
@@ -271,7 +270,6 @@ SearchableDocSubDB::reconfigureIndexSearchable()
 {
     std::lock_guard<std::mutex> guard(_configMutex);
     // Create new views as needed.
-    _commitable.commitAndWait();
     _configurer.reconfigureIndexSearchable();
     // Activate new feed view at once
     syncViews();

@@ -63,7 +63,7 @@ public:
         (void) strict;
         std::vector<DocumentWeightIterator> children;
         for (size_t i = 0; i < _num_children; ++i) {
-            auto dict_entry = _helper.dwa().lookup(vespalib::make_string("%zu", i).c_str());
+            auto dict_entry = _helper.dwa().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dwa().get_dictionary_snapshot());
             _helper.dwa().create(dict_entry.posting_idx, children);
         }
         return create(std::move(children));

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/tensor/tensor.h>
@@ -25,6 +26,7 @@ using namespace search::fef::test;
 using namespace search::features;
 using search::AttributeFactory;
 using search::tensor::TensorAttribute;
+using search::tensor::DirectTensorAttribute;
 using search::AttributeVector;
 using vespalib::eval::Function;
 using vespalib::eval::Value;
@@ -70,10 +72,14 @@ struct ExecFixture
         addAttributeField(attrName);
         return AttributeFactory::createAttribute(attrName, AVC(AVBT::STRING, AVCT::SINGLE));
     }
-    AttributeVector::SP createTensorAttribute(const vespalib::string &attrName, const vespalib::string &type) {
+    AttributeVector::SP createTensorAttribute(const vespalib::string &attrName,
+                                              const vespalib::string &type,
+                                              bool direct = false)
+    {
         addAttributeField(attrName);
         AVC config(AVBT::TENSOR, AVCT::SINGLE);
         config.setTensorType(ValueType::from_spec(type));
+        config.setFastSearch(direct);
         return AttributeFactory::createAttribute(attrName, config);
     }
     void setAttributeTensorType(const vespalib::string &attrName, const vespalib::string &type) {
@@ -85,10 +91,12 @@ struct ExecFixture
     void setupAttributeVectors() {
         std::vector<AttributePtr> attrs;
         attrs.push_back(createTensorAttribute("tensorattr", "tensor(x{})"));
+        attrs.push_back(createTensorAttribute("directattr", "tensor(x{})", true));
         attrs.push_back(createStringAttribute("singlestr"));
         attrs.push_back(createTensorAttribute("wrongtype", "tensor(y{})"));
         addAttributeField("null");
         setAttributeTensorType("tensorattr", "tensor(x{})");
+        setAttributeTensorType("directattr", "tensor(x{})");
         setAttributeTensorType("wrongtype", "tensor(x{})");
         setAttributeTensorType("null", "tensor(x{})");
 
@@ -103,11 +111,16 @@ struct ExecFixture
 
         TensorAttribute *tensorAttr =
             dynamic_cast<TensorAttribute *>(attrs[0].get());
+        DirectTensorAttribute *directAttr =
+            dynamic_cast<DirectTensorAttribute *>(attrs[1].get());
 
-        tensorAttr->setTensor(1, *makeTensor<Tensor>(TensorSpec("tensor(x{})")
-                                                     .add({{"x", "a"}}, 3)
-                                                     .add({{"x", "b"}}, 5)
-                                                     .add({{"x", "c"}}, 7)));
+        auto doc_tensor = makeTensor<Tensor>(TensorSpec("tensor(x{})")
+                                             .add({{"x", "a"}}, 3)
+                                             .add({{"x", "b"}}, 5)
+                                             .add({{"x", "c"}}, 7));
+        tensorAttr->setTensor(1, *doc_tensor);
+        directAttr->set_tensor(1, std::move(doc_tensor));
+
         for (const auto &attr : attrs) {
             attr->commit();
         }
@@ -157,6 +170,15 @@ TEST_F("require that tensor attribute can be extracted as tensor in attribute fe
                                      .add({{"x", "a"}}, 3)), f.execute());
 }
 
+TEST_F("require that direct tensor attribute can be extracted in attribute feature",
+       ExecFixture("attribute(directattr)"))
+{
+    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(x{})")
+                                     .add({{"x", "b"}}, 5)
+                                     .add({{"x", "c"}}, 7)
+                                     .add({{"x", "a"}}, 3)), f.execute());
+}
+
 TEST_F("require that tensor from query can be extracted as tensor in query feature",
        ExecFixture("query(tensorquery)"))
 {
@@ -186,6 +208,11 @@ TEST_F("require that empty tensor is created if query parameter is not found",
 
 TEST_F("require that empty tensor with correct type is created if document has no tensor",
        ExecFixture("attribute(tensorattr)")) {
+    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute(2));
+}
+
+TEST_F("require that empty tensor with correct type is returned by direct tensor attribute",
+       ExecFixture("attribute(directattr)")) {
     EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute(2));
 }
 

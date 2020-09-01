@@ -18,6 +18,7 @@ public:
     using CellsIterator = DenseTensorCellsIterator;
     using Address = std::vector<eval::ValueType::Dimension::size_type>;
 
+    DenseTensorView(const DenseTensorView &rhs) : DenseTensorView(rhs._typeRef, rhs._cellsRef) {}
     DenseTensorView(const eval::ValueType &type_in, TypedCells cells_in)
         : _typeRef(type_in),
           _cellsRef(cells_in)
@@ -43,6 +44,9 @@ public:
     Tensor::UP clone() const override;
     eval::TensorSpec toSpec() const override;
     void accept(TensorVisitor &visitor) const override;
+    size_t count_memory_used() const override {
+        return sizeof(DenseTensorView);
+    }
 
     template <typename T> static ConstArrayRef<T> typify_cells(const eval::Value &self) {
         return static_cast<const DenseTensorView &>(self).cellsRef().typify<T>();
@@ -55,7 +59,6 @@ protected:
         : _typeRef(type_in),
           _cellsRef()
     {}
-    DenseTensorView(const DenseTensorView &rhs) : DenseTensorView(rhs._typeRef, rhs._cellsRef) {}
 
     void initCellsRef(TypedCells cells_in) {
         assert(_typeRef.cell_type() == cells_in.type);

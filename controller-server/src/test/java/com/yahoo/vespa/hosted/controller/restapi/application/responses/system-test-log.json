@@ -1,0 +1,321 @@
+{
+  "active": false,
+  "status": "success",
+  "log": {
+    "deployTester": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "No services requiring restart."
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Deployment successful."
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "foo"
+      }
+    ],
+    "installTester": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Tester container successfully installed!"
+      }
+    ],
+    "deployReal": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "No services requiring restart."
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Deployment successful."
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "foo"
+      }
+    ],
+    "installReal": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "######## Details for all nodes ########"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform dockerImage:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Found endpoints:"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "- test.us-east-1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": " |-- https://application--tenant.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Installation succeeded!"
+      }
+    ],
+    "startTests": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Attempting to find endpoints ..."
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Found endpoints:"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "- test.us-east-1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": " |-- https://application--tenant.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Starting tests ..."
+      }
+    ],
+    "endTests": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Tests completed successfully."
+      }
+    ],
+    "deactivateReal": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Deactivating deployment of tenant.application in test.us-east-1 ..."
+      }
+    ],
+    "deactivateTester": [
+      {
+        "at": 0,
+        "type": "info",
+        "message": "Deactivating tester of tenant.application in test.us-east-1 ..."
+      }
+    ]
+  },
+  "lastId": 50,
+  "steps": {
+    "deployTester": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "installTester": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "deployReal": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "installReal": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "startTests": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "endTests": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "copyVespaLogs": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "deactivateReal": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "deactivateTester": {
+      "status": "succeeded",
+      "startMillis": 0
+    },
+    "report": {
+      "status": "succeeded",
+      "startMillis": 0
+    }
+  },
+  "testReport": {
+    "summary": {
+      "success": 1,
+      "failed": 0
+    }
+  }
+}

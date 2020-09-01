@@ -31,10 +31,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
@@ -59,7 +59,6 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.json.JSONObject;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
@@ -90,6 +89,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private RuntimeException prepareException = null;
     private ConfigChangeActions configChangeActions = null;
     private String log = "INFO - All good";
+    private Map<DeploymentId, TestReport> testReport = new HashMap<>();
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
@@ -324,6 +324,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public boolean isTesterReady(DeploymentId deployment) {
         return false;
+    }
+
+    @Override
+    public Optional<TestReport> getTestReport(DeploymentId deployment) {
+        return Optional.ofNullable(testReport.get(deployment));
+    }
+    public void setTestReport(DeploymentId deploymentId, TestReport report) {
+        testReport.put(deploymentId, report);
     }
 
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */

@@ -3,6 +3,7 @@
 #include <vespa/vespalib/trace/slime_trace_serializer.h>
 #include <vespa/vespalib/trace/slime_trace_deserializer.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 
 using namespace vespalib;
 using namespace vespalib::slime;

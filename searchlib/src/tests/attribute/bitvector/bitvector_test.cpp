@@ -491,7 +491,7 @@ BitVectorTest::test(BasicType bt,
         v->asDocumentWeightAttribute();
     if (dwa != NULL) {
         search::IDocumentWeightAttribute::LookupResult lres = 
-            dwa->lookup(getSearchStr<VectorType>());
+            dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
         typedef search::queryeval::DocumentWeightSearchIterator DWSI;
         typedef search::queryeval::SearchIterator SI;
         TermFieldMatchData md;

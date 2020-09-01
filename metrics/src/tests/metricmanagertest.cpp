@@ -11,6 +11,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <thread>
 
 #include <vespa/log/log.h>

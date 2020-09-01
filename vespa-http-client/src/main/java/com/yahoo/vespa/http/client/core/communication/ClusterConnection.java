@@ -14,7 +14,10 @@ import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +46,8 @@ public class ClusterConnection implements AutoCloseable {
                              Cluster cluster,
                              int clusterId,
                              int clientQueueSizePerCluster,
-                             ScheduledThreadPoolExecutor timeoutExecutor) {
+                             ScheduledThreadPoolExecutor timeoutExecutor,
+                             Clock clock) {
         if (cluster.getEndpoints().isEmpty())
             throw new IllegalArgumentException("At least a single endpoint is required in " + cluster);
 
@@ -53,7 +57,7 @@ public class ClusterConnection implements AutoCloseable {
             throw new IllegalArgumentException("At least 1 persistent connection per endpoint is required in " + cluster);
         int maxInFlightPerSession = Math.max(1, feedParams.getMaxInFlightRequests() / totalNumberOfEndpointsInThisCluster);
 
-        documentQueue = new DocumentQueue(clientQueueSizePerCluster);
+        documentQueue = new DocumentQueue(clientQueueSizePerCluster, clock);
         ioThreadGroup = operationProcessor.getIoThreadGroup();
         singleEndpoint = cluster.getEndpoints().size() == 1 ? cluster.getEndpoints().get(0) : null;
         Double idlePollFrequency = feedParams.getIdlePollFrequency();
@@ -66,28 +70,33 @@ public class ClusterConnection implements AutoCloseable {
                                                                               timeoutExecutor,
                                                                               feedParams.getServerTimeout(TimeUnit.MILLISECONDS) + feedParams.getClientTimeout(TimeUnit.MILLISECONDS));
             for (int i = 0; i < connectionParams.getNumPersistentConnectionsPerEndpoint(); i++) {
-                GatewayConnection gatewayConnection;
+                GatewayConnectionFactory connectionFactory;
                 if (connectionParams.isDryRun()) {
-                    gatewayConnection = new DryRunGatewayConnection(endpoint);
+                    connectionFactory = new DryRunGatewayConnectionFactory(endpoint, clock);
                 } else {
-                    gatewayConnection = new ApacheGatewayConnection(endpoint,
-                                                                    feedParams,
-                                                                    cluster.getRoute(),
-                                                                    connectionParams,
-                                                                    new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
-                                                                    operationProcessor.getClientId()
+                    connectionFactory = new ApacheGatewayConnectionFactory(endpoint,
+                                                                           feedParams,
+                                                                           cluster.getRoute(),
+                                                                           connectionParams,
+                                                                           new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
+                                                                           operationProcessor.getClientId(),
+                                                                           clock
                     );
                 }
                 IOThread ioThread = new IOThread(operationProcessor.getIoThreadGroup(),
+                                                 endpoint,
                                                  endpointResultQueue,
-                                                 gatewayConnection,
+                                                 connectionFactory,
                                                  clusterId,
                                                  feedParams.getMaxChunkSizeBytes(),
                                                  maxInFlightPerSession,
-                                                 feedParams.getLocalQueueTimeOut(),
+                                                 Duration.ofMillis(feedParams.getLocalQueueTimeOut()),
                                                  documentQueue,
                                                  feedParams.getMaxSleepTimeMs(),
-                                                 idlePollFrequency);
+                                                 connectionParams.getConnectionTimeToLive(),
+                                                 connectionParams.runThreads(),
+                                                 idlePollFrequency,
+                                                 clock);
                 ioThreads.add(ioThread);
             }
         }
@@ -158,6 +167,10 @@ public class ClusterConnection implements AutoCloseable {
         jsonGenerator.writeEndObject();
         jsonGenerator.close();
         return stringWriter.toString();
+    }
+
+    public List<IOThread> ioThreads() {
+        return Collections.unmodifiableList(ioThreads);
     }
 
     @Override

@@ -200,7 +200,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         }
         assert(pass_params == PassParams::LAZY);
         assert(params.size() == 2);
-        return builder.CreateCall(params[0], {params[1], builder.getInt64(idx)}, "resolve_param");
+        return builder.CreateCall(llvm::cast<llvm::FunctionType>(params[0]->getType()->getPointerElementType()),
+                                  params[0], {params[1], builder.getInt64(idx)}, "resolve_param");
     }
 
     //-------------------------------------------------------------------------
@@ -252,12 +253,14 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::Value *eval_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)eval_ptr), eval_funptr_t, "inject_eval");
         llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getVoidTy()->getPointerTo(), "inject_ctx");
         if (pass_params == PassParams::ARRAY) {
-	    push(builder.CreateCall(eval_fun, {ctx, params[0]}, "call_eval"));
+	    push(builder.CreateCall(llvm::cast<llvm::FunctionType>(eval_fun->getType()->getPointerElementType()),
+                                    eval_fun, {ctx, params[0]}, "call_eval"));
         } else {
             assert(pass_params == PassParams::LAZY);
             llvm::PointerType *proxy_funptr_t = make_eval_forest_proxy_funptr_t();
             llvm::Value *proxy_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)vespalib_eval_forest_proxy), proxy_funptr_t, "inject_eval_proxy");
-            push(builder.CreateCall(proxy_fun, {eval_fun, ctx, params[0], params[1], builder.getInt64(stats.num_params)}));
+            push(builder.CreateCall(llvm::cast<llvm::FunctionType>(proxy_fun->getType()->getPointerElementType()),
+                                    proxy_fun, {eval_fun, ctx, params[0], params[1], builder.getInt64(stats.num_params)}));
         }
         return true;
     }
@@ -411,7 +414,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             llvm::PointerType *funptr_t = make_check_membership_funptr_t();
             llvm::Value *call_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)call_ptr), funptr_t, "inject_call_addr");
             llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), builder.getVoidTy()->getPointerTo(), "inject_ctx");
-            push(builder.CreateCall(call_fun, {ctx, lhs}, "call_check_membership"));
+            push(builder.CreateCall(llvm::cast<llvm::FunctionType>(call_fun->getType()->getPointerElementType()),
+                                    call_fun, {ctx, lhs}, "call_check_membership"));
         } else {
             // build explicit code to check all set members
             llvm::Value *found = builder.getFalse();

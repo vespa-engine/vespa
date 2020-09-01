@@ -25,7 +25,8 @@ std::string get_source_dir() {
 }
 std::string source_dir = get_source_dir();
 std::string vespa_dir = source_dir + "/" + "../../../../..";
-std::string simple_model = vespa_dir + "/" + "model-integration/src/test/models/onnx/simple/simple.onnx";
+std::string simple_model = vespa_dir + "/" + "eval/src/tests/tensor/onnx_wrapper/simple.onnx";
+std::string dynamic_model = vespa_dir + "/" + "eval/src/tests/tensor/onnx_wrapper/dynamic.onnx";
 
 uint32_t default_docid = 1;
 
@@ -93,6 +94,18 @@ TEST_F(OnnxFeatureTest, simple_onnx_model_can_be_calculated) {
     compile(onnx_feature("simple"));
     EXPECT_EQ(get(1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get("onnxModel(simple).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
+    EXPECT_EQ(get(2), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 84.0));
+    EXPECT_EQ(get(3), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 89.0));
+}
+
+TEST_F(OnnxFeatureTest, dynamic_onnx_model_can_be_calculated) {
+    add_expr("query_tensor", "tensor<float>(a[1],b[4]):[[docid,2,3,4]]");
+    add_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
+    add_expr("bias_tensor", "tensor<float>(a[1],b[2]):[[4,5]]");
+    add_onnx("dynamic", dynamic_model);
+    compile(onnx_feature("dynamic"));
+    EXPECT_EQ(get(1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
+    EXPECT_EQ(get("onnxModel(dynamic).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get(2), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 84.0));
     EXPECT_EQ(get(3), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 89.0));
 }

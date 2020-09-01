@@ -3,6 +3,8 @@ package com.yahoo.vespa.http.client.core.communication;
 
 import com.yahoo.vespa.http.client.core.Document;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -11,8 +13,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Document queue that only gives you document operations on documents for which there are no
- * already in flight operations for.
+ * Shared document queue that gives clients operations on documents which do not have operations already in flight.
+ * This is multithread safe.
  *
  * @author dybis
  */
@@ -21,10 +23,12 @@ class DocumentQueue {
     private final Deque<Document> queue;
     private final int maxSize;
     private boolean closed = false;
+    private final Clock clock;
 
-    DocumentQueue(int maxSize) {
+    DocumentQueue(int maxSize, Clock clock) {
         this.maxSize = maxSize;
         this.queue = new ArrayDeque<>(maxSize);
+        this.clock = clock;
     }
 
     List<Document> removeAllDocuments() {
@@ -39,7 +43,7 @@ class DocumentQueue {
     }
 
     void put(Document document, boolean calledFromIoThreadGroup) throws InterruptedException {
-        document.resetQueueTime();
+        document.setQueueInsertTime(clock.instant());
         synchronized (queue) {
             while (!closed && (queue.size() >= maxSize) && !calledFromIoThreadGroup) {
                 queue.wait();
@@ -56,9 +60,9 @@ class DocumentQueue {
         synchronized (queue) {
             long remainingToWait = unit.toMillis(timeout);
             while (queue.isEmpty()) {
-                long startTime = System.currentTimeMillis();
+                long startTime = clock.millis();
                 queue.wait(remainingToWait);
-                remainingToWait -= (System.currentTimeMillis() - startTime);
+                remainingToWait -= (clock.millis() - startTime);
                 if (remainingToWait <= 0) {
                     break;
                 }
@@ -106,16 +110,15 @@ class DocumentQueue {
         return previousState;
     }
 
-    Optional<Document> pollDocumentIfTimedoutInQueue(long localQueueTimeOut) {
+    Optional<Document> pollDocumentIfTimedoutInQueue(Duration localQueueTimeOut) {
         synchronized (queue) {
-            if (queue.isEmpty()) {
-                return Optional.empty();
-            }
+            if (queue.isEmpty()) return Optional.empty();
+
             Document document = queue.peek();
-            if (document.timeInQueueMillis() > localQueueTimeOut) {
-                return Optional.of(queue.poll());
-            }
-            return Optional.empty();
+            if (document.getQueueInsertTime().plus(localQueueTimeOut).isBefore(clock.instant()))
+                return Optional.ofNullable(queue.poll());
+            else
+                return Optional.empty();
         }
     }
 

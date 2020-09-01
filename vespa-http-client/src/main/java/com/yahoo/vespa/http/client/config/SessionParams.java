@@ -141,13 +141,12 @@ public final class SessionParams {
     private final ErrorReporter errorReport;
     private int throttlerMinSize;
 
-    private SessionParams(
-            Collection<Cluster> clusters,
-            FeedParams feedParams,
-            ConnectionParams connectionParams,
-            int clientQueueSize,
-            ErrorReporter errorReporter,
-            int throttlerMinSize) {
+    private SessionParams(Collection<Cluster> clusters,
+                          FeedParams feedParams,
+                          ConnectionParams connectionParams,
+                          int clientQueueSize,
+                          ErrorReporter errorReporter,
+                          int throttlerMinSize) {
         this.clusters = Collections.unmodifiableList(new ArrayList<>(clusters));
         this.feedParams = feedParams;
         this.connectionParams = connectionParams;
