@@ -455,8 +455,14 @@ class IOThread implements Runnable, AutoCloseable {
         for (Iterator<GatewayConnection> i = oldConnections.iterator(); i.hasNext(); ) {
             GatewayConnection connection = i.next();
             if (closingTime(connection).isBefore(clock.instant())) {
-                connection.close();
-                i.remove();
+                try {
+                    processResponse(connection.poll());
+                    connection.close();
+                    i.remove();
+                }
+                catch (Exception e) {
+                    // Old connection; best effort
+                }
             }
             else if (timeToPoll(connection)) {
                 try {
@@ -476,14 +482,13 @@ class IOThread implements Runnable, AutoCloseable {
     private boolean timeToPoll(GatewayConnection connection) {
         if (connection.lastPollTime() == null) return true;
 
-        // Poll less the closer the connection comes to closing time
-        double newness = ( closingTime(connection).toEpochMilli() - clock.millis() ) /
-                         (double)localQueueTimeOut.toMillis();
-        if (newness < 0) return true; // connection retired prematurely
-        if (newness > 1) return false; // closing time reached
-        Duration pollInterval = Duration.ofMillis(pollIntervalUS / 1000 +
-                                                  (long)((1 - newness) * ( maxOldConnectionPollInterval.toMillis() - pollIntervalUS / 1000)));
-        return connection.lastPollTime().plus(pollInterval).isBefore(clock.instant());
+        // Exponential (2^x) dropoff:
+        double unit = pollIntervalUS / 1000.0;
+        double x = (  clock.millis() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
+        double lastX = (  connection.lastPollTime().toEpochMilli() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
+
+        double currentDelayDoublings = Math.log(lastX)/Math.log(2);
+        return (x - lastX) > Math.pow(2, currentDelayDoublings);
     }
 
     public static class ConnectionStats {
