@@ -10,8 +10,8 @@ public class ApplicationMetaDataGarbageCollector extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(ApplicationMetaDataGarbageCollector.class.getName());
 
-    public ApplicationMetaDataGarbageCollector(Controller controller) {
-        super(controller, Duration.ofHours(12));
+    public ApplicationMetaDataGarbageCollector(Controller controller, Duration interval) {
+        super(controller, interval);
     }
 
     @Override
