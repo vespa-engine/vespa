@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Vespa.ai python API
-============================
+Vespa python API
+================
 
 .. toctree::
    :hidden:
@@ -14,10 +14,19 @@ Vespa.ai python API
    reference-api
 
 ``pyvespa`` provides a python API to vespa.ai_. It allow us to create, modify, deploy and interact with
-running Vespa instances. The main goal of the library is to allow for faster prototyping and ML experimentation.
+running Vespa instances. The main goal of the library is to allow for faster prototyping and to facilitate
+Machine Learning experiments around Vespa applications.
 
 .. _vespa.ai: https://vespa.ai/
 
+Install
++++++++
+
+You can install ``pyvespa`` via ``pip``:
+
+.. code:: bash
+
+	pip install pyvespa
 
 
 Indices and tables
