@@ -14,7 +14,9 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,6 +32,10 @@ public class FeatureData implements Inspectable, JsonProducer {
     private final Inspector value;
 
     private Set<String> featureNames = null;
+
+    /** Cached decoded values */
+    private Map<String, Double> decodedDoubles = null;
+    private Map<String, Tensor> decodedTensors = null;
 
     private String jsonForm = null;
 
@@ -68,6 +74,16 @@ public class FeatureData implements Inspectable, JsonProducer {
      *                                  (that is, if it is a tensor with nonzero rank)
      */
     public Double getDouble(String featureName) {
+        if (decodedDoubles != null && decodedDoubles.containsKey(featureName))
+            return decodedDoubles.get(featureName);
+        Double value = decodeDouble(featureName);
+        if (decodedDoubles == null)
+            decodedDoubles = new HashMap<>();
+        decodedDoubles.put(featureName, value);
+        return value;
+    }
+
+    private Double decodeDouble(String featureName) {
         Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
@@ -83,6 +99,16 @@ public class FeatureData implements Inspectable, JsonProducer {
      * This will return any feature value: Scalars are returned as a rank 0 tensor.
      */
     public Tensor getTensor(String featureName) {
+        if (decodedTensors != null && decodedTensors.containsKey(featureName))
+            return decodedTensors.get(featureName);
+        Tensor value = decodeTensor(featureName);
+        if (decodedTensors == null)
+            decodedTensors = new HashMap<>();
+        decodedTensors.put(featureName, value);
+        return value;
+    }
+
+    private Tensor decodeTensor(String featureName) {
         Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
