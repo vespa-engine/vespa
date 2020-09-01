@@ -4,6 +4,12 @@ Reference API
 vespa.application module
 ------------------------
 
+.. _vespa-class:
+
+.. autoclass:: vespa.application.Vespa
+   :members:
+
+
 .. automodule:: vespa.application
    :members:
    :undoc-members:
