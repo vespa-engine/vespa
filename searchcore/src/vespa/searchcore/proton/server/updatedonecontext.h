@@ -3,7 +3,7 @@
 #pragma once
 
 #include "operationdonecontext.h"
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/document/update/documentupdate.h>
 #include <future>
 

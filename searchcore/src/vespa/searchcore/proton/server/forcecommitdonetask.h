@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/vespalib/util/executor.h>
 
 namespace proton {
@@ -25,9 +25,9 @@ struct IDocumentMetaStore;
  */
 class ForceCommitDoneTask : public vespalib::Executor::Task
 {
-    std::vector<uint32_t>           _lidsToReuse;
-    bool                             _holdUnblockShrinkLidSpace;
-    IDocumentMetaStore              &_documentMetaStore;
+    std::vector<uint32_t>  _lidsToReuse;
+    bool                   _holdUnblockShrinkLidSpace;
+    IDocumentMetaStore    &_documentMetaStore;
 
 public:
     ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore);

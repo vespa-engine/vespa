@@ -4,7 +4,7 @@
 
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 
 namespace document { class DocumentTypeRepo; }
 

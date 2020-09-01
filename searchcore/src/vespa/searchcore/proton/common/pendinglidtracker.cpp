@@ -7,34 +7,6 @@
 
 namespace proton {
 
-IPendingLidTracker::Token::Token()
-    : _tracker(nullptr),
-      _lid(0u)
-{}
-IPendingLidTracker::Token::Token(uint32_t lid, IPendingLidTracker &tracker)
-    : _tracker(&tracker),
-      _lid(lid)
-{}
-
-IPendingLidTracker::Token::~Token() {
-    if (_tracker != nullptr) {
-        _tracker->consume(_lid);
-    }
-}
-
-void
-ILidCommitState::waitComplete(uint32_t lid) const {
-    waitState(State::COMPLETED, lid);
-}
-void
-ILidCommitState::waitComplete(const LidList & lids) const {
-    waitState(State::COMPLETED, lids);
-}
-void
-ILidCommitState::waitComplete() const {
-    waitState(State::COMPLETED);
-}
-
 PendingLidTrackerBase::PendingLidTrackerBase() = default;
 PendingLidTrackerBase::~PendingLidTrackerBase() = default;
 
@@ -117,7 +89,12 @@ PendingLidTracker::pendingLids() const {
     return lids;
 }
 
-TwoPhasePendingLidTracker::TwoPhasePendingLidTracker() = default;
+TwoPhasePendingLidTracker::TwoPhasePendingLidTracker()
+    : _sequenceId(0),
+      _lastCommitStarted(0),
+      _lastCommitCompleted(0),
+      _pending()
+{}
 
 TwoPhasePendingLidTracker::~TwoPhasePendingLidTracker() {
     assert(_pending.empty());
@@ -126,24 +103,19 @@ TwoPhasePendingLidTracker::~TwoPhasePendingLidTracker() {
 IPendingLidTracker::Token
 TwoPhasePendingLidTracker::produce(uint32_t lid) {
     std::lock_guard guard(_mutex);
-    _pending[lid].inflight_feed++;
+    _pending[lid] = ++_sequenceId;
     return Token(lid, *this);
 }
 void
 TwoPhasePendingLidTracker::consume(uint32_t lid) {
-    std::lock_guard guard(_mutex);
-    auto found = _pending.find(lid);
-    assert (found != _pending.end());
-    assert (found->second.inflight_feed > 0);
-    found->second.inflight_feed--;
-    found->second.need_commit = true;
+    (void) lid;
 }
 
 ILidCommitState::State
 TwoPhasePendingLidTracker::waitFor(MonitorGuard & guard, State state, uint32_t lid) const {
     for (auto found = _pending.find(lid); found != _pending.end(); found = _pending.find(lid)) {
         if (state == State::NEED_COMMIT) {
-            if ((found->second.inflight_feed > 0) || found->second.need_commit) {
+            if (found->second > _lastCommitStarted) {
                 return State::NEED_COMMIT;
             }
             return State::WAITING;
@@ -154,16 +126,17 @@ TwoPhasePendingLidTracker::waitFor(MonitorGuard & guard, State state, uint32_t l
 }
 
 void
-TwoPhasePendingLidTracker::consumeSnapshot(LidList committed) {
+TwoPhasePendingLidTracker::consumeSnapshot(uint64_t sequenceIdWhenStarted) {
     MonitorGuard guard(_mutex);
-    for (const auto & lid : committed) {
-        auto found = _pending.find(lid);
-        assert(found != _pending.end());
-        assert(found->second.inflight_commit >= 1);
-        found->second.inflight_commit --;
-        if (found->second.empty()) {
-            _pending.erase(found);
-        }
+    assert(sequenceIdWhenStarted >= _lastCommitCompleted);
+    _lastCommitCompleted = sequenceIdWhenStarted;
+    std::vector<uint32_t> committed;
+    for (const auto & entry : _pending) {
+        if (entry.second <= sequenceIdWhenStarted)
+            committed.push_back(entry.first);
+    }
+    for (uint32_t lid : committed) {
+        _pending.erase(lid);
     }
     _cond.notify_all();
 }
@@ -184,43 +157,36 @@ namespace common::internal {
 class CommitList : public PendingLidTrackerBase::Payload {
 public:
     using LidList = ILidCommitState::LidList;
-    CommitList(LidList lids, TwoPhasePendingLidTracker & tracker)
+    CommitList(uint64_t commitStarted, TwoPhasePendingLidTracker & tracker)
         : _tracker(&tracker),
-          _lids(std::move(lids))
+          _commitStarted(commitStarted)
     { }
     CommitList(const CommitList &) = delete;
     CommitList & operator = (const CommitList &) = delete;
     CommitList & operator = (CommitList &&) = delete;
     CommitList(CommitList && rhs) noexcept
         : _tracker(rhs._tracker),
-          _lids(std::move(rhs._lids))
+          _commitStarted(rhs._commitStarted)
     {
         rhs._tracker = nullptr;
     }
     ~CommitList() override {
         if (_tracker != nullptr) {
-            _tracker->consumeSnapshot(std::move(_lids));
+            _tracker->consumeSnapshot(_commitStarted);
         }
     }
 private:
     TwoPhasePendingLidTracker * _tracker;
-    LidList                     _lids;
+    uint64_t                    _commitStarted;
 };
 
 }
 
 PendingLidTrackerBase::Snapshot
 TwoPhasePendingLidTracker::produceSnapshot() {
-    LidList toCommit;
     MonitorGuard guard(_mutex);
-    for (auto & entry : _pending) {
-        if (entry.second.need_commit) {
-            toCommit.emplace_back(entry.first);
-            entry.second.inflight_commit ++;
-            entry.second.need_commit = false;
-        }
-    }
-    return std::make_unique<common::internal::CommitList>(std::move(toCommit), *this);
+    _lastCommitStarted = _sequenceId;
+    return std::make_unique<common::internal::CommitList>(_lastCommitStarted, *this);
 }
 
 }

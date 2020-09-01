@@ -9,6 +9,7 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
