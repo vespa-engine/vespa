@@ -612,9 +612,7 @@ class VespaCloud(object):
     def get_dev_region(self) -> str:
         return self.request("GET", "/zone/v1/environment/dev/default")["name"]
 
-    def get_endpoint(
-        self, instance: str, region: str, application_package_name: str
-    ) -> str:
+    def get_endpoint(self, instance: str, region: str) -> str:
         endpoints = self.request(
             "GET",
             "/application/v4/tenant/{}/application/{}/instance/{}/environment/dev/region/{}".format(
@@ -624,7 +622,8 @@ class VespaCloud(object):
         container_url = [
             endpoint["url"]
             for endpoint in endpoints
-            if endpoint["cluster"] == "{}_container".format(application_package_name)
+            if endpoint["cluster"]
+            == "{}_container".format(self.application_package.name)
         ]
         if not container_url:
             raise RuntimeError("No endpoints found for container 'test_app_container'")
@@ -743,11 +742,7 @@ class VespaCloud(object):
         job = "dev-" + region
         run = self.start_deployment(instance, job, disk_folder)
         self.follow_deployment(instance, job, run)
-        endpoint_url = self.get_endpoint(
-            instance=instance,
-            region=region,
-            application_package_name=self.application_package.name,
-        )
+        endpoint_url = self.get_endpoint(instance=instance, region=region)
         return Vespa(
             url=endpoint_url,
             cert=os.path.join(disk_folder, self.private_cert_file_name),
