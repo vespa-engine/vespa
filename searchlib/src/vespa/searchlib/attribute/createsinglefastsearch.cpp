@@ -8,6 +8,7 @@
 #include "singleboolattribute.h"
 #include "singlestringpostattribute.hpp"
 #include "singlenumericpostattribute.hpp"
+#include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 
 #define INTPOSTING(T)   SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>) >
 #define FLOATPOSTING(T) SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>) >
@@ -41,6 +42,11 @@ AttributeFactory::createSingleFastSearch(stringref name, const Config & info)
         return std::make_shared<FLOATPOSTING(double)>(name, info);
     case BasicType::STRING:
         return std::make_shared<SingleValueStringPostingAttribute>(name, info);
+    case BasicType::TENSOR:
+        if (info.tensorType().is_sparse()) {
+            return std::make_shared<tensor::DirectTensorAttribute>(name, info);
+        }
+        break;
     default:
         break;
     }
