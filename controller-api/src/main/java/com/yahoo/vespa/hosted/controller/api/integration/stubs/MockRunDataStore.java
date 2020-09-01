@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MockRunDataStore implements RunDataStore {
 
     private final Map<RunId, byte[]> logs = new ConcurrentHashMap<>();
+    private final Map<RunId, byte[]> reports = new ConcurrentHashMap<>();
 
     @Override
     public Optional<byte[]> get(RunId id) {
@@ -27,13 +28,25 @@ public class MockRunDataStore implements RunDataStore {
     }
 
     @Override
+    public Optional<byte[]> getTestReport(RunId id) {
+        return Optional.ofNullable(reports.get(id));
+    }
+
+    @Override
+    public void putTestReport(RunId id, byte[] report) {
+        reports.put(id, report);
+    }
+
+    @Override
     public void delete(RunId id) {
         logs.remove(id);
+        reports.remove(id);
     }
 
     @Override
     public void delete(ApplicationId id) {
         logs.keySet().removeIf(runId -> runId.application().equals(id));
+        reports.keySet().removeIf(runId -> runId.application().equals(id));
     }
 
 }

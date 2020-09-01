@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -61,10 +62,15 @@ public class JobControllerApiHandlerHelperTest {
         var app = tester.newDeploymentContext();
         tester.clock().setInstant(Instant.EPOCH);
 
+        // All completed runs will have a test report.
+        tester.cloud().testReport(TestReport.fromJson("{\"summary\":{\"success\": 1, \"failed\": 0}}"));
+
         // Revision 1 gets deployed everywhere.
         app.submit(applicationPackage).deploy();
         ApplicationVersion revision1 = app.lastSubmission().get();
         assertEquals(1000, tester.application().projectId().getAsLong());
+        // System test includes test report
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), systemTest).get().id(), "0"), "system-test-log.json");
 
         tester.clock().advance(Duration.ofMillis(1000));
         // Revision 2 gets deployed everywhere except in us-east-3.

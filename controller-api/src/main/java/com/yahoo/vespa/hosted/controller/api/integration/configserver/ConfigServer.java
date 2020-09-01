@@ -10,8 +10,8 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -121,4 +121,5 @@ public interface ConfigServer {
     /** Is tester node ready */
     boolean isTesterReady(DeploymentId deployment);
 
+    Optional<TestReport> getTestReport(DeploymentId deployment);
 }

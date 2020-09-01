@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -25,6 +26,7 @@ public class MockTesterCloud implements TesterCloud {
     private List<LogEntry> log = new ArrayList<>();
     private Status status = NOT_STARTED;
     private byte[] config;
+    private Optional<TestReport> testReport = Optional.empty();
 
     public MockTesterCloud(NameService nameService) {
         this.nameService = nameService;
@@ -64,6 +66,15 @@ public class MockTesterCloud implements TesterCloud {
         return nameService.findRecords(Record.Type.CNAME, RecordName.from(hostName.value())).stream()
                           .findFirst()
                           .map(record -> HostName.from(record.data().asString().substring(0, record.data().asString().length() - 1)));
+    }
+
+    @Override
+    public Optional<TestReport> getTestReport(DeploymentId deploymentId) {
+        return testReport;
+    }
+
+    public void testReport(TestReport testReport) {
+        this.testReport = Optional.ofNullable(testReport);
     }
 
     public void add(LogEntry entry) {

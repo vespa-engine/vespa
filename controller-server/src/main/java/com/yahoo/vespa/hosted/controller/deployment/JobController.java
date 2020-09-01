@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -188,6 +189,21 @@ public class JobController {
             logs.append(id.application(), id.type(), step.get(), entries);
             return run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong());
         });
+    }
+
+    public void updateTestReport(RunId id) {
+        locked(id, run -> {
+            Optional<TestReport> report = cloud.getTestReport(new DeploymentId(id.tester().id(), id.type().zone(controller.system())));
+            if (report.isEmpty()) {
+                return run;
+            }
+            logs.writeTestReport(id, report.get());
+            return run;
+        });
+    }
+
+    public Optional<String> getTestReport(RunId id) {
+        return logs.readTestReport(id);
     }
 
     /** Stores the given certificate as the tester certificate for this run, or throws if it's already set. */

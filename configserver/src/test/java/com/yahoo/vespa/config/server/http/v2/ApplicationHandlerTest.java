@@ -285,6 +285,17 @@ public class ApplicationHandlerTest {
         assertEquals(200, response.getStatus());
     }
 
+    @Test
+    public void testGetTestReport() throws IOException {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/report";
+        ApplicationHandler mockHandler = createApplicationHandler();
+        HttpRequest testRequest = HttpRequest.createTestRequest(url, GET);
+        HttpResponse response = mockHandler.handle(testRequest);
+        assertEquals(200, response.getStatus());
+        assertEquals("report", getRenderedString(response));
+    }
+
     private void assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
         deleteAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",

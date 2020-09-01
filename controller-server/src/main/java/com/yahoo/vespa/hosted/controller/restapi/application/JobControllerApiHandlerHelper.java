@@ -9,6 +9,7 @@ import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
@@ -188,6 +189,12 @@ class JobControllerApiHandlerHelper {
                     toSlime(stepCursor.setObject("convergence"), summary);
             });
         });
+
+        // If a test report is available, include it in the response.
+        Optional<String> testReport = jobController.getTestReport(runId);
+        testReport.map(SlimeUtils::jsonToSlime)
+                .map(Slime::get)
+                .ifPresent(reportCursor -> SlimeUtils.copyObject(reportCursor, detailsObject.setObject("testReport")));
 
         return new SlimeJsonResponse(slime);
     }
