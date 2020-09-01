@@ -37,6 +37,9 @@ public interface TesterCloud {
     /** Returns the host name of the given CNAME, if any. */
     Optional<HostName> resolveCname(HostName hostName);
 
+    /** Returns the test report as JSON if available */
+    Optional<TestReport> getTestReport(DeploymentId deploymentId);
+
     enum Status {
 
         /** Tests have not yet started. */
