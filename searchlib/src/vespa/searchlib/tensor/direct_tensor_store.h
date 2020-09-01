@@ -26,7 +26,7 @@ public:
     using RefType = DataStoreType::RefType;
 
     const Tensor* get_tensor(EntryRef ref) const;
-    EntryRef set_tensor(std::unique_ptr<Tensor> tensor);
+    EntryRef store_tensor(std::unique_ptr<Tensor> tensor);
 
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;

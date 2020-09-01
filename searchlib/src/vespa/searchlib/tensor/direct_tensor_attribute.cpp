@@ -47,7 +47,8 @@ DirectTensorAttribute::onLoad()
                 buffer.resize(tensorSize + 1024);
             }
             tensorReader.readBlob(&buffer[0], tensorSize);
-            EntryRef ref = _direct_store.set_tensor(deserialize_tensor(&buffer[0], tensorSize));
+            auto tensor = deserialize_tensor(&buffer[0], tensorSize);
+            EntryRef ref = _direct_store.store_tensor(std::move(tensor));
             _refVector.push_back(ref);
         } else {
             EntryRef invalid;
@@ -63,7 +64,7 @@ void
 DirectTensorAttribute::set_tensor(DocId lid, std::unique_ptr<Tensor> tensor)
 {
     checkTensorType(*tensor);
-    EntryRef ref = _direct_store.set_tensor(std::move(tensor));
+    EntryRef ref = _direct_store.store_tensor(std::move(tensor));
     setTensorRef(lid, ref);
 }
 
