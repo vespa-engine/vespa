@@ -1,3 +1,4 @@
+import sys
 import http.client
 import json
 import os
@@ -395,6 +396,7 @@ class VespaDocker(object):
         self.application_package = application_package
         self.container = None
         self.local_port = 8080
+        self.output = sys.stdout
 
     def _run_vespa_engine_container(self, disk_folder: str, container_memory: str):
         """
@@ -472,7 +474,7 @@ class VespaDocker(object):
         )
 
         while not self._check_configuration_server():
-            print("Waiting for configuration server.")
+            print("Waiting for configuration server.", file=self.output)
             sleep(5)
 
         deployment = self.container.exec_run(
@@ -522,6 +524,7 @@ class VespaCloud(object):
         self.connection = http.client.HTTPSConnection(
             "api.vespa-external.aws.oath.cloud", 4443
         )
+        self.output = sys.stdout
 
     @staticmethod
     def _read_private_key(key_location: str) -> ec.EllipticCurvePrivateKey:
@@ -668,7 +671,7 @@ class VespaCloud(object):
             application_zip_bytes,
             {"Content-Type": "application/zip"},
         )
-        print(response["message"])
+        print(response["message"], file=self.output)
         return response["run"]
 
     def _get_deployment_status(
@@ -724,12 +727,14 @@ class VespaCloud(object):
             else:
                 raise RuntimeError("Unexpected status: {}".format(status))
 
-    @staticmethod
-    def _print_log_entry(step: str, entry: dict):
+    def _print_log_entry(self, step: str, entry: dict):
         timestamp = strftime("%H:%M:%S", gmtime(entry["at"] / 1e3))
         message = entry["message"].replace("\n", "\n" + " " * 23)
         if step != "copyVespaLogs" or entry["type"] == "error":
-            print("{:<7} [{}]  {}".format(entry["type"].upper(), timestamp, message))
+            print(
+                "{:<7} [{}]  {}".format(entry["type"].upper(), timestamp, message),
+                file=self.output,
+            )
 
     def deploy(self, instance: str, disk_folder: str) -> Vespa:
         """
@@ -762,7 +767,8 @@ class VespaCloud(object):
                 "/application/v4/tenant/{}/application/{}/instance/{}/environment/dev/region/{}".format(
                     self.tenant, self.application, instance, self._get_dev_region()
                 ),
-            )["message"]
+            )["message"],
+            file=self.output,
         )
 
     def close(self):
