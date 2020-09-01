@@ -671,55 +671,71 @@ class VespaCloud(object):
         print(response["message"])
         return response["run"]
 
-    def _follow_deployment(self, instance: str, job: str, run: int):
+    def _get_deployment_status(
+        self, instance: str, job: str, run: int, last: int
+    ) -> (str, int):
+
+        update = self._request(
+            "GET",
+            "/application/v4/tenant/{}/application/{}/instance/{}/job/{}/run/{}?after={}".format(
+                self.tenant, self.application, instance, job, run, last
+            ),
+        )
+
+        for step, entries in update["log"].items():
+            for entry in entries:
+                self._print_log_entry(step, entry)
+        last = update.get("lastId", last)
+
+        if update["active"]:
+            return "active", last
+        else:
+            status = update["status"]
+            if status == "success":
+                return "success", last
+            elif status == "error":
+                raise RuntimeError(
+                    "Unexpected error during deployment; see log for details"
+                )
+            elif status == "aborted":
+                raise RuntimeError(
+                    "Deployment was aborted, probably by a newer deployment"
+                )
+            elif status == "outOfCapacity":
+                raise RuntimeError(
+                    "No capacity left in zone; please contact the Vespa team"
+                )
+            elif status == "deploymentFailed":
+                raise RuntimeError("Deployment failed; see log for details")
+            elif status == "installationFailed":
+                raise RuntimeError("Installation failed; see Vespa log for details")
+            elif status == "running":
+                raise RuntimeError("Deployment not completed")
+            elif status == "endpointCertificateTimeout":
+                raise RuntimeError(
+                    "Endpoint certificate not ready in time; please contact Vespa team"
+                )
+            elif status == "testFailure":
+                raise RuntimeError(
+                    "Unexpected status; tests are not run for manual deployments"
+                )
+            else:
+                raise RuntimeError("Unexpected status '" + status + "'")
+
+    def _follow_deployment(self, instance: str, job: str, run: int) -> None:
         last = -1
         while True:
-            update = self._request(
-                "GET",
-                "/application/v4/tenant/{}/application/{}/instance/{}/job/{}/run/{}?after={}".format(
-                    self.tenant, self.application, instance, job, run, last
-                ),
-            )
+            try:
+                status, last = self._get_deployment_status(instance, job, run, last)
+            except RuntimeError:
+                raise
 
-            for step, entries in update["log"].items():
-                for entry in entries:
-                    self._print_log_entry(step, entry)
-            last = update.get("lastId", last)
-
-            if update["active"]:
+            if status == "active":
                 sleep(1)
+            elif status == "success":
+                return
             else:
-                status = update["status"]
-                if status == "success":
-                    return
-                elif status == "error":
-                    raise RuntimeError(
-                        "Unexpected error during deployment; see log for details"
-                    )
-                elif status == "aborted":
-                    raise RuntimeError(
-                        "Deployment was aborted, probably by a newer deployment"
-                    )
-                elif status == "outOfCapacity":
-                    raise RuntimeError(
-                        "No capacity left in zone; please contact the Vespa team"
-                    )
-                elif status == "deploymentFailed":
-                    raise RuntimeError("Deployment failed; see log for details")
-                elif status == "installationFailed":
-                    raise RuntimeError("Installation failed; see Vespa log for details")
-                elif status == "running":
-                    raise RuntimeError("Deployment not completed")
-                elif status == "endpointCertificateTimeout":
-                    raise RuntimeError(
-                        "Endpoint certificate not ready in time; please contact Vespa team"
-                    )
-                elif status == "testFailure":
-                    raise RuntimeError(
-                        "Unexpected status; tests are not run for manual deployments"
-                    )
-                else:
-                    raise RuntimeError("Unexpected status '" + status + "'")
+                raise NotImplementedError
 
     @staticmethod
     def _print_log_entry(step: str, entry: dict):
