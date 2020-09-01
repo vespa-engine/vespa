@@ -2,7 +2,6 @@ import http.client
 import json
 import os
 import re
-import tempfile
 import zipfile
 from base64 import standard_b64encode
 from datetime import datetime, timedelta
