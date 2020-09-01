@@ -687,40 +687,27 @@ class VespaCloud(object):
                 self._print_log_entry(step, entry)
         last = update.get("lastId", last)
 
+        fail_status_message = {
+            "error": "Unexpected error during deployment; see log for details",
+            "aborted": "Deployment was aborted, probably by a newer deployment",
+            "outOfCapacity": "No capacity left in zone; please contact the Vespa team",
+            "deploymentFailed": "Deployment failed; see log for details",
+            "installationFailed": "Installation failed; see Vespa log for details",
+            "running": "Deployment not completed",
+            "endpointCertificateTimeout": "Endpoint certificate not ready in time; please contact Vespa team",
+            "testFailure": "Unexpected status; tests are not run for manual deployments",
+        }
+
         if update["active"]:
             return "active", last
         else:
             status = update["status"]
             if status == "success":
                 return "success", last
-            elif status == "error":
-                raise RuntimeError(
-                    "Unexpected error during deployment; see log for details"
-                )
-            elif status == "aborted":
-                raise RuntimeError(
-                    "Deployment was aborted, probably by a newer deployment"
-                )
-            elif status == "outOfCapacity":
-                raise RuntimeError(
-                    "No capacity left in zone; please contact the Vespa team"
-                )
-            elif status == "deploymentFailed":
-                raise RuntimeError("Deployment failed; see log for details")
-            elif status == "installationFailed":
-                raise RuntimeError("Installation failed; see Vespa log for details")
-            elif status == "running":
-                raise RuntimeError("Deployment not completed")
-            elif status == "endpointCertificateTimeout":
-                raise RuntimeError(
-                    "Endpoint certificate not ready in time; please contact Vespa team"
-                )
-            elif status == "testFailure":
-                raise RuntimeError(
-                    "Unexpected status; tests are not run for manual deployments"
-                )
+            elif status in fail_status_message.keys():
+                raise RuntimeError(fail_status_message[status])
             else:
-                raise RuntimeError("Unexpected status '" + status + "'")
+                raise RuntimeError("Unexpected status: {}".format(status))
 
     def _follow_deployment(self, instance: str, job: str, run: int) -> None:
         last = -1
@@ -735,7 +722,7 @@ class VespaCloud(object):
             elif status == "success":
                 return
             else:
-                raise NotImplementedError
+                raise RuntimeError("Unexpected status: {}".format(status))
 
     @staticmethod
     def _print_log_entry(step: str, entry: dict):
