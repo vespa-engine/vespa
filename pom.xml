@@ -32,6 +32,7 @@
         <module>chain</module>
         <module>client</module>
         <module>cloud-tenant-base</module>
+        <module>cloud-tenant-base-dependencies-enforcer</module>
         <module>cloud-tenant-cd</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-apputil</module>
