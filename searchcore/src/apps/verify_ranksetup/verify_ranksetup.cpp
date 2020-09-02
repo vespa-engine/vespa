@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "config-verify-ranksetup.h"
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
@@ -18,6 +19,7 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/fastos/app.h>
+#include <optional>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-verify-ranksetup");
@@ -35,6 +37,7 @@ using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::core::RankingConstantsConfig;
 using vespa::config::search::core::OnnxModelsConfig;
+using vespa::config::search::core::VerifyRanksetupConfig;
 using vespalib::eval::ConstantValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
@@ -42,13 +45,24 @@ using vespalib::tensor::DefaultTensorEngine;
 using vespalib::eval::SimpleConstantValue;
 using vespalib::eval::BadConstantValue;
 
-OnnxModels make_models(const OnnxModelsConfig &modelsCfg) {
+std::optional<vespalib::string> get_file(const vespalib::string &ref, const VerifyRanksetupConfig &myCfg) {
+    for (const auto &entry: myCfg.file) {
+        if (ref == entry.ref) {
+            return entry.path;
+        }
+    }
+    return std::nullopt;
+}
+
+OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupConfig &myCfg) {
     OnnxModels::Vector model_list;
     for (const auto &entry: modelsCfg.model) {
-        // TODO(havardpe): resolve model path
-        vespalib::string model_path = entry.name;
-        model_path += ".onnx";
-        model_list.emplace_back(entry.name, model_path);
+        if (auto file = get_file(entry.fileref, myCfg)) {
+            model_list.emplace_back(entry.name, file.value());
+        } else {
+            LOG(warning, "could not find file for onnx model '%s' (ref:'%s')\n",
+                entry.name.c_str(), entry.fileref.c_str());
+        }
     }
     return OnnxModels(model_list);
 }
@@ -61,7 +75,8 @@ public:
                 const IConstantValueRepo &repo,
                 OnnxModels models);
 
-    bool verifyConfig(const RankProfilesConfig &rankCfg,
+    bool verifyConfig(const VerifyRanksetupConfig &myCfg,
+                      const RankProfilesConfig &rankCfg,
                       const IndexschemaConfig &schemaCfg,
                       const AttributesConfig &attributeCfg,
                       const RankingConstantsConfig &constantsCfg,
@@ -120,7 +135,8 @@ App::verify(const search::index::Schema &schema,
 }
 
 bool
-App::verifyConfig(const RankProfilesConfig &rankCfg,
+App::verifyConfig(const VerifyRanksetupConfig &myCfg,
+                  const RankProfilesConfig &rankCfg,
                   const IndexschemaConfig &schemaCfg,
                   const AttributesConfig &attributeCfg,
                   const RankingConstantsConfig &constantsCfg,
@@ -131,7 +147,7 @@ App::verifyConfig(const RankProfilesConfig &rankCfg,
     search::index::SchemaBuilder::build(schemaCfg, schema);
     search::index::SchemaBuilder::build(attributeCfg, schema);
     DummyConstantValueRepo repo(constantsCfg);
-    auto models = make_models(modelsCfg);
+    auto models = make_models(modelsCfg, myCfg);
     for(size_t i = 0; i < rankCfg.rankprofile.size(); i++) {
         search::fef::Properties properties;
         const RankProfilesConfig::Rankprofile &profile = rankCfg.rankprofile[i];
@@ -172,6 +188,7 @@ App::Main()
         IConfigContext::SP ctx(new ConfigContext(*config::legacyConfigId2Spec(configid)));
         vespalib::string cfgId(config::legacyConfigId2ConfigId(configid));
         ConfigSubscriber subscriber(ctx);
+        ConfigHandle<VerifyRanksetupConfig>::UP myHandle = subscriber.subscribe<VerifyRanksetupConfig>(cfgId);
         ConfigHandle<RankProfilesConfig>::UP rankHandle = subscriber.subscribe<RankProfilesConfig>(cfgId);
         ConfigHandle<AttributesConfig>::UP attributesHandle = subscriber.subscribe<AttributesConfig>(cfgId);
         ConfigHandle<IndexschemaConfig>::UP schemaHandle = subscriber.subscribe<IndexschemaConfig>(cfgId);
@@ -179,7 +196,8 @@ App::Main()
         ConfigHandle<OnnxModelsConfig>::UP modelsHandle = subscriber.subscribe<OnnxModelsConfig>(cfgId);
 
         subscriber.nextConfig();
-        ok = verifyConfig(*rankHandle->getConfig(),
+        ok = verifyConfig(*myHandle->getConfig(),
+                          *rankHandle->getConfig(),
                           *schemaHandle->getConfig(),
                           *attributesHandle->getConfig(),
                           *constantsHandle->getConfig(),
