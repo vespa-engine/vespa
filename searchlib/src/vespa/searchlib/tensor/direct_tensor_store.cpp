@@ -57,7 +57,7 @@ EntryRef
 DirectTensorStore::store_tensor(std::unique_ptr<Tensor> tensor)
 {
     assert(tensor);
-    return add_entry(TensorSP(tensor.release()));
+    return add_entry(TensorSP(std::move(tensor)));
 }
 
 void
