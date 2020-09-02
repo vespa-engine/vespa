@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author bratseth
@@ -35,11 +36,16 @@ public class FeatureDataTestCase {
         assertEquals(1.5, featureData.getDouble("scalar1"), delta);
         assertEquals(2.5, featureData.getDouble("scalar2"), delta);
         assertEquals("Cached lookup", 2.5, featureData.getDouble("scalar2"), delta);
+        assertNull(featureData.getDouble("nosuch"));
+        assertNull(featureData.getDouble("nosuch"));
+
         assertEquals(Tensor.from(1.5), featureData.getTensor("scalar1"));
         assertEquals(Tensor.from(2.5), featureData.getTensor("scalar2"));
         assertEquals(tensor1, featureData.getTensor("tensor1"));
         assertEquals(tensor2, featureData.getTensor("tensor2"));
         assertEquals("Cached lookup", tensor2, featureData.getTensor("tensor2"));
+        assertNull(featureData.getTensor("nosuch"));
+        assertNull(featureData.getTensor("nosuch"));
 
         String expectedJson =
                 "{" +
