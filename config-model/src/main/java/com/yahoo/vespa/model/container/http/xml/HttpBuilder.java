@@ -31,6 +31,10 @@ import java.util.logging.Level;
  */
 public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> {
 
+    static final String REQUEST_CHAIN_TAG_NAME = "request-chain";
+    static final String RESPONSE_CHAIN_TAG_NAME = "response-chain";
+    static final List<String> VALID_FILTER_CHAIN_TAG_NAMES = List.of(REQUEST_CHAIN_TAG_NAME, RESPONSE_CHAIN_TAG_NAME);
+
     @Override
     protected Http doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
         FilterChains filterChains;
@@ -116,17 +120,24 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
         for (Element child: XML.getChildren(filteringSpec)) {
             String tagName = child.getTagName();
-            if ((tagName.equals("request-chain") || tagName.equals("response-chain"))) {
+            if (VALID_FILTER_CHAIN_TAG_NAMES.contains(tagName)) {
                 ComponentSpecification chainId = XmlHelper.getIdRef(child);
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    FilterBinding.Type type = tagName.equals("request-chain") ? FilterBinding.Type.REQUEST : FilterBinding.Type.RESPONSE;
-                    result.add(FilterBinding.create(type, chainId, UserBindingPattern.fromPattern(binding)));
+                    result.add(FilterBinding.create(toFilterBindingType(tagName), chainId, UserBindingPattern.fromPattern(binding)));
                 }
             }
         }
         return result;
+    }
+
+    private static FilterBinding.Type toFilterBindingType(String chainTag) {
+        switch (chainTag) {
+            case REQUEST_CHAIN_TAG_NAME: return FilterBinding.Type.REQUEST;
+            case RESPONSE_CHAIN_TAG_NAME: return FilterBinding.Type.RESPONSE;
+            default: throw new IllegalArgumentException("Unknown filter chain tag: " + chainTag);
+        }
     }
 
     static int readPort(ModelElement spec, boolean isHosted, DeployLogger logger) {
