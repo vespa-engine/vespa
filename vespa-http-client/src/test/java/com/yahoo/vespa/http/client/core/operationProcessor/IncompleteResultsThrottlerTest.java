@@ -12,11 +12,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,14 +25,14 @@ public class IncompleteResultsThrottlerTest {
     @Test
     public void simpleStaticQueueSizeTest() {
         IncompleteResultsThrottler incompleteResultsThrottler = new IncompleteResultsThrottler(2, 2, null, null);
-        assertThat(incompleteResultsThrottler.waitingThreads(), is(0));
+        assertEquals(0, incompleteResultsThrottler.waitingThreads());
         incompleteResultsThrottler.operationStart();
         incompleteResultsThrottler.operationStart();
-        assertThat(incompleteResultsThrottler.waitingThreads(), is(2));
+        assertEquals(2, incompleteResultsThrottler.waitingThreads());
         incompleteResultsThrottler.resultReady(true);
-        assertThat(incompleteResultsThrottler.waitingThreads(), is(1));
+        assertEquals(1, incompleteResultsThrottler.waitingThreads());
         incompleteResultsThrottler.resultReady(true);
-        assertThat(incompleteResultsThrottler.waitingThreads(), is(0));
+        assertEquals(0, incompleteResultsThrottler.waitingThreads());
     }
 
     /**

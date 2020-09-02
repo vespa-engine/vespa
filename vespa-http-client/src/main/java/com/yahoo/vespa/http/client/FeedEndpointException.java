@@ -11,6 +11,7 @@ import com.yahoo.vespa.http.client.config.Endpoint;
  * @author bjorncs
  */
 public abstract class FeedEndpointException extends RuntimeException {
+
     private final Endpoint endpoint;
 
     protected FeedEndpointException(String message, Throwable cause, Endpoint endpoint) {

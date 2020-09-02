@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * 
  * @author Einar M R Rosenvinge
  */
-class IOThread implements Runnable, AutoCloseable {
+public class IOThread implements Runnable, AutoCloseable {
 
     private static final Logger log = Logger.getLogger(IOThread.class.getName());
 
@@ -51,7 +51,6 @@ class IOThread implements Runnable, AutoCloseable {
     private final int maxChunkSizeBytes;
     private final int maxInFlightRequests;
     private final Duration localQueueTimeOut;
-    private final Duration maxOldConnectionPollInterval;
     private final GatewayThrottler gatewayThrottler;
     private final Duration connectionTimeToLive;
     private final long pollIntervalUS;
@@ -107,9 +106,6 @@ class IOThread implements Runnable, AutoCloseable {
         this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1us, 10s]
         this.clock = clock;
         this.localQueueTimeOut = localQueueTimeOut;
-        this.maxOldConnectionPollInterval = localQueueTimeOut.dividedBy(10).toMillis() > pollIntervalUS / 1000
-                                            ? localQueueTimeOut.dividedBy(10)
-                                            : Duration.ofMillis(pollIntervalUS / 1000);
         if (runThreads) {
             this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
             thread.setDaemon(true);
@@ -231,9 +227,10 @@ class IOThread implements Runnable, AutoCloseable {
 
     private void markDocumentAsFailed(List<Document> docs, ServerResponseException servletException) {
         for (Document doc : docs) {
-            resultQueue.failOperation(
-                    EndPointResultFactory.createTransientError(
-                            endpoint, doc.getOperationId(), servletException), clusterId);
+            resultQueue.failOperation(EndPointResultFactory.createTransientError(endpoint,
+                                                                                 doc.getOperationId(),
+                                                                                 servletException),
+                                      clusterId);
         }
     }
 
@@ -327,8 +324,8 @@ class IOThread implements Runnable, AutoCloseable {
                 } catch (Throwable throwable1) {
                     drainFirstDocumentsInQueueIfOld();
 
-                    log.log(Level.INFO, "Failed connecting to endpoint: '" + endpoint
-                            + "'. Will re-try connecting. Failed with '" + Exceptions.toMessageString(throwable1) + "'",throwable1);
+                    log.log(Level.INFO, "Failed connecting to endpoint: '" + endpoint + "'. Will re-try connecting.",
+                            throwable1);
                     executeProblemsCounter.incrementAndGet();
                     return ConnectionState.DISCONNECTED;
                 }
@@ -341,8 +338,9 @@ class IOThread implements Runnable, AutoCloseable {
                 } catch (ServerResponseException ser) {
 
                     executeProblemsCounter.incrementAndGet();
-                    log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint
-                            + "' failed. Will re-try handshake. Failed with '" + Exceptions.toMessageString(ser) + "'",ser);
+                    log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint +
+                                        "' failed. Will re-try handshake.",
+                            ser);
 
                     drainFirstDocumentsInQueueIfOld();
                     resultQueue.onEndpointError(new FeedProtocolException(ser.getResponseCode(), ser.getResponseString(), ser, endpoint));
@@ -350,8 +348,9 @@ class IOThread implements Runnable, AutoCloseable {
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
                     resultQueue.onEndpointError(new FeedConnectException(throwable, endpoint));
-                    log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint
-                            + "' failed. Will re-try handshake. Failed with '" + Exceptions.toMessageString(throwable) + "'",throwable);
+                    log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" +
+                                        endpoint + "' failed. Will re-try handshake.",
+                            throwable);
                     drainFirstDocumentsInQueueIfOld();
                     currentConnection.close();
                     return ConnectionState.DISCONNECTED;
@@ -366,14 +365,14 @@ class IOThread implements Runnable, AutoCloseable {
                 }
                 catch (ServerResponseException ser) {
                     log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint +
-                                        "'. Will re-try. Endpoint responded with an unexpected HTTP response code. '"
-                                        + Exceptions.toMessageString(ser) + "'",ser);
+                                        "'. Will re-try. Endpoint responded with an unexpected HTTP response code.",
+                            ser);
                     return ConnectionState.CONNECTED;
                 }
                 catch (Throwable e) {
-                    log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint +
-                                        "'. Will re-try. Connection level error. Failed with '" +
-                                        Exceptions.toMessageString(e) + "'", e);
+                    log.log(Level.INFO,
+                            "Connection level error handing data over to endpoint '" + endpoint + "'. Will re-try.",
+                            e);
                     currentConnection.close();
                     return ConnectionState.DISCONNECTED;
                 }
@@ -531,5 +530,8 @@ class IOThread implements Runnable, AutoCloseable {
 
     /** For testing. Returns a snapshot of the old connections of this. Not thread safe. */
     public List<GatewayConnection> oldConnections() { return new ArrayList<>(oldConnections); }
+
+    /** For testing */
+    public EndpointResultQueue resultQueue() { return resultQueue; }
 
 }

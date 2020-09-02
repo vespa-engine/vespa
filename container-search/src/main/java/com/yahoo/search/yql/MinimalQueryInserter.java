@@ -99,12 +99,16 @@ public class MinimalQueryInserter extends Searcher {
             int maxHits = query.properties().getInteger(MAX_HITS);
             int maxOffset = query.properties().getInteger(MAX_OFFSET);
             if (parser.getOffset() > maxOffset) {
-                return new Result(query, ErrorMessage.createInvalidQueryParameter("Requested offset " + parser.getOffset()
-                        + ", but the max offset allowed is " + maxOffset + "."));
+                return new Result(query,
+                                  ErrorMessage.createInvalidQueryParameter("Requested offset " + parser.getOffset() +
+                                                                           ", but the max offset allowed is " +
+                                                                           maxOffset + "."));
             }
             if (parser.getHits() > maxHits) {
-                return new Result(query, ErrorMessage.createInvalidQueryParameter("Requested " + parser.getHits()
-                        + " hits returned, but max hits allowed is " + maxHits + "."));
+                return new Result(query,
+                                  ErrorMessage.createInvalidQueryParameter("Requested " + parser.getHits() +
+                                                                           " hits returned, but max hits allowed is " +
+                                                                           maxHits + "."));
             }
         }
         query.getModel().getQueryTree().setRoot(newTree.getRoot());
