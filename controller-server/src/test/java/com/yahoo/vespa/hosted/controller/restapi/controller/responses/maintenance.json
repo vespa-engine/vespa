@@ -1,6 +1,9 @@
 {
   "jobs": [
     {
+      "name": "ApplicationMetaDataGarbageCollector"
+    },
+    {
       "name": "ApplicationOwnershipConfirmer"
     },
     {
