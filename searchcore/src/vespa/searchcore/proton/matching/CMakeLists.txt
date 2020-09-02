@@ -20,6 +20,7 @@ vespa_add_library(searchcore_matching STATIC
     match_tools.cpp
     matcher.cpp
     matching_stats.cpp
+    onnx_models.cpp
     partial_result.cpp
     query.cpp
     queryenvironment.cpp

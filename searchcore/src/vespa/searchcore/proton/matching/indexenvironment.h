@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "onnx_models.h"
 #include "i_constant_value_repo.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
@@ -25,6 +26,7 @@ private:
     std::vector<search::fef::FieldInfo> _fields;
     mutable FeatureMotivation           _motivation;
     const IConstantValueRepo           &_constantValueRepo;
+    OnnxModels                          _onnxModels;
     uint32_t                            _distributionKey;
 
 
@@ -44,11 +46,13 @@ public:
      * @param schema the index schema
      * @param props config
      * @param constantValueRepo repo used to access constant values for ranking
+     * @param onnxModels processed config about onnx models
      **/
     IndexEnvironment(uint32_t distributionKey,
                      const search::index::Schema &schema,
                      const search::fef::Properties &props,
-                     const IConstantValueRepo &constantValueRepo);
+                     const IConstantValueRepo &constantValueRepo,
+                     OnnxModels onnxModels);
 
     const search::fef::Properties &getProperties() const override;
     uint32_t getNumFields() const override;
@@ -65,6 +69,7 @@ public:
         return _constantValueRepo.getConstant(name);
     }
 
+    std::optional<vespalib::string> getOnnxModelFullPath(const vespalib::string &name) const override;
     ~IndexEnvironment() override;
 };
 

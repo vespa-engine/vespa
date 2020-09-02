@@ -21,6 +21,7 @@ using vespa::config::search::RankProfilesConfig;
 namespace proton {
 
 using matching::Matcher;
+using matching::OnnxModels;
 
 typedef AttributeReprocessingInitializer::Config ARIConfig;
 
@@ -122,7 +123,8 @@ SearchableDocSubDBConfigurer::~SearchableDocSubDBConfigurer() = default;
 
 Matchers::UP
 SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
-                                             const RankProfilesConfig &cfg)
+                                             const RankProfilesConfig &cfg,
+                                             const OnnxModels &onnxModels)
 {
     auto newMatchers = std::make_unique<Matchers>(_clock, _queryLimiter, _constantValueRepo);
     for (const auto &profile : cfg.rankprofile) {
@@ -132,7 +134,7 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
             properties.add(property.name, property.value);
         }
         // schema instance only used during call.
-        auto profptr = std::make_shared<Matcher>(*schema, properties, _clock, _queryLimiter, _constantValueRepo, _distributionKey);
+        auto profptr = std::make_shared<Matcher>(*schema, properties, _clock, _queryLimiter, _constantValueRepo, onnxModels, _distributionKey);
         newMatchers->add(name, profptr);
     }
     return newMatchers;
@@ -200,7 +202,9 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     Matchers::SP matchers = searchView->getMatchers();
     if (params.shouldMatchersChange()) {
         _constantValueRepo.reconfigure(newConfig.getRankingConstants());
-        Matchers::SP newMatchers = createMatchers(newConfig.getSchemaSP(),newConfig.getRankProfilesConfig());
+        Matchers::SP newMatchers = createMatchers(newConfig.getSchemaSP(),
+                                                  newConfig.getRankProfilesConfig(),
+                                                  newConfig.getOnnxModels());
         matchers = newMatchers;
         shouldMatchViewChange = true;
     }

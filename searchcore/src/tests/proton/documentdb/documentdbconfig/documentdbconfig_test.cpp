@@ -17,6 +17,7 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search;
 using proton::matching::RankingConstants;
+using proton::matching::OnnxModels;
 using std::make_shared;
 using std::shared_ptr;
 using document::config_builder::DocumenttypesConfigBuilderHelper;
@@ -66,6 +67,11 @@ public:
     MyConfigBuilder &addRankingConstant() {
         RankingConstants::Vector constants = {{"my_name", "my_type", "my_path"}};
         _builder.rankingConstants(make_shared<RankingConstants>(constants));
+        return *this;
+    }
+    MyConfigBuilder &addOnnxModel() {
+        OnnxModels::Vector models = {{"my_model_name", "my_model_file"}};
+        _builder.onnxModels(make_shared<OnnxModels>(models));
         return *this;
     }
     MyConfigBuilder &addImportedField() {
@@ -132,6 +138,7 @@ struct Fixture {
         fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().
+                                                   addOnnxModel().
                                                    addImportedField().
                                                    addSummary(true).
                                                    addSummarymap().
@@ -166,12 +173,14 @@ struct DelayAttributeAspectFixture {
         attrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(true)).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().
+                                                   addOnnxModel().
                                                    addImportedField().
                                                    addSummary(true).
                                                    addSummarymap().
                                                    build();
         noAttrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(hasDocField)).addRankProfile().
                          addRankingConstant().
+                         addOnnxModel().
                          addImportedField().
                          addSummary(hasDocField).
                          build();

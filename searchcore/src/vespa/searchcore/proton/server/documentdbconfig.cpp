@@ -11,6 +11,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
 #include <vespa/searchcore/proton/common/indexschema_inspector.h>
@@ -25,12 +26,14 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::core::RankingConstantsConfig;
+using vespa::config::search::core::OnnxModelsConfig;
 
 namespace proton {
 
 DocumentDBConfig::ComparisonResult::ComparisonResult()
     : rankProfilesChanged(false),
       rankingConstantsChanged(false),
+      onnxModelsChanged(false),
       indexschemaChanged(false),
       attributesChanged(false),
       summaryChanged(false),
@@ -51,6 +54,7 @@ DocumentDBConfig::DocumentDBConfig(
                int64_t generation,
                const RankProfilesConfigSP &rankProfiles,
                const RankingConstants::SP &rankingConstants,
+               const OnnxModels::SP &onnxModels,
                const IndexschemaConfigSP &indexschema,
                const AttributesConfigSP &attributes,
                const SummaryConfigSP &summary,
@@ -70,6 +74,7 @@ DocumentDBConfig::DocumentDBConfig(
       _generation(generation),
       _rankProfiles(rankProfiles),
       _rankingConstants(rankingConstants),
+      _onnxModels(onnxModels),
       _indexschema(indexschema),
       _attributes(attributes),
       _summary(summary),
@@ -94,6 +99,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _generation(cfg._generation),
       _rankProfiles(cfg._rankProfiles),
       _rankingConstants(cfg._rankingConstants),
+      _onnxModels(cfg._onnxModels),
       _indexschema(cfg._indexschema),
       _attributes(cfg._attributes),
       _summary(cfg._summary),
@@ -117,6 +123,7 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
 {
     return equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get()) &&
            equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get()) &&
+           equals<OnnxModels>(_onnxModels.get(), rhs._onnxModels.get()) &&
            equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get()) &&
            equals<AttributesConfig>(_attributes.get(), rhs._attributes.get()) &&
            equals<SummaryConfig>(_summary.get(), rhs._summary.get()) &&
@@ -138,6 +145,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     ComparisonResult retval;
     retval.rankProfilesChanged = !equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get());
     retval.rankingConstantsChanged = !equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get());
+    retval.onnxModelsChanged = !equals<OnnxModels>(_onnxModels.get(), rhs._onnxModels.get());
     retval.indexschemaChanged = !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
     retval.attributesChanged = !equals<AttributesConfig>(_attributes.get(), rhs._attributes.get());
     retval.summaryChanged = !equals<SummaryConfig>(_summary.get(), rhs._summary.get());
@@ -161,6 +169,7 @@ DocumentDBConfig::valid() const
 {
     return _rankProfiles &&
            _rankingConstants &&
+           _onnxModels &&
            _indexschema &&
            _attributes &&
            _summary &&
@@ -201,6 +210,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._generation,
                 emptyConfig(o._rankProfiles),
                 std::make_shared<RankingConstants>(),
+                std::make_shared<OnnxModels>(),
                 o._indexschema,
                 o._attributes,
                 o._summary,
@@ -241,6 +251,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _generation,
             _rankProfiles,
             _rankingConstants,
+            _onnxModels,
             _indexschema,
             attributes,
             _summary,
@@ -276,6 +287,7 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                   (n._generation,
                    n._rankProfiles,
                    n._rankingConstants,
+                   n._onnxModels,
                    n._indexschema,
                    attributeAspectDelayer.getAttributesConfig(),
                    n._summary,

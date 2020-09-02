@@ -28,6 +28,7 @@ using namespace vespa::config::search;
 using namespace std::chrono_literals;
 using vespa::config::content::core::BucketspacesConfig;
 using proton::matching::RankingConstants;
+using proton::matching::OnnxModels;
 
 typedef DocumentDBConfigHelper DBCM;
 typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
@@ -77,7 +78,9 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
 {
     EXPECT_TRUE(exp.getRankProfilesConfig() == act.getRankProfilesConfig());
     EXPECT_TRUE(exp.getRankingConstants() == act.getRankingConstants());
+    EXPECT_TRUE(exp.getOnnxModels() == act.getOnnxModels());
     EXPECT_EQUAL(0u, exp.getRankingConstants().size());
+    EXPECT_EQUAL(0u, exp.getOnnxModels().size());
     EXPECT_TRUE(exp.getIndexschemaConfig() == act.getIndexschemaConfig());
     EXPECT_TRUE(exp.getAttributesConfig() == act.getAttributesConfig());
     EXPECT_TRUE(exp.getSummaryConfig() == act.getSummaryConfig());
@@ -104,6 +107,9 @@ addConfigsThatAreNotSavedToDisk(const DocumentDBConfig &cfg)
     test::DocumentDBConfigBuilder builder(cfg);
     RankingConstants::Vector constants = {{"my_name", "my_type", "my_path"}};
     builder.rankingConstants(std::make_shared<RankingConstants>(constants));
+
+    OnnxModels::Vector models = {{"my_model_name", "my_model_file"}};
+    builder.onnxModels(std::make_shared<OnnxModels>(models));
 
     ImportedFieldsConfigBuilder importedFields;
     importedFields.attribute.resize(1);

@@ -99,8 +99,8 @@ handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingCont
 }  // namespace proton::matching::<unnamed>
 
 Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
-                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo, uint32_t distributionKey)
-    : _indexEnv(distributionKey, schema, props, constantValueRepo),
+                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo, OnnxModels onnxModels, uint32_t distributionKey)
+    : _indexEnv(distributionKey, schema, props, constantValueRepo, std::move(onnxModels)),
       _blueprintFactory(),
       _rankSetup(),
       _viewResolver(ViewResolver::createFromSchema(schema)),

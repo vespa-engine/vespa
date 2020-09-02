@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
@@ -45,6 +46,7 @@ struct DoctypeFixture {
     AttributesConfigBuilder attributesBuilder;
     RankProfilesConfigBuilder rankProfilesBuilder;
     RankingConstantsConfigBuilder rankingConstantsBuilder;
+    OnnxModelsConfigBuilder onnxModelsBuilder;
     IndexschemaConfigBuilder indexschemaBuilder;
     SummaryConfigBuilder summaryBuilder;
     SummarymapConfigBuilder summarymapBuilder;
@@ -100,6 +102,7 @@ struct ConfigTestFixture {
         set.addBuilder(db.configid, &fixture->attributesBuilder);
         set.addBuilder(db.configid, &fixture->rankProfilesBuilder);
         set.addBuilder(db.configid, &fixture->rankingConstantsBuilder);
+        set.addBuilder(db.configid, &fixture->onnxModelsBuilder);
         set.addBuilder(db.configid, &fixture->indexschemaBuilder);
         set.addBuilder(db.configid, &fixture->summaryBuilder);
         set.addBuilder(db.configid, &fixture->summarymapBuilder);
@@ -253,7 +256,7 @@ TEST_FF("require that documentdb config manager subscribes for config",
         DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
     f1.addDocType("typea");
     const ConfigKeySet keySet(f2.createConfigKeySet());
-    ASSERT_EQUAL(8u, keySet.size());
+    ASSERT_EQUAL(9u, keySet.size());
     ASSERT_TRUE(f1.configEqual("typea", getDocumentDBConfig(f1, f2)));
 }
 

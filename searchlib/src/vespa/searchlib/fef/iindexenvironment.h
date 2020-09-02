@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <optional>
 
 namespace vespalib::eval { struct ConstantValue; }
 
@@ -119,6 +120,11 @@ public:
      * Returns a constant rank value with the given name or null ptr if no such value exists.
      */
     virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const vespalib::string &name) const = 0;
+
+    /**
+     * Get the full path of the file containing the given onnx model
+     **/
+    virtual std::optional<vespalib::string> getOnnxModelFullPath(const vespalib::string &name) const = 0;
 
     virtual uint32_t getDistributionKey() const = 0;
 

@@ -58,9 +58,7 @@ struct OnnxFeatureTest : ::testing::Test {
         indexEnv.getProperties().add(expr_name, expr);
     }
     void add_onnx(const vespalib::string &name, const vespalib::string &file) {
-        vespalib::string feature_name = onnx_feature(name);
-        vespalib::string file_name = feature_name + ".fileref";
-        indexEnv.getProperties().add(file_name, file);
+        indexEnv.addOnnxModel(name, file);
     }
     void compile(const vespalib::string &seed) {
         resolver->addSeed(seed);
