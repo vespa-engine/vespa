@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
@@ -98,7 +99,18 @@ class LogReader {
 
         private LogLineIterator(Path log, double from, double to, Optional<String> hostname) throws IOException {
             boolean zipped = log.toString().endsWith(".gz");
-            InputStream in = Files.newInputStream(log);
+            InputStream in = InputStream.nullInputStream();
+            try {
+                in = Files.newInputStream(log);
+            }
+            catch (NoSuchFileException e) {
+                if ( ! zipped)
+                    try {
+                        in = Files.newInputStream(Paths.get(log.toString() + ".gz"));
+                        zipped = true;
+                    }
+                    catch (NoSuchFileException ignored) { }
+            }
             this.reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
             this.from = from;
             this.to = to;
