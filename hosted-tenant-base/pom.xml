@@ -72,7 +72,7 @@
                 <!-- Note: applications must manually add junit4 in pom.xml -->
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>{junit4.version}</version>
+                <version>${junit4.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
