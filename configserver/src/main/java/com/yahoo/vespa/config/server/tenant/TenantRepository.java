@@ -18,8 +18,6 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -88,7 +86,6 @@ public class TenantRepository {
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Optional<Curator.DirectoryCache> directoryCache;
-    private final BooleanFlag useTenantMetaData;
 
     /**
      * Creates a new tenant repository
@@ -105,7 +102,6 @@ public class TenantRepository {
         this.tenantListeners.add(componentRegistry.getTenantListener());
         this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
         this.zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
-        this.useTenantMetaData = Flags.USE_TENANT_META_DATA.bindTo(componentRegistry.getFlagSource());
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -230,9 +226,7 @@ public class TenantRepository {
     private Tenant createTenant(TenantName tenantName, Instant created) {
         if (tenants.containsKey(tenantName)) {
             Tenant tenant = getTenant(tenantName);
-            if (useTenantMetaData.value())
-                createAndWriteTenantMetaData(tenant);
-
+            createAndWriteTenantMetaData(tenant);
             return tenant;
         }
 
@@ -255,8 +249,7 @@ public class TenantRepository {
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
-        if (useTenantMetaData.value())
-            createAndWriteTenantMetaData(tenant);
+        createAndWriteTenantMetaData(tenant);
         return tenant;
     }
 

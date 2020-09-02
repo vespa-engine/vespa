@@ -165,25 +165,11 @@ public class ApplicationRepositoryTest {
         LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
                                                                                .requireActiveSessionOf(applicationId()));
         session.getAllocatedHosts();
-
-        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp());
-        assertEquals(Instant.EPOCH, applicationRepository.getTenantMetaData(tenant).createdTimestamp());
     }
 
     @Test
-    public void prepareAndActivateWithTenantMetaData() throws IOException {
-        InMemoryFlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), false);
-        setup(flagSource);
-
-        // Tenants created when flag is false has EPOCH as metadata values
-        Tenant tenant = applicationRepository.getTenant(applicationId());
-        assertEquals(Instant.EPOCH.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
-        assertEquals(Instant.EPOCH.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
-
-        // Change flag value to true
-        flagSource.withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
+    public void prepareAndActivateWithTenantMetaData() {
+        Instant startTime = clock.instant();
         Duration duration = Duration.ofHours(1);
         clock.advance(duration);
         Instant deployTime = clock.instant();
@@ -191,12 +177,9 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
-        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
-                                                                                     .requireActiveSessionOf(applicationId()));
-        session.getAllocatedHosts();
+        Tenant tenant = applicationRepository.getTenant(applicationId());
 
-        // Only last deploy timestamp updated
-        assertEquals(Instant.EPOCH.toEpochMilli(),
+        assertEquals(startTime.toEpochMilli(),
                      applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
         assertEquals(deployTime.toEpochMilli(),
                      applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());

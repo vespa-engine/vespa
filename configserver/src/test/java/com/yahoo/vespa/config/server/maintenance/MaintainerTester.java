@@ -23,7 +23,6 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.FlagSource;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -39,7 +38,7 @@ class MaintainerTester {
     private final ApplicationRepository applicationRepository;
     private final Clock clock;
 
-    MaintainerTester(Clock clock, FlagSource flagSource, TemporaryFolder temporaryFolder) throws IOException {
+    MaintainerTester(Clock clock, TemporaryFolder temporaryFolder) throws IOException {
         this.clock = clock;
         this.curator = new MockCurator();
         InMemoryProvisioner hostProvisioner = new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4");
@@ -54,7 +53,6 @@ class MaintainerTester {
                 .clock(clock)
                 .configServerConfig(configserverConfig)
                 .provisioner(provisioner)
-                .flagSource(flagSource)
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
                 .build();
         tenantRepository = new TenantRepository(componentRegistry);
@@ -63,7 +61,6 @@ class MaintainerTester {
                 .withProvisioner(provisioner)
                 .withOrchestrator(new OrchestratorMock())
                 .withLogRetriever(new MockLogRetriever())
-                .withFlagSource(flagSource)
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .build();

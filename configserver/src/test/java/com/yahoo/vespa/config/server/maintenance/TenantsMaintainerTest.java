@@ -9,8 +9,6 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,8 +29,7 @@ public class TenantsMaintainerTest {
     @Test
     public void deleteTenantWithNoApplications() throws IOException {
         ManualClock clock = new ManualClock("2020-06-01T00:00:00");
-        FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.USE_TENANT_META_DATA.id(), true);
-        MaintainerTester tester = new MaintainerTester(clock, flagSource, temporaryFolder);
+        MaintainerTester tester = new MaintainerTester(clock, temporaryFolder);
         TenantRepository tenantRepository = tester.tenantRepository();
         ApplicationRepository applicationRepository = tester.applicationRepository();
         File applicationPackage = new File("src/test/apps/hosted");
