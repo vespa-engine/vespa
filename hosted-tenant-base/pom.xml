@@ -209,7 +209,7 @@
                                 com.yahoo.vespa:container-test:runtime,
                                 org.junit.jupiter:junit-jupiter-api:provided,
                                 org.junit.jupiter:junit-jupiter-engine:test,
-                                org.junit.jupiter:junit-vintage-engine:test,
+                                org.junit.vintage:junit-vintage-engine:test,
                                 com.yahoo.vespa:tenant-cd-api:provided
                             </testBundleScopeOverrides>
                         </configuration>
