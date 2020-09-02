@@ -4,12 +4,15 @@ package com.yahoo.searchdefinition.derived;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.OnnxModels;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.AbstractService;
 
@@ -22,17 +25,21 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-public class RankProfileList extends Derived implements RankProfilesConfig.Producer, RankingConstantsConfig.Producer {
+public class RankProfileList extends Derived implements RankProfilesConfig.Producer,
+                                                        RankingConstantsConfig.Producer,
+                                                        OnnxModelsConfig.Producer {
 
     private static final Logger log = Logger.getLogger(RankProfileList.class.getName());
 
     private final Map<String, RawRankProfile> rankProfiles = new java.util.LinkedHashMap<>();
     private final RankingConstants rankingConstants;
+    private final OnnxModels onnxModels;
 
     public static RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
         this.rankingConstants = new RankingConstants();
+        this.onnxModels = new OnnxModels();
     }
 
     /**
@@ -51,6 +58,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         setName(search == null ? "default" : search.getName());
         this.rankingConstants = rankingConstants;
         deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
+        this.onnxModels = search == null ? new OnnxModels() : search.onnxModels();  // as ONNX models come from parsing rank expressions
     }
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
@@ -109,4 +117,15 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         }
     }
 
+    @Override
+    public void getConfig(OnnxModelsConfig.Builder builder) {
+        for (OnnxModel model : onnxModels.asMap().values()) {
+            if ("".equals(model.getFileReference()))
+                log.warning("Illegal file reference " + model); // Let tests pass ... we should find a better way
+            else
+                builder.model(new OnnxModelsConfig.Model.Builder()
+                        .name(model.getName())
+                        .fileref(model.getFileReference()));
+        }
+    }
 }

@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -25,6 +26,7 @@ public class DocumentDatabase extends AbstractConfigProducer implements
         AttributesConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
+        OnnxModelsConfig.Producer,
         IndexschemaConfig.Producer,
         JuniperrcConfig.Producer,
         SummarymapConfig.Producer,
@@ -74,6 +76,11 @@ public class DocumentDatabase extends AbstractConfigProducer implements
 
     @Override
     public void getConfig(RankingConstantsConfig.Builder builder) {
+        derivedCfg.getRankProfileList().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(OnnxModelsConfig.Builder builder) {
         derivedCfg.getRankProfileList().getConfig(builder);
     }
 
