@@ -14,6 +14,7 @@ namespace vespalib::slime {
     struct Cursor;
     struct Inserter;
 }
+namespace search { class MatchingElementsFields; }
 namespace search::attribute { class ISearchContext; }
 namespace search::fef {
     class TermFieldMatchDataArray;
@@ -24,6 +25,7 @@ namespace search::queryeval {
 
 class SearchIterator;
 class ExecuteInfo;
+class MatchingElementsSearch;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -207,7 +209,6 @@ public:
 
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
     virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const;
-
     static std::unique_ptr<SearchIterator> create_and_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
     static std::unique_ptr<SearchIterator> create_or_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
 
@@ -220,6 +221,9 @@ public:
     virtual bool isWhiteList() const { return false; }
     virtual bool isIntermediate() const { return false; }
     virtual const attribute::ISearchContext *get_attribute_search_context() const { return nullptr; }
+
+    // For document summaries with matched-elements-only set.
+    virtual std::unique_ptr<MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const;
 };
 
 namespace blueprint {

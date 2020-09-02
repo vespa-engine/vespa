@@ -8,6 +8,7 @@
 #include "field_spec.hpp"
 #include "andsearch.h"
 #include "orsearch.h"
+#include "matching_elements_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
@@ -133,6 +134,13 @@ Blueprint::createFilterSearch(bool /*strict*/, FilterConstraint constraint) cons
         return std::make_unique<EmptySearch>();
     }
 }
+
+std::unique_ptr<MatchingElementsSearch>
+Blueprint::create_matching_elements_search(const MatchingElementsFields &fields) const
+{
+    (void) fields;
+    return std::unique_ptr<MatchingElementsSearch>();
+};
 
 namespace {
 
