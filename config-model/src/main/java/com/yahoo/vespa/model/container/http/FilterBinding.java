@@ -11,16 +11,20 @@ import java.util.Objects;
  */
 public class FilterBinding {
 
+    public enum Type {REQUEST, RESPONSE}
+
+    private final Type type;
     private final ComponentSpecification chainId;
     private final BindingPattern binding;
 
-    private FilterBinding(ComponentSpecification chainId, BindingPattern binding) {
+    private FilterBinding(Type type, ComponentSpecification chainId, BindingPattern binding) {
+        this.type = type;
         this.chainId = chainId;
         this.binding = binding;
     }
 
-    public static FilterBinding create(ComponentSpecification chainId, BindingPattern binding) {
-        return new FilterBinding(chainId, binding);
+    public static FilterBinding create(Type type, ComponentSpecification chainId, BindingPattern binding) {
+        return new FilterBinding(type, chainId, binding);
     }
 
     public ComponentSpecification chainId() {
@@ -31,17 +35,20 @@ public class FilterBinding {
         return binding;
     }
 
+    public Type type() { return type; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FilterBinding that = (FilterBinding) o;
-        return Objects.equals(chainId, that.chainId) &&
+        return type == that.type &&
+                Objects.equals(chainId, that.chainId) &&
                 Objects.equals(binding, that.binding);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chainId, binding);
+        return Objects.hash(type, chainId, binding);
     }
 }
