@@ -11,7 +11,7 @@ namespace vespalib::compression {
 struct CompressionConfig {
     enum Type {
         NONE = 0,
-        HISTORIC_1 = 1,
+        NONE_MULTI = 1,
         HISTORIC_2 = 2,
         HISTORIC_3 = 3,
         HISTORIC_4 = 4,
@@ -42,7 +42,7 @@ struct CompressionConfig {
 
     static Type toType(uint32_t val) {
         switch (val) {
-        case 1: return HISTORIC_1;
+        case 1: return NONE_MULTI;
         case 2: return HISTORIC_2;
         case 3: return HISTORIC_3;
         case 4: return HISTORIC_4;
@@ -75,8 +75,6 @@ struct CompressionConfig {
 class CompressionInfo
 {
 public:
-    CompressionInfo(size_t uncompressedSize)
-        : _uncompressedSize(uncompressedSize), _compressedSize(uncompressedSize) { }
     CompressionInfo(size_t uncompressedSize, size_t compressedSize)
         : _uncompressedSize(uncompressedSize), _compressedSize(compressedSize) { }
     size_t getUncompressedSize() const { return _uncompressedSize; }

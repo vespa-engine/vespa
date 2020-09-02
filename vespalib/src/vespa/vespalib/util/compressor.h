@@ -27,6 +27,7 @@ public:
  *             and it is not compressable. Then it will be swapped in.
  * @param allowSwap will tell it the data must be appended or if it can be swapped in if it is uncompressable or config is NONE.
  */
+CompressionConfig::Type compress(CompressionConfig::Type compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap);
 CompressionConfig::Type compress(const CompressionConfig & compression, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
 
 /**
