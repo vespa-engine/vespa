@@ -37,11 +37,9 @@ Quick-start
 The best way to get started is by following the tutorials below. You can easily run them yourself on Google Colab
 by clicking on the badge at the top of the tutorial.
 
-.. toctree::
-   :maxdepth: 1
 
-   connect-to-vespa-instance
-   create-and-deploy-vespa-cloud
+- :doc:`connect-to-vespa-instance`
+- :doc:`create-and-deploy-vespa-cloud`
 
 
 How-to guides
