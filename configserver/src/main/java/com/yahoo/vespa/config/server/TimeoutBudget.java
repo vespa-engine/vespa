@@ -16,7 +16,7 @@ public class TimeoutBudget {
 
     private final Clock clock;
     private final Instant startTime;
-    private final List<Instant> measurements = new ArrayList<>();
+    private final List<Measurement> measurements = new ArrayList<>();
     private final Instant endTime;
 
     public TimeoutBudget(Clock clock, Duration duration) {
@@ -27,14 +27,18 @@ public class TimeoutBudget {
 
     public Duration timeLeft() {
         Instant now = clock.instant();
-        measurements.add(now);
+        measurements.add(new Measurement(now));
         Duration duration = Duration.between(now, endTime);
         return duration.isNegative() ? Duration.ofMillis(0) : duration;
     }
 
     public boolean hasTimeLeft() {
+        return hasTimeLeft("");
+    }
+
+    public boolean hasTimeLeft(String step) {
         Instant now = clock.instant();
-        measurements.add(now);
+        measurements.add(new Measurement(now, step));
         return now.isBefore(endTime);
     }
 
@@ -42,10 +46,14 @@ public class TimeoutBudget {
         StringBuilder buf = new StringBuilder();
         buf.append("[");
         Instant prev = startTime;
-        for (Instant m : measurements) {
-            buf.append(Duration.between(prev, m).toMillis());
-            prev = m;
-            buf.append(" ms, ");
+        for (Measurement m : measurements) {
+            if ( ! m.label().isEmpty()) {
+                buf.append(m.label()).append(": ");
+            }
+            buf.append(Duration.between(prev, m.timestamp()).toMillis())
+                    .append(" ms")
+                    .append(", ");
+            prev = m.timestamp();
         }
         Instant now = clock.instant();
         buf.append("total: ");
@@ -54,4 +62,26 @@ public class TimeoutBudget {
         return buf.toString();
     }
 
+    private static class Measurement {
+
+        private final Instant timestamp;
+        private final String label;
+
+        Measurement(Instant timestamp) {
+            this(timestamp, "");
+        }
+
+        Measurement(Instant timestamp, String label) {
+            this.timestamp = timestamp;
+            this.label = label;
+        }
+
+        public Instant timestamp() {
+            return timestamp;
+        }
+
+        public String label() {
+            return label;
+        }
+    }
 }

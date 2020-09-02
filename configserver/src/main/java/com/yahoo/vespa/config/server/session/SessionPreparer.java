@@ -234,9 +234,9 @@ public class SessionPreparer {
         }
 
         void checkTimeout(String step) {
-            if (! params.getTimeoutBudget().hasTimeLeft()) {
+            if (! params.getTimeoutBudget().hasTimeLeft(step)) {
                 String used = params.getTimeoutBudget().timesUsed();
-                throw new RuntimeException("prepare timed out "+used+" after "+step+" step: " + applicationId);
+                throw new RuntimeException("prepare timed out " + used + " after " + step + " step: " + applicationId);
             }
         }
 
@@ -246,7 +246,7 @@ public class SessionPreparer {
             FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addApplicationPackage();
             FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();
-            log.log(Level.INFO, "Distribute application package for " + applicationId + " ("  + fileReference + ") to other config servers");
+            log.log(Level.FINE, () -> "Distribute application package for " + applicationId + " ("  + fileReference + ") to other config servers");
             properties.configServerSpecs().stream()
                     .filter(spec -> ! spec.getHostName().equals(fileRegistry.fileSourceHost()))
                     .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
