@@ -698,7 +698,7 @@ TransLogStress::Main()
 
     // start transaction log server
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tls("server", 17897, ".", fileHeaderContext, _cfg.domainPartSize);
+    TransLogServer tls("server", 17897, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(_cfg.domainPartSize));
     TransLogClient client(tlsSpec);
     client.create(domain);
 
