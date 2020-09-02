@@ -66,7 +66,9 @@ FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsS
     assert(dwa != nullptr);
     auto callback = [this](EntryRef folded) { _matches.insert(get_from_enum(_attr, folded)); };
     for (auto &entry : dict_entries) {
-        dwa->collect_folded(entry.enum_idx, dictionary_snapshot, callback);
+        if (entry.enum_idx.valid()) {
+            dwa->collect_folded(entry.enum_idx, dictionary_snapshot, callback);
+        }
     }
 }
 
