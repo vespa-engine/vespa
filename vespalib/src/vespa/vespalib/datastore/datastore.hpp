@@ -133,16 +133,16 @@ DataStoreT<RefT>::freeListRawAllocator(uint32_t typeId)
 
 template <typename EntryType, typename RefT>
 DataStore<EntryType, RefT>::DataStore()
-    : DataStore(RefType::offsetSize())
+    : DataStore(std::make_unique<BufferType<EntryType>>(1, RefType::offsetSize(), RefType::offsetSize()))
 {
 }
 
 template <typename EntryType, typename RefT>
-DataStore<EntryType, RefT>::DataStore(uint32_t min_arrays)
+DataStore<EntryType, RefT>::DataStore(BufferTypeUP type)
     : ParentType(),
-      _type(1, min_arrays, RefType::offsetSize())
+      _type(std::move(type))
 {
-    addType(&_type);
+    addType(_type.get());
     initActiveBuffers();
 }
 

@@ -98,14 +98,17 @@ protected:
     using ParentType::dropBuffers;
     using ParentType::initActiveBuffers;
     using ParentType::addType;
+    using BufferTypeUP = std::unique_ptr<BufferType<EntryType>>;
 
-    BufferType<EntryType> _type;
+    BufferTypeUP _type;
+
+
 public:
-    typedef typename ParentType::RefType RefType;
+    using RefType = typename ParentType::RefType;
     DataStore(const DataStore &rhs) = delete;
     DataStore &operator=(const DataStore &rhs) = delete;
     DataStore();
-    DataStore(uint32_t min_arrays);
+    DataStore(BufferTypeUP type);
     ~DataStore();
 
     EntryRef addEntry(const EntryType &e);
