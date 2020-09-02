@@ -239,8 +239,8 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
         doc = _doc_store.read(lid, getDocumentTypeRepo());
         if (doc) {
             populate(lid, *doc);
+            FieldSet::stripFields(*doc, fieldSet);
         }
-        FieldSet::stripFields(*doc, fieldSet);
     } else {
         doc = std::make_unique<Document>(getDocumentType(), docId);
         switch (fieldSet.getType()) {
