@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <stdexcept>
 
 using std::runtime_error;
 using std::make_unique;
