@@ -17,4 +17,5 @@ vespa_add_executable(vdslib_gtest_runner_app TEST
 vespa_add_test(
     NAME vdslib_gtest_runner_app
     COMMAND vdslib_gtest_runner_app
+    COST 300
 )
