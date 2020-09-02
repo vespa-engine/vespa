@@ -368,7 +368,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_TENANT_META_DATA = defineFeatureFlag(
             "use-tenant-meta-data",
-            false,
+            true,
             "Whether config server should write and read tenant metadata",
             "Takes effect immediately"
     );

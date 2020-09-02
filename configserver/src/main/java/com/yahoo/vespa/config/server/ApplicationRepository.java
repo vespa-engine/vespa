@@ -65,9 +65,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -127,7 +125,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
-    private final BooleanFlag useTenantMetaData;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -177,7 +174,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = Objects.requireNonNull(clock);
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
-        this.useTenantMetaData = Flags.USE_TENANT_META_DATA.bindTo(flagSource);
     }
 
     public static class Builder {
@@ -410,10 +406,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
             transaction.add(active.createDeactivateTransaction().operations());
         }
-
-        if (useTenantMetaData.value())
-            transaction.add(updateMetaDataWithDeployTimestamp(tenant, clock.instant()));
-
+        transaction.add(updateMetaDataWithDeployTimestamp(tenant, clock.instant()));
         return transaction;
     }
 
@@ -876,8 +869,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
-        if ( ! useTenantMetaData.value()) return Set.of();
-
         return tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
