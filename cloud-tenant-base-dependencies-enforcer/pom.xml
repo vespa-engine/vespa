@@ -9,7 +9,7 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>cloud-tenant-base</artifactId>
         <version>7-SNAPSHOT</version>
-        <relativePath />
+        <relativePath>../cloud-tenant-base/pom.xml</relativePath>
     </parent>
 
     <artifactId>cloud-tenant-base-dependencies-enforcer</artifactId>
