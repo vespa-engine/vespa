@@ -192,7 +192,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void access_control_chains_does_not_contain_duplicate_bindings_to_user_filter_chain() {
+    public void access_control_chains_does_not_contain_duplicate_bindings_to_user_request_filter_chain() {
         Http http = createModelAndGetHttp(
                 "  <http>",
                 "    <handler id='custom.Handler'>",
@@ -225,6 +225,46 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
         Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-request-chain"));
         assertThat(actualCustomChainBindings, containsInAnyOrder("http://*/custom-handler/*", "http://*/"));
+    }
+
+    @Test
+    public void access_control_excludes_are_not_affected_by_user_response_filter_chain() {
+        Http http = createModelAndGetHttp(
+                "  <http>",
+                "    <handler id='custom.Handler'>",
+                "      <binding>http://*/custom-handler/*</binding>",
+                "    </handler>",
+                "    <filtering>",
+                "      <access-control>",
+                "        <exclude>",
+                "          <binding>http://*/custom-handler/*</binding>",
+                "        </exclude>",
+                "      </access-control>",
+                "      <response-chain id='my-custom-response-chain'>",
+                "        <filter id='my-custom-response-filter' />",
+                "        <binding>http://*/custom-handler/*</binding>",
+                "      </response-chain>",
+                "    </filtering>",
+                "  </http>");
+
+        Set<String> actualExcludeBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
+        assertThat(actualExcludeBindings, containsInAnyOrder(
+                "http://*:4443/ApplicationStatus",
+                "http://*:4443/status.html",
+                "http://*:4443/state/v1",
+                "http://*:4443/state/v1/*",
+                "http://*:4443/prometheus/v1",
+                "http://*:4443/prometheus/v1/*",
+                "http://*:4443/metrics/v2",
+                "http://*:4443/metrics/v2/*",
+                "http://*:4443/",
+                "http://*:4443/custom-handler/*"));
+
+        Set<String> actualAccessControlBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_CHAIN_ID);
+        assertThat(actualAccessControlBindings, containsInAnyOrder("http://*:4443/*"));
+
+        Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-response-chain"));
+        assertThat(actualCustomChainBindings, containsInAnyOrder("http://*/custom-handler/*"));
     }
 
     private Http createModelAndGetHttp(String... httpElement) {

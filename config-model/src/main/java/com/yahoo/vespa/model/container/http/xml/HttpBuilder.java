@@ -121,7 +121,8 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    result.add(FilterBinding.create(chainId, UserBindingPattern.fromPattern(binding)));
+                    FilterBinding.Type type = tagName.equals("request-chain") ? FilterBinding.Type.REQUEST : FilterBinding.Type.RESPONSE;
+                    result.add(FilterBinding.create(type, chainId, UserBindingPattern.fromPattern(binding)));
                 }
             }
         }

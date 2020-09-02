@@ -144,8 +144,7 @@ public class AccessControl {
         for (FilterBinding binding : http.getBindings()) {
             if (binding.chainId().toId().equals(chainId)) {
                 for (FilterBinding otherBinding : http.getBindings()) {
-                    if (!binding.chainId().equals(otherBinding.chainId())
-                            && effectivelyDuplicateOf(binding.binding(), otherBinding.binding())) {
+                    if (effectivelyDuplicateOf(binding, otherBinding)) {
                         duplicateBindings.add(binding);
                     }
                 }
@@ -154,14 +153,17 @@ public class AccessControl {
         duplicateBindings.forEach(http.getBindings()::remove);
     }
 
-    private static boolean effectivelyDuplicateOf(BindingPattern accessControlBinding, BindingPattern other) {
-        return accessControlBinding.equals(other)
-                || (accessControlBinding.path().equals(other.path()) && other.matchesAnyPort());
+    private static boolean effectivelyDuplicateOf(FilterBinding accessControlBinding, FilterBinding other) {
+        if (accessControlBinding.chainId().equals(other.chainId())) return false; // Same filter chain
+        if (other.type() == FilterBinding.Type.RESPONSE) return false;
+        return accessControlBinding.binding().equals(other.binding())
+                || (accessControlBinding.binding().path().equals(other.binding().path()) && other.binding().matchesAnyPort());
     }
 
 
     private static FilterBinding createAccessControlBinding(String path) {
         return FilterBinding.create(
+                FilterBinding.Type.REQUEST,
                 new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()),
                 SystemBindingPattern.fromHttpPortAndPath(Integer.toString(HOSTED_CONTAINER_PORT), path));
     }
@@ -170,6 +172,7 @@ public class AccessControl {
         BindingPattern rewrittenBinding = SystemBindingPattern.fromHttpPortAndPath(
                 Integer.toString(HOSTED_CONTAINER_PORT), excludedBinding.path()); // only keep path from excluded binding
         return FilterBinding.create(
+                FilterBinding.Type.REQUEST,
                 new ComponentSpecification(ACCESS_CONTROL_EXCLUDED_CHAIN_ID.stringValue()),
                 rewrittenBinding);
     }
