@@ -96,7 +96,8 @@ IChunk::create(Encoding encoding, uint8_t compressionLevel) {
     }
 }
 
-int32_t Encoding::calcCrc(Crc version, const void * buf, size_t sz)
+int32_t
+Encoding::calcCrc(Crc version, const void * buf, size_t sz)
 {
     if (version == xxh64) {
         return static_cast<int32_t>(XXH64(buf, sz, 0ll));
