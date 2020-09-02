@@ -21,6 +21,8 @@ using namespace search::index;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 
+using vespalib::make_string_short::fmt;
+
 struct Writer {
     FILE *file;
     Writer(const std::string &file_name) {
@@ -61,14 +63,15 @@ struct Attribute {
 
 Attribute::~Attribute() {}
 
-struct Model {
+struct Setup {
     std::map<std::string,std::pair<std::string,std::string> > indexes;
     std::map<std::string,Attribute>                           attributes;
     std::map<std::string,std::string>                         properties;
     std::map<std::string,std::string>                         constants;
     std::vector<bool>                                         extra_profiles;
-    Model();
-    ~Model();
+    std::map<std::string,std::string>                         onnx_models;
+    Setup();
+    ~Setup();
     void index(const std::string &name, schema::DataType data_type,
                schema::CollectionType collection_type)
     {
@@ -84,6 +87,9 @@ struct Model {
     }
     void property(const std::string &name, const std::string &val) {
         properties[name] = val;
+    }
+    void rank_expr(const std::string &name, const std::string &expr) {
+        property(fmt("rankingExpression(%s).rankingScript", name.c_str()), expr);
     }
     void first_phase(const std::string &feature) {
         property(rank::FirstPhase::NAME, feature);
@@ -146,15 +152,33 @@ struct Model {
             ++idx;
         }
     }
+    void write_onnx_models(const Writer &out) {
+        size_t idx = 0;
+        for (const auto &entry: onnx_models) {
+            out.fmt("model[%zu].name \"%s\"\n", idx, entry.first.c_str());
+            out.fmt("model[%zu].fileref \"onnx_ref_%zu\"\n", idx, idx);
+            ++idx;
+        }
+    }
+    void write_self_cfg(const Writer &out) {
+        size_t idx = 0;
+        for (const auto &entry: onnx_models) {
+            out.fmt("file[%zu].ref \"onnx_ref_%zu\"\n", idx, idx);
+            out.fmt("file[%zu].path \"%s\"\n", idx, entry.second.c_str());
+            ++idx;
+        }
+    }
     void generate() {
         write_attributes(Writer(gen_dir + "/attributes.cfg"));
         write_indexschema(Writer(gen_dir + "/indexschema.cfg"));
         write_rank_profiles(Writer(gen_dir + "/rank-profiles.cfg"));
         write_ranking_constants(Writer(gen_dir + "/ranking-constants.cfg"));
+        write_onnx_models(Writer(gen_dir + "/onnx-models.cfg"));
+        write_self_cfg(Writer(gen_dir + "/verify-ranksetup.cfg"));
     }
     bool verify() {
         generate();
-        return vespalib::ChildProcess::run(vespalib::make_string("%s dir:%s", prog, gen_dir.c_str()).c_str());
+        return vespalib::ChildProcess::run(fmt("%s dir:%s", prog, gen_dir.c_str()).c_str());
     }
     void verify_valid(std::initializer_list<std::string> features) {
         for (const std::string &f: features) {
@@ -174,7 +198,7 @@ struct Model {
     }
 };
 
-Model::Model()
+Setup::Setup()
     : indexes(),
       attributes(),
       properties(),
@@ -182,14 +206,14 @@ Model::Model()
 {
     verify_dir();
 }
-Model::~Model() {}
+Setup::~Setup() {}
 
 //-----------------------------------------------------------------------------
 
-struct EmptyModel : Model {};
+struct EmptySetup : Setup {};
 
-struct SimpleModel : Model {
-    SimpleModel() : Model() {
+struct SimpleSetup : Setup {
+    SimpleSetup() : Setup() {
         index("title", DataType::STRING, CollectionType::SINGLE);
         index("list", DataType::STRING, CollectionType::ARRAY);
         index("keywords", DataType::STRING, CollectionType::WEIGHTEDSET);
@@ -199,29 +223,35 @@ struct SimpleModel : Model {
     }
 };
 
-struct ShadowModel : Model {
-    ShadowModel() : Model() {
+struct OnnxSetup : Setup {
+    OnnxSetup() : Setup() {
+        onnx_models["simple"] = TEST_PATH("../../../../../eval/src/tests/tensor/onnx_wrapper/simple.onnx");
+    }
+};
+
+struct ShadowSetup : Setup {
+    ShadowSetup() : Setup() {
         index("both", DataType::STRING, CollectionType::SINGLE);
         attribute("both", DataType::STRING, CollectionType::SINGLE);
     }
 };
 
-TEST_F("print usage", Model()) {
-    EXPECT_TRUE(!vespalib::ChildProcess::run(vespalib::make_string("%s", prog).c_str()));
+TEST_F("print usage", Setup()) {
+    EXPECT_TRUE(!vespalib::ChildProcess::run(fmt("%s", prog).c_str()));
 }
 
-TEST_F("setup output directory", Model()) {
-    ASSERT_TRUE(vespalib::ChildProcess::run(vespalib::make_string("rm -rf %s", gen_dir.c_str()).c_str()));
-    ASSERT_TRUE(vespalib::ChildProcess::run(vespalib::make_string("mkdir %s", gen_dir.c_str()).c_str()));
+TEST_F("setup output directory", Setup()) {
+    ASSERT_TRUE(vespalib::ChildProcess::run(fmt("rm -rf %s", gen_dir.c_str()).c_str()));
+    ASSERT_TRUE(vespalib::ChildProcess::run(fmt("mkdir %s", gen_dir.c_str()).c_str()));
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that empty setup passes validation", EmptyModel()) {
+TEST_F("require that empty setup passes validation", EmptySetup()) {
     EXPECT_TRUE(f.verify());
 }
 
-TEST_F("require that we can verify multiple rank profiles", SimpleModel()) {
+TEST_F("require that we can verify multiple rank profiles", SimpleSetup()) {
     f.first_phase(valid_feature);
     f.good_profile();
     EXPECT_TRUE(f.verify());
@@ -229,95 +259,101 @@ TEST_F("require that we can verify multiple rank profiles", SimpleModel()) {
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that first phase can break validation", SimpleModel()) {
+TEST_F("require that first phase can break validation", SimpleSetup()) {
     f.first_phase(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that second phase can break validation", SimpleModel()) {
+TEST_F("require that second phase can break validation", SimpleSetup()) {
     f.second_phase(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that summary features can break validation", SimpleModel()) {
+TEST_F("require that summary features can break validation", SimpleSetup()) {
     f.summary_feature(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that dump features can break validation", SimpleModel()) {
+TEST_F("require that dump features can break validation", SimpleSetup()) {
     f.dump_feature(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that fieldMatch feature requires single value field", SimpleModel()) {
-    f.first_phase("fieldMatch(keywords)");
-    EXPECT_TRUE(!f.verify());
-    f.first_phase("fieldMatch(list)");
-    EXPECT_TRUE(!f.verify());
-    f.first_phase("fieldMatch(title)");
-    EXPECT_TRUE(f.verify());
+//-----------------------------------------------------------------------------
+
+TEST_F("require that fieldMatch feature requires single value field", SimpleSetup()) {
+    f.verify_invalid({"fieldMatch(keywords)", "fieldMatch(list)"});
+    f.verify_valid({"fieldMatch(title)"});
 }
 
-TEST_F("require that age feature requires attribute parameter", SimpleModel()) {
-    f.first_phase("age(unknown)");
-    EXPECT_TRUE(!f.verify());
-    f.first_phase("age(title)");
-    EXPECT_TRUE(!f.verify());
-    f.first_phase("age(date)");
-    EXPECT_TRUE(f.verify());
+TEST_F("require that age feature requires attribute parameter", SimpleSetup()) {
+    f.verify_invalid({"age(unknown)", "age(title)"});
+    f.verify_valid({"age(date)"});
 }
 
-TEST_F("require that nativeRank can be used on any valid field", SimpleModel()) {
+TEST_F("require that nativeRank can be used on any valid field", SimpleSetup()) {
     f.verify_invalid({"nativeRank(unknown)"});
     f.verify_valid({"nativeRank", "nativeRank(title)", "nativeRank(date)", "nativeRank(title,date)"});
 }
 
-TEST_F("require that nativeAttributeMatch requires attribute parameter", SimpleModel()) {
+TEST_F("require that nativeAttributeMatch requires attribute parameter", SimpleSetup()) {
     f.verify_invalid({"nativeAttributeMatch(unknown)", "nativeAttributeMatch(title)", "nativeAttributeMatch(title,date)"});
     f.verify_valid({"nativeAttributeMatch", "nativeAttributeMatch(date)"});
 }
 
-TEST_F("require that shadowed attributes can be used", ShadowModel()) {
-    f.first_phase("attribute(both)");
-    EXPECT_TRUE(f.verify());
+TEST_F("require that shadowed attributes can be used", ShadowSetup()) {
+    f.verify_valid({"attribute(both)"});
 }
 
-TEST_F("require that ranking constants can be used", SimpleModel()) {
-    f.first_phase("constant(my_tensor)");
-    EXPECT_TRUE(f.verify());
+TEST_F("require that ranking constants can be used", SimpleSetup()) {
+    f.verify_valid({"constant(my_tensor)"});
 }
 
-TEST_F("require that undefined ranking constants cannot be used", SimpleModel()) {
-    f.first_phase("constant(bogus_tensor)");
-    EXPECT_TRUE(!f.verify());
+TEST_F("require that undefined ranking constants cannot be used", SimpleSetup()) {
+    f.verify_invalid({"constant(bogus_tensor)"});
 }
 
-TEST_F("require that ranking expressions can be verified", SimpleModel()) {
-    f.first_phase("rankingExpression(\\\"constant(my_tensor)+attribute(date)\\\")");
-    EXPECT_TRUE(f.verify());
+TEST_F("require that ranking expressions can be verified", SimpleSetup()) {
+    f.rank_expr("my_expr", "constant(my_tensor)+attribute(date)");
+    f.verify_valid({"rankingExpression(my_expr)"});
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that tensor join is supported", SimpleModel()) {
-    f.first_phase("rankingExpression(\\\"join(constant(my_tensor),attribute(date),f(t,d)(t+d))\\\")");
-    EXPECT_TRUE(f.verify());
+TEST_F("require that tensor join is supported", SimpleSetup()) {
+    f.rank_expr("my_expr", "join(constant(my_tensor),attribute(date),f(t,d)(t+d))");
+    f.verify_valid({"rankingExpression(my_expr)"});
 }
 
-TEST_F("require that nested tensor join is not supported", SimpleModel()) {
-    f.first_phase("rankingExpression(\\\"join(constant(my_tensor),attribute(date),f(t,d)(join(t,d,f(x,y)(x+y))))\\\")");
-    EXPECT_TRUE(!f.verify());
+TEST_F("require that nested tensor join is not supported", SimpleSetup()) {
+    f.rank_expr("my_expr", "join(constant(my_tensor),attribute(date),f(t,d)(join(t,d,f(x,y)(x+y))))");
+    f.verify_invalid({"rankingExpression(my_expr)"});
 }
 
-TEST_F("require that imported attribute field can be used by rank feature", SimpleModel()) {
-    f.first_phase("attribute(imported_attr)");
-    EXPECT_TRUE(f.verify());
+TEST_F("require that imported attribute field can be used by rank feature", SimpleSetup()) {
+    f.verify_valid({"attribute(imported_attr)"});
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("cleanup files", Model()) {
-    ASSERT_TRUE(vespalib::ChildProcess::run(vespalib::make_string("rm -rf %s", gen_dir.c_str()).c_str()));
+TEST_F("require that onnx model can be verified", OnnxSetup()) {
+    f.rank_expr("query_tensor", "tensor<float>(a[1],b[4]):[[1,2,3,4]]");
+    f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
+    f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
+    f.verify_valid({"onnxModel(simple)"});
+}
+
+TEST_F("require that input type mismatch makes onnx model fail verification", OnnxSetup()) {
+    f.rank_expr("query_tensor", "tensor<double>(a[1],b[4]):[[1,2,3,4]]"); // <- double vs float
+    f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
+    f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
+    f.verify_invalid({"onnxModel(simple)"});
+}
+
+//-----------------------------------------------------------------------------
+
+TEST_F("cleanup files", Setup()) {
+    ASSERT_TRUE(vespalib::ChildProcess::run(fmt("rm -rf %s", gen_dir.c_str()).c_str()));
 }
 
 TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
