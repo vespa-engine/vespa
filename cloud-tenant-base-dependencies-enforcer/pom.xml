@@ -31,6 +31,8 @@
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.30.v20200611</jetty.version>
+        <junit5.version>5.6.2</junit5.version>
+        <junit5.platform.version>1.6.2</junit5.platform.version>
         <org.lz4.version>1.7.1</org.lz4.version>
         <org.json.version>20090211</org.json.version>
         <slf4j.version>1.7.5</slf4j.version>
@@ -258,10 +260,11 @@
                                         <include>org.eclipse.jetty:jetty-servlet:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-servlets:[${jetty.version}]:jar:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:2.1.8:jar:test</include>
-                                        <include>org.junit.jupiter:junit-jupiter-api:5.6.2:jar:test</include>
-                                        <include>org.junit.jupiter:junit-jupiter-engine:5.6.2:jar:test</include>
-                                        <include>org.junit.platform:junit-platform-commons:1.6.2:jar:test</include>
-                                        <include>org.junit.platform:junit-platform-engine:1.6.2:jar:test</include>
+                                        <include>org.junit.jupiter:junit-jupiter-api:[${junit5.version}]:jar:test</include>
+                                        <include>org.junit.jupiter:junit-jupiter-engine:[${junit5.version}]:jar:test</include>
+                                        <include>org.junit.platform:junit-platform-commons:[${junit5.platform.version}]:jar:test</include>
+                                        <include>org.junit.platform:junit-platform-engine:[${junit5.platform.version}]:jar:test</include>
+                                        <include>org.junit.vintage:junit-vintage-engine:[${junit5.version}]:jar:test</include>
                                         <include>org.kohsuke:libpam4j:1.11:jar:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
                                         <include>org.tensorflow:libtensorflow:[${tensorflow.version}]:jar:test</include>
