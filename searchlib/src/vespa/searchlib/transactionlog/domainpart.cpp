@@ -27,11 +27,6 @@ namespace search::transactionlog {
 
 namespace {
 
-enum Crc {
-    ccitt_crc32=1,
-    xxh64=2
-};
-
 void
 handleSync(FastOS_FileInterface &file) __attribute__ ((noinline));
 
@@ -182,11 +177,11 @@ handleReadError(const char *text,
 }
 
 int32_t
-calcCrc(Crc version, const void * buf, size_t sz)
+calcCrc(Encoding::Crc version, const void * buf, size_t sz)
 {
-    if (version == xxh64) {
+    if (version == Encoding::Crc::xxh64) {
         return static_cast<int32_t>(XXH64(buf, sz, 0ll));
-    } else if (version == ccitt_crc32) {
+    } else if (version == Encoding::Crc::ccitt_crc32) {
         vespalib::crc_32_type calculator;
         calculator.process_bytes(buf, sz);
         return calculator.checksum();
@@ -602,12 +597,12 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
     int32_t crc(0);
     uint32_t len(entry.serializedSize() + sizeof(crc));
     nbostream os;
-    os << static_cast<uint8_t>(Crc::xxh64);
+    os << static_cast<uint8_t>(_encoding.getRaw());
     os << len;
     size_t start(os.size());
     entry.serialize(os);
     size_t end(os.size());
-    crc = calcCrc(Crc::xxh64, os.data() + start, end - start);
+    crc = calcCrc(_encoding.getCrc(), os.data() + start, end - start);
     os << crc;
     size_t osSize = os.size();
     assert(osSize == len + sizeof(len) + sizeof(uint8_t));
@@ -635,10 +630,10 @@ DomainPart::read(FastOS_FileInterface &file,
     uint32_t len(0);
     his >> version >> len;
     if ((retval = (rlen == sizeof(tmp)))) {
-        if ( ! (retval = (version == ccitt_crc32) || version == xxh64)) {
+        if ( ! (retval = (version == Encoding::Crc::ccitt_crc32) || version == Encoding::Crc::xxh64)) {
             string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
-                                             " got %d from '%s' at position %" PRId64,
-                                             version, file.GetFileName(), lastKnownGoodPos));
+                                   " got %d from '%s' at position %" PRId64,
+                                   version, file.GetFileName(), lastKnownGoodPos));
             if ((version == 0) && (len == 0) && tailOfFileIsZero(file, lastKnownGoodPos)) {
                 LOG(warning, "%s", msg.c_str());
                 return handleReadError("packet version", file, sizeof(tmp), rlen, lastKnownGoodPos, allowTruncate);
@@ -658,7 +653,7 @@ DomainPart::read(FastOS_FileInterface &file,
             entry.deserialize(is);
             int32_t crc(0);
             is >> crc;
-            int32_t crcVerify(calcCrc(static_cast<Crc>(version), buf.get(), len - sizeof(crc)));
+            int32_t crcVerify(calcCrc(Encoding(version).getCrc(), buf.get(), len - sizeof(crc)));
             if (crc != crcVerify) {
                 throw runtime_error(make_string("Got bad crc for packet from '%s' (len pos=%" PRId64 ", len=%d) : crcVerify = %d, expected %d",
                                                 file.GetFileName(), file.GetPosition() - len - sizeof(len),

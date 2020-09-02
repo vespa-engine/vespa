@@ -548,8 +548,8 @@ TEST("partialUpdateTest") {
 }
 
 TEST("testCrcVersions") {
-    createAndFillDomain("ccitt_crc32", Encoding::Crc::ccitt_crc32, 0);
-    createAndFillDomain("xxh64", Encoding::Crc::xxh64, 1);
+    createAndFillDomain("ccitt_crc32", Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none), 0);
+    createAndFillDomain("xxh64", Encoding(Encoding::Crc::xxh64, Encoding::Compression::none), 1);
 
     verifyDomain("ccitt_crc32");
     verifyDomain("xxh64");

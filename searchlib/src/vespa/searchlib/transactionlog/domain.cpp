@@ -324,7 +324,7 @@ Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _config.getPartSizeLimit(),
+        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _config.getEncoding(),
                                           _config.getCompressionlevel(), _fileHeaderContext, false);
         {
             LockGuard guard(_lock);

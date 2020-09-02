@@ -32,7 +32,7 @@ getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
         case searchlib::TranslogserverConfig::Crcmethod::ccitt_crc32:
             return Encoding::Crc::ccitt_crc32;
         case searchlib::TranslogserverConfig::Crcmethod::xxh64:
-            return Encoding::Crc ::xxh64;
+            return Encoding::Crc::xxh64;
     }
     assert(false);
 }
