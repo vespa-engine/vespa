@@ -10,9 +10,34 @@ namespace search::tensor {
 
 constexpr size_t MIN_BUFFER_ARRAYS = 8192;
 
+DirectTensorStore::TensorBufferType::TensorBufferType()
+    : ParentType(1, MIN_BUFFER_ARRAYS, TensorStoreType::RefType::offsetSize())
+{
+}
+
+void
+DirectTensorStore::TensorBufferType::cleanHold(void* buffer, size_t offset, size_t num_elems, CleanContext clean_ctx)
+{
+    TensorSP* elem = static_cast<TensorSP*>(buffer) + offset;
+    for (size_t i = 0; i < num_elems; ++i) {
+        clean_ctx.extraBytesCleaned((*elem)->count_memory_used());
+        *elem = _emptyEntry;
+        ++elem;
+    }
+}
+
+EntryRef
+DirectTensorStore::add_entry(TensorSP tensor)
+{
+    auto ref = _tensor_store.addEntry(tensor);
+    auto& state = _tensor_store.getBufferState(RefType(ref).bufferId());
+    state.incExtraUsedBytes(tensor->count_memory_used());
+    return ref;
+}
+
 DirectTensorStore::DirectTensorStore()
-    : TensorStore(_concrete_store),
-      _concrete_store(MIN_BUFFER_ARRAYS)
+    : TensorStore(_tensor_store),
+      _tensor_store(std::make_unique<TensorBufferType>())
 {
 }
 
@@ -22,7 +47,7 @@ DirectTensorStore::get_tensor(EntryRef ref) const
     if (!ref.valid()) {
         return nullptr;
     }
-    auto entry = _concrete_store.getEntry(ref);
+    const auto& entry = _tensor_store.getEntry(ref);
     assert(entry);
     return entry.get();
 }
@@ -31,8 +56,7 @@ EntryRef
 DirectTensorStore::store_tensor(std::unique_ptr<Tensor> tensor)
 {
     assert(tensor);
-    // TODO: Account for heap allocated memory
-    return _concrete_store.addEntry(TensorSP(tensor.release()));
+    return add_entry(TensorSP(tensor.release()));
 }
 
 void
@@ -41,8 +65,9 @@ DirectTensorStore::holdTensor(EntryRef ref)
     if (!ref.valid()) {
         return;
     }
-    // TODO: Account for heap allocated memory
-    _concrete_store.holdElem(ref, 1);
+    const auto& tensor = _tensor_store.getEntry(ref);
+    assert(tensor);
+    _tensor_store.holdElem(ref, 1, tensor->count_memory_used());
 }
 
 EntryRef
@@ -51,11 +76,10 @@ DirectTensorStore::move(EntryRef ref)
     if (!ref.valid()) {
         return EntryRef();
     }
-    auto old_tensor = _concrete_store.getEntry(ref);
+    const auto& old_tensor = _tensor_store.getEntry(ref);
     assert(old_tensor);
-    // TODO: Account for heap allocated memory (regular + hold)
-    auto new_ref = _concrete_store.addEntry(old_tensor);
-    _concrete_store.holdElem(ref, 1);
+    auto new_ref = add_entry(old_tensor);
+    _tensor_store.holdElem(ref, 1, old_tensor->count_memory_used());
     return new_ref;
 }
 

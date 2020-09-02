@@ -17,13 +17,25 @@ private:
     // Note: Must use SP (instead of UP) because of fallbackCopy() and initializeReservedElements() in BufferType,
     //       and implementation of move().
     using TensorSP = std::shared_ptr<Tensor>;
-    using DataStoreType = vespalib::datastore::DataStore<TensorSP>;
+    using TensorStoreType = vespalib::datastore::DataStore<TensorSP>;
 
-    DataStoreType _concrete_store;
+    class TensorBufferType : public vespalib::datastore::BufferType<TensorSP> {
+    private:
+        using ParentType = BufferType<TensorSP>;
+        using ParentType::_emptyEntry;
+        using CleanContext = typename ParentType::CleanContext;
+    public:
+        TensorBufferType();
+        virtual void cleanHold(void* buffer, size_t offset, size_t num_elems, CleanContext clean_ctx) override;
+    };
+
+    TensorStoreType _tensor_store;
+
+    EntryRef add_entry(TensorSP tensor);
 
 public:
     DirectTensorStore();
-    using RefType = DataStoreType::RefType;
+    using RefType = TensorStoreType::RefType;
 
     const Tensor* get_tensor(EntryRef ref) const;
     EntryRef store_tensor(std::unique_ptr<Tensor> tensor);
