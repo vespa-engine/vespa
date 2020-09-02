@@ -15,16 +15,16 @@ import static org.junit.Assert.assertEquals;
 public class RankingExpressionWithOnnxModelTestCase {
 
     @Test
-    public void testOnnxModelFeature() throws Exception {
+    public void testOnnxModelFeature() {
         VespaModel model = new VespaModelCreatorWithFilePkg("src/test/integration/onnx-file").create();
         DocumentDatabase db = ((IndexedSearchCluster)model.getSearchClusters().get(0)).getDocumentDbs().get(0);
 
-        String modelName = OnnxModelTransformer.toModelName("other/mnist_softmax.onnx");
+        String modelName = OnnxModelTransformer.toModelName("files/simple.onnx");
 
         // Ranking expression should be transformed from
-        //     onnxModel("other/mnist_softmax.onnx", "add")
+        //     onnxModel("files/simple.onnx", "output")
         // to
-        //     onnxModel(other_mnist_softmax_onnx).add
+        //     onnxModel(files_simple_onnx).output
 
         assertTransformedFeature(db, modelName);
         assertGeneratedConfig(db, modelName);
@@ -45,7 +45,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals(3, config.rankprofile().size());
         assertEquals("my_profile", config.rankprofile(2).name());
         assertEquals("vespa.rank.firstphase", config.rankprofile(2).fef().property(0).name());
-        assertEquals("onnxModel(" + modelName + ").add", config.rankprofile(2).fef().property(0).value());
+        assertEquals("onnxModel(" + modelName + ").output", config.rankprofile(2).fef().property(0).value());
     }
 
 }
