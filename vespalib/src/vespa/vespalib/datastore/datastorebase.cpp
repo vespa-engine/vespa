@@ -271,6 +271,23 @@ DataStoreBase::disableElemHoldList()
     }
 }
 
+namespace {
+
+void
+add_buffer_state_to_mem_stats(const BufferState& state, size_t elementSize, DataStoreBase::MemStats& stats)
+{
+    size_t extra_used_bytes = state.getExtraUsedBytes();
+    stats._allocElems += state.capacity();
+    stats._usedElems += state.size();
+    stats._deadElems += state.getDeadElems();
+    stats._holdElems += state.getHoldElems();
+    stats._allocBytes += (state.capacity() * elementSize) + extra_used_bytes;
+    stats._usedBytes += (state.size() * elementSize) + extra_used_bytes;
+    stats._deadBytes += state.getDeadElems() * elementSize;
+    stats._holdBytes += (state.getHoldElems() * elementSize) + state.getExtraHoldBytes();
+}
+
+}
 
 DataStoreBase::MemStats
 DataStoreBase::getMemStats() const
@@ -285,25 +302,11 @@ DataStoreBase::getMemStats() const
         } else if (state == BufferState::ACTIVE) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._activeBuffers;
-            stats._allocElems += bState.capacity();
-            stats._usedElems += bState.size();
-            stats._deadElems += bState.getDeadElems();
-            stats._holdElems += bState.getHoldElems();
-            stats._allocBytes += bState.capacity() * elementSize;
-            stats._usedBytes += (bState.size() * elementSize) + bState.getExtraUsedBytes();
-            stats._deadBytes += bState.getDeadElems() * elementSize;
-            stats._holdBytes += (bState.getHoldElems() * elementSize) + bState.getExtraHoldBytes();
+            add_buffer_state_to_mem_stats(bState, elementSize, stats);
         } else if (state == BufferState::HOLD) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._holdBuffers;
-            stats._allocElems += bState.capacity();
-            stats._usedElems += bState.size();
-            stats._deadElems += bState.getDeadElems();
-            stats._holdElems += bState.getHoldElems();
-            stats._allocBytes += bState.capacity() * elementSize;
-            stats._usedBytes += (bState.size() * elementSize) + bState.getExtraUsedBytes();
-            stats._deadBytes += bState.getDeadElems() * elementSize;
-            stats._holdBytes += (bState.getHoldElems() * elementSize) + bState.getExtraHoldBytes();
+            add_buffer_state_to_mem_stats(bState, elementSize, stats);
         } else {
             LOG_ABORT("should not be reached");
         }

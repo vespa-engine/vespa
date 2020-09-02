@@ -23,25 +23,15 @@ private:
     using ParentType::_activeBufferIds;
 public:
     MyStore() {}
-
-    void
-    holdBuffer(uint32_t bufferId)
-    {
+    void holdBuffer(uint32_t bufferId) {
         ParentType::holdBuffer(bufferId);
     }
-
-    void
-    holdElem(EntryRef ref, uint64_t len)
-    {
+    void holdElem(EntryRef ref, uint64_t len) {
         ParentType::holdElem(ref, len);
     }
-
-    void
-    transferHoldLists(generation_t generation)
-    {
+    void transferHoldLists(generation_t generation) {
         ParentType::transferHoldLists(generation);
     }
-
     void trimElemHoldList(generation_t usedGen) override {
         ParentType::trimElemHoldList(usedGen);
     }
@@ -54,13 +44,13 @@ public:
     void enableFreeLists() {
         ParentType::enableFreeLists();
     }
-
-    void
-    switchActiveBuffer()
-    {
+    void switchActiveBuffer() {
         ParentType::switchActiveBuffer(0, 0u);
     }
     size_t activeBufferId() const { return _activeBufferIds[0]; }
+    BufferState& get_active_buffer_state() {
+        return ParentType::getBufferState(activeBufferId());
+    }
 };
 
 
@@ -454,6 +444,21 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     m._freeBuffers = MyRef::numBuffers() - 1;
     m._holdBuffers = 0;
     assertMemStats(m, s.getMemStats());
+
+    { // increase extra used bytes
+        auto prev_stats = s.getMemStats();
+        s.get_active_buffer_state().incExtraUsedBytes(50);
+        auto curr_stats = s.getMemStats();
+        EXPECT_EQ(prev_stats._allocBytes + 50, curr_stats._allocBytes);
+        EXPECT_EQ(prev_stats._usedBytes + 50, curr_stats._usedBytes);
+    }
+
+    { // increase extra hold bytes
+        auto prev_stats = s.getMemStats();
+        s.get_active_buffer_state().incExtraHoldBytes(30);
+        auto curr_stats = s.getMemStats();
+        EXPECT_EQ(prev_stats._holdBytes + 30, curr_stats._holdBytes);
+    }
 }
 
 TEST(DataStoreTest, require_that_memory_usage_is_calculated)
