@@ -2,7 +2,6 @@
 
 #include "lz4compressor.h"
 #include "zstdcompressor.h"
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <stdexcept>
@@ -58,27 +57,29 @@ compress(ICompressor & compressor, const CompressionConfig & compression, const 
 CompressionConfig::Type
 docompress(const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
 {
-    CompressionConfig::Type type(CompressionConfig::NONE);
     switch (compression.type) {
     case CompressionConfig::LZ4:
         {
             LZ4Compressor lz4;
-            type = compress(lz4, compression, org, dest);
+            return compress(lz4, compression, org, dest);
         }
-        break;
     case CompressionConfig::ZSTD:
         {
             ZStdCompressor zstd;
-            type = compress(zstd, compression, org, dest);
+            return compress(zstd, compression, org, dest);
         }
-        break;
+    case CompressionConfig::NONE_MULTI:
+        return CompressionConfig::NONE_MULTI;
     case CompressionConfig::NONE:
     default:
-        break;
+        return CompressionConfig::NONE;
     }
-    return type;
 }
 
+CompressionConfig::Type
+compress(CompressionConfig::Type compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap) {
+    return compress(CompressionConfig(compression), org, dest, allowSwap);
+}
 CompressionConfig::Type
 compress(const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
 {
@@ -86,7 +87,7 @@ compress(const CompressionConfig & compression, const ConstBufferRef & org, Data
     if (org.size() >= compression.minSize) {
         type = docompress(compression, org, dest);
     }
-    if (type == CompressionConfig::NONE) {
+    if ((type == CompressionConfig::NONE) || (type == CompressionConfig::NONE_MULTI)) {
         if (allowSwap) {
             DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
             tmp.moveFreeToData(org.size());
@@ -139,6 +140,7 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const C
         }
         break;
     case CompressionConfig::NONE:
+    case CompressionConfig::NONE_MULTI:
     case CompressionConfig::UNCOMPRESSABLE:
         if (allowSwap) {
             DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
