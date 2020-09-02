@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.equalTo;
  * @author ollivir
  */
 public class HttpResponseStatisticsCollectorTest {
+
     private Connector connector;
     private List<String> monitoringPaths = List.of("/status.html");
     private List<String> searchPaths = List.of("/search");
@@ -41,7 +42,7 @@ public class HttpResponseStatisticsCollectorTest {
     private int httpResponseCode = 500;
 
     @Test
-    public void statistics_are_aggregated_by_category() throws Exception {
+    public void statistics_are_aggregated_by_category() {
         testRequest("http", 300, "GET");
         testRequest("http", 301, "GET");
         testRequest("http", 200, "GET");
@@ -52,7 +53,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void statistics_are_grouped_by_http_method_and_scheme() throws Exception {
+    public void statistics_are_grouped_by_http_method_and_scheme() {
         testRequest("http", 200, "GET");
         testRequest("http", 200, "PUT");
         testRequest("http", 200, "POST");
@@ -74,7 +75,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void statistics_include_grouped_and_single_statuscodes() throws Exception {
+    public void statistics_include_grouped_and_single_statuscodes() {
         testRequest("http", 401, "GET");
         testRequest("http", 404, "GET");
         testRequest("http", 403, "GET");
@@ -87,7 +88,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void retrieving_statistics_resets_the_counters() throws Exception {
+    public void retrieving_statistics_resets_the_counters() {
         testRequest("http", 200, "GET");
         testRequest("http", 200, "GET");
 
@@ -101,7 +102,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
-    public void statistics_include_request_type_dimension() throws Exception {
+    public void statistics_include_request_type_dimension() {
         testRequest("http", 200, "GET", "/search");
         testRequest("http", 200, "POST", "/search");
         testRequest("http", 200, "POST", "/feed");
@@ -117,7 +118,14 @@ public class HttpResponseStatisticsCollectorTest {
 
         stats = collector.takeStatistics();
         assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
+    }
 
+    @Test
+    public void request_type_can_be_set_explicitly() {
+        testRequest("http", 200, "GET", "/search", com.yahoo.jdisc.Request.RequestType.WRITE);
+
+        var stats = collector.takeStatistics();
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "write", 1L);
     }
 
     @Before
@@ -145,13 +153,19 @@ public class HttpResponseStatisticsCollectorTest {
         server.start();
     }
 
-    private Request testRequest(String scheme, int responseCode, String httpMethod) throws Exception {
+    private Request testRequest(String scheme, int responseCode, String httpMethod) {
         return testRequest(scheme, responseCode, httpMethod, "foo/bar");
     }
-    private Request testRequest(String scheme, int responseCode, String httpMethod, String path) throws Exception {
+    private Request testRequest(String scheme, int responseCode, String httpMethod, String path) {
+        return testRequest(scheme, responseCode, httpMethod, path, null);
+    }
+    private Request testRequest(String scheme, int responseCode, String httpMethod, String path,
+                                com.yahoo.jdisc.Request.RequestType explicitRequestType) {
         HttpChannel channel = new HttpChannel(connector, new HttpConfiguration(), null, new DummyTransport());
         MetaData.Request metaData = new MetaData.Request(httpMethod, new HttpURI(scheme + "://" + path), HttpVersion.HTTP_1_1, new HttpFields());
         Request req = channel.getRequest();
+        if (explicitRequestType != null)
+            req.setAttribute("requestType", explicitRequestType);
         req.setMetaData(metaData);
 
         this.httpResponseCode = responseCode;

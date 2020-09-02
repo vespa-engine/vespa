@@ -464,7 +464,9 @@
       "public java.lang.String getCharacterEncoding()",
       "public void populateAccessLogEntry(com.yahoo.container.logging.AccessLogEntry)",
       "public void complete()",
-      "public java.lang.Iterable getLogValues()"
+      "public java.lang.Iterable getLogValues()",
+      "public void setRequestType(com.yahoo.jdisc.Request$RequestType)",
+      "public com.yahoo.jdisc.Request$RequestType getRequestType()"
     ],
     "fields": [
       "public static final java.lang.String DEFAULT_MIME_TYPE",

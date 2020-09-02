@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author bjorncs
  */
 class JDiscServerConnector extends ServerConnector {
+
     public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
     private final Metric.Context metricCtx;
     private final Map<RequestDimensions, Metric.Context> requestMetricContextCache = new ConcurrentHashMap<>();

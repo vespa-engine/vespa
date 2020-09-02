@@ -33,49 +33,47 @@ class JDiscHttpServlet extends HttpServlet {
     private final static Logger log = Logger.getLogger(JDiscHttpServlet.class.getName());
     private final JDiscContext context;
 
+    private static final Set<String> servletSupportedMethods =
+            Stream.of(Method.OPTIONS, Method.GET, Method.HEAD, Method.POST, Method.PUT, Method.DELETE, Method.TRACE)
+                  .map(Method::name)
+                  .collect(Collectors.toSet());
+
     public JDiscHttpServlet(JDiscContext context) {
         this.context = context;
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doHead(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doHead(HttpServletRequest request, HttpServletResponse response) throws IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doOptions(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws IOException {
         dispatchHttpRequest(request, response);
     }
 
     @Override
-    protected void doTrace(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doTrace(HttpServletRequest request, HttpServletResponse response) throws IOException {
         dispatchHttpRequest(request, response);
     }
 
@@ -92,11 +90,6 @@ class JDiscHttpServlet extends HttpServlet {
         context.metric.add(JettyHttpServer.Metrics.NUM_REQUESTS, 1, metricContext);
         context.metric.add(JettyHttpServer.Metrics.JDISC_HTTP_REQUESTS, 1, metricContext);
 
-
-        Set<String> servletSupportedMethods =
-                Stream.of(Method.OPTIONS, Method.GET, Method.HEAD, Method.POST, Method.PUT, Method.DELETE, Method.TRACE)
-                        .map(Method::name)
-                        .collect(Collectors.toSet());
         String method = request.getMethod().toUpperCase();
         if (servletSupportedMethods.contains(method)) {
             super.service(request, response);
@@ -109,8 +102,6 @@ class JDiscHttpServlet extends HttpServlet {
         }
     }
 
-
-
     static JDiscServerConnector getConnector(HttpServletRequest request) {
         return (JDiscServerConnector)getConnection(request).getConnector();
     }
@@ -121,8 +112,7 @@ class JDiscHttpServlet extends HttpServlet {
         try {
             switch (request.getDispatcherType()) {
                 case REQUEST:
-                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response)
-                            .dispatch();
+                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response).dispatch();
                     break;
                 default:
                     if (log.isLoggable(Level.INFO)) {

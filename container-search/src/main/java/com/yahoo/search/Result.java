@@ -51,7 +51,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * Headers containing "envelope" meta information to be returned with this result.
      * Used for HTTP getHeaders when the return protocol is HTTP.
      */
-    private ListMap<String,String> headers = null;
+    private ListMap<String, String> headers = null;
 
     /** Creates a new Result where the top level hit group has id "toplevel" */
     public Result(Query query) {
@@ -66,7 +66,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * @param query the query which produced this result
      * @param hits the hit container which this will return from {@link #hits()}
      */
-    @SuppressWarnings("deprecation")
     public Result(Query query, HitGroup hits) {
         super(query);
         if (query==null) throw new NullPointerException("The query reference in a result cannot be null");

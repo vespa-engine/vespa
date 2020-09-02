@@ -14,9 +14,9 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
  * Represents a response for a request to read contents of a file.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class SessionContentReadResponse extends HttpResponse {
+
     private final ApplicationFile file;
 
     public SessionContentReadResponse(ApplicationFile file) {
@@ -35,4 +35,5 @@ public class SessionContentReadResponse extends HttpResponse {
     public String getContentType() {
         return HttpResponse.DEFAULT_MIME_TYPE;
     }
+
 }

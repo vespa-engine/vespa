@@ -39,16 +39,12 @@ public class Response extends ListenableFreezableClass {
 
     private final DataList<?> data;
 
-    /**
-     * Creates a request containing an empty array data list
-     */
+    /** Creates a request containing an empty array data list */
     public Response(Request request) {
         this(ArrayDataList.create(request));
     }
 
-    /**
-     * Creates a response containing a list of data
-     */
+    /** Creates a response containing a list of data */
     public Response(DataList<?> data) {
         this.data = data;
 
@@ -104,7 +100,7 @@ public class Response extends ListenableFreezableClass {
         return new CompleteAllOnGetFuture<D>(futures);
     }
 
-        @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     private static <D extends Data> void collectCompletionFutures(DataList<D> dataList, List<ListenableFuture<DataList<D>>> futures) {
         futures.add(dataList.complete());
         for (D data : dataList.asList()) {
