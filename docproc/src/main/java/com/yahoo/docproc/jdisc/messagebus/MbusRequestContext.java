@@ -51,6 +51,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     // document being processed is a resource and is then grabbing more resources of
     // the same type without releasing its own resources.
     public final static String internalNoThrottledSource = "internalNoThrottledSource";
+    private final static String internalNoThrottledSourcePath = "/" + internalNoThrottledSource;
 
     public MbusRequestContext(MbusRequest request, ResponseHandler responseHandler,
                               ComponentRegistry<DocprocService> docprocServiceComponentRegistry,
@@ -96,12 +97,16 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         }
         long inputSequenceId = requestMsg.getSequenceId();
         ResponseMerger responseHandler = new ResponseMerger(requestMsg, messages.size(), this);
+        int numMsgWithOriginalSequenceId = 0;
         for (Message message : messages) {
+            if (message.getSequenceId() == inputSequenceId) numMsgWithOriginalSequenceId++;
+        }
+        for (Message message : messages) {
+            String path = internalNoThrottledSourcePath;
+            if ((numMsgWithOriginalSequenceId == 1) && (message.getSequenceId() == inputSequenceId))
+                path = getUri().getPath();
             // See comment for internalNoThrottledSource
-            dispatchRequest(message,
-                            message.getSequenceId() == inputSequenceId ? getUri().getPath()
-                                                                       : "/" + internalNoThrottledSource,
-                            responseHandler);
+            dispatchRequest(message, path, responseHandler);
         }
     }
 
