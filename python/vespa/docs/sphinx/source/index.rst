@@ -10,6 +10,8 @@ Vespa python API
    :hidden:
 
    install
+   quickstart
+   howto
    reference-api
 
 ``pyvespa`` provides a python API to vespa.ai_. It allow us to create, modify, deploy and interact with
@@ -17,6 +19,7 @@ running Vespa instances. The main goal of the library is to allow for faster pro
 Machine Learning experiments around Vespa applications.
 
 .. _vespa.ai: https://vespa.ai/
+
 
 Install
 +++++++
@@ -27,18 +30,24 @@ You can install ``pyvespa`` via ``pip``:
 
 	pip install pyvespa
 
-Connecting to a running Vespa instance
-++++++++++++++++++++++++++++++++++++++
+Quick-start
++++++++++++
 
-If you have a running Vespa instance that you would like to experiment with, you connect to it with :class:`vespa.application.Vespa`
+The best way to get started is by following the tutorials below. You can easily run them yourself on Google Colab
+by clicking on the badge at the top of the tutorial.
 
+- :doc:`Connect and interact with CORD-19 search app <connect-to-vespa-instance>`.
+- :doc:`Create and deploy a MS MARCO search app from scratch <create-and-deploy-vespa-cloud>`.
 
-.. code-block:: python
+How-to guides
++++++++++++++
 
-   from vespa.application import Vespa
-   app = Vespa(url = "https://api.cord19.vespa.ai")
-
-
+- :doc:`Create Vespa application packages <application-package>`.
+- :doc:`Deploy Vespa applications to Vespa Cloud or to Docker containers <deploy-application>`.
+- :doc:`Define query models <query-model>`.
+- :doc:`Query Vespa applications <query>`.
+- :doc:`Evaluate query models <evaluation>`.
+- :doc:`Collect training data from Vespa applications <collect-training-data>`.
 
 Indices and tables
 ==================
