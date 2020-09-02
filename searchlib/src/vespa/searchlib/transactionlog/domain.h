@@ -4,45 +4,20 @@
 #include "domainpart.h"
 #include "session.h"
 #include <vespa/vespalib/util/threadexecutor.h>
-#include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/thread.h>
 #include <chrono>
 
 namespace search::transactionlog {
-
-class DomainConfig {
-public:
-    using duration = vespalib::duration;
-    DomainConfig();
-    DomainConfig & setEncoding(Encoding v)          { _encoding = v; return *this; }
-    DomainConfig & setPartSizeLimit(size_t v)       { _partSizeLimit = v; return *this; }
-    DomainConfig & setChunkSizeLimit(size_t v)      { _chunkSizeLimit = v; return *this; }
-    DomainConfig & setChunkAgeLimit(vespalib::duration v) { _chunkAgeLimit = v; return *this; }
-    DomainConfig & setCompressionLevel(uint8_t v)   { _compressionLevel = v; return *this; }
-    Encoding          getEncoding() const { return _encoding; }
-    size_t       getPartSizeLimit() const { return _partSizeLimit; }
-    size_t      getChunkSizeLimit() const { return _chunkSizeLimit; }
-    duration     getChunkAgeLimit() const { return _chunkAgeLimit; }
-    uint8_t   getCompressionlevel() const { return _compressionLevel; }
-private:
-    Encoding     _encoding;
-    uint8_t      _compressionLevel;
-    size_t       _partSizeLimit;
-    size_t       _chunkSizeLimit;
-    duration     _chunkAgeLimit;
-};
 
 struct PartInfo {
     SerialNumRange range;
     size_t numEntries;
     size_t byteSize;
     vespalib::string file;
-    PartInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, vespalib::stringref file_in)
-        : range(range_in),
-          numEntries(numEntries_in),
-          byteSize(byteSize_in),
-          file(file_in)
-    {}
+    PartInfo(SerialNumRange range_in, size_t numEntries_in,
+             size_t byteSize_in,
+             vespalib::stringref file_in)
+        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in),
+          file(file_in) {}
 };
 
 struct DomainInfo {
@@ -65,17 +40,17 @@ class Domain
 public:
     using SP = std::shared_ptr<Domain>;
     using Executor = vespalib::SyncableThreadExecutor;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir, FastOS_ThreadPool & threadPool,
-           Executor & commitExecutor, Executor & sessionExecutor, const DomainConfig & cfg,
+    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
+           Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
            const common::FileHeaderContext &fileHeaderContext);
 
-    ~Domain();
+    virtual ~Domain();
 
     DomainInfo getDomainInfo() const;
     const vespalib::string & name() const { return _name; }
     bool erase(SerialNum to);
 
-    void commit(const Packet & packet, Writer::DoneCallback onDone);
+    void commit(const Packet & packet);
     int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Session::Destination> dest);
 
     SerialNum begin() const;
@@ -102,7 +77,7 @@ public:
         return _sessionExecutor.execute(std::move(task));
     }
     uint64_t size() const;
-    Domain & setConfig(const DomainConfig & cfg);
+
 private:
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;
@@ -120,26 +95,22 @@ private:
     using DomainPartList = std::map<int64_t, DomainPart::SP>;
     using DurationSeconds = std::chrono::duration<double>;
 
-    DomainConfig           _config;
-    SerialNum              _lastSerial;
-    FastOS_ThreadPool    & _threadPool;
-    std::unique_ptr<Executor> _singleCommiter;
-    Executor             & _commitExecutor;
-    Executor             & _sessionExecutor;
-    std::atomic<int>       _sessionId;
-    vespalib::Monitor      _syncMonitor;
-    bool                   _pendingSync;
-    vespalib::string       _name;
-    DomainPartList         _parts;
-    vespalib::Lock         _lock;
-    vespalib::Monitor      _currentChunkMonitor;
-    vespalib::Lock         _sessionLock;
-    SessionList            _sessions;
-    DurationSeconds        _maxSessionRunTime;
-    vespalib::string       _baseDir;
+    DomainPart::Crc     _defaultCrcType;
+    Executor          & _commitExecutor;
+    Executor          & _sessionExecutor;
+    std::atomic<int>    _sessionId;
+    vespalib::Monitor   _syncMonitor;
+    bool                _pendingSync;
+    vespalib::string    _name;
+    uint64_t            _domainPartSize;
+    DomainPartList      _parts;
+    vespalib::Lock      _lock;
+    vespalib::Lock      _sessionLock;
+    SessionList         _sessions;
+    DurationSeconds     _maxSessionRunTime;
+    vespalib::string    _baseDir;
     const common::FileHeaderContext &_fileHeaderContext;
-    bool                   _markedDeleted;
-    FastOS_ThreadInterface  * _self;
+    bool                _markedDeleted;
 };
 
 }

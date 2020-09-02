@@ -176,20 +176,6 @@ handleReadError(const char *text,
     return retval;
 }
 
-int32_t
-calcCrc(Encoding::Crc version, const void * buf, size_t sz)
-{
-    if (version == Encoding::Crc::xxh64) {
-        return static_cast<int32_t>(XXH64(buf, sz, 0ll));
-    } else if (version == Encoding::Crc::ccitt_crc32) {
-        vespalib::crc_32_type calculator;
-        calculator.process_bytes(buf, sz);
-        return calculator.checksum();
-    } else {
-        LOG_ABORT("should not be reached");
-    }
-}
-
 }
 
 int64_t
@@ -279,23 +265,22 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     return currPos;
 }
 
-DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding encoding,
-                       uint8_t compressionLevel, const FileHeaderContext &fileHeaderContext, bool allowTruncate)
-    : _encoding(encoding),
-      _compressionLevel(compressionLevel),
-      _lock(),
-      _fileLock(),
-      _range(s),
-      _sz(0),
-      _byteSize(0),
-      _packets(),
-      _fileName(make_string("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
-      _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
-      _skipList(),
-      _headerLen(0),
-      _writeLock(),
-      _writtenSerial(0),
-      _syncedSerial(0)
+DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Crc defaultCrc,
+                       const FileHeaderContext &fileHeaderContext, bool allowTruncate) :
+    _defaultCrc(defaultCrc),
+    _lock(),
+    _fileLock(),
+    _range(s),
+    _sz(0),
+    _byteSize(0),
+    _packets(),
+    _fileName(make_string("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
+    _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
+    _skipList(),
+    _headerLen(0),
+    _writeLock(),
+    _writtenSerial(0),
+    _syncedSerial(0)
 {
     if (_transLog->OpenReadOnly()) {
         int64_t currPos = buildPacketMapping(allowTruncate);
@@ -597,12 +582,12 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
     int32_t crc(0);
     uint32_t len(entry.serializedSize() + sizeof(crc));
     nbostream os;
-    os << static_cast<uint8_t>(_encoding.getRaw());
+    os << static_cast<uint8_t>(_defaultCrc);
     os << len;
     size_t start(os.size());
     entry.serialize(os);
     size_t end(os.size());
-    crc = calcCrc(_encoding.getCrc(), os.data() + start, end - start);
+    crc = calcCrc(_defaultCrc, os.data() + start, end - start);
     os << crc;
     size_t osSize = os.size();
     assert(osSize == len + sizeof(len) + sizeof(uint8_t));
@@ -630,10 +615,10 @@ DomainPart::read(FastOS_FileInterface &file,
     uint32_t len(0);
     his >> version >> len;
     if ((retval = (rlen == sizeof(tmp)))) {
-        if ( ! (retval = (version == Encoding::Crc::ccitt_crc32) || version == Encoding::Crc::xxh64)) {
+        if ( ! (retval = (version == ccitt_crc32) || version == xxh64)) {
             string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
-                                   " got %d from '%s' at position %" PRId64,
-                                   version, file.GetFileName(), lastKnownGoodPos));
+                                             " got %d from '%s' at position %" PRId64,
+                                             version, file.GetFileName(), lastKnownGoodPos));
             if ((version == 0) && (len == 0) && tailOfFileIsZero(file, lastKnownGoodPos)) {
                 LOG(warning, "%s", msg.c_str());
                 return handleReadError("packet version", file, sizeof(tmp), rlen, lastKnownGoodPos, allowTruncate);
@@ -653,7 +638,7 @@ DomainPart::read(FastOS_FileInterface &file,
             entry.deserialize(is);
             int32_t crc(0);
             is >> crc;
-            int32_t crcVerify(calcCrc(Encoding(version).getCrc(), buf.get(), len - sizeof(crc)));
+            int32_t crcVerify(calcCrc(static_cast<Crc>(version), buf.get(), len - sizeof(crc)));
             if (crc != crcVerify) {
                 throw runtime_error(make_string("Got bad crc for packet from '%s' (len pos=%" PRId64 ", len=%d) : crcVerify = %d, expected %d",
                                                 file.GetFileName(), file.GetPosition() - len - sizeof(len),
@@ -668,6 +653,19 @@ DomainPart::read(FastOS_FileInterface &file,
         }
     }
     return retval;
+}
+
+int32_t DomainPart::calcCrc(Crc version, const void * buf, size_t sz)
+{
+    if (version == xxh64) {
+        return static_cast<int32_t>(XXH64(buf, sz, 0ll));
+    } else if (version == ccitt_crc32) {
+        vespalib::crc_32_type calculator;
+        calculator.process_bytes(buf, sz);
+        return calculator.checksum();
+    } else {
+        LOG_ABORT("should not be reached");
+    }
 }
 
 }

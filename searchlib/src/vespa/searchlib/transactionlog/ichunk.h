@@ -22,7 +22,7 @@ public:
         lz4 = 2,
         zstd = 3
     };
-    explicit Encoding(uint8_t raw) : _raw(raw) { }
+    Encoding(uint8_t raw) : _raw(raw) {}
     Encoding(Crc crc, Compression compression);
     Crc getCrc() const { return Crc(_raw & 0xf); }
     Compression getCompression() const { return Compression((_raw >> 4) & 0xf); }

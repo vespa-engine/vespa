@@ -49,7 +49,6 @@ using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using vespalib::makeLambdaTask;
 using search::transactionlog::TransLogServer;
-using search::transactionlog::DomainConfig;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
@@ -460,7 +459,7 @@ struct FeedHandlerFixture
     FeedHandler                  handler;
     FeedHandlerFixture()
         : _fileHeaderContext(),
-          tls("mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
+          tls("mytls", 9016, "mytlsdir", _fileHeaderContext, 0x10000),
           tlsSpec("tcp/localhost:9016"),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
