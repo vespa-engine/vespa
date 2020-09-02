@@ -23,5 +23,6 @@ vespa_add_executable(metrics_gtest_runner_app TEST
 vespa_add_test(
     NAME metrics_gtest_runner_app
     COMMAND metrics_gtest_runner_app
+    COST 200
 )
 

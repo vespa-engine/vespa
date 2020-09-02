@@ -403,7 +403,7 @@ function(__is_command_a_script COMMAND RESULT_VAR)
 endfunction()
 
 function(vespa_add_test)
-    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;ENVIRONMENT" "COMMAND;DEPENDS" ${ARGN})
+    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;ENVIRONMENT;COST" "COMMAND;DEPENDS" ${ARGN})
 
     if(NOT RUN_BENCHMARKS AND ARG_BENCHMARK)
         return()
@@ -454,8 +454,13 @@ function(vespa_add_test)
 
     list(APPEND ARG_ENVIRONMENT "SOURCE_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}")
     set_tests_properties(${ARG_NAME} PROPERTIES ENVIRONMENT "${ARG_ENVIRONMENT}")
+
+    if (ARG_COST)
+        set_tests_properties(${ARG_NAME} PROPERTIES COST ${ARG_COST})
+    endif()
+    
     if(ARG_RUN_SERIAL)
-        set_tests_properties(${TEST_NAME} PROPERTIES RUN_SERIAL TRUE)
+        set_tests_properties(${ARG_NAME} PROPERTIES RUN_SERIAL TRUE)
     endif()
 
     if (AUTORUN_UNIT_TESTS)
