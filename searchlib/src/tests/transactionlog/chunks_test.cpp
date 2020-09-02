@@ -30,31 +30,31 @@ verifySerializationAndDeserialization(IChunk & org, size_t numEntries) {
 }
 
 TEST("test serialization and deserialization of current default uncompressed xxh64") {
-    XXH64None chunk;
+    XXH64NoneChunk chunk;
     verifySerializationAndDeserialization(chunk, 1);
 }
 
 TEST("test serialization and deserialization of legacy uncompressed ccittcrc32") {
-    CCITTCRC32None chunk;
+    CCITTCRC32NoneChunk chunk;
     verifySerializationAndDeserialization(chunk, 1);
 }
 
 TEST("test serialization and deserialization of future multientry xxh64 lz4 compression") {
     for (size_t level(1); level < 9; level++) {
-        XXH64Compressed chunk(CompressionConfig::Type::LZ4, level);
+        XXH64CompressedChunk chunk(CompressionConfig::Type::LZ4, level);
         verifySerializationAndDeserialization(chunk, 100);
     }
 }
 
 TEST("test serialization and deserialization of future multientry xxh64 zstd compression") {
     for (size_t level(1); level < 9; level++) {
-        XXH64Compressed chunk(CompressionConfig::Type::ZSTD, level);
+        XXH64CompressedChunk chunk(CompressionConfig::Type::ZSTD, level);
         verifySerializationAndDeserialization(chunk, 100);
     }
 }
 
 TEST("test serialization and deserialization of future multientry xxh64 no compression") {
-    XXH64Compressed chunk(CompressionConfig::Type::NONE_MULTI, 1);
+    XXH64CompressedChunk chunk(CompressionConfig::Type::NONE_MULTI, 1);
     verifySerializationAndDeserialization(chunk, 100);
 }
 

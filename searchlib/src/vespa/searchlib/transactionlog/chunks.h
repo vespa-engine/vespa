@@ -8,7 +8,7 @@
 namespace search::transactionlog {
 
 /// Current default chunk serialisation format
-class XXH64None : public IChunk {
+class XXH64NoneChunk : public IChunk {
 protected:
     Encoding onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
@@ -16,7 +16,7 @@ public:
 };
 
 /// TODO Legacy chunk serialisation format to be removed soon.
-class CCITTCRC32None : public IChunk {
+class CCITTCRC32NoneChunk : public IChunk {
 protected:
     Encoding onEncode(nbostream &os) const override;
     void onDecode(nbostream &is) override;
@@ -24,10 +24,10 @@ public:
 };
 
 /// Future default chunk serialisation format
-class XXH64Compressed : public IChunk {
+class XXH64CompressedChunk : public IChunk {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    XXH64Compressed(CompressionConfig::Type, uint8_t level);
+    XXH64CompressedChunk(CompressionConfig::Type, uint8_t level);
 protected:
     void decompress(nbostream & os, uint32_t uncompressedLen);
     Encoding compress(nbostream & os, Encoding::Crc crc) const;

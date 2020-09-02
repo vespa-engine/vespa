@@ -3,19 +3,20 @@
 #include "chunks.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/crc.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <xxhash.h>
 #include <cassert>
 
-using std::runtime_error;
 using std::make_unique;
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::compression::CompressionConfig;
+using vespalib::IllegalArgumentException;
 
 namespace search::transactionlog {
 
 Encoding::Encoding(Crc crc, Compression compression)
-    : _raw(crc | (compression << 4))
+    : _raw(crc | (compression << 4u))
 {
     assert(crc <= Crc::xxh64);
     assert(compression <= Compression::zstd);
@@ -71,26 +72,27 @@ IChunk::create(Encoding encoding, uint8_t compressionLevel) {
         case Encoding::Crc::xxh64:
             switch (encoding.getCompression()) {
                 case Encoding::Compression::none:
-                    return make_unique<XXH64None>();
+                    return make_unique<XXH64NoneChunk>();
                 case Encoding::Compression::none_multi:
-                    return make_unique<XXH64Compressed>(CompressionConfig::NONE_MULTI, compressionLevel);
+                    return make_unique<XXH64CompressedChunk>(CompressionConfig::NONE_MULTI, compressionLevel);
                 case Encoding::Compression::lz4:
-                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4, compressionLevel);
+                    return make_unique<XXH64CompressedChunk>(CompressionConfig::LZ4, compressionLevel);
                 case Encoding::Compression::zstd:
-                    return make_unique<XXH64Compressed>(CompressionConfig::ZSTD, compressionLevel);
+                    return make_unique<XXH64CompressedChunk>(CompressionConfig::ZSTD, compressionLevel);
                 default:
-                    return make_unique<XXH64Compressed>(CompressionConfig::LZ4, compressionLevel);
+                    throw IllegalArgumentException(fmt("Unhandled compression type '%d' for xxh64, compression=",
+                                                       encoding.getCompression()));
             }
         case Encoding::Crc::ccitt_crc32:
             switch (encoding.getCompression()) {
                 case Encoding::Compression::none:
-                    return make_unique<CCITTCRC32None>();
+                    return make_unique<CCITTCRC32NoneChunk>();
                 default:
-                    throw runtime_error(make_string("Unhandled compression type '%d' for ccitt_crc32 compression",
-                                                    encoding.getCompression()));
+                    throw IllegalArgumentException(fmt("Unhandled compression type '%d' for ccitt_crc32, compression=",
+                                                       encoding.getCompression()));
             }
         default:
-            throw runtime_error(make_string("Unhandled crc type '%d'", encoding.getCrc()));
+            throw IllegalArgumentException(fmt("Unhandled crc type '%d'", encoding.getCrc()));
     }
 }
 

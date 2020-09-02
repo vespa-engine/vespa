@@ -54,7 +54,7 @@ toCompression(CompressionConfig::Type type) {
 }
 
 Encoding
-CCITTCRC32None::onEncode(nbostream &os) const {
+CCITTCRC32NoneChunk::onEncode(nbostream &os) const {
     size_t start = os.wp();
     assert(getEntries().size() == 1);
     serializeEntries(os);
@@ -63,7 +63,7 @@ CCITTCRC32None::onEncode(nbostream &os) const {
 }
 
 void
-CCITTCRC32None::onDecode(nbostream &is) {
+CCITTCRC32NoneChunk::onDecode(nbostream &is) {
     verifyCrc(is, Encoding::Crc::ccitt_crc32);
     nbostream data(is.peek(), is.size() - sizeof(int32_t));
     deserializeEntries(data);
@@ -71,7 +71,7 @@ CCITTCRC32None::onDecode(nbostream &is) {
 }
 
 Encoding
-XXH64None::onEncode(nbostream &os) const {
+XXH64NoneChunk::onEncode(nbostream &os) const {
     size_t start = os.wp();
     assert(getEntries().size() == 1);
     serializeEntries(os);
@@ -80,7 +80,7 @@ XXH64None::onEncode(nbostream &os) const {
 }
 
 void
-XXH64None::onDecode(nbostream &is) {
+XXH64NoneChunk::onDecode(nbostream &is) {
     verifyCrc(is, Encoding::Crc::xxh64);
     nbostream data(is.peek(), is.size() - sizeof(int32_t));
     deserializeEntries(data);
@@ -88,7 +88,7 @@ XXH64None::onDecode(nbostream &is) {
 }
 
 void
-XXH64Compressed::decompress(nbostream & is, uint32_t uncompressedLen) {
+XXH64CompressedChunk::decompress(nbostream & is, uint32_t uncompressedLen) {
     vespalib::DataBuffer uncompressed;
     ConstBufferRef compressed(is.peek(), is.size() - sizeof(int32_t));
     ::decompress(_type, uncompressedLen, compressed, uncompressed, false);
@@ -97,13 +97,13 @@ XXH64Compressed::decompress(nbostream & is, uint32_t uncompressedLen) {
     is.adjustReadPos(is.size());
 }
 
-XXH64Compressed::XXH64Compressed(CompressionConfig::Type type, uint8_t level)
+XXH64CompressedChunk::XXH64CompressedChunk(CompressionConfig::Type type, uint8_t level)
     : _type(type),
       _level(level)
 { }
 
 Encoding
-XXH64Compressed::compress(nbostream & os, Encoding::Crc crc) const {
+XXH64CompressedChunk::compress(nbostream & os, Encoding::Crc crc) const {
     nbostream org;
     serializeEntries(org);
     DataBuffer compressed;
@@ -118,12 +118,12 @@ XXH64Compressed::compress(nbostream & os, Encoding::Crc crc) const {
 }
 
 Encoding
-XXH64Compressed::onEncode(IChunk::nbostream &os) const {
+XXH64CompressedChunk::onEncode(IChunk::nbostream &os) const {
     return compress(os, Encoding::Crc::xxh64);
 }
 
 void
-XXH64Compressed::onDecode(IChunk::nbostream &is) {
+XXH64CompressedChunk::onDecode(IChunk::nbostream &is) {
     uint32_t uncompressedLen;
     is >> uncompressedLen;
     verifyCrc(is, Encoding::Crc::xxh64);
