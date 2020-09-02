@@ -56,7 +56,7 @@ private:
     void set_doc(IntegerAttribute *ia, uint32_t docid, const Position &p) {
 	ia->clearDoc(docid);
 	int64_t value = vespalib::geo::ZCurve::encode(p.first, p.second);
-	LOG(debug, "single: value for docid %u is %zd", docid, value);
+	LOG(debug, "single: value for docid %u is %" PRId64, docid, value);
 	ia->update(docid, value);
 	ia->commit();
         if (docid >= _positions.size()) {
