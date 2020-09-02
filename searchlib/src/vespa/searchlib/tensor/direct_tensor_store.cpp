@@ -39,6 +39,7 @@ DirectTensorStore::DirectTensorStore()
     : TensorStore(_tensor_store),
       _tensor_store(std::make_unique<TensorBufferType>())
 {
+    _tensor_store.enableFreeLists();
 }
 
 const vespalib::tensor::Tensor*
