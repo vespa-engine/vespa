@@ -262,6 +262,7 @@ void
 StoreOnlyFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
     (void) serialNum;
+    _writeService.summary().execute(makeLambdaTask([onDone=onCommitDone]() {(void) onDone;}));
     std::vector<uint32_t> lidsToReuse;
     lidsToReuse = _lidReuseDelayer.getReuseLids();
     if (!lidsToReuse.empty()) {
