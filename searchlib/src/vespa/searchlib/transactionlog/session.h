@@ -25,7 +25,7 @@ private:
 public:
     class Destination {
     public:
-        virtual ~Destination() {}
+        virtual ~Destination() = default;
         virtual bool send(int32_t id, const vespalib::string & domain, const Packet & packet) = 0;
         virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
         virtual bool connected() const = 0;
