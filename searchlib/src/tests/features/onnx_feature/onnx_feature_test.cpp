@@ -27,6 +27,7 @@ std::string source_dir = get_source_dir();
 std::string vespa_dir = source_dir + "/" + "../../../../..";
 std::string simple_model = vespa_dir + "/" + "eval/src/tests/tensor/onnx_wrapper/simple.onnx";
 std::string dynamic_model = vespa_dir + "/" + "eval/src/tests/tensor/onnx_wrapper/dynamic.onnx";
+std::string strange_names_model = source_dir + "/" + "strange_names.onnx";
 
 uint32_t default_docid = 1;
 
@@ -106,6 +107,18 @@ TEST_F(OnnxFeatureTest, dynamic_onnx_model_can_be_calculated) {
     EXPECT_EQ(get("onnxModel(dynamic).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get(2), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 84.0));
     EXPECT_EQ(get(3), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 89.0));
+}
+
+TEST_F(OnnxFeatureTest, strange_input_and_output_names_are_normalized) {
+    add_expr("input_0", "tensor<float>(a[2]):[10,20]");
+    add_expr("input_1", "tensor<float>(a[2]):[5,10]");
+    add_onnx("strange_names", strange_names_model);
+    compile(onnx_feature("strange_names"));
+    auto expect_add = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},15).add({{"d0",1}},30);
+    auto expect_sub = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},5).add({{"d0",1}},10);
+    EXPECT_EQ(get(1), expect_add);
+    EXPECT_EQ(get("onnxModel(strange_names).foo_bar", 1), expect_add);
+    EXPECT_EQ(get("onnxModel(strange_names)._baz_0", 1), expect_sub);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
