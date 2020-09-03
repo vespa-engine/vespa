@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -31,7 +32,7 @@ public class XmlPreProcessor {
     final static String preprocessNamespace = "xmlns:preprocess";
     final static String preprocessNamespaceUri = "properties";  //TODO
 
-    private final File applicationDir;
+    private final FileWrapper applicationDir;
     private final Reader xmlInput;
     private final InstanceName instance;
     private final Environment environment;
@@ -43,6 +44,10 @@ public class XmlPreProcessor {
     }
 
     public XmlPreProcessor(File applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {
+        this(FileSystemWrapper.getDefault().wrap(applicationDir.toPath()), xmlInput, instance, environment, region);
+    }
+
+    public XmlPreProcessor(FileWrapper applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {
         this.applicationDir = applicationDir;
         this.xmlInput = xmlInput;
         this.instance = instance;

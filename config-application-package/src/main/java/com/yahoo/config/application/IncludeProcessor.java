@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
-import com.yahoo.io.IOUtils;
+import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.NoSuchElementException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Handles preprocess:include statements and returns a Document which has all the include statements resolved
@@ -23,10 +26,14 @@ import java.util.List;
  */
 class IncludeProcessor implements PreProcessor {
 
-    private final File application;
-    public IncludeProcessor(File application) {
-        this.application = application;
+    private final FileWrapper application;
 
+    public IncludeProcessor(File application) {
+        this(FileSystemWrapper.getDefault().wrap(application.toPath()));
+    }
+
+    public IncludeProcessor(FileWrapper application) {
+        this.application = application;
     }
 
     public Document process(Document input) throws IOException, TransformerException {
@@ -35,17 +42,18 @@ class IncludeProcessor implements PreProcessor {
         return doc;
     }
 
-    private static void includeFile(File currentFolder, Element currentElement) throws IOException {
+    private static void includeFile(FileWrapper currentFolder, Element currentElement) throws IOException {
         NodeList list = currentElement.getElementsByTagNameNS(XmlPreProcessor.preprocessNamespaceUri, "include");
         while (list.getLength() > 0) {
             Element elem = (Element) list.item(0);
             Element parent = (Element) elem.getParentNode();
             String filename = elem.getAttribute("file");
             boolean required = ! elem.hasAttribute("required") || Boolean.parseBoolean(elem.getAttribute("required"));
-            File file = new File(currentFolder, filename);
+            FileWrapper file = currentFolder.child(filename);
 
             Document subFile = IncludeProcessor.parseIncludeFile(file, parent.getTagName(), required);
-            includeFile(file.getParentFile(), subFile.getDocumentElement());
+            includeFile(file.parent().orElseThrow(() -> new NoSuchElementException(file + " has no parent")),
+                        subFile.getDocumentElement());
 
             //System.out.println("document before merging: " + documentAsString(doc));
             IncludeProcessor.mergeInto(parent, XML.getChildren(subFile.getDocumentElement()));
@@ -65,12 +73,12 @@ class IncludeProcessor implements PreProcessor {
         }
     }
 
-    private static Document parseIncludeFile(File file, String parentTagName, boolean required) throws IOException {
+    private static Document parseIncludeFile(FileWrapper file, String parentTagName, boolean required) throws IOException {
         StringWriter w = new StringWriter();
         final String startTag = "<" + parentTagName + " " + XmlPreProcessor.deployNamespace + "='" + XmlPreProcessor.deployNamespaceUri + "' " + XmlPreProcessor.preprocessNamespace + "='" + XmlPreProcessor.preprocessNamespaceUri + "'>";
         w.append(startTag);
         if (file.exists() || required) {
-            w.append(IOUtils.readFile(file));
+            w.append(new String(file.content(), UTF_8));
         }
         final String endTag = "</" + parentTagName + ">";
         w.append(endTag);
