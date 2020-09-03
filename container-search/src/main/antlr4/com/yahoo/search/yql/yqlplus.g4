@@ -646,6 +646,7 @@ constantExpression
     : scalar_literal
     | constantMapExpression
     | constantArray
+    | parameter
     ;
 
 constantArray

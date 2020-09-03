@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import java.util.Arrays;
+
 /**
  * @author Simon Thoresen Hult
  */
@@ -33,7 +35,8 @@ class IntegerDecoder {
         if (c >= CHAR_MIN && c <= CHAR_MAX) {
             return (0xF & (c - CHAR_MIN));
         } else {
-            throw new NumberFormatException(String.valueOf(c));
+            throw new NumberFormatException("Expected a char in " + Arrays.toString(IntegerEncoder.CHARS) +
+                                            " but was '" + c + "'");
         }
     }
 }
