@@ -55,7 +55,19 @@ encoding_to_cell_type(uint32_t cell_encoding) {
     }
 }
 
+std::unique_ptr<Tensor>
+wrap_simple_tensor(std::unique_ptr<eval::SimpleTensor> simple)
+{
+    if (Tensor::supported({simple->type()})) {
+        nbostream data;
+        eval::SimpleTensor::encode(*simple, data);
+        // note: some danger of infinite recursion here
+        return TypedBinaryFormat::deserialize(data);
+    }
+    return std::make_unique<WrappedSimpleTensor>(std::move(simple));
 }
+
+} // namespace <unnamed>
 
 void
 TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
@@ -104,7 +116,7 @@ TypedBinaryFormat::deserialize(nbostream &stream)
     case MIXED_BINARY_FORMAT_TYPE:
     case MIXED_BINARY_FORMAT_WITH_CELLTYPE:
         stream.adjustReadPos(read_pos - stream.rp());
-        return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::decode(stream));
+        return wrap_simple_tensor(eval::SimpleTensor::decode(stream));
     default:
         throw IllegalArgumentException(make_string("Received unknown tensor format type = %du.", formatId));
     }
