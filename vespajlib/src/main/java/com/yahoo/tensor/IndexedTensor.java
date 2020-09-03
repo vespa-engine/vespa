@@ -178,9 +178,7 @@ public abstract class IndexedTensor implements Tensor {
     @Override
     public abstract IndexedTensor withType(TensorType type);
 
-    public DimensionSizes dimensionSizes() {
-        return dimensionSizes;
-    }
+    public DimensionSizes dimensionSizes() { return dimensionSizes; }
 
     @Override
     public Map<TensorAddress, Double> cells() {

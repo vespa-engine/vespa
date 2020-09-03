@@ -51,31 +51,41 @@ public class TypedBinaryFormat {
     }
 
     private static BinaryFormat getFormatEncoder(GrowableByteBuffer buffer, Tensor tensor) {
-        if (tensor instanceof MixedTensor && tensor.type().valueType() == TensorType.Value.DOUBLE) {
+        boolean hasMappedDimensions = tensor.type().dimensions().stream().anyMatch(d -> d.isMapped());
+        boolean hasIndexedDimensions = tensor.type().dimensions().stream().anyMatch(d -> d.isIndexed());
+        boolean isMixed = hasMappedDimensions && hasIndexedDimensions;
+
+        // TODO: Encoding as indexed if the implementation is mixed is not yet supported so use mixed format instead
+        if (tensor instanceof MixedTensor && ! isMixed && hasIndexedDimensions)
+            isMixed = true;
+
+        if (isMixed && tensor.type().valueType() == TensorType.Value.DOUBLE) {
             encodeFormatType(buffer, MIXED_BINARY_FORMAT_TYPE);
             return new MixedBinaryFormat();
         }
-        if (tensor instanceof MixedTensor) {
+        else if (isMixed) {
             encodeFormatType(buffer, MIXED_BINARY_FORMAT_WITH_CELLTYPE);
             encodeValueType(buffer, tensor.type().valueType());
             return new MixedBinaryFormat(tensor.type().valueType());
         }
-        if (tensor instanceof IndexedTensor && tensor.type().valueType() == TensorType.Value.DOUBLE) {
+        else if (hasIndexedDimensions && tensor.type().valueType() == TensorType.Value.DOUBLE) {
             encodeFormatType(buffer, DENSE_BINARY_FORMAT_TYPE);
             return new DenseBinaryFormat();
         }
-        if (tensor instanceof IndexedTensor) {
+        else if (hasIndexedDimensions) {
             encodeFormatType(buffer, DENSE_BINARY_FORMAT_WITH_CELLTYPE);
             encodeValueType(buffer, tensor.type().valueType());
             return new DenseBinaryFormat(tensor.type().valueType());
         }
-        if (tensor.type().valueType() == TensorType.Value.DOUBLE) {
+        else if (tensor.type().valueType() == TensorType.Value.DOUBLE) {
             encodeFormatType(buffer, SPARSE_BINARY_FORMAT_TYPE);
             return new SparseBinaryFormat();
         }
-        encodeFormatType(buffer, SPARSE_BINARY_FORMAT_WITH_CELLTYPE);
-        encodeValueType(buffer, tensor.type().valueType());
-        return new SparseBinaryFormat(tensor.type().valueType());
+        else {
+            encodeFormatType(buffer, SPARSE_BINARY_FORMAT_WITH_CELLTYPE);
+            encodeValueType(buffer, tensor.type().valueType());
+            return new SparseBinaryFormat(tensor.type().valueType());
+        }
     }
 
     private static BinaryFormat getFormatDecoder(GrowableByteBuffer buffer) {

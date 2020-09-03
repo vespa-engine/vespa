@@ -71,7 +71,8 @@ public class SerializationTestCase {
                         serializedToABinaryRepresentation = true;
                     }
                 }
-                assertTrue("Tensor did not serialize to one of the given representations", serializedToABinaryRepresentation);
+                assertTrue("Tensor serialized to one of the given representations",
+                           serializedToABinaryRepresentation);
             }
         }
     }
