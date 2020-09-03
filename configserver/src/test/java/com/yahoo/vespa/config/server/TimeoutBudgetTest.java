@@ -12,7 +12,6 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class TimeoutBudgetTest {
     public static TimeoutBudget day() {
@@ -57,6 +56,22 @@ public class TimeoutBudgetTest {
 
         clock.advance(Duration.ofMillis(1));
         assertThat(budget.timesUsed(), is("[0 ms, 1 ms, 5 ms, 0 ms, 1 ms, 5 ms, total: 13 ms]"));
+    }
+
+    @Test
+    public void testHasTimeLeftWithLabels() {
+        ManualClock clock = new ManualClock();
+
+        TimeoutBudget budget = new TimeoutBudget(clock, Duration.ofMillis(7));
+        assertThat(budget.hasTimeLeft("a"), is(true));
+        clock.advance(Duration.ofMillis(1));
+        assertThat(budget.hasTimeLeft("b"), is(true));
+        clock.advance(Duration.ofMillis(5));
+        assertThat(budget.hasTimeLeft("c"), is(true));
+        assertThat(budget.hasTimeLeft("d"), is(true));
+
+        clock.advance(Duration.ofMillis(1));
+        assertThat(budget.timesUsed(), is("[a: 0 ms, b: 1 ms, c: 5 ms, d: 0 ms, total: 7 ms]"));
     }
 
 }
