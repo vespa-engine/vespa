@@ -40,6 +40,7 @@ by clicking on the badge at the top of the tutorial.
 
 - :doc:`connect-to-vespa-instance`
 - :doc:`create-and-deploy-vespa-cloud`
+- :doc:`create-and-deploy-vespa-docker`
 
 
 How-to guides
