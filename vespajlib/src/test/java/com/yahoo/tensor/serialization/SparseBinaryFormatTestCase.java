@@ -2,7 +2,9 @@
 package com.yahoo.tensor.serialization;
 
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
@@ -31,6 +33,17 @@ public class SparseBinaryFormatTestCase {
     }
 
     @Test
+    public void testSerializationFormatIsDecidedByTensorTypeNotImplementationType() {
+        Tensor sparse        =      Tensor.Builder.of(TensorType.fromSpec("tensor(x{})"))
+                                                  .cell(TensorAddress.ofLabels("key1"), 9.1).build();
+        Tensor sparseAsMixed = MixedTensor.Builder.of(TensorType.fromSpec("tensor(x{})"))
+                                                  .cell(TensorAddress.ofLabels("key1"), 9.1).build();
+        byte[] sparseEncoded        = TypedBinaryFormat.encode(sparse);
+        byte[] sparseAsMixedEncoded = TypedBinaryFormat.encode(sparseAsMixed);
+        assertEquals(Arrays.toString(sparseEncoded), Arrays.toString(sparseAsMixedEncoded));
+    }
+
+    @Test
     public void testSerializationToSeparateType() {
         try {
             assertSerialization(Tensor.from("tensor(x{},y{}):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x{})"));
@@ -55,7 +68,8 @@ public class SparseBinaryFormatTestCase {
 
     @Test
     public void requireThatFloatSerializationFormatDoNotChange() {
-        byte[] encodedTensor = new byte[] {5, // binary format type
+        byte[] encodedTensor = new byte[] {
+                5, // binary format type
                 1, // float type
                 2, // num dimensions
                 2, (byte)'x', (byte)'y', 1, (byte)'z', // dimensions
@@ -63,7 +77,7 @@ public class SparseBinaryFormatTestCase {
                 2, (byte)'a', (byte)'b', 1, (byte)'e', 64, 0, 0, 0, // cell 0
                 2, (byte)'c', (byte)'d', 1, (byte)'e', 64, 64, 0, 0}; // cell 1
         assertEquals(Arrays.toString(encodedTensor),
-                Arrays.toString(TypedBinaryFormat.encode(Tensor.from("tensor<float>(xy{},z{}):{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
+                     Arrays.toString(TypedBinaryFormat.encode(Tensor.from("tensor<float>(xy{},z{}):{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
     }
 
     @Test

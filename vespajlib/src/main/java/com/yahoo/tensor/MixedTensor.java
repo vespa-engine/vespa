@@ -152,7 +152,6 @@ public class MixedTensor implements Tensor {
         return index.denseSubspaceSize();
     }
 
-
     /**
      * Base class for building mixed tensors.
      */
