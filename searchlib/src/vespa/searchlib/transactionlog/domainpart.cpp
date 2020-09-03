@@ -65,7 +65,7 @@ handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnown
                  SerialNumRange range, int bufLen)
 {
     string last(FastOS_File::getLastErrorString());
-    string e(make_string("%s. File '%s' at position %" PRId64 " for entries [%zu, %zu] of length %u. "
+    string e(make_string("%s. File '%s' at position %" PRId64 " for entries [%" PRIu64 ", %" PRIu64 "] of length %u. "
                          "OS says '%s'. Rewind to last known good position %" PRId64 ".",
                          text, file.GetFileName(), file.GetPosition(), range.from(), range.to(), bufLen,
                          last.c_str(), lastKnownGoodPos));
