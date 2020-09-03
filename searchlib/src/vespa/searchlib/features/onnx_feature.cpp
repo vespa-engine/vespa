@@ -26,6 +26,25 @@ using vespalib::tensor::Onnx;
 
 namespace search::features {
 
+namespace {
+
+vespalib::string normalize_name(const vespalib::string &name, const char *context) {
+    vespalib::string result;
+    for (char c: name) {
+        if (isalnum(c)) {
+            result.push_back(c);
+        } else {
+            result.push_back('_');
+        }
+    }
+    if (result != name) {
+        LOG(warning, "normalized %s name: '%s' -> '%s'", context, name.c_str(), result.c_str());
+    }
+    return result;
+}
+
+}
+
 /**
  * Feature executor that evaluates an onnx model
  */
@@ -78,23 +97,25 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
     Onnx::WirePlanner planner;
     for (size_t i = 0; i < _model->inputs().size(); ++i) {
         const auto &model_input = _model->inputs()[i];
-        if (auto maybe_input = defineInput(fmt("rankingExpression(\"%s\")", model_input.name.c_str()), AcceptInput::OBJECT)) {
+        vespalib::string input_name = normalize_name(model_input.name, "input");
+        if (auto maybe_input = defineInput(fmt("rankingExpression(\"%s\")", input_name.c_str()), AcceptInput::OBJECT)) {
             const FeatureType &feature_input = maybe_input.value();
             assert(feature_input.is_object());
             if (!planner.bind_input_type(feature_input.type(), model_input)) {
-                return fail("incompatible type for input '%s': %s -> %s", model_input.name.c_str(),
+                return fail("incompatible type for input '%s': %s -> %s", input_name.c_str(),
                             feature_input.type().to_spec().c_str(), model_input.type_as_string().c_str());
             }
         }
     }
     for (size_t i = 0; i < _model->outputs().size(); ++i) {
         const auto &model_output = _model->outputs()[i];
+        vespalib::string output_name = normalize_name(model_output.name, "output");
         ValueType output_type = planner.make_output_type(model_output);
         if (output_type.is_error()) {
             return fail("unable to make compatible type for output '%s': %s -> error",
-                        model_output.name.c_str(), model_output.type_as_string().c_str());
+                        output_name.c_str(), model_output.type_as_string().c_str());
         }
-        describeOutput(model_output.name, "output from onnx model", FeatureType::object(output_type));
+        describeOutput(output_name, "output from onnx model", FeatureType::object(output_type));
     }
     _wire_info = planner.get_wire_info(*_model);
     return true;
