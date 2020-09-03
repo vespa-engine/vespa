@@ -49,9 +49,11 @@ public:
         vespalib::string as_string() const;
     };
 
+    // supported onnx element types
+    enum class ElementType { INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, DOUBLE };
+
     // information about a single input or output tensor
     struct TensorInfo {
-        enum class ElementType { FLOAT, DOUBLE, UNKNOWN };
         vespalib::string name;
         std::vector<DimSize> dimensions;
         ElementType elements;
@@ -59,20 +61,30 @@ public:
         ~TensorInfo();
     };
 
+    // concrete tensor type with known dimension sizes
+    struct TensorType {
+        ElementType elements;
+        std::vector<int64_t> dimensions;
+        TensorType(ElementType elements_in, std::vector<int64_t> dimensions_in)
+            : elements(elements_in), dimensions(std::move(dimensions_in)) {}
+    };
+
     // how the model should be wired with inputs/outputs
     struct WireInfo {
-        std::vector<std::vector<int64_t>> input_sizes;
-        std::vector<eval::ValueType> output_types;
-        WireInfo() : input_sizes(), output_types() {}
+        std::vector<eval::ValueType>  vespa_inputs;
+        std::vector<Onnx::TensorType> onnx_inputs;
+        std::vector<Onnx::TensorType> onnx_outputs;
+        std::vector<eval::ValueType>  vespa_outputs;
+        ~WireInfo();
     };
 
     // planning how we should wire the model based on input types
     class WirePlanner {
     private:
+        std::map<vespalib::string,eval::ValueType> _input_types;
         std::map<vespalib::string,size_t> _symbolic_sizes;
-        std::map<std::pair<vespalib::string,size_t>,size_t> _unknown_sizes;
     public:
-        WirePlanner() : _symbolic_sizes(), _unknown_sizes() {}
+        WirePlanner() : _input_types(), _symbolic_sizes() {}
         ~WirePlanner();
         bool bind_input_type(const eval::ValueType &vespa_in, const TensorInfo &onnx_in);
         eval::ValueType make_output_type(const TensorInfo &onnx_out) const;
@@ -83,15 +95,29 @@ public:
     // all parameter values are expected to be bound per evaluation
     // output values are pre-allocated and will not change
     class EvalContext {
+    public:
+        struct ParamBinder {
+            using UP = std::unique_ptr<ParamBinder>;
+            virtual void bind(const eval::Value &vespa, Ort::Value &onnx) = 0;
+            virtual ~ParamBinder() {}
+        };
+        struct EvalHook {
+            using UP = std::unique_ptr<EvalHook>;
+            virtual void invoke() = 0;
+            virtual ~EvalHook() {}
+        };
+
     private:
         static Ort::AllocatorWithDefaultOptions _alloc;
 
-        const Onnx                      &_model;
-        const WireInfo                  &_wire_info;
-        Ort::MemoryInfo                  _cpu_memory;
-        std::vector<Ort::Value>          _param_values;
-        std::vector<Ort::Value>          _result_values;
-        std::vector<DenseTensorView>     _result_views;
+        const Onnx                  &_model;
+        const WireInfo              &_wire_info;
+        Ort::MemoryInfo              _cpu_memory;
+        std::vector<Ort::Value>      _param_values;
+        std::vector<Ort::Value>      _result_values;
+        std::vector<eval::Value::UP> _results;
+        std::vector<ParamBinder::UP> _param_binders;
+        std::vector<EvalHook::UP>    _eval_hooks;
 
     public:
         EvalContext(const Onnx &model, const WireInfo &wire_info);
