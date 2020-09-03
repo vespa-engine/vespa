@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/tensor.h>
+#include <vespa/vespalib/datastore/datastore.hpp>
 
 using namespace search::tensor;
 
