@@ -27,30 +27,19 @@ namespace search::transactionlog {
 
 namespace {
 
-void
-handleSync(FastOS_FileInterface &file) __attribute__ ((noinline));
+constexpr size_t TARGET_PACKET_SIZE = 0x3f000;
 
 string
-handleWriteError(const char *text,
-                 FastOS_FileInterface &file,
-                 int64_t lastKnownGoodPos,
-                 const Packet::Entry &entry,
-                 int bufLen) __attribute__ ((noinline));
+handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnownGoodPos,
+                 SerialNumRange range, int bufLen) __attribute__ ((noinline));
 
 bool
-handleReadError(const char *text,
-                FastOS_FileInterface &file,
-                ssize_t len,
-                ssize_t rlen,
-                int64_t lastKnownGoodPos,
-                bool allowTruncate) __attribute__ ((noinline));
+handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize_t rlen,
+                int64_t lastKnownGoodPos, bool allowTruncate) __attribute__ ((noinline));
 
-bool
-addPacket(Packet &packet,
-          const Packet::Entry &e) __attribute__ ((noinline));
-
-bool
-tailOfFileIsZero(FastOS_FileInterface &file, int64_t lastKnownGoodPos) __attribute__ ((noinline));
+void handleSync(FastOS_FileInterface &file) __attribute__ ((noinline));
+bool addPacket(Packet &packet, const Packet::Entry &e) __attribute__ ((noinline));
+bool tailOfFileIsZero(FastOS_FileInterface &file, int64_t lastKnownGoodPos) __attribute__ ((noinline));
 
 bool
 addPacket(Packet &packet, const Packet::Entry &e)
@@ -72,21 +61,18 @@ handleSync(FastOS_FileInterface &file)
 }
 
 string
-handleWriteError(const char *text,
-                 FastOS_FileInterface &file,
-                 int64_t lastKnownGoodPos,
-                 const Packet::Entry &entry,
-                 int bufLen)
+handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnownGoodPos,
+                 SerialNumRange range, int bufLen)
 {
     string last(FastOS_File::getLastErrorString());
-    string e(make_string("%s. File '%s' at position %" PRId64 " for entry %" PRIu64 " of length %u. "
+    string e(make_string("%s. File '%s' at position %" PRId64 " for entries [%" PRIu64 ", %" PRIu64 "] of length %u. "
                          "OS says '%s'. Rewind to last known good position %" PRId64 ".",
-                         text, file.GetFileName(), file.GetPosition(), entry.serial(), bufLen,
+                         text, file.GetFileName(), file.GetPosition(), range.from(), range.to(), bufLen,
                          last.c_str(), lastKnownGoodPos));
     LOG(error, "%s",  e.c_str());
     if ( ! file.SetPosition(lastKnownGoodPos) ) {
         last = FastOS_File::getLastErrorString();
-        throw runtime_error(make_string("Failed setting position %" PRId64 " of file '%s' of size %" PRId64 ": OS says '%s'",
+        throw runtime_error(make_string("Failed setting position %" PRId64 " of file '%s' of size %" PRId64 " : OS says '%s'",
                                         lastKnownGoodPos, file.GetFileName(), file.GetSize(), last.c_str()));
     }
     handleSync(file);
@@ -118,12 +104,8 @@ tailOfFileIsZero(FastOS_FileInterface &file, int64_t lastKnownGoodPos)
 }
 
 bool
-handleReadError(const char *text,
-                FastOS_FileInterface &file,
-                ssize_t len,
-                ssize_t rlen,
-                int64_t lastKnownGoodPos,
-                bool allowTruncate)
+handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize_t rlen,
+                int64_t lastKnownGoodPos, bool allowTruncate)
 {
     bool retval(true);
     if (rlen != -1) {
@@ -265,7 +247,6 @@ DomainPart::buildPacketMapping(bool allowTruncate)
                 }
             }
         }
-        packet.close();
         if (!packet.empty()) {
             _packets[firstSerial] = packet;
             _range.to(lastSerial);
@@ -534,12 +515,9 @@ DomainPart::visit(SerialNumRange &r, Packet &packet)
                         }
                     }
                 }
-                newPacket.close();
                 packet = newPacket;
                 retval = next != _packets.end();
             }
-        } else {
-            packet.close();
         }
     } else {
         /// File has been closed must continue from file.
@@ -583,7 +561,6 @@ DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
                 }
             }
         }
-        newPacket.close();
         packet = newPacket;
     }
 
@@ -609,7 +586,7 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
 
     LockGuard guard(_writeLock);
     if ( ! file.CheckedWrite(os.data(), osSize) ) {
-        throw runtime_error(handleWriteError("Failed writing the entry.", file, lastKnownGoodPos, entry, end - start));
+        throw runtime_error(handleWriteError("Failed writing the entry.", file, lastKnownGoodPos, SerialNumRange(entry.serial(), entry.serial()), end - start));
     }
     _writtenSerial = entry.serial();
     _byteSize.store(lastKnownGoodPos + osSize, std::memory_order_release);

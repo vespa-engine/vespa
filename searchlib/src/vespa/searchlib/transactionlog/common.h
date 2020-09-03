@@ -72,7 +72,6 @@ public:
     Packet(size_t m=0xf000) : _count(0), _range(), _limit(m), _buf(m) { }
     Packet(const void * buf, size_t sz);
     bool add(const Entry & data);
-    void close() { }
     void clear() { _buf.clear(); _count = 0; _range.from(0); _range.to(0); }
     const SerialNumRange & range() const { return _range; }
     const vespalib::nbostream & getHandle() const { return _buf; }
