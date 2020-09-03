@@ -527,6 +527,11 @@ public class ApplicationController {
 
             Optional<Quota> quota = billingController.getQuota(application.tenant(), zone.environment());
 
+            if (zone.environment().isManuallyDeployed())
+                controller.applications().applicationStore().putMeta(new DeploymentId(application, zone),
+                                                                     clock.instant(),
+                                                                     applicationPackage.metaDataZip());
+
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain, applicationRoles, quota));
@@ -713,12 +718,14 @@ public class ApplicationController {
      * @return the application with the deployment in the given zone removed
      */
     private LockedApplication deactivate(LockedApplication application, InstanceName instanceName, ZoneId zone) {
+        DeploymentId id = new DeploymentId(application.get().id().instance(instanceName), zone);
         try {
-            configServer.deactivate(new DeploymentId(application.get().id().instance(instanceName), zone));
+            configServer.deactivate(id);
         } catch (NotFoundException ignored) {
             // ok; already gone
         } finally {
             controller.routing().policies().refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
+            applicationStore.putMetaTombstone(id, clock.instant());
         }
         return application.with(instanceName, instance -> instance.withoutDeploymentIn(zone));
     }

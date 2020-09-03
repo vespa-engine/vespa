@@ -5,9 +5,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -58,6 +58,12 @@ public interface ApplicationStore {
 
     /** Marks the given application as deleted, and eligible for meta data GC at a later time. */
     void putMetaTombstone(TenantName tenant, ApplicationName application, Instant now);
+
+    /** Stores the given manual deployment meta data with the current time as part of the path. */
+    void putMeta(DeploymentId id, Instant now, byte[] metaZip);
+
+    /** Marks the given manual deployment as deleted, and eligible for meta data GC at a later time. */
+    void putMetaTombstone(DeploymentId id, Instant now);
 
     /** Prunes meta data such that only what was active at the given instant, and anything newer, is retained. */
     void pruneMeta(Instant oldest);
