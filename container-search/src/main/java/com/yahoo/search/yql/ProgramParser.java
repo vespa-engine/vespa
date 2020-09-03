@@ -987,7 +987,7 @@ final class ProgramParser {
         for (Field_defContext rulenode : fieldDefs) {
             // FIELD
                 // expression alias_def?
-                OperatorNode<ExpressionOperator> expr = convertExpr((ExpressionContext)rulenode.getChild(0), scope);
+                OperatorNode<ExpressionOperator> expr = convertExpr(rulenode.getChild(0), scope);
 
                 String aliasName = null;
                 if (rulenode.getChildCount() > 1) {
@@ -1018,9 +1018,8 @@ final class ProgramParser {
 	                            .constantMapExpression(), scope);
 	                    OperatorNode<ExpressionOperator> expr = OperatorNode.create(toLocation(scope, secondChild),
 	                            ExpressionOperator.VESPA_GROUPING, secondChild.getText());
-	                    List<String> names = (List<String>) annotation.getArgument(0);
-	                    List<OperatorNode<ExpressionOperator>> annotates = (List<OperatorNode<ExpressionOperator>>) annotation
-	                            .getArgument(1);
+	                    List<String> names = annotation.getArgument(0);
+	                    List<OperatorNode<ExpressionOperator>> annotates = annotation.getArgument(1);
 	                    for (int i = 0; i < names.size(); ++i) {
 	                        expr.putAnnotation(names.get(i), readConstantExpression(annotates.get(i)));
 	                    }
@@ -1147,8 +1146,8 @@ final class ProgramParser {
 			AnnotationContext annotateExpressionContext = ((AnnotateExpressionContext)parseTree).annotation();
 			OperatorNode<ExpressionOperator> annotation = convertExpr(annotateExpressionContext.constantMapExpression(), scope);
 			OperatorNode<ExpressionOperator> expr = convertExpr(parseTree.getChild(1), scope);
-			List<String> names = (List<String>) annotation.getArgument(0);
-			List<OperatorNode<ExpressionOperator>> annotates = (List<OperatorNode<ExpressionOperator>>) annotation.getArgument(1);
+			List<String> names = annotation.getArgument(0);
+			List<OperatorNode<ExpressionOperator>> annotates = annotation.getArgument(1);
 			for (int i = 0; i < names.size(); ++i) {
 				expr.putAnnotation(names.get(i), readConstantExpression(annotates.get(i)));
 			}
@@ -1375,9 +1374,9 @@ final class ProgramParser {
             case yqlplusParser.STRING:
                 return StringUnescaper.unquote(text);
             case yqlplusParser.TRUE:
-                return Boolean.valueOf(true);
+                return true;
             case yqlplusParser.FALSE:
-                return Boolean.valueOf(false);
+                return false;
             case yqlplusParser.LONG_INT:
                 return Long.parseLong(text.substring(0, text.length()-1));
             default:
@@ -1391,20 +1390,23 @@ final class ProgramParser {
                 return node.getArgument(0);
             case MAP: {
                 ImmutableMap.Builder<String, Object> map = ImmutableMap.builder();
-                List<String> names = (List<String>) node.getArgument(0);
-                List<OperatorNode<ExpressionOperator>> exprs = (List<OperatorNode<ExpressionOperator>>) node.getArgument(1);
+                List<String> names = node.getArgument(0);
+                List<OperatorNode<ExpressionOperator>> exprs = node.getArgument(1);
                 for (int i = 0; i < names.size(); ++i) {
                     map.put(names.get(i), readConstantExpression(exprs.get(i)));
                 }
                 return map.build();
             }
             case ARRAY: {
-                List<OperatorNode<ExpressionOperator>> exprs = (List<OperatorNode<ExpressionOperator>>) node.getArgument(0);
+                List<OperatorNode<ExpressionOperator>> exprs = node.getArgument(0);
                 ImmutableList.Builder<Object> lst = ImmutableList.builder();
                 for (OperatorNode<ExpressionOperator> expr : exprs) {
                     lst.add(readConstantExpression(expr));
                 }
                 return lst.build();
+            }
+            case VARREF: {
+                return node; // must be dereferenced in YqlParser when we have userQuery
             }
             default:
                 throw new ProgramCompileException(node.getLocation(), "Internal error: Unknown constant expression type: " + node.getOperator());

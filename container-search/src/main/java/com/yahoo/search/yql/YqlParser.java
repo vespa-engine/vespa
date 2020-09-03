@@ -810,16 +810,29 @@ public class YqlParser implements Parser {
             OperatorNode<ExpressionOperator> groupingAst = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(2).get(0);
             GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.<String> getArgument(0));
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
-            List<String> continuations = getAnnotation(groupingAst, "continuations", List.class,
+            List<Object> continuations = getAnnotation(groupingAst, "continuations", List.class,
                                                        Collections.emptyList(), "grouping continuations");
-            for (String continuation : continuations) {
-                groupingStep.continuations().add(Continuation.fromString(continuation));
+
+            for (Object continuation : continuations) {
+                groupingStep.continuations().add(Continuation.fromString(dereference(continuation)));
             }
             groupingSteps.add(groupingStep);
             ast = ast.getArgument(0);
         }
         Collections.reverse(groupingSteps);
         return ast;
+    }
+
+    private String dereference(Object constantOrVarref) {
+        if (constantOrVarref instanceof OperatorNode) {
+            OperatorNode<?> varref = (OperatorNode<?>)constantOrVarref;
+            Preconditions.checkState(userQuery != null,
+                                     "properties must be available when trying to fetch user input");
+            return userQuery.properties().getString(varref.getArgument(0, String.class));
+        }
+        else {
+            return constantOrVarref.toString();
+        }
     }
 
     private OperatorNode<?> fetchSorting(OperatorNode<?> ast) {
@@ -1750,7 +1763,15 @@ public class YqlParser implements Parser {
         Object value = ast.getAnnotation(key);
         for (Iterator<OperatorNode<?>> i = annotationStack.iterator(); value == null
                                                                        && considerParents && i.hasNext();) {
-            value = i.next().getAnnotation(key);
+            OperatorNode node = i.next();
+            if (node.getOperator() == ExpressionOperator.VARREF) {
+                Preconditions.checkState(userQuery != null,
+                                         "properties must be available when trying to fetch user input");
+                value = userQuery.properties().getString(ast.getArgument(0, String.class));
+            }
+            else {
+                value = node.getAnnotation(key);
+            }
         }
         if (value == null) return defaultValue;
         Preconditions.checkArgument(expectedClass.isInstance(value),

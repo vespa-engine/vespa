@@ -15,6 +15,8 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 
+import java.util.Arrays;
+
 import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
 
 /**
@@ -204,11 +206,28 @@ public class UserInputTestCase {
         assertEquals("select * from sources * where year > 1980;", query.yqlRepresentation());
     }
 
+    @Test
+    public void testReferenceInContinuation() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("continuation", "BCBCBCBEBG");
+        builder.setParameter("yql",
+                             "select * from sources * where myfield contains 'token'" +
+                             "| [{'continuations':[@continuation, 'BCBKCBACBKCCK'] }] all(group(f) each(output(count())));");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where myfield contains \"token\" | [{ 'continuations':['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(f) each(output(count())));", query.yqlRepresentation());
+    }
+
     private Query searchAndAssertNoErrors(URIBuilder builder) {
         Query query = new Query(builder.toString());
         Result r = execution.search(query);
-        assertNull(r.hits().getError());
+        assertNull(stackTraceIfAny(r), r.hits().getError());
         return query;
+    }
+
+    private String stackTraceIfAny(Result r) {
+        if (r.hits().getError() == null) return "";
+        if (r.hits().getError().getCause() == null) return "";
+        return Arrays.toString(r.hits().getError().getCause().getStackTrace());
     }
 
     private URIBuilder searchUri() {
@@ -220,8 +239,7 @@ public class UserInputTestCase {
     @Test
     public void testEmptyUserInput() {
         URIBuilder builder = searchUri();
-        builder.setParameter("yql",
-                "select * from sources * where userInput(\"\");");
+        builder.setParameter("yql", "select * from sources * where userInput(\"\");");
         assertQueryFails(builder);
     }
 
@@ -229,8 +247,7 @@ public class UserInputTestCase {
     public void testEmptyUserInputFromQueryProperty() {
         URIBuilder builder = searchUri();
         builder.setParameter("foo", "");
-        builder.setParameter("yql",
-                "select * from sources * where userInput(@foo);");
+        builder.setParameter("yql", "select * from sources * where userInput(@foo);");
         assertQueryFails(builder);
     }
 
