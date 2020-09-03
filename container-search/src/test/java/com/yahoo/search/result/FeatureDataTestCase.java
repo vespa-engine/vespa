@@ -33,19 +33,21 @@ public class FeatureDataTestCase {
         FeatureData featureData = new FeatureData(new SlimeAdapter(features));
         assertEquals("scalar1,scalar2,tensor1,tensor2",
                      featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
+        assertNull(featureData.getDouble("nosuch1"));
         assertEquals(1.5, featureData.getDouble("scalar1"), delta);
         assertEquals(2.5, featureData.getDouble("scalar2"), delta);
         assertEquals("Cached lookup", 2.5, featureData.getDouble("scalar2"), delta);
-        assertNull(featureData.getDouble("nosuch"));
-        assertNull(featureData.getDouble("nosuch"));
+        assertNull(featureData.getDouble("nosuch2"));
+        assertNull(featureData.getDouble("nosuch2"));
 
+        assertNull(featureData.getTensor("nosuch1"));
         assertEquals(Tensor.from(1.5), featureData.getTensor("scalar1"));
         assertEquals(Tensor.from(2.5), featureData.getTensor("scalar2"));
         assertEquals(tensor1, featureData.getTensor("tensor1"));
         assertEquals(tensor2, featureData.getTensor("tensor2"));
         assertEquals("Cached lookup", tensor2, featureData.getTensor("tensor2"));
-        assertNull(featureData.getTensor("nosuch"));
-        assertNull(featureData.getTensor("nosuch"));
+        assertNull(featureData.getTensor("nosuch2"));
+        assertNull(featureData.getTensor("nosuch2"));
 
         String expectedJson =
                 "{" +

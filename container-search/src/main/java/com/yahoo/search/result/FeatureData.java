@@ -74,16 +74,15 @@ public class FeatureData implements Inspectable, JsonProducer {
      *                                  (that is, if it is a tensor with nonzero rank)
      */
     public Double getDouble(String featureName) {
-        Double value = null;
-        if (decodedDoubles != null)
-            value = decodedDoubles.get(featureName);
-        if (value != null)
-            return value;
+        if (decodedDoubles == null)
+            decodedDoubles = new HashMap<>();
+
+        Double value = decodedDoubles.get(featureName);
+        if (value != null) return value;
 
         value = decodeDouble(featureName);
-        if (value != null && decodedDoubles == null)
-            decodedDoubles = new HashMap<>();
-        decodedDoubles.put(featureName, value);
+        if (value != null)
+            decodedDoubles.put(featureName, value);
         return value;
     }
 
@@ -103,16 +102,15 @@ public class FeatureData implements Inspectable, JsonProducer {
      * This will return any feature value: Scalars are returned as a rank 0 tensor.
      */
     public Tensor getTensor(String featureName) {
-        Tensor value = null;
-        if (decodedTensors != null)
-            value = decodedTensors.get(featureName);
-        if (value != null)
-            return value;
+        if (decodedTensors == null)
+            decodedTensors = new HashMap<>();
+
+        Tensor value = decodedTensors.get(featureName);
+        if (value != null) return value;
 
         value = decodeTensor(featureName);
-        if (value != null && decodedTensors == null)
-            decodedTensors = new HashMap<>();
-        decodedTensors.put(featureName, value);
+        if (value != null)
+            decodedTensors.put(featureName, value);
         return value;
     }
 
