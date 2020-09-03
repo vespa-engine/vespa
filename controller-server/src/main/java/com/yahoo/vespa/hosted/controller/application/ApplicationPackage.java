@@ -1,12 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.FileSystemWrapper;
+import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
+import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -16,10 +21,10 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UncheckedIOException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -32,11 +37,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * A representation of the content of an application package.
@@ -46,6 +51,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * This is immutable.
  * 
  * @author bratseth
+ * @author jonmv
  */
 public class ApplicationPackage {
 
@@ -59,7 +65,7 @@ public class ApplicationPackage {
     private final byte[] zippedContent;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
-    private final Files files;
+    private final ZipArchiveCache files;
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
     private final List<X509Certificate> trustedCertificates;
@@ -82,14 +88,14 @@ public class ApplicationPackage {
     public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
         this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
-        this.files = Files.extract(Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile), zippedContent);
+        this.files = new ZipArchiveCache(zippedContent, Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile));
 
-        Optional<DeploymentSpec> deploymentSpec = files.getAsReader(deploymentFile).map(DeploymentSpec::fromXml);
+        Optional<DeploymentSpec> deploymentSpec = files.get(deploymentFile).map(bytes -> new String(bytes, UTF_8)).map(DeploymentSpec::fromXml);
         if (requireFiles && deploymentSpec.isEmpty())
             throw new IllegalArgumentException("Missing required file '" + deploymentFile + "'");
         this.deploymentSpec = deploymentSpec.orElse(DeploymentSpec.empty);
 
-        this.validationOverrides = files.getAsReader(validationOverridesFile).map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
+        this.validationOverrides = files.get(validationOverridesFile).map(bytes -> new String(bytes, UTF_8)).map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
 
         Optional<Inspector> buildMetaObject = files.get(buildMetaFile).map(SlimeUtils::jsonToSlime).map(Slime::get);
         if (requireFiles && buildMetaObject.isEmpty())
@@ -151,68 +157,42 @@ public class ApplicationPackage {
         }
     }
 
-    private static class Files {
-
-        /** Max size of each extracted file */
-        private static final int maxSize = 10 * 1024 * 1024; // 10 MiB
-
-        // TODO: Vespa 8: Remove application/ directory support
-        private static final String applicationDir = "application/";
-
-        private final ImmutableMap<String, byte[]> files;
-
-        private Files(ImmutableMap<String, byte[]> files) {
-            this.files = files;
-        }
-
-        public static Files extract(Set<String> filesToExtract, byte[] zippedContent) {
-            ImmutableMap.Builder<String, byte[]> builder = ImmutableMap.builder();
-            try (ByteArrayInputStream stream = new ByteArrayInputStream(zippedContent)) {
-                ZipStreamReader reader = new ZipStreamReader(stream,
-                                                             (name) -> filesToExtract.contains(withoutLegacyDir(name)),
-                                                             maxSize);
-                for (ZipStreamReader.ZipEntryWithContent entry : reader.entries()) {
-                    builder.put(withoutLegacyDir(entry.zipEntry().getName()), entry.content());
-                }
-            } catch (IOException e) {
-                throw new UncheckedIOException("Exception reading application package", e);
-            }
-            return new Files(builder.build());
-        }
-
-
-        /** Get content of given file name */
-        public Optional<byte[]> get(String name) {
-            return Optional.ofNullable(files.get(name));
-        }
-
-        /** Get reader for the content of given file name */
-        public Optional<Reader> getAsReader(String name) {
-            return get(name).map(ByteArrayInputStream::new).map(InputStreamReader::new);
-        }
-
-        private static String withoutLegacyDir(String name) {
-            if (name.startsWith(applicationDir)) return name.substring(applicationDir.length());
-            return name;
-        }
-
-    }
-
     /** Creates a valid application package that will remove all application's deployments */
     public static ApplicationPackage deploymentRemoval() {
         return new ApplicationPackage(filesZip(Map.of(validationOverridesFile, allValidationOverrides().xmlForm().getBytes(UTF_8),
                                                       deploymentFile, DeploymentSpec.empty.xmlForm().getBytes(UTF_8))));
     }
 
-    /** Returns a zip containing only services.xml and deployment.xml files of this. */
+    /** Returns a zip containing meta data about deployments of this package by the given job. */
     public byte[] metaDataZip() {
-        return filesZip(Stream.of(deploymentFile, servicesFile)
-                              .filter(name -> files.files.containsKey(name))
-                              .collect(Collectors.toMap(name -> name,
-                                                        name -> files.files.get(name))));
+        preProcessAndPopulateCache();
+        return cacheZip();
     }
 
-    private static byte[] filesZip(Map<String, byte[]> files) {
+    private void preProcessAndPopulateCache() {
+        FileWrapper servicesXml = files.wrapper().wrap(Paths.get(servicesFile));
+        if (servicesXml.exists())
+            try {
+                new XmlPreProcessor(files.wrapper().wrap(Paths.get("./")),
+                                    new InputStreamReader(new ByteArrayInputStream(servicesXml.content()), UTF_8),
+                                    InstanceName.defaultName(),
+                                    Environment.prod,
+                                    RegionName.defaultName())
+                        .run(); // Populates the zip archive cache with files that would be included.
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+    }
+
+    private byte[] cacheZip() {
+        return filesZip(files.cache.entrySet().stream()
+                                   .filter(entry -> entry.getValue().isPresent())
+                                   .collect(toMap(entry -> entry.getKey().toString(),
+                                                  entry -> entry.getValue().get())));
+    }
+
+    static byte[] filesZip(Map<String, byte[]> files) {
         try (ZipBuilder zipBuilder = new ZipBuilder(files.values().stream().mapToInt(bytes -> bytes.length).sum() + 512)) {
             files.forEach(zipBuilder::add);
             zipBuilder.close();
@@ -229,6 +209,56 @@ public class ApplicationPackage {
         validationOverridesContents.append("</validation-overrides>\n");
 
         return ValidationOverrides.fromXml(validationOverridesContents.toString());
+    }
+
+
+    /** Maps normalized paths to cached content read from a zip archive. */
+    private static class ZipArchiveCache {
+
+        /** Max size of each extracted file */
+        private static final int maxSize = 10 << 20; // 10 Mb
+
+        // TODO: Vespa 8: Remove application/ directory support
+        private static final String applicationDir = "application/";
+
+        private static String withoutLegacyDir(String name) {
+            if (name.startsWith(applicationDir)) return name.substring(applicationDir.length());
+            return name;
+        }
+
+        private final byte[] zip;
+        private final Map<Path, Optional<byte[]>> cache;
+
+        public ZipArchiveCache(byte[] zip, Collection<String> prePopulated) {
+            this.zip = zip;
+            this.cache = new ConcurrentSkipListMap<>();
+            this.cache.putAll(read(prePopulated));
+        }
+
+        public Optional<byte[]> get(String path) {
+            return get(Paths.get(path));
+        }
+
+        public Optional<byte[]> get(Path path) {
+            return cache.computeIfAbsent(path.normalize(), read(List.of(path.normalize().toString()))::get);
+        }
+
+        public FileSystemWrapper wrapper() {
+            return FileSystemWrapper.ofFiles(path -> get(path).isPresent(), // Assume content asked for will also be read ...
+                                             path -> get(path).orElseThrow(() -> new NoSuchFileException(path.toString())));
+        }
+
+        private Map<Path, Optional<byte[]>> read(Collection<String> names) {
+            var entries = new ZipStreamReader(new ByteArrayInputStream(zip),
+                                              name -> names.contains(withoutLegacyDir(name)),
+                                              maxSize)
+                    .entries().stream()
+                    .collect(toMap(entry -> Paths.get(withoutLegacyDir(entry.zipEntry().getName())).normalize(),
+                                   entry -> Optional.of(entry.content())));
+            names.stream().map(Paths::get).forEach(path -> entries.putIfAbsent(path.normalize(), Optional.empty()));
+            return entries;
+        }
+
     }
 
 }

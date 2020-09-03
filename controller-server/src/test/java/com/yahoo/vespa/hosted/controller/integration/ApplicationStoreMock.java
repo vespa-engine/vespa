@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
@@ -14,7 +15,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -32,6 +32,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
     private final Map<ApplicationId, Map<ZoneId, byte[]>> devStore = new ConcurrentHashMap<>();
     private final Map<ApplicationId, NavigableMap<Instant, byte[]>> meta = new ConcurrentHashMap<>();
+    private final Map<DeploymentId, NavigableMap<Instant, byte[]>> metaManual = new ConcurrentHashMap<>();
 
     private static ApplicationId appId(TenantName tenant, ApplicationName application) {
         return ApplicationId.from(tenant, application, InstanceName.defaultName());
@@ -117,6 +118,16 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public void putMetaTombstone(TenantName tenant, ApplicationName application, Instant now) {
         putMeta(tenant, application, now, tombstone);
+    }
+
+    @Override
+    public void putMeta(DeploymentId id, Instant now, byte[] metaZip) {
+        metaManual.computeIfAbsent(id, __ -> new ConcurrentSkipListMap<>()).put(now, metaZip);
+    }
+
+    @Override
+    public void putMetaTombstone(DeploymentId id, Instant now) {
+        putMeta(id, now, tombstone);
     }
 
     @Override
