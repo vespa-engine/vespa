@@ -583,13 +583,6 @@ public class ApplicationController {
         return application;
     }
 
-    private DeployOptions withVersion(Version version, DeployOptions options) {
-        return new DeployOptions(options.deployDirectly,
-                                 Optional.of(version),
-                                 options.ignoreValidationErrors,
-                                 options.deployCurrentVersion);
-    }
-
     /**
      * Deletes the the given application. All known instances of the applications will be deleted.
      *
