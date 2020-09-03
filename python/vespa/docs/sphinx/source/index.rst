@@ -45,8 +45,8 @@ by clicking on the badge at the top of the tutorial.
 How-to guides
 +++++++++++++
 
-- :doc:`Create Vespa application packages <application-package>`.
-- :doc:`Deploy Vespa applications to Vespa Cloud or to Docker containers <deploy-application>`.
+- :doc:`application-package`
+- :doc:`deploy-application`.
 - :doc:`Define query models <query-model>`.
 - :doc:`Query Vespa applications <query>`.
 - :doc:`Evaluate query models <evaluation>`.
