@@ -1283,7 +1283,7 @@ public class YqlParser implements Parser {
         equiv.setIndexName(field);
         for (OperatorNode<ExpressionOperator> arg : args) {
             switch (arg.getOperator()) {
-                case LITERAL:
+                case LITERAL: case VARREF:
                     equiv.addItem(instantiateWordItem(field, arg, equiv.getClass()));
                     break;
                 case CALL:
@@ -1292,7 +1292,7 @@ public class YqlParser implements Parser {
                     break;
                 default:
                     throw newUnexpectedArgumentException(arg.getOperator(),
-                                                         ExpressionOperator.CALL, ExpressionOperator.LITERAL);
+                                                         ExpressionOperator.CALL, ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
             }
         }
         return leafStyleSettings(ast, equiv);
@@ -1353,7 +1353,8 @@ public class YqlParser implements Parser {
     }
 
     private Item instantiateWordItem(String field,
-                                     OperatorNode<ExpressionOperator> ast, Class<?> parent,
+                                     OperatorNode<ExpressionOperator> ast,
+                                     Class<?> parent,
                                      SegmentWhen segmentPolicy) {
         String wordData = getStringContents(ast);
         return instantiateWordItem(field, wordData, ast, parent, segmentPolicy, null, decideParsingLanguage(ast, wordData));
@@ -1369,7 +1370,8 @@ public class YqlParser implements Parser {
     //       which always expands first, but not using getIndex, which performs checks that doesn't always work
     private Item instantiateWordItem(String field,
                                      String rawWord,
-                                     OperatorNode<ExpressionOperator> ast, Class<?> parent,
+                                     OperatorNode<ExpressionOperator> ast,
+                                     Class<?> parent,
                                      SegmentWhen segmentPolicy,
                                      Boolean exactMatch,
                                      Language language) {

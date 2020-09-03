@@ -217,6 +217,16 @@ public class UserInputTestCase {
         assertEquals("select * from sources * where myfield contains \"token\" | [{ 'continuations':['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(f) each(output(count())));", query.yqlRepresentation());
     }
 
+    @Test
+    public void testReferenceInEquiv() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("term", "A");
+        builder.setParameter("yql",
+                             "select foo from bar where fieldName contains equiv(@term,'B');");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select foo from bar where fieldName contains equiv(\"A\", \"B\");", query.yqlRepresentation());
+    }
+
     private Query searchAndAssertNoErrors(URIBuilder builder) {
         Query query = new Query(builder.toString());
         Result r = execution.search(query);
