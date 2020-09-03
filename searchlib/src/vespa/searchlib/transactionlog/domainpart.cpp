@@ -281,7 +281,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
 
 DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding encoding,
                        uint8_t compressionLevel, const FileHeaderContext &fileHeaderContext, bool allowTruncate)
-    : _encoding(encoding),
+    : _encoding(encoding.getCrc(), Encoding::Compression::none), //TODO We do not yet support compression
       _compressionLevel(compressionLevel),
       _lock(),
       _fileLock(),
