@@ -47,8 +47,8 @@ How-to guides
 
 - :doc:`application-package`
 - :doc:`deploy-application`.
-- :doc:`Define query models <query-model>`.
-- :doc:`Query Vespa applications <query>`.
+- :doc:`query-model`.
+- :doc:`query`.
 - :doc:`Evaluate query models <evaluation>`.
 - :doc:`Collect training data from Vespa applications <collect-training-data>`.
 
