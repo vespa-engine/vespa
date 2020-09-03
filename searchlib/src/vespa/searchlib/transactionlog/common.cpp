@@ -1,14 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "common.h"
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/file.h>
 
 namespace search::transactionlog {
 
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
+using vespalib::make_string;
+using std::runtime_error;
 
-int makeDirectory(const char * dir)
+namespace {
+
+void throwRangeError(SerialNum prev, SerialNum next) __attribute__((noinline));
+
+void throwRangeError(SerialNum prev, SerialNum next) {
+    if (prev < next) return;
+    throw runtime_error(make_string("The new serialnum %zu is not higher than the old one %zu", next, prev));
+}
+
+}
+
+int
+makeDirectory(const char * dir)
 {
     int retval(-1);
 
@@ -50,18 +65,22 @@ Packet::Packet(const void * buf, size_t sz) :
     }
 }
 
-bool Packet::merge(const Packet & packet)
+void
+Packet::merge(const Packet & packet)
 {
-    bool retval(_range.to() < packet._range.from());
-    if (retval) {
-        _count += packet._count;
-        _range.to(packet._range.to());
-        _buf.write(packet.getHandle().data(), packet.getHandle().size());
+    if (_range.to() >= packet.range().from()) {
+        throwRangeError(_range.to(), packet.range().from());
     }
-    return retval;
+    if (_buf.empty()) {
+        _range.from(packet.range().from());
+    }
+    _count += packet._count;
+    _range.to(packet._range.to());
+    _buf.write(packet.getHandle().data(), packet.getHandle().size());
 }
 
-nbostream & Packet::Entry::deserialize(nbostream & os)
+nbostream &
+Packet::Entry::deserialize(nbostream & os)
 {
     _valid = false;
     int32_t len(0);

@@ -426,11 +426,8 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
     if ( ! _packets.empty() ) {
         Packet & lastPacket = _packets.rbegin()->second;
         if (lastPacket.sizeBytes() < 0xf000) {
-            if ( ! (merged = lastPacket.merge(packet)) ) {
-                LOG(error, "Failed merging packet [%" PRIu64 ", %" PRIu64 "] with [%" PRIu64 ", %" PRIu64 "]",
-                           lastPacket.range().from(), lastPacket.range().to(),
-                           packet.range().from(), packet.range().to());
-            }
+            lastPacket.merge(packet);
+            merged = true;
         }
     }
     if (! merged ) {
