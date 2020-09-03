@@ -8,3 +8,4 @@ by clicking on the badge at the top of the tutorial.
 
    connect-to-vespa-instance
    create-and-deploy-vespa-cloud
+   create-and-deploy-vespa-docker
