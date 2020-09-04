@@ -533,13 +533,13 @@ DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
 {
     nbostream os;
     size_t begin = os.wp();
-    os << _encoding.getRaw();
-    os << uint32_t(0);
+    os << _encoding.getRaw();  // Placeholder for encoding
+    os << uint32_t(0);         // Placeholder for size
     Encoding realEncoding = chunk.encode(os);
     size_t end = os.wp();
     os.wp(0);
-    os << realEncoding.getRaw();
-    os << uint32_t(end - (begin + sizeof(uint32_t) + sizeof(uint8_t)));
+    os << realEncoding.getRaw();  //Patching real encoding
+    os << uint32_t(end - (begin + sizeof(uint32_t) + sizeof(uint8_t))); // Patching actual size.
     os.wp(end);
     int64_t lastKnownGoodPos(file.GetPosition());
     LockGuard guard(_writeLock);
@@ -570,7 +570,7 @@ DomainPart::read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc & buf, bo
         chunk = IChunk::create(encoding);
     } catch (const std::exception & e) {
         string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
-                               " got %d from '%s' at position %ld",
+                               " got %d from '%s' at position %" PRId64,
                                encoding, file.GetFileName(), lastKnownGoodPos));
         if ((encoding == 0) && (len == 0) && tailOfFileIsZero(file, lastKnownGoodPos)) {
             LOG(warning, "%s", msg.c_str());
@@ -590,7 +590,7 @@ DomainPart::read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc & buf, bo
         nbostream_longlivedbuf is(buf.get(), len);
         chunk->decode(is);
     } catch (const std::exception & e) {
-        throw runtime_error(make_string("Got exception during decoding of packet '%s' from file '%s' (len pos=%" PRId64 ", len=%d)",
+        throw runtime_error(make_string("Got exception during decoding of packet '%s' from file '%s' (pos=%" PRId64 ", len=%d)",
                             e.what(), file.GetFileName(), file.GetPosition() - len - sizeof(len), static_cast<int>(len)));
     }
     return true;
