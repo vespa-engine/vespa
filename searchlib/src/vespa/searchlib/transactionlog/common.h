@@ -78,7 +78,7 @@ public:
     size_t                  size() const { return _count; }
     bool                   empty() const { return _count == 0; }
     size_t             sizeBytes() const { return _buf.size(); }
-    bool merge(const Packet & packet);
+    void merge(const Packet & packet);
 private:
     size_t                            _count;
     SerialNumRange                    _range;
