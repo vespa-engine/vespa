@@ -176,18 +176,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public Path rewritePathInNodeForWantedDockerImage(Path path) {
-        requireValidPath(path);
-
-        if (!node().wantedDockerImage().get().repository().endsWith("/vespa/ci")) return path;
-
-        Path originalVespaHome = pathInNodeUnderVespaHome("");
-        if (!path.startsWith(originalVespaHome)) return path;
-
-        return fileSystem.getPath("/home/y").resolve(originalVespaHome.relativize(path));
-    }
-
-    @Override
     public String toString() {
         return "NodeAgentContextImpl{" +
                 "node=" + node +
