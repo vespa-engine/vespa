@@ -15,7 +15,7 @@
 LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 using vespalib::LockGuard;
 using vespalib::makeTask;
 using vespalib::makeClosure;
@@ -32,6 +32,7 @@ VESPA_THREAD_STACK_TAG(domain_commit_executor);
 DomainConfig::DomainConfig()
     : _encoding(Encoding::Crc::xxh64, Encoding::Compression::none),
       _compressionLevel(9),
+      _fSyncOnCommit(false),
       _partSizeLimit(0x10000000), // 256M
       _chunkSizeLimit(0x40000),   // 256k
       _chunkAgeLimit(10ms)
@@ -61,10 +62,10 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
-        throw runtime_error(make_string("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
+        throw runtime_error(fmt("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
     }
     if ((retval = makeDirectory(dir().c_str())) != 0) {
-        throw runtime_error(make_string("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
+        throw runtime_error(fmt("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
     }
     SerialNumList partIdVector = scanDir();
     const int64_t lastPart = partIdVector.empty() ? 0 : partIdVector.back();
@@ -360,8 +361,8 @@ void
 Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
     vespalib::MonitorGuard guard(_currentChunkMonitor);
     if (! (_lastSerial < packet.range().from())) {
-        throw runtime_error(make_string("Incomming serial number(%ld) must be bigger than the last one (%ld).",
-                                        packet.range().from(), _lastSerial));
+        throw runtime_error(fmt("Incomming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
+                                packet.range().from(), _lastSerial));
     } else {
         _lastSerial = packet.range().to();
     }
@@ -423,6 +424,9 @@ Domain::doCommit(std::unique_ptr<Chunk> chunk) {
         vespalib::File::sync(dir());
     }
     dp->commit(entry.serial(), packet);
+    if (_config.getFSyncOnCommit()) {
+        dp->sync();
+    }
     cleanSessions();
 }
 
@@ -534,7 +538,7 @@ Domain::scanDir()
             continue;
         const char *p = ename + wantPrefixLen + 1;
         uint64_t num = strtoull(p, NULL, 10);
-        string checkName = make_string("%s-%016" PRIu64, _name.c_str(), num);
+        string checkName = fmt("%s-%016" PRIu64, _name.c_str(), num);
         if (strcmp(checkName.c_str(), ename) != 0)
             continue;
         res.push_back(static_cast<SerialNum>(num));
