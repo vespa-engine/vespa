@@ -29,11 +29,11 @@ using Cells = SparseTensor::Cells;
 void
 copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
 {
-    cells.resize(cells_in.capacity());
-    for (const auto &cell : cells_in) {
+    cells = cells_in;
+    for (auto &cell : cells) {
         SparseTensorAddressRef oldRef = cell.first;
         SparseTensorAddressRef newRef(oldRef, stash);
-        cells[newRef] = cell.second;
+        cell.first = newRef;
     }
 }
 
