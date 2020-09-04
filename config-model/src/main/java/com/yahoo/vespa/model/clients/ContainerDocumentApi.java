@@ -95,13 +95,13 @@ public class ContainerDocumentApi {
     private static int maxPoolSize(ContainerCluster<?> cluster, Options options) {
         double vcpu = vcpu(cluster);
         if (vcpu == 0) return FALLBACK_MAX_POOL_SIZE;
-        return Math.max(2, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactory));
+        return Math.max(2, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactor));
     }
 
     private static int corePoolSize(ContainerCluster<?> cluster, Options options) {
         double vcpu = vcpu(cluster);
         if (vcpu == 0) return FALLBACK_CORE_POOL_SIZE;
-        return Math.max(1, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactory * 0.5));
+        return Math.max(1, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactor * 0.5));
     }
 
     private static double vcpu(ContainerCluster<?> cluster) {
@@ -117,11 +117,11 @@ public class ContainerDocumentApi {
 
     public static final class Options {
         private final Collection<String> bindings;
-        private final double feedThreadPoolSizeFactory;
+        private final double feedThreadPoolSizeFactor;
 
-        public Options(Collection<String> bindings, double feedThreadPoolSizeFactory) {
+        public Options(Collection<String> bindings, double feedThreadPoolSizeFactor) {
             this.bindings = Collections.unmodifiableCollection(bindings);
-            this.feedThreadPoolSizeFactory = feedThreadPoolSizeFactory;
+            this.feedThreadPoolSizeFactor = feedThreadPoolSizeFactor;
         }
     }
 
