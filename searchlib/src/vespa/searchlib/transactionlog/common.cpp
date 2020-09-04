@@ -3,6 +3,7 @@
 #include "common.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/file.h>
+#include <stdexcept>
 
 namespace search::transactionlog {
 
