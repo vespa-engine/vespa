@@ -542,14 +542,12 @@ DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
     os << realEncoding.getRaw();  //Patching real encoding
     os << uint32_t(end - (begin + sizeof(uint32_t) + sizeof(uint8_t))); // Patching actual size.
     os.wp(end);
-    int64_t lastKnownGoodPos(file.GetPosition());
     LockGuard guard(_writeLock);
     if ( ! file.CheckedWrite(os.data(), os.size()) ) {
-        throw runtime_error(handleWriteError("Failed writing the entry.", file, lastKnownGoodPos, chunk.range(), os.size()));
+        throw runtime_error(handleWriteError("Failed writing the entry.", file, byteSize(), chunk.range(), os.size()));
     }
     _writtenSerial = chunk.range().to();
-    assert(size_t(lastKnownGoodPos) == byteSize());
-    _byteSize.store(lastKnownGoodPos + os.size(), std::memory_order_release);
+    _byteSize.fetch_add(os.size(), std::memory_order_release);
 }
 
 bool
