@@ -556,17 +556,25 @@ public class IOThread implements Runnable, AutoCloseable {
 
         @Override
         public void run() {
-            while (stopSignal.getCount() > 0)
+            while (stopSignal.getCount() > 0) {
                 checkOldConnections();
+                try {
+                    Thread.sleep(pollIntervalUS/1000);
+                }
+                catch (InterruptedException e) {
+                }
+            }
         }
 
         public void checkOldConnections() {
-            List<GatewayConnection> toRemove = new ArrayList<>();
+            List<GatewayConnection> toRemove = null;
             for (GatewayConnection connection : connections) {
                 if (closingTime(connection).isBefore(clock.instant())) {
                     try {
                         IOThread.processResponse(connection.poll(), endpoint, clusterId, statusReceivedCounter, resultQueue);
                         connection.close();
+                        if (toRemove == null)
+                            toRemove = new ArrayList<>(1);
                         toRemove.add(connection);
                     } catch (Exception e) {
                         // Old connection; best effort
@@ -579,7 +587,8 @@ public class IOThread implements Runnable, AutoCloseable {
                     }
                 }
             }
-            connections.removeAll(toRemove);
+            if (toRemove != null)
+                connections.removeAll(toRemove);
         }
 
         private boolean timeToPoll(GatewayConnection connection) {
