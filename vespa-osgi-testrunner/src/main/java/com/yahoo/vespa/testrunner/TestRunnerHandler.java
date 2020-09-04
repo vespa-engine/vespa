@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -76,15 +75,14 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         if (path.equals("/tester/v1/log")) {
             if (useOsgiMode) {
-                Instant fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
+                long fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
                         .map(Long::parseLong)
-                        .map(Instant::ofEpochSecond)
-                        .orElse(Instant.EPOCH);
+                        .orElse(-1L);
 
                 List<LogRecord> logRecords = Optional.ofNullable(junitRunner.getReport())
                         .map(TestReport::logLines)
                         .orElse(Collections.emptyList()).stream()
-                        .filter(record -> record.getInstant().isAfter(fetchRecordsAfter))
+                        .filter(record -> record.getSequenceNumber()>fetchRecordsAfter)
                         .collect(Collectors.toList());
                 return new SlimeJsonResponse(logToSlime(logRecords));
             } else {

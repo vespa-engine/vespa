@@ -71,7 +71,7 @@ public class TestRunnerHandlerTest {
         JsonTestHelper.assertJsonEquals(new String(out.toByteArray()), "{\"logRecords\":[{\"id\":0,\"at\":1598432151660,\"type\":\"info\",\"message\":\"Tests started\"}]}");
 
         // Should not get old log
-        response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log?after="+testInstant.plusSeconds(1).getEpochSecond(), GET));
+        response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log?after=0", GET));
         out = new ByteArrayOutputStream();
         response.render(out);
         assertEquals("{\"logRecords\":[]}", new String(out.toByteArray()));
