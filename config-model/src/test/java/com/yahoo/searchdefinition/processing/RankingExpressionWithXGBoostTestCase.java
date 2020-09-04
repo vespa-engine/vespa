@@ -50,7 +50,7 @@ public class RankingExpressionWithXGBoostTestCase {
             storedApplicationDirectory.toFile().mkdirs();
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage storedApplication = new RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage(storedApplicationDirectory);
+            RankingExpressionWithOnnxTestCase.StoringApplicationPackage storedApplication = new RankingExpressionWithOnnxTestCase.StoringApplicationPackage(storedApplicationDirectory);
             RankProfileSearchFixture searchFromStored = fixtureWith("xgboost('xgboost.2.2.json')");
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
         }
@@ -61,13 +61,13 @@ public class RankingExpressionWithXGBoostTestCase {
 
     private RankProfileSearchFixture fixtureWith(String firstPhaseExpression) {
         return fixtureWith(firstPhaseExpression, null, null,
-                new RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage(applicationDir));
+                new RankingExpressionWithOnnxTestCase.StoringApplicationPackage(applicationDir));
     }
 
     private RankProfileSearchFixture fixtureWith(String firstPhaseExpression,
                                                  String constant,
                                                  String field,
-                                                 RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage application) {
+                                                 RankingExpressionWithOnnxTestCase.StoringApplicationPackage application) {
         try {
             RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,

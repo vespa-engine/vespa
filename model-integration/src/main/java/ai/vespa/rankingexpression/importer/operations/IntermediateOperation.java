@@ -166,7 +166,7 @@ public abstract class IntermediateOperation {
         return vespaName(name);
     }
 
-    public String vespaName(String name) {
+    public static String vespaName(String name) {
         return name != null ? namePartOf(name).replace('/', '_').replace('.', '_') : null;
     }
 
