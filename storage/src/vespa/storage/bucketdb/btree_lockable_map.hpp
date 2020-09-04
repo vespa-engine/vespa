@@ -59,7 +59,7 @@ struct BTreeLockableMap<T>::ValueTraits {
 
 template <typename T>
 BTreeLockableMap<T>::BTreeLockableMap()
-    : _impl(std::make_unique<GenericBTreeBucketDatabase<ValueTraits>>())
+    : _impl(std::make_unique<GenericBTreeBucketDatabase<ValueTraits>>(1024/*data store array count*/))
 {}
 
 template <typename T>
