@@ -36,7 +36,7 @@ const char* get_from_enum(const StringAttribute &attr, EntryRef enum_idx)
 }
 
 struct EqualCStringValue {
-    constexpr bool operator()(const char *lhs, const char *rhs) const { return strcmp(lhs, rhs) == 0; }
+    bool operator()(const char *lhs, const char *rhs) const { return strcmp(lhs, rhs) == 0; }
 };
 
 }
