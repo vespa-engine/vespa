@@ -3,11 +3,11 @@ package com.yahoo.document.restapi.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
-
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -15,7 +15,6 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
-
 import com.yahoo.document.json.SingleDocumentParser;
 import com.yahoo.document.restapi.OperationHandler;
 import com.yahoo.document.restapi.OperationHandlerImpl;
@@ -27,11 +26,11 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import java.util.logging.Level;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
+import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaxmlparser.DocumentFeedOperation;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 
@@ -77,11 +77,16 @@ public class RestApi extends LoggingRequestHandler {
     private final AtomicInteger threadsAvailableForApi;
 
     @Inject
-    public RestApi(LoggingRequestHandler.Context parentCtx, DocumentmanagerConfig documentManagerConfig,
-                   LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig,
+    public RestApi(ContainerThreadPool threadpool,
+                   AccessLog accessLog,
+                   Metric metric,
+                   DocumentmanagerConfig documentManagerConfig,
+                   LoadTypeConfig loadTypeConfig,
+                   ThreadpoolConfig threadpoolConfig,
                    AllClustersBucketSpacesConfig bucketSpacesConfig,
-                   ClusterListConfig clusterListConfig, MetricReceiver metricReceiver) {
-        super(parentCtx);
+                   ClusterListConfig clusterListConfig,
+                   MetricReceiver metricReceiver) {
+        super(threadpool.executor(), accessLog, metric);
         MessageBusParams params = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
         params.setDocumentmanagerConfig(documentManagerConfig);
         this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params),

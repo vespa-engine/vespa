@@ -346,8 +346,8 @@ public class Flags {
     );
 
     public static final UnboundDoubleFlag FEED_CORE_THREAD_POOL_SIZE_FACTOR = defineDoubleFlag(
-            "feed-core-thread-pool-size-factor", 1.0,
-            "Number of core threads in threadpool for feeding APIs as factor of max pool size",
+            "feed-core-thread-pool-size-factor", 4.0,
+            "Max threads in threadpool for feeding APIs as a factor of vcpu",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 

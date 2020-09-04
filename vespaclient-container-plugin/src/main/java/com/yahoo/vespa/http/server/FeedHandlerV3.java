@@ -7,26 +7,26 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
-import java.util.logging.Level;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.yolean.Exceptions;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -48,18 +48,20 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     private final AtomicInteger threadsAvailableForFeeding;
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
-    public FeedHandlerV3(LoggingRequestHandler.Context parentCtx,
+    public FeedHandlerV3(Executor executor,
+                         Metric metric,
+                         AccessLog accessLog,
                          DocumentmanagerConfig documentManagerConfig,
                          SessionCache sessionCache,
                          ThreadpoolConfig threadpoolConfig,
                          DocumentApiMetrics metricsHelper) {
-        super(parentCtx);
+        super(executor, accessLog, metric);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
-        feedReplyHandler = new FeedReplyReader(parentCtx.getMetric(), metricsHelper);
+        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
         cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
-        this.metric = parentCtx.getMetric();
+        this.metric = metric;
         // 40% of the threads can be blocking on feeding before we deny requests.
         if (threadpoolConfig != null) {
             threadsAvailableForFeeding = new AtomicInteger(Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1));

@@ -3,12 +3,15 @@ package com.yahoo.vespa.http.server;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.http.client.core.Headers;
@@ -39,15 +42,17 @@ public class FeedHandler extends LoggingRequestHandler {
     private final DocumentApiMetrics metricsHelper;
 
     @Inject
-    public FeedHandler(LoggingRequestHandler.Context parentCtx,
+    public FeedHandler(ContainerThreadPool threadpool,
+                       Metric metric,
+                       AccessLog accessLog,
                        DocumentmanagerConfig documentManagerConfig,
                        SessionCache sessionCache,
                        ThreadpoolConfig threadpoolConfig,
                        MetricReceiver metricReceiver) throws Exception {
-        super(parentCtx);
+        super(threadpool.executor(), accessLog, metric);
         metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
-        feedHandlerV3 = new FeedHandlerV3(parentCtx, documentManagerConfig, sessionCache, threadpoolConfig, metricsHelper);
-        feedReplyHandler = new FeedReplyReader(parentCtx.getMetric(), metricsHelper);
+        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, accessLog, documentManagerConfig, sessionCache, threadpoolConfig, metricsHelper);
+        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
     }
 
     private Tuple2<HttpResponse, Integer> checkProtocolVersion(HttpRequest request) {

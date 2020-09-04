@@ -116,8 +116,8 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertThat(injectedComponentIds, hasItem("threadpool@feedapi-handler"));
 
         ThreadpoolConfig config = root.getConfig(ThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
-        assertEquals(4, config.maxthreads());
-        assertEquals(4, config.corePoolSize());
+        assertEquals(16, config.maxthreads());
+        assertEquals(8, config.corePoolSize());
     }
 
     private static class HostProvisionerWithCustomRealResource implements HostProvisioner {
