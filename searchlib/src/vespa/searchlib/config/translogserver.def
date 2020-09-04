@@ -24,7 +24,7 @@ maxthreads int default=4 restart
 crcmethod enum {ccitt_crc32, xxh64} default=xxh64
 
 ## Control compression type.
-compression.type enum {NONE, NONE_MULTI, LZ4, ZSTD} default=LZ4
+compression.type enum {NONE, NONE_MULTI, LZ4, ZSTD} default=NONE
 
 ## Control compression level
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
