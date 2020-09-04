@@ -241,6 +241,7 @@
                                         <include>io.prometheus:simpleclient:0.6.0:jar:test</include>
                                         <include>io.prometheus:simpleclient_common:0.6.0:jar:test</include>
                                         <include>joda-time:joda-time:2.8.1:jar:test</include>
+                                        <include>junit:junit:4.13:jar:test</include>
                                         <include>net.arnx:jsonic:1.2.11:jar:test</include>
                                         <include>net.java.dev.jna:jna:4.5.2:jar:test</include>
                                         <include>org.abego.treelayout:org.abego.treelayout.core:1.0.1:jar:test</include>
@@ -259,6 +260,7 @@
                                         <include>org.eclipse.jetty:jetty-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-servlet:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-servlets:[${jetty.version}]:jar:test</include>
+                                        <include>org.hamcrest:hamcrest-core:1.3:jar:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:2.1.8:jar:test</include>
                                         <include>org.junit.jupiter:junit-jupiter-api:[${junit5.version}]:jar:test</include>
                                         <include>org.junit.jupiter:junit-jupiter-engine:[${junit5.version}]:jar:test</include>
