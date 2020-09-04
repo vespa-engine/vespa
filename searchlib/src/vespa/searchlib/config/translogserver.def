@@ -29,7 +29,7 @@ compression.type enum {NONE, NONE_MULTI, LZ4, ZSTD} default=LZ4
 ## Control compression level
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
 ## 9 is a reasonable default for both
-compression.level int default=9
+compression.level int default=3
 
 ## How large a chunk can grow in memory before beeing flushed
 chunk.sizelimit int default = 256000  # 256k
