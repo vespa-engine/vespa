@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "generic_tensor_attribute_saver.h"
+#include "serialized_tensor_attribute_saver.h"
 #include "serialized_tensor_store.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
@@ -9,11 +9,11 @@ using vespalib::GenerationHandler;
 
 namespace search::tensor {
 
-GenericTensorAttributeSaver::
-GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
-                            const attribute::AttributeHeader &header,
-                            RefCopyVector &&refs,
-                            const SerializedTensorStore &tensorStore)
+SerializedTensorAttributeSaver::
+SerializedTensorAttributeSaver(GenerationHandler::Guard &&guard,
+                               const attribute::AttributeHeader &header,
+                               RefCopyVector &&refs,
+                               const SerializedTensorStore &tensorStore)
     : AttributeSaver(std::move(guard), header),
       _refs(std::move(refs)),
       _tensorStore(tensorStore)
@@ -21,13 +21,13 @@ GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
 }
 
 
-GenericTensorAttributeSaver::~GenericTensorAttributeSaver()
+SerializedTensorAttributeSaver::~SerializedTensorAttributeSaver()
 {
 }
 
 
 bool
-GenericTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
+SerializedTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
     std::unique_ptr<BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());

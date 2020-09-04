@@ -12,11 +12,11 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
-#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index_factory.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index_saver.h>
+#include <vespa/searchlib/tensor/serialized_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -40,7 +40,7 @@ using search::tensor::DefaultNearestNeighborIndexFactory;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::DirectTensorAttribute;
 using search::tensor::DocVectorAccess;
-using search::tensor::GenericTensorAttribute;
+using search::tensor::SerializedTensorAttribute;
 using search::tensor::HnswIndex;
 using search::tensor::HnswNode;
 using search::tensor::NearestNeighborIndex;
@@ -361,7 +361,7 @@ struct Fixture {
         } else if (_traits.use_direct_tensor_attribute) {
             return std::make_shared<DirectTensorAttribute>(_name, _cfg);
         } else {
-            return std::make_shared<GenericTensorAttribute>(_name, _cfg);
+            return std::make_shared<SerializedTensorAttribute>(_name, _cfg);
         }
     }
 

@@ -5,17 +5,14 @@
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include "tensor_attribute.h"
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 class SerializedTensorStore;
 
 /*
  * Class for saving a tensor attribute.
  */
-class GenericTensorAttributeSaver : public AttributeSaver
-{
+class SerializedTensorAttributeSaver : public AttributeSaver {
 public:
     using RefCopyVector = TensorAttribute::RefCopyVector;
 private:
@@ -25,14 +22,12 @@ private:
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
-                                const attribute::AttributeHeader &header,
-                                RefCopyVector &&refs,
-                                const SerializedTensorStore &tensorStore);
+    SerializedTensorAttributeSaver(GenerationHandler::Guard &&guard,
+                                   const attribute::AttributeHeader &header,
+                                   RefCopyVector &&refs,
+                                   const SerializedTensorStore &tensorStore);
 
-    virtual ~GenericTensorAttributeSaver();
+    virtual ~SerializedTensorAttributeSaver();
 };
 
-} // namespace search::tensor
-
-} // namespace search
+}

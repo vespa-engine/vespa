@@ -10,12 +10,11 @@ namespace search::tensor {
 /**
  * Attribute vector class used to store tensors for all documents in memory.
  */
-class GenericTensorAttribute : public TensorAttribute
-{
+class SerializedTensorAttribute : public TensorAttribute {
     SerializedTensorStore _serializedTensorStore; // data store for serialized tensors
 public:
-    GenericTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
-    virtual ~GenericTensorAttribute();
+    SerializedTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
+    virtual ~SerializedTensorAttribute();
     virtual void setTensor(DocId docId, const Tensor &tensor) override;
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
     virtual void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
