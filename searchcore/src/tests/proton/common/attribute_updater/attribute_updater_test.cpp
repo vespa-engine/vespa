@@ -28,7 +28,7 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
+#include <vespa/searchlib/tensor/serialized_tensor_attribute.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -48,7 +48,7 @@ using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::tensor::ITensorAttribute;
 using search::tensor::DenseTensorAttribute;
-using search::tensor::GenericTensorAttribute;
+using search::tensor::SerializedTensorAttribute;
 using search::tensor::TensorAttribute;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
@@ -457,7 +457,7 @@ TEST_F("require that tensor modify update is applied",
 }
 
 TEST_F("require that tensor add update is applied",
-        TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
+        TensorFixture<SerializedTensorAttribute>("tensor(x{})", "sparse_tensor"))
 {
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
     f.applyValueUpdate(*f.attribute, 1,
@@ -466,7 +466,7 @@ TEST_F("require that tensor add update is applied",
 }
 
 TEST_F("require that tensor add update to non-existing tensor creates empty tensor first",
-       TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
+       TensorFixture<SerializedTensorAttribute>("tensor(x{})", "sparse_tensor"))
 {
     f.applyValueUpdate(*f.attribute, 1,
                        TensorAddUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
@@ -474,7 +474,7 @@ TEST_F("require that tensor add update to non-existing tensor creates empty tens
 }
 
 TEST_F("require that tensor remove update is applied",
-        TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
+        TensorFixture<SerializedTensorAttribute>("tensor(x{})", "sparse_tensor"))
 {
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2).add({{"x", "b"}}, 3));
     f.applyValueUpdate(*f.attribute, 1,

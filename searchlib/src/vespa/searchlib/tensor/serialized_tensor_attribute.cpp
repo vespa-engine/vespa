@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "generic_tensor_attribute.h"
-#include "generic_tensor_attribute_saver.h"
-#include "tensor_attribute.hpp"
 #include "blob_sequence_reader.h"
+#include "serialized_tensor_attribute.h"
+#include "serialized_tensor_attribute_saver.h"
+#include "tensor_attribute.hpp"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
@@ -21,29 +21,29 @@ constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 
 }
 
-GenericTensorAttribute::GenericTensorAttribute(stringref name, const Config &cfg)
-    : TensorAttribute(name, cfg, _genericTensorStore)
+SerializedTensorAttribute::SerializedTensorAttribute(stringref name, const Config &cfg)
+    : TensorAttribute(name, cfg, _serializedTensorStore)
 {
 }
 
 
-GenericTensorAttribute::~GenericTensorAttribute()
+SerializedTensorAttribute::~SerializedTensorAttribute()
 {
     getGenerationHolder().clearHoldLists();
     _tensorStore.clearHoldLists();
 }
 
 void
-GenericTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
+SerializedTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
     checkTensorType(tensor);
-    EntryRef ref = _genericTensorStore.setTensor(tensor);
+    EntryRef ref = _serializedTensorStore.setTensor(tensor);
     setTensorRef(docId, ref);
 }
 
 
 std::unique_ptr<Tensor>
-GenericTensorAttribute::getTensor(DocId docId) const
+SerializedTensorAttribute::getTensor(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
@@ -52,17 +52,17 @@ GenericTensorAttribute::getTensor(DocId docId) const
     if (!ref.valid()) {
         return std::unique_ptr<Tensor>();
     }
-    return _genericTensorStore.getTensor(ref);
+    return _serializedTensorStore.getTensor(ref);
 }
 
 void
-GenericTensorAttribute::getTensor(DocId, vespalib::tensor::MutableDenseTensorView &) const
+SerializedTensorAttribute::getTensor(DocId, vespalib::tensor::MutableDenseTensorView &) const
 {
     notImplemented();
 }
 
 bool
-GenericTensorAttribute::onLoad()
+SerializedTensorAttribute::onLoad()
 {
     BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {
@@ -75,7 +75,7 @@ GenericTensorAttribute::onLoad()
     _refVector.unsafe_reserve(numDocs);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
         uint32_t tensorSize = tensorReader.getNextSize();
-        auto raw = _genericTensorStore.allocRawBuffer(tensorSize);
+        auto raw = _serializedTensorStore.allocRawBuffer(tensorSize);
         if (tensorSize != 0) {
             tensorReader.readBlob(raw.data, tensorSize);
         }
@@ -88,21 +88,21 @@ GenericTensorAttribute::onLoad()
 
 
 std::unique_ptr<AttributeSaver>
-GenericTensorAttribute::onInitSave(vespalib::stringref fileName)
+SerializedTensorAttribute::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
-    return std::make_unique<GenericTensorAttributeSaver>
+    return std::make_unique<SerializedTensorAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
          getRefCopy(),
-         _genericTensorStore);
+         _serializedTensorStore);
 }
 
 void
-GenericTensorAttribute::compactWorst()
+SerializedTensorAttribute::compactWorst()
 {
-    doCompactWorst<GenericTensorStore::RefType>();
+    doCompactWorst<SerializedTensorStore::RefType>();
 }
 
 }
