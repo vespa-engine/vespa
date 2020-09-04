@@ -35,7 +35,10 @@ public:
 
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    std::unique_ptr<MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const vespalib::string &field_name() const { return _children_field.getName(); }
+    const std::vector<Blueprint*>& get_terms() const { return _terms; }
 
 private:
     void fetchPostings(const ExecuteInfo &execInfo) override;

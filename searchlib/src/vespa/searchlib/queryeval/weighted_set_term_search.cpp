@@ -3,8 +3,10 @@
 #include "weighted_set_term_search.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/objects/visit.h>
+#include <vespa/searchcommon/attribute/i_search_context.h>
 
 #include "iterator_pack.h"
+#include "blueprint.h"
 
 using search::fef::TermFieldMatchData;
 using vespalib::ObjectVisitor;
@@ -47,6 +49,15 @@ private:
     void seek_child(ref_t child, uint32_t docId) {
         _termPos[child] = _children.seek(child, docId);
     }
+    void get_matching_elements_child(ref_t child, uint32_t docId, const std::vector<Blueprint *> &child_blueprints, std::vector<uint32_t> &dst) {
+        auto *sc = child_blueprints[child]->get_attribute_search_context();
+        if (sc != nullptr) {
+            int32_t weight(0);
+            for (int32_t id = sc->find(docId, 0, weight); id >= 0; id = sc->find(docId, id + 1, weight)) {
+                dst.push_back(id);
+            }
+        }
+    }
 
 public:
     WeightedSetTermSearchImpl(search::fef::TermFieldMatchData &tmd,
@@ -87,13 +98,17 @@ public:
         setDocId(_termPos[HEAP::front(_data_begin, _data_stash)]);
     }
 
-    void doUnpack(uint32_t docId) override {
-        _tmd.reset(docId);
+    void pop_matching_children(uint32_t docId) {
         while ((_data_begin < _data_stash) &&
                _termPos[HEAP::front(_data_begin, _data_stash)] == docId)
         {
             HEAP::pop(_data_begin, _data_stash--, _cmpDocId);
         }
+    }
+
+    void doUnpack(uint32_t docId) override {
+        _tmd.reset(docId);
+        pop_matching_children(docId);
         std::sort(_data_stash, _data_end, _cmpWeight);
         for (ref_t *ptr = _data_stash; ptr < _data_end; ++ptr) {
             fef::TermFieldMatchDataPosition pos;
@@ -126,6 +141,12 @@ public:
     }
     void and_hits_into(BitVector &result, uint32_t begin_id) override {
         result.andWith(*get_hits(begin_id));
+    }
+    void find_matching_elements(uint32_t docId, const std::vector<Blueprint *>& child_blueprints, std::vector<uint32_t> &dst) override {
+        pop_matching_children(docId);
+        for (ref_t *ptr = _data_stash; ptr < _data_end; ++ptr) {
+            get_matching_elements_child(*ptr, docId, child_blueprints, dst);
+        }
     }
 };
 

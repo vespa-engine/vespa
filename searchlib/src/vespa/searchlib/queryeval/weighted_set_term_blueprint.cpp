@@ -3,9 +3,62 @@
 #include "weighted_set_term_blueprint.h"
 #include "weighted_set_term_search.h"
 #include "orsearch.h"
+#include "matching_elements_search.h"
+#include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::queryeval {
+
+class WeightedSetTermMatchingElementsSearch : public MatchingElementsSearch
+{
+    fef::TermFieldMatchData                _tfmd;
+    fef::TermFieldMatchDataArray           _tfmda;
+    vespalib::string                       _field_name;
+    const std::vector<Blueprint*>&         _terms;
+    std::unique_ptr<WeightedSetTermSearch> _search;
+    
+public:
+    WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint*>& terms);
+    ~WeightedSetTermMatchingElementsSearch() override;
+    void find_matching_elements(uint32_t docid, MatchingElements& result) override;
+    void initRange(uint32_t begin_id, uint32_t end_id) override;
+};
+
+WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const vespalib::string& field_name, const std::vector<Blueprint*>& terms)
+    : _tfmd(),
+      _tfmda(),
+      _field_name(field_name),
+      _terms(terms),
+      _search()
+{
+    _tfmda.add(&_tfmd);
+    auto generic_search = bp.createLeafSearch(_tfmda, false);
+    auto weighted_set_term_search = dynamic_cast<WeightedSetTermSearch *>(generic_search.get());
+    generic_search.release();
+    _search.reset(weighted_set_term_search);
+}
+
+WeightedSetTermMatchingElementsSearch::~WeightedSetTermMatchingElementsSearch() = default;
+
+void
+WeightedSetTermMatchingElementsSearch::find_matching_elements(uint32_t docid, MatchingElements& result)
+{
+    _matching_elements.clear();
+    _search->seek(docid);
+    _search->find_matching_elements(docid, _terms, _matching_elements);
+    if (!_matching_elements.empty()) {
+        std::sort(_matching_elements.begin(), _matching_elements.end());
+        _matching_elements.resize(std::unique(_matching_elements.begin(), _matching_elements.end()) - _matching_elements.begin());
+        result.add_matching_elements(docid, _field_name, _matching_elements);
+    }
+}
+
+void
+WeightedSetTermMatchingElementsSearch::initRange(uint32_t begin_id, uint32_t end_id)
+{
+    _search->initRange(begin_id, end_id);
+}
 
 WeightedSetTermBlueprint::WeightedSetTermBlueprint(const FieldSpec &field)
     : ComplexLeafBlueprint(field),
@@ -61,6 +114,16 @@ SearchIterator::UP
 WeightedSetTermBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
     return create_or_filter(_terms, strict, constraint);
+}
+
+std::unique_ptr<MatchingElementsSearch>
+WeightedSetTermBlueprint::create_matching_elements_search(const MatchingElementsFields &fields) const
+{
+    if (fields.has_field(_children_field.getName())) {
+        return std::make_unique<WeightedSetTermMatchingElementsSearch>(*this, _children_field.getName(), _terms);
+    } else {
+        return std::unique_ptr<MatchingElementsSearch>();
+    }
 }
 
 void
