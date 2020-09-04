@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -595,12 +594,9 @@ public class IOThread implements Runnable, AutoCloseable {
             if (connection.lastPollTime() == null) return true;
 
             // Exponential (2^x) dropoff:
-            double unit = pollIntervalUS / 1000.0;
-            double x = (  clock.millis() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
-            double lastX = (  connection.lastPollTime().toEpochMilli() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
-
-            double currentDelayDoublings = Math.log(lastX)/Math.log(2);
-            return (x - lastX) > Math.pow(2, currentDelayDoublings);
+            double connectionEndOfLife = connection.connectionTime().plus(connectionTimeToLive).toEpochMilli();
+            double connectionLastPolled = connection.lastPollTime().toEpochMilli();
+            return clock.millis() - connectionEndOfLife > 2 * (connectionLastPolled - connectionEndOfLife);
         }
 
         private Instant closingTime(GatewayConnection connection) {
