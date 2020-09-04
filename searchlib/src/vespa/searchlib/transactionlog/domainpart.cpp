@@ -548,6 +548,7 @@ DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
         throw runtime_error(handleWriteError("Failed writing the entry.", file, lastKnownGoodPos, chunk.range(), os.size()));
     }
     _writtenSerial = chunk.range().to();
+    assert(size_t(lastKnownGoodPos) == byteSize());
     _byteSize.store(lastKnownGoodPos + os.size(), std::memory_order_release);
 }
 
