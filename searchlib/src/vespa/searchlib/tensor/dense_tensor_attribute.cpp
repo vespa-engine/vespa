@@ -178,7 +178,7 @@ DenseTensorAttribute::getTensor(DocId docId) const
 }
 
 void
-DenseTensorAttribute::getTensor(DocId docId, MutableDenseTensorView &tensor) const
+DenseTensorAttribute::extract_dense_view(DocId docId, MutableDenseTensorView &tensor) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {

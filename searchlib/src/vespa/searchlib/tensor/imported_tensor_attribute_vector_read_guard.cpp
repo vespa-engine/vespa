@@ -51,9 +51,15 @@ ImportedTensorAttributeVectorReadGuard::getEmptyTensor() const
 }
 
 void
-ImportedTensorAttributeVectorReadGuard::getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const
+ImportedTensorAttributeVectorReadGuard::extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const
 {
-    _target_tensor_attribute.getTensor(getTargetLid(docId), tensor);
+    _target_tensor_attribute.extract_dense_view(getTargetLid(docid), tensor);
+}
+
+const Tensor&
+ImportedTensorAttributeVectorReadGuard::get_tensor_ref(uint32_t docid) const
+{
+    return _target_tensor_attribute.get_tensor_ref(getTargetLid(docid));
 }
 
 vespalib::eval::ValueType

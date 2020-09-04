@@ -16,11 +16,11 @@ namespace search::features {
 class DenseTensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
-    const search::tensor::ITensorAttribute *_attribute;
+    const search::tensor::ITensorAttribute& _attribute;
     vespalib::tensor::MutableDenseTensorView _tensorView;
 
 public:
-    DenseTensorAttributeExecutor(const search::tensor::ITensorAttribute *attribute);
+    DenseTensorAttributeExecutor(const search::tensor::ITensorAttribute& attribute);
     void execute(uint32_t docId) override;
 };
 
