@@ -35,6 +35,7 @@ private:
 
 public:
     DirectTensorStore();
+    ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
     const Tensor* get_tensor(EntryRef ref) const;
