@@ -11,6 +11,7 @@
 
 #include "blob_sequence_reader.h"
 #include "tensor_deserialize.h"
+#include "tensor_attribute.hpp"
 
 using vespalib::tensor::Tensor;
 
