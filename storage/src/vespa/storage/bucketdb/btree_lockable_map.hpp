@@ -150,6 +150,12 @@ size_t BTreeLockableMap<T>::getMemoryUsage() const noexcept {
 }
 
 template <typename T>
+vespalib::MemoryUsage BTreeLockableMap<T>::detailed_memory_usage() const noexcept {
+    std::lock_guard guard(_lock);
+    return _impl->memory_usage();
+}
+
+template <typename T>
 bool BTreeLockableMap<T>::empty() const noexcept {
     std::lock_guard guard(_lock);
     return _impl->empty();

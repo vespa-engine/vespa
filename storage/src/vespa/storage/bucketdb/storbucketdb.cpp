@@ -91,6 +91,10 @@ size_t StorBucketDatabase::getMemoryUsage() const {
     return _impl->getMemoryUsage();
 }
 
+vespalib::MemoryUsage StorBucketDatabase::detailed_memory_usage() const noexcept {
+    return _impl->detailed_memory_usage();
+}
+
 void StorBucketDatabase::showLockClients(vespalib::asciistream& out) const {
     _impl->showLockClients(out);
 }

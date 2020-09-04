@@ -263,6 +263,15 @@ BucketManager::updateMetrics(bool updateDocCount)
             }
         }
     }
+    update_bucket_db_memory_usage_metrics();
+}
+
+void BucketManager::update_bucket_db_memory_usage_metrics() {
+    for (auto& space : _component.getBucketSpaceRepo()) {
+        auto bm = _metrics->bucket_spaces.find(space.first);
+        bm->second->bucket_db_metrics.memory_usage.update(
+                space.second->bucketDatabase().detailed_memory_usage());
+    }
 }
 
 void BucketManager::updateMinUsedBits()

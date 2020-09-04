@@ -289,7 +289,7 @@ TEST_F(BucketManagerTest, distribution_bit_change_on_create_bucket){
     EXPECT_EQ(4u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
 
-TEST_F(BucketManagerTest, Min_Used_Bits_From_Component_Is_Honored) {
+TEST_F(BucketManagerTest, min_used_bits_from_component_is_honored) {
     setupTestEnvironment();
     // Let these differ in order to test state update behavior.
     _node->getComponentRegister().getMinUsedBitsTracker().setMinUsedBits(10);
@@ -464,6 +464,20 @@ TEST_F(BucketManagerTest, metrics_generation) {
     EXPECT_EQ(2, m.ready.getLast());
 }
 
+namespace {
+
+void verify_db_memory_metrics_present(const ContentBucketDbMetrics& db_metrics) {
+    auto* m = db_metrics.memory_usage.getMetric("allocated_bytes");
+    ASSERT_TRUE(m != nullptr);
+    // Actual values are very much implementation defined, so just check for non-zero.
+    EXPECT_GT(m->getLongValue("last"), 0);
+    m = db_metrics.memory_usage.getMetric("used_bytes");
+    ASSERT_TRUE(m != nullptr);
+    EXPECT_GT(m->getLongValue("last"), 0);
+}
+
+}
+
 TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     setupTestEnvironment();
     _top->open();
@@ -499,6 +513,8 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     EXPECT_EQ(0,   default_m->second->active_buckets.getLast());
     EXPECT_EQ(1,   default_m->second->ready_buckets.getLast());
 
+    verify_db_memory_metrics_present(default_m->second->bucket_db_metrics);
+
     auto global_m = spaces.find(document::FixedBucketSpaces::global_space());
     ASSERT_TRUE(global_m != spaces.end());
     EXPECT_EQ(1,   global_m->second->buckets_total.getLast());
@@ -506,6 +522,8 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     EXPECT_EQ(300, global_m->second->bytes.getLast());
     EXPECT_EQ(1,   global_m->second->active_buckets.getLast());
     EXPECT_EQ(0,   global_m->second->ready_buckets.getLast());
+
+    verify_db_memory_metrics_present(global_m->second->bucket_db_metrics);
 }
 
 void

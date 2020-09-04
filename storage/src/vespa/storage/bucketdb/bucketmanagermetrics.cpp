@@ -22,13 +22,21 @@ DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet
 
 DataStoredMetrics::~DataStoredMetrics() = default;
 
+ContentBucketDbMetrics::ContentBucketDbMetrics(metrics::MetricSet* owner)
+    : metrics::MetricSet("bucket_db", {}, "", owner),
+      memory_usage(this)
+{}
+
+ContentBucketDbMetrics::~ContentBucketDbMetrics() = default;
+
 BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metrics::MetricSet* owner)
         : metrics::MetricSet("bucket_space", {{"bucketSpace", space_name}}, "", owner),
           buckets_total("buckets_total", {}, "Total number buckets present in the bucket space (ready + not ready)", this),
           docs("docs", {}, "Documents stored in the bucket space", this),
           bytes("bytes", {}, "Bytes stored across all documents in the bucket space", this),
           active_buckets("active_buckets", {}, "Number of active buckets in the bucket space", this),
-          ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this)
+          ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this),
+          bucket_db_metrics(this)
 {}
 
 BucketSpaceMetrics::~BucketSpaceMetrics() = default;

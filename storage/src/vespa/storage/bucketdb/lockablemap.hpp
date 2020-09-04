@@ -85,6 +85,15 @@ LockableMap<Map>::getMemoryUsage() const noexcept
         sizeof(std::mutex) + sizeof(std::condition_variable);
 }
 
+template <typename Map>
+vespalib::MemoryUsage LockableMap<Map>::detailed_memory_usage() const noexcept {
+    // We don't have any details for this map type, just count everything as "allocated".
+    size_t used = getMemoryUsage();
+    vespalib::MemoryUsage mem_usage;
+    mem_usage.incAllocatedBytes(used);
+    return mem_usage;
+}
+
 template<typename Map>
 bool
 LockableMap<Map>::empty() const noexcept

@@ -46,6 +46,7 @@ public:
     bool operator<(const BTreeLockableMap& other) const;
     size_t size() const noexcept override;
     size_t getMemoryUsage() const noexcept override;
+    vespalib::MemoryUsage detailed_memory_usage() const noexcept override;
     bool empty() const noexcept override;
     void swap(BTreeLockableMap&);
 

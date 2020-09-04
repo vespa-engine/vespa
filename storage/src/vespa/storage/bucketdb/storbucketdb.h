@@ -5,6 +5,7 @@
 #include "read_guard.h"
 #include "storagebucketinfo.h"
 #include <vespa/storageapi/defs.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <memory>
 
 namespace storage {
@@ -79,7 +80,8 @@ public:
      */
     bool isConsistent(const WrappedEntry& entry);
 
-    size_t getMemoryUsage() const;
+    [[nodiscard]] size_t getMemoryUsage() const;
+    [[nodiscard]] vespalib::MemoryUsage detailed_memory_usage() const noexcept;
     void showLockClients(vespalib::asciistream & out) const;
 
 };
