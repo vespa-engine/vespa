@@ -71,6 +71,7 @@ public class TensorFlowImporter extends ModelImporter {
         try {
             tempDir = Files.createTempDirectory("tf2onnx");
             String convertedPath = tempDir.toString() + File.separatorChar + "converted.onnx";
+            String outputOfLastConversionAttempt = "";
             for (int opset : onnxOpsetsToTry) {
                 log.info("Converting TensorFlow model '" + modelDir + "' to ONNX with opset " + opset + "...");
                 Pair<Integer, String> res = convertToOnnx(modelDir, convertedPath, opset);
@@ -78,9 +79,11 @@ public class TensorFlowImporter extends ModelImporter {
                     log.info("Conversion to ONNX with opset " + opset + " successful.");
                     return onnxImporter.importModel(modelName, convertedPath);
                 }
-                log.info("Conversion to ONNX with opset " + opset + " failed. Reason: " + res.getSecond());
+                log.fine("Conversion to ONNX with opset " + opset + " failed. Reason: " + res.getSecond());
+                outputOfLastConversionAttempt = res.getSecond();
             }
-            throw new IllegalArgumentException("Unable to convert TensorFlow model in '" + modelDir + "' to ONNX.");
+            throw new IllegalArgumentException("Unable to convert TensorFlow model in '" + modelDir + "' to ONNX. " +
+                    "Reason: " + outputOfLastConversionAttempt);
         } catch (IOException e) {
             throw new IllegalArgumentException("Conversion from TensorFlow to ONNX failed for '" + modelDir + "'");
         } finally {
