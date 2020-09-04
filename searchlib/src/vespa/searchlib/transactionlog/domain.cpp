@@ -360,8 +360,8 @@ Domain::Chunk::age() const {
 void
 Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
     vespalib::MonitorGuard guard(_currentChunkMonitor);
-    if (! (_lastSerial < packet.range().from())) {
-        throw runtime_error(fmt("Incomming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
+    if (_lastSerial >= packet.range().from()) {
+        throw runtime_error(fmt("Incoming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
                                 packet.range().from(), _lastSerial));
     } else {
         _lastSerial = packet.range().to();
