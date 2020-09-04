@@ -178,4 +178,44 @@ public:
 
 };
 
+/**
+ * Calculates the Hamming distance defined as
+ * "number of cells where the values are different"
+ */
+template <typename FloatType>
+class HammingDistance : public DistanceFunction {
+public:
+    HammingDistance() {}
+    double calc(const vespalib::tensor::TypedCells& lhs, const vespalib::tensor::TypedCells& rhs) const override {
+        auto lhs_vector = lhs.typify<FloatType>();
+        auto rhs_vector = rhs.typify<FloatType>();
+        size_t sz = lhs_vector.size();
+        assert(sz == rhs_vector.size());
+        size_t sum = 0;
+        for (size_t i = 0; i < sz; ++i) {
+            sum += (lhs_vector[i] == rhs_vector[i]) ? 0 : 1;
+        }
+        return (double)sum;
+    }
+    double to_rawscore(double distance) const override {
+        double score = 1.0 / (1.0 + distance);
+        return score;
+    }
+    double calc_with_limit(const vespalib::tensor::TypedCells& lhs,
+                           const vespalib::tensor::TypedCells& rhs,
+                           double limit) const override
+    {
+        auto lhs_vector = lhs.typify<FloatType>();
+        auto rhs_vector = rhs.typify<FloatType>();
+        size_t sz = lhs_vector.size();
+        assert(sz == rhs_vector.size());
+        size_t sum = 0;
+        for (size_t i = 0; i < sz && sum <= limit; ++i) {
+            sum += (lhs_vector[i] == rhs_vector[i]) ? 0 : 1;
+        }
+        return (double)sum;
+    }
+};
+
+
 }

@@ -40,6 +40,13 @@ make_distance_function(DistanceMetric variant, ValueType::CellType cell_type)
                 return std::make_unique<InnerProductDistance<double>>();
             }
             break;
+        case DistanceMetric::Hamming:
+            if (cell_type == ValueType::CellType::FLOAT) {
+                return std::make_unique<HammingDistance<float>>();
+            } else {
+                return std::make_unique<HammingDistance<double>>();
+            }
+            break;
     }
     // not reached:
     return DistanceFunction::UP();
