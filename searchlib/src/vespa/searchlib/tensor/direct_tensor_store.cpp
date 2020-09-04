@@ -42,6 +42,8 @@ DirectTensorStore::DirectTensorStore()
     _tensor_store.enableFreeLists();
 }
 
+DirectTensorStore::~DirectTensorStore() = default;
+
 const vespalib::tensor::Tensor*
 DirectTensorStore::get_tensor(EntryRef ref) const
 {
