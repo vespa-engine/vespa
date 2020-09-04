@@ -725,7 +725,8 @@ public class ApplicationController {
             // ok; already gone
         } finally {
             controller.routing().policies().refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
-            applicationStore.putMetaTombstone(id, clock.instant());
+            if (zone.environment().isManuallyDeployed())
+                applicationStore.putMetaTombstone(id, clock.instant());
         }
         return application.with(instanceName, instance -> instance.withoutDeploymentIn(zone));
     }

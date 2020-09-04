@@ -141,4 +141,8 @@ public class ApplicationStoreMock implements ApplicationStore {
         }
     }
 
+    public NavigableMap<Instant, byte[]> getMeta(ApplicationId id) { return meta.get(id); }
+
+    public NavigableMap<Instant, byte[]> getMeta(DeploymentId id) { return metaManual.get(id); }
+
 }

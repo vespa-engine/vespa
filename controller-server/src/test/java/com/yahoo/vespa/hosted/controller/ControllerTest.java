@@ -48,6 +48,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -60,6 +61,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -181,6 +183,27 @@ public class ControllerTest {
         assertNull("Zone was removed",
                    context.instance().deployments().get(productionUsWest1.zone(main)));
         assertNull("Deployment job was removed", context.instanceJobs().get(productionUsWest1));
+
+        // Submission has stored application meta.
+        assertArrayEquals(applicationPackage.metaDataZip(),
+                          tester.controllerTester().serviceRegistry().applicationStore()
+                                .getMeta(context.instanceId())
+                                .get(tester.clock().instant()));
+
+        // Meta data tombstone placed on delete
+        tester.clock().advance(Duration.ofSeconds(1));
+        context.submit(ApplicationPackage.deploymentRemoval());
+        tester.clock().advance(Duration.ofSeconds(1));
+        context.submit(ApplicationPackage.deploymentRemoval());
+        tester.applications().deleteApplication(context.application().id(),
+                                                tester.controllerTester().credentialsFor(context.instanceId().tenant()));
+        assertArrayEquals(new byte[0],
+                          tester.controllerTester().serviceRegistry().applicationStore()
+                                .getMeta(context.instanceId())
+                                .get(tester.clock().instant()));
+
+        assertNull(tester.controllerTester().serviceRegistry().applicationStore()
+                         .getMeta(context.deploymentIdIn(productionUsWest1.zone(main))));
     }
 
     @Test
@@ -635,7 +658,7 @@ public class ControllerTest {
                    tester.configServer().application(context.instanceId(), zone).get().activated());
         assertTrue("No job status added",
                    context.instanceJobs().isEmpty());
-        assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, context.application().deploymentSpec());
+        assertEquals("DeploymentSpec is not stored", DeploymentSpec.empty, context.application().deploymentSpec());
 
         // Verify zone supports shared layer 4 and shared routing methods
         Set<RoutingMethod> routingMethods = tester.controller().routing().endpointsOf(context.deploymentIdIn(zone))
@@ -644,6 +667,20 @@ public class ControllerTest {
                 .map(Endpoint::routingMethod)
                 .collect(Collectors.toSet());
         assertEquals(routingMethods, Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4));
+
+        // Deployment has stored application meta.
+        assertArrayEquals(applicationPackage.metaDataZip(),
+                          tester.controllerTester().serviceRegistry().applicationStore()
+                                .getMeta(new DeploymentId(context.instanceId(), zone))
+                                .get(tester.clock().instant()));
+
+        // Meta data tombstone placed on delete
+        tester.clock().advance(Duration.ofSeconds(1));
+        tester.controller().applications().deactivate(context.instanceId(), zone);
+        assertArrayEquals(new byte[0],
+                          tester.controllerTester().serviceRegistry().applicationStore()
+                                .getMeta(new DeploymentId(context.instanceId(), zone))
+                                .get(tester.clock().instant()));
     }
 
     @Test
