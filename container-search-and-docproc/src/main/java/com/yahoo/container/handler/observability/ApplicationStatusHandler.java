@@ -332,4 +332,5 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
             handler.completed();
         }
     }
+
 }

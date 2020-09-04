@@ -40,7 +40,6 @@ import java.util.logging.Level;
  *
  * @author  Henrik Høiness
  */
-
 public class GUIHandler extends LoggingRequestHandler {
 
     private final IndexModel indexModel;

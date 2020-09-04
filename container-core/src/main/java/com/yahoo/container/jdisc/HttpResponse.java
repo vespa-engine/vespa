@@ -3,6 +3,7 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.processing.execution.Execution.Trace.LogValue;
 
@@ -18,21 +19,18 @@ import java.util.Collections;
  */
 public abstract class HttpResponse {
 
-    /**
-     * Default response content type; text/plain.
-     */
+    /** Default response content type; text/plain. */
     public static final String DEFAULT_MIME_TYPE = "text/plain";
 
-    /**
-     * Default encoding/character set of a HTTP response; UTF-8.
-     */
+    /** Default encoding/character set of a HTTP response; UTF-8. */
     public static final String DEFAULT_CHARACTER_ENCODING = "UTF-8";
-
 
     private final Response parentResponse;
 
+    private Request.RequestType requestType;
+
     /**
-     * Create a new HTTP response.
+     * Creates a new HTTP response
      *
      * @param status the HTTP status code to return with this response (may be changed later)
      * @see Response
@@ -41,13 +39,11 @@ public abstract class HttpResponse {
         parentResponse = com.yahoo.jdisc.http.HttpResponse.newInstance(status);
     }
 
-    /**
-     * Marshal this response to the network layer. The caller is responsible for flushing and closing outputStream.
-     */
+    /** Marshals this response to the network layer. The caller is responsible for flushing and closing outputStream. */
     public abstract void render(OutputStream outputStream) throws IOException;
 
     /**
-     * The numeric HTTP status code, e.g. 200, 404 and so on.
+     * Returns the numeric HTTP status code, e.g. 200, 404 and so on.
      *
      * @return the numeric HTTP status code
      */
@@ -128,5 +124,14 @@ public abstract class HttpResponse {
     public Iterable<LogValue> getLogValues() {
         return Collections::emptyIterator;
     }
+
+    /** Sets the type classification of this request for metric collection purposes */
+    public void setRequestType(Request.RequestType requestType) { this.requestType = requestType; }
+
+    /**
+     * Returns the type classification of this request for metric collection purposes, or null if not set.
+     * When not set, the request type will be "read" for GET requests and "write" for other request methods.
+     */
+    public Request.RequestType getRequestType() { return requestType; }
 
 }

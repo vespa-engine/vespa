@@ -28,6 +28,7 @@ import java.util.logging.Logger;
  * it's important that errors are delivered synchronously.
  */
 class ServletRequestReader implements ReadListener {
+
     private enum State {
         READING, ALL_DATA_READ, REQUEST_CONTENT_CLOSED
     }
@@ -136,7 +137,7 @@ class ServletRequestReader implements ReadListener {
             requestContentChannel.write(buf, writeCompletionHandler);
             metricReporter.successfulRead(bytesReceived);
             bytesRead += bytesReceived;
-        } catch (final Throwable t) {
+        } catch (Throwable t) {
             finishedFuture.completeExceptionally(t);
         } finally {
             //decrease due to this method completing.
@@ -145,7 +146,7 @@ class ServletRequestReader implements ReadListener {
     }
 
     private void decreaseOutstandingUserCallsAndCloseRequestContentChannelConditionally() {
-        final boolean shouldCloseRequestContentChannel;
+        boolean shouldCloseRequestContentChannel;
 
         synchronized (monitor) {
             assertStateNotEquals(state, State.REQUEST_CONTENT_CLOSED);
@@ -154,7 +155,7 @@ class ServletRequestReader implements ReadListener {
             numberOfOutstandingUserCalls -= 1;
 
             shouldCloseRequestContentChannel = numberOfOutstandingUserCalls == 0 &&
-                    (finishedFuture.isDone() || state == State.ALL_DATA_READ);
+                                               (finishedFuture.isDone() || state == State.ALL_DATA_READ);
 
             if (shouldCloseRequestContentChannel) {
                 state = State.REQUEST_CONTENT_CLOSED;

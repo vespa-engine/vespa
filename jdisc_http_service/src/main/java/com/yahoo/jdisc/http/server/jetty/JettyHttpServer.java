@@ -128,17 +128,16 @@ public class JettyHttpServer extends AbstractServerProvider {
     private final List<Integer> listenedPorts = new ArrayList<>();
 
     @Inject
-    public JettyHttpServer(
-            final CurrentContainer container,
-            final Metric metric,
-            final ServerConfig serverConfig,
-            final ServletPathsConfig servletPathsConfig,
-            final ThreadFactory threadFactory,
-            final FilterBindings filterBindings,
-            final ComponentRegistry<ConnectorFactory> connectorFactories,
-            final ComponentRegistry<ServletHolder> servletHolders,
-            final FilterInvoker filterInvoker,
-            final AccessLog accessLog) {
+    public JettyHttpServer(CurrentContainer container,
+                           Metric metric,
+                           ServerConfig serverConfig,
+                           ServletPathsConfig servletPathsConfig,
+                           ThreadFactory threadFactory,
+                           FilterBindings filterBindings,
+                           ComponentRegistry<ConnectorFactory> connectorFactories,
+                           ComponentRegistry<ServletHolder> servletHolders,
+                           FilterInvoker filterInvoker,
+                           AccessLog accessLog) {
         super(container);
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
@@ -160,44 +159,40 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         janitor = newJanitor(threadFactory);
 
-        JDiscContext jDiscContext = new JDiscContext(
-                filterBindings.getRequestFilters().activate(),
-                filterBindings.getResponseFilters().activate(),
-                container,
-                janitor,
-                metric,
-                serverConfig);
+        JDiscContext jDiscContext = new JDiscContext(filterBindings.getRequestFilters().activate(),
+                                                     filterBindings.getResponseFilters().activate(),
+                                                     container,
+                                                     janitor,
+                                                     metric,
+                                                     serverConfig);
 
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
         FilterHolder jDiscFilterInvokerFilter = new FilterHolder(new JDiscFilterInvokerFilter(jDiscContext, filterInvoker));
 
         List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
-                .map(JDiscServerConnector.class::cast)
-                .collect(toList());
+                                                      .map(JDiscServerConnector.class::cast)
+                                                      .collect(toList());
 
-        server.setHandler(
-                getHandlerCollection(
-                        serverConfig,
-                        servletPathsConfig,
-                        connectors,
-                        jdiscServlet,
-                        servletHolders,
-                        jDiscFilterInvokerFilter));
+        server.setHandler(getHandlerCollection(serverConfig,
+                                               servletPathsConfig,
+                                               connectors,
+                                               jdiscServlet,
+                                               servletHolders,
+                                               jDiscFilterInvokerFilter));
 
         int numMetricReporterThreads = 1;
-        metricReporterExecutor = Executors.newScheduledThreadPool(
-                numMetricReporterThreads,
-                new ThreadFactoryBuilder()
-                        .setDaemon(true)
-                        .setNameFormat(JettyHttpServer.class.getName() + "-MetricReporter-%d")
-                        .setThreadFactory(threadFactory)
-                        .build()
-        );
+        metricReporterExecutor =
+                Executors.newScheduledThreadPool(numMetricReporterThreads,
+                                                 new ThreadFactoryBuilder()
+                                                         .setDaemon(true)
+                                                         .setNameFormat(JettyHttpServer.class.getName() + "-MetricReporter-%d")
+                                                         .setThreadFactory(threadFactory)
+                                                         .build());
         metricReporterExecutor.scheduleAtFixedRate(new MetricTask(), 0, 2, TimeUnit.SECONDS);
     }
 
     private static void initializeJettyLogging() {
-        // Note: Jetty is logging stderr if no logger is explicitly configured.
+        // Note: Jetty is logging stderr if no logger is explicitly configured
         try {
             Log.setLog(new JavaUtilLog());
         } catch (Exception e) {
@@ -208,32 +203,26 @@ public class JettyHttpServer extends AbstractServerProvider {
     private static void setupJmx(Server server, ServerConfig serverConfig) {
         if (serverConfig.jmx().enabled()) {
             System.setProperty("java.rmi.server.hostname", "localhost");
-            server.addBean(
-                    new MBeanContainer(ManagementFactory.getPlatformMBeanServer()));
-            server.addBean(
-                    new ConnectorServer(
-                            createJmxLoopbackOnlyServiceUrl(serverConfig.jmx().listenPort()),
-                            "org.eclipse.jetty.jmx:name=rmiconnectorserver"));
+            server.addBean(new MBeanContainer(ManagementFactory.getPlatformMBeanServer()));
+            server.addBean(new ConnectorServer(createJmxLoopbackOnlyServiceUrl(serverConfig.jmx().listenPort()),
+                                               "org.eclipse.jetty.jmx:name=rmiconnectorserver"));
         }
     }
 
     private static JMXServiceURL createJmxLoopbackOnlyServiceUrl(int port) {
         try {
-            return new JMXServiceURL(
-                    "rmi", "localhost", port, "/jndi/rmi://localhost:" + port + "/jmxrmi");
+            return new JMXServiceURL("rmi", "localhost", port, "/jndi/rmi://localhost:" + port + "/jmxrmi");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private HandlerCollection getHandlerCollection(
-            ServerConfig serverConfig,
-            ServletPathsConfig servletPathsConfig,
-            List<JDiscServerConnector> connectors,
-            ServletHolder jdiscServlet,
-            ComponentRegistry<ServletHolder> servletHolders,
-            FilterHolder jDiscFilterInvokerFilter) {
-
+    private HandlerCollection getHandlerCollection(ServerConfig serverConfig,
+                                                   ServletPathsConfig servletPathsConfig,
+                                                   List<JDiscServerConnector> connectors,
+                                                   ServletHolder jdiscServlet,
+                                                   ComponentRegistry<ServletHolder> servletHolders,
+                                                   FilterHolder jDiscFilterInvokerFilter) {
         ServletContextHandler servletContextHandler = createServletContextHandler();
 
         servletHolders.allComponentsById().forEach((id, servlet) -> {
@@ -257,7 +246,9 @@ public class JettyHttpServer extends AbstractServerProvider {
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
         gzipHandler.setHandler(authEnforcer);
 
-        HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(), serverConfig.metric().searchHandlerPaths());
+        HttpResponseStatisticsCollector statisticsCollector =
+                new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(),
+                                                    serverConfig.metric().searchHandlerPaths());
         statisticsCollector.setHandler(gzipHandler);
 
         StatisticsHandler statisticsHandler = newStatisticsHandler();

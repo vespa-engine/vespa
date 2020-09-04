@@ -48,6 +48,11 @@ public class Request extends AbstractResource {
     private boolean serverRequest;
     private Long timeout;
     private URI uri;
+    private RequestType requestType;
+
+    public enum RequestType {
+        READ, WRITE, MONITORING
+    }
 
     /**
      * <p>Creates a new instance of this class. As a {@link ServerProvider} you need to inject a {@link
@@ -325,6 +330,12 @@ public class Request extends AbstractResource {
     public long creationTime(TimeUnit unit) {
         return unit.convert(creationTime, TimeUnit.MILLISECONDS);
     }
+
+    /** Sets the type classification of this request for metric collection purposes */
+    public void setRequestType(RequestType requestType) { this.requestType = requestType; }
+
+    /** Returns the type classification of this request for metric collection purposes, or null if not set */
+    public RequestType getRequestType() { return requestType; }
 
     /**
      * <p>Returns whether or not this Request has been cancelled. This can be thought of as the {@link

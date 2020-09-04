@@ -67,12 +67,11 @@ class HttpRequestDispatch {
 
         this.jettyRequest = (Request) servletRequest;
         this.metricReporter = new MetricReporter(jDiscContext.metric, metricContext, jettyRequest.getTimeStamp());
-        this.servletResponseController = new ServletResponseController(
-                servletRequest,
-                servletResponse,
-                jDiscContext.janitor,
-                metricReporter,
-                jDiscContext.developerMode());
+        this.servletResponseController = new ServletResponseController(servletRequest,
+                                                                       servletResponse,
+                                                                       jDiscContext.janitor,
+                                                                       metricReporter,
+                                                                       jDiscContext.developerMode());
         markConnectionAsNonPersistentIfThresholdReached(servletRequest);
         this.async = servletRequest.startAsync();
         async.setTimeout(0);
@@ -86,17 +85,13 @@ class HttpRequestDispatch {
         } catch (Throwable throwable) {
             servletResponseController.trySendError(throwable);
             servletResponseController.finishedFuture().whenComplete((result, exception) ->
-                    completeRequestCallback.accept(null, throwable));
+                                                                            completeRequestCallback.accept(null, throwable));
             return;
         }
 
         try {
-            onError(servletRequestReader.finishedFuture,
-                    servletResponseController::trySendError);
-
-            onError(servletResponseController.finishedFuture(),
-                    servletRequestReader::onError);
-
+            onError(servletRequestReader.finishedFuture, servletResponseController::trySendError);
+            onError(servletResponseController.finishedFuture(), servletRequestReader::onError);
             CompletableFuture.allOf(servletRequestReader.finishedFuture, servletResponseController.finishedFuture())
                     .whenComplete(completeRequestCallback);
         } catch (Throwable throwable) {
@@ -104,7 +99,7 @@ class HttpRequestDispatch {
         }
     }
 
-    private BiConsumer<Void, Throwable> completeRequestCallback;
+    private final BiConsumer<Void, Throwable> completeRequestCallback;
     {
         AtomicBoolean completeRequestCalled = new AtomicBoolean(false);
         HttpRequestDispatch parent = this; //used to avoid binding uninitialized variables
@@ -139,7 +134,7 @@ class HttpRequestDispatch {
                 log.finest(() -> "Request completed successfully: " + parent.jettyRequest.getRequestURI());
             } catch (Throwable throwable) {
                 Level level = reportedError ? Level.FINE: Level.WARNING;
-                log.log(level, "async.complete failed", throwable);
+                log.log(level, "Async.complete failed", throwable);
             }
         };
     }
@@ -180,16 +175,17 @@ class HttpRequestDispatch {
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
+            if (jdiscRequest.getRequestType() != null)
+                jettyRequest.setAttribute(HttpResponseStatisticsCollector.requestTypeAttribute,
+                                          jdiscRequest.getRequestType());
         }
 
         ServletInputStream servletInputStream = jettyRequest.getInputStream();
 
-        ServletRequestReader servletRequestReader =
-                new ServletRequestReader(
-                        servletInputStream,
-                        requestContentChannel,
-                        jDiscContext.janitor,
-                        metricReporter);
+        ServletRequestReader servletRequestReader = new ServletRequestReader(servletInputStream,
+                                                                             requestContentChannel,
+                                                                             jDiscContext.janitor,
+                                                                             metricReporter);
 
         servletInputStream.setReadListener(servletRequestReader);
         return servletRequestReader;

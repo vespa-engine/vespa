@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.AsyncContextEvent;
@@ -26,18 +27,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * HttpResponseStatisticsCollector collects statistics about HTTP response types aggregated by category (1xx, 2xx, etc). It is similar to
- * {@link org.eclipse.jetty.server.handler.StatisticsHandler} with the distinction that this class collects response type statistics grouped
+ * HttpResponseStatisticsCollector collects statistics about HTTP response types aggregated by category
+ * (1xx, 2xx, etc). It is similar to {@link org.eclipse.jetty.server.handler.StatisticsHandler}
+ * with the distinction that this class collects response type statistics grouped
  * by HTTP method and only collects the numbers that are reported as metrics from Vespa.
  *
  * @author ollivir
  */
 public class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful {
+
+    static final String requestTypeAttribute = "requestType";
+
     private final AtomicReference<FutureCallback> shutdown = new AtomicReference<>();
     private final List<String> monitoringHandlerPaths;
     private final List<String> searchHandlerPaths;
 
-    public static enum HttpMethod {
+    public enum HttpMethod {
         GET, PATCH, POST, PUT, DELETE, OPTIONS, HEAD, OTHER
     }
 
@@ -45,18 +50,20 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         HTTP, HTTPS, OTHER
     }
 
-    public enum RequestType {
-        READ, WRITE, MONITORING
-    }
-
-    private static final String[] HTTP_RESPONSE_GROUPS = { Metrics.RESPONSES_1XX, Metrics.RESPONSES_2XX, Metrics.RESPONSES_3XX,
-            Metrics.RESPONSES_4XX, Metrics.RESPONSES_5XX, Metrics.RESPONSES_401, Metrics.RESPONSES_403};
+    private static final String[] HTTP_RESPONSE_GROUPS = {
+            Metrics.RESPONSES_1XX,
+            Metrics.RESPONSES_2XX,
+            Metrics.RESPONSES_3XX,
+            Metrics.RESPONSES_4XX,
+            Metrics.RESPONSES_5XX,
+            Metrics.RESPONSES_401,
+            Metrics.RESPONSES_403
+    };
 
     private final AtomicLong inFlight = new AtomicLong();
-    private final LongAdder statistics[][][][];
+    private final LongAdder[][][][] statistics;
 
     public HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths) {
-        super();
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
         statistics = new LongAdder[HttpScheme.values().length][HttpMethod.values().length][][];
@@ -64,8 +71,8 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             for (int method = 0; method < HttpMethod.values().length; method++) {
                 statistics[scheme][method] = new LongAdder[HTTP_RESPONSE_GROUPS.length][];
                 for (int group = 0; group < HTTP_RESPONSE_GROUPS.length; group++) {
-                    statistics[scheme][method][group] = new LongAdder[RequestType.values().length];
-                    for (int requestType = 0 ; requestType < RequestType.values().length; requestType++) {
+                    statistics[scheme][method][group] = new LongAdder[HttpRequest.RequestType.values().length];
+                    for (int requestType = 0; requestType < HttpRequest.RequestType.values().length; requestType++) {
                         statistics[scheme][method][group][requestType] = new LongAdder();
                     }
                 }
@@ -74,18 +81,17 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     }
 
     private final AsyncListener completionWatcher = new AsyncListener() {
-        @Override
-        public void onTimeout(AsyncEvent event) throws IOException {
-        }
 
         @Override
-        public void onStartAsync(AsyncEvent event) throws IOException {
+        public void onTimeout(AsyncEvent event) { }
+
+        @Override
+        public void onStartAsync(AsyncEvent event) {
             event.getAsyncContext().addListener(this);
         }
 
         @Override
-        public void onError(AsyncEvent event) throws IOException {
-        }
+        public void onError(AsyncEvent event) { }
 
         @Override
         public void onComplete(AsyncEvent event) throws IOException {
@@ -101,18 +107,16 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             throws IOException, ServletException {
         inFlight.incrementAndGet();
 
-        /* The control flow logic here is mostly a copy from org.eclipse.jetty.server.handler.StatisticsHandler.handle(..) */
         try {
             Handler handler = getHandler();
             if (handler != null && shutdown.get() == null && isStarted()) {
                 handler.handle(path, baseRequest, request, response);
-            } else if (!baseRequest.isHandled()) {
+            } else if ( ! baseRequest.isHandled()) {
                 baseRequest.setHandled(true);
                 response.sendError(HttpStatus.SERVICE_UNAVAILABLE_503);
             }
         } finally {
             HttpChannelState state = baseRequest.getHttpChannelState();
-
             if (state.isSuspended()) {
                 if (state.isInitial()) {
                     state.addListener(completionWatcher);
@@ -128,7 +132,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         if (group >= 0) {
             HttpScheme scheme = getScheme(request);
             HttpMethod method = getMethod(request);
-            RequestType requestType = getRequestType(request);
+            HttpRequest.RequestType requestType = getRequestType(request);
 
             statistics[scheme.ordinal()][method.ordinal()][group][requestType.ordinal()].increment();
             if (group == 5 || group == 6) { // if 401/403, also increment 4xx
@@ -197,18 +201,22 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         }
     }
 
-    private RequestType getRequestType(Request request) {
+    private HttpRequest.RequestType getRequestType(Request request) {
+        HttpRequest.RequestType requestType = (HttpRequest.RequestType)request.getAttribute(requestTypeAttribute);
+        if (requestType != null) return requestType;
+
+        // Deduce from path and method:
         String path = request.getRequestURI();
         for (String monitoringHandlerPath : monitoringHandlerPaths) {
-            if (path.startsWith(monitoringHandlerPath)) return RequestType.MONITORING;
+            if (path.startsWith(monitoringHandlerPath)) return HttpRequest.RequestType.MONITORING;
         }
         for (String searchHandlerPath : searchHandlerPaths) {
-            if (path.startsWith(searchHandlerPath)) return RequestType.READ;
+            if (path.startsWith(searchHandlerPath)) return HttpRequest.RequestType.READ;
         }
         if ("GET".equals(request.getMethod())) {
-            return RequestType.READ;
+            return HttpRequest.RequestType.READ;
         } else {
-            return RequestType.WRITE;
+            return HttpRequest.RequestType.WRITE;
         }
     }
 
@@ -219,7 +227,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             for (HttpMethod method : HttpMethod.values()) {
                 int methodIndex = method.ordinal();
                 for (int group = 0; group < HTTP_RESPONSE_GROUPS.length; group++) {
-                    for (RequestType type : RequestType.values()) {
+                    for (HttpRequest.RequestType type : HttpRequest.RequestType.values()) {
                         long value = statistics[schemeIndex][methodIndex][group][type.ordinal()].sumThenReset();
                         if (value > 0) {
                             ret.add(new StatisticsEntry(scheme.name().toLowerCase(), method.name(), HTTP_RESPONSE_GROUPS[group], type.name().toLowerCase(), value));
@@ -241,15 +249,13 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     protected void doStop() throws Exception {
         super.doStop();
         FutureCallback shutdownCb = shutdown.get();
-        if (shutdown != null && !shutdownCb.isDone()) {
+        if ( ! shutdownCb.isDone()) {
             shutdownCb.failed(new TimeoutException());
         }
     }
 
     @Override
     public Future<Void> shutdown() {
-        /* This shutdown callback logic is a copy from org.eclipse.jetty.server.handler.StatisticsHandler */
-
         FutureCallback shutdownCb = new FutureCallback(false);
         shutdown.compareAndSet(null, shutdownCb);
         shutdownCb = shutdown.get();
@@ -266,12 +272,12 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     }
 
     public static class StatisticsEntry {
+
         public final String scheme;
         public final String method;
         public final String name;
         public final String requestType;
         public final long value;
-
 
         public StatisticsEntry(String scheme, String method, String name, String requestType, long value) {
             this.scheme = scheme;
@@ -280,5 +286,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             this.requestType = requestType;
             this.value = value;
         }
+
     }
+
 }
