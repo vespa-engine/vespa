@@ -15,9 +15,9 @@ namespace {
 
 void throwRangeError(SerialNum prev, SerialNum next) __attribute__((noinline));
 
-void throwRangeError(SerialNum prev, SerialNum next) {
-    if (prev < next) return;
-    throw runtime_error(make_string("The new serialnum %zu is not higher than the old one %zu", next, prev));
+void
+throwRangeError(SerialNum prev, SerialNum next) {
+    throw runtime_error(make_string("The new serialnum %" PRIu64 " is not higher than the old one %" PRIu64 "", next, prev));
 }
 
 }
