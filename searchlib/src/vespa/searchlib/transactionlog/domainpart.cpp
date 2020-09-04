@@ -9,7 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domainpart");
 
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 using vespalib::FileHeader;
 using vespalib::string;
 using vespalib::getLastErrorString;
@@ -52,9 +52,9 @@ handleSync(FastOS_FileInterface &file)
 {
     if ( file.IsOpened() && ! file.Sync() ) {
         int osError = errno;
-        throw runtime_error(make_string("Failed to synchronize file '%s' of size %" PRId64 " due to '%s'. "
-                                        "Does not know how to handle this so throwing an exception.",
-                                        file.GetFileName(), file.GetSize(), FastOS_File::getErrorString(osError).c_str()));
+        throw runtime_error(fmt("Failed to synchronize file '%s' of size %" PRId64 " due to '%s'. "
+                                "Does not know how to handle this so throwing an exception.",
+                                file.GetFileName(), file.GetSize(), FastOS_File::getErrorString(osError).c_str()));
     }
 }
 
@@ -63,15 +63,15 @@ handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnown
                  SerialNumRange range, int bufLen)
 {
     string last(FastOS_File::getLastErrorString());
-    string e(make_string("%s. File '%s' at position %" PRId64 " for entries [%" PRIu64 ", %" PRIu64 "] of length %u. "
-                         "OS says '%s'. Rewind to last known good position %" PRId64 ".",
-                         text, file.GetFileName(), file.GetPosition(), range.from(), range.to(), bufLen,
-                         last.c_str(), lastKnownGoodPos));
+    string e(fmt("%s. File '%s' at position %" PRId64 " for entries [%" PRIu64 ", %" PRIu64 "] of length %u. "
+                 "OS says '%s'. Rewind to last known good position %" PRId64 ".",
+                 text, file.GetFileName(), file.GetPosition(), range.from(), range.to(), bufLen,
+                 last.c_str(), lastKnownGoodPos));
     LOG(error, "%s",  e.c_str());
     if ( ! file.SetPosition(lastKnownGoodPos) ) {
         last = FastOS_File::getLastErrorString();
-        throw runtime_error(make_string("Failed setting position %" PRId64 " of file '%s' of size %" PRId64 " : OS says '%s'",
-                                        lastKnownGoodPos, file.GetFileName(), file.GetSize(), last.c_str()));
+        throw runtime_error(fmt("Failed setting position %" PRId64 " of file '%s' of size %" PRId64 " : OS says '%s'",
+                                lastKnownGoodPos, file.GetFileName(), file.GetSize(), last.c_str()));
     }
     handleSync(file);
     return e;
@@ -80,8 +80,8 @@ handleWriteError(const char *text, FastOS_FileInterface &file, int64_t lastKnown
 string
 getError(FastOS_FileInterface & f)
 {
-    return make_string("File '%s' of size %" PRId64 " has last error of '%s'.",
-                       f.GetFileName(), f.GetSize(), FastOS_File::getLastErrorString().c_str());
+    return fmt("File '%s' of size %" PRId64 " has last error of '%s'.",
+               f.GetFileName(), f.GetSize(), FastOS_File::getLastErrorString().c_str());
 }
 
 bool
@@ -109,11 +109,11 @@ handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize
     if (rlen != -1) {
         string e;
         if (len == rlen) {
-            e = make_string("Error in data read of size %zd bytes at pos %" PRId64 " trying to read %s. ",
-                             len, file.GetPosition() - rlen, text);
+            e = fmt("Error in data read of size %zd bytes at pos %" PRId64 " trying to read %s. ",
+                    len, file.GetPosition() - rlen, text);
         } else {
-            e = make_string("Short Read. Got only %zd of %zd bytes at pos %" PRId64 " trying to read %s. ",
-                             rlen, len, file.GetPosition() - rlen, text);
+            e = fmt("Short Read. Got only %zd of %zd bytes at pos %" PRId64 " trying to read %s. ",
+                    rlen, len, file.GetPosition() - rlen, text);
         }
         e += getError(file);
         if (!allowTruncate) {
@@ -121,7 +121,7 @@ handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize
             throw runtime_error(e);
         }
         // Short read. Log error, Truncate, continue.
-        e += make_string(" Truncate to %" PRId64 " and continue", lastKnownGoodPos);
+        e += fmt(" Truncate to %" PRId64 " and continue", lastKnownGoodPos);
         LOG(error, "%s", e.c_str());
         FastOS_File truncateFile(file.GetFileName());
         file.Close();
@@ -132,26 +132,26 @@ handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize
                         if (file.SetPosition(lastKnownGoodPos)) {
                             retval = false;
                         } else {
-                            throw runtime_error(make_string("Failed setting position %" PRId64 ". %s", lastKnownGoodPos, getError(file).c_str()));
+                            throw runtime_error(fmt("Failed setting position %" PRId64 ". %s", lastKnownGoodPos, getError(file).c_str()));
                         }
                     } else {
-                        throw runtime_error(make_string("Failed reopening file after truncate: %s", getError(file).c_str()));
+                        throw runtime_error(fmt("Failed reopening file after truncate: %s", getError(file).c_str()));
                     }
                 } else {
-                    throw runtime_error(make_string("Failed closing truncated file: %s", getError(truncateFile).c_str()));
+                    throw runtime_error(fmt("Failed closing truncated file: %s", getError(truncateFile).c_str()));
                 }
             } else {
-                throw runtime_error(make_string("Failed truncating to %" PRId64 ": %s", lastKnownGoodPos, getError(truncateFile).c_str()));
+                throw runtime_error(fmt("Failed truncating to %" PRId64 ": %s", lastKnownGoodPos, getError(truncateFile).c_str()));
             }
         } else {
-            throw runtime_error(make_string("Failed opening for truncating: %s", getError(file).c_str()));
+            throw runtime_error(fmt("Failed opening for truncating: %s", getError(file).c_str()));
         }
     } else {
         // Some kind of IO error throw exception.
         string errString = FastOS_File::getLastErrorString();
-        throw runtime_error(make_string("IO error when reading %zd bytes at pos %" PRId64 "trying to read %s."
-                                        " Last known good position is %" PRId64 ": %s",
-                                        len, file.GetPosition(), text, lastKnownGoodPos, getError(file).c_str()));
+        throw runtime_error(fmt("IO error when reading %zd bytes at pos %" PRId64 "trying to read %s."
+                                " Last known good position is %" PRId64 ": %s",
+                                len, file.GetPosition(), text, lastKnownGoodPos, getError(file).c_str()));
     }
     return retval;
 }
@@ -175,19 +175,19 @@ DomainPart::readPacket(FastOS_FileInterface & transLog, SerialNumRange wanted, s
                         }
                     }
                 } catch (const std::exception & ex) {
-                    throw runtime_error(make_string("%s : Failed creating packet for list %s(%" PRIu64 ") at pos(%" PRIu64 ", %" PRIu64 ")",
-                                                    ex.what(), transLog.GetFileName(), fSize, currPos, transLog.GetPosition()));
+                    throw runtime_error(fmt("%s : Failed creating packet for list %s(%" PRIu64 ") at pos(%" PRIu64 ", %" PRIu64 ")",
+                                            ex.what(), transLog.GetFileName(), fSize, currPos, transLog.GetPosition()));
                 }
             } else {
-                throw runtime_error(make_string("Invalid entry reading file %s(%" PRIu64 ") at pos(%" PRIu64 ", %" PRIu64 ")",
-                                                transLog.GetFileName(), fSize, currPos, transLog.GetPosition()));
+                throw runtime_error(fmt("Invalid entry reading file %s(%" PRIu64 ") at pos(%" PRIu64 ", %" PRIu64 ")",
+                                        transLog.GetFileName(), fSize, currPos, transLog.GetPosition()));
             }
         } else {
             if (transLog.GetSize() != fSize) {
                 fSize = transLog.GetSize();
             } else {
-                throw runtime_error(make_string("Failed reading file %s(%" PRIu64 ") at pos(%" PRIu64 ", %" PRIu64 ")",
-                                                transLog.GetFileName(), fSize, currPos, transLog.GetPosition()));
+                throw runtime_error(fmt("Failed reading file %s(%" PRIu64 ") at pos(%" PRIu64 ", %" PRIu64 ")",
+                                        transLog.GetFileName(), fSize, currPos, transLog.GetPosition()));
             }
         }
         currPos = transLog.GetPosition();
@@ -201,7 +201,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     Fast_BufferedFile transLog;
     transLog.EnableDirectIO();
     if ( ! transLog.OpenReadOnly(_transLog->GetFileName())) {
-        throw runtime_error(make_string("Failed opening '%s' for buffered readinf with direct io.", transLog.GetFileName()));
+        throw runtime_error(fmt("Failed opening '%s' for buffered readinf with direct io.", transLog.GetFileName()));
     }
     int64_t fSize(transLog.GetSize());
     int64_t currPos(0);
@@ -260,7 +260,7 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
       _sz(0),
       _byteSize(0),
       _packets(),
-      _fileName(make_string("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
+      _fileName(fmt("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
       _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
       _skipList(),
       _headerLen(0),
@@ -271,10 +271,10 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
     if (_transLog->OpenReadOnly()) {
         int64_t currPos = buildPacketMapping(allowTruncate);
         if ( ! _transLog->Close() ) {
-            throw runtime_error(make_string("Failed closing file '%s' after reading.", _transLog->GetFileName()));
+            throw runtime_error(fmt("Failed closing file '%s' after reading.", _transLog->GetFileName()));
         }
         if ( ! _transLog->OpenWriteOnlyExisting() ) {
-            string e(make_string("Failed opening existing file '%s' for writing: %s", _transLog->GetFileName(), getLastErrorString().c_str()));
+            string e(fmt("Failed opening existing file '%s' for writing: %s", _transLog->GetFileName(), getLastErrorString().c_str()));
             LOG(error, "%s", e.c_str());
             throw runtime_error(e);
         }
@@ -286,7 +286,8 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
         _byteSize = currPos;
     } else {
         if ( ! _transLog->OpenWriteOnly()) {
-            string e(make_string("Failed opening new file '%s' for writing: '%s'", _transLog->GetFileName(), getLastErrorString().c_str()));
+            string e(fmt("Failed opening new file '%s' for writing: '%s'",
+                         _transLog->GetFileName(), getLastErrorString().c_str()));
 
             LOG(error, "%s", e.c_str());
             throw runtime_error(e);
@@ -295,8 +296,8 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
         _byteSize = _headerLen;
     }
     if ( ! _transLog->SetPosition(_transLog->GetSize()) ) {
-        throw runtime_error(make_string("Failed moving write pointer to the end of the file %s(%" PRIu64 ").",
-                                        _transLog->GetFileName(), _transLog->GetSize()));
+        throw runtime_error(fmt("Failed moving write pointer to the end of the file %s(%" PRIu64 ").",
+                                _transLog->GetFileName(), _transLog->GetSize()));
     }
     handleSync(*_transLog);
     _writtenSerial = _range.to();
@@ -341,8 +342,8 @@ DomainPart::close()
         _syncedSerial = _writtenSerial;
     }
     if ( ! retval ) {
-        throw runtime_error(make_string("Failed closing file '%s' of size %" PRId64 ".",
-                                        _transLog->GetFileName(), _transLog->GetSize()));
+        throw runtime_error(fmt("Failed closing file '%s' of size %" PRId64 ".",
+                                _transLog->GetFileName(), _transLog->GetSize()));
     }
     {
         LockGuard guard(_lock);
@@ -408,8 +409,8 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
             _sz++;
             _range.to(entry.serial());
         } else {
-            throw runtime_error(make_string("Incomming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
-                                            entry.serial(), _range.to()));
+            throw runtime_error(fmt("Incomming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
+                                    entry.serial(), _range.to()));
         }
     }
 
@@ -569,9 +570,8 @@ DomainPart::read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc & buf, bo
     try {
         chunk = IChunk::create(encoding);
     } catch (const std::exception & e) {
-        string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
-                               " got %d from '%s' at position %" PRId64,
-                               encoding, file.GetFileName(), lastKnownGoodPos));
+        string msg(fmt("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2', got %d from '%s' at position %" PRId64,
+                       encoding, file.GetFileName(), lastKnownGoodPos));
         if ((encoding == 0) && (len == 0) && tailOfFileIsZero(file, lastKnownGoodPos)) {
             LOG(warning, "%s", msg.c_str());
             return handleReadError("packet version", file, sizeof(tmp), rlen, lastKnownGoodPos, allowTruncate);
@@ -590,7 +590,7 @@ DomainPart::read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc & buf, bo
         nbostream_longlivedbuf is(buf.get(), len);
         chunk->decode(is);
     } catch (const std::exception & e) {
-        throw runtime_error(make_string("Got exception during decoding of packet '%s' from file '%s' (pos=%" PRId64 ", len=%d)",
+        throw runtime_error(fmt("Got exception during decoding of packet '%s' from file '%s' (pos=%" PRId64 ", len=%d)",
                             e.what(), file.GetFileName(), file.GetPosition() - len - sizeof(len), static_cast<int>(len)));
     }
     return true;
