@@ -55,12 +55,6 @@ SerializedTensorAttribute::getTensor(DocId docId) const
     return _serializedTensorStore.getTensor(ref);
 }
 
-void
-SerializedTensorAttribute::getTensor(DocId, vespalib::tensor::MutableDenseTensorView &) const
-{
-    notImplemented();
-}
-
 bool
 SerializedTensorAttribute::onLoad()
 {

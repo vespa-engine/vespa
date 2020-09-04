@@ -76,7 +76,7 @@ public:
 
 private:
     double computeDistance(uint32_t docId, double limit) {
-        params().tensorAttribute.getTensor(docId, _fieldTensor);
+        params().tensorAttribute.extract_dense_view(docId, _fieldTensor);
         auto rhs = _fieldTensor.cellsRef();
         return params().distanceFunction->calc_with_limit(_lhs, rhs, limit);
     }

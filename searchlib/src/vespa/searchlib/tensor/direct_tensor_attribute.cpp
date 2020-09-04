@@ -108,12 +108,6 @@ DirectTensorAttribute::get_tensor_ref(DocId docId) const
     return *_emptyTensor;
 }
 
-void
-DirectTensorAttribute::getTensor(DocId, vespalib::tensor::MutableDenseTensorView &) const
-{
-    notImplemented();
-}
-
 std::unique_ptr<AttributeSaver>
 DirectTensorAttribute::onInitSave(vespalib::stringref fileName)
 {

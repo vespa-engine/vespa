@@ -45,6 +45,10 @@ public:
     void onGenerationChange(generation_t generation) override;
     bool addDoc(DocId &docId) override;
     std::unique_ptr<Tensor> getEmptyTensor() const override;
+    void extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const override;
+    const Tensor& get_tensor_ref(uint32_t docid) const override;
+    bool supports_extract_dense_view() const override { return false; }
+    bool supports_get_tensor_ref() const override { return false; }
     vespalib::eval::ValueType getTensorType() const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
     void clearDocs(DocId lidLow, DocId lidLimit) override;

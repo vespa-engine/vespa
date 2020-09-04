@@ -15,12 +15,12 @@ namespace search::features {
 class TensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
-    const search::tensor::ITensorAttribute *_attribute;
+    const search::tensor::ITensorAttribute& _attribute;
     std::unique_ptr<vespalib::eval::Tensor> _emptyTensor;
     std::unique_ptr<vespalib::eval::Tensor> _tensor;
 
 public:
-    TensorAttributeExecutor(const search::tensor::ITensorAttribute *attribute);
+    TensorAttributeExecutor(const search::tensor::ITensorAttribute& attribute);
     void execute(uint32_t docId) override;
 };
 

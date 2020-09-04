@@ -10,16 +10,16 @@ using vespalib::tensor::MutableDenseTensorView;
 namespace search::features {
 
 DenseTensorAttributeExecutor::
-DenseTensorAttributeExecutor(const ITensorAttribute *attribute)
+DenseTensorAttributeExecutor(const ITensorAttribute& attribute)
     : _attribute(attribute),
-      _tensorView(_attribute->getTensorType())
+      _tensorView(_attribute.getTensorType())
 {
 }
 
 void
 DenseTensorAttributeExecutor::execute(uint32_t docId)
 {
-    _attribute->getTensor(docId, _tensorView);
+    _attribute.extract_dense_view(docId, _tensorView);
     outputs().set_object(0, _tensorView);
 }
 

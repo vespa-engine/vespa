@@ -469,13 +469,13 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    if (tensorType.is_dense()) {
-        return stash.create<DenseTensorAttributeExecutor>(tensorAttribute);
+    if (tensorAttribute->supports_extract_dense_view()) {
+        return stash.create<DenseTensorAttributeExecutor>(*tensorAttribute);
     }
-    if (auto direct = dynamic_cast<const DirectTensorAttribute *>(tensorAttribute)) {
-        return stash.create<DirectTensorAttributeExecutor>(*direct);
+    if (tensorAttribute->supports_get_tensor_ref()) {
+        return stash.create<DirectTensorAttributeExecutor>(*tensorAttribute);
     }
-    return stash.create<TensorAttributeExecutor>(tensorAttribute);
+    return stash.create<TensorAttributeExecutor>(*tensorAttribute);
 }
 
 bool

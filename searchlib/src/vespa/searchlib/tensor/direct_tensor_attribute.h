@@ -15,13 +15,13 @@ public:
     virtual ~DirectTensorAttribute();
     virtual void setTensor(DocId docId, const Tensor &tensor) override;
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
-    virtual void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
     virtual bool onLoad() override;
     virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual void compactWorst() override;
 
     void set_tensor(DocId docId, std::unique_ptr<Tensor> tensor);
-    const Tensor &get_tensor_ref(DocId docId) const;
+    const Tensor &get_tensor_ref(DocId docId) const override;
+    virtual bool supports_get_tensor_ref() const override { return true; }
 };
 
 }  // namespace search::tensor

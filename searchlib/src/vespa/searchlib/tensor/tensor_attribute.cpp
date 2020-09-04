@@ -202,6 +202,22 @@ TensorAttribute::getEmptyTensor() const
     return _emptyTensor->clone();
 }
 
+void
+TensorAttribute::extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const
+{
+    (void) docid;
+    (void) tensor;
+    notImplemented();
+}
+
+const Tensor&
+TensorAttribute::get_tensor_ref(uint32_t docid) const
+{
+    (void) docid;
+    notImplemented();
+    abort(); // Needed to avoid compile error
+}
+
 vespalib::eval::ValueType
 TensorAttribute::getTensorType() const
 {
