@@ -69,9 +69,9 @@ public:
         vespalib::ConstBufferRef _data;
     };
 public:
-    Packet(size_t m=0xf000) : _count(0), _range(), _limit(m), _buf(m) { }
+    Packet(size_t reserved) : _count(0), _range(), _buf(reserved) { }
     Packet(const void * buf, size_t sz);
-    bool add(const Entry & data);
+    void add(const Entry & data);
     void clear() { _buf.clear(); _count = 0; _range.from(0); _range.to(0); }
     const SerialNumRange & range() const { return _range; }
     const vespalib::nbostream & getHandle() const { return _buf; }
@@ -82,7 +82,6 @@ public:
 private:
     size_t                            _count;
     SerialNumRange                    _range;
-    size_t                            _limit;
     vespalib::nbostream_longlivedbuf  _buf;
 };
 

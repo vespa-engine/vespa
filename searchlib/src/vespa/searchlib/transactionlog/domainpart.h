@@ -46,12 +46,13 @@ public:
     }
     bool        isClosed() const;
 private:
+    using Alloc = vespalib::alloc::Alloc;
     bool openAndFind(FastOS_FileInterface &file, const SerialNum &from);
     int64_t buildPacketMapping(bool allowTruncate);
+    static Packet readPacket(FastOS_FileInterface & file, SerialNumRange wanted, size_t targetSize, bool allowTruncate);
+    static bool read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc &buf, bool allowTruncate);
 
-    static bool read(FastOS_FileInterface &file, Packet::Entry &entry, vespalib::alloc::Alloc &buf, bool allowTruncate);
-
-    void write(FastOS_FileInterface &file, const Packet::Entry &entry);
+    void write(FastOS_FileInterface &file, const IChunk & entry);
     void writeHeader(const common::FileHeaderContext &fileHeaderContext);
 
     class SkipInfo

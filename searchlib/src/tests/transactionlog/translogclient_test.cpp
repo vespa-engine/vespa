@@ -251,7 +251,7 @@ fillDomainTest(TransLogClient::Session * s1, const vespalib::string & name)
     Packet b(DEFAULT_PACKET_SIZE);
     b.add(e2);
     b.add(e3);
-    EXPECT_FALSE(b.add(e1));
+    EXPECT_EXCEPTION(b.add(e1), std::runtime_error, "");
     ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())));
     ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(b.getHandle().data(), b.getHandle().size())));
     EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())),
