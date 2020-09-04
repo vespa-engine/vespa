@@ -252,7 +252,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
 
 DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding encoding,
                        uint8_t compressionLevel, const FileHeaderContext &fileHeaderContext, bool allowTruncate)
-    : _encoding(encoding.getCrc(), Encoding::Compression::none), //TODO We do not yet support compression
+    : _encoding(encoding),
       _compressionLevel(compressionLevel),
       _lock(),
       _fileLock(),
@@ -427,10 +427,10 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
         _packets.insert(std::make_pair(firstSerial, std::move(packet)));
         _skipList.push_back(SkipInfo(firstSerial, firstPos));
     }
-    sync();
 }
 
-void DomainPart::sync()
+void
+DomainPart::sync()
 {
     SerialNum syncSerial(0);
     {
