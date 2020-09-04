@@ -9,7 +9,7 @@ namespace search::transactionlog {
 
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 using std::runtime_error;
 
 namespace {
@@ -18,7 +18,7 @@ void throwRangeError(SerialNum prev, SerialNum next) __attribute__((noinline));
 
 void
 throwRangeError(SerialNum prev, SerialNum next) {
-    throw runtime_error(make_string("The new serialnum %" PRIu64 " is not higher than the old one %" PRIu64 "", next, prev));
+    throw runtime_error(fmt("The new serialnum %" PRIu64 " is not higher than the old one %" PRIu64 "", next, prev));
 }
 
 }
@@ -51,7 +51,6 @@ SerialNumRange::cmp(const SerialNumRange & b) const
 Packet::Packet(const void * buf, size_t sz) :
      _count(0),
      _range(),
-     _limit(sz),
      _buf(static_cast<const char *>(buf), sz)
 {
     nbostream_longlivedbuf os(_buf.data(), sz);
@@ -105,22 +104,21 @@ Packet::Entry::Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d) :
     _type(t),
     _valid(true),
     _data(d)
-{
-}
+{ }
 
-
-bool Packet::add(const Packet::Entry & e)
+void
+Packet::add(const Packet::Entry & e)
 {
-    bool retval((_buf.size() < _limit) && (_range.to() < e.serial()));
-    if (retval) {
-        if (_buf.empty()) {
-            _range.from(e.serial());
-        }
-        e.serialize(_buf);
-        _count++;
-        _range.to(e.serial());
+    if (_range.to() >= e.serial()) {
+        throwRangeError(_range.to(), e.serial());
     }
-    return retval;
+
+    if (_buf.empty()) {
+        _range.from(e.serial());
+    }
+    e.serialize(_buf);
+    _count++;
+    _range.to(e.serial());
 }
 
 }
