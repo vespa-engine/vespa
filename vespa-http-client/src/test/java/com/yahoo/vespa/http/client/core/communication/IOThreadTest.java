@@ -1,9 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.yahoo.vespa.http.client.FeedClient;
-import com.yahoo.vespa.http.client.FeedEndpointException;
-import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.core.OperationProcessorTester;
 import com.yahoo.vespa.http.client.core.ServerResponseException;
 import org.junit.Test;

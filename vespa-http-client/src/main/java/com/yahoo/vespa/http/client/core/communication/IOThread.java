@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,17 +57,10 @@ public class IOThread implements Runnable, AutoCloseable {
     private final long pollIntervalUS;
     private final Clock clock;
     private final Random random = new Random();
+    private final OldConnectionsDrainer oldConnectionsDrainer;
 
     private GatewayConnection currentConnection;
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
-
-    /**
-     * Previous connections on which we have sent operations and are still waiting for the result
-     * (so all connections in this are in state SESSION_SYNCED).
-     * We need to drain results on the connection where they were sent to make sure we request results on
-     * the node which received the operation also when going through a VIP.
-     */
-    private final List<GatewayConnection> oldConnections = new ArrayList<>();
 
     private enum ConnectionState { DISCONNECTED, CONNECTED, SESSION_SYNCED };
     private final AtomicInteger wrongSessionDetectedCounter = new AtomicInteger(0);
@@ -106,8 +100,20 @@ public class IOThread implements Runnable, AutoCloseable {
         this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1us, 10s]
         this.clock = clock;
         this.localQueueTimeOut = localQueueTimeOut;
+        this.oldConnectionsDrainer = new OldConnectionsDrainer(endpoint,
+                                                               clusterId,
+                                                               pollIntervalUS,
+                                                               connectionTimeToLive,
+                                                               localQueueTimeOut,
+                                                               statusReceivedCounter,
+                                                               resultQueue,
+                                                               stopSignal,
+                                                               clock);
         if (runThreads) {
             this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
+            thread.setDaemon(true);
+            thread.start();
+            Thread thread = new Thread(ioThreadGroup, oldConnectionsDrainer, "IOThread " + endpoint + " drainer");
             thread.setDaemon(true);
             thread.start();
         }
@@ -144,13 +150,13 @@ public class IOThread implements Runnable, AutoCloseable {
         stopSignal.countDown();
         log.finer("Closed called.");
 
+        oldConnectionsDrainer.close();
+
         // Make a last attempt to get results from previous operations, we have already waited quite a bit before getting here.
         int size = resultQueue.getPendingSize();
         if (size > 0) {
             log.info("We have outstanding operations (" + size + ") , trying to fetch responses.");
             try {
-                for (GatewayConnection oldConnection : oldConnections)
-                    processResponse(oldConnection.drain());
                 processResponse(currentConnection.drain());
             } catch (Throwable e) {
                 log.log(Level.SEVERE, "Some failures while trying to get latest responses from vespa.", e);
@@ -158,8 +164,6 @@ public class IOThread implements Runnable, AutoCloseable {
         }
 
         try {
-            for (GatewayConnection oldConnection : oldConnections)
-                oldConnection.close();
             currentConnection.close();
         } finally {
             // If there is still documents in the queue, fail them.
@@ -260,6 +264,14 @@ public class IOThread implements Runnable, AutoCloseable {
     }
 
     private ProcessResponse processResponse(InputStream serverResponse) throws IOException {
+        return processResponse(serverResponse, endpoint, clusterId, statusReceivedCounter, resultQueue);
+    }
+
+    private static ProcessResponse processResponse(InputStream serverResponse,
+                                                   Endpoint endpoint,
+                                                   int clusterId,
+                                                   AtomicInteger statusReceivedCounter,
+                                                   EndpointResultQueue resultQueue) throws IOException {
         Collection<EndpointResult> endpointResults = EndPointResultFactory.createResult(endpoint, serverResponse);
         statusReceivedCounter.addAndGet(endpointResults.size());
         int transientErrors = 0;
@@ -409,7 +421,8 @@ public class IOThread implements Runnable, AutoCloseable {
     public void tick() {
         ConnectionState oldState = connectionState;
         connectionState = cycle(connectionState);
-        checkOldConnections();
+        if (thread == null)
+            oldConnectionsDrainer.checkOldConnections();
         if (thread != null)
             sleepIfProblemsGettingSyncedConnection(connectionState, oldState);
     }
@@ -445,49 +458,9 @@ public class IOThread implements Runnable, AutoCloseable {
 
     private ConnectionState refreshConnection(ConnectionState currentConnectionState) {
         if (currentConnectionState == ConnectionState.SESSION_SYNCED)
-            oldConnections.add(currentConnection);
+            oldConnectionsDrainer.add(currentConnection);
         currentConnection = connectionFactory.newConnection();
         return ConnectionState.DISCONNECTED;
-    }
-
-    private void checkOldConnections() {
-        for (Iterator<GatewayConnection> i = oldConnections.iterator(); i.hasNext(); ) {
-            GatewayConnection connection = i.next();
-            if (closingTime(connection).isBefore(clock.instant())) {
-                try {
-                    processResponse(connection.poll());
-                    connection.close();
-                    i.remove();
-                }
-                catch (Exception e) {
-                    // Old connection; best effort
-                }
-            }
-            else if (timeToPoll(connection)) {
-                try {
-                    processResponse(connection.poll());
-                }
-                catch (Exception e) {
-                    // Old connection; best effort
-                }
-            }
-        }
-    }
-
-    private Instant closingTime(GatewayConnection connection) {
-        return connection.connectionTime().plus(connectionTimeToLive).plus(localQueueTimeOut);
-    }
-
-    private boolean timeToPoll(GatewayConnection connection) {
-        if (connection.lastPollTime() == null) return true;
-
-        // Exponential (2^x) dropoff:
-        double unit = pollIntervalUS / 1000.0;
-        double x = (  clock.millis() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
-        double lastX = (  connection.lastPollTime().toEpochMilli() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
-
-        double currentDelayDoublings = Math.log(lastX)/Math.log(2);
-        return (x - lastX) > Math.pow(2, currentDelayDoublings);
     }
 
     public static class ConnectionStats {
@@ -528,10 +501,131 @@ public class IOThread implements Runnable, AutoCloseable {
     /** For testing. Returns the current connection of this. Not thread safe. */
     public GatewayConnection currentConnection() { return currentConnection; }
 
-    /** For testing. Returns a snapshot of the old connections of this. Not thread safe. */
-    public List<GatewayConnection> oldConnections() { return new ArrayList<>(oldConnections); }
+    /** For testing. Returns a snapshot of the old connections of this. */
+    public List<GatewayConnection> oldConnections() { return oldConnectionsDrainer.connections(); }
 
     /** For testing */
     public EndpointResultQueue resultQueue() { return resultQueue; }
+
+    /**
+     * We need to drain results on the connection where they were sent to make sure we request results on
+     * the node which received the operation also when going through a VIP.
+     */
+    private static class OldConnectionsDrainer implements Runnable {
+
+        private final Endpoint endpoint;
+        private final int clusterId;
+        private final long pollIntervalUS;
+        private final Duration connectionTimeToLive;
+        private final Duration localQueueTimeOut;
+        private final AtomicInteger statusReceivedCounter;
+        private final EndpointResultQueue resultQueue;
+        private final CountDownLatch stopSignal;
+        private final Clock clock;
+
+        /**
+         * Previous connections on which we may have sent operations and are still waiting for the results
+         * All connections in this are in state SESSION_SYNCED.
+         */
+        private final List<GatewayConnection> connections = new CopyOnWriteArrayList<>();
+
+        OldConnectionsDrainer(Endpoint endpoint,
+                             int clusterId,
+                             long pollIntervalUS,
+                             Duration connectionTimeToLive,
+                             Duration localQueueTimeOut,
+                             AtomicInteger statusReceivedCounter,
+                             EndpointResultQueue resultQueue,
+                             CountDownLatch stopSignal,
+                             Clock clock) {
+            this.endpoint = endpoint;
+            this.clusterId = clusterId;
+            this.pollIntervalUS = pollIntervalUS;
+            this.connectionTimeToLive = connectionTimeToLive;
+            this.localQueueTimeOut = localQueueTimeOut;
+            this.statusReceivedCounter = statusReceivedCounter;
+            this.resultQueue = resultQueue;
+            this.stopSignal = stopSignal;
+            this.clock = clock;
+        }
+
+        /** Add another old connection to this for draining */
+        public void add(GatewayConnection connection) {
+            connections.add(connection);
+        }
+
+        @Override
+        public void run() {
+            while (stopSignal.getCount() > 0) {
+                checkOldConnections();
+                try {
+                    Thread.sleep(pollIntervalUS/1000);
+                }
+                catch (InterruptedException e) {
+                }
+            }
+        }
+
+        public void checkOldConnections() {
+            List<GatewayConnection> toRemove = null;
+            for (GatewayConnection connection : connections) {
+                if (closingTime(connection).isBefore(clock.instant())) {
+                    try {
+                        IOThread.processResponse(connection.poll(), endpoint, clusterId, statusReceivedCounter, resultQueue);
+                        connection.close();
+                        if (toRemove == null)
+                            toRemove = new ArrayList<>(1);
+                        toRemove.add(connection);
+                    } catch (Exception e) {
+                        // Old connection; best effort
+                    }
+                } else if (timeToPoll(connection)) {
+                    try {
+                        IOThread.processResponse(connection.poll(), endpoint, clusterId, statusReceivedCounter, resultQueue);
+                    } catch (Exception e) {
+                        // Old connection; best effort
+                    }
+                }
+            }
+            if (toRemove != null)
+                connections.removeAll(toRemove);
+        }
+
+        private boolean timeToPoll(GatewayConnection connection) {
+            if (connection.lastPollTime() == null) return true;
+
+            // Exponential (2^x) dropoff:
+            double unit = pollIntervalUS / 1000.0;
+            double x = (  clock.millis() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
+            double lastX = (  connection.lastPollTime().toEpochMilli() - connection.connectionTime().plus(connectionTimeToLive).toEpochMilli() ) / unit;
+
+            double currentDelayDoublings = Math.log(lastX)/Math.log(2);
+            return (x - lastX) > Math.pow(2, currentDelayDoublings);
+        }
+
+        private Instant closingTime(GatewayConnection connection) {
+            return connection.connectionTime().plus(connectionTimeToLive).plus(localQueueTimeOut);
+        }
+
+        private void close() {
+            int size = resultQueue.getPendingSize();
+            if (size > 0) {
+                log.info("We have outstanding operations (" + size + ") , trying to fetch responses.");
+                for (GatewayConnection connection : connections) {
+                    try {
+                        IOThread.processResponse(connection.poll(), endpoint, clusterId, statusReceivedCounter, resultQueue);
+                    } catch (Throwable e) {
+                        log.log(Level.SEVERE, "Some failures while trying to get latest responses from vespa.", e);
+                    }
+                }
+            }
+            for (GatewayConnection oldConnection : connections)
+                oldConnection.close();
+        }
+
+        /** For testing. Returns the old connections of this. */
+        public List<GatewayConnection> connections() { return Collections.unmodifiableList(connections); }
+
+    }
 
 }
