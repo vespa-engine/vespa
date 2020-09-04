@@ -516,7 +516,7 @@ DomainPart::visit(SerialNumRange &r, Packet &packet)
 bool
 DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
 {
-    if ( ! file.IsOpened() && ! openAndFind(file, r.from() + 1))
+    if ( ! file.IsOpened() && ! openAndFind(file, r.from() + 1)) {
         return false;
     }
 
