@@ -347,11 +347,16 @@ public class IOThread implements Runnable, AutoCloseable {
                     currentConnection.handshake();
                     successfulHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
+                    int code = ser.getResponseCode();
+                    if (code == 401 || code == 403) {
+                        drainDocumentQueueWhenFailingPermanently(new Exception("Denied access by endpoint:" + ser.getResponseString()));
+                        log.log(Level.SEVERE, "Failed authentication or authorization with '" + endpoint + "': " + Exceptions.toMessageString(ser));
+                        return ConnectionState.CONNECTED; // Should ideally exit immediately, instead of doing this per X documents :/
+                    }
 
                     executeProblemsCounter.incrementAndGet();
                     log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint +
-                                        "' failed. Will re-try handshake.",
-                            ser);
+                                        "' failed -- will re-try handshake: " + Exceptions.toMessageString(ser));
 
                     drainFirstDocumentsInQueueIfOld();
                     resultQueue.onEndpointError(new FeedProtocolException(ser.getResponseCode(), ser.getResponseString(), ser, endpoint));

@@ -41,18 +41,20 @@ public class IOThreadTest {
     }
 
     @Test
-    public void testExceptionOnConnect() {
+    public void testFatalExceptionOnHandshake() {
         OperationProcessorTester tester = new OperationProcessorTester();
         IOThread ioThread = tester.getSingleIOThread();
         DryRunGatewayConnection firstConnection = (DryRunGatewayConnection)ioThread.currentConnection();
         firstConnection.throwOnHandshake(new ServerResponseException(403, "Not authorized"));
 
         tester.send("doc1");
+        tester.send("doc2");
+        tester.send("doc3");
         tester.tick(3);
-        assertEquals(1, tester.incomplete());
+        assertEquals(0, tester.incomplete());
         assertEquals(0, ioThread.resultQueue().getPendingSize());
         assertEquals(0, tester.success());
-        assertEquals("Awaiting retry", 0, tester.failures());
+        assertEquals(3, tester.failures());
     }
 
     @Test
@@ -60,7 +62,7 @@ public class IOThreadTest {
         OperationProcessorTester tester = new OperationProcessorTester();
         IOThread ioThread = tester.getSingleIOThread();
         DryRunGatewayConnection firstConnection = (DryRunGatewayConnection)ioThread.currentConnection();
-        firstConnection.throwOnHandshake(new ServerResponseException(403, "Not authorized"));
+        firstConnection.throwOnHandshake(new ServerResponseException(418, "I'm a teapot"));
 
         tester.send("doc1");
         tester.tick(3);
