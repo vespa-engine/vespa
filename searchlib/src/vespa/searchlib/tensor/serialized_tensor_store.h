@@ -4,9 +4,7 @@
 
 #include "tensor_store.h"
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 /**
  * Class for storing serialized tensors in memory, used by TensorAttribute.
@@ -15,8 +13,7 @@ namespace tensor {
  * might also require corresponding changes to implemented optimized tensor
  * operations that use the serialized tensor as argument.
  */
-class GenericTensorStore : public TensorStore
-{
+class SerializedTensorStore : public TensorStore {
 public:
     using RefType = vespalib::datastore::AlignedEntryRefT<22, 2>;
     using DataStoreType = vespalib::datastore::DataStoreT<RefType>;
@@ -24,9 +21,9 @@ private:
     DataStoreType _concreteStore;
     vespalib::datastore::BufferType<char> _bufferType;
 public:
-    GenericTensorStore();
+    SerializedTensorStore();
 
-    virtual ~GenericTensorStore();
+    virtual ~SerializedTensorStore();
 
     std::pair<const void *, uint32_t> getRawBuffer(RefType ref) const;
 
@@ -41,7 +38,4 @@ public:
     EntryRef setTensor(const Tensor &tensor);
 };
 
-
-}  // namespace search::tensor
-
-}  // namespace search
+}

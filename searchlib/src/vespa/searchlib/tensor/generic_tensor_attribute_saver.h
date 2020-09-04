@@ -9,7 +9,7 @@ namespace search {
 
 namespace tensor {
 
-class GenericTensorStore;
+class SerializedTensorStore;
 
 /*
  * Class for saving a tensor attribute.
@@ -20,7 +20,7 @@ public:
     using RefCopyVector = TensorAttribute::RefCopyVector;
 private:
     RefCopyVector      _refs;
-    const GenericTensorStore &_tensorStore;
+    const SerializedTensorStore &_tensorStore;
     using GenerationHandler = vespalib::GenerationHandler;
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
@@ -28,7 +28,7 @@ public:
     GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
                                 const attribute::AttributeHeader &header,
                                 RefCopyVector &&refs,
-                                const GenericTensorStore &tensorStore);
+                                const SerializedTensorStore &tensorStore);
 
     virtual ~GenericTensorAttributeSaver();
 };

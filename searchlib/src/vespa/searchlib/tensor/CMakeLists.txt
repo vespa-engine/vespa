@@ -12,7 +12,6 @@ vespa_add_library(searchlib_tensor OBJECT
     distance_functions.cpp
     generic_tensor_attribute.cpp
     generic_tensor_attribute_saver.cpp
-    generic_tensor_store.cpp
     hnsw_graph.cpp
     hnsw_index.cpp
     hnsw_index_loader.cpp
@@ -22,6 +21,7 @@ vespa_add_library(searchlib_tensor OBJECT
     inv_log_level_generator.cpp
     nearest_neighbor_index.cpp
     nearest_neighbor_index_saver.cpp
+    serialized_tensor_store.cpp
     tensor_attribute.cpp
     tensor_deserialize.cpp
     tensor_store.cpp

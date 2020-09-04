@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "generic_tensor_store.h"
+#include "serialized_tensor_store.h"
 #include "tensor_deserialize.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
@@ -17,7 +17,7 @@ namespace search::tensor {
 
 constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 
-GenericTensorStore::GenericTensorStore()
+SerializedTensorStore::SerializedTensorStore()
     : TensorStore(_concreteStore),
       _concreteStore(),
       _bufferType(RefType::align(1),
@@ -28,13 +28,13 @@ GenericTensorStore::GenericTensorStore()
     _store.initActiveBuffers();
 }
 
-GenericTensorStore::~GenericTensorStore()
+SerializedTensorStore::~SerializedTensorStore()
 {
     _store.dropBuffers();
 }
 
 std::pair<const void *, uint32_t>
-GenericTensorStore::getRawBuffer(RefType ref) const
+SerializedTensorStore::getRawBuffer(RefType ref) const
 {
     if (!ref.valid()) {
         return std::make_pair(nullptr, 0u);
@@ -45,7 +45,7 @@ GenericTensorStore::getRawBuffer(RefType ref) const
 }
 
 Handle<char>
-GenericTensorStore::allocRawBuffer(uint32_t size)
+SerializedTensorStore::allocRawBuffer(uint32_t size)
 {
     if (size == 0) {
         return Handle<char>();
@@ -63,7 +63,7 @@ GenericTensorStore::allocRawBuffer(uint32_t size)
 }
 
 void
-GenericTensorStore::holdTensor(EntryRef ref)
+SerializedTensorStore::holdTensor(EntryRef ref)
 {
     if (!ref.valid()) {
         return;
@@ -75,7 +75,7 @@ GenericTensorStore::holdTensor(EntryRef ref)
 }
 
 TensorStore::EntryRef
-GenericTensorStore::move(EntryRef ref)
+SerializedTensorStore::move(EntryRef ref)
 {
     if (!ref.valid()) {
         return RefType();
@@ -88,7 +88,7 @@ GenericTensorStore::move(EntryRef ref)
 }
 
 std::unique_ptr<Tensor>
-GenericTensorStore::getTensor(EntryRef ref) const
+SerializedTensorStore::getTensor(EntryRef ref) const
 {
     auto raw = getRawBuffer(ref);
     if (raw.second == 0u) {
@@ -98,7 +98,7 @@ GenericTensorStore::getTensor(EntryRef ref) const
 }
 
 TensorStore::EntryRef
-GenericTensorStore::setTensor(const Tensor &tensor)
+SerializedTensorStore::setTensor(const Tensor &tensor)
 {
     vespalib::nbostream stream;
     TypedBinaryFormat::serialize(stream, tensor);

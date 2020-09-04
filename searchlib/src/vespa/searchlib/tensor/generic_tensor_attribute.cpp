@@ -22,7 +22,7 @@ constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 }
 
 GenericTensorAttribute::GenericTensorAttribute(stringref name, const Config &cfg)
-    : TensorAttribute(name, cfg, _genericTensorStore)
+    : TensorAttribute(name, cfg, _serializedTensorStore)
 {
 }
 
@@ -37,7 +37,7 @@ void
 GenericTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 {
     checkTensorType(tensor);
-    EntryRef ref = _genericTensorStore.setTensor(tensor);
+    EntryRef ref = _serializedTensorStore.setTensor(tensor);
     setTensorRef(docId, ref);
 }
 
@@ -52,7 +52,7 @@ GenericTensorAttribute::getTensor(DocId docId) const
     if (!ref.valid()) {
         return std::unique_ptr<Tensor>();
     }
-    return _genericTensorStore.getTensor(ref);
+    return _serializedTensorStore.getTensor(ref);
 }
 
 void
@@ -75,7 +75,7 @@ GenericTensorAttribute::onLoad()
     _refVector.unsafe_reserve(numDocs);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
         uint32_t tensorSize = tensorReader.getNextSize();
-        auto raw = _genericTensorStore.allocRawBuffer(tensorSize);
+        auto raw = _serializedTensorStore.allocRawBuffer(tensorSize);
         if (tensorSize != 0) {
             tensorReader.readBlob(raw.data, tensorSize);
         }
@@ -96,13 +96,13 @@ GenericTensorAttribute::onInitSave(vespalib::stringref fileName)
         (std::move(guard),
          this->createAttributeHeader(fileName),
          getRefCopy(),
-         _genericTensorStore);
+         _serializedTensorStore);
 }
 
 void
 GenericTensorAttribute::compactWorst()
 {
-    doCompactWorst<GenericTensorStore::RefType>();
+    doCompactWorst<SerializedTensorStore::RefType>();
 }
 
 }

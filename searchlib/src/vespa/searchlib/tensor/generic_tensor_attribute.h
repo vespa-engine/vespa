@@ -2,19 +2,17 @@
 
 #pragma once
 
+#include "serialized_tensor_store.h"
 #include "tensor_attribute.h"
-#include "generic_tensor_store.h"
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 /**
  * Attribute vector class used to store tensors for all documents in memory.
  */
 class GenericTensorAttribute : public TensorAttribute
 {
-    GenericTensorStore _genericTensorStore; // data store for serialized tensors
+    SerializedTensorStore _serializedTensorStore; // data store for serialized tensors
 public:
     GenericTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~GenericTensorAttribute();
@@ -26,7 +24,4 @@ public:
     virtual void compactWorst() override;
 };
 
-
-}  // namespace search::tensor
-
-}  // namespace search
+}
