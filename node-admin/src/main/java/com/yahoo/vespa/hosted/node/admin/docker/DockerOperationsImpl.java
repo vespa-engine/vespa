@@ -352,8 +352,7 @@ public class DockerOperationsImpl implements DockerOperations {
             Stream.of(pathsInNode).forEach(pathString -> {
                 Path absolutePathInNode = resolveNodePath(pathString);
                 Path pathOnHost = context.pathOnHostFromPathInNode(absolutePathInNode);
-                Path pathInNode = context.rewritePathInNodeForWantedDockerImage(absolutePathInNode);
-                command.withVolume(pathOnHost, pathInNode);
+                command.withVolume(pathOnHost, absolutePathInNode);
             });
         }
 

@@ -92,12 +92,4 @@ public interface NodeAgentContext extends TaskContext {
     default Path pathInNodeUnderVespaHome(String relativePath) {
         return pathInNodeUnderVespaHome(fileSystem().getPath(relativePath));
     }
-
-    /**
-     * Rewrite the given path in node to a path required by the image.
-     * WARNING: This method should only be used when starting the docker container, e.g. writing container data or
-     * configuring mounts.
-     * TODO: Remove when everyone has migrated of vespa/ci image
-     */
-    Path rewritePathInNodeForWantedDockerImage(Path path);
 }
