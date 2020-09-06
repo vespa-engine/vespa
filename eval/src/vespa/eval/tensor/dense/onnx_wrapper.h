@@ -95,19 +95,10 @@ public:
     // all parameter values are expected to be bound per evaluation
     // output values are pre-allocated and will not change
     class EvalContext {
-    public:
-        struct ParamBinder {
-            using UP = std::unique_ptr<ParamBinder>;
-            virtual void bind(const eval::Value &vespa, Ort::Value &onnx) = 0;
-            virtual ~ParamBinder() {}
-        };
-        struct EvalHook {
-            using UP = std::unique_ptr<EvalHook>;
-            virtual void invoke() = 0;
-            virtual ~EvalHook() {}
-        };
-
     private:
+        using param_fun_t = void (*)(EvalContext &, size_t i, const eval::Value &);
+        using result_fun_t = void (*)(EvalContext &, size_t i);
+
         static Ort::AllocatorWithDefaultOptions _alloc;
 
         const Onnx                  &_model;
@@ -116,10 +107,23 @@ public:
         std::vector<Ort::Value>      _param_values;
         std::vector<Ort::Value>      _result_values;
         std::vector<eval::Value::UP> _results;
-        std::vector<ParamBinder::UP> _param_binders;
-        std::vector<EvalHook::UP>    _eval_hooks;
+        std::vector<param_fun_t>     _param_binders;
+        std::vector<std::pair<size_t,result_fun_t>> _result_converters;
+
+        template <typename T>
+        static void adapt_param(EvalContext &self, size_t idx, const eval::Value &param);
+
+        template <typename SRC, typename DST>
+        static void convert_param(EvalContext &self, size_t idx, const eval::Value &param);
+
+        template <typename SRC, typename DST>
+        static void convert_result(EvalContext &self, size_t idx);
 
     public:
+        struct SelectAdaptParam;
+        struct SelectConvertParam;
+        struct SelectConvertResult;
+
         EvalContext(const Onnx &model, const WireInfo &wire_info);
         ~EvalContext();
         size_t num_params() const { return _param_values.size(); }
