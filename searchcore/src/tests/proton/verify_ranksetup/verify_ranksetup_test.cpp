@@ -344,7 +344,7 @@ TEST_F("require that onnx model can be verified", OnnxSetup()) {
 }
 
 TEST_F("require that input type mismatch makes onnx model fail verification", OnnxSetup()) {
-    f.rank_expr("query_tensor", "tensor<double>(a[1],b[4]):[[1,2,3,4]]"); // <- double vs float
+    f.rank_expr("query_tensor", "tensor<float>(a[1],b[3]):[[1,2,3]]"); // <- 3 vs 4
     f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
     f.verify_invalid({"onnxModel(simple)"});
