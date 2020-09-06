@@ -65,9 +65,8 @@ class Domain
 public:
     using SP = std::shared_ptr<Domain>;
     using Executor = vespalib::SyncableThreadExecutor;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir, FastOS_ThreadPool & threadPool,
-           Executor & commitExecutor, Executor & sessionExecutor, const DomainConfig & cfg,
-           const common::FileHeaderContext &fileHeaderContext);
+    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
+           Executor & sessionExecutor, const DomainConfig & cfg, const common::FileHeaderContext &fileHeaderContext);
 
     ~Domain();
 
@@ -122,7 +121,6 @@ private:
 
     DomainConfig           _config;
     SerialNum              _lastSerial;
-    FastOS_ThreadPool    & _threadPool;
     std::unique_ptr<Executor> _singleCommiter;
     Executor             & _commitExecutor;
     Executor             & _sessionExecutor;
@@ -139,7 +137,6 @@ private:
     vespalib::string       _baseDir;
     const common::FileHeaderContext &_fileHeaderContext;
     bool                   _markedDeleted;
-    FastOS_ThreadInterface  * _self;
 };
 
 }

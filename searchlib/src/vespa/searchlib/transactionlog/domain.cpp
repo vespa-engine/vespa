@@ -37,12 +37,10 @@ DomainConfig::DomainConfig()
       _chunkAgeLimit(10ms)
 { }
 
-Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPool & threadPool,
-               Executor & commitExecutor, Executor & sessionExecutor, const DomainConfig & cfg,
-               const FileHeaderContext &fileHeaderContext)
+Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
+               Executor & sessionExecutor, const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
     : _config(cfg),
       _lastSerial(0),
-      _threadPool(threadPool),
       _singleCommiter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128*1024)),
       _commitExecutor(commitExecutor),
       _sessionExecutor(sessionExecutor),
@@ -58,8 +56,7 @@ Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPo
       _maxSessionRunTime(),
       _baseDir(baseDir),
       _fileHeaderContext(fileHeaderContext),
-      _markedDeleted(false),
-      _self(nullptr)
+      _markedDeleted(false)
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) != 0) {

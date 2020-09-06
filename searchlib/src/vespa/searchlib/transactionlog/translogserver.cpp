@@ -113,7 +113,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        auto domain = make_shared<Domain>(domainName, dir(), *_threadPool, _commitExecutor,
+                        auto domain = make_shared<Domain>(domainName, dir(), _commitExecutor,
                                                           _sessionExecutor, cfg, _fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
@@ -446,7 +446,7 @@ TransLogServer::createDomain(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain = std::make_shared<Domain>(domainName, dir(), *_threadPool, _commitExecutor,
+            domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor,
                                               _sessionExecutor, _domainConfig, _fileHeaderContext);
             Guard domainGuard(_lock);
             _domains[domain->name()] = domain;
