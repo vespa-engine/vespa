@@ -832,41 +832,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                    connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
         assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
     }
-    @Test
-
-    public void jdisc_proxy_protocol_disabled_in_public_systems() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                nodesXml,
-                "</container>" );
-
-        var applicationPackage = new MockApplicationPackage.Builder()
-                .withRoot(applicationFolder.getRoot())
-                .build();
-
-        applicationPackage.getFile(Path.fromString("security")).createDirectory();
-        applicationPackage.getFile(Path.fromString("security/clients.pem")).writeFile(new StringReader("I am a very nice certificate"));
-
-        Zone zone = new Zone(SystemName.Public, Environment.prod, RegionName.defaultName());
-        DeployState state = new DeployState.Builder()
-                .zone(zone)
-                .applicationPackage(applicationPackage)
-                .properties(new TestProperties()
-                                    .setHostedVespa(true)
-                                    .setZone(zone)
-                                    .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
-                .build();
-        createModel(root, state, null, clusterElem);
-        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
-        ConnectorFactory tlsPort = container.getHttp().getHttpServer().get().getConnectorFactories().stream()
-                .filter(connectorFactory -> connectorFactory.getListenPort() == 4443)
-                .findFirst()
-                .orElseThrow();
-        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
-        tlsPort.getConfig(builder);
-        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
-        assertFalse(connectorConfig.proxyProtocol().enabled());
-    }
 
 
     private Element generateContainerElementWithRenderer(String rendererId) {
