@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "session.h"
 #include "domain.h"
-#include "domainpart.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/log/log.h>
 

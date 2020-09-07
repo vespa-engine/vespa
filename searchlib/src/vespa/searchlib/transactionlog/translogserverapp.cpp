@@ -66,8 +66,7 @@ getDomainConfig(const searchlib::TranslogserverConfig & cfg) {
         .setCompressionLevel(cfg.compression.level)
         .setPartSizeLimit(cfg.filesizemax)
         .setChunkSizeLimit(cfg.chunk.sizelimit)
-        .setChunkAgeLimit(vespalib::from_s(cfg.chunk.agelimit))
-        .setFSyncOnCommit(cfg.usefsync);
+        .setChunkAgeLimit(vespalib::from_s(cfg.chunk.agelimit));
     return dcfg;
 }
 
