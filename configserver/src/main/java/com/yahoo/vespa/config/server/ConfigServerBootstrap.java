@@ -108,7 +108,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         try {
             configServerMaintenance.ifPresent(ConfigServerMaintenance::runBeforeBootstrap);
         } catch (Exception e) {
-            log.log(Level.INFO, "Running maintainers before bootstrap failed, continuing with bootstrap", e);
+            log.log(Level.INFO, "Running maintainers before bootstrap failed, continuing with bootstrap", Exceptions.toMessageString(e));
         }
 
         switch (mode) {
