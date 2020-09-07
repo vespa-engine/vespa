@@ -4,6 +4,7 @@ package com.yahoo.container.handler.threadpool;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
 
@@ -26,26 +27,26 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
     private final ExecutorServiceWrapper threadpool;
 
     @Inject
-    public ContainerThreadPool(ContainerThreadpoolConfig config, Metric metric) {
+    public ContainerThreadPool(ThreadpoolConfig config, Metric metric) {
         this(config, metric, new ProcessTerminator());
     }
 
-    public ContainerThreadPool(ContainerThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator) {
-        ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, config.name());
-        int maxNumThreads = computeMaximumThreadPoolSize(config.maxThreads());
-        int coreNumThreads = computeCoreThreadPoolSize(config.minThreads(), maxNumThreads);
+    public ContainerThreadPool(ThreadpoolConfig threadpoolConfig, Metric metric, ProcessTerminator processTerminator) {
+        ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, threadpoolConfig.name());
+        int maxNumThreads = computeMaximumThreadPoolSize(threadpoolConfig.maxthreads());
+        int coreNumThreads = computeCoreThreadPoolSize(threadpoolConfig.corePoolSize(), maxNumThreads);
         WorkerCompletionTimingThreadPoolExecutor executor =
                 new WorkerCompletionTimingThreadPoolExecutor(coreNumThreads, maxNumThreads,
-                        (int)config.keepAliveTime() * 1000, TimeUnit.MILLISECONDS,
-                        createQ(config.queueSize(), maxNumThreads),
-                        ThreadFactoryFactory.getThreadFactory(config.name()),
+                        (int)threadpoolConfig.keepAliveTime() * 1000, TimeUnit.MILLISECONDS,
+                        createQ(threadpoolConfig.queueSize(), maxNumThreads),
+                        ThreadFactoryFactory.getThreadFactory(threadpoolConfig.name()),
                         threadPoolMetric);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
         // That counters what we we want to achieve with the Q that will prefer thread locality.
         executor.prestartAllCoreThreads();
         threadpool = new ExecutorServiceWrapper(executor, threadPoolMetric, processTerminator,
-                config.maxThreadExecutionTimeSeconds() * 1000L);
+                threadpoolConfig.maxThreadExecutionTimeSeconds() * 1000L);
     }
 
     public Executor executor() { return threadpool; }

@@ -2,8 +2,8 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
-import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
@@ -14,7 +14,7 @@ import java.time.Duration;
  *
  * @author bjorncs
  */
-public class ThreadPoolExecutorComponent extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
+public class ThreadPoolExecutorComponent extends SimpleComponent implements ThreadpoolConfig.Producer {
 
     private final String name;
     private final Integer maxPoolSize;
@@ -38,10 +38,10 @@ public class ThreadPoolExecutorComponent extends SimpleComponent implements Cont
     }
 
     @Override
-    public void getConfig(ContainerThreadpoolConfig.Builder builder) {
+    public void getConfig(ThreadpoolConfig.Builder builder) {
         builder.name(this.name);
-        if (maxPoolSize != null) builder.maxThreads(maxPoolSize);
-        if (corePoolSize != null) builder.minThreads(corePoolSize);
+        if (maxPoolSize != null) builder.maxthreads(maxPoolSize);
+        if (corePoolSize != null) builder.corePoolSize(corePoolSize);
         if (keepAliveTime != null) builder.keepAliveTime(keepAliveTime.toMillis() / 1000D);
         if (queueSize != null) builder.queueSize(queueSize);
         if (maxThreadExecutionTime != null) builder.maxThreadExecutionTimeSeconds((int)maxThreadExecutionTime.toMillis() / 1000);
