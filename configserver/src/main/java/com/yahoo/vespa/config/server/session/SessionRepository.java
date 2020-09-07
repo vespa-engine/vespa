@@ -363,7 +363,6 @@ public class SessionRepository {
         applicationRepo.reloadConfig(app);
         log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
         session.notifyCompletion(waiter);
-        log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
     public void deactivate(RemoteSession remoteSession) {
