@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
 
@@ -23,12 +24,27 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     private final ContainerThreadPool threadpool;
 
     @Inject
-    public ThreadPoolProvider(ThreadpoolConfig threadpoolConfig, Metric metric) {
-        this.threadpool = new ContainerThreadPool(threadpoolConfig, metric);
+    public ThreadPoolProvider(ThreadpoolConfig config, Metric metric) {
+        this.threadpool = new ContainerThreadPool(translateConfig(config), metric);
     }
 
-    public ThreadPoolProvider(ThreadpoolConfig threadpoolConfig, Metric metric, ProcessTerminator processTerminator) {
-        this.threadpool = new ContainerThreadPool(threadpoolConfig, metric, processTerminator);
+    public ThreadPoolProvider(ThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator) {
+        this.threadpool = new ContainerThreadPool(translateConfig(config), metric, processTerminator);
+    }
+
+    /**
+     * The underlying {@link ContainerThreadPool} uses a different config definition ({@link ContainerThreadpoolConfig})
+     * as {@link ThreadpoolConfig} is currently public api.
+     */
+    private static ContainerThreadpoolConfig translateConfig(ThreadpoolConfig config) {
+        return new ContainerThreadpoolConfig(
+                new ContainerThreadpoolConfig.Builder()
+                        .maxThreads(config.maxthreads())
+                        .minThreads(config.corePoolSize())
+                        .name(config.name())
+                        .queueSize(config.queueSize())
+                        .keepAliveTime(config.keepAliveTime())
+                        .maxThreadExecutionTimeSeconds(config.maxThreadExecutionTimeSeconds()));
     }
 
     /**

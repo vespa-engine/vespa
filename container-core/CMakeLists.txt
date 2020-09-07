@@ -2,6 +2,7 @@
 install_config_definition(src/main/resources/configdefinitions/application-metadata.def container.core.application-metadata.def)
 install_config_definition(src/main/resources/configdefinitions/container-document.def container.core.document.container-document.def)
 install_config_definition(src/main/resources/configdefinitions/container-http.def container.core.container-http.def)
+install_config_definition(src/main/resources/configdefinitions/container-threadpool.def container.core.container-threadpool.def)
 install_config_definition(src/main/resources/configdefinitions/health-monitor.def container.jdisc.config.health-monitor.def)
 install_config_definition(src/main/resources/configdefinitions/http-filter.def container.core.http.http-filter.def)
 install_config_definition(src/main/resources/configdefinitions/identity.def container.core.identity.identity.def)

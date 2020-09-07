@@ -1,0 +1,25 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+namespace=container.handler.threadpool
+
+## Maximum number of thread in the thread pool
+## 0 is translated to vcpu*4
+maxThreads int default=0
+
+## Minimum number of thread in the thread pool
+## 0 is translated to vcpu*2
+minThreads int default=0
+
+## The number of seconds that excess idle threads will wait for new tasks before terminating
+keepAliveTime double default=5.0
+
+## Max queue size
+queueSize int default=0
+
+## The max time the container tolerates having no threads available before it shuts down to
+## get out of a bad state. This should be set a bit higher than the expected max execution
+## time of each request when in a state of overload, i.e about "worst case execution time*2"
+maxThreadExecutionTimeSeconds int default=190
+
+# Prefix for the name of the threads
+name string default="default-pool"
