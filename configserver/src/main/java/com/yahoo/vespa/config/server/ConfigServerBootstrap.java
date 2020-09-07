@@ -10,8 +10,6 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
-import java.util.logging.Level;
-
 import com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
@@ -21,7 +19,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -30,7 +27,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_CONSTRUCTOR;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
@@ -69,7 +68,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
 
-    @SuppressWarnings("unused")
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
@@ -224,12 +222,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
             if ( ! applicationsNotRedeployed.isEmpty() && ! sleepTimeWhenRedeployingFails.isZero()) {
-                failCount++;
-                Duration sleepTime = sleepTimeWhenRedeployingFails.multipliedBy(failCount);
+                Duration sleepTime = sleepTimeWhenRedeployingFails.multipliedBy(++failCount);
                 if (sleepTime.compareTo(Duration.ofMinutes(10)) > 0)
                     sleepTime = Duration.ofMinutes(10);
-                log.log(Level.INFO, "Redeployment of " + applicationsNotRedeployed +
-                                    " failed (" + failCount + " failures), will retry in " + sleepTime);
+                log.log(Level.INFO, "Redeployment of " + applicationsNotRedeployed + " not finished, will retry in " + sleepTime);
                 Thread.sleep(sleepTime.toMillis());
             }
         } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
@@ -247,30 +243,39 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                                 new DaemonThreadFactory("redeploy apps"));
         // Keep track of deployment per application
-        Map<ApplicationId, Future<?>> futures = new HashMap<>();
-        applicationIds.forEach(applicationId -> futures.put(applicationId, executor.submit(() -> {
-            applicationRepository.deployFromLocalActive(applicationId, true /* bootstrap */)
-                    .ifPresent(Deployment::activate);
-        })));
+        Map<ApplicationId, Future<?>> deployments = new HashMap<>();
+        log.log(Level.INFO, () -> "Redeploying " + applicationIds);
+        applicationIds.forEach(appId -> deployments.put(appId,
+                                                    executor.submit(() -> applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
+                                .ifPresent(Deployment::activate))));
 
-        Set<ApplicationId> failedDeployments = new HashSet<>();
-        for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
-            try {
-                f.getValue().get();
-            } catch (ExecutionException e) {
-                ApplicationId app = f.getKey();
-                if (e.getCause() instanceof TransientException) {
-                    log.log(Level.INFO, "Redeploying " + app +
-                            " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
-                } else {
-                    log.log(Level.WARNING, "Redeploying " + app + " failed, will retry", e);
-                    failedDeployments.add(app);
-                }
-            }
-        }
+        Set<ApplicationId> failedDeployments =
+                deployments.entrySet().stream()
+                        .map(entry -> checkDeployment(entry.getKey(), entry.getValue()))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toSet());
+
         executor.shutdown();
         executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
         return failedDeployments;
+    }
+
+    // Returns an application id if deployment failed
+    private Optional<ApplicationId> checkDeployment(ApplicationId applicationId, Future<?> future) {
+        try {
+            future.get();
+            log.log(Level.INFO, () -> applicationId + " redeployed");
+        } catch (ExecutionException | InterruptedException e) {
+            if (e.getCause() instanceof TransientException) {
+                log.log(Level.INFO, "Redeploying " + applicationId +
+                                    " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
+            } else {
+                log.log(Level.WARNING, "Redeploying " + applicationId + " failed, will retry", e);
+                return Optional.of(applicationId);
+            }
+        }
+        return Optional.empty();
     }
 
 }
