@@ -273,11 +273,11 @@
             {
               "name": "system-test",
               "coolingDownUntil": "(ignore)",
-              "pending": "platform"
+              "pending": "application"
             },
             {
               "name": "staging-test",
-              "pending": "platform"
+              "pending": "application"
             },
             {
               "name": "production-us-west-1",
