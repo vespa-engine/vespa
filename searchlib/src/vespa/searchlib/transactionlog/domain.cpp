@@ -19,6 +19,7 @@ using vespalib::make_string_short::fmt;
 using vespalib::LockGuard;
 using vespalib::makeTask;
 using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 using vespalib::Monitor;
 using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
@@ -81,24 +82,12 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
         vespalib::File::sync(dir());
     }
     _lastSerial = end();
-    _self = _threadPool.NewThread(this);
-    assert(_self);
 }
 
 Domain &
 Domain::setConfig(const DomainConfig & cfg) {
     _config = cfg;
     return *this;
-}
-
-void
-Domain::Run(FastOS_ThreadInterface *thisThread, void *) {
-
-    while (!thisThread->GetBreakFlag()) {
-        vespalib::MonitorGuard guard(_currentChunkMonitor);
-        guard.wait(_config.getChunkAgeLimit());
-        commitIfStale(guard);
-    }
 }
 
 void Domain::addPart(int64_t partId, bool isLastPart) {
@@ -142,14 +131,9 @@ private:
 };
 
 Domain::~Domain() {
-    if (_self) {
-        _self->SetBreakFlag();
-        {
-            MonitorGuard guard(_currentChunkMonitor);
-            guard.broadcast();
-        }
-        _self->Join();
-    }
+    MonitorGuard guard(_currentChunkMonitor);
+    guard.broadcast();
+    commitChunk(grabCurrentChunk(guard), guard);
     _singleCommiter->shutdown().sync();
 }
 
@@ -389,9 +373,15 @@ Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
 }
 
 void
+Domain::commitIfStale() {
+    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    commitIfStale(guard);
+}
+
+void
 Domain::commitIfStale(const vespalib::MonitorGuard & guard) {
     assert(guard.monitors(_currentChunkMonitor));
-    if (_currentChunk->age() > _config.getChunkAgeLimit()) {
+    if ((_currentChunk->age() > _config.getChunkAgeLimit()) && ! _currentChunk->getPacket().empty()) {
         commitChunk(grabCurrentChunk(guard), guard);
     }
 }
@@ -399,7 +389,11 @@ Domain::commitIfStale(const vespalib::MonitorGuard & guard) {
 void
 Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard) {
     assert(chunkOrderGuard.monitors(_currentChunkMonitor));
-    _singleCommiter->execute(vespalib::makeLambdaTask([this, chunk = std::move(chunk)] () mutable { doCommit(std::move(chunk)); } ));
+    if ( ! chunk->getPacket().empty()) {
+        _singleCommiter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
+            doCommit(std::move(chunk));
+        }));
+    }
 }
 
 void

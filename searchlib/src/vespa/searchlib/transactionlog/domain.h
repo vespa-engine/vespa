@@ -63,7 +63,7 @@ struct DomainInfo {
 
 typedef std::map<vespalib::string, DomainInfo> DomainStats;
 
-class Domain final : public FastOS_Runnable
+class Domain
 {
 public:
     using SP = std::shared_ptr<Domain>;
@@ -71,7 +71,7 @@ public:
     Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
            Executor & sessionExecutor, const DomainConfig & cfg, const common::FileHeaderContext &fileHeaderContext);
 
-    ~Domain() override;
+    ~Domain();
 
     DomainInfo getDomainInfo() const;
     const vespalib::string & name() const { return _name; }
@@ -84,6 +84,7 @@ public:
     SerialNum end() const;
     SerialNum getSynced() const;
     void triggerSyncNow();
+    void commitIfStale();
     bool getMarkedDeleted() const { return _markedDeleted; }
     void markDeleted() { _markedDeleted = true; }
 
@@ -106,7 +107,6 @@ public:
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
-    void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
     void commitIfStale(const vespalib::MonitorGuard & guard);
     void commitIfFull(const vespalib::MonitorGuard & guard);
     class Chunk {

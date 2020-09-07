@@ -8,12 +8,10 @@
 #include <vespa/fnet/frt/invokable.h>
 #include <mutex>
 
-
 class FRT_Supervisor;
 class FNET_Transport;
 
 namespace search::common { class FileHeaderContext; }
-
 namespace search::transactionlog {
 
 class TransLogServerExplorer;
@@ -33,6 +31,7 @@ public:
                    const common::FileHeaderContext &fileHeaderContext);
     ~TransLogServer() override;
     DomainStats getDomainStats() const;
+    void commitIfStale();
     void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) override;
     TransLogServer & setDomainConfig(const DomainConfig & cfg);
 
@@ -88,11 +87,13 @@ private:
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
     DomainList                          _domains;
-    mutable std::mutex                  _lock;          // Protects _domains
+    mutable std::mutex                  _domainMutex;          // Protects _domains
+    std::condition_variable             _domainCondition;
     std::mutex                          _fileLock;      // Protects the creating and deleting domains including file system operations.
     document::Queue<FRT_RPCRequest *>   _reqQ;
     const common::FileHeaderContext    &_fileHeaderContext;
     using Guard = std::lock_guard<std::mutex>;
+    using MonitorGuard = std::unique_lock<std::mutex>;
 };
 
 }
