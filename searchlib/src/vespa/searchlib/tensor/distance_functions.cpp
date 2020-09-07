@@ -16,4 +16,7 @@ template class InnerProductDistance<double>;
 template class GeoDegreesDistance<float>;
 template class GeoDegreesDistance<double>;
 
+template class HammingDistance<float>;
+template class HammingDistance<double>;
+
 }

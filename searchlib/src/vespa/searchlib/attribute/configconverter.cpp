@@ -88,6 +88,9 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
         case CfgDm::INNERPRODUCT:
             dm = DistanceMetric::InnerProduct;
             break;
+        case CfgDm::HAMMING:
+            dm = DistanceMetric::Hamming;
+            break;
     }
     retval.set_distance_metric(dm);
     if (cfg.index.hnsw.enabled) {
