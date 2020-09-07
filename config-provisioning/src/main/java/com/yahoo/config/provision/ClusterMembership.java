@@ -20,7 +20,7 @@ public class ClusterMembership {
 
     protected ClusterMembership() {}
 
-    private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo) {
+    private ClusterMembership(String stringValue, Version vespaVersion, Optional<ContainerImage> dockerImageRepo) {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
@@ -115,7 +115,7 @@ public class ClusterMembership {
         return new ClusterMembership(stringValue, vespaVersion, Optional.empty());
     }
 
-    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo) {
+    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<ContainerImage> dockerImageRepo) {
         return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo);
     }
 

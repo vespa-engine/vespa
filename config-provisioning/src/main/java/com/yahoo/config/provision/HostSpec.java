@@ -31,7 +31,7 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<Version> version;
 
-    private final Optional<DockerImage> dockerImageRepo;
+    private final Optional<ContainerImage> dockerImageRepo;
 
     private final Optional<NetworkPorts> networkPorts;
 
@@ -50,7 +50,7 @@ public class HostSpec implements Comparable<HostSpec> {
                     ClusterMembership membership,
                     Optional<Version> version,
                     Optional<NetworkPorts> networkPorts,
-                    Optional<DockerImage> dockerImageRepo) {
+                    Optional<ContainerImage> dockerImageRepo) {
         this(hostname,
              List.of(),
              realResources,
@@ -70,7 +70,7 @@ public class HostSpec implements Comparable<HostSpec> {
                      Optional<ClusterMembership> membership,
                      Optional<Version> version,
                      Optional<NetworkPorts> networkPorts,
-                     Optional<DockerImage> dockerImageRepo) {
+                     Optional<ContainerImage> dockerImageRepo) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
         this.aliases = List.copyOf(aliases);
@@ -178,7 +178,7 @@ public class HostSpec implements Comparable<HostSpec> {
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<Version> version,
                     Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources,
-                    Optional<DockerImage> dockerImageRepo) {
+                    Optional<ContainerImage> dockerImageRepo) {
         this(hostname, aliases,
              flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
              flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
@@ -216,7 +216,7 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the requested resources leading to this host being provisioned, or empty if unspecified */
     public Optional<NodeResources> requestedResources() { return requestedResources.asOptional(); }
 
-    public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
+    public Optional<ContainerImage> dockerImageRepo() { return dockerImageRepo; }
 
     public HostSpec withPorts(Optional<NetworkPorts> ports) {
         return new HostSpec(hostname, aliases, realResources, advertisedResources, requestedResources, membership, version, ports, dockerImageRepo);

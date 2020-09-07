@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -63,7 +63,7 @@ public class MockNodeRepository extends NodeRepository {
               Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
               Zone.defaultZone(),
               new MockNameResolver().mockAnyLookup(),
-              DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+              ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               new InMemoryFlagSource(),
               true,
               false,
@@ -92,14 +92,14 @@ public class MockNodeRepository extends NodeRepository {
                                 new Flavor(new NodeResources(1, 4, 100, 1, fast, local)), Optional.empty(), NodeType.tenant);
         node4 = node4.with(node4.status()
                                 .withVespaVersion(new Version("6.41.0"))
-                                .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")));
+                                .withDockerImage(ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")));
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", ipConfig(5), Optional.of("dockerhost2.yahoo.com"),
                                 new Flavor(new NodeResources(1, 8, 100, 1, slow, remote)), Optional.empty(), NodeType.tenant);
         nodes.add(node5.with(node5.status()
                                   .withVespaVersion(new Version("1.2.3"))
-                                  .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3"))));
+                                  .withDockerImage(ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3"))));
 
 
         nodes.add(createNode("node6", "host6.yahoo.com", ipConfig(6), Optional.empty(),
@@ -114,7 +114,7 @@ public class MockNodeRepository extends NodeRepository {
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
                 .withVespaVersion(Version.fromString("5.104.142"))
-                .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:5.104.142"));
+                .withDockerImage(ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:5.104.142"));
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
 

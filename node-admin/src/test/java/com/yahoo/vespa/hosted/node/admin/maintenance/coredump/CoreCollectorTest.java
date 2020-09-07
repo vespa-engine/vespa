@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import org.junit.Test;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 public class CoreCollectorTest {
     private final String GDB_PATH = "/opt/rh/devtoolset-9/root/bin/gdb";
     private final String JDK_PATH = "/path/to/jdk/java";
-    private final DockerOperations docker = mock(DockerOperations.class);
+    private final ContainerOperations docker = mock(ContainerOperations.class);
     private final CoreCollector coreCollector = new CoreCollector(docker);
     private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
 

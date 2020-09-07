@@ -7,7 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -131,7 +131,7 @@ public class NodeRepository extends AbstractComponent {
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.dockerImage()),
+             ContainerImage.fromString(config.dockerImage()),
              flagSource,
              config.useCuratorClientCache(),
              provisionServiceProvider.getHostProvisioner().isPresent(),
@@ -148,7 +148,7 @@ public class NodeRepository extends AbstractComponent {
                           Clock clock,
                           Zone zone,
                           NameResolver nameResolver,
-                          DockerImage dockerImage,
+                          ContainerImage containerImage,
                           FlagSource flagSource,
                           boolean useCuratorClientCache,
                           boolean canProvisionHosts,
@@ -164,7 +164,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.dockerImages = new DockerImages(db, dockerImage);
+        this.dockerImages = new DockerImages(db, containerImage);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.canProvisionHosts = canProvisionHosts;
@@ -202,7 +202,7 @@ public class NodeRepository extends AbstractComponent {
     public CuratorDatabaseClient database() { return db; }
 
     /** Returns the Docker image to use for given node */
-    public DockerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node.type()); }
+    public ContainerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node.type()); }
 
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }

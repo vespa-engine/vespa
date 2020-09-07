@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
@@ -11,10 +11,9 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
- * API to simplify the com.github.dockerjava API for clients,
- * and to avoid OSGi exporting those classes.
+ * API that hides the access to a specific container engine like Docker or Podman.
  */
-public interface Docker {
+public interface ContainerEngine {
 
     interface CreateContainerCommand {
         CreateContainerCommand withHostName(String hostname);
@@ -23,7 +22,7 @@ public interface Docker {
         CreateContainerCommand withEnvironment(String name, String value);
 
         /**
-         * Mounts a directory on host inside the docker container.
+         * Mounts a directory on host inside the container.
          *
          * <p>Bind mount content will be <b>private</b> to this container (and host) only.
          *
@@ -38,7 +37,7 @@ public interface Docker {
         CreateContainerCommand withVolume(Path path, Path volumePath);
 
         /**
-         * Mounts a directory on host inside the docker container.
+         * Mounts a directory on host inside the container.
          *
          * <p>The bind mount content will be <b>shared</b> among multiple containers.
          *
@@ -59,7 +58,7 @@ public interface Docker {
         void create();
     }
 
-    CreateContainerCommand createContainerCommand(DockerImage dockerImage, ContainerName containerName);
+    CreateContainerCommand createContainerCommand(ContainerImage containerImage, ContainerName containerName);
 
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
 
@@ -77,14 +76,14 @@ public interface Docker {
      * Checks if the image is currently being pulled or is already pulled, if not, starts an async
      * pull of the image
      *
-     * @param image Docker image to pull
+     * @param image Container image to pull
      * @return true iff image being pulled, false otherwise
      */
-    boolean pullImageAsyncIfNeeded(DockerImage image);
+    boolean pullImageAsyncIfNeeded(ContainerImage image);
 
     boolean noManagedContainersRunning(String manager);
 
-    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
+    boolean deleteUnusedContainerImages(List<ContainerImage> excludes, Duration minImageAgeToDelete);
 
     /**
      * @param containerName The name of the container

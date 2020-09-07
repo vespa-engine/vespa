@@ -5,7 +5,7 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.google.common.base.Strings;
 import com.yahoo.collections.Pair;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -72,7 +72,7 @@ class DockerImageGarbageCollector {
      * @param minImageAgeToDelete Minimum duration after which an image can be removed if it has not been used
      * @return true iff at least 1 image was deleted
      */
-    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+    boolean deleteUnusedDockerImages(List<ContainerImage> excludes, Duration minImageAgeToDelete) {
         List<Image> images = docker.listAllImages();
         List<Container> containers = docker.listAllContainers();
 
@@ -100,7 +100,7 @@ class DockerImageGarbageCollector {
         Set<String> imagesToKeep = Stream
                 .concat(
                         getRecentlyUsedImageIds(images, containers, minImageAgeToDelete).stream(), // 1
-                        dockerImageToImageIds(excludes, images).stream()) // 2
+                        containerImageToImageIds(excludes, images).stream()) // 2
                 .flatMap(imageId -> ancestorsByImageId.getOrDefault(imageId, Collections.emptySet()).stream()) // 3
                 .collect(Collectors.toSet());
 
@@ -128,7 +128,7 @@ class DockerImageGarbageCollector {
                     // Deleting an image by image ID with multiple tags will fail -> delete by tags instead
                     referencesOf(image).forEach(imageReference -> {
                         logger.info("Deleting unused docker image " + imageReference);
-                        docker.deleteImage(DockerImage.fromString(imageReference));
+                        docker.deleteImage(ContainerImage.fromString(imageReference));
                     });
                     lastTimeUsedByImageId.remove(image.getId());
                 })
@@ -152,18 +152,18 @@ class DockerImageGarbageCollector {
     }
 
     /**
-     * Attemps to make dockerImages which may be image tags or image ids to image ids. This only works
+     * Attemps to make containerImages which may be image tags or image ids to image ids. This only works
      * if the given tag is actually present locally. This is fine, because if it isn't - we can't delete
      * it, so no harm done.
      */
-    private Set<String> dockerImageToImageIds(List<DockerImage> dockerImages, List<Image> images) {
+    private Set<String> containerImageToImageIds(List<ContainerImage> containerImages, List<Image> images) {
         Map<String, String> imageIdByImageTag = images.stream()
                 .flatMap(image -> referencesOf(image).stream()
                                                      .map(repoTag -> new Pair<>(repoTag, image.getId())))
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
 
-        return dockerImages.stream()
-                .map(DockerImage::asString)
+        return containerImages.stream()
+                .map(ContainerImage::asString)
                 .map(tag -> imageIdByImageTag.getOrDefault(tag, tag))
                 .collect(Collectors.toSet());
     }

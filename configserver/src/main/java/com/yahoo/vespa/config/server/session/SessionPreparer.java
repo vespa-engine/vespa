@@ -21,7 +21,7 @@ import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -157,7 +157,7 @@ public class SessionPreparer {
         final ApplicationId applicationId;
 
         /** The repository part of docker image to be used for this deployment */
-        final Optional<DockerImage> dockerImageRepository;
+        final Optional<ContainerImage> dockerImageRepository;
 
         /** The version of Vespa the application to be prepared specifies for its nodes */
         final Version vespaVersion;
@@ -333,7 +333,7 @@ public class SessionPreparer {
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
                                        FileReference distributedApplicationPackage,
-                                       Optional<DockerImage> dockerImageRepository,
+                                       Optional<ContainerImage> dockerImageRepository,
                                        Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,

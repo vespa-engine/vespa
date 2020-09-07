@@ -1,7 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -14,18 +14,18 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author mpolden
  */
-public class DockerImagesTest {
+public class ContainerImagesTest {
 
     @Test
     public void image_selection() {
         var flagSource = new InMemoryFlagSource();
         var tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
 
-        var proxyImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/proxy");
+        var proxyImage = ContainerImage.fromString("docker-registry.domain.tld:8080/dist/proxy");
         tester.nodeRepository().dockerImages().setDockerImage(NodeType.proxy, Optional.of(proxyImage));
 
         // Host uses tenant default image (for preload purposes)
-        var defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
+        var defaultImage = ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
         var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
         tester.deployZoneApp();
         for (var host : hosts) {

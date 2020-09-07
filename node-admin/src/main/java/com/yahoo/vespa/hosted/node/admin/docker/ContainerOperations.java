@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
-public interface DockerOperations {
+public interface ContainerOperations {
 
     void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources);
 
@@ -26,7 +26,7 @@ public interface DockerOperations {
 
     Optional<Container> getContainer(NodeAgentContext context);
 
-    boolean pullImageAsyncIfNeeded(DockerImage dockerImage);
+    boolean pullImageAsyncIfNeeded(ContainerImage containerImage);
 
     ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, String... command);
 
@@ -56,5 +56,5 @@ public interface DockerOperations {
     boolean noManagedContainersRunning();
 
     /** Deletes the local images that are currently not in use by any container and not recently used. */
-    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
+    boolean deleteUnusedContainerImages(List<ContainerImage> excludes, Duration minImageAgeToDelete);
 }

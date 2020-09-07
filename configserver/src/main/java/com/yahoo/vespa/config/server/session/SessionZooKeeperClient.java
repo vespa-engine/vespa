@@ -11,10 +11,9 @@ import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
-import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
-import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -199,13 +197,13 @@ public class SessionZooKeeperClient {
         return new Version(configCurator.getData(versionPath()));
     }
 
-    public Optional<DockerImage> readDockerImageRepository() {
+    public Optional<ContainerImage> readDockerImageRepository() {
         if ( ! configCurator.exists(dockerImageRepositoryPath())) return Optional.empty();
         String dockerImageRepository = configCurator.getData(dockerImageRepositoryPath());
-        return dockerImageRepository.isEmpty() ? Optional.empty() : Optional.of(DockerImage.fromString(dockerImageRepository));
+        return dockerImageRepository.isEmpty() ? Optional.empty() : Optional.of(ContainerImage.fromString(dockerImageRepository));
     }
 
-    public void writeDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
+    public void writeDockerImageRepository(Optional<ContainerImage> dockerImageRepository) {
         dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo.repository()));
     }
 

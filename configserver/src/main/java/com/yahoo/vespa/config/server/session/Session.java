@@ -9,7 +9,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
@@ -126,7 +126,7 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeVespaVersion(version);
     }
 
-    public void setDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
+    public void setDockerImageRepository(Optional<ContainerImage> dockerImageRepository) {
         sessionZooKeeperClient.writeDockerImageRepository(dockerImageRepository);
     }
 
@@ -151,7 +151,7 @@ public abstract class Session implements Comparable<Session>  {
 
     public FileReference getApplicationPackageReference() {return sessionZooKeeperClient.readApplicationPackageReference(); }
 
-    public Optional<DockerImage> getDockerImageRepository() { return sessionZooKeeperClient.readDockerImageRepository(); }
+    public Optional<ContainerImage> getDockerImageRepository() { return sessionZooKeeperClient.readDockerImageRepository(); }
 
     public Version getVespaVersion() { return sessionZooKeeperClient.readVespaVersion(); }
 

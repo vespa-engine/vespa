@@ -6,11 +6,10 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -50,9 +49,9 @@ public class ZKApplicationPackageTest {
                                                TEST_FLAVOR.get().resources(),
                                                TEST_FLAVOR.get().resources(),
                                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                                      Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
+                                                                      Optional.of(ContainerImage.fromString("docker.foo.com:4443/vespa/bar"))),
                                                Optional.of(Version.fromString("6.0.1")), Optional.empty(),
-                                               Optional.of(DockerImage.fromString("docker repo")))));
+                                               Optional.of(ContainerImage.fromString("docker repo")))));
 
     private ConfigCurator configCurator;
 

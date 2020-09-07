@@ -2,7 +2,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoles;
@@ -28,7 +28,7 @@ public class DeploymentData {
     private final Version platform;
     private final Set<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
-    private final Optional<DockerImage> dockerImageRepo;
+    private final Optional<ContainerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<ApplicationRoles> applicationRoles;
     private final Optional<Quota> quota;
@@ -36,7 +36,7 @@ public class DeploymentData {
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                          Optional<DockerImage> dockerImageRepo,
+                          Optional<ContainerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> quota) {
@@ -76,7 +76,7 @@ public class DeploymentData {
         return endpointCertificateMetadata;
     }
 
-    public Optional<DockerImage> dockerImageRepo() {
+    public Optional<ContainerImage> dockerImageRepo() {
         return dockerImageRepo;
     }
 

@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
@@ -23,13 +23,13 @@ import java.util.OptionalLong;
  *
  * @author freva
  */
-public class DockerMock implements Docker {
+public class DockerMock implements ContainerEngine {
     private final Map<ContainerName, Container> containersByContainerName = new HashMap<>();
     private static final Object monitor = new Object();
 
     @Override
-    public CreateContainerCommand createContainerCommand(DockerImage dockerImage, ContainerName containerName) {
-        return new StartContainerCommandMock(dockerImage, containerName);
+    public CreateContainerCommand createContainerCommand(ContainerImage containerImage, ContainerName containerName) {
+        return new StartContainerCommandMock(containerImage, containerName);
     }
 
     @Override
@@ -75,14 +75,14 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(DockerImage image) {
+    public boolean pullImageAsyncIfNeeded(ContainerImage image) {
         synchronized (monitor) {
             return false;
         }
     }
 
     @Override
-    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+    public boolean deleteUnusedContainerImages(List<ContainerImage> excludes, Duration minImageAgeToDelete) {
         return false;
     }
 
@@ -98,13 +98,13 @@ public class DockerMock implements Docker {
 
     public class StartContainerCommandMock implements CreateContainerCommand {
 
-        private final DockerImage dockerImage;
+        private final ContainerImage containerImage;
         private final ContainerName containerName;
         private String hostName;
         private ContainerResources containerResources;
 
-        public StartContainerCommandMock(DockerImage dockerImage, ContainerName containerName) {
-            this.dockerImage = dockerImage;
+        public StartContainerCommandMock(ContainerImage containerImage, ContainerName containerName) {
+            this.containerImage = containerImage;
             this.containerName = containerName;
         }
 
@@ -194,7 +194,7 @@ public class DockerMock implements Docker {
         public void create() {
             synchronized (monitor) {
                 containersByContainerName.put(
-                        containerName, new Container(hostName, dockerImage, containerResources, containerName, Container.State.RUNNING, 2));
+                        containerName, new Container(hostName, containerImage, containerResources, containerName, Container.State.RUNNING, 2));
             }
         }
     }

@@ -19,7 +19,7 @@ import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -80,7 +80,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     protected PreparedModelResult buildModelVersion(ModelFactory modelFactory,
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId,
-                                                    Optional<DockerImage> wantedDockerImageRepository,
+                                                    Optional<ContainerImage> wantedDockerImageRepository,
                                                     Version wantedNodeVespaVersion,
                                                     Optional<AllocatedHosts> allocatedHosts) {
         Version modelVersion = modelFactory.version();

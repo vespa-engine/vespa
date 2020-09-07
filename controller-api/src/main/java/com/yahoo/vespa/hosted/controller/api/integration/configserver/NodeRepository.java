@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -211,8 +211,8 @@ public interface NodeRepository {
         return s == null ? Version.emptyVersion : Version.fromString(s);
     }
 
-    private static DockerImage dockerImageFrom(String s) {
-        return s == null ? DockerImage.EMPTY : DockerImage.fromString(s);
+    private static ContainerImage dockerImageFrom(String s) {
+        return s == null ? ContainerImage.EMPTY : ContainerImage.fromString(s);
     }
 
 }

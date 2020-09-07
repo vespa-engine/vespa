@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -23,7 +23,7 @@ public class NodeTypeDockerImagesSerializer {
 
     private NodeTypeDockerImagesSerializer() {}
 
-    public static byte[] toJson(Map<NodeType, DockerImage> dockerImages) {
+    public static byte[] toJson(Map<NodeType, ContainerImage> dockerImages) {
         Slime slime = new Slime();
         Cursor object = slime.setObject();
         dockerImages.forEach((nodeType, dockerImage) ->
@@ -35,11 +35,11 @@ public class NodeTypeDockerImagesSerializer {
         }
     }
 
-    public static Map<NodeType, DockerImage> fromJson(byte[] data) {
-        Map<NodeType, DockerImage> dockerImages = new TreeMap<>(); // Use TreeMap to sort by node type
+    public static Map<NodeType, ContainerImage> fromJson(byte[] data) {
+        Map<NodeType, ContainerImage> dockerImages = new TreeMap<>(); // Use TreeMap to sort by node type
         Inspector inspector = SlimeUtils.jsonToSlime(data).get();
         inspector.traverse((ObjectTraverser) (key, value) ->
-                dockerImages.put(NodeSerializer.nodeTypeFromString(key), DockerImage.fromString(value.asString())));
+                dockerImages.put(NodeSerializer.nodeTypeFromString(key), ContainerImage.fromString(value.asString())));
         return dockerImages;
     }
 

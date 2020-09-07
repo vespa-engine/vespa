@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
@@ -257,7 +257,7 @@ public class FailedExpirerTest {
                                                      clock,
                                                      zone,
                                                      new MockNameResolver().mockAnyLookup(),
-                                                     DockerImage.fromString("docker-image"),
+                                                     ContainerImage.fromString("docker-image"),
                                                      new InMemoryFlagSource(),
                                                      true,
                                                      false,

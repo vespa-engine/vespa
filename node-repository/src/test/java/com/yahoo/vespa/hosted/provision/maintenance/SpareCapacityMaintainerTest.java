@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
@@ -245,7 +245,7 @@ public class SpareCapacityMaintainerTest {
                                                 new ManualClock(),
                                                 new Zone(Environment.prod, RegionName.from("us-east-3")),
                                                 new MockNameResolver().mockAnyLookup(),
-                                                DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 new InMemoryFlagSource(),
                                                 true,
                                                 false,

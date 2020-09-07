@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
@@ -41,11 +41,11 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class AclMaintainer {
     private static final Logger logger = Logger.getLogger(AclMaintainer.class.getName());
 
-    private final DockerOperations dockerOperations;
+    private final ContainerOperations containerOperations;
     private final IPAddresses ipAddresses;
 
-    public AclMaintainer(DockerOperations dockerOperations, IPAddresses ipAddresses) {
-        this.dockerOperations = dockerOperations;
+    public AclMaintainer(ContainerOperations containerOperations, IPAddresses ipAddresses) {
+        this.containerOperations = containerOperations;
         this.ipAddresses = ipAddresses;
     }
 
@@ -88,7 +88,7 @@ public class AclMaintainer {
     }
 
     private Supplier<List<String>> listTable(NodeAgentContext context, String table, IPVersion ipVersion) {
-        return () -> dockerOperations
+        return () -> containerOperations
                 .executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-S", "-t", table)
                 .mapEachLine(String::trim);
     }
@@ -99,12 +99,12 @@ public class AclMaintainer {
                 String rules = String.join("\n", list);
                 String fileContent = "*" + table + "\n" + rules + "\nCOMMIT\n";
                 fileHandler.writeUtf8Content(fileContent);
-                dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesRestore(), fileHandler.absolutePath());
+                containerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesRestore(), fileHandler.absolutePath());
             } catch (Exception e) {
                 if (flush) {
                     context.log(logger, Level.SEVERE, "Exception occurred while syncing iptable " + table + ", attempting rollback", e);
                     try {
-                        dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-F", "-t", table);
+                        containerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-F", "-t", table);
                     } catch (Exception ne) {
                         context.log(logger, Level.SEVERE, "Rollback of table " + table + " failed, giving up", ne);
                     }

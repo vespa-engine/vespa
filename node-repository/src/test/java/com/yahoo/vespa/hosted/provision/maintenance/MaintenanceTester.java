@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -40,7 +40,7 @@ public class MaintenanceTester {
                                                                     clock,
                                                                     zone,
                                                                     new MockNameResolver().mockAnyLookup(),
-                                                                    DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                                    ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                                     new InMemoryFlagSource(),
                                                                     true,
                                                                     false,

@@ -4,12 +4,12 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
@@ -51,11 +51,11 @@ public class DockerTester implements AutoCloseable {
 
     private final Thread loopThread;
 
-    final Docker docker = spy(new DockerMock());
+    final ContainerEngine containerEngine = spy(new DockerMock());
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    final InOrder inOrder = Mockito.inOrder(docker, nodeRepository, orchestrator, storageMaintainer);
+    final InOrder inOrder = Mockito.inOrder(containerEngine, nodeRepository, orchestrator, storageMaintainer);
     final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     final NodeAdminStateUpdater nodeAdminStateUpdater;
@@ -81,10 +81,10 @@ public class DockerTester implements AutoCloseable {
         Clock clock = Clock.systemUTC();
         Metrics metrics = new Metrics();
         FileSystem fileSystem = TestFileSystem.create();
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, terminal, ipAddresses, fileSystem);
+        ContainerOperations containerOperations = new ContainerOperationsImpl(containerEngine, terminal, ipAddresses, fileSystem);
 
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(
-                contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource,
+                contextSupplier, nodeRepository, orchestrator, containerOperations, storageMaintainer, flagSource,
                 Optional.empty(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1));
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->

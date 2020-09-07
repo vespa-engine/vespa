@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
@@ -101,7 +101,7 @@ public class NodePatcher {
             case "currentDockerImage" :
                 if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                     throw new IllegalArgumentException("Docker image can only be set for docker containers");
-                return node.with(node.status().withDockerImage(DockerImage.fromString(asString(value))));
+                return node.with(node.status().withDockerImage(ContainerImage.fromString(asString(value))));
             case "vespaVersion" :
             case "currentVespaVersion" :
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));

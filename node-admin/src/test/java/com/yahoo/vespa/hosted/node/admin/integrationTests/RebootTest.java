@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
@@ -23,14 +23,14 @@ import static org.mockito.ArgumentMatchers.eq;
 public class RebootTest {
 
     private final String hostname = "host1.test.yahoo.com";
-    private final DockerImage dockerImage = DockerImage.fromString("dockerImage");
+    private final ContainerImage containerImage = ContainerImage.fromString("containerImage");
 
     @Test
     public void test() {
         try (DockerTester tester = new DockerTester()) {
-            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
+            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(containerImage).build());
 
-            tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
+            tester.inOrder(tester.containerEngine).createContainerCommand(eq(containerImage), eq(new ContainerName("host1")));
 
             try {
                 tester.setWantedState(NodeAdminStateUpdater.State.SUSPENDED);
@@ -38,7 +38,7 @@ public class RebootTest {
 
             tester.inOrder(tester.orchestrator).suspend(
                     eq(HOST_HOSTNAME.value()), eq(List.of(hostname, HOST_HOSTNAME.value())));
-            tester.inOrder(tester.docker).executeInContainerAsUser(
+            tester.inOrder(tester.containerEngine).executeInContainerAsUser(
                     eq(new ContainerName("host1")), eq("root"), eq(OptionalLong.empty()), eq(NODE_PROGRAM), eq("stop"));
             assertTrue(tester.nodeAdmin.setFrozen(true));
         }

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -208,7 +208,7 @@ public class StorageMaintainer {
     private String getDockerImage(NodeAgentContext context, Optional<Container> container) {
         return container.map(c -> c.image.asString())
                 .orElse(context.node().currentDockerImage()
-                        .map(DockerImage::asString)
+                        .map(ContainerImage::asString)
                         .orElse("<none>")
                 );
     }

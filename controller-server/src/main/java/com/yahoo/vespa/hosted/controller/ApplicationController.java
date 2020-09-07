@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
@@ -513,13 +513,13 @@ public class ApplicationController {
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                                   Optional<ApplicationRoles> applicationRoles) {
         try {
-            Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
+            Optional<ContainerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
                             .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                             .value())
                     .filter(s -> !s.isBlank())
-                    .map(DockerImage::fromString);
+                    .map(ContainerImage::fromString);
 
             Optional<AthenzDomain> domain = controller.tenants().get(application.tenant())
                     .filter(tenant-> tenant instanceof AthenzTenant)

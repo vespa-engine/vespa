@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.model.Image;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author freva
  */
-public class DockerImageGarbageCollectionTest {
+public class ContainerImageGarbageCollectionTest {
 
     private final ImageGcTester gcTester = new ImageGcTester();
 
@@ -173,7 +173,7 @@ public class DockerImageGarbageCollectionTest {
         private final DockerImpl docker = mock(DockerImpl.class);
         private final ManualClock clock = new ManualClock();
         private final DockerImageGarbageCollector imageGC = new DockerImageGarbageCollector(docker, clock);
-        private final Map<DockerImage, Integer> numDeletes = new HashMap<>();
+        private final Map<ContainerImage, Integer> numDeletes = new HashMap<>();
         private boolean initialized = false;
 
         private ImageGcTester withExistingImages(ImageBuilder... images) {
@@ -211,11 +211,11 @@ public class DockerImageGarbageCollectionTest {
             clock.advance(Duration.ofMinutes(minutesAfter));
 
             imageGC.deleteUnusedDockerImages(
-                    except.stream().map(DockerImage::fromString).collect(Collectors.toList()),
+                    except.stream().map(ContainerImage::fromString).collect(Collectors.toList()),
                     Duration.ofHours(1).minusSeconds(1));
 
             Arrays.stream(imageIds)
-                    .map(DockerImage::fromString)
+                    .map(ContainerImage::fromString)
                     .forEach(image -> {
                         int newValue = numDeletes.getOrDefault(image, 0) + 1;
                         numDeletes.put(image, newValue);

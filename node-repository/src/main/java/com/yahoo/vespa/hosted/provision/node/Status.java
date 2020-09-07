@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -17,7 +17,7 @@ public class Status {
 
     private final Generation reboot;
     private final Optional<Version> vespaVersion;
-    private final Optional<DockerImage> dockerImage;
+    private final Optional<ContainerImage> dockerImage;
     private final int failCount;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
@@ -26,7 +26,7 @@ public class Status {
 
     public Status(Generation generation,
                   Optional<Version> vespaVersion,
-                  Optional<DockerImage> dockerImage,
+                  Optional<ContainerImage> dockerImage,
                   int failCount,
                   boolean wantToRetire,
                   boolean wantToDeprovision,
@@ -34,7 +34,7 @@ public class Status {
                   Optional<Instant> firmwareVerifiedAt) {
         this.reboot = Objects.requireNonNull(generation, "Generation must be non-null");
         this.vespaVersion = Objects.requireNonNull(vespaVersion, "Vespa version must be non-null").filter(v -> !Version.emptyVersion.equals(v));
-        this.dockerImage = Objects.requireNonNull(dockerImage, "Docker image must be non-null").filter(d -> !DockerImage.EMPTY.equals(d));
+        this.dockerImage = Objects.requireNonNull(dockerImage, "Docker image must be non-null").filter(d -> !ContainerImage.EMPTY.equals(d));
         this.failCount = failCount;
         if (wantToDeprovision && !wantToRetire) {
             throw new IllegalArgumentException("Node cannot be marked wantToDeprovision unless it's also marked wantToRetire");
@@ -58,10 +58,10 @@ public class Status {
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
     /** Returns a copy of this with the docker image changed */
-    public Status withDockerImage(DockerImage dockerImage) { return new Status(reboot, vespaVersion, Optional.of(dockerImage), failCount, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
+    public Status withDockerImage(ContainerImage containerImage) { return new Status(reboot, vespaVersion, Optional.of(containerImage), failCount, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
     /** Returns the docker image the node is running, if known */
-    public Optional<DockerImage> dockerImage() { return dockerImage; }
+    public Optional<ContainerImage> dockerImage() { return dockerImage; }
 
     public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, dockerImage, failCount + 1, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 

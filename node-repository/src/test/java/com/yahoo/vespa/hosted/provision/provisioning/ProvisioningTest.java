@@ -7,7 +7,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
@@ -177,8 +177,8 @@ public class ProvisioningTest {
 
         HostSpec host1 = state1.container0.iterator().next();
         Node node1 = tester.nodeRepository().getNode(host1.hostname()).get();
-        DockerImage dockerImage = DockerImage.fromString(dockerImageRepo).withTag(Version.fromString("1.2.3"));
-        tester.nodeRepository().write(node1.with(node1.status().withDockerImage(dockerImage)), () -> {});
+        ContainerImage containerImage = ContainerImage.fromString(dockerImageRepo).withTag(Version.fromString("1.2.3"));
+        tester.nodeRepository().write(node1.with(node1.status().withDockerImage(containerImage)), () -> {});
 
         // redeploy
         SystemState state2 = prepare(application1, tester, 1, 1, 1 ,1 , false, defaultResources, "1.2.3", Optional.of(dockerImageRepo));
@@ -186,7 +186,7 @@ public class ProvisioningTest {
 
         host1 = state2.container0.iterator().next();
         node1 = tester.nodeRepository().getNode(host1.hostname()).get();
-        assertEquals(dockerImage, node1.status().dockerImage().get());
+        assertEquals(containerImage, node1.status().dockerImage().get());
     }
 
     @Test

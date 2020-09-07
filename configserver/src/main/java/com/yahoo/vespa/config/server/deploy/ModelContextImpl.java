@@ -17,7 +17,7 @@ import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
@@ -48,7 +48,7 @@ public class ModelContextImpl implements ModelContext {
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
 
-    private final Optional<DockerImage> wantedDockerImageRepository;
+    private final Optional<ContainerImage> wantedDockerImageRepository;
 
     /** The version of Vespa we are building a model for */
     private final Version modelVespaVersion;
@@ -72,7 +72,7 @@ public class ModelContextImpl implements ModelContext {
                             Provisioned provisioned,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
-                            Optional<DockerImage> wantedDockerImageRepository,
+                            Optional<ContainerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
                             Version wantedNodeVespaVersion) {
         this.applicationPackage = applicationPackage;
@@ -126,7 +126,7 @@ public class ModelContextImpl implements ModelContext {
     public Optional<File> appDir() { return appDir; }
 
     @Override
-    public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
+    public Optional<ContainerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
 
     @Override
     public Version modelVespaVersion() { return modelVespaVersion; }

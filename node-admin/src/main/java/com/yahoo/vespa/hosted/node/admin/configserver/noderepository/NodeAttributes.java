@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 
 import java.time.Instant;
 import java.util.Map;
@@ -24,7 +24,7 @@ public class NodeAttributes {
 
     private Optional<Long> restartGeneration = Optional.empty();
     private Optional<Long> rebootGeneration = Optional.empty();
-    private Optional<DockerImage> dockerImage = Optional.empty();
+    private Optional<ContainerImage> dockerImage = Optional.empty();
     private Optional<Version> vespaVersion = Optional.empty();
     private Optional<Version> currentOsVersion = Optional.empty();
     private Optional<Instant> currentFirmwareCheck = Optional.empty();
@@ -47,8 +47,8 @@ public class NodeAttributes {
         return this;
     }
 
-    public NodeAttributes withDockerImage(DockerImage dockerImage) {
-        this.dockerImage = Optional.of(dockerImage);
+    public NodeAttributes withDockerImage(ContainerImage containerImage) {
+        this.dockerImage = Optional.of(containerImage);
         return this;
     }
 
@@ -90,7 +90,7 @@ public class NodeAttributes {
         return rebootGeneration;
     }
 
-    public Optional<DockerImage> getDockerImage() {
+    public Optional<ContainerImage> getDockerImage() {
         return dockerImage;
     }
 

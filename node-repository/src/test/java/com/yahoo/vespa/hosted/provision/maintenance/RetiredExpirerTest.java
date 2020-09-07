@@ -7,7 +7,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.ContainerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
@@ -70,7 +70,7 @@ public class RetiredExpirerTest {
                                                                      clock,
                                                                      zone,
                                                                      new MockNameResolver().mockAnyLookup(),
-                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                                     ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                                      new InMemoryFlagSource(),
                                                                      true,
                                                                      false,
