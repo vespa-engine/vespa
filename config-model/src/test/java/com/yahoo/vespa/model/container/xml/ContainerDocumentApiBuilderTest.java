@@ -12,7 +12,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -115,10 +115,9 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         Set<String> injectedComponentIds = feedApiHandler.getInjectedComponentIds();
         assertThat(injectedComponentIds, hasItem("threadpool@feedapi-handler"));
 
-        ContainerThreadpoolConfig config = root.getConfig(
-                ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
-        assertEquals(16, config.maxThreads());
-        assertEquals(8, config.minThreads());
+        ThreadpoolConfig config = root.getConfig(ThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
+        assertEquals(16, config.maxthreads());
+        assertEquals(8, config.corePoolSize());
     }
 
     private static class HostProvisionerWithCustomRealResource implements HostProvisioner {
