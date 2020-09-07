@@ -20,14 +20,14 @@ class Vespa(object):
         """
         Establish a connection with a Vespa application.
 
-        :param url: URL
-        :param port: Port
-        :param deployment_message: Message returned by Vespa engine after deployment.
-        :param cert: Path to certificate and key file
+        :param url: Vespa instance URL.
+        :param port: Vespa instance port.
+        :param deployment_message: Message returned by Vespa engine after deployment. Used internally by deploy methods.
+        :param cert: Path to certificate and key file.
 
-            >>> Vespa(url = "https://cord19.vespa.ai")
-            >>> Vespa(url = "http://localhost", port = 8080)
-            >>> Vespa(url = "https://api.vespa-external.aws.oath.cloud", port = 4443, cert = "/path/to/cert-and-key.pem")
+        >>> Vespa(url = "https://cord19.vespa.ai")
+        >>> Vespa(url = "http://localhost", port = 8080)
+        >>> Vespa(url = "https://api.vespa-external.aws.oath.cloud", port = 4443, cert = "/path/to/cert-and-key.pem")
 
         """
         self.url = url
