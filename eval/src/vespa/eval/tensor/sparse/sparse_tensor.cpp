@@ -29,7 +29,11 @@ using Cells = SparseTensor::Cells;
 void
 copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
 {
+    // copy the exact hashtable structure:
     cells = cells_in;
+    // copy the actual contents of the addresses,
+    // and update the pointers inside the hashtable
+    // keys so they point to our copy:
     for (auto &cell : cells) {
         SparseTensorAddressRef oldRef = cell.first;
         SparseTensorAddressRef newRef(oldRef, stash);
