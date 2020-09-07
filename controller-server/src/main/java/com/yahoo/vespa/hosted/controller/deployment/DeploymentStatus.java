@@ -140,8 +140,8 @@ public class DeploymentStatus {
         // Add test jobs for any outstanding change.
         for (InstanceName instance : application.deploymentSpec().instanceNames())
             changes.put(instance, outstandingChange(instance).onTopOf(application.require(instance).change()));
-        var testJobs = jobsToRun(changes).entrySet().stream()
-                                         .filter(entry -> ! entry.getKey().type().isProduction());
+        var testJobs = jobsToRun(changes, true).entrySet().stream()
+                                               .filter(entry -> ! entry.getKey().type().isProduction());
 
         return Stream.concat(jobs.entrySet().stream(), testJobs)
                      .collect(collectingAndThen(toMap(Map.Entry::getKey,
@@ -151,10 +151,9 @@ public class DeploymentStatus {
                                                 ImmutableMap::copyOf));
     }
 
-    /** The set of jobs that need to run for the given changes to be considered complete. */
-    public Map<JobId, List<Versions>> jobsToRun(Map<InstanceName, Change> changes) {
+    private Map<JobId, List<Versions>> jobsToRun(Map<InstanceName, Change> changes, boolean eagerTests) {
         Map<JobId, Versions> productionJobs = new LinkedHashMap<>();
-        changes.forEach((instance, change) -> productionJobs.putAll(productionJobs(instance, change)));
+        changes.forEach((instance, change) -> productionJobs.putAll(productionJobs(instance, change, eagerTests)));
         Map<JobId, List<Versions>> testJobs = testJobs(productionJobs);
         Map<JobId, List<Versions>> jobs = new LinkedHashMap<>(testJobs);
         productionJobs.forEach((job, versions) -> jobs.put(job, List.of(versions)));
@@ -174,9 +173,14 @@ public class DeploymentStatus {
 
             Versions versions = Versions.from(change, application, firstProductionJobWithDeployment.flatMap(this::deploymentFor), systemVersion);
             if (step.completedAt(change, firstProductionJobWithDeployment).isEmpty())
-            jobs.merge(job, List.of(versions), DeploymentStatus::union);
+                jobs.merge(job, List.of(versions), DeploymentStatus::union);
         });
         return ImmutableMap.copyOf(jobs);
+    }
+
+    /** The set of jobs that need to run for the given changes to be considered complete. */
+    public Map<JobId, List<Versions>> jobsToRun(Map<InstanceName, Change> changes) {
+        return jobsToRun(changes, false);
     }
 
     /** The step status for all steps in the deployment spec of this, which are jobs, in the same order as in the deployment spec. */
@@ -223,16 +227,29 @@ public class DeploymentStatus {
                                                                                         .successOn(versions).isEmpty());
     }
 
-    /** The production jobs that need to run to complete roll-out of the given change to production. */
-    public Map<JobId, Versions> productionJobs(InstanceName instance, Change change) {
+    private Map<JobId, Versions> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
         ImmutableMap.Builder<JobId, Versions> jobs = ImmutableMap.builder();
         jobSteps.forEach((job, step) -> {
+            // When computing eager test jobs for outstanding changes, assume current upgrade completes successfully.
+            Optional<Deployment> deployment = deploymentFor(job)
+                    .map(existing -> assumeUpgradesSucceed ? new Deployment(existing.zone(),
+                                                                            existing.applicationVersion(),
+                                                                            change.platform().orElse(existing.version()),
+                                                                            existing.at(),
+                                                                            existing.metrics(),
+                                                                            existing.activity())
+                                                           : existing);
             if (   job.application().instance().equals(instance)
                 && job.type().isProduction()
                 && step.completedAt(change).isEmpty())
-                jobs.put(job, Versions.from(change, application, deploymentFor(job), systemVersion));
+                jobs.put(job, Versions.from(change, application, deployment, systemVersion));
         });
         return jobs.build();
+    }
+
+    /** The production jobs that need to run to complete roll-out of the given change to production. */
+    public Map<JobId, Versions> productionJobs(InstanceName instance, Change change) {
+        return productionJobs(instance, change, false);
     }
 
     /** The test jobs that need to run prior to the given production deployment jobs. */

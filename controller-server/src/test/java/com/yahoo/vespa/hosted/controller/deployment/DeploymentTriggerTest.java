@@ -1172,4 +1172,37 @@ public class DeploymentTriggerTest {
 
     }
 
+    @Test
+    public void testEagerTests() {
+        var app = tester.newDeploymentContext().submit().deploy();
+
+        // Start upgrade, then receive new submission.
+        Version version1 = new Version("7.8.9");
+        ApplicationVersion build1 = app.lastSubmission().get();
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        app.runJob(stagingTest);
+        app.submit();
+        ApplicationVersion build2 = app.lastSubmission().get();
+        assertNotEquals(build1, build2);
+
+        // App now free to start system tests eagerly, for new submission. These should run assuming upgrade succeeds.
+        tester.outstandingChangeDeployer().run();
+        tester.triggerJobs();
+        app.assertRunning(stagingTest);
+        assertEquals(version1,
+                     app.instanceJobs().get(stagingTest).lastCompleted().get().versions().targetPlatform());
+        assertEquals(build1,
+                     app.instanceJobs().get(stagingTest).lastCompleted().get().versions().targetApplication());
+
+        assertEquals(version1,
+                     app.instanceJobs().get(stagingTest).lastTriggered().get().versions().sourcePlatform().get());
+        assertEquals(build1,
+                     app.instanceJobs().get(stagingTest).lastTriggered().get().versions().sourceApplication().get());
+        assertEquals(version1,
+                     app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetPlatform());
+        assertEquals(build2,
+                     app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetApplication());
+    }
+
 }
