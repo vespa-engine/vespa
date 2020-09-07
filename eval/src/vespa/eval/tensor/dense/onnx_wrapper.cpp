@@ -256,12 +256,15 @@ Onnx::WirePlanner::bind_input_type(const eval::ValueType &vespa_in, const Tensor
             if (dimensions[i].value != type.dimensions()[i].size) {
                 return false;
             }
-        } else if (dimensions[i].is_symbolic()) {
-            auto &bound_size = _symbolic_sizes[dimensions[i].name];
-            if (bound_size == 0) {
-                bound_size = type.dimensions()[i].size;
-            } else if (bound_size != type.dimensions()[i].size) {
-                return false;
+        } else {
+            _unknown_sizes.insert(type.dimensions()[i].size);
+            if (dimensions[i].is_symbolic()) {
+                auto &bound_size = _symbolic_sizes[dimensions[i].name];
+                if (bound_size == 0) {
+                    bound_size = type.dimensions()[i].size;
+                } else if (bound_size != type.dimensions()[i].size) {
+                    return false;
+                }
             }
         }
     }
@@ -282,6 +285,15 @@ Onnx::WirePlanner::make_output_type(const TensorInfo &onnx_out) const
             if (pos != _symbolic_sizes.end()) {
                 dim_size = pos->second;
             }
+        }
+        // if the output dimension is still unknown, but all unknown
+        // input dimensions have the same size, we use that size as a
+        // guess for the size of the unknown output dimension as
+        // well. (typical scenario would be batch dimension not tagged
+        // as having the same symbolic size across input and output
+        // values).
+        if ((dim_size == 0) && (_unknown_sizes.size() == 1)) {
+            dim_size = *_unknown_sizes.begin();
         }
         if ((dim_size == 0) || (dim_list.size() > 9)) {
             return ValueType::error_type();

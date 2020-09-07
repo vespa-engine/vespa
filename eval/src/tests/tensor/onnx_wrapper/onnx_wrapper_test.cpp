@@ -22,6 +22,7 @@ std::string source_dir = get_source_dir();
 std::string simple_model = source_dir + "/simple.onnx";
 std::string dynamic_model = source_dir + "/dynamic.onnx";
 std::string int_types_model = source_dir + "/int_types.onnx";
+std::string guess_batch_model = source_dir + "/guess_batch.onnx";
 
 void dump_info(const char *ctx, const std::vector<TensorInfo> &info) {
     fprintf(stderr, "%s:\n", ctx);
@@ -263,6 +264,47 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
     ctx.bind_param(2, new_bias);
     ctx.eval();
     EXPECT_EQ(static_cast<const DenseTensorView&>(output).cellsRef().get(0), 80.0);
+    //-------------------------------------------------------------------------
+}
+
+TEST(OnnxTest, we_guess_batch_dimension_size_when_inference_fails) {    
+    Onnx model(guess_batch_model, Onnx::Optimize::ENABLE);
+    Onnx::WirePlanner planner_3;
+    Onnx::WirePlanner planner_4;
+
+    ValueType in_3_type = ValueType::from_spec("tensor<float>(a[3])");
+    std::vector<float> in_3_values({1.0, 2.0, 3.0});
+    DenseTensorView in_3(in_3_type, TypedCells(in_3_values));
+    EXPECT_TRUE(planner_3.bind_input_type(in_3_type, model.inputs()[0]));
+    EXPECT_TRUE(planner_3.bind_input_type(in_3_type, model.inputs()[1]));
+
+    ValueType in_4_type = ValueType::from_spec("tensor<float>(a[4])");
+    std::vector<float> in_4_values({1.0, 2.0, 3.0, 4.0});
+    DenseTensorView in_4(in_4_type, TypedCells(in_4_values));
+    EXPECT_TRUE(planner_4.bind_input_type(in_4_type, model.inputs()[0]));
+    EXPECT_TRUE(planner_4.bind_input_type(in_4_type, model.inputs()[1]));
+
+    EXPECT_EQ(planner_3.make_output_type(model.outputs()[0]).to_spec(), "tensor<float>(d0[3])");
+    EXPECT_EQ(planner_4.make_output_type(model.outputs()[0]).to_spec(), "tensor<float>(d0[4])");
+
+    Onnx::WireInfo wire_info_3 = planner_3.get_wire_info(model);
+    Onnx::WireInfo wire_info_4 = planner_4.get_wire_info(model);
+    Onnx::EvalContext ctx_3(model, wire_info_3);
+    Onnx::EvalContext ctx_4(model, wire_info_4);
+    //-------------------------------------------------------------------------
+    ctx_3.bind_param(0, in_3);
+    ctx_3.bind_param(1, in_3);
+    ctx_3.eval();
+    ctx_4.bind_param(0, in_4);
+    ctx_4.bind_param(1, in_4);
+    ctx_4.eval();
+    //-------------------------------------------------------------------------
+    auto out_3 = TensorSpec::from_value(ctx_3.get_result(0));
+    auto out_4 = TensorSpec::from_value(ctx_4.get_result(0));
+    auto expect_3 = TensorSpec::from_expr("tensor<float>(d0[3]):[2,4,6]");
+    auto expect_4 = TensorSpec::from_expr("tensor<float>(d0[4]):[2,4,6,8]");
+    EXPECT_EQ(out_3, expect_3);
+    EXPECT_EQ(out_4, expect_4);
     //-------------------------------------------------------------------------
 }
 

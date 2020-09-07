@@ -4,6 +4,9 @@
 #include "value.h"
 #include "tensor.h"
 #include "tensor_engine.h"
+#include "simple_tensor_engine.h"
+#include "function.h"
+#include "interpreted_function.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <ostream>
@@ -105,6 +108,19 @@ TensorSpec::from_value(const eval::Value &value)
     }
     if (value.is_double()) {
         return TensorSpec("double").add({}, value.as_double());
+    }
+    return TensorSpec("error");
+}
+
+TensorSpec
+TensorSpec::from_expr(const vespalib::string &expr)
+{
+    NoParams no_params;
+    auto fun = Function::parse(expr);
+    if (!fun->has_error() && (fun->num_params() == 0)) {
+        InterpretedFunction ifun(SimpleTensorEngine::ref(), *fun, NodeTypes());
+        InterpretedFunction::Context ctx(ifun);
+        return from_value(ifun.eval(ctx, no_params));
     }
     return TensorSpec("error");
 }
