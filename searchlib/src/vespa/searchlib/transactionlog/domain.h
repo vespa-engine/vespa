@@ -1,70 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "domainpart.h"
-#include "session.h"
+#include "domainconfig.h"
+#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadexecutor.h>
-#include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/thread.h>
-#include <chrono>
+#include <atomic>
 
+namespace search::common { class FileHeaderContext; }
 namespace search::transactionlog {
 
-class DomainConfig {
-public:
-    using duration = vespalib::duration;
-    DomainConfig();
-    DomainConfig & setEncoding(Encoding v)          { _encoding = v; return *this; }
-    DomainConfig & setPartSizeLimit(size_t v)       { _partSizeLimit = v; return *this; }
-    DomainConfig & setChunkSizeLimit(size_t v)      { _chunkSizeLimit = v; return *this; }
-    DomainConfig & setChunkAgeLimit(vespalib::duration v) { _chunkAgeLimit = v; return *this; }
-    DomainConfig & setCompressionLevel(uint8_t v)   { _compressionLevel = v; return *this; }
-    Encoding          getEncoding() const { return _encoding; }
-    size_t       getPartSizeLimit() const { return _partSizeLimit; }
-    size_t      getChunkSizeLimit() const { return _chunkSizeLimit; }
-    duration     getChunkAgeLimit() const { return _chunkAgeLimit; }
-    uint8_t   getCompressionlevel() const { return _compressionLevel; }
-private:
-    Encoding     _encoding;
-    uint8_t      _compressionLevel;
-    size_t       _partSizeLimit;
-    size_t       _chunkSizeLimit;
-    duration     _chunkAgeLimit;
-};
-
-struct PartInfo {
-    SerialNumRange range;
-    size_t numEntries;
-    size_t byteSize;
-    vespalib::string file;
-    PartInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, vespalib::stringref file_in)
-        : range(range_in),
-          numEntries(numEntries_in),
-          byteSize(byteSize_in),
-          file(file_in)
-    {}
-};
-
-struct DomainInfo {
-    using DurationSeconds = std::chrono::duration<double>;
-    SerialNumRange range;
-    size_t numEntries;
-    size_t byteSize;
-    DurationSeconds maxSessionRunTime;
-    std::vector<PartInfo> parts;
-    DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, DurationSeconds maxSessionRunTime_in)
-        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in), maxSessionRunTime(maxSessionRunTime_in), parts() {}
-    DomainInfo()
-        : range(), numEntries(0), byteSize(0), maxSessionRunTime(), parts() {}
-};
-
-typedef std::map<vespalib::string, DomainInfo> DomainStats;
+class DomainPart;
+class Session;
 
 class Domain
 {
 public:
     using SP = std::shared_ptr<Domain>;
     using Executor = vespalib::SyncableThreadExecutor;
+    using DomainPartSP = std::shared_ptr<DomainPart>;
     Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
            Executor & sessionExecutor, const DomainConfig & cfg, const common::FileHeaderContext &fileHeaderContext);
 
@@ -75,12 +28,13 @@ public:
     bool erase(SerialNum to);
 
     void commit(const Packet & packet, Writer::DoneCallback onDone);
-    int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Session::Destination> dest);
+    int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest);
 
     SerialNum begin() const;
     SerialNum end() const;
     SerialNum getSynced() const;
     void triggerSyncNow();
+    void commitIfStale();
     bool getMarkedDeleted() const { return _markedDeleted; }
     void markDeleted() { _markedDeleted = true; }
 
@@ -91,7 +45,7 @@ public:
     int closeSession(int sessionId);
 
     SerialNum findOldestActiveVisit() const;
-    DomainPart::SP findPart(SerialNum s);
+    DomainPartSP findPart(SerialNum s);
 
     static vespalib::string
     getDir(const vespalib::string & base, const vespalib::string & domain) {
@@ -103,6 +57,25 @@ public:
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
+    void commitIfStale(const vespalib::MonitorGuard & guard);
+    void commitIfFull(const vespalib::MonitorGuard & guard);
+    class Chunk {
+    public:
+        Chunk();
+        ~Chunk();
+        void add(const Packet & packet, Writer::DoneCallback onDone);
+        size_t sizeBytes() const { return _data.sizeBytes(); }
+        const Packet & getPacket() const { return _data; }
+        vespalib::duration age() const;
+    private:
+        Packet                             _data;
+        std::vector<Writer::DoneCallback>  _callBacks;
+        vespalib::steady_time              _firstArrivalTime;
+    };
+
+    std::unique_ptr<Chunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
+    void commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
+    void doCommit(std::unique_ptr<Chunk> chunk);
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;
     size_t byteSize(const vespalib::LockGuard & guard) const;
@@ -115,11 +88,12 @@ private:
 
     SerialNumList scanDir();
 
-    using SessionList = std::map<int, Session::SP>;
-    using DomainPartList = std::map<int64_t, DomainPart::SP>;
+    using SessionList = std::map<int, std::shared_ptr<Session>>;
+    using DomainPartList = std::map<int64_t, DomainPartSP>;
     using DurationSeconds = std::chrono::duration<double>;
 
     DomainConfig           _config;
+    std::unique_ptr<Chunk> _currentChunk;
     SerialNum              _lastSerial;
     std::unique_ptr<Executor> _singleCommiter;
     Executor             & _commitExecutor;
