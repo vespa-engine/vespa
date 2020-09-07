@@ -15,10 +15,12 @@ namespace search::common { class FileHeaderContext; }
 namespace search::transactionlog {
 
 class DomainPart {
+private:
+    DomainPart(const DomainPart &);
+    DomainPart& operator=(const DomainPart &);
+
 public:
-    using SP = std::shared_ptr<DomainPart>;
-    DomainPart(const DomainPart &) = delete;
-    DomainPart& operator=(const DomainPart &) = delete;
+    typedef std::shared_ptr<DomainPart> SP;
     DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s, Encoding defaultEncoding,
                uint8_t compressionLevel, const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
 

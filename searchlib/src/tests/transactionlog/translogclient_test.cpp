@@ -256,7 +256,7 @@ fillDomainTest(TransLogClient::Session * s1, const vespalib::string & name)
     ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(b.getHandle().data(), b.getHandle().size())));
     EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())),
                      std::runtime_error,
-                     "commit failed with code -2. server says: Exception during commit on " + name + " : Incoming serial number(1) must be bigger than the last one (3).");
+                     "commit failed with code -2. server says: Exception during commit on " + name + " : Incomming serial number(1) must be bigger than the last one (3).");
     EXPECT_EQUAL(a.size(), 1u);
     EXPECT_EQUAL(a.range().from(), 1u);
     EXPECT_EQUAL(a.range().to(), 1u);
