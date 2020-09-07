@@ -108,7 +108,8 @@ public:
     DataStore(const DataStore &rhs) = delete;
     DataStore &operator=(const DataStore &rhs) = delete;
     DataStore();
-    DataStore(BufferTypeUP type);
+    explicit DataStore(uint32_t min_arrays);
+    explicit DataStore(BufferTypeUP type);
     ~DataStore();
 
     EntryRef addEntry(const EntryType &e);

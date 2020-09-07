@@ -123,6 +123,7 @@ private:
 
     void updateMetrics(bool updateDocCount);
     void updateMetrics(const MetricLockGuard &) override { updateMetrics(true); }
+    void update_bucket_db_memory_usage_metrics();
     void updateMinUsedBits();
 
     bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;

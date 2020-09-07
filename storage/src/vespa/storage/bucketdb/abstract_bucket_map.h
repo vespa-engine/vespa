@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/time.h>
 #include <cassert>
 #include <functional>
@@ -192,6 +193,7 @@ public:
 
     [[nodiscard]] virtual size_type size() const noexcept = 0;
     [[nodiscard]] virtual size_type getMemoryUsage() const noexcept = 0;
+    [[nodiscard]] virtual vespalib::MemoryUsage detailed_memory_usage() const noexcept = 0;
     [[nodiscard]] virtual bool empty() const noexcept = 0;
 
     virtual void showLockClients(vespalib::asciistream& out) const = 0;

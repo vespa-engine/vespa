@@ -59,7 +59,7 @@ struct BTreeLockableMap<T>::ValueTraits {
 
 template <typename T>
 BTreeLockableMap<T>::BTreeLockableMap()
-    : _impl(std::make_unique<GenericBTreeBucketDatabase<ValueTraits>>())
+    : _impl(std::make_unique<GenericBTreeBucketDatabase<ValueTraits>>(1024/*data store array count*/))
 {}
 
 template <typename T>
@@ -147,6 +147,12 @@ size_t BTreeLockableMap<T>::getMemoryUsage() const noexcept {
     const auto impl_usage = _impl->memory_usage();
     return (impl_usage.allocatedBytes() + _lockedKeys.getMemoryUsage() +
             sizeof(std::mutex) + sizeof(std::condition_variable));
+}
+
+template <typename T>
+vespalib::MemoryUsage BTreeLockableMap<T>::detailed_memory_usage() const noexcept {
+    std::lock_guard guard(_lock);
+    return _impl->memory_usage();
 }
 
 template <typename T>

@@ -138,6 +138,12 @@ DataStore<EntryType, RefT>::DataStore()
 }
 
 template <typename EntryType, typename RefT>
+DataStore<EntryType, RefT>::DataStore(uint32_t min_arrays)
+    : DataStore(std::make_unique<BufferType<EntryType>>(1, min_arrays, RefType::offsetSize()))
+{
+}
+
+template <typename EntryType, typename RefT>
 DataStore<EntryType, RefT>::DataStore(BufferTypeUP type)
     : ParentType(),
       _type(std::move(type))
