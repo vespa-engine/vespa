@@ -91,6 +91,7 @@ vespalib::MemoryUsage LockableMap<Map>::detailed_memory_usage() const noexcept {
     size_t used = getMemoryUsage();
     vespalib::MemoryUsage mem_usage;
     mem_usage.incAllocatedBytes(used);
+    mem_usage.incUsedBytes(used);
     return mem_usage;
 }
 
