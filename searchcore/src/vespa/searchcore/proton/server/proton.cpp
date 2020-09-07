@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
+#include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/document/base/exceptions.h>

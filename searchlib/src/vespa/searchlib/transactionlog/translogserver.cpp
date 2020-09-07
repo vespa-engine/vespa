@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogserver.h"
+#include "domain.h"
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
@@ -42,7 +42,6 @@ public:
     void PerformTask() override;
 };
 
-
 SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
                          const TransLogServer::Session::SP &session, SerialNum syncTo)
     : FNET_Task(supervisor->GetScheduler()),
@@ -53,9 +52,7 @@ SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const 
 {
 }
 
-
 SyncHandler::~SyncHandler() = default;
-
 
 void
 SyncHandler::PerformTask()
@@ -75,7 +72,6 @@ SyncHandler::PerformTask()
     }
 }
 
-
 class StaleCommitTask final : public FNET_Task {
 public:
     StaleCommitTask(FNET_Scheduler * sceduler, TransLogServer & server, double seconds2Wait)
@@ -89,8 +85,6 @@ public:
         if (_server.running()) {
             _server.commitIfStale();
             Schedule(_seconds2Wait);
-        } else {
-            delete this;
         }
     }
 private:
@@ -168,12 +162,13 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
     }
     start(*_threadPool);
     double chunkAgeLimit = vespalib::to_s(_domainConfig.getChunkAgeLimit());
-    auto staleCommitTask = new StaleCommitTask(_supervisor->GetScheduler(), *this, chunkAgeLimit);
-    staleCommitTask->ScheduleNow();
+    _staleCommitTask = std::make_unique<StaleCommitTask>(_supervisor->GetScheduler(), *this, chunkAgeLimit);
+    _staleCommitTask->ScheduleNow();
 }
 
 TransLogServer::~TransLogServer()
 {
+    _staleCommitTask->Kill();
     stop();
     join();
     _commitExecutor.shutdown();
@@ -397,7 +392,7 @@ writeDomainDir(std::lock_guard<std::mutex> &guard,
     vespalib::File::sync(dir);
 }
 
-class RPCDestination : public Session::Destination {
+class RPCDestination : public Destination {
 public:
     RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
         : _supervisor(supervisor), _connection(connection), _ok(true)

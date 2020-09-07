@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "domain.h"
+#include "domainconfig.h"
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/util/queue.h>
@@ -10,19 +10,20 @@
 
 class FRT_Supervisor;
 class FNET_Transport;
+class FNET_Task;
 
 namespace search::common { class FileHeaderContext; }
 namespace search::transactionlog {
 
 class TransLogServerExplorer;
+class Domain;
 
 class TransLogServer : public document::Runnable, private FRT_Invokable, public Writer
 {
 public:
     friend class TransLogServerExplorer;
-    typedef std::unique_ptr<TransLogServer> UP;
-    typedef std::shared_ptr<TransLogServer> SP;
-
+    using SP = std::shared_ptr<TransLogServer>;
+    using DomainSP = std::shared_ptr<Domain>;
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads);
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
@@ -70,13 +71,13 @@ private:
     void downSession(FRT_RPCRequest *req);
 
     std::vector<vespalib::string> getDomainNames();
-    Domain::SP findDomain(vespalib::stringref name);
+    DomainSP findDomain(vespalib::stringref name);
     vespalib::string dir()        const { return _baseDir + "/" + _name; }
     vespalib::string domainList() const { return dir() + "/" + _name + ".domains"; }
 
     static const Session::SP & getSession(FRT_RPCRequest *req);
 
-    using DomainList = std::map<vespalib::string, Domain::SP >;
+    using DomainList = std::map<vespalib::string, DomainSP >;
 
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
@@ -86,6 +87,7 @@ private:
     std::unique_ptr<FastOS_ThreadPool>  _threadPool;
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
+    std::unique_ptr<FNET_Task>          _staleCommitTask;
     DomainList                          _domains;
     mutable std::mutex                  _domainMutex;          // Protects _domains
     std::condition_variable             _domainCondition;
