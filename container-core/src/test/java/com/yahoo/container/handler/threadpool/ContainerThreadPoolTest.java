@@ -3,7 +3,6 @@ package com.yahoo.container.handler.threadpool;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.concurrent.Receiver;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
 import org.junit.Ignore;
@@ -24,7 +23,7 @@ import static org.junit.Assert.fail;
 public class ContainerThreadPoolTest {
     @Test
     public final void testThreadPool() throws InterruptedException {
-        ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(1));
+        ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1));
         ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class));
         Executor exec = threadPool.executor();
         Tuple2<Receiver.MessageState, Boolean> reply;
@@ -56,7 +55,7 @@ public class ContainerThreadPoolTest {
     }
 
     private ThreadPoolExecutor createPool(int maxThreads, int queueSize) {
-        ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(maxThreads).queueSize(queueSize));
+        ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(maxThreads).queueSize(queueSize));
         ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class));
         ExecutorServiceWrapper wrapper = (ExecutorServiceWrapper) threadPool.executor();
         WorkerCompletionTimingThreadPoolExecutor executor = (WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
@@ -100,8 +99,10 @@ public class ContainerThreadPoolTest {
     @Test
     @Ignore // Ignored because it depends on the system time and so is unstable on factory
     public void testThreadPoolTerminationOnBreakdown() throws InterruptedException {
-        ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(2)
-                .maxThreadExecutionTimeSeconds(1));
+        ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(
+                new ContainerThreadpoolConfig.Builder()
+                        .maxThreads(2)
+                        .maxThreadExecutionTimeSeconds(1));
         MockProcessTerminator terminator = new MockProcessTerminator();
         ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class), terminator);
 
