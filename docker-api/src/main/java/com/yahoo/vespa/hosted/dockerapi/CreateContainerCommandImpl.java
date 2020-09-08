@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.dockerapi.DockerImpl.LABEL_NAME_MANAGEDBY;
+import static com.yahoo.vespa.hosted.dockerapi.DockerEngine.LABEL_NAME_MANAGEDBY;
 
 class CreateContainerCommandImpl implements ContainerEngine.CreateContainerCommand {
 

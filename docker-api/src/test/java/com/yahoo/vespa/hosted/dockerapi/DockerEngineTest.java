@@ -32,11 +32,11 @@ import static org.mockito.Mockito.when;
 /**
  * @author Tony Vaagenes
  */
-public class DockerImplTest {
+public class DockerEngineTest {
 
     private final DockerClient dockerClient = mock(DockerClient.class);
     private final Metrics metrics = new Metrics();
-    private final DockerImpl docker = new DockerImpl(dockerClient, metrics);
+    private final DockerEngine docker = new DockerEngine(dockerClient, metrics);
 
     @Test
     public void testExecuteCompletes() {

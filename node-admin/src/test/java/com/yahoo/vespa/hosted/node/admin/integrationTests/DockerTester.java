@@ -51,7 +51,7 @@ public class DockerTester implements AutoCloseable {
 
     private final Thread loopThread;
 
-    final ContainerEngine containerEngine = spy(new DockerMock());
+    final ContainerEngine containerEngine = spy(new ContainerEngineMock());
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);

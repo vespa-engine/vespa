@@ -170,7 +170,7 @@ public class DockerImageGarbageCollectionTest {
     }
 
     private class ImageGcTester {
-        private final DockerImpl docker = mock(DockerImpl.class);
+        private final DockerEngine docker = mock(DockerEngine.class);
         private final ManualClock clock = new ManualClock();
         private final DockerImageGarbageCollector imageGC = new DockerImageGarbageCollector(docker, clock);
         private final Map<DockerImage, Integer> numDeletes = new HashMap<>();

@@ -43,8 +43,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-public class DockerImpl implements ContainerEngine {
-    private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
+public class DockerEngine implements ContainerEngine {
+    private static final Logger logger = Logger.getLogger(DockerEngine.class.getName());
 
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
@@ -58,11 +58,11 @@ public class DockerImpl implements ContainerEngine {
     private final Counter numberOfDockerApiFails;
 
     @Inject
-    public DockerImpl(Metrics metrics) {
+    public DockerEngine(Metrics metrics) {
         this(createDockerClient(), metrics);
     }
 
-    DockerImpl(DockerClient dockerClient, Metrics metrics) {
+    DockerEngine(DockerClient dockerClient, Metrics metrics) {
         this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
 

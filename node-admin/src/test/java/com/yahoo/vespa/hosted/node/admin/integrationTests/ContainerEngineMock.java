@@ -23,7 +23,7 @@ import java.util.OptionalLong;
  *
  * @author freva
  */
-public class DockerMock implements ContainerEngine {
+public class ContainerEngineMock implements ContainerEngine {
     private final Map<ContainerName, Container> containersByContainerName = new HashMap<>();
     private static final Object monitor = new Object();
 

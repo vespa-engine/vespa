@@ -53,14 +53,14 @@ class DockerImageGarbageCollector {
     private static final Logger logger = Logger.getLogger(DockerImageGarbageCollector.class.getName());
 
     private final Map<String, Instant> lastTimeUsedByImageId = new ConcurrentHashMap<>();
-    private final DockerImpl docker;
+    private final DockerEngine docker;
     private final Clock clock;
 
-    DockerImageGarbageCollector(DockerImpl docker) {
+    DockerImageGarbageCollector(DockerEngine docker) {
         this(docker, Clock.systemUTC());
     }
 
-    DockerImageGarbageCollector(DockerImpl docker, Clock clock) {
+    DockerImageGarbageCollector(DockerEngine docker, Clock clock) {
         this.docker = docker;
         this.clock = clock;
     }
