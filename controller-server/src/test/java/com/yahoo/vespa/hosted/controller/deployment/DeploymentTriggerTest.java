@@ -1187,7 +1187,6 @@ public class DeploymentTriggerTest {
         assertNotEquals(build1, build2);
 
         // App now free to start system tests eagerly, for new submission. These should run assuming upgrade succeeds.
-        tester.outstandingChangeDeployer().run();
         tester.triggerJobs();
         app.assertRunning(stagingTest);
         assertEquals(version1,
@@ -1203,6 +1202,18 @@ public class DeploymentTriggerTest {
                      app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetPlatform());
         assertEquals(build2,
                      app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetApplication());
+
+        // App completes upgrade, and outstanding change is triggered. This should let relevant, running jobs finish.
+        app.runJob(systemTest)
+           .runJob(productionUsCentral1)
+           .runJob(productionUsEast3)
+           .runJob(productionUsWest1);
+        tester.outstandingChangeDeployer().run();
+
+        assertEquals(RunStatus.running, tester.jobs().last(app.instanceId(), stagingTest).get().status());
+        app.runJob(stagingTest);
+        tester.triggerJobs();
+        app.assertNotRunning(stagingTest);
     }
 
 }

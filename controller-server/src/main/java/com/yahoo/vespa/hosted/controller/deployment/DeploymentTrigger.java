@@ -102,9 +102,14 @@ public class DeploymentTrigger {
                                                        instance = instance.withChange(instance.change().with(outstanding.application().get()));
                                                        return instance.withChange(remainingChange(instance, status));
                                                    });
-                    for (Run run : jobs.active(application.get().id().instance(instanceName)))
-                        if ( ! run.id().type().environment().isManuallyDeployed())
+
+                    // Abort irrelevant, running jobs to get new application out faster.
+                    Map<JobId, List<Versions>> newJobsToRun = jobs.deploymentStatus(application.get()).jobsToRun();
+                    for (Run run : jobs.active(application.get().id().instance(instanceName))) {
+                        if (   ! run.id().type().environment().isManuallyDeployed()
+                            && ! newJobsToRun.getOrDefault(run.id().job(), List.of()).contains(run.versions()))
                             jobs.abort(run.id());
+                    }
                 }
             }
             applications().store(application);
