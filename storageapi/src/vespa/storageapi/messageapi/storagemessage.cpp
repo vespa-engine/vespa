@@ -105,7 +105,7 @@ const MessageType MessageType::SETBUCKETSTATE_REPLY("SetBucketStateReply", SETBU
 const MessageType&
 MessageType::MessageType::get(Id id)
 {
-    std::map<Id, MessageType*>::const_iterator it = _codes.find(id);
+    auto it = _codes.find(id);
     if (it == _codes.end()) {
         std::ostringstream ost;
         ost << "No message type with id " << id << ".";
@@ -115,13 +115,13 @@ MessageType::MessageType::get(Id id)
 }
 MessageType::MessageType(vespalib::stringref name, Id id,
                          const MessageType* replyOf)
-    : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
+    : _name(name), _id(id), _reply(nullptr), _replyOf(replyOf)
 {
     _codes[id] = this;
-    if (_replyOf != 0) {
-        assert(_replyOf->_reply == 0);
+    if (_replyOf) {
+        assert(_replyOf->_reply == nullptr);
         // Ugly cast to let initialization work
-        MessageType& type = const_cast<MessageType&>(*_replyOf);
+        auto& type = const_cast<MessageType&>(*_replyOf);
         type._reply = this;
     }
 }
@@ -144,7 +144,7 @@ StorageMessageAddress::StorageMessageAddress(const mbus::Route& route)
       _retryEnabled(false),
       _protocol(DOCUMENT),
       _cluster(""),
-      _type(0),
+      _type(nullptr),
       _index(0xFFFF)
 { }
 
@@ -179,7 +179,7 @@ StorageMessageAddress::~StorageMessageAddress() = default;
 uint16_t
 StorageMessageAddress::getIndex() const
 {
-    if (_type == 0) {
+    if (!_type) {
         throw vespalib::IllegalStateException("Cannot retrieve node index out of external address", VESPA_STRLOC);
     }
     return _index;
@@ -188,7 +188,7 @@ StorageMessageAddress::getIndex() const
 const lib::NodeType&
 StorageMessageAddress::getNodeType() const
 {
-    if (_type == 0) {
+    if (!_type) {
         throw vespalib::IllegalStateException("Cannot retrieve node type out of external address", VESPA_STRLOC);
     }
     return *_type;
@@ -197,7 +197,7 @@ StorageMessageAddress::getNodeType() const
 const vespalib::string&
 StorageMessageAddress::getCluster() const
 {
-    if (_type == 0) {
+    if (!_type) {
         throw vespalib::IllegalStateException("Cannot retrieve cluster out of external address", VESPA_STRLOC);
     }
     return _cluster;
@@ -209,7 +209,7 @@ StorageMessageAddress::operator==(const StorageMessageAddress& other) const
     if (_protocol != other._protocol) return false;
     if (_retryEnabled != other._retryEnabled) return false;
     if (_type != other._type) return false;
-    if (_type != 0) {
+    if (_type) {
         if (_cluster != other._cluster) return false;
         if (_index != other._index) return false;
         if (_type != other._type) return false;
@@ -237,7 +237,7 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
     if (_retryEnabled) {
         out << ", retry enabled";
     }
-    if (_type == 0) {
+    if (!_type) {
         out << ", " << _route.toString() << ")";
     } else {
         out << ", cluster " << _cluster << ", nodetype " << *_type
