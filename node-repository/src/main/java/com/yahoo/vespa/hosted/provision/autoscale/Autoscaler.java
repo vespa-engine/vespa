@@ -105,7 +105,8 @@ public class Autoscaler {
                                                           resource,
                                                           clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
 
-        // Require a total number of measurements scaling with the number of nodes but don't require them from all nodes
+        // Require a total number of measurements scaling with the number of nodes,
+        // but don't require that we have at least that many from every node
         if (window.measurementCount()/clusterNodes.size() < minimumMeasurementsPerNode) return Optional.empty();
         if (window.hostnames() != clusterNodes.size()) return Optional.empty();
 
