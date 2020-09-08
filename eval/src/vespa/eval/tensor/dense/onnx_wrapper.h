@@ -84,9 +84,9 @@ public:
     private:
         std::map<vespalib::string,eval::ValueType> _input_types;
         std::map<vespalib::string,size_t> _symbolic_sizes;
-        std::set<size_t> _unknown_sizes;
+        std::set<size_t> _bound_unknown_sizes;
     public:
-        WirePlanner() : _input_types(), _symbolic_sizes(), _unknown_sizes() {}
+        WirePlanner() : _input_types(), _symbolic_sizes(), _bound_unknown_sizes() {}
         ~WirePlanner();
         bool bind_input_type(const eval::ValueType &vespa_in, const TensorInfo &onnx_in);
         eval::ValueType make_output_type(const TensorInfo &onnx_out) const;
