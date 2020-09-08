@@ -417,18 +417,13 @@ public class SessionRepository {
     }
 
     public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
-        Optional<ApplicationSet> applicationSet = session.applicationSet();
-        if (applicationSet.isPresent()) {
-            return applicationSet.get();
+        if (session.applicationSet().isPresent()) {
+            return session.applicationSet().get();
         }
 
-        ApplicationSet newApplicationSet = loadApplication(session);
-        RemoteSession newSession = new RemoteSession(session.getTenantName(),
-                                    session.getSessionId(),
-                                    session.getSessionZooKeeperClient(),
-                                    Optional.of(newApplicationSet));
-        remoteSessionCache.putSession(newSession);
-        return newApplicationSet;
+        ApplicationSet applicationSet = loadApplication(session);
+        remoteSessionCache.putSession(session.activated(applicationSet));
+        return applicationSet;
     }
 
     void confirmUpload(RemoteSession session) {
@@ -700,7 +695,7 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()

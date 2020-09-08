@@ -5,6 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -24,9 +25,7 @@ public class RemoteSession extends Session {
      * @param sessionId The session id for this session.
      * @param zooKeeperClient a SessionZooKeeperClient instance
      */
-    public RemoteSession(TenantName tenant,
-                         long sessionId,
-                         SessionZooKeeperClient zooKeeperClient) {
+    public RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient) {
         this(tenant, sessionId, zooKeeperClient, Optional.empty());
     }
 
@@ -37,16 +36,21 @@ public class RemoteSession extends Session {
      * @param sessionId The session id for this session.
      * @param zooKeeperClient a SessionZooKeeperClient instance
      */
-    public RemoteSession(TenantName tenant,
-                         long sessionId,
-                         SessionZooKeeperClient zooKeeperClient,
-                         Optional<ApplicationSet> applicationSet) {
+    private RemoteSession(TenantName tenant,
+                          long sessionId,
+                          SessionZooKeeperClient zooKeeperClient,
+                          Optional<ApplicationSet> applicationSet) {
         super(tenant, sessionId, zooKeeperClient);
         this.applicationSet = applicationSet;
     }
 
     Optional<ApplicationSet> applicationSet() {
         return applicationSet;
+    }
+
+    public synchronized RemoteSession activated(ApplicationSet applicationSet) {
+        Objects.requireNonNull(applicationSet, "applicationSet cannot be null");
+        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationSet));
     }
 
     public synchronized RemoteSession deactivated() {
