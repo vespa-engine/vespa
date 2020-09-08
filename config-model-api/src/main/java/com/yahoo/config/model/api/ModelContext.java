@@ -7,7 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -37,7 +37,7 @@ public interface ModelContext {
     default Optional<File> appDir() { return Optional.empty();}
 
     /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
-    default Optional<ContainerImage> wantedDockerImageRepo() { return Optional.empty(); }
+    default Optional<DockerImage> wantedDockerImageRepo() { return Optional.empty(); }
 
     /** The Vespa version this model is built for */
     Version modelVespaVersion();

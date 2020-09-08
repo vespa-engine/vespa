@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
@@ -209,8 +209,8 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(ContainerImage containerImage) {
-        return containerEngine.pullImageAsyncIfNeeded(containerImage);
+    public boolean pullImageAsyncIfNeeded(DockerImage dockerImage) {
+        return containerEngine.pullImageAsyncIfNeeded(dockerImage);
     }
 
     @Override
@@ -324,8 +324,8 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public boolean deleteUnusedContainerImages(List<ContainerImage> excludes, Duration minImageAgeToDelete) {
-        return containerEngine.deleteUnusedContainerImages(excludes, minImageAgeToDelete);
+    public boolean deleteUnusedContainerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return containerEngine.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */

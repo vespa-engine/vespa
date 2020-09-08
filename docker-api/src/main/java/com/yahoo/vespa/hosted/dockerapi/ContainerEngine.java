@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
@@ -58,7 +58,7 @@ public interface ContainerEngine {
         void create();
     }
 
-    CreateContainerCommand createContainerCommand(ContainerImage containerImage, ContainerName containerName);
+    CreateContainerCommand createContainerCommand(DockerImage dockerImage, ContainerName containerName);
 
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
 
@@ -76,14 +76,14 @@ public interface ContainerEngine {
      * Checks if the image is currently being pulled or is already pulled, if not, starts an async
      * pull of the image
      *
-     * @param image Container image to pull
+     * @param image Docker image to pull
      * @return true iff image being pulled, false otherwise
      */
-    boolean pullImageAsyncIfNeeded(ContainerImage image);
+    boolean pullImageAsyncIfNeeded(DockerImage image);
 
     boolean noManagedContainersRunning(String manager);
 
-    boolean deleteUnusedContainerImages(List<ContainerImage> excludes, Duration minImageAgeToDelete);
+    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 
     /**
      * @param containerName The name of the container

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -14,13 +14,13 @@ public class CreateContainerCommandImplTest {
 
     @Test
     public void testToString() throws UnknownHostException {
-        ContainerImage containerImage = ContainerImage.fromString("docker.registry.domain.tld/my/image:1.2.3");
+        DockerImage dockerImage = DockerImage.fromString("docker.registry.domain.tld/my/image:1.2.3");
         ContainerResources containerResources = new ContainerResources(2.5, 100, 1024);
         String hostname = "docker-1.region.domain.tld";
         ContainerName containerName = ContainerName.fromHostname(hostname);
 
         ContainerEngine.CreateContainerCommand createContainerCommand = new CreateContainerCommandImpl(
-                null, containerImage, containerName)
+                null, dockerImage, containerName)
                 .withHostName(hostname)
                 .withResources(containerResources)
                 .withLabel("my-label", "test-label")

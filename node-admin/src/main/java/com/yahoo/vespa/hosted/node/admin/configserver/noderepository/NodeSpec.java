@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
@@ -28,8 +28,8 @@ public class NodeSpec {
     private final NodeType type;
     private final String flavor;
 
-    private final Optional<ContainerImage> wantedDockerImage;
-    private final Optional<ContainerImage> currentDockerImage;
+    private final Optional<DockerImage> wantedDockerImage;
+    private final Optional<DockerImage> currentDockerImage;
 
     private final Optional<Version> wantedVespaVersion;
     private final Optional<Version> currentVespaVersion;
@@ -62,8 +62,8 @@ public class NodeSpec {
 
     public NodeSpec(
             String hostname,
-            Optional<ContainerImage> wantedDockerImage,
-            Optional<ContainerImage> currentDockerImage,
+            Optional<DockerImage> wantedDockerImage,
+            Optional<DockerImage> currentDockerImage,
             NodeState state,
             NodeType type,
             String flavor,
@@ -138,11 +138,11 @@ public class NodeSpec {
         return flavor;
     }
 
-    public Optional<ContainerImage> wantedDockerImage() {
+    public Optional<DockerImage> wantedDockerImage() {
         return wantedDockerImage;
     }
 
-    public Optional<ContainerImage> currentDockerImage() {
+    public Optional<DockerImage> currentDockerImage() {
         return currentDockerImage;
     }
 
@@ -341,8 +341,8 @@ public class NodeSpec {
         private NodeState state;
         private NodeType type;
         private String flavor;
-        private Optional<ContainerImage> wantedDockerImage = Optional.empty();
-        private Optional<ContainerImage> currentDockerImage = Optional.empty();
+        private Optional<DockerImage> wantedDockerImage = Optional.empty();
+        private Optional<DockerImage> currentDockerImage = Optional.empty();
         private Optional<Version> wantedVespaVersion = Optional.empty();
         private Optional<Version> currentVespaVersion = Optional.empty();
         private Optional<Version> wantedOsVersion = Optional.empty();
@@ -397,13 +397,13 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder wantedDockerImage(ContainerImage wantedContainerImage) {
-            this.wantedDockerImage = Optional.of(wantedContainerImage);
+        public Builder wantedDockerImage(DockerImage wantedDockerImage) {
+            this.wantedDockerImage = Optional.of(wantedDockerImage);
             return this;
         }
 
-        public Builder currentDockerImage(ContainerImage currentContainerImage) {
-            this.currentDockerImage = Optional.of(currentContainerImage);
+        public Builder currentDockerImage(DockerImage currentDockerImage) {
+            this.currentDockerImage = Optional.of(currentDockerImage);
             return this;
         }
 
@@ -556,11 +556,11 @@ public class NodeSpec {
             return hostname;
         }
 
-        public Optional<ContainerImage> wantedDockerImage() {
+        public Optional<DockerImage> wantedDockerImage() {
             return wantedDockerImage;
         }
 
-        public Optional<ContainerImage> currentDockerImage() {
+        public Optional<DockerImage> currentDockerImage() {
             return currentDockerImage;
         }
 
@@ -673,7 +673,7 @@ public class NodeSpec {
                 builder .owner(ApplicationId.defaultId())
                         .membership(new NodeMembership("container", "my-id", "group", 0, false))
                         .wantedVespaVersion(Version.fromString("7.1.1"))
-                        .wantedDockerImage(ContainerImage.fromString("docker.domain.tld/repo/image:7.1.1"))
+                        .wantedDockerImage(DockerImage.fromString("docker.domain.tld/repo/image:7.1.1"))
                         .currentRestartGeneration(0)
                         .wantedRestartGeneration(0);
             }

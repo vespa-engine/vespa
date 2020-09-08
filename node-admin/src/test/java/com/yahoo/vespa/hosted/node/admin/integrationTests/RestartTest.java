@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -22,13 +22,13 @@ public class RestartTest {
     public void test() {
         try (DockerTester tester = new DockerTester()) {
             String hostname = "host1.test.yahoo.com";
-            ContainerImage containerImage = ContainerImage.fromString("containerImage:1.2.3");
+            DockerImage dockerImage = DockerImage.fromString("dockerImage:1.2.3");
 
-            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(containerImage).build());
+            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 
-            tester.inOrder(tester.containerEngine).createContainerCommand(eq(containerImage), eq(new ContainerName("host1")));
+            tester.inOrder(tester.containerEngine).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(
-                    eq(hostname), eq(new NodeAttributes().withDockerImage(containerImage).withVespaVersion(containerImage.tagAsVersion())));
+                    eq(hostname), eq(new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion())));
 
             // Increment wantedRestartGeneration to 2 in node-repo
             tester.addChildNodeRepositoryNode(new NodeSpec.Builder(tester.nodeRepository.getNode(hostname))

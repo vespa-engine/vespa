@@ -21,7 +21,7 @@ import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
@@ -51,7 +51,7 @@ public class DockerImpl implements ContainerEngine {
     private static final Duration WAIT_BEFORE_KILLING = Duration.ofSeconds(10);
 
     private final Object monitor = new Object();
-    private final Set<ContainerImage> scheduledPulls = new HashSet<>();
+    private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
     private final DockerClient dockerClient;
     private final DockerImageGarbageCollector dockerImageGC;
@@ -70,7 +70,7 @@ public class DockerImpl implements ContainerEngine {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(ContainerImage image) {
+    public boolean pullImageAsyncIfNeeded(DockerImage image) {
         try {
             synchronized (monitor) {
                 if (scheduledPulls.contains(image)) return true;
@@ -89,7 +89,7 @@ public class DockerImpl implements ContainerEngine {
         }
     }
 
-    private void removeScheduledPoll(ContainerImage image) {
+    private void removeScheduledPoll(DockerImage image) {
         synchronized (monitor) {
             scheduledPulls.remove(image);
         }
@@ -98,23 +98,23 @@ public class DockerImpl implements ContainerEngine {
     /**
      * Check if a given image is already in the local registry
      */
-    boolean imageIsDownloaded(ContainerImage containerImage) {
-        return inspectImage(containerImage).isPresent();
+    boolean imageIsDownloaded(DockerImage dockerImage) {
+        return inspectImage(dockerImage).isPresent();
     }
 
-    private Optional<InspectImageResponse> inspectImage(ContainerImage containerImage) {
+    private Optional<InspectImageResponse> inspectImage(DockerImage dockerImage) {
         try {
-            return Optional.of(dockerClient.inspectImageCmd(containerImage.asString()).exec());
+            return Optional.of(dockerClient.inspectImageCmd(dockerImage.asString()).exec());
         } catch (NotFoundException e) {
             return Optional.empty();
         } catch (RuntimeException e) {
             numberOfDockerApiFails.increment();
-            throw new DockerException("Failed to inspect image '" + containerImage.asString() + "'", e);
+            throw new DockerException("Failed to inspect image '" + dockerImage.asString() + "'", e);
         }
     }
 
     @Override
-    public CreateContainerCommand createContainerCommand(ContainerImage image, ContainerName containerName) {
+    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName containerName) {
         return new CreateContainerCommandImpl(dockerClient, image, containerName);
     }
 
@@ -265,7 +265,7 @@ public class DockerImpl implements ContainerEngine {
         return inspectContainerCmd(container)
                 .map(response -> new Container(
                         response.getConfig().getHostName(),
-                        ContainerImage.fromString(response.getConfig().getImage()),
+                        DockerImage.fromString(response.getConfig().getImage()),
                         containerResourcesFromHostConfig(response.getHostConfig()),
                         new ContainerName(decode(response.getName())),
                         Container.State.valueOf(response.getState().getStatus().toUpperCase()),
@@ -319,44 +319,44 @@ public class DockerImpl implements ContainerEngine {
         }
     }
 
-    void deleteImage(ContainerImage containerImage) {
+    void deleteImage(DockerImage dockerImage) {
         try {
-            dockerClient.removeImageCmd(containerImage.asString()).exec();
+            dockerClient.removeImageCmd(dockerImage.asString()).exec();
         } catch (NotFoundException ignored) {
             // Image was already deleted, ignore
         } catch (RuntimeException e) {
             numberOfDockerApiFails.increment();
-            throw new DockerException("Failed to delete docker image " + containerImage.asString(), e);
+            throw new DockerException("Failed to delete docker image " + dockerImage.asString(), e);
         }
     }
 
     @Override
-    public boolean deleteUnusedContainerImages(List<ContainerImage> excludes, Duration minImageAgeToDelete) {
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
         return dockerImageGC.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
     private class ImagePullCallback extends PullImageResultCallback {
-        private final ContainerImage containerImage;
+        private final DockerImage dockerImage;
 
-        private ImagePullCallback(ContainerImage containerImage) {
-            this.containerImage = containerImage;
+        private ImagePullCallback(DockerImage dockerImage) {
+            this.dockerImage = dockerImage;
         }
 
         @Override
         public void onError(Throwable throwable) {
-            removeScheduledPoll(containerImage);
-            logger.log(Level.SEVERE, "Could not download image " + containerImage.asString(), throwable);
+            removeScheduledPoll(dockerImage);
+            logger.log(Level.SEVERE, "Could not download image " + dockerImage.asString(), throwable);
         }
 
 
         @Override
         public void onComplete() {
-            if (imageIsDownloaded(containerImage)) {
-                logger.log(Level.INFO, "Download completed: " + containerImage.asString());
-                removeScheduledPoll(containerImage);
+            if (imageIsDownloaded(dockerImage)) {
+                logger.log(Level.INFO, "Download completed: " + dockerImage.asString());
+                removeScheduledPoll(dockerImage);
             } else {
                 numberOfDockerApiFails.increment();
-                throw new DockerClientException("Could not download image: " + containerImage);
+                throw new DockerClientException("Could not download image: " + dockerImage);
             }
         }
     }

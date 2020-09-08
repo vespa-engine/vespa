@@ -22,10 +22,10 @@ public final class ClusterSpec {
     private final Version vespaVersion;
     private boolean exclusive;
     private final Optional<Id> combinedId;
-    private final Optional<ContainerImage> dockerImageRepo;
+    private final Optional<DockerImage> dockerImageRepo;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
-                        Optional<Id> combinedId, Optional<ContainerImage> dockerImageRepo) {
+                        Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -49,7 +49,7 @@ public final class ClusterSpec {
     public Id id() { return id; }
 
     /** Returns the docker image repository part of a docker image we want this cluster to run */
-    public Optional<ContainerImage> dockerImageRepo() { return dockerImageRepo; }
+    public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     /** Returns the docker image (repository + vespa version) we want this cluster to run */
     public Optional<String> dockerImage() { return dockerImageRepo.map(repo -> repo + ":" + vespaVersion.toFullString()); }
@@ -96,7 +96,7 @@ public final class ClusterSpec {
         private final boolean specification;
 
         private Optional<Group> groupId = Optional.empty();
-        private Optional<ContainerImage> dockerImageRepo = Optional.empty();
+        private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
         private Optional<Id> combinedId = Optional.empty();
@@ -144,11 +144,11 @@ public final class ClusterSpec {
         @Deprecated
         // TODO: Remove after 7.208 is oldest version in use
         public Builder dockerImageRepo(Optional<String> dockerImageRepo) {
-            this.dockerImageRepo = dockerImageRepo.map(ContainerImage::fromString);
+            this.dockerImageRepo = dockerImageRepo.map(DockerImage::fromString);
             return this;
         }
 
-        public Builder dockerImageRepository(Optional<ContainerImage> dockerImageRepo) {
+        public Builder dockerImageRepository(Optional<DockerImage> dockerImageRepo) {
             this.dockerImageRepo = dockerImageRepo;
             return this;
         }

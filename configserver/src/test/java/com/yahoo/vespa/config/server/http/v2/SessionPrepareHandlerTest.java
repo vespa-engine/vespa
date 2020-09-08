@@ -6,7 +6,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.TenantName;
@@ -280,7 +280,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         request(HttpRequest.Method.PUT, sessionId, Map.of("dockerImageRepository", dockerImageRepository,
                                                           "applicationName", applicationId().application().value()));
         applicationRepository.activate(tenantRepository.getTenant(tenant), sessionId, timeoutBudget, false);
-        assertEquals(ContainerImage.fromString(dockerImageRepository),
+        assertEquals(DockerImage.fromString(dockerImageRepository),
                      applicationRepository.getActiveSession(applicationId()).getDockerImageRepository().get());
     }
 

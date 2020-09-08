@@ -5,7 +5,7 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -492,11 +492,11 @@ public class CuratorDatabaseClient {
 
     // Docker images -----------------------------------------------------------
 
-    public Map<NodeType, ContainerImage> readDockerImages() {
+    public Map<NodeType, DockerImage> readDockerImages() {
         return read(dockerImagesPath, NodeTypeDockerImagesSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
-    public void writeDockerImages(Map<NodeType, ContainerImage> dockerImages) {
+    public void writeDockerImages(Map<NodeType, DockerImage> dockerImages) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(dockerImagesPath.getAbsolute(),

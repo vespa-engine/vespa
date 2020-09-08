@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeFlavors;
@@ -390,11 +390,11 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         }
 
         if (dockerImageField.valid()) {
-            Optional<ContainerImage> dockerImage = Optional.of(dockerImageField.asString())
+            Optional<DockerImage> dockerImage = Optional.of(dockerImageField.asString())
                     .filter(s -> !s.isEmpty())
-                    .map(ContainerImage::fromString);
+                    .map(DockerImage::fromString);
             nodeRepository.dockerImages().setDockerImage(nodeType, dockerImage);
-            messageParts.add("docker image to " + dockerImage.map(ContainerImage::asString).orElse(null));
+            messageParts.add("docker image to " + dockerImage.map(DockerImage::asString).orElse(null));
         }
 
         if (messageParts.isEmpty()) {

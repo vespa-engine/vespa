@@ -3,7 +3,7 @@ package com.yahoo.config.provision.serialization;
 
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -216,7 +216,7 @@ public class AllocatedHostsSerializer {
         return ClusterMembership.from(object.field(hostSpecMembershipKey).asString(),
                                       com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()),
                                       object.field(hostSpecDockerImageRepoKey).valid()
-                                              ? Optional.of(ContainerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
+                                              ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
                                               : Optional.empty());
     }
 
@@ -225,9 +225,9 @@ public class AllocatedHostsSerializer {
         return Optional.of(inspector.asString());
     }
 
-    private static Optional<ContainerImage> optionalDockerImage(Inspector inspector) {
+    private static Optional<DockerImage> optionalDockerImage(Inspector inspector) {
         if ( ! inspector.valid()) return Optional.empty();
-        return Optional.of(ContainerImage.fromString(inspector.asString()));
+        return Optional.of(DockerImage.fromString(inspector.asString()));
     }
 
 }

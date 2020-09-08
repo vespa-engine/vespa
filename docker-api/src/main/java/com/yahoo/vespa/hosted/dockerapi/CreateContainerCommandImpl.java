@@ -7,7 +7,7 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Capability;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Ulimit;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 
 import java.net.Inet6Address;
@@ -29,7 +29,7 @@ import static com.yahoo.vespa.hosted.dockerapi.DockerImpl.LABEL_NAME_MANAGEDBY;
 class CreateContainerCommandImpl implements ContainerEngine.CreateContainerCommand {
 
     private final DockerClient docker;
-    private final ContainerImage containerImage;
+    private final DockerImage dockerImage;
     private final ContainerName containerName;
     private final Map<String, String> labels = new HashMap<>();
     private final List<String> environmentAssignments = new ArrayList<>();
@@ -48,9 +48,9 @@ class CreateContainerCommandImpl implements ContainerEngine.CreateContainerComma
     private Optional<String[]> entrypoint = Optional.empty();
     private boolean privileged = false;
 
-    CreateContainerCommandImpl(DockerClient docker, ContainerImage containerImage, ContainerName containerName) {
+    CreateContainerCommandImpl(DockerClient docker, DockerImage dockerImage, ContainerName containerName) {
         this.docker = docker;
-        this.containerImage = containerImage;
+        this.dockerImage = dockerImage;
         this.containerName = containerName;
     }
 
@@ -190,7 +190,7 @@ class CreateContainerCommandImpl implements ContainerEngine.CreateContainerComma
                 .withCpuQuota(cr.cpuQuota() > 0 ? (long) cr.cpuQuota() : null));
 
         final CreateContainerCmd containerCmd = docker
-                .createContainerCmd(containerImage.asString())
+                .createContainerCmd(dockerImage.asString())
                 .withHostConfig(hostConfig)
                 .withName(containerName.asString())
                 .withLabels(labels)
@@ -255,7 +255,7 @@ class CreateContainerCommandImpl implements ContainerEngine.CreateContainerComma
                 toOptionalOption("--ip6", ipv6Address),
                 toOptionalOption("--entrypoint", entrypointExecuteable),
                 toFlagOption("--privileged", privileged),
-                containerImage.asString(),
+                dockerImage.asString(),
                 entrypointArgs)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(" "));

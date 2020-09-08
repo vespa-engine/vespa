@@ -8,7 +8,7 @@ import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.slime.SlimeUtils;
@@ -55,7 +55,7 @@ public final class PrepareParams {
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<String> tlsSecretsKeyName;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
-    private final Optional<ContainerImage> dockerImageRepository;
+    private final Optional<DockerImage> dockerImageRepository;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<ApplicationRoles> applicationRoles;
     private final Optional<Quota> quota;
@@ -64,7 +64,7 @@ public final class PrepareParams {
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
                           List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                          Optional<ContainerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
+                          Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
@@ -94,7 +94,7 @@ public final class PrepareParams {
         private List<ContainerEndpoint> containerEndpoints = null;
         private Optional<String> tlsSecretsKeyName = Optional.empty();
         private Optional<EndpointCertificateMetadata> endpointCertificateMetadata = Optional.empty();
-        private Optional<ContainerImage> dockerImageRepository = Optional.empty();
+        private Optional<DockerImage> dockerImageRepository = Optional.empty();
         private Optional<AthenzDomain> athenzDomain = Optional.empty();
         private Optional<ApplicationRoles> applicationRoles = Optional.empty();
         private Optional<Quota> quota = Optional.empty();
@@ -168,12 +168,12 @@ public final class PrepareParams {
         public Builder dockerImageRepository(String dockerImageRepository) {
             this.dockerImageRepository = (dockerImageRepository == null)
                     ? Optional.empty()
-                    : Optional.of(ContainerImage.fromString(dockerImageRepository));
+                    : Optional.of(DockerImage.fromString(dockerImageRepository));
             return this;
         }
 
-        public Builder dockerImageRepository(ContainerImage containerImageRepository) {
-            this.dockerImageRepository = Optional.ofNullable(containerImageRepository);
+        public Builder dockerImageRepository(DockerImage dockerImageRepository) {
+            this.dockerImageRepository = Optional.ofNullable(dockerImageRepository);
             return this;
         }
 
@@ -282,7 +282,7 @@ public final class PrepareParams {
         return endpointCertificateMetadata;
     }
 
-    public Optional<ContainerImage> dockerImageRepository() {
+    public Optional<DockerImage> dockerImageRepository() {
         return dockerImageRepository;
     }
 

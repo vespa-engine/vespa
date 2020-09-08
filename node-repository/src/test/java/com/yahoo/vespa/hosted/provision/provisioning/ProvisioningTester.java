@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -103,7 +103,7 @@ public class ProvisioningTester {
                                                  clock,
                                                  zone,
                                                  nameResolver,
-                                                 ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  flagSource,
                                                  true,
                                                  provisionServiceProvider.getHostProvisioner().isPresent(),

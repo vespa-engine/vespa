@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.host.FlavorOverrides;
@@ -152,8 +152,8 @@ public class RealNodeRepository implements NodeRepository {
         NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
         return new NodeSpec(
                 node.hostname,
-                Optional.ofNullable(node.wantedDockerImage).map(ContainerImage::fromString),
-                Optional.ofNullable(node.currentDockerImage).map(ContainerImage::fromString),
+                Optional.ofNullable(node.wantedDockerImage).map(DockerImage::fromString),
+                Optional.ofNullable(node.currentDockerImage).map(DockerImage::fromString),
                 nodeState,
                 nodeType,
                 node.flavor,
@@ -249,7 +249,7 @@ public class RealNodeRepository implements NodeRepository {
 
     public static NodeRepositoryNode nodeRepositoryNodeFromNodeAttributes(NodeAttributes nodeAttributes) {
         NodeRepositoryNode node = new NodeRepositoryNode();
-        node.currentDockerImage = nodeAttributes.getDockerImage().map(ContainerImage::asString).orElse(null);
+        node.currentDockerImage = nodeAttributes.getDockerImage().map(DockerImage::asString).orElse(null);
         node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
         node.vespaVersion = nodeAttributes.getVespaVersion().map(Version::toFullString).orElse(null);

@@ -13,7 +13,7 @@ import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -75,7 +75,7 @@ public class DockerImplTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void pullImageAsyncIfNeededSuccessfully() {
-        final ContainerImage image = ContainerImage.fromString("test:1.2.3");
+        final DockerImage image = DockerImage.fromString("test:1.2.3");
 
         InspectImageResponse inspectImageResponse = mock(InspectImageResponse.class);
         when(inspectImageResponse.getId()).thenReturn(image.asString());
@@ -104,7 +104,7 @@ public class DockerImplTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void pullImageAsyncIfNeededWithError() {
-        final ContainerImage image = ContainerImage.fromString("test:1.2.3");
+        final DockerImage image = DockerImage.fromString("test:1.2.3");
 
         InspectImageCmd imageInspectCmd = mock(InspectImageCmd.class);
         when(imageInspectCmd.exec()).thenThrow(new NotFoundException("Image not found"));

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -26,7 +26,7 @@ public class DockerImages {
     private static final Logger log = Logger.getLogger(DockerImages.class.getName());
 
     private final CuratorDatabaseClient db;
-    private final ContainerImage defaultImage;
+    private final DockerImage defaultImage;
     private final Duration cacheTtl;
 
     /**
@@ -34,13 +34,13 @@ public class DockerImages {
      * unnecessary ZK reads. When getDockerImages change, some nodes may need to wait for TTL until they see the new target,
      * this is fine.
      */
-    private volatile Supplier<Map<NodeType, ContainerImage>> dockerImages;
+    private volatile Supplier<Map<NodeType, DockerImage>> dockerImages;
 
-    public DockerImages(CuratorDatabaseClient db, ContainerImage defaultImage) {
+    public DockerImages(CuratorDatabaseClient db, DockerImage defaultImage) {
         this(db, defaultImage, defaultCacheTtl);
     }
 
-    DockerImages(CuratorDatabaseClient db, ContainerImage defaultImage, Duration cacheTtl) {
+    DockerImages(CuratorDatabaseClient db, DockerImage defaultImage, Duration cacheTtl) {
         this.db = db;
         this.defaultImage = defaultImage;
         this.cacheTtl = cacheTtl;
@@ -53,29 +53,29 @@ public class DockerImages {
     }
 
     /** Returns the current docker images for each node type */
-    public Map<NodeType, ContainerImage> getDockerImages() {
+    public Map<NodeType, DockerImage> getDockerImages() {
         return dockerImages.get();
     }
 
     /** Returns the current docker image for given node type, or the type for corresponding child nodes
      * if it is a Docker host, or default */
-    public ContainerImage dockerImageFor(NodeType type) {
+    public DockerImage dockerImageFor(NodeType type) {
         NodeType typeToUseForLookup = type.isHost() ? type.childNodeType() : type;
         return getDockerImages().getOrDefault(typeToUseForLookup, defaultImage);
     }
 
     /** Set the docker image for nodes of given type */
-    public void setDockerImage(NodeType nodeType, Optional<ContainerImage> dockerImage) {
+    public void setDockerImage(NodeType nodeType, Optional<DockerImage> dockerImage) {
         if (nodeType.isHost()) {
             throw new IllegalArgumentException("Setting docker image for " + nodeType + " nodes is unsupported");
         }
         try (Lock lock = db.lockDockerImages()) {
-            Map<NodeType, ContainerImage> dockerImages = db.readDockerImages();
+            Map<NodeType, DockerImage> dockerImages = db.readDockerImages();
             dockerImage.ifPresentOrElse(image -> dockerImages.put(nodeType, image),
                                         () -> dockerImages.remove(nodeType));
             db.writeDockerImages(dockerImages);
             createCache(); // Throw away current cache
-            log.info("Set docker image for " + nodeType + " nodes to " + dockerImage.map(ContainerImage::asString).orElse(null));
+            log.info("Set docker image for " + nodeType + " nodes to " + dockerImage.map(DockerImage::asString).orElse(null));
         }
     }
 

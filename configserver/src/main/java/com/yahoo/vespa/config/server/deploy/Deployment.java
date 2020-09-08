@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import java.util.logging.Level;
@@ -51,7 +51,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final DeployLogger logger = new SilentDeployLogger();
 
     /** The repository part of docker image this application should run on. Version is separate from image repo */
-    final Optional<ContainerImage> dockerImageRepository;
+    final Optional<DockerImage> dockerImageRepository;
 
     /** The Vespa version this application should run on */
     private final Version version;

@@ -11,14 +11,14 @@ import java.util.Optional;
  *
  * @author mpolden
  */
-public class ContainerImage {
+public class DockerImage {
 
-    public static final ContainerImage EMPTY = new ContainerImage("", Optional.empty());
+    public static final DockerImage EMPTY = new DockerImage("", Optional.empty());
 
     private final String repository;
     private final Optional<String> tag;
 
-    private ContainerImage(String repository, Optional<String> tag) {
+    private DockerImage(String repository, Optional<String> tag) {
         this.repository = Objects.requireNonNull(repository, "repository must be non-null");
         this.tag = Objects.requireNonNull(tag, "tag must be non-null");
     }
@@ -37,8 +37,8 @@ public class ContainerImage {
     }
 
     /** Returns the Docker image tagged with the given version */
-    public ContainerImage withTag(Version version) {
-        return new ContainerImage(repository, Optional.of(version.toFullString()));
+    public DockerImage withTag(Version version) {
+        return new DockerImage(repository, Optional.of(version.toFullString()));
     }
 
     public String asString() {
@@ -54,7 +54,7 @@ public class ContainerImage {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ContainerImage that = (ContainerImage) o;
+        DockerImage that = (DockerImage) o;
         return repository.equals(that.repository) &&
                 tag.equals(that.tag);
     }
@@ -64,16 +64,16 @@ public class ContainerImage {
         return Objects.hash(repository, tag);
     }
 
-    public static ContainerImage fromString(String name) {
+    public static DockerImage fromString(String name) {
         if (name.isEmpty()) return EMPTY;
 
         int n = name.lastIndexOf(':');
-        if (n < 0) return new ContainerImage(name, Optional.empty());
+        if (n < 0) return new DockerImage(name, Optional.empty());
 
         String tag = name.substring(n + 1);
         if (!tag.contains("/")) {
-            return new ContainerImage(name.substring(0, n), Optional.of(tag));
+            return new DockerImage(name.substring(0, n), Optional.of(tag));
         }
-        return new ContainerImage(name, Optional.empty());
+        return new DockerImage(name, Optional.empty());
     }
 }

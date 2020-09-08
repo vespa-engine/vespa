@@ -9,7 +9,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
@@ -49,7 +49,7 @@ public class NodesSpecification {
     private final boolean exclusive;
 
     /** The repo part of a docker image (without tag), optional */
-    private final Optional<ContainerImage> dockerImageRepo;
+    private final Optional<DockerImage> dockerImageRepo;
 
     /** The ID of the cluster referencing this node specification, if any */
     private final Optional<String> combinedId;
@@ -58,7 +58,7 @@ public class NodesSpecification {
                                ClusterResources max,
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
-                               Optional<ContainerImage> dockerImageRepo,
+                               Optional<DockerImage> dockerImageRepo,
                                Optional<String> combinedId) {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("Min resources must be larger or equal to max resources, but " +
@@ -84,7 +84,7 @@ public class NodesSpecification {
     }
 
     private static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
-                                             ModelElement nodesElement, Optional<ContainerImage> dockerImageRepo) {
+                                             ModelElement nodesElement, Optional<DockerImage> dockerImageRepo) {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
         var resources = toResources(resolvedElement);
@@ -370,9 +370,9 @@ public class NodesSpecification {
         return new IllegalArgumentException("referenced service '" + referenceId + "' is not defined");
     }
 
-    private static Optional<ContainerImage> dockerImageToUse(ModelElement nodesElement, Optional<ContainerImage> dockerImage) {
+    private static Optional<DockerImage> dockerImageToUse(ModelElement nodesElement, Optional<DockerImage> dockerImage) {
         String dockerImageFromElement = nodesElement.stringAttribute("docker-image");
-        return dockerImageFromElement == null ? dockerImage : Optional.of(ContainerImage.fromString(dockerImageFromElement));
+        return dockerImageFromElement == null ? dockerImage : Optional.of(DockerImage.fromString(dockerImageFromElement));
     }
 
     /** Parses a value ("value") or value range ("[min-value, max-value]") */

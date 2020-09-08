@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -84,7 +84,7 @@ public class MetricsReporterTest {
                                                            Clock.systemUTC(),
                                                            Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
-                                                           ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                           DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            new InMemoryFlagSource(),
                                                            true,
                                                            false,
@@ -153,7 +153,7 @@ public class MetricsReporterTest {
                                                            Clock.systemUTC(),
                                                            Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
-                                                           ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                           DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            new InMemoryFlagSource(),
                                                            true,
                                                            false,

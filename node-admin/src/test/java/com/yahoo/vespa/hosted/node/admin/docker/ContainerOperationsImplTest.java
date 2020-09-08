@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -83,7 +83,7 @@ public class ContainerOperationsImplTest {
     }
 
     private Container makeContainer(String name, Container.State state, int pid) {
-        final Container container = new Container(name + ".fqdn", ContainerImage.fromString("mock"), null,
+        final Container container = new Container(name + ".fqdn", DockerImage.fromString("mock"), null,
                 new ContainerName(name), state, pid);
         when(containerEngine.getContainer(eq(container.name))).thenReturn(Optional.of(container));
         return container;

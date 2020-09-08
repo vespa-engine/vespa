@@ -10,7 +10,7 @@ import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.TransientException;
@@ -73,7 +73,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      *                       and assigns to this SettableOptional such that it can be used after this method returns
      */
     public List<MODELRESULT> buildModels(ApplicationId applicationId,
-                                         Optional<ContainerImage> dockerImageRepository,
+                                         Optional<DockerImage> dockerImageRepository,
                                          Version wantedNodeVespaVersion,
                                          ApplicationPackage applicationPackage,
                                          SettableOptional<AllocatedHosts> allocatedHosts,
@@ -149,7 +149,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     // versions is the set of versions for one particular major version
     private List<MODELRESULT> buildModelVersions(Set<Version> versions,
                                                  ApplicationId applicationId,
-                                                 Optional<ContainerImage> wantedDockerImageRepository,
+                                                 Optional<DockerImage> wantedDockerImageRepository,
                                                  Version wantedNodeVespaVersion,
                                                  ApplicationPackage applicationPackage,
                                                  SettableOptional<AllocatedHosts> allocatedHosts,
@@ -242,7 +242,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                                     ApplicationId applicationId, Optional<ContainerImage> dockerImageRepository,
+                                                     ApplicationId applicationId, Optional<DockerImage> dockerImageRepository,
                                                      Version wantedNodeVespaVersion, Optional<AllocatedHosts> allocatedHosts);
 
     /**

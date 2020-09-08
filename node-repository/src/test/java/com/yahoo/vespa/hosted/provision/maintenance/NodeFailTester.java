@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
@@ -81,7 +81,7 @@ public class NodeFailTester {
                                             clock,
                                             zone,
                                             new MockNameResolver().mockAnyLookup(),
-                                            ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             new InMemoryFlagSource(),
                                             true,
                                             false,

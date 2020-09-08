@@ -7,7 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -76,7 +76,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Set<ApplicationId> disallowConvergenceCheckApplications = new HashSet<>();
     private final Version initialVersion = new Version(6, 1, 0);
-    private final ContainerImage initialContainerImage = ContainerImage.fromString("dockerImage:6.1.0");
+    private final DockerImage initialDockerImage = DockerImage.fromString("dockerImage:6.1.0");
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, Set<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Set<Environment> deferLoadBalancerProvisioning = new HashSet<>();
@@ -122,8 +122,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                           .parentHostname(parent.hostname())
                                                           .currentVersion(initialVersion)
                                                           .wantedVersion(initialVersion)
-                                                          .currentDockerImage(initialContainerImage)
-                                                          .wantedDockerImage(initialContainerImage)
+                                                          .currentDockerImage(initialDockerImage)
+                                                          .wantedDockerImage(initialDockerImage)
                                                           .currentOsVersion(Version.emptyVersion)
                                                           .wantedOsVersion(Version.emptyVersion)
                                                           .resources(new NodeResources(2, 8, 50, 1, slow, remote))

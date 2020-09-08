@@ -6,7 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -291,14 +291,14 @@ public class NodeSerializer {
         return Optional.of(Version.fromString(object.asString()));
     }
 
-    private Optional<ContainerImage> dockerImageRepoFromSlime(Inspector object) {
+    private Optional<DockerImage> dockerImageRepoFromSlime(Inspector object) {
         if ( ! object.valid() || object.asString().isEmpty()) return Optional.empty();
-        return Optional.of(ContainerImage.fromString(object.asString()));
+        return Optional.of(DockerImage.fromString(object.asString()));
     }
 
-    private Optional<ContainerImage> dockerImageFromSlime(Inspector object) {
+    private Optional<DockerImage> dockerImageFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        return Optional.of(ContainerImage.fromString(object.asString()));
+        return Optional.of(DockerImage.fromString(object.asString()));
     }
 
     private Optional<Instant> instantFromSlime(Inspector object) {

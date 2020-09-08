@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.config.provision.ContainerImage;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.host.FlavorOverrides;
@@ -106,7 +106,7 @@ public class RealNodeRepositoryTest {
         assertThat(containersToRun.size(), is(1));
         NodeSpec node = containersToRun.get(0);
         assertThat(node.hostname(), is("host4.yahoo.com"));
-        assertThat(node.wantedDockerImage().get(), is(ContainerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
+        assertThat(node.wantedDockerImage().get(), is(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
         assertThat(node.state(), is(NodeState.active));
         assertThat(node.wantedRestartGeneration().get(), is(0L));
         assertThat(node.currentRestartGeneration().get(), is(0L));
@@ -137,7 +137,7 @@ public class RealNodeRepositoryTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
-                        .withDockerImage(ContainerImage.fromString("image-1:6.2.3")));
+                        .withDockerImage(DockerImage.fromString("image-1:6.2.3")));
     }
 
     @Test
