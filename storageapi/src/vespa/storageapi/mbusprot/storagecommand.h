@@ -12,7 +12,7 @@ class StorageCommand : public mbus::Message, public StorageMessage {
 public:
     typedef std::unique_ptr<StorageCommand> UP;
 
-    StorageCommand(api::StorageCommand::SP);
+    explicit StorageCommand(api::StorageCommand::SP);
 
     const mbus::string & getProtocol() const override { return StorageProtocol::NAME; }
     uint32_t getType() const override { return _cmd->getType().getId(); }
@@ -20,6 +20,9 @@ public:
     api::StorageCommand::CSP getCommand() const { return _cmd; }
     api::StorageMessage::SP getInternalMessage() override { return _cmd; }
     api::StorageMessage::CSP getInternalMessage() const override { return _cmd; }
+
+    bool has_command() const noexcept { return (_cmd.get() != nullptr); }
+    api::StorageCommand::SP steal_command() { return std::move(_cmd); }
 
     bool hasBucketSequence() const override { return false; }
 

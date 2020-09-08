@@ -5,7 +5,7 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 
-namespace storage {
+namespace storage::rpc {
 
 /**
  * Contains an opaque encoded (possibly compressed) representation of a ClusterStateBundle.

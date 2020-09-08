@@ -4,9 +4,9 @@
 
 #include "encoded_cluster_state_bundle.h"
 
-namespace storage {
+namespace storage::lib { class ClusterStateBundle; }
 
-namespace lib { class ClusterStateBundle; }
+namespace storage::rpc {
 
 /**
  * Provides opaque encoding and decoding of ClusterStateBundles for transmission over RPC.

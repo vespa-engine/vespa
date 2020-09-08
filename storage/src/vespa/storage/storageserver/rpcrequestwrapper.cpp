@@ -7,13 +7,13 @@
 namespace storage {
 
 RPCRequestWrapper::RPCRequestWrapper(FRT_RPCRequest *req)
-    :       _req(req)
+    : _req(req)
 {
 }
 
 RPCRequestWrapper::~RPCRequestWrapper()
 {
-    if (_req != 0) {
+    if (_req) {
         _req->SetError(ERR_REQUEST_DELETED, "Request deleted without having been replied to");
         _req->Return();
     }
@@ -22,7 +22,7 @@ RPCRequestWrapper::~RPCRequestWrapper()
 const char *
 RPCRequestWrapper::getParam() const
 {
-    assert(_req != 0);
+    assert(_req);
     return _req->GetParams()->GetValue(0)._data._buf;
 }
 
@@ -30,7 +30,7 @@ RPCRequestWrapper::getParam() const
 uint32_t
 RPCRequestWrapper::getParamLen() const
 {
-    assert(_req != 0);
+    assert(_req);
     return _req->GetParams()->GetValue(0)._data._len;
 }
 
@@ -38,26 +38,26 @@ RPCRequestWrapper::getParamLen() const
 void
 RPCRequestWrapper::returnData(const char *pt, uint32_t len)
 {
-    assert(_req != 0);
+    assert(_req);
     _req->GetReturn()->AddData(pt, len);
     _req->Return();
-    _req = 0;
+    _req = nullptr;
 }
 
 
 void
 RPCRequestWrapper::returnError(uint32_t errorCode, const char *errorMessage)
 {
-    assert(_req != 0);
+    assert(_req);
     _req->SetError(errorCode, errorMessage);
     _req->Return();
-    _req = 0;
+    _req = nullptr;
 }
 
 void
 RPCRequestWrapper::addReturnString(const char *str, uint32_t len)
 {
-    assert(_req != 0);
+    assert(_req);
     if (len !=0) {
         _req->GetReturn()->AddString(str, len);
     } else {
@@ -68,16 +68,16 @@ RPCRequestWrapper::addReturnString(const char *str, uint32_t len)
 void
 RPCRequestWrapper::addReturnInt(uint32_t value)
 {
-    assert(_req != 0);
+    assert(_req);
     _req->GetReturn()->AddInt32(value);
 }
 
 void
 RPCRequestWrapper::returnRequest()
 {
-    assert(_req != 0);
+    assert(_req);
     _req->Return();
-    _req = 0;
+    _req = nullptr;
 
 }
 
@@ -89,7 +89,7 @@ RPCRequestWrapper::getMethodName() const {
 void
 RPCRequestWrapper::discardBlobs()
 {
-    if (_req != 0) {
+    if (_req) {
         _req->DiscardBlobs();
     }
 }

@@ -11,6 +11,7 @@ namespace api { class StorageMessage; }
 class MessageEnqueuer {
 public:
     virtual ~MessageEnqueuer() = default;
+    // TODO separate into explicit direct dispatch and threaded enqueue
     virtual void enqueue(std::shared_ptr<api::StorageMessage> msg) = 0;
 };
 

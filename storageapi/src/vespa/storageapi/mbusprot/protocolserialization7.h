@@ -5,8 +5,7 @@
 #include "protocolserialization.h"
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 /**
  * Protocol serialization version that uses Protocol Buffers for all its binary
@@ -142,5 +141,4 @@ private:
     std::unique_ptr<api::StorageReply> decode_bucket_info_response(document::ByteBuffer& in_buf, Func&& f) const;
 };
 
-}
 }
