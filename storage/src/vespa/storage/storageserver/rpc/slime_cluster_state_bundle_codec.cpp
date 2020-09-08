@@ -18,7 +18,7 @@ using vespalib::compression::compress;
 using vespalib::Memory;
 using namespace vespalib::slime;
 
-namespace storage {
+namespace storage::rpc {
 
 // TODO find a suitable home for this class to avoid dupes with rpcsendv2.cpp
 namespace {

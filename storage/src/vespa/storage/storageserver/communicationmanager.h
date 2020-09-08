@@ -37,19 +37,23 @@ namespace mbus {
 }
 namespace storage {
 
+namespace rpc {
+class ClusterControllerApiRpcService;
+class SharedRpcResources;
+class StorageApiRpcService;
+}
+
 struct BucketResolver;
-class VisitorMbusSession;
 class Visitor;
 class VisitorThread;
-class FNetListener;
 class RPCRequestWrapper;
 
 class StorageTransportContext : public api::TransportContext {
 public:
-    StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
-    StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
-    StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
-    ~StorageTransportContext();
+    explicit StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
+    explicit StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
+    explicit StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
+    ~StorageTransportContext() override;
 
     std::unique_ptr<documentapi::DocumentMessage> _docAPIMsg;
     std::unique_ptr<mbusprot::StorageCommand>     _storageProtocolMsg;
@@ -72,7 +76,9 @@ private:
     StorageComponent _component;
     CommunicationManagerMetrics _metrics;
 
-    std::unique_ptr<FNetListener> _listener;
+    std::unique_ptr<rpc::SharedRpcResources> _shared_rpc_resources;
+    std::unique_ptr<rpc::StorageApiRpcService> _storage_api_rpc_service;
+    std::unique_ptr<rpc::ClusterControllerApiRpcService> _cc_rpc_service;
     Queue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
@@ -112,6 +118,7 @@ private:
     DocumentApiConverter  _docApiConverter;
     framework::Thread::UP _thread;
     bool                  _skip_thread;
+    bool                  _use_direct_storageapi_rpc;
 
     void updateMetrics(const MetricLockGuard &) override;
     void enqueue_or_process(std::shared_ptr<api::StorageMessage> msg);

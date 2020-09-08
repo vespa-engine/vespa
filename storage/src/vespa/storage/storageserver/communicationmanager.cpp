@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "communicationmanager.h"
-#include "fnetlistener.h"
+#include "vespa/storage/storageserver/rpc/cluster_controller_api_rpc_service.h"
+#include "vespa/storage/storageserver/rpc/storage_api_rpc_service.h"
 #include "rpcrequestwrapper.h"
+#include "vespa/storage/storageserver/rpc/shared_rpc_resources.h"
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
@@ -20,6 +22,7 @@
 #include <vespa/log/bufferedlogger.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
+#include <string_view>
 
 LOG_SETUP(".communication.manager");
 
@@ -248,14 +251,17 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
     : StorageLink("Communication manager"),
       _component(compReg, "communicationmanager"),
       _metrics(_component.getLoadTypes()->getMetricLoadTypes()),
-      _listener(),
+      _shared_rpc_resources(),    // Created upon initial configuration
+      _storage_api_rpc_service(), // (ditto)
+      _cc_rpc_service(),          // (ditto)
       _eventQueue(),
       _mbus(),
       _configUri(configUri),
       _closed(false),
       _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>()),
       _thread(),
-      _skip_thread(false)
+      _skip_thread(false),
+      _use_direct_storageapi_rpc(false)
 {
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
     _component.registerMetric(_metrics);
@@ -270,8 +276,8 @@ CommunicationManager::onOpen()
     framework::MilliSecTime maxProcessingTime(60 * 1000);
     _thread = _component.startThread(*this, maxProcessingTime);
 
-    if (_listener) {
-        _listener->registerHandle(_component.getIdentity());
+    if (_shared_rpc_resources) {
+        _shared_rpc_resources->start_server_and_register_slobrok(_component.getIdentity());
     }
 }
 
@@ -313,8 +319,13 @@ void CommunicationManager::onClose()
         }
     }
 
-    if (_listener) {
-        _listener->close();
+    // TODO remove? this no longer has any particularly useful semantics
+    if (_cc_rpc_service) {
+        _cc_rpc_service->close();
+    }
+    // TODO do this after we drain queues?
+    if (_shared_rpc_resources) {
+        _shared_rpc_resources->shutdown();
     }
 
     // Stopping pumper thread should stop all incoming messages from being
@@ -327,6 +338,7 @@ void CommunicationManager::onClose()
     }
 
     // Emptying remaining queued messages
+    // FIXME but RPC/mbus is already shut down at this point...! Make sure we handle this
     std::shared_ptr<api::StorageMessage> msg;
     api::ReturnCode code(api::ReturnCode::ABORTED, "Node shutting down");
     while (_eventQueue.size() > 0) {
@@ -362,9 +374,9 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
             LOG(warning, "%s", m.c_str());
             _component.requestShutdown(m);
         }
-        if (_listener->getListenPort() != config->rpcport) {
+        if (_shared_rpc_resources->listen_port() != config->rpcport) {
             auto m = make_string("rpc port changed from %d to %d. Will conduct a quick, but controlled restart.",
-                                 _listener->getListenPort(), config->rpcport);
+                                 _shared_rpc_resources->listen_port(), config->rpcport);
             LOG(warning, "%s", m.c_str());
             _component.requestShutdown(m);
         }
@@ -407,7 +419,15 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         configureMessageBusLimits(*config);
     }
 
-    _listener = std::make_unique<FNetListener>(*this, _configUri, config->rpcport);
+    // TODO temporary!
+    auto repo_getter = [this]{ return _component.getTypeRepo()->documentTypeRepo; };
+    auto loadtype_getter = [this]{ return _component.getLoadTypes(); };
+
+    _use_direct_storageapi_rpc = config->useDirectStorageapiRpc;
+    // TODO configurable thread pool size
+    _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, 1/*pool size*/);
+    _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
+    _storage_api_rpc_service = std::make_unique<rpc::StorageApiRpcService>(*this, *_shared_rpc_resources, std::move(repo_getter), std::move(loadtype_getter));
 
     if (_mbus) {
         mbus::DestinationSessionParams dstParams;
@@ -542,15 +562,18 @@ CommunicationManager::sendCommand(
     switch (address.getProtocol()) {
     case api::StorageMessageAddress::STORAGE:
     {
-        LOG(spam, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
+        LOG(info, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
+        if (_use_direct_storageapi_rpc) {
+            _storage_api_rpc_service->send_rpc_v1_request(msg);
+        } else {
+            auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);
 
-        auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);
-
-        cmd->setContext(mbus::Context(msg->getMsgId()));
-        cmd->setRetryEnabled(address.retryEnabled());
-        cmd->setTimeRemaining(msg->getTimeout());
-        cmd->setTrace(msg->getTrace());
-        sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
+            cmd->setContext(mbus::Context(msg->getMsgId()));
+            cmd->setRetryEnabled(address.retryEnabled());
+            cmd->setTimeRemaining(msg->getTimeout());
+            cmd->setTrace(msg->getTrace());
+            sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
+        }
         break;
     }
     case api::StorageMessageAddress::DOCUMENT:
@@ -601,8 +624,11 @@ CommunicationManager::sendDirectRPCReply(
         RPCRequestWrapper& request,
         const std::shared_ptr<api::StorageReply>& reply)
 {
-    std::string requestName(request.getMethodName());
-    if (requestName == "getnodestate3") {
+    std::string_view requestName(request.getMethodName()); // TODO non-name based dispatch
+    // TODO rework this entire dispatch mechanism :D
+    if (requestName == "storageapi.v1.send") {
+        _storage_api_rpc_service->encode_rpc_v1_response(*request.raw_request(), *reply);
+    } else if (requestName == "getnodestate3") {
         auto& gns(dynamic_cast<api::GetNodeStateReply&>(*reply));
         std::ostringstream ns;
         serializeNodeState(gns, ns, true, true, false);

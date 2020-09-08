@@ -1,4 +1,5 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 vespa_add_library(storage_storageserver
     SOURCES
     bouncer.cpp
@@ -12,7 +13,6 @@ vespa_add_library(storage_storageserver
     distributornodecontext.cpp
     documentapiconverter.cpp
     fnet_metrics_wrapper.cpp
-    fnetlistener.cpp
     mergethrottler.cpp
     messagesink.cpp
     opslogger.cpp
@@ -21,13 +21,13 @@ vespa_add_library(storage_storageserver
     service_layer_error_listener.cpp
     servicelayernode.cpp
     servicelayernodecontext.cpp
-    slime_cluster_state_bundle_codec.cpp
     statemanager.cpp
     statereporter.cpp
     storagemetricsset.cpp
     storagenode.cpp
     storagenodecontext.cpp
     tls_statistics_metrics_wrapper.cpp
+    $<TARGET_OBJECTS:storage_storageserver_rpc>
     INSTALL lib64
     DEPENDS
     storage

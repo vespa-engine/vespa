@@ -55,3 +55,7 @@ mbus.skip_request_thread bool default=false
 ## Skip communication manager thread on mbus requests
 ## Experimental
 skip_thread bool default=false
+
+## Whether to use direct P2P RPC protocol for all StorageAPI communication
+## instead of going via MessageBus.
+use_direct_storageapi_rpc bool default=false

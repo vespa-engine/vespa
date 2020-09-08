@@ -5,7 +5,7 @@
 #include "cluster_state_bundle_codec.h"
 #include <memory>
 
-namespace storage {
+namespace storage::rpc {
 
 /**
  * Implementation of ClusterStateBundleCodec which uses structured Slime binary encoding

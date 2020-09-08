@@ -1,0 +1,15 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+syntax = "proto3";
+
+option cc_enable_arenas = true;
+
+package storage.protobuf;
+
+message RequestHeader {
+    uint64 time_remaining_ms = 1;
+    uint32 trace_level = 2;
+}
+
+message ResponseHeader {
+    bytes trace_payload = 1;
+}
