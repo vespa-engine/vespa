@@ -188,7 +188,8 @@ class LogReader {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (logFilePattern.matcher(file.getFileName().toString()).matches())
+                    if (     logFilePattern.matcher(file.getFileName().toString()).matches()
+                        && ! attrs.lastModifiedTime().toInstant().isBefore(from))
                         paths.add(file);
 
                     return FileVisitResult.CONTINUE;
