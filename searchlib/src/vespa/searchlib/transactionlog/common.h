@@ -90,8 +90,17 @@ int makeDirectory(const char * dir);
 class Writer {
 public:
     using DoneCallback = std::shared_ptr<IDestructorCallback>;
-    virtual ~Writer() { }
+    virtual ~Writer() = default;
     virtual void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) = 0;
+};
+
+class Destination {
+public:
+    virtual ~Destination() = default;
+    virtual bool send(int32_t id, const vespalib::string & domain, const Packet & packet) = 0;
+    virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
+    virtual bool connected() const = 0;
+    virtual bool ok() const = 0;
 };
 
 }
