@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 
@@ -84,19 +85,18 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                                 ApplicationId application,
                                 ClusterSpec.Id clusterId,
                                 List<Node> clusterNodes) {
-        int currentGroups = (int)clusterNodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        ClusterResources current = new AllocatableClusterResources(clusterNodes, nodeRepository()).toAdvertisedClusterResources();
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         log.info("Autoscaling " + application + " " + clusterType + " " + clusterId + ":" +
-                 "\nfrom " + toString(clusterNodes.size(), currentGroups, clusterNodes.get(0).resources()) +
-                 "\nto   " + toString(target.nodes(), target.groups(), target.nodeResources()));
+                 "\nfrom " + toString(current) + "\nto   " + toString(target));
     }
 
-    private String toString(int nodes, int groups, NodeResources resources) {
-        return String.format(nodes + (groups > 1 ? " (in " + groups + " groups)" : "") +
+    private String toString(ClusterResources r) {
+        return String.format(r.nodes() + (r.groups() > 1 ? " (in " + r.groups() + " groups)" : "") +
                              " * [vcpu: %0$.1f, memory: %1$.1f Gb, disk %2$.1f Gb]" +
                              " (total: [vcpu: %3$.1f, memory: %4$.1f Gb, disk: %5$.1f Gb])",
-                             resources.vcpu(), resources.memoryGb(), resources.diskGb(),
-                             nodes * resources.vcpu(), nodes * resources.memoryGb(), nodes * resources.diskGb());
+                             r.nodeResources().vcpu(), r.nodeResources().memoryGb(), r.nodeResources().diskGb(),
+                             r.nodes() * r.nodeResources().vcpu(), r.nodes() * r.nodeResources().memoryGb(), r.nodes() * r.nodeResources().diskGb());
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {
