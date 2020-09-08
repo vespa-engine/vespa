@@ -53,7 +53,6 @@ public:
     Tensor::UP clone() const override;
     eval::TensorSpec toSpec() const override;
     void accept(TensorVisitor &visitor) const override;
-    size_t count_memory_used() const override;
     MemoryUsage get_memory_usage() const override;
 };
 

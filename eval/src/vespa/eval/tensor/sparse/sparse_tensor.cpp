@@ -248,16 +248,6 @@ SparseTensor::remove(const CellValues &cellAddresses) const
     return remover.build();
 }
 
-size_t
-SparseTensor::count_memory_used() const
-{
-    size_t result = sizeof(SparseTensor) + _cells.getMemoryConsumption();
-    for (const auto &cell : _cells) {
-        result += cell.first.size();
-    }
-    return result;
-}
-
 MemoryUsage
 SparseTensor::get_memory_usage() const
 {

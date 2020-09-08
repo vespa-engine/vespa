@@ -179,9 +179,9 @@ TEST("require that memory used count is reasonable") {
     const DenseTensorView &full_view = dynamic_cast<const DenseTensorView &>(*full);
     DenseTensorView ref_view(full_view.fast_type(), full_view.cellsRef());
 
-    size_t full_sz = full->count_memory_used();
-    size_t view_sz = full_view.count_memory_used();
-    size_t ref_sz = ref_view.count_memory_used();
+    size_t full_sz = full->get_memory_usage().usedBytes();
+    size_t view_sz = full_view.get_memory_usage().usedBytes();
+    size_t ref_sz = ref_view.get_memory_usage().usedBytes();
 
     EXPECT_EQUAL(ref_sz, sizeof(DenseTensorView));
     EXPECT_LESS(ref_sz, full_sz);
