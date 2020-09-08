@@ -53,8 +53,9 @@ Stash::do_alloc(size_t size)
         _chunks = new (chunk_mem) stash::Chunk(_chunks);
         return _chunks->alloc(size, _chunk_size);
     } else {
-        char *mem = static_cast<char*>(malloc(sizeof(stash::DeleteMemory) + size));
-        _cleanup = new (mem) stash::DeleteMemory(_cleanup);
+        size_t allocate = sizeof(stash::DeleteMemory) + size;
+        char *mem = static_cast<char*>(malloc(allocate));
+        _cleanup = new (mem) stash::DeleteMemory(allocate, _cleanup);
         return (mem + sizeof(stash::DeleteMemory));
     }
 }
@@ -120,5 +121,23 @@ Stash::count_used() const
     }
     return used;
 }
+
+MemoryUsage
+Stash::get_memory_usage() const
+{
+    size_t allocated = 0;
+    size_t used = 0;
+    for (stash::Chunk *chunk = _chunks; chunk != nullptr; chunk = chunk->next) {
+        allocated += _chunk_size;
+        used += chunk->used;
+    }
+    for (auto cleanup = _cleanup; cleanup; cleanup = cleanup->next) {
+        if (auto memory = dynamic_cast<stash::DeleteMemory *>(cleanup)) {
+            allocated += memory->allocated;
+            used += memory->allocated;
+        }
+    }
+    return MemoryUsage(allocated, used, 0, 0);
+};
 
 } // namespace vespalib
