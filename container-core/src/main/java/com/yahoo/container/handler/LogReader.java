@@ -72,9 +72,12 @@ class LogReader {
 
                 Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                           Comparator.comparingDouble(LineWithTimestamp::timestamp));
+                long linesWritten = 0;
                 while (lines.hasNext()) {
                     writer.write(lines.next().line());
                     writer.newLine();
+                    if ((++linesWritten & ((1 << 16) - 1)) == 0)
+                        writer.flush();
                 }
             }
             catch (IOException e) {
