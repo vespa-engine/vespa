@@ -22,7 +22,6 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.DockerImage;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
@@ -40,11 +39,12 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-public class DockerImpl implements Docker {
-    private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
+public class DockerEngine implements ContainerEngine {
+    private static final Logger logger = Logger.getLogger(DockerEngine.class.getName());
 
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
@@ -58,11 +58,11 @@ public class DockerImpl implements Docker {
     private final Counter numberOfDockerApiFails;
 
     @Inject
-    public DockerImpl(Metrics metrics) {
+    public DockerEngine(Metrics metrics) {
         this(createDockerClient(), metrics);
     }
 
-    DockerImpl(DockerClient dockerClient, Metrics metrics) {
+    DockerEngine(DockerClient dockerClient, Metrics metrics) {
         this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
 

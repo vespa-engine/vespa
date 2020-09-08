@@ -3,10 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
@@ -23,7 +23,7 @@ import java.util.OptionalLong;
  *
  * @author freva
  */
-public class DockerMock implements Docker {
+public class ContainerEngineMock implements ContainerEngine {
     private final Map<ContainerName, Container> containersByContainerName = new HashMap<>();
     private static final Object monitor = new Object();
 

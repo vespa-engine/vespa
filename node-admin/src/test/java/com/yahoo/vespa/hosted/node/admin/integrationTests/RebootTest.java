@@ -30,7 +30,7 @@ public class RebootTest {
         try (DockerTester tester = new DockerTester()) {
             tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 
-            tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
+            tester.inOrder(tester.containerEngine).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
 
             try {
                 tester.setWantedState(NodeAdminStateUpdater.State.SUSPENDED);
@@ -38,7 +38,7 @@ public class RebootTest {
 
             tester.inOrder(tester.orchestrator).suspend(
                     eq(HOST_HOSTNAME.value()), eq(List.of(hostname, HOST_HOSTNAME.value())));
-            tester.inOrder(tester.docker).executeInContainerAsUser(
+            tester.inOrder(tester.containerEngine).executeInContainerAsUser(
                     eq(new ContainerName("host1")), eq("root"), eq(OptionalLong.empty()), eq(NODE_PROGRAM), eq("stop"));
             assertTrue(tester.nodeAdmin.setFrozen(true));
         }

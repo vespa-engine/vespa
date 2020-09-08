@@ -24,9 +24,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.dockerapi.DockerImpl.LABEL_NAME_MANAGEDBY;
+import static com.yahoo.vespa.hosted.dockerapi.DockerEngine.LABEL_NAME_MANAGEDBY;
 
-class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
+class CreateContainerCommandImpl implements ContainerEngine.CreateContainerCommand {
 
     private final DockerClient docker;
     private final DockerImage dockerImage;
@@ -56,66 +56,66 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
 
     @Override
-    public Docker.CreateContainerCommand withHostName(String hostName) {
+    public ContainerEngine.CreateContainerCommand withHostName(String hostName) {
         this.hostName = Optional.of(hostName);
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withResources(ContainerResources containerResources) {
+    public ContainerEngine.CreateContainerCommand withResources(ContainerResources containerResources) {
         this.containerResources = Optional.of(containerResources);
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withLabel(String name, String value) {
+    public ContainerEngine.CreateContainerCommand withLabel(String name, String value) {
         assert !name.contains("=");
         labels.put(name, value);
         return this;
     }
 
-    public Docker.CreateContainerCommand withManagedBy(String manager) {
+    public ContainerEngine.CreateContainerCommand withManagedBy(String manager) {
         return withLabel(LABEL_NAME_MANAGEDBY, manager);
     }
 
     @Override
-    public Docker.CreateContainerCommand withAddCapability(String capabilityName) {
+    public ContainerEngine.CreateContainerCommand withAddCapability(String capabilityName) {
         addCapabilities.add(Capability.valueOf(capabilityName));
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withDropCapability(String capabilityName) {
+    public ContainerEngine.CreateContainerCommand withDropCapability(String capabilityName) {
         dropCapabilities.add(Capability.valueOf(capabilityName));
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withSecurityOpt(String securityOpt) {
+    public ContainerEngine.CreateContainerCommand withSecurityOpt(String securityOpt) {
         securityOpts.add(securityOpt);
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withDnsOption(String dnsOption) {
+    public ContainerEngine.CreateContainerCommand withDnsOption(String dnsOption) {
         dnsOptions.add(dnsOption);
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withPrivileged(boolean privileged) {
+    public ContainerEngine.CreateContainerCommand withPrivileged(boolean privileged) {
         this.privileged = privileged;
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit) {
+    public ContainerEngine.CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit) {
         ulimits.add(new Ulimit(name, softLimit, hardLimit));
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withEntrypoint(String... entrypoint) {
+    public ContainerEngine.CreateContainerCommand withEntrypoint(String... entrypoint) {
         if (entrypoint.length < 1) throw new IllegalArgumentException("Entrypoint must contain at least 1 element");
         this.entrypoint = Optional.of(entrypoint);
         return this;
@@ -123,32 +123,32 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
 
     @Override
-    public Docker.CreateContainerCommand withEnvironment(String name, String value) {
+    public ContainerEngine.CreateContainerCommand withEnvironment(String name, String value) {
         assert name.indexOf('=') == -1;
         environmentAssignments.add(name + "=" + value);
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withVolume(Path path, Path volumePath) {
+    public ContainerEngine.CreateContainerCommand withVolume(Path path, Path volumePath) {
         volumeBindSpecs.add(path + ":" + volumePath + ":Z");
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withSharedVolume(Path path, Path volumePath) {
+    public ContainerEngine.CreateContainerCommand withSharedVolume(Path path, Path volumePath) {
         volumeBindSpecs.add(path + ":" + volumePath + ":z");
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withNetworkMode(String mode) {
+    public ContainerEngine.CreateContainerCommand withNetworkMode(String mode) {
         networkMode = Optional.of(mode);
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withIpAddress(InetAddress address) {
+    public ContainerEngine.CreateContainerCommand withIpAddress(InetAddress address) {
         if (address instanceof Inet6Address) {
             ipv6Address = Optional.of(address.getHostAddress());
         } else {

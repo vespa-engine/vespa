@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -35,9 +35,9 @@ public class AclMaintainerTest {
     private static final String EMPTY_FILTER_TABLE = "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT\n";
     private static final String EMPTY_NAT_TABLE = "-P PREROUTING ACCEPT\n-P INPUT ACCEPT\n-P OUTPUT ACCEPT\n-P POSTROUTING ACCEPT\n";
 
-    private final DockerOperations dockerOperations = mock(DockerOperations.class);
+    private final ContainerOperations containerOperations = mock(ContainerOperations.class);
     private final IPAddressesMock ipAddresses = new IPAddressesMock();
-    private final AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, ipAddresses);
+    private final AclMaintainer aclMaintainer = new AclMaintainer(containerOperations, ipAddresses);
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final Function<Acl, NodeAgentContext> contextGenerator =
@@ -63,10 +63,10 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(dockerOperations, times(4)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
-        verifyNoMoreInteractions(dockerOperations);
+        verify(containerOperations, times(4)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
+        verifyNoMoreInteractions(containerOperations);
 
         List<String> expected = List.of(
                 // IPv4 filter table restore
@@ -130,10 +130,10 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
-        verifyNoMoreInteractions(dockerOperations);
+        verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
+        verifyNoMoreInteractions(containerOperations);
 
         List<String> expected = List.of(
                 // IPv4 filter table restore
@@ -187,10 +187,10 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(dockerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any()); //we don't have a ip4 address for the container so no redirect
-        verifyNoMoreInteractions(dockerOperations);
+        verify(containerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(containerOperations, never()).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any()); //we don't have a ip4 address for the container so no redirect
+        verifyNoMoreInteractions(containerOperations);
 
         List<String> expected = List.of(
                 "*filter\n" +
@@ -231,15 +231,15 @@ public class AclMaintainerTest {
                 "-P POSTROUTING ACCEPT\n" +
                 "-A OUTPUT -d 2001::1/128 -j REDIRECT\n");
 
-        when(dockerOperations.executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any()))
+        when(containerOperations.executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any()))
                 .thenThrow(new RuntimeException("iptables restore failed"));
 
         aclMaintainer.converge(context);
 
-        verify(dockerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables"), eq("-F"), eq("-t"), eq("filter"));
-        verifyNoMoreInteractions(dockerOperations);
+        verify(containerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
+        verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables"), eq("-F"), eq("-t"), eq("filter"));
+        verifyNoMoreInteractions(containerOperations);
 
         aclMaintainer.converge(context);
     }
@@ -250,11 +250,11 @@ public class AclMaintainerTest {
             String path = invoc.getArgument(2);
             writtenFileContents.add(new UnixPath(path).readUtf8File());
             return new CommandResult(null, 0, "");
-        }).when(dockerOperations).executeCommandInNetworkNamespace(any(), endsWith("-restore"), any());
+        }).when(containerOperations).executeCommandInNetworkNamespace(any(), endsWith("-restore"), any());
     }
 
     private void whenListRules(NodeAgentContext context, String table, IPVersion ipVersion, String output) {
-        when(dockerOperations.executeCommandInNetworkNamespace(
+        when(containerOperations.executeCommandInNetworkNamespace(
                 eq(context), eq(ipVersion.iptablesCmd()), eq("-S"), eq("-t"), eq(table)))
                 .thenReturn(new CommandResult(null, 0, output));
     }

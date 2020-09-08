@@ -11,10 +11,9 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
- * API to simplify the com.github.dockerjava API for clients,
- * and to avoid OSGi exporting those classes.
+ * API that hides the access to a specific container engine like Docker or Podman.
  */
-public interface Docker {
+public interface ContainerEngine {
 
     interface CreateContainerCommand {
         CreateContainerCommand withHostName(String hostname);
@@ -23,7 +22,7 @@ public interface Docker {
         CreateContainerCommand withEnvironment(String name, String value);
 
         /**
-         * Mounts a directory on host inside the docker container.
+         * Mounts a directory on host inside the container.
          *
          * <p>Bind mount content will be <b>private</b> to this container (and host) only.
          *
@@ -38,7 +37,7 @@ public interface Docker {
         CreateContainerCommand withVolume(Path path, Path volumePath);
 
         /**
-         * Mounts a directory on host inside the docker container.
+         * Mounts a directory on host inside the container.
          *
          * <p>The bind mount content will be <b>shared</b> among multiple containers.
          *

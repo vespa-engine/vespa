@@ -20,7 +20,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
@@ -57,7 +57,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final NodeAgentContextSupplier contextSupplier;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
-    private final DockerOperations dockerOperations;
+    private final ContainerOperations containerOperations;
     private final StorageMaintainer storageMaintainer;
     private final Optional<CredentialsMaintainer> credentialsMaintainer;
     private final Optional<AclMaintainer> aclMaintainer;
@@ -97,21 +97,21 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Created in NodeAdminImpl
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
-                         Orchestrator orchestrator, DockerOperations dockerOperations, StorageMaintainer storageMaintainer,
+                         Orchestrator orchestrator, ContainerOperations containerOperations, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
-        this(contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource, credentialsMaintainer,
+        this(contextSupplier, nodeRepository, orchestrator, containerOperations, storageMaintainer, flagSource, credentialsMaintainer,
              aclMaintainer, healthChecker, clock, DEFAULT_WARM_UP_DURATION);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
-                        Orchestrator orchestrator, DockerOperations dockerOperations, StorageMaintainer storageMaintainer,
-                        FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
-                        Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock, Duration warmUpDuration) {
+                         Orchestrator orchestrator, ContainerOperations containerOperations, StorageMaintainer storageMaintainer,
+                         FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
+                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock, Duration warmUpDuration) {
         this.contextSupplier = contextSupplier;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
-        this.dockerOperations = dockerOperations;
+        this.containerOperations = containerOperations;
         this.storageMaintainer = storageMaintainer;
         this.credentialsMaintainer = credentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
@@ -157,7 +157,7 @@ public class NodeAgentImpl implements NodeAgent {
     void startServicesIfNeeded(NodeAgentContext context) {
         if (!hasStartedServices) {
             context.log(logger, "Starting services");
-            dockerOperations.startServices(context);
+            containerOperations.startServices(context);
             hasStartedServices = true;
         }
     }
@@ -165,7 +165,7 @@ public class NodeAgentImpl implements NodeAgent {
     void resumeNodeIfNeeded(NodeAgentContext context) {
         if (!hasResumedNode) {
             context.log(logger, Level.FINE, "Starting optional node program resume command");
-            dockerOperations.resumeNode(context);
+            containerOperations.resumeNode(context);
             hasResumedNode = true;
         }
     }
@@ -211,15 +211,15 @@ public class NodeAgentImpl implements NodeAgent {
         ContainerData containerData = createContainerData(context);
         ContainerResources wantedResources = context.nodeType() != NodeType.tenant || warmUpDuration(context.zone()).isNegative() ?
                 getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
-        dockerOperations.createContainer(context, containerData, wantedResources);
-        dockerOperations.startContainer(context);
+        containerOperations.createContainer(context, containerData, wantedResources);
+        containerOperations.startContainer(context);
 
         currentRebootGeneration = context.node().wantedRebootGeneration();
         currentRestartGeneration = context.node().wantedRestartGeneration();
         hasStartedServices = true; // Automatically started with the container
         hasResumedNode = false;
         context.log(logger, "Container successfully started, new containerState is " + containerState);
-        return dockerOperations.getContainer(context).orElseThrow(() ->
+        return containerOperations.getContainer(context).orElseThrow(() ->
                 new ConvergenceException("Did not find container that was just started"));
     }
 
@@ -236,7 +236,7 @@ public class NodeAgentImpl implements NodeAgent {
                 context.log(logger, "Will restart services: " + restartReason);
                 orchestratorSuspendNode(context);
 
-                dockerOperations.restartVespa(context);
+                containerOperations.restartVespa(context);
                 currentRestartGeneration = context.node().wantedRestartGeneration();
             });
         }
@@ -268,7 +268,7 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             hasStartedServices = hasResumedNode = false;
             firstSuccessfulHealthCheckInstant = Optional.empty();
-            dockerOperations.stopServices(context);
+            containerOperations.stopServices(context);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         }
@@ -284,7 +284,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (containerState == ABSENT) return;
         try {
             hasResumedNode = false;
-            dockerOperations.suspendNode(context);
+            containerOperations.suspendNode(context);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         } catch (RuntimeException e) {
@@ -345,7 +345,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
-        dockerOperations.removeContainer(context, existingContainer);
+        containerOperations.removeContainer(context, existingContainer);
         containerState = ABSENT;
         context.log(logger, "Container successfully removed, new containerState is " + containerState);
     }
@@ -366,8 +366,8 @@ public class NodeAgentImpl implements NodeAgent {
         orchestratorSuspendNode(context);
 
         // Only update CPU resources
-        dockerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
-        return dockerOperations.getContainer(context).orElseThrow(() ->
+        containerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
+        return containerOperations.getContainer(context).orElseThrow(() ->
                 new ConvergenceException("Did not find container that was just updated"));
     }
 
@@ -390,7 +390,7 @@ public class NodeAgentImpl implements NodeAgent {
     private boolean downloadImageIfNeeded(NodeSpec node, Optional<Container> container) {
         if (node.wantedDockerImage().equals(container.map(c -> c.image))) return false;
 
-        return node.wantedDockerImage().map(dockerOperations::pullImageAsyncIfNeeded).orElse(false);
+        return node.wantedDockerImage().map(containerOperations::pullImageAsyncIfNeeded).orElse(false);
     }
 
     public void converge(NodeAgentContext context) {
@@ -531,7 +531,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<Container> getContainer(NodeAgentContext context) {
         if (containerState == ABSENT) return Optional.empty();
-        Optional<Container> container = dockerOperations.getContainer(context);
+        Optional<Container> container = containerOperations.getContainer(context);
         if (container.isEmpty()) containerState = ABSENT;
         return container;
     }

@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
-public interface DockerOperations {
+public interface ContainerOperations {
 
     void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources);
 
@@ -56,5 +56,5 @@ public interface DockerOperations {
     boolean noManagedContainersRunning();
 
     /** Deletes the local images that are currently not in use by any container and not recently used. */
-    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
+    boolean deleteUnusedContainerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 }

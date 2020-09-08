@@ -10,7 +10,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;

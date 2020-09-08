@@ -19,7 +19,7 @@ public class CreateContainerCommandImplTest {
         String hostname = "docker-1.region.domain.tld";
         ContainerName containerName = ContainerName.fromHostname(hostname);
 
-        Docker.CreateContainerCommand createContainerCommand = new CreateContainerCommandImpl(
+        ContainerEngine.CreateContainerCommand createContainerCommand = new CreateContainerCommandImpl(
                 null, dockerImage, containerName)
                 .withHostName(hostname)
                 .withResources(containerResources)

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
 import java.nio.file.Path;
@@ -28,9 +28,9 @@ public class CoreCollector {
     private static final Pattern EXECFN_PATH_PATTERN = Pattern.compile("^.* execfn: '(?<path>.*?)'");
     private static final Pattern FROM_PATH_PATTERN = Pattern.compile("^.* from '(?<path>.*?)'");
 
-    private final DockerOperations docker;
+    private final ContainerOperations docker;
 
-    public CoreCollector(DockerOperations docker) {
+    public CoreCollector(ContainerOperations docker) {
         this.docker = docker;
     }
 

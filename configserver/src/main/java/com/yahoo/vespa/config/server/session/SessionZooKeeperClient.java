@@ -14,7 +14,6 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
-import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
-import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
