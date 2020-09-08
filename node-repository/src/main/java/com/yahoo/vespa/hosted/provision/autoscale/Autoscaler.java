@@ -96,12 +96,11 @@ public class Autoscaler {
                similar(a.realResources().memoryGb() * a.nodes(),
                        b.realResources().memoryGb() * b.nodes(), resourceDifferenceWorthReallocation) &&
                similar(a.realResources().diskGb() * a.nodes(),
-                       b.realResources().diskGb() * b.nodes(),
-                       resourceDifferenceWorthReallocation);
+                       b.realResources().diskGb() * b.nodes(), resourceDifferenceWorthReallocation);
     }
 
     private boolean similar(double r1, double r2, double threshold) {
-        return Math.abs(r1 - r2) / r1 < threshold;
+        return Math.abs(r1 - r2) / (( r1 + r2) / 2) < threshold;
     }
 
     /**
