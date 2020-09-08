@@ -20,15 +20,7 @@ import java.util.stream.Collectors;
  */
 public class Autoscaler {
 
-    /*
-     TODO:
-     - Scale group size
-     - Consider taking spikes/variance into account
-     - Measure observed regulation lag (startup+redistribution) and take it into account when deciding regulation observation window
-     - Scale by performance not just load+cost
-     */
-
-    private static final int minimumMeasurements = 500; // TODO: Per node instead? Also say something about interval?
+    private static final int minimumMeasurementsPerNode = 60; // 1 hour
 
     /** What cost difference factor is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
@@ -113,8 +105,10 @@ public class Autoscaler {
                                                           resource,
                                                           clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
 
-        if (window.measurementCount() < minimumMeasurements) return Optional.empty();
-        if (window.hostnames() != clusterNodes.size()) return Optional.empty(); // Regulate only when all nodes are measured
+        // Require a total number of measurements scaling with the number of nodes,
+        // but don't require that we have at least that many from every node
+        if (window.measurementCount()/clusterNodes.size() < minimumMeasurementsPerNode) return Optional.empty();
+        if (window.hostnames() != clusterNodes.size()) return Optional.empty();
 
         return Optional.of(window.average());
     }
