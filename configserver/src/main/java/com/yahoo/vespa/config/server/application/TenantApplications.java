@@ -119,16 +119,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return curator.getChildren(applicationsPath).stream()
                       .sorted()
                       .map(ApplicationId::fromSerializedForm)
-                      .filter(applicationId -> {
-                          if ( ! applicationId.tenant().equals(tenant)) {
-                              log.log(Level.WARNING, "There is an application ('" + applicationId + "') with wrong tenant (should be '" +
-                                                     tenant + "') in " + applicationsPath + ", deleting it");
-                              curator.delete(applicationsPath.append(applicationId.serializedForm()));
-                              return false;
-                          } else {
-                              return true;
-                          }
-                      })
                       .filter(id -> activeSessionOf(id).isPresent())
                       .collect(Collectors.toUnmodifiableList());
     }
@@ -208,7 +198,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return curator.lock(lockPath(id), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
     }
 
-    private void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {
+    private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
             switch (event.getType()) {
                 case CHILD_ADDED:
