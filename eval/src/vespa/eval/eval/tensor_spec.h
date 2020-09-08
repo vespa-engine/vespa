@@ -81,6 +81,7 @@ public:
     void to_slime(slime::Cursor &tensor) const;
     static TensorSpec from_slime(const slime::Inspector &tensor);
     static TensorSpec from_value(const eval::Value &value);
+    static TensorSpec from_expr(const vespalib::string &expr);
 };
 
 bool operator==(const TensorSpec &lhs, const TensorSpec &rhs);
