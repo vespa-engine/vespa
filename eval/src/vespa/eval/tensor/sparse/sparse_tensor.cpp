@@ -258,6 +258,16 @@ SparseTensor::count_memory_used() const
     return result;
 }
 
+MemoryUsage
+SparseTensor::get_memory_usage() const
+{
+    MemoryUsage result = _stash.get_memory_usage();
+    size_t plus = sizeof(SparseTensor) + _cells.getMemoryConsumption();
+    result.incUsedBytes(plus);
+    result.incAllocatedBytes(plus); // should probably be even more
+    return result;
+}
+
 }
 
 VESPALIB_HASH_MAP_INSTANTIATE(vespalib::tensor::SparseTensorAddressRef, double);

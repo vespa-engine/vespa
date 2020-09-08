@@ -64,6 +64,18 @@ WrappedSimpleTensor::count_memory_used() const
     return result;
 }
 
+
+MemoryUsage
+WrappedSimpleTensor::get_memory_usage() const
+{
+    size_t used = sizeof(WrappedSimpleTensor);
+    if (_space) {
+        used += _space->count_memory_used();
+    }
+    // XXX - does not account for extra allocated memory
+    return MemoryUsage(used, used, 0, 0);
+}
+
 Tensor::UP
 WrappedSimpleTensor::clone() const
 {
