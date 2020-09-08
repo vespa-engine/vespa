@@ -417,13 +417,15 @@ public class SessionRepository {
     }
 
     public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
-        if (session.applicationSet().isPresent()) {
-            return session.applicationSet().get();
-        }
+        try (var lock = lock(session.sessionId)) {
+            if (session.applicationSet().isPresent()) {
+                return session.applicationSet().get();
+            }
 
-        ApplicationSet applicationSet = loadApplication(session);
-        remoteSessionCache.putSession(session.activated(applicationSet));
-        return applicationSet;
+            ApplicationSet applicationSet = loadApplication(session);
+            remoteSessionCache.putSession(session.activated(applicationSet));
+            return applicationSet;
+        }
     }
 
     void confirmUpload(RemoteSession session) {
