@@ -46,7 +46,7 @@ public class AutoscalingTest {
 
         assertTrue("No measurements -> No change", tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
 
-        tester.addMeasurements(Resource.cpu, 0.25f, 1f, 60, application1);
+        tester.addMeasurements(Resource.cpu, 0.25f, 1f, 59, application1);
         assertTrue("Too few measurements -> No change", tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
 
         tester.addMeasurements(Resource.cpu, 0.25f, 1f, 60, application1);

@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
  */
 public class NodeMetricsDb {
 
-    private Logger log = Logger.getLogger(NodeMetricsDb.class.getName());
     private static final Duration dbWindow = Duration.ofHours(24);
 
     /** Measurements by key. Each list of measurements is sorted by increasing timestamp */
