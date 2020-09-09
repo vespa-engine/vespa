@@ -23,9 +23,11 @@ private:
     void configure(std::unique_ptr<searchlib::TranslogserverConfig> cfg) override ;
 
 public:
+    typedef std::unique_ptr<TransLogServerApp> UP;
+
     TransLogServerApp(const config::ConfigUri & tlsConfigUri,
                       const common::FileHeaderContext &fileHeaderContext);
-    ~TransLogServerApp() override;
+    ~TransLogServerApp();
 
     TransLogServer::SP getTransLogServer() const;
 
