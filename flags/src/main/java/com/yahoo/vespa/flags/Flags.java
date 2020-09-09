@@ -264,6 +264,12 @@ public class Flags {
             "Whether to provision and use endpoint certs for apps in shared routing zones",
             "Takes effect on next deployment of the application", APPLICATION_ID);
 
+    public static final UnboundBooleanFlag PHRASE_SEGMENTING = defineFeatureFlag(
+            "phrase-segmenting", false,
+            "Should 'implicit phrases' in queries we parsed to a phrase or and?",
+            "Takes effect on redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
             "nlb-proxy-protocol", false,
             "Configure NLB to use proxy protocol",
