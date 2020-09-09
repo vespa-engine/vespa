@@ -110,6 +110,11 @@ public class ClusterMembership {
     @Override
     public String toString() { return stringValue(); }
 
+    // TODO: Remove when 7.208 is the latest model in use
+    public static ClusterMembership from(String stringValue, Version vespaVersion) {
+        return new ClusterMembership(stringValue, vespaVersion, Optional.empty());
+    }
+
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo) {
         return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo);
     }

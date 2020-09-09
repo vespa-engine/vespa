@@ -109,6 +109,27 @@ public class Flavor {
 
     public Optional<FlavorOverrides> flavorOverrides() { return flavorOverrides; }
 
+    // TODO: Remove when models older than 7.226 are gone
+    @Deprecated
+    public double getMinMainMemoryAvailableGb() { return resources.memoryGb(); }
+
+    // TODO: Remove when models older than 7.226 are gone
+    @Deprecated
+    public double getMinDiskAvailableGb() { return resources.diskGb(); }
+
+    // TODO: Remove when models older than 7.226 are gone
+    @Deprecated
+    public boolean hasFastDisk() { return resources.diskSpeed() == NodeResources.DiskSpeed.fast; }
+
+    // TODO: Remove when models older than 7.226 are gone
+    @Deprecated
+    public double getBandwidthGbps() { return resources.bandwidthGbps(); }
+
+    /** Returns the number of cores available in this flavor, not scaled for speed. */
+    // TODO: Remove when models older than 7.226 are gone
+    @Deprecated
+    public double getMinCpuCores() { return minCpuCores; }
+
     public Type getType() { return type; }
     
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */

@@ -20,7 +20,7 @@ public final class ClusterSpec {
     /** The group id of these hosts, or empty if this is represents a request for hosts */
     private final Optional<Group> groupId;
     private final Version vespaVersion;
-    private final boolean exclusive;
+    private boolean exclusive;
     private final Optional<Id> combinedId;
     private final Optional<DockerImage> dockerImageRepo;
 
@@ -109,7 +109,7 @@ public final class ClusterSpec {
 
         public ClusterSpec build() {
             if (specification) {
-                if (groupId.isEmpty()) throw new IllegalArgumentException("groupId is required to be set when creating a ClusterSpec with specification()");
+                if (groupId.isEmpty()) throw new IllegalArgumentException("groupIs is required to be set when creating a ClusterSpec with specification()");
                 if (vespaVersion == null) throw new IllegalArgumentException("vespaVersion is required to be set when creating a ClusterSpec with specification()");
             } else
                 if (groupId.isPresent()) throw new IllegalArgumentException("groupId is not allowed to be set when creating a ClusterSpec with request()");
@@ -138,6 +138,13 @@ public final class ClusterSpec {
 
         public Builder combinedId(Optional<Id> combinedId) {
             this.combinedId = combinedId;
+            return this;
+        }
+
+        @Deprecated
+        // TODO: Remove after 7.208 is oldest version in use
+        public Builder dockerImageRepo(Optional<String> dockerImageRepo) {
+            this.dockerImageRepo = dockerImageRepo.map(DockerImage::fromString);
             return this;
         }
 
