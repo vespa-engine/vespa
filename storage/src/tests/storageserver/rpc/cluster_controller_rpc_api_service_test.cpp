@@ -3,7 +3,7 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/storage/storageserver/message_enqueuer.h>
+#include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storage/storageserver/rpc/cluster_controller_api_rpc_service.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
@@ -26,10 +26,13 @@ struct ClusterControllerApiRpcServiceTest : Test {
 
 namespace {
 
-struct MockOperationEnqueuer : MessageEnqueuer {
+struct MockOperationDispatcher : MessageDispatcher {
     std::vector<std::shared_ptr<api::StorageMessage>> _enqueued;
 
-    void enqueue(std::shared_ptr<api::StorageMessage> msg) override {
+    void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override {
+        _enqueued.emplace_back(std::move(msg));
+    }
+    void dispatch_async(std::shared_ptr<api::StorageMessage> msg) override {
         _enqueued.emplace_back(std::move(msg));
     }
 };
@@ -42,7 +45,7 @@ struct DummyReturnHandler : FRT_IReturnHandler {
 struct FixtureBase {
     mbus::Slobrok slobrok;
     vdstestlib::DirConfig config;
-    MockOperationEnqueuer enqueuer;
+    MockOperationDispatcher dispatcher;
     std::unique_ptr<SharedRpcResources> shared_rpc_resources;
     std::unique_ptr<ClusterControllerApiRpcService> cc_service;
     DummyReturnHandler return_handler;
@@ -56,14 +59,14 @@ struct FixtureBase {
         addSlobrokConfig(config, slobrok);
 
         shared_rpc_resources = std::make_unique<SharedRpcResources>(config.getConfigId(), 0, 1);
-        cc_service = std::make_unique<ClusterControllerApiRpcService>(enqueuer, *shared_rpc_resources);
+        cc_service = std::make_unique<ClusterControllerApiRpcService>(dispatcher, *shared_rpc_resources);
         shared_rpc_resources->start_server_and_register_slobrok("my_cool_rpc_test");
     }
 
     virtual ~FixtureBase() {
         // Must destroy any associated message contexts that may have refs to FRT_Request
         // instance _before_ we destroy the request itself.
-        enqueuer._enqueued.clear();
+        dispatcher._enqueued.clear();
         if (bound_request) {
             bound_request->SubRef();
         }
@@ -97,8 +100,8 @@ struct SetStateFixture : FixtureBase {
     void assert_enqueued_operation_has_bundle(const lib::ClusterStateBundle& expectedBundle) {
         ASSERT_TRUE(bound_request != nullptr);
         ASSERT_TRUE(request_is_detached);
-        ASSERT_EQ(1, enqueuer._enqueued.size());
-        auto& state_request = dynamic_cast<const api::SetSystemStateCommand&>(*enqueuer._enqueued[0]);
+        ASSERT_EQ(1, dispatcher._enqueued.size());
+        auto& state_request = dynamic_cast<const api::SetSystemStateCommand&>(*dispatcher._enqueued[0]);
         ASSERT_EQ(expectedBundle, state_request.getClusterStateBundle());
     }
 
@@ -222,8 +225,8 @@ struct ActivateStateFixture : FixtureBase {
     void assert_enqueued_operation_has_activate_version(uint32_t version) {
         ASSERT_TRUE(bound_request != nullptr);
         ASSERT_TRUE(request_is_detached);
-        ASSERT_EQ(1, enqueuer._enqueued.size());
-        auto& state_request = dynamic_cast<const api::ActivateClusterStateVersionCommand&>(*enqueuer._enqueued[0]);
+        ASSERT_EQ(1, dispatcher._enqueued.size());
+        auto& state_request = dynamic_cast<const api::ActivateClusterStateVersionCommand&>(*dispatcher._enqueued[0]);
         ASSERT_EQ(version, state_request.version());
     }
 
