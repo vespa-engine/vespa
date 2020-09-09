@@ -24,18 +24,17 @@ import java.nio.file.Path;
  */
 public class TestDrivers {
 
-    public static TestDriver newConfiguredInstance(final RequestHandler requestHandler,
-                                                   final ServerConfig.Builder serverConfig,
-                                                   final ConnectorConfig.Builder connectorConfig,
-                                                   final Module... guiceModules) throws IOException {
+    public static TestDriver newConfiguredInstance(RequestHandler requestHandler,
+                                                   ServerConfig.Builder serverConfig,
+                                                   ConnectorConfig.Builder connectorConfig,
+                                                   Module... guiceModules) throws IOException {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,
                 newConfigModule(serverConfig, connectorConfig, guiceModules));
     }
 
-    public static TestDriver newInstance(final RequestHandler requestHandler,
-                                         final Module... guiceModules) throws IOException {
+    public static TestDriver newInstance(RequestHandler requestHandler, Module... guiceModules) throws IOException {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,
@@ -48,11 +47,11 @@ public class TestDrivers {
 
     public enum TlsClientAuth { NEED, WANT }
 
-    public static TestDriver newInstanceWithSsl(final RequestHandler requestHandler,
+    public static TestDriver newInstanceWithSsl(RequestHandler requestHandler,
                                                 Path certificateFile,
                                                 Path privateKeyFile,
                                                 TlsClientAuth tlsClientAuth,
-                                                final Module... guiceModules) throws IOException {
+                                                Module... guiceModules) throws IOException {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,
@@ -74,10 +73,9 @@ public class TestDrivers {
                         Modules.combine(guiceModules)));
     }
 
-    private static Module newConfigModule(
-            final ServerConfig.Builder serverConfig,
-            final ConnectorConfig.Builder connectorConfigBuilder,
-            final Module... guiceModules) {
+    private static Module newConfigModule(ServerConfig.Builder serverConfig,
+                                          ConnectorConfig.Builder connectorConfigBuilder,
+                                          Module... guiceModules) {
         return Modules.combine(
                 new AbstractModule() {
                     @Override
@@ -87,12 +85,13 @@ public class TestDrivers {
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(connectorConfigBuilder));
                         bind(FilterBindings.class).toInstance(
                                 new FilterBindings(
-                                        new BindingRepository<RequestFilter>(),
-                                        new BindingRepository<ResponseFilter>()));
+                                        new BindingRepository<>(),
+                                        new BindingRepository<>()));
                     }
                 },
                 new ConnectorFactoryRegistryModule(connectorConfigBuilder),
                 new ServletModule(),
                 Modules.combine(guiceModules));
     }
+
 }

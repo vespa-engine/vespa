@@ -40,6 +40,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Rule;
 import org.junit.Test;
@@ -97,13 +98,12 @@ import static org.cthul.matchers.CthulMatchers.matchesPattern;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
@@ -125,8 +125,8 @@ public class HttpServerTest {
     @Test
     public void requireThatServerCanListenToRandomPort() throws Exception {
         final TestDriver driver = TestDrivers.newInstance(mockRequestHandler());
-        assertThat(driver.server().getListenPort(), is(not(0)));
-        assertThat(driver.close(), is(true));
+        assertNotEquals(0, driver.server().getListenPort());
+        assertTrue(driver.close());
     }
 
     @Test
@@ -142,7 +142,7 @@ public class HttpServerTest {
         } catch (final Throwable t) {
             assertThat(t.getCause(), instanceOf(BindException.class));
         }
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -159,7 +159,7 @@ public class HttpServerTest {
                       Pattern.quote(BindingSetNotFoundException.class.getName()) +
                       ": No binding set named &apos;unknown&apos;\\.\n\tat .+",
                       Pattern.DOTALL | Pattern.MULTILINE)));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -171,7 +171,7 @@ public class HttpServerTest {
                         .requestHeaderSize(1));
         driver.client().get("/status.html")
               .expectStatusCode(is(REQUEST_URI_TOO_LONG));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -188,7 +188,7 @@ public class HttpServerTest {
 
         assertThat(accessLogMock.logEntries.size(), equalTo(1));
         AccessLogEntry accessLogEntry = accessLogMock.logEntries.get(0);
-        assertThat(accessLogEntry.getStatusCode(), equalTo(414));
+        assertEquals(414, accessLogEntry.getStatusCode());
     }
 
     private static class AccessLogMock extends AccessLog {
@@ -208,7 +208,7 @@ public class HttpServerTest {
         final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -217,7 +217,7 @@ public class HttpServerTest {
         SimpleHttpClient client = driver.newClient(true);
         client.get("/status.html")
                 .expectStatusCode(is(OK));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -227,7 +227,7 @@ public class HttpServerTest {
               .expectStatusCode(is(OK));
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -241,7 +241,7 @@ public class HttpServerTest {
                       .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(startsWith('{' + requestContent + "=[]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -254,7 +254,7 @@ public class HttpServerTest {
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(is("{foo=[bar]}foo=bar"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -267,7 +267,7 @@ public class HttpServerTest {
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(is("{foo=[bar]}foo=bar"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -280,7 +280,7 @@ public class HttpServerTest {
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(is("{foo=[bar]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -295,7 +295,7 @@ public class HttpServerTest {
                       .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(startsWith('{' + requestContent + "=[]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -307,7 +307,7 @@ public class HttpServerTest {
                       .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(is("{}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -320,7 +320,7 @@ public class HttpServerTest {
                       .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(startsWith("{a=[b], c=[d]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -332,7 +332,7 @@ public class HttpServerTest {
                       .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(is("{a=[b], c=[d]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -345,7 +345,7 @@ public class HttpServerTest {
                       .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(startsWith("{a=[b], c=[d1, d2], e=[f]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -358,7 +358,7 @@ public class HttpServerTest {
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(is("{B\u00e6r=[bl\u00e5]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -370,7 +370,7 @@ public class HttpServerTest {
                         .setContent("a=b")
                         .execute();
         response.expectStatusCode(is(UNSUPPORTED_MEDIA_TYPE));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
     
     @Test
@@ -383,7 +383,7 @@ public class HttpServerTest {
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(startsWith("{ =\u00d8=[\"% ]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -395,7 +395,7 @@ public class HttpServerTest {
                         .setContent("a=b")
                         .execute();
         response.expectStatusCode(is(INTERNAL_SERVER_ERROR));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -426,7 +426,7 @@ public class HttpServerTest {
                       .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(containsString("[foo=bar]"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -441,7 +441,7 @@ public class HttpServerTest {
               .expectStatusCode(is(OK))
               .expectHeader("Set-Cookie",
                       is("foo=bar; Path=/foopath; Domain=.localhost; Secure; HttpOnly"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -451,7 +451,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
               .expectStatusCode(is(GATEWAY_TIMEOUT));
         ResponseDispatch.newInstance(OK).dispatch(requestHandler.responseHandler);
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     // Header with no value is disallowed by https://tools.ietf.org/html/rfc7230#section-3.2
@@ -462,7 +462,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
               .expectStatusCode(is(OK))
               .expectNoHeader("X-Foo");
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     // Header with empty value is allowed by https://tools.ietf.org/html/rfc7230#section-3.2
@@ -473,7 +473,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectHeader("X-Foo", is(""));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -498,7 +498,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectHeader(CONNECTION, is(CLOSE));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -510,7 +510,7 @@ public class HttpServerTest {
         final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -528,7 +528,7 @@ public class HttpServerTest {
                 .get("/dummy.html")
                 .expectStatusCode(is(UNAUTHORIZED));
 
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -546,7 +546,7 @@ public class HttpServerTest {
                 .get("/status.html")
                 .expectStatusCode(is(OK));
 
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -560,21 +560,66 @@ public class HttpServerTest {
 
     @Test
     public void requireThatGzipEncodingRequestsAreAutomaticallyDecompressed() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
-        final String requestContent = generateContent('a', 30);
-        final ResponseValidator response =
-                driver.client().newPost("/status.html")
-                        .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
-                        .setGzipContent(requestContent)
-                        .execute();
+        TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        String requestContent = generateContent('a', 30);
+        ResponseValidator response = driver.client().newPost("/status.html")
+                                           .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                                           .setGzipContent(requestContent)
+                                           .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(startsWith('{' + requestContent + "=[]}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatResponseStatsAreCollected() throws Exception {
+        RequestTypeHandler handler = new RequestTypeHandler();
+        TestDriver driver = TestDrivers.newInstance(handler);
+        HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) driver.server().server().getHandler())
+                                                                      .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
+
+        {
+            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+            assertEquals(0, stats.size());
+        }
+
+        {
+            driver.client().newPost("/status.html").execute();
+            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+            assertEquals(1, stats.size());
+            assertEquals("http", stats.get(0).scheme);
+            assertEquals("POST", stats.get(0).method);
+            assertEquals("http.status.2xx", stats.get(0).name);
+            assertEquals("write", stats.get(0).requestType);
+            assertEquals(1, stats.get(0).value);
+        }
+
+        {
+            driver.client().newGet("/status.html").execute();
+            driver.client().newGet("/status.html").execute();
+            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+            assertEquals(1, stats.size());
+            assertEquals("http", stats.get(0).scheme);
+            assertEquals("GET", stats.get(0).method);
+            assertEquals("http.status.2xx", stats.get(0).name);
+            assertEquals("read", stats.get(0).requestType);
+            assertEquals(2, stats.get(0).value);
+        }
+
+        {
+            handler.setRequestType(Request.RequestType.READ);
+            driver.client().newPost("/status.html").execute();
+            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+            assertEquals(1, stats.size());
+            assertEquals("Handler overrides request type", "read", stats.get(0).requestType);
+        }
+
+        assertTrue(driver.close());
     }
 
     @Test
     public void requireThatConnectionThrottleDoesNotBlockConnectionsBelowThreshold() throws Exception {
-        final TestDriver driver = TestDrivers.newConfiguredInstance(
+        TestDriver driver = TestDrivers.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder()
@@ -585,7 +630,7 @@ public class HttpServerTest {
                                             .maxConnections(10)));
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -603,7 +648,7 @@ public class HttpServerTest {
                 driver, clientCtx, null, null, "Received fatal alert: bad_certificate");
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -623,7 +668,7 @@ public class HttpServerTest {
                 driver, clientCtx, "TLSv1.3", null, "Received fatal alert: protocol_version");
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -643,7 +688,7 @@ public class HttpServerTest {
                 driver, clientCtx, null, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "Received fatal alert: handshake_failure");
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -667,7 +712,7 @@ public class HttpServerTest {
                 driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -690,7 +735,7 @@ public class HttpServerTest {
                 driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
         verify(metricConsumer.mockitoMock())
                 .add(Metrics.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -707,9 +752,9 @@ public class HttpServerTest {
         sendJettyClientRequest(driver, client, new V1.Tag(proxiedRemoteAddress, proxiedRemotePort));
         sendJettyClientRequest(driver, client, new V2.Tag(proxiedRemoteAddress, proxiedRemotePort));
         client.stop();
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
 
-        assertThat(accessLogMock.logEntries, hasSize(2));
+        assertEquals(2, accessLogMock.logEntries.size());
         assertLogEntryHasRemote(accessLogMock.logEntries.get(0), proxiedRemoteAddress, proxiedRemotePort);
         assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, proxiedRemotePort);
     }
@@ -727,9 +772,9 @@ public class HttpServerTest {
         sendJettyClientRequest(driver, client, null);
         sendJettyClientRequest(driver, client, new V2.Tag(proxiedRemoteAddress, 12345));
         client.stop();
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
 
-        assertThat(accessLogMock.logEntries, hasSize(2));
+        assertEquals(2, accessLogMock.logEntries.size());
         assertLogEntryHasRemote(accessLogMock.logEntries.get(0), "127.0.0.1", 0);
         assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, 0);
     }
@@ -751,7 +796,7 @@ public class HttpServerTest {
                                   proxiedRemoteAddress, proxiedRemotePort, proxyLocalAddress, proxyLocalPort, null);
         ContentResponse response = sendJettyClientRequest(driver, client, v2Tag);
         client.stop();
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
 
         int clientPort = Integer.parseInt(response.getHeaders().get("Jdisc-Local-Port"));
         assertNotEquals(proxyLocalPort, clientPort);
@@ -879,8 +924,8 @@ public class HttpServerTest {
         return ret.toString();
     }
 
-    private static TestDriver newDriverWithFormPostContentRemoved(
-            final RequestHandler requestHandler, final boolean removeFormPostBody) throws Exception {
+    private static TestDriver newDriverWithFormPostContentRemoved(RequestHandler requestHandler,
+                                                                  boolean removeFormPostBody) throws Exception {
         return TestDrivers.newConfiguredInstance(
                 requestHandler,
                 new ServerConfig.Builder()
@@ -888,8 +933,7 @@ public class HttpServerTest {
                 new ConnectorConfig.Builder());
     }
 
-    private static FormBodyPart newFileBody(final String parameterName, final String fileName, final String fileContent)
-            throws Exception {
+    private static FormBodyPart newFileBody(final String parameterName, final String fileName, final String fileContent) {
         return new FormBodyPart(
                 parameterName,
                 new StringBody(fileContent, ContentType.TEXT_PLAIN) {
@@ -959,20 +1003,35 @@ public class HttpServerTest {
     }
 
     private static class ParameterPrinterRequestHandler extends AbstractRequestHandler {
+
         private static final CompletionHandler NULL_COMPLETION_HANDLER = null;
 
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final Map<String, List<String>> parameters =
-                    new TreeMap<>(((HttpRequest)request).parameters());
-            final ContentChannel responseContentChannel
-                    = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
-            responseContentChannel.write(
-                    ByteBuffer.wrap(parameters.toString().getBytes(StandardCharsets.UTF_8)),
-                    NULL_COMPLETION_HANDLER);
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            Map<String, List<String>> parameters = new TreeMap<>(((HttpRequest)request).parameters());
+            ContentChannel responseContentChannel = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
+            responseContentChannel.write(ByteBuffer.wrap(parameters.toString().getBytes(StandardCharsets.UTF_8)),
+                                         NULL_COMPLETION_HANDLER);
 
             // Have the request content written back to the response.
             return responseContentChannel;
+        }
+    }
+
+    private static class RequestTypeHandler extends AbstractRequestHandler {
+
+        private Request.RequestType requestType = null;
+
+        public void setRequestType(Request.RequestType requestType) {
+            this.requestType = requestType;
+        }
+
+        @Override
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            ContentChannel channel = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
+            if (requestType != null)
+                request.setRequestType(requestType);
+            return channel;
         }
     }
 

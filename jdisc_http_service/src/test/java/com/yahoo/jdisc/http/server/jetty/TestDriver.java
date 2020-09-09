@@ -24,8 +24,7 @@ public class TestDriver {
     private final JettyHttpServer server;
     private final SimpleHttpClient client;
 
-    private TestDriver(com.yahoo.jdisc.test.TestDriver driver, JettyHttpServer server, SimpleHttpClient client)
-            throws IOException {
+    private TestDriver(com.yahoo.jdisc.test.TestDriver driver, JettyHttpServer server, SimpleHttpClient client) {
         this.driver = driver;
         this.server = server;
         this.client = client;
@@ -33,7 +32,7 @@ public class TestDriver {
 
     public static TestDriver newInstance(Class<? extends JettyHttpServer> serverClass,
                                          RequestHandler requestHandler,
-                                         Module testConfig) throws IOException {
+                                         Module testConfig) {
         com.yahoo.jdisc.test.TestDriver driver =
                 com.yahoo.jdisc.test.TestDriver.newSimpleApplicationInstance(testConfig);
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -47,7 +46,7 @@ public class TestDriver {
         return new TestDriver(driver, server, client);
     }
 
-    public boolean close() throws IOException {
+    public boolean close() {
         server.close();
         server.release();
         return driver.close();
@@ -65,7 +64,7 @@ public class TestDriver {
         return newSslContext(driver.newContainerBuilder());
     }
 
-    private static SSLContext newSslContext(final ContainerBuilder builder) {
+    private static SSLContext newSslContext(ContainerBuilder builder) {
         ConnectorConfig.Ssl sslConfig = builder.getInstance(ConnectorConfig.class).ssl();
         if (!sslConfig.enabled()) return null;
 
