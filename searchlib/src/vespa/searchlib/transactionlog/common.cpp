@@ -121,31 +121,39 @@ Packet::add(const Packet::Entry & e)
     _range.to(e.serial());
 }
 
+Writer::CommitResult::CommitResult()
+    : _callBacks()
+{}
+Writer::CommitResult::CommitResult( CommitPayload commitPayLoad)
+    : _callBacks(std::move(commitPayLoad))
+{}
+
+Writer::CommitResult::~CommitResult() = default;
+
 CommitChunk::CommitChunk(size_t reserveBytes, size_t reserveCount)
     : _data(reserveBytes),
-      _callBacks(),
-      _firstArrivalTime()
+      _callBacks(std::make_shared<Writer::DoneCallbacksList>())
 {
-    _callBacks.reserve(reserveCount);
+    _callBacks->reserve(reserveCount);
+}
+
+CommitChunk::CommitChunk(size_t reserveBytes, Writer::CommitPayload postponed)
+    : _data(reserveBytes),
+      _callBacks(std::move(postponed))
+{
 }
 
 CommitChunk::~CommitChunk() = default;
 
 void
 CommitChunk::add(const Packet &packet, Writer::DoneCallback onDone) {
-    if (_callBacks.empty()) {
-        _firstArrivalTime = vespalib::steady_clock::now();
-    }
     _data.merge(packet);
-    _callBacks.emplace_back(std::move(onDone));
+    _callBacks->emplace_back(std::move(onDone));
 }
 
-vespalib::duration
-CommitChunk::age() const {
-    if (_callBacks.empty()) {
-        return 0ms;
-    }
-    return (vespalib::steady_clock::now() - _firstArrivalTime);
+Writer::CommitResult
+CommitChunk::createCommitResult() const {
+    return Writer::CommitResult(_callBacks);
 }
 
 }

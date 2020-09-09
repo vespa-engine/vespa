@@ -224,7 +224,7 @@ protected:
 
     virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
                                      bool immediateCommit, OnWriteDoneType onWriteDone);
-
+    virtual void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
 public:
     StoreOnlyFeedView(const Context &ctx, const PersistentParams &params);
     ~StoreOnlyFeedView() override;
@@ -253,8 +253,7 @@ public:
     void handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
     void heartBeat(search::SerialNum serialNum) override;
     void sync() override;
-    void forceCommit(SerialNum serialNum) override;
-    virtual void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
+    void forceCommit(SerialNum serialNum, DoneCallback onDone) override;
 
     /**
      * Prune lids present in operation.  Caller must call doneSegment()

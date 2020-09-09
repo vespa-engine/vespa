@@ -35,13 +35,13 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              const std::shared_ptr<IBucketStateCalculator> &calc)
 {
     for (auto &lidHandler : lscHandlers) {
-        IMaintenanceJob::UP job = IMaintenanceJob::UP
-                (new LidSpaceCompactionJob(config.getLidSpaceCompactionConfig(),
-                                           *lidHandler, opStorer, fbHandler,
-                                           diskMemUsageNotifier,
-                                           config.getBlockableJobConfig(),
-                                           clusterStateChangedNotifier,
-                                           (calc ? calc->nodeRetired() : false)));
+        IMaintenanceJob::UP job = std::make_unique<LidSpaceCompactionJob>(
+                config.getLidSpaceCompactionConfig(),
+                *lidHandler, opStorer, fbHandler,
+                diskMemUsageNotifier,
+                config.getBlockableJobConfig(),
+                clusterStateChangedNotifier,
+                (calc ? calc->nodeRetired() : false));
         controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
     }
 }

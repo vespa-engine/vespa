@@ -6,6 +6,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/time.h>
+#include <future>
 
 namespace search::transactionlog {
 
@@ -84,8 +85,24 @@ int makeDirectory(const char * dir);
 class Writer {
 public:
     using DoneCallback = std::shared_ptr<IDestructorCallback>;
+    using DoneCallbacksList = std::vector<DoneCallback>;
+    using CommitPayload = std::shared_ptr<DoneCallbacksList>;
+    class CommitResult {
+    public:
+        CommitResult();
+        CommitResult(CommitPayload callBacks);
+        CommitResult(CommitResult &&) noexcept = default;
+        CommitResult & operator = (CommitResult &&) noexcept = default;
+        CommitResult(const CommitResult &) = delete;
+        CommitResult & operator = (const CommitResult &) = delete;
+        ~CommitResult();
+        size_t getNumOperations() const { return _callBacks->size(); }
+    private:
+        CommitPayload _callBacks;
+    };
     virtual ~Writer() = default;
-    virtual void commit(const Packet & packet, DoneCallback done) = 0;
+    virtual void append(const Packet & packet, DoneCallback done) = 0;
+    virtual CommitResult startCommit(DoneCallback onDone) = 0;
 };
 
 class WriterFactory {
@@ -106,16 +123,20 @@ public:
 class CommitChunk {
 public:
     CommitChunk(size_t reserveBytes, size_t reserveCount);
+    CommitChunk(size_t reserveBytes, Writer::CommitPayload postponed);
     ~CommitChunk();
+    bool empty() const { return _callBacks->empty(); }
     void add(const Packet & packet, Writer::DoneCallback onDone);
     size_t sizeBytes() const { return _data.sizeBytes(); }
     const Packet & getPacket() const { return _data; }
-    vespalib::duration age() const;
-    size_t getNumCallBacks() const { return _callBacks.size(); }
+    size_t getNumCallBacks() const { return _callBacks->size(); }
+    Writer::CommitResult createCommitResult() const;
+    void setCommitDoneCallback(Writer::DoneCallback onDone) { _onCommitDone = std::move(onDone); }
+    Writer::CommitPayload stealCallbacks() { return std::move(_callBacks); }
 private:
-    Packet                             _data;
-    std::vector<Writer::DoneCallback>  _callBacks;
-    vespalib::steady_time              _firstArrivalTime;
+    Packet                 _data;
+    Writer::CommitPayload  _callBacks;
+    Writer::DoneCallback   _onCommitDone;
 };
 
 }

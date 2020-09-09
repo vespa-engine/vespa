@@ -32,7 +32,7 @@ struct DummyFeedView : public IFeedView
     void sync() override {}
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}
     void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
-    void forceCommit(search::SerialNum) override { }
+    void forceCommit(search::SerialNum, DoneCallback) override { }
     ILidCommitState & getUncommittedLidsTracker() override;
 };
 

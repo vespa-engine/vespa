@@ -30,10 +30,19 @@ using std::runtime_error;
 using std::make_shared;
 
 namespace search::transactionlog {
+namespace {
+
+std::unique_ptr<CommitChunk>
+createCommitChunk(const DomainConfig &cfg) {
+    return std::make_unique<CommitChunk>(cfg.getChunkSizeLimit(), cfg.getChunkSizeLimit()/256);
+}
+
+}
 
 Domain::Domain(const string &domainName, const string & baseDir, Executor & executor,
                const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
     : _config(cfg),
+      _currentChunk(createCommitChunk(cfg)),
       _lastSerial(0),
       _singleCommiter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128*1024)),
       _executor(executor),
@@ -105,7 +114,12 @@ Domain::addPart(SerialNum partId, bool isLastPart) {
     }
 }
 
-Domain::~Domain() { }
+Domain::~Domain() {
+    MonitorGuard guard(_currentChunkMonitor);
+    guard.broadcast();
+    commitChunk(grabCurrentChunk(guard), guard);
+    _singleCommiter->shutdown().sync();
+}
 
 DomainInfo
 Domain::getDomainInfo() const
@@ -290,6 +304,64 @@ waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
+void
+Domain::append(const Packet & packet, Writer::DoneCallback onDone) {
+    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    if (_lastSerial >= packet.range().from()) {
+        throw runtime_error(fmt("Incoming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
+                                packet.range().from(), _lastSerial));
+    } else {
+        _lastSerial = packet.range().to();
+    }
+    _currentChunk->add(packet, std::move(onDone));
+    commitIfFull(guard);
+}
+
+Domain::CommitResult
+Domain::startCommit(DoneCallback onDone) {
+    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    if ( !_currentChunk->empty() ) {
+        auto completed = grabCurrentChunk(guard);
+        assert(completed);
+        completed->setCommitDoneCallback(std::move(onDone));
+        CommitResult result(completed->createCommitResult());
+        commitChunk(std::move(completed), guard);
+        return result;
+    }
+    return CommitResult();
+}
+
+void
+Domain::commitIfFull(const vespalib::MonitorGuard &guard) {
+    if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
+        auto completed = std::move(_currentChunk);
+        _currentChunk = std::make_unique<CommitChunk>(_config.getChunkSizeLimit(), completed->stealCallbacks());
+        if (completed) {
+            commitChunk(std::move(completed), guard);
+        }
+    }
+}
+
+std::unique_ptr<CommitChunk>
+Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
+    assert(guard.monitors(_currentChunkMonitor));
+    auto chunk = std::move(_currentChunk);
+    _currentChunk = createCommitChunk(_config);
+    return chunk;
+}
+
+bool
+Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard) {
+    assert(chunkOrderGuard.monitors(_currentChunkMonitor));
+    if ( ! chunk->getPacket().empty()) {
+        _singleCommiter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
+            doCommit(std::move(chunk));
+        }));
+        return true;
+    }
+    return false;
+}
+
 DomainPart::SP
 Domain::optionallyRotateFile(SerialNum serialNum) {
     DomainPart::SP dp(_parts.rbegin()->second);
@@ -311,15 +383,19 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
 }
 
 void
-Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
-{
-    (void) onDone;
+Domain::doCommit(std::unique_ptr<CommitChunk> chunk) {
+    const Packet & packet = chunk->getPacket();
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
     DomainPart::SP dp = optionallyRotateFile(entry.serial());
     dp->commit(entry.serial(), packet);
+    if (_config.getFSyncOnCommit()) {
+        dp->sync();
+    }
     cleanSessions();
+    LOG(debug, "Releasing %zu acks and %zu entries and %zu bytes.",
+        chunk->getNumCallBacks(), chunk->getPacket().size(), chunk->sizeBytes());
 }
 
 bool
@@ -343,8 +419,7 @@ Domain::erase(SerialNum to)
 }
 
 int
-Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
-              std::unique_ptr<Destination> dest)
+Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest)
 {
     assert(this == domain.get());
     cleanSessions();

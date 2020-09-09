@@ -66,7 +66,6 @@ getDomainConfig(const searchlib::TranslogserverConfig & cfg) {
         .setCompressionLevel(cfg.compression.level)
         .setPartSizeLimit(cfg.filesizemax)
         .setChunkSizeLimit(cfg.chunk.sizelimit)
-        .setChunkAgeLimit(vespalib::from_s(cfg.chunk.agelimit))
         .setFSyncOnCommit(cfg.usefsync);
     return dcfg;
 }
@@ -74,11 +73,10 @@ getDomainConfig(const searchlib::TranslogserverConfig & cfg) {
 void
 logReconfig(const searchlib::TranslogserverConfig & cfg, const DomainConfig & dcfg) {
     LOG(config, "configure Transaction Log Server %s at port %d\n"
-                "DomainConfig {encoding={%d, %d}, compression_level=%d, part_limit=%ld, chunk_limit=%ld age=%1.4f}",
+                "DomainConfig {encoding={%d, %d}, compression_level=%d, part_limit=%ld, chunk_limit=%ld}",
         cfg.servername.c_str(), cfg.listenport,
         dcfg.getEncoding().getCrc(), dcfg.getEncoding().getCompression(), dcfg.getCompressionlevel(),
-        dcfg.getPartSizeLimit(), dcfg.getChunkSizeLimit(), vespalib::to_s(dcfg.getChunkAgeLimit())
-    );
+        dcfg.getPartSizeLimit(), dcfg.getChunkSizeLimit());
 }
 
 }

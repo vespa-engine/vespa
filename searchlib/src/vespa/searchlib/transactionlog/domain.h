@@ -27,14 +27,14 @@ public:
     const vespalib::string & name() const { return _name; }
     bool erase(SerialNum to);
 
-    void commit(const Packet & packet, Writer::DoneCallback onDone) override;
+    void append(const Packet & packet, Writer::DoneCallback onDone) override;
+    CommitResult startCommit(DoneCallback onDone) override;
     int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest);
 
     SerialNum begin() const;
     SerialNum end() const;
     SerialNum getSynced() const;
     void triggerSyncNow();
-    bool commitIfStale();
     bool getMarkedDeleted() const { return _markedDeleted; }
     void markDeleted() { _markedDeleted = true; }
 
@@ -55,6 +55,11 @@ public:
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
+    void commitIfFull(const vespalib::MonitorGuard & guard);
+
+    std::unique_ptr<CommitChunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
+    bool commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
+    void doCommit(std::unique_ptr<CommitChunk> chunk);
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;
     size_t byteSize(const vespalib::LockGuard & guard) const;
@@ -73,6 +78,7 @@ private:
     using DurationSeconds = std::chrono::duration<double>;
 
     DomainConfig           _config;
+    std::unique_ptr<CommitChunk> _currentChunk;
     SerialNum              _lastSerial;
     std::unique_ptr<Executor> _singleCommiter;
     Executor             & _executor;

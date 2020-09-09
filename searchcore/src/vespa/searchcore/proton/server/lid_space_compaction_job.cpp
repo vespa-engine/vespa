@@ -57,7 +57,7 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
             } else {
                 MoveOperation::UP op = _handler.createMoveOperation(document, stats.getLowestFreeLid());
                 search::IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
-                _opStorer.storeOperation(*op, context);
+                _opStorer.appendOperation(*op, context);
                 _handler.handleMove(*op, std::move(context));
                 if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                     return true;

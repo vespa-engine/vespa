@@ -165,12 +165,15 @@ struct MyStorer : public IOperationStorer {
         : _moveCnt(0),
           _compactCnt(0)
     {}
-    void storeOperation(const FeedOperation &op, DoneCallback) override {
+    void appendOperation(const FeedOperation &op, DoneCallback) override {
         if (op.getType() == FeedOperation::MOVE) {
             ++ _moveCnt;
         } else if (op.getType() == FeedOperation::COMPACT_LID_SPACE) {
             ++_compactCnt;
         }
+    }
+    CommitResult startCommit(DoneCallback) override {
+        return CommitResult();
     }
 };
 

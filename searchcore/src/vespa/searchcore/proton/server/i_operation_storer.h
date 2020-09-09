@@ -14,12 +14,18 @@ class FeedOperation;
 struct IOperationStorer
 {
     using DoneCallback = search::transactionlog::Writer::DoneCallback;
+    using CommitResult = search::transactionlog::Writer::CommitResult;
     virtual ~IOperationStorer() = default;
 
     /**
      * Assign serial number to (if not set) and store the given operation.
      */
-    virtual void storeOperation(const FeedOperation &op, DoneCallback onDone) = 0;
+    virtual void appendOperation(const FeedOperation &op, DoneCallback onDone) = 0;
+    void storeOperation(const FeedOperation &op, DoneCallback onDone) {
+        appendOperation(op, onDone);
+        startCommit(std::move(onDone));
+    }
+    virtual CommitResult startCommit(DoneCallback onDone) = 0;
 };
 
 } // namespace proton

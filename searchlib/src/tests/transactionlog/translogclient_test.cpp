@@ -329,11 +329,12 @@ fillDomainTest(TransLogServer & s1, const vespalib::string & domain, size_t numP
             Packet::Entry e(value+1, j+1, vespalib::ConstBufferRef((const char *)&value, sizeof(value)));
             p->add(e);
             if ( p->sizeBytes() > DEFAULT_PACKET_SIZE ) {
-                domainWriter->commit(*p, std::make_shared<CountDone>(inFlight));
+                domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
                 p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
             }
         }
-        domainWriter->commit(*p, std::make_shared<CountDone>(inFlight));
+        domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
+        domainWriter->startCommit(Writer::DoneCallback());
         LOG(info, "Inflight %ld", inFlight.load());
     }
     while (inFlight.load() != 0) {
@@ -623,8 +624,7 @@ TEST("test sending a lot of data") {
     const vespalib::string MANY("many");
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000)
-                .setChunkAgeLimit(100us));
+        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000));
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, MANY, 0);
@@ -696,8 +696,7 @@ TEST("test sending a lot of data async") {
     const vespalib::string MANY("many-async");
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000)
-                .setChunkAgeLimit(10ms));
+        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000));
         TransLogClient tls("tcp/localhost:18377");
         createDomainTest(tls, MANY, 1);
         auto s1 = openDomainTest(tls, MANY);

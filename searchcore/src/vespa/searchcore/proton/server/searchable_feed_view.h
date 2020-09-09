@@ -68,7 +68,7 @@ private:
                              bool immediateCommit, OnWriteDoneType onWriteDone) override;
 
     void performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
-    void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
+    void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
 public:
     SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,

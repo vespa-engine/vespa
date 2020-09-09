@@ -76,6 +76,8 @@ private:
     // the serial num of the last message in the transaction log
     SerialNum                              _serialNum;
     SerialNum                              _prunedSerialNum;
+    size_t                                 _numPendingCommit;
+    size_t                                 _numCommitsCompleted;
     bool                                   _delayedPrune;
     mutable std::shared_mutex              _feedLock;
     FeedStateSP                            _feedState;
@@ -125,6 +127,9 @@ private:
     FeedStateSP getFeedState() const;
     void changeFeedState(FeedStateSP newState);
     void doChangeFeedState(FeedStateSP newState);
+    void onCommitDone(uint64_t numPendingAtStart);
+    void initiateCommit();
+    void enqueCommitTask();
 public:
     FeedHandler(const FeedHandler &) = delete;
     FeedHandler & operator = (const FeedHandler &) = delete;
@@ -225,7 +230,8 @@ public:
     void eof() override;
     void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
     void syncTls(SerialNum syncTo);
-    void storeOperation(const FeedOperation &op, DoneCallback onDone) override;
+    void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
+    CommitResult startCommit(DoneCallback onDone) override;
     void storeOperationSync(const FeedOperation & op);
     void considerDelayedPrune();
 };

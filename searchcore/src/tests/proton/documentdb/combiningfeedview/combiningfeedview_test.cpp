@@ -99,7 +99,7 @@ struct MySubDb
     MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo,
             std::shared_ptr<BucketDBOwner> bucketDB,
             SubDbType subDbType)
-        : _view(new MyFeedView(repo, bucketDB, subDbType))
+        : _view(std::make_shared<MyFeedView>(repo, std::move(bucketDB), subDbType))
     {
     }
     void insertDocs(const test::BucketDocuments &docs) {

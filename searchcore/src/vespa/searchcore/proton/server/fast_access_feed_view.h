@@ -52,7 +52,7 @@ private:
     void heartBeatAttributes(SerialNum serialNum) override;
 
 protected:
-    void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
+    void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
 public:
     FastAccessFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,

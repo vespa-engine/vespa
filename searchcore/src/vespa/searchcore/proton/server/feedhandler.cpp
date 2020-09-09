@@ -58,28 +58,33 @@ class TlsMgrWriter : public TlsWriter {
     std::shared_ptr<search::transactionlog::Writer> _writer;
 public:
     TlsMgrWriter(TransactionLogManager &tls_mgr,
-                 const search::transactionlog::WriterFactory & factory) :
-            _tls_mgr(tls_mgr),
-            _writer(factory.getWriter(tls_mgr.getDomainName()))
+                 const search::transactionlog::WriterFactory & factory)
+        : _tls_mgr(tls_mgr),
+          _writer(factory.getWriter(tls_mgr.getDomainName()))
     { }
-    void storeOperation(const FeedOperation &op, DoneCallback onDone) override;
+    void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
+    CommitResult startCommit(DoneCallback onDone) override {
+        return _writer->startCommit(std::move(onDone));
+    }
     bool erase(SerialNum oldest_to_keep) override;
     SerialNum sync(SerialNum syncTo) override;
 };
 
-
-void TlsMgrWriter::storeOperation(const FeedOperation &op, DoneCallback onDone) {
+void
+TlsMgrWriter::appendOperation(const FeedOperation &op, DoneCallback onDone) {
     using Packet = search::transactionlog::Packet;
     vespalib::nbostream stream;
     op.serialize(stream);
-    LOG(debug, "storeOperation(): serialNum(%" PRIu64 "), type(%u), size(%zu)",
+    LOG(debug, "appendOperation(): serialNum(%" PRIu64 "), type(%u), size(%zu)",
         op.getSerialNum(), (uint32_t)op.getType(), stream.size());
     Packet::Entry entry(op.getSerialNum(), op.getType(), vespalib::ConstBufferRef(stream.data(), stream.size()));
     Packet packet(entry.serializedSize());
     packet.add(entry);
-    _writer->commit(packet, std::move(onDone));
+    _writer->append(packet, std::move(onDone));
 }
-bool TlsMgrWriter::erase(SerialNum oldest_to_keep) {
+
+bool
+TlsMgrWriter::erase(SerialNum oldest_to_keep) {
     return _tls_mgr.getSession()->erase(oldest_to_keep);
 }
 
@@ -104,6 +109,24 @@ TlsMgrWriter::sync(SerialNum syncTo)
     throw IllegalStateException(make_string("Failed to sync TLS to token %" PRIu64 ".", syncTo));
 }
 
+class OnCommitDone : public search::IDestructorCallback {
+public:
+    OnCommitDone(Executor & executor, std::unique_ptr<Executor::Task> task)
+        : _executor(executor),
+          _task(std::move(task))
+    {}
+    ~OnCommitDone() override { _executor.execute(std::move(_task)); }
+private:
+    Executor & _executor;
+    std::unique_ptr<Executor::Task> _task;
+};
+
+template <typename T>
+struct KeepAlive : public search::IDestructorCallback {
+    explicit KeepAlive(T toKeep) : _toKeep(std::move(toKeep)) { }
+    ~KeepAlive() override = default;
+    T _toKeep;
+};
 }  // namespace
 
 void
@@ -114,7 +137,8 @@ FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
     _feedState->handleOperation(std::move(token), std::move(op));
 }
 
-void FeedHandler::performPut(FeedToken token, PutOperation &op) {
+void
+FeedHandler::performPut(FeedToken token, PutOperation &op) {
     op.assertValid();
     _activeFeedView->preparePut(op);
     if (ignoreOperation(op)) {
@@ -133,7 +157,7 @@ void FeedHandler::performPut(FeedToken token, PutOperation &op) {
     if (_repo != op.getDocument()->getRepo()) {
         op.deserializeDocument(*_repo);
     }
-    storeOperation(op, token);
+    appendOperation(op, token);
     if (token) {
         token->setResult(make_unique<Result>(), false);
     }
@@ -166,7 +190,7 @@ FeedHandler::performUpdate(FeedToken token, UpdateOperation &op)
 void
 FeedHandler::performInternalUpdate(FeedToken token, UpdateOperation &op)
 {
-    storeOperation(op, token);
+    appendOperation(op, token);
     if (token) {
         token->setResult(make_unique<UpdateResult>(op.getPrevTimestamp()), true);
     }
@@ -182,7 +206,7 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
     op.getUpdate()->applyTo(*doc);
     PutOperation putOp(op.getBucketId(), op.getTimestamp(), std::move(doc));
     _activeFeedView->preparePut(putOp);
-    storeOperation(putOp, token);
+    appendOperation(putOp, token);
     if (token) {
         token->setResult(make_unique<UpdateResult>(putOp.getTimestamp()), true);
     }
@@ -192,7 +216,8 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
 }
 
 
-void FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
+void
+FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
     _activeFeedView->prepareRemove(op);
     if (ignoreOperation(op)) {
         LOG(debug, "performRemove(): ignoreOperation: remove(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
@@ -205,7 +230,7 @@ void FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
     if (op.getPrevDbDocumentId().valid()) {
         assert(op.getValidNewOrPrevDbdId());
         assert(op.notMovingLidInSameSubDb());
-        storeOperation(op, token);
+        appendOperation(op, token);
         if (token) {
             bool documentWasFound = !op.getPrevMarkedAsRemoved();
             token->setResult(make_unique<RemoveResult>(documentWasFound), documentWasFound);
@@ -213,7 +238,7 @@ void FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
         _activeFeedView->handleRemove(std::move(token), op);
     } else if (op.hasDocType()) {
         assert(op.getDocType() == _docTypeName.getName());
-        storeOperation(op, token);
+        appendOperation(op, token);
         if (token) {
             token->setResult(make_unique<RemoveResult>(false), false);
         }
@@ -234,13 +259,14 @@ FeedHandler::performGarbageCollect(FeedToken token)
 void
 FeedHandler::performCreateBucket(FeedToken token, CreateBucketOperation &op)
 {
-    storeOperation(op, token);
+    appendOperation(op, token);
     _bucketDBHandler->handleCreateBucket(op.getBucketId());
 }
 
-void FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
+void
+FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
     _activeFeedView->prepareDeleteBucket(op);
-    storeOperation(op, token);
+    appendOperation(op, token);
     // Delete documents in bucket
     _activeFeedView->handleDeleteBucket(op);
     // Delete bucket itself, should no longer have documents.
@@ -248,13 +274,15 @@ void FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op
 
 }
 
-void FeedHandler::performSplit(FeedToken token, SplitBucketOperation &op) {
-    storeOperation(op, token);
+void
+FeedHandler::performSplit(FeedToken token, SplitBucketOperation &op) {
+    appendOperation(op, token);
     _bucketDBHandler->handleSplit(op.getSerialNum(), op.getSource(), op.getTarget1(), op.getTarget2());
 }
 
-void FeedHandler::performJoin(FeedToken token, JoinBucketsOperation &op) {
-    storeOperation(op, token);
+void
+FeedHandler::performJoin(FeedToken token, JoinBucketsOperation &op) {
+    appendOperation(op, token);
     _bucketDBHandler->handleJoin(op.getSerialNum(), op.getSource1(), op.getSource2(), op.getTarget());
 }
 
@@ -374,6 +402,8 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
+      _numPendingCommit(0),
+      _numCommitsCompleted(0),
       _delayedPrune(false),
       _feedLock(),
       _feedState(make_shared<InitState>(getDocTypeName())),
@@ -467,11 +497,44 @@ FeedHandler::getTransactionLogReplayDone() const {
 }
 
 void
-FeedHandler::storeOperation(const FeedOperation &op, TlsWriter::DoneCallback onDone) {
+FeedHandler::onCommitDone(uint64_t numPendingAtStart) {
+    assert(numPendingAtStart <= _numPendingCommit);
+    _numPendingCommit -= numPendingAtStart;
+    if (_numPendingCommit > 0) {
+        enqueCommitTask();
+    }
+}
+
+void FeedHandler::enqueCommitTask() {
+    _writeService.master().execute(makeLambdaTask([this]() { initiateCommit(); }));
+}
+
+void
+FeedHandler::initiateCommit() {
+    auto commitResult = _tlsWriter->startCommit(std::make_shared<OnCommitDone>(
+            _writeService.master(),
+            makeLambdaTask([this, numPendingAtStart=_numPendingCommit]() {
+                onCommitDone(numPendingAtStart);
+            })));
+    if (_activeFeedView) {
+        _activeFeedView->forceCommit(_serialNum, std::make_shared<KeepAlive<CommitResult>>(std::move(commitResult)));
+    }
+}
+
+void
+FeedHandler::appendOperation(const FeedOperation &op, TlsWriter::DoneCallback onDone) {
     if (!op.getSerialNum()) {
         const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
     }
-    _tlsWriter->storeOperation(op, std::move(onDone));
+    _tlsWriter->appendOperation(op, std::move(onDone));
+    if (++_numPendingCommit == 1) {
+        enqueCommitTask();
+    }
+}
+
+FeedHandler::CommitResult
+FeedHandler::startCommit(DoneCallback onDone) {
+    return _tlsWriter->startCommit(std::move(onDone));
 }
 
 void
@@ -635,7 +698,7 @@ FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCa
     assert(op.getValidDbdId());
     assert(op.getValidPrevDbdId());
     assert(op.getSubDbId() != op.getPrevSubDbId());
-    storeOperation(op, moveDoneCtx);
+    appendOperation(op, moveDoneCtx);
     _activeFeedView->handleMove(op, std::move(moveDoneCtx));
 }
 
