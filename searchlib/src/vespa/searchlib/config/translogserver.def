@@ -24,15 +24,15 @@ maxthreads int default=4 restart
 crcmethod enum {ccitt_crc32, xxh64} default=xxh64
 
 ## Control compression type.
-compression.type enum {NONE, NONE_MULTI, LZ4, ZSTD} default=LZ4
+compression.type enum {NONE, NONE_MULTI, LZ4, ZSTD} default=NONE
 
 ## Control compression level
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
 ## 9 is a reasonable default for both
-compression.level int default=9
+compression.level int default=3
 
 ## How large a chunk can grow in memory before beeing flushed
 chunk.sizelimit int default = 256000  # 256k
 
 ## How long a chunk can reside in memory befor ebeeing flushed to disk.
-chunk.agelimit double default = 0.010 # 10 milliseconds
+chunk.agelimit double default = 0.004 # 4 milliseconds seems to be the sweetspot for the dynamic throttling algorithm.
