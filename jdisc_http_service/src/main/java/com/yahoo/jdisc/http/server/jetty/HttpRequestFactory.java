@@ -42,14 +42,22 @@ class HttpRequestFactory {
     // Implementation based on org.eclipse.jetty.server.Request.getRequestURL(), but with the connector's local port instead
     public static URI getUri(HttpServletRequest servletRequest) {
         try {
-            StringBuffer builder = new StringBuffer(128);
-            URIUtil.appendSchemeHostPort(builder, servletRequest.getScheme(), servletRequest.getServerName(), getConnectorLocalPort(servletRequest));
-            builder.append(servletRequest.getRequestURI());
+            String scheme = servletRequest.getScheme();
+            String host = servletRequest.getServerName();
+            int port = getConnectorLocalPort(servletRequest);
+            String path = servletRequest.getRequestURI();
             String query = servletRequest.getQueryString();
+
+            StringBuffer builder = new StringBuffer(128);
+            URIUtil.appendSchemeHostPort(builder, scheme, host, port);
+            builder.append(path);
             if (query != null) {
                 builder.append('?').append(query);
             }
-            return URI.create(builder.toString());
+            URI uri = URI.create(builder.toString());
+            if ( ! scheme.equals(uri.getScheme()) || ! host.equals(uri.getHost()) || port != uri.getPort())
+                throw new IllegalArgumentException("Bad scheme, host or port");
+            return uri;
         } catch (IllegalArgumentException e) {
             throw createBadQueryException(e);
         }
