@@ -45,6 +45,42 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
+    public final void illegal_host_throws_requestexception1() {
+        try {
+            HttpRequestFactory.newJDiscRequest(
+                    new MockContainer(),
+                    createMockRequest("http", "?", "/foo", ""));
+            fail("Above statement should throw");
+        } catch (RequestException e) {
+            assertThat(e.getResponseStatus(), is(Response.Status.BAD_REQUEST));
+        }
+    }
+
+    @Test
+    public final void illegal_host_throws_requestexception2() {
+        try {
+            HttpRequestFactory.newJDiscRequest(
+                    new MockContainer(),
+                    createMockRequest("http", ".", "/foo", ""));
+            fail("Above statement should throw");
+        } catch (RequestException e) {
+            assertThat(e.getResponseStatus(), is(Response.Status.BAD_REQUEST));
+        }
+    }
+
+    @Test
+    public final void illegal_host_throws_requestexception3() {
+        try {
+            HttpRequestFactory.newJDiscRequest(
+                    new MockContainer(),
+                    createMockRequest("http", "*", "/foo", ""));
+            fail("Above statement should throw");
+        } catch (RequestException e) {
+            assertThat(e.getResponseStatus(), is(Response.Status.BAD_REQUEST));
+        }
+    }
+
+    @Test
     public final void illegal_unicode_in_query_throws_requestexception() {
         try {
             HttpRequestFactory.newJDiscRequest(
