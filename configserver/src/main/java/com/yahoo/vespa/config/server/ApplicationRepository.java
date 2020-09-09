@@ -610,10 +610,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try {
             Tenant tenant = getTenant(applicationId);
             if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
-            RemoteSession session = getActiveSession(applicationId);
-            if (session == null) throw new NotFoundException("No active session found for '" + applicationId + "'");
-            SessionRepository sessionRepository = tenant.getSessionRepository();
-            return sessionRepository.ensureApplicationLoaded(session).getForVersionOrLatest(version, clock.instant());
+            long sessionId = getSessionIdForApplication(tenant, applicationId);
+            RemoteSession session = getRemoteSession(tenant, sessionId);
+            return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
             log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
             throw e;
@@ -952,7 +951,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try {
             long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
             RemoteSession currentActiveSession = getRemoteSession(tenant, currentActiveSessionId);
-            currentActiveApplicationSet = Optional.ofNullable(tenant.getSessionRepository().ensureApplicationLoaded(currentActiveSession));
+            currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
         } catch (IllegalArgumentException e) {
             // Do nothing if we have no currently active session
         }

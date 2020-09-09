@@ -15,7 +15,7 @@ public class SessionCache<SESSIONTYPE extends Session> {
 
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
-    public synchronized void putSession(SESSIONTYPE session) {
+    public synchronized void addSession(SESSIONTYPE session) {
         sessions.putIfAbsent(session.getSessionId(), session);
     }
 
