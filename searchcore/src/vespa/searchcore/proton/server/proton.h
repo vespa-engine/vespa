@@ -19,6 +19,7 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
+#include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/vespalib/net/component_config_producer.h>
 #include <vespa/vespalib/net/generic_state_handler.h>
 #include <vespa/vespalib/net/json_get_handler.h>
@@ -30,7 +31,7 @@
 #include <shared_mutex>
 
 namespace vespalib { class StateServer; }
-namespace search::transactionlog { class TransLogServerApp; }
+
 namespace proton {
 
 class DiskMemUsageSampler;
@@ -51,12 +52,12 @@ class Proton : public IProtonConfigurerOwner,
                public vespalib::StateExplorer
 {
 private:
-    using TLS = search::transactionlog::TransLogServerApp;
-    using MonitorRequest = search::engine::MonitorRequest;
-    using MonitorReply = search::engine::MonitorReply;
-    using MonitorClient = search::engine::MonitorClient;
-    using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
-    using ProtonConfigSP = BootstrapConfig::ProtonConfigSP;
+    typedef search::transactionlog::TransLogServerApp     TLS;
+    typedef search::engine::MonitorRequest                MonitorRequest;
+    typedef search::engine::MonitorReply                  MonitorReply;
+    typedef search::engine::MonitorClient                 MonitorClient;
+    typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
+    typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;
     using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     using BucketSpace = document::BucketSpace;
 
@@ -90,7 +91,7 @@ private:
     MetricsUpdateHook               _metricsHook;
     std::unique_ptr<MetricsEngine>  _metricsEngine;
     ProtonFileHeaderContext         _fileHeaderContext;
-    std::unique_ptr<TLS>            _tls;
+    TLS::UP                         _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
     PersistenceEngine::UP           _persistenceEngine;
     DocumentDBMap                   _documentDBMap;

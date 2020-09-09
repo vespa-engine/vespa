@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "trans_log_server_explorer.h"
-#include "translogserver.h"
-#include "domain.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/file.h>
@@ -46,7 +44,6 @@ struct DomainExplorer : vespalib::StateExplorer {
 
 } // namespace search::transactionlog::<unnamed>
 
-TransLogServerExplorer::~TransLogServerExplorer() = default;
 void
 TransLogServerExplorer::get_state(const Inserter &inserter, bool full) const
 {
