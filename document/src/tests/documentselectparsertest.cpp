@@ -94,11 +94,9 @@ void DocumentSelectParserTest::SetUp()
                      Struct("usergroup.header"),
                      Struct("usergroup.body"));
     builder.document(875463456, "user",
-                     Struct("user.header").addField("id", DataType::T_INT),
-                     Struct("user.body"));
+                     Struct("user.header"), Struct("user.body"));
     builder.document(567463442, "group",
-                     Struct("group.header").addField("iD", DataType::T_INT),
-                     Struct("group.body"));
+                     Struct("group.header"), Struct("group.body"));
     _repo = std::make_unique<DocumentTypeRepo>(builder.config());
 
     _parser = std::make_unique<select::Parser>(*_repo, _bucketIdFactory);
@@ -1457,9 +1455,6 @@ TEST_F(DocumentSelectParserTest, special_tokens_are_allowed_as_freestanding_iden
     EXPECT_EQ("(== (ID id.user) (FIELD user user))", parse_to_tree("id.user == user.user"));
     EXPECT_EQ("(NOT (DOCTYPE group))", parse_to_tree("not group"));
     EXPECT_EQ("(== (ID id.group) (FIELD group group))", parse_to_tree("id.group == group.group"));
-    EXPECT_EQ("(== (FIELD user id) (ID id.user))", parse_to_tree("user.id == id.user"));
-    // Case is preserved for special ID field
-    EXPECT_EQ("(== (FIELD group iD) (ID id.user))", parse_to_tree("group.iD == id.user"));
 }
 
 TEST_F(DocumentSelectParserTest, test_can_build_field_value_from_field_expr_node)

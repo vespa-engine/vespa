@@ -50,6 +50,7 @@
 %token LE    "<="
 %token GT    ">"
 %token LT    "<"
+%token ID
 %token NOW_FUNC
 
  /*
@@ -72,7 +73,7 @@
 %token <string_val>  FP_MAP_LOOKUP FP_ARRAY_LOOKUP
 %token <double_val>  FLOAT
 %token <i64_val>     INTEGER
-%token <string_val>  ID USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE
+%token <string_val>  USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE
 
 %type <string_val> ident mangled_ident
 %type <abstract_node> bool_
@@ -83,7 +84,7 @@
 %type <field_expr_node> field_spec
 
 %destructor { delete $$; } IDENTIFIER STRING FP_MAP_LOOKUP FP_ARRAY_LOOKUP
-%destructor { delete $$; } ID USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE
+%destructor { delete $$; } USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE
 %destructor { delete $$; } null_ bool_ number string doc_type ident id_arg id_spec
 %destructor { delete $$; } variable mangled_ident field_spec value arith_expr
 %destructor { delete $$; } comparison leaf logical_expr expression
@@ -243,18 +244,9 @@ id_arg
     ;
 
 id_spec
-    : ID %prec NON_DOT {
-          (void)steal<string>($1); // Explicitly discard.
-          $$ = new IdValueNode(bucket_id_factory, "id", ""); // Prefer shifting instead of reducing.
-      }
-    | ID "." id_arg {
-          (void)steal<string>($1); // Explicitly discard.
-          $$ = new IdValueNode(bucket_id_factory, "id", *steal<string>($3));
-      }
-    | ID "." IDENTIFIER "(" ")" {
-          (void)steal<string>($1);  // Explicitly discard.
-          $$ = new FunctionValueNode(*steal<string>($3), std::make_unique<IdValueNode>(bucket_id_factory, "id", ""));
-      }
+    : ID %prec NON_DOT { $$ = new IdValueNode(bucket_id_factory, "id", ""); } /* Prefer shifting instead of reducing */
+    | ID "." id_arg    { $$ = new IdValueNode(bucket_id_factory, "id", *steal<string>($3)); }
+    | ID "." IDENTIFIER "(" ")" { $$ = new FunctionValueNode(*steal<string>($3), std::make_unique<IdValueNode>(bucket_id_factory, "id", "")); }
     ;
 
 variable
@@ -262,17 +254,12 @@ variable
     ;
 
  /* FIXME this is a horrible leftover of post-parsed fieldpath processing */
- /* At least we verify structural integrity at initial parse-time now...   */
- /* Post-parsing should be replaced with an actual parse-time built AST!   */
- /* This rule is only used after matching an initial valid identifier, so  */
- /* we add some special casing of lexer keywords that today are allowed as */
- /* regular field names (but not as document type names). Not pretty, but  */
- /* it avoids parser ambiguities.                                          */
+ /* At least we verify structural integrity at initial parse-time now... */
+ /* Post-parsing should be replaced with an actual parse-time built AST! */
 mangled_ident
     : ident                         { $$ = $1; }
     | mangled_ident FP_MAP_LOOKUP   { $1->append(*steal<string>($2)); $$ = $1; }
     | mangled_ident FP_ARRAY_LOOKUP { $1->append(*steal<string>($2)); $$ = $1; }
-    | ID                            { $$ = $1; }
     ;
 
 field_spec
