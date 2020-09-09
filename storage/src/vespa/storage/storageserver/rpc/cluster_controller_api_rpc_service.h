@@ -9,7 +9,7 @@ class FRT_RPCRequest;
 
 namespace storage {
 
-class MessageEnqueuer;
+class MessageDispatcher;
 
 namespace api {
 class StorageCommand;
@@ -23,13 +23,13 @@ namespace rpc {
 class SharedRpcResources;
 
 class ClusterControllerApiRpcService : public FRT_Invokable {
-    MessageEnqueuer&    _message_enqueuer;
+    MessageDispatcher&  _message_dispatcher;
     SharedRpcResources& _rpc_resources;
     std::atomic<bool>   _closed;
 public:
     static constexpr uint32_t StateBundleMaxUncompressedSize = 1024 * 1024 * 16;
 
-    ClusterControllerApiRpcService(MessageEnqueuer& message_enqueuer,
+    ClusterControllerApiRpcService(MessageDispatcher& message_dispatcher,
                                    SharedRpcResources& rpc_resources);
     ~ClusterControllerApiRpcService() override;
 

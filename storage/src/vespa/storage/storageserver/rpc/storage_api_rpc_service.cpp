@@ -7,6 +7,7 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/storage/storageserver/communicationmanager.h>
+#include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storageapi/mbusprot/protocolserialization7.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
@@ -20,11 +21,11 @@ LOG_SETUP(".storage.storage_api_rpc_service");
 
 namespace storage::rpc {
 
-StorageApiRpcService::StorageApiRpcService(MessageEnqueuer& messageEnqueuer,
+StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher,
                                            SharedRpcResources& rpc_resources,
                                            std::function<std::shared_ptr<const document::DocumentTypeRepo>()> doctype_repo_func,
                                            std::function<std::shared_ptr<documentapi::LoadTypeSet>()> loadtype_set_func)
-    : _message_enqueuer(messageEnqueuer),
+    : _message_dispatcher(message_dispatcher),
       _rpc_resources(rpc_resources),
       // TODO these are temporary, need to be consolidated and moved out
       _doctype_repo_func(std::move(doctype_repo_func)),
@@ -58,7 +59,7 @@ void StorageApiRpcService::detach_and_forward_to_enqueuer(std::shared_ptr<api::S
     // Create a request object to avoid needing a separate transport type
     cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
-    _message_enqueuer.enqueue(std::move(cmd));
+    _message_dispatcher.dispatch_sync(std::move(cmd));
 }
 
 namespace {
@@ -201,9 +202,9 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
         reply->setResult(api::ReturnCode(
                 static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE),
                 "Couldn't find the darn thing in Slobrok")); // TODO :D
-        // TODO always enforce separate thread for this, or we risk nuking the
-        // stack if the reply receiver keeps resending immediately and synchronously.
-        _message_enqueuer.enqueue(std::move(reply)); // TODO dispatch_async_in_separate_thread(std::move(reply))?
+        // Always dispatch async for synchronously generated replies, or we risk nuking the
+        // stack if the reply receiver keeps resending synchronously as well.
+        _message_dispatcher.dispatch_async(std::move(reply));
         return;
     }
     std::unique_ptr<FRT_RPCRequest, SubRefDeleter> req(_rpc_resources.supervisor().AllocRPCRequest());
@@ -260,7 +261,7 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
         auto error_reply = req_ctx->_originator_cmd->makeReply();
         error_reply->setResult(std::move(error));
         // TODO needs tracing of received-event!
-        _message_enqueuer.enqueue(std::move(error_reply));
+        _message_dispatcher.dispatch_sync(std::move(error_reply));
         return;
     }
     LOG(info, "Client: received rpc.v1 OK response");
@@ -286,7 +287,7 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
 
     // TODO ensure that no implicit long-lived refs end up pointing into RPC memory...!
     req->DiscardBlobs();
-    _message_enqueuer.enqueue(std::move(reply));
+    _message_dispatcher.dispatch_sync(std::move(reply));
 }
 
 /*
