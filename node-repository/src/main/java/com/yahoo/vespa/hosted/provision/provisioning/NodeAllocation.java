@@ -112,20 +112,22 @@ class NodeAllocation {
                 if ( offered.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
+                boolean wantToRetire = false;
+                boolean resizeable = false;
+                boolean acceptToRetire = false;
                 if (requestedNodes.considerRetiring()) {
-                    boolean wantToRetireNode = false;
-                    if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) wantToRetireNode = true;
-                    if (violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
-                    if ( ! hasCompatibleFlavor(node)) wantToRetireNode = true;
-                    if (offered.status().wantToRetire()) wantToRetireNode = true;
+                    if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) wantToRetire = true;
+                    if (violatesParentHostPolicy(this.nodes, offered)) wantToRetire = true;
+                    if ( ! hasCompatibleFlavor(node)) wantToRetire = true;
+                    if (offered.status().wantToRetire()) wantToRetire = true;
                     if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname()))
-                        wantToRetireNode = true;
-                    if ((! saturated() && hasCompatibleFlavor(node) && requestedNodes.acceptable(offered)) || acceptToRetire(node))
-                        accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
+                        wantToRetire = true;
+                    resizeable = node.isResizable;
+                    acceptToRetire = acceptToRetire(node);
                 }
-                else if (! saturated()) {
-                    accepted.add(acceptNode(node, false, false));
-                }
+
+                if ((! saturated() && hasCompatibleFlavor(node) && requestedNodes.acceptable(offered)) || acceptToRetire)
+                    accepted.add(acceptNode(node, wantToRetire, resizeable));
             }
             else if (! saturated() && hasCompatibleFlavor(node)) {
                 if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) {
