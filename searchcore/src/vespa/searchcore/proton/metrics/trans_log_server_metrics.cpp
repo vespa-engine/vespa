@@ -17,7 +17,7 @@ TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
 {
 }
 
-TransLogServerMetrics::DomainMetrics::~DomainMetrics() = default;
+TransLogServerMetrics::DomainMetrics::~DomainMetrics() {}
 
 void
 TransLogServerMetrics::DomainMetrics::update(const DomainInfo &stats)
@@ -66,7 +66,7 @@ TransLogServerMetrics::TransLogServerMetrics(metrics::MetricSet *parent)
 {
 }
 
-TransLogServerMetrics::~TransLogServerMetrics() = default;
+TransLogServerMetrics::~TransLogServerMetrics() { }
 
 void
 TransLogServerMetrics::update(const DomainStats &stats)
