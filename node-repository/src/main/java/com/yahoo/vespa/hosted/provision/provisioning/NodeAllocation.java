@@ -116,12 +116,7 @@ class NodeAllocation {
                 boolean resizeable = false;
                 boolean acceptToRetire = false;
                 if (requestedNodes.considerRetiring()) {
-                    if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) wantToRetire = true;
-                    if (violatesParentHostPolicy(this.nodes, offered)) wantToRetire = true;
-                    if ( ! hasCompatibleFlavor(node)) wantToRetire = true;
-                    if (offered.status().wantToRetire()) wantToRetire = true;
-                    if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname()))
-                        wantToRetire = true;
+                    wantToRetire = shouldRetire(node);
                     resizeable = node.isResizable;
                     acceptToRetire = acceptToRetire(node);
                 }
@@ -142,7 +137,7 @@ class NodeAllocation {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
-                if ( requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname())) {
+                if ( requestedNodes.isExclusive() && ! hostsOnly(application, offered.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
@@ -160,6 +155,15 @@ class NodeAllocation {
         return accepted;
     }
 
+    private boolean shouldRetire(PrioritizableNode node) {
+        if ( ! requestedNodes.considerRetiring()) return false;
+        if ( ! nodeResourceLimits.isWithinRealLimits(node.node, cluster)) return true;
+        if (violatesParentHostPolicy(this.nodes, node.node)) return true;
+        if ( ! hasCompatibleFlavor(node)) return true;
+        if (node.node.status().wantToRetire()) return true;
+        if (requestedNodes.isExclusive() && ! hostsOnly(application, node.node.parentHostname())) return true;
+        return false;
+    }
 
     private boolean violatesParentHostPolicy(Collection<PrioritizableNode> accepted, Node offered) {
         return checkForClashingParentHost() && offeredNodeHasParentHostnameAlreadyAccepted(accepted, offered);
@@ -196,13 +200,13 @@ class NodeAllocation {
         return true;
     }
 
-    /** Returns true if this host only hosts the given applicaton (in any instance) */
-    private boolean hostsOnly(TenantName tenant, ApplicationName application, Optional<String> parentHostname) {
+    /** Returns true if this host only hosts the given application (in any instance) */
+    private boolean hostsOnly(ApplicationId application, Optional<String> parentHostname) {
         if (parentHostname.isEmpty()) return true; // yes, as host is exclusive
 
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( ! allocatedTo(tenant, application, nodeOnHost)) return false;
+            if ( ! allocatedTo(application.tenant(), application.application(), nodeOnHost)) return false;
         }
         return true;
     }
