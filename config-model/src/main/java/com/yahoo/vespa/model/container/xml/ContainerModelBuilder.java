@@ -197,7 +197,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
-        addHandlerSpecificThreadpools(cluster);
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
     }
 
@@ -209,13 +208,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 secretStore.addGroup(group.getAttribute("name"), group.getAttribute("environment"));
             }
             cluster.setSecretStore(secretStore);
-        }
-    }
-
-    private void addHandlerSpecificThreadpools(ContainerCluster<?> cluster) {
-        ContainerDocumentApi documentApi = cluster.getDocumentApi();
-        if (documentApi != null) {
-            documentApi.addNodesDependentThreadpoolConfiguration();
         }
     }
 
