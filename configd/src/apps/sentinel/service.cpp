@@ -91,7 +91,10 @@ int
 Service::terminate(bool catchable, bool dumpState)
 {
     if (isRunning()) {
-        runPreShutdownCommand();
+        if (_state == RUNNING) {
+            // only run this once, before signaling the service:
+            runPreShutdownCommand();
+        }
         LOG(debug, "%s: terminate(%s)", name().c_str(), catchable ? "cleanly" : "NOW");
         resetRestartPenalty();
         kill(_pid, SIGCONT); // if it was stopped for some reason
@@ -144,8 +147,14 @@ void
 Service::runCommand(const std::string & command)
 {
     int ret = system(command.c_str());
-    if (ret != 0) {
-        LOG(info, "%s: unable to run showdown command (%s): %d (%s)", name().c_str(), command.c_str(), ret, strerror(ret));
+    if (ret == -1) {
+        LOG(error, "%s: unable to run shutdown command (%s): %s", name().c_str(), command.c_str(), strerror(errno));
+    } else if (WIFSIGNALED(ret)) {
+        LOG(error, "%s: shutdown command (%s) terminated by signal %d", name().c_str(), command.c_str(), WTERMSIG(ret));
+    } else if (ret != 0) {
+        LOG(warning, "%s: shutdown command (%s) failed with exit status %d", name().c_str(), command.c_str(), WEXITSTATUS(ret));
+    } else {
+        LOG(info, "%s: shutdown command (%s) completed normally.", name().c_str(), command.c_str());
     }
 }
 
