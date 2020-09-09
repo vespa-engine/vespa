@@ -112,17 +112,15 @@ class NodeAllocation {
                 if ( offered.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
-                boolean wantToRetire = false;
                 boolean resizeable = false;
                 boolean acceptToRetire = false;
                 if (requestedNodes.considerRetiring()) {
-                    wantToRetire = shouldRetire(node);
                     resizeable = node.isResizable;
                     acceptToRetire = acceptToRetire(node);
                 }
 
                 if ((! saturated() && hasCompatibleFlavor(node) && requestedNodes.acceptable(offered)) || acceptToRetire)
-                    accepted.add(acceptNode(node, wantToRetire, resizeable));
+                    accepted.add(acceptNode(node, shouldRetire(node), resizeable));
             }
             else if (! saturated() && hasCompatibleFlavor(node)) {
                 if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) {
