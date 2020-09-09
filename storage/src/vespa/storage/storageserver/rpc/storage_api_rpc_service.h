@@ -17,7 +17,7 @@ namespace documentapi { class LoadTypeSet; }
 
 namespace storage {
 
-class MessageEnqueuer;
+class MessageDispatcher;
 
 namespace api {
 class StorageCommand;
@@ -32,10 +32,10 @@ class SharedRpcResources;
 class CachingRpcTargetResolver;
 
 class StorageApiRpcService : public FRT_Invokable, public FRT_IRequestWait {
-    MessageEnqueuer&    _message_enqueuer;
+    MessageDispatcher&  _message_dispatcher;
     SharedRpcResources& _rpc_resources;
 public:
-    StorageApiRpcService(MessageEnqueuer& messageEnqueuer,
+    StorageApiRpcService(MessageDispatcher& message_dispatcher,
                          SharedRpcResources& rpc_resources,
                          // TODO temporary!
                          std::function<std::shared_ptr<const document::DocumentTypeRepo>()> doctype_repo_func,

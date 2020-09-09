@@ -3,7 +3,7 @@
 #include "shared_rpc_resources.h"
 #include "slime_cluster_state_bundle_codec.h"
 #include <vespa/storage/storageserver/communicationmanager.h>
-#include <vespa/storage/storageserver/message_enqueuer.h>
+#include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
@@ -17,9 +17,9 @@ LOG_SETUP(".storage.cluster_controller_api_rpc_service");
 namespace storage::rpc {
 
 ClusterControllerApiRpcService::ClusterControllerApiRpcService(
-        MessageEnqueuer& message_enqueuer,
+        MessageDispatcher& message_dispatcher,
         SharedRpcResources& rpc_resources)
-    : _message_enqueuer(message_enqueuer),
+    : _message_dispatcher(message_dispatcher),
       _rpc_resources(rpc_resources),
       _closed(false)
 {
@@ -98,7 +98,7 @@ void ClusterControllerApiRpcService::detach_and_forward_to_enqueuer(
     // Create a request object to avoid needing a separate transport type
     cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
-    _message_enqueuer.enqueue(std::move(cmd));
+    _message_dispatcher.dispatch_async(std::move(cmd));
 }
 
 void ClusterControllerApiRpcService::RPC_getNodeState2(FRT_RPCRequest* req) {

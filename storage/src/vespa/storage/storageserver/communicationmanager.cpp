@@ -472,15 +472,17 @@ CommunicationManager::enqueue_or_process(std::shared_ptr<api::StorageMessage> ms
         LOG(spam, "Process storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
         process(msg);
     } else {
-        enqueue(std::move(msg));
+        dispatch_async(std::move(msg));
     }
 }
 
-void
-CommunicationManager::enqueue(std::shared_ptr<api::StorageMessage> msg)
-{
-    assert(msg);
-    LOG(spam, "Enq storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
+void CommunicationManager::dispatch_sync(std::shared_ptr<api::StorageMessage> msg) {
+    LOG(spam, "Direct dispatch of storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
+    process(std::move(msg));
+}
+
+void CommunicationManager::dispatch_async(std::shared_ptr<api::StorageMessage> msg) {
+    LOG(spam, "Enqueued dispatch of storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
     _eventQueue.enqueue(std::move(msg));
 }
 
