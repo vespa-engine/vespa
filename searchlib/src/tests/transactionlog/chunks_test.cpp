@@ -58,4 +58,9 @@ TEST("test serialization and deserialization of future multientry xxh64 no compr
     verifySerializationAndDeserialization(chunk, 100);
 }
 
+TEST("test serialization and deserialization of uncompressable lz4") {
+    XXH64CompressedChunk chunk(CompressionConfig::Type::LZ4, 1);
+    verifySerializationAndDeserialization(chunk, 1);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -8,7 +8,7 @@
 
 using std::runtime_error;
 using std::make_unique;
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 using vespalib::compression::compress;
 using vespalib::compression::decompress;
 using vespalib::compression::CompressionConfig;
@@ -22,7 +22,7 @@ namespace {
 void
 verifyCrc(nbostream & is, Encoding::Crc crcType) {
     if (is.size() < sizeof(int32_t) * 2) {
-        throw runtime_error(make_string("Not even room for the crc and length. Only %zu bytes left", is.size()));
+        throw runtime_error(fmt("Not even room for the crc and length. Only %zu bytes left", is.size()));
     }
     size_t start = is.rp();
     is.adjustReadPos(is.size() - sizeof(int32_t));
@@ -31,8 +31,7 @@ verifyCrc(nbostream & is, Encoding::Crc crcType) {
     is.rp(start);
     int32_t crcVerify = Encoding::calcCrc(crcType, is.data() + start, is.size() - sizeof(crc));
     if (crc != crcVerify) {
-        throw runtime_error(make_string("Got bad crc : crcVerify = %d, expected %d",
-                                        static_cast<int>(crcVerify), static_cast<int>(crc)));
+        throw runtime_error(fmt("Got bad crc : crcVerify = %d, expected %d", crcVerify, crc));
     }
 }
 
@@ -108,9 +107,12 @@ XXH64CompressedChunk::compress(nbostream & os, Encoding::Crc crc) const {
     nbostream org;
     serializeEntries(org);
     DataBuffer compressed;
-    CompressionConfig cfg(_type, _level, 80);
+    CompressionConfig cfg(_type, _level, 80, 200);
     ConstBufferRef uncompressed(org.data(), org.size());
     Encoding::Compression actual = toCompression(::compress(cfg, uncompressed, compressed, false));
+    if (actual == Encoding::Compression::none) {
+        actual = Encoding::Compression::none_multi;
+    }
     os << uint32_t(uncompressed.size());
     size_t start = os.wp();
     os.write(compressed.getData(), compressed.getDataLen());
