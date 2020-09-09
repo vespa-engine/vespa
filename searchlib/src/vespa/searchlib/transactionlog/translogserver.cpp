@@ -72,26 +72,6 @@ SyncHandler::PerformTask()
     }
 }
 
-class StaleCommitTask final : public FNET_Task {
-public:
-    StaleCommitTask(FNET_Scheduler * sceduler, TransLogServer & server, double seconds2Wait)
-        : FNET_Task(sceduler),
-          _server(server),
-          _seconds2Wait(seconds2Wait)
-    {}
-    ~StaleCommitTask() override = default;
-
-    void PerformTask() override {
-        if (_server.running()) {
-            _server.commitIfStale();
-            Schedule(_seconds2Wait);
-        }
-    }
-private:
-    TransLogServer    & _server;
-    double              _seconds2Wait;
-};
-
 }
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
@@ -117,6 +97,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
       _threadPool(std::make_unique<FastOS_ThreadPool>(1024*120)),
       _transport(std::make_unique<FNET_Transport>()),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
+      _staleCommitThread(),
       _domains(),
       _reqQ(),
       _fileHeaderContext(fileHeaderContext)
@@ -161,16 +142,19 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
         throw std::runtime_error(make_string("Failed creating tls base dir %s r(%d), e(%d). Requires manual intervention.", _baseDir.c_str(), retval, errno));
     }
     start(*_threadPool);
-    double chunkAgeLimit = vespalib::to_s(_domainConfig.getChunkAgeLimit());
-    _staleCommitTask = std::make_unique<StaleCommitTask>(_supervisor->GetScheduler(), *this, chunkAgeLimit);
-    _staleCommitTask->ScheduleNow();
+    _staleCommitThread = std::make_unique<std::thread>([this]() {
+        while (running()) {
+            std::this_thread::sleep_for(getChunkAgeLimit());
+            commitIfStale();
+        }
+    });
 }
 
 TransLogServer::~TransLogServer()
 {
-    _staleCommitTask->Kill();
     stop();
     join();
+    _staleCommitThread->join();
     _commitExecutor.shutdown();
     _commitExecutor.sync();
     _sessionExecutor.shutdown();
@@ -228,6 +212,12 @@ TransLogServer::run()
     LOG(info, "TLS Stopped");
 }
 
+vespalib::duration
+TransLogServer::getChunkAgeLimit() const
+{
+    Guard domainGuard(_domainMutex);
+    return _domainConfig.getChunkAgeLimit();
+}
 
 TransLogServer &
 TransLogServer::setDomainConfig(const DomainConfig & cfg) {
@@ -239,12 +229,14 @@ TransLogServer::setDomainConfig(const DomainConfig & cfg) {
     return *this;
 }
 
-void
+bool
 TransLogServer::commitIfStale() {
     MonitorGuard domainMonitor(_domainMutex);
+    bool committedAnything(false);
     for (const auto &domain : _domains) {
-        domain.second->commitIfStale();
+        committedAnything = committedAnything || domain.second->commitIfStale();
     }
+    return committedAnything;
 }
 
 DomainStats

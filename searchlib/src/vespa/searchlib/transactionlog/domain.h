@@ -34,7 +34,7 @@ public:
     SerialNum end() const;
     SerialNum getSynced() const;
     void triggerSyncNow();
-    void commitIfStale();
+    bool commitIfStale();
     bool getMarkedDeleted() const { return _markedDeleted; }
     void markDeleted() { _markedDeleted = true; }
 
@@ -57,7 +57,7 @@ public:
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
-    void commitIfStale(const vespalib::MonitorGuard & guard);
+    bool commitIfStale(const vespalib::MonitorGuard & guard);
     void commitIfFull(const vespalib::MonitorGuard & guard);
     class Chunk {
     public:
@@ -75,7 +75,7 @@ private:
     };
 
     std::unique_ptr<Chunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
-    void commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
+    bool commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
     void doCommit(std::unique_ptr<Chunk> chunk);
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;

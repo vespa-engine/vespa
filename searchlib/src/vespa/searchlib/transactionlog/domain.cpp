@@ -365,28 +365,31 @@ Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
     return chunk;
 }
 
-void
+bool
 Domain::commitIfStale() {
     vespalib::MonitorGuard guard(_currentChunkMonitor);
-    commitIfStale(guard);
+    return commitIfStale(guard);
 }
 
-void
+bool
 Domain::commitIfStale(const vespalib::MonitorGuard & guard) {
     assert(guard.monitors(_currentChunkMonitor));
     if ((_currentChunk->age() > _config.getChunkAgeLimit()) && ! _currentChunk->getPacket().empty()) {
-        commitChunk(grabCurrentChunk(guard), guard);
+        return commitChunk(grabCurrentChunk(guard), guard);
     }
+    return false;
 }
 
-void
+bool
 Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard) {
     assert(chunkOrderGuard.monitors(_currentChunkMonitor));
     if ( ! chunk->getPacket().empty()) {
         _singleCommiter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
             doCommit(std::move(chunk));
         }));
+        return true;
     }
+    return false;
 }
 
 void
