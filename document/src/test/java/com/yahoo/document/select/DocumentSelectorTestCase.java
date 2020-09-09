@@ -88,12 +88,8 @@ public class DocumentSelectorTestCase {
         manager.registerDocumentType(new DocumentType("andornot"));
         manager.registerDocumentType(new DocumentType("idid"));
         manager.registerDocumentType(new DocumentType("usergroup"));
-        var userType = new DocumentType("user");
-        userType.addField("id", DataType.INT);
-        manager.registerDocumentType(userType);
-        var groupType = new DocumentType("group");
-        groupType.addField("iD", DataType.INT); // For checking case preservation
-        manager.registerDocumentType(groupType);
+        manager.registerDocumentType(new DocumentType("user"));
+        manager.registerDocumentType(new DocumentType("group"));
     }
 
     @Test
@@ -161,8 +157,6 @@ public class DocumentSelectorTestCase {
         assertParse(null, "true or or_t or ortype");
         assertParse(null, "user or group");
         assertParse(null, "user.foo or group.bar");
-        assertParse("user.id == id.user", "user.id == id.user");
-        assertParse("group.iD == id.user", "group.iD == id.user"); // Casing is preserved
     }
 
     @Test
