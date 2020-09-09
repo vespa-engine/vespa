@@ -390,16 +390,16 @@ int main(int argc, char *argv[])
             } else {
                 fprintf(stdout, "%s was running with pid %d, sending SIGTERM\n",
                     service, pid);
-                if (killpg(pid, SIGTERM) != 0) {
+                if (kill(pid, SIGTERM) != 0) {
                     fprintf(stderr, "could not signal %d: %s\n", pid,
                             strerror(errno));
                     return 1;
                 }
             }
-            fprintf(stdout, "Waiting for exit (up to 60 seconds)\n");
-            for (int cnt(0); cnt < 1800; cnt++) {
+            fprintf(stdout, "Waiting for exit (up to 15 minutes)\n");
+            for (int cnt(0); cnt < 86400; cnt++) {
                 usleep(100000); // wait 0.1 seconds
-                if ((cnt > 300) && (cnt % 100 == 0)) {
+                if ((cnt > 7200) && (cnt % 100 == 0)) {
                     killpg(pid, SIGTERM);
                 }
                 if (killpg(pid, 0) == 0) {
@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
                     fprintf(stdout, "DONE\n");
                     break;
                 }
-                if (cnt == 900) {
+                if (cnt == 9000) {
                     printf("\ngiving up, sending KILL signal\n");
                     killpg(pid, SIGKILL);
                 }
