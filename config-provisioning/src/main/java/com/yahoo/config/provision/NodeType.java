@@ -45,6 +45,12 @@ public enum NodeType {
         this.description = description;
     }
 
+    // TODO: Remove when no version older than 7.247 is live
+    @Deprecated
+    public boolean isDockerHost() {
+        return !childNodeTypes.isEmpty();
+    }
+
     public boolean isHost() {
         return !childNodeTypes.isEmpty();
     }
