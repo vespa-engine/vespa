@@ -20,6 +20,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -379,6 +380,39 @@ public class DockerProvisioningTest {
                          e.getMessage());
         }
     }
+
+    @Test
+    public void inactive_container_nodes_are_reused() {
+        assertInactiveResuse(ClusterSpec.Type.container);
+    }
+
+    @Test
+    public void inactive_content_nodes_are_reused() {
+        assertInactiveResuse(ClusterSpec.Type.content);
+    }
+
+    private void assertInactiveResuse(ClusterSpec.Type clusterType) {
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .flavors(List.of(hostFlavor))
+                                                                    .build();
+        tester.makeReadyHosts(4, hostFlavor.resources()).deployZoneApp();
+
+        ApplicationId app1 = tester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(clusterType, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, hostFlavor.resources())));
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, hostFlavor.resources())));
+
+        // Deactivate any retired nodes - usually done by the RetiredExpirer
+        tester.nodeRepository().setRemovable(app1, tester.getNodes(app1).retired().asList());
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, hostFlavor.resources())));
+
+        assertEquals(2, tester.getNodes(app1, Node.State.inactive).size());
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, hostFlavor.resources())));
+        assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
+    }
+
 
     private Set<String> hostsOf(NodeList nodes) {
         return nodes.asList().stream().map(Node::parentHostname).map(Optional::get).collect(Collectors.toSet());

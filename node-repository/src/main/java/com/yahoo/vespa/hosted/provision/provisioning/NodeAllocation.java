@@ -104,11 +104,12 @@ class NodeAllocation {
             Node offered = node.node;
 
             if (offered.allocation().isPresent()) {
-                ClusterMembership membership = offered.allocation().get().membership();
-                if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
+                Allocation allocation = offered.allocation().get();
+                ClusterMembership membership = allocation.membership();
+                if ( ! allocation.owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().satisfies(cluster)) continue; // wrong cluster id/type
                 if ((! node.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
-                if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
+                if ( offered.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
                 if (requestedNodes.considerRetiring()) {
@@ -119,7 +120,7 @@ class NodeAllocation {
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
                     if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname()))
                         wantToRetireNode = true;
-                    if ((! saturated() && hasCompatibleFlavor(node)) || acceptToRetire(node))
+                    if ((! saturated() && hasCompatibleFlavor(node) && requestedNodes.acceptable(offered)) || acceptToRetire(node))
                         accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
                 }
                 else {
@@ -256,8 +257,8 @@ class NodeAllocation {
             if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
                 node = resize(node);
 
-            if (node.state() != Node.State.active) // reactivated node - make sure its not retired
-                node = node.unretire();
+            if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
+                node = node.unretire().removable(false);
         } else {
             ++wasRetiredJustNow;
             node = node.retire(nodeRepository.clock().instant());

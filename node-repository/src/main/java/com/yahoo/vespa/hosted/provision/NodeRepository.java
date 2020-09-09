@@ -511,7 +511,7 @@ public class NodeRepository extends AbstractComponent {
     public void setRemovable(ApplicationId application, List<Node> nodes) {
         try (Mutex lock = lock(application)) {
             List<Node> removableNodes =
-                nodes.stream().map(node -> node.with(node.allocation().get().removable()))
+                nodes.stream().map(node -> node.with(node.allocation().get().removable(true)))
                               .collect(Collectors.toList());
             write(removableNodes, lock);
         }
@@ -641,7 +641,7 @@ public class NodeRepository extends AbstractComponent {
     }
 
     private Node move(Node node, State toState, Agent agent, Optional<String> reason) {
-        if (toState == Node.State.active && ! node.allocation().isPresent())
+        if (toState == Node.State.active && node.allocation().isEmpty())
             illegal("Could not set " + node + " active. It has no allocation.");
 
         try (Mutex lock = lock(node)) {
