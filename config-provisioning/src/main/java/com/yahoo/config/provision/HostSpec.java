@@ -3,7 +3,6 @@ package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -83,109 +82,6 @@ public class HostSpec implements Comparable<HostSpec> {
         this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Docker image repo cannot be null but can be empty");
     }
 
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, Optional<ClusterMembership> membership) {
-        this(hostname, new ArrayList<>(),
-             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-             membership,
-             Optional.empty(), Optional.empty(), Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<Version> version) {
-        this(hostname, new ArrayList<>(),
-             flavor.resources(), flavor.resources(), NodeResources.unspecified(),
-             Optional.of(membership), version, Optional.empty(), Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases) {
-        this(hostname, aliases,
-             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases, Flavor flavor) {
-        this(hostname, aliases,
-             flavor.resources(), flavor.resources(), NodeResources.unspecified(),
-             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases, ClusterMembership membership) {
-        this(hostname, aliases,
-             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-             Optional.of(membership),
-             Optional.empty(), Optional.empty(), Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor, Optional<ClusterMembership> membership) {
-        this(hostname, aliases,
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             NodeResources.unspecified(),
-             membership, Optional.empty(), Optional.empty(), Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<Version> version) {
-        this(hostname, aliases,
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             NodeResources.unspecified(),
-             membership, version,
-             Optional.empty(), Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<Version> version,
-                    Optional<NetworkPorts> networkPorts) {
-        this(hostname, aliases,
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             NodeResources.unspecified(),
-             membership, version, networkPorts,
-             Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases,
-                    Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<Version> version,
-                    Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources) {
-        this(hostname, aliases,
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             requestedResources.orElse(NodeResources.unspecified()),
-             membership, version, networkPorts, Optional.empty());
-    }
-
-    // TODO: Remove when models older than 7.226 are gone
-    @Deprecated
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<Version> version,
-                    Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources,
-                    Optional<DockerImage> dockerImageRepo) {
-        this(hostname, aliases,
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             flavor.map(f -> f.resources()).orElse(NodeResources.unspecified()),
-             requestedResources.orElse(NodeResources.unspecified()),
-             membership, version, networkPorts, dockerImageRepo);
-    }
-
     /** Returns the name identifying this host */
     public String hostname() { return hostname; }
 
@@ -197,12 +93,6 @@ public class HostSpec implements Comparable<HostSpec> {
 
     /** The total advertised resources of this node, typically matching what's requested. */
     public NodeResources advertisedResources() { return advertisedResources; }
-
-    /** A flavor contained the advertised resources of this host */
-    // TODO: Remove when models older than 7.226 are gone
-    public Optional<Flavor> flavor() {
-        return advertisedResources.asOptional().map(resources -> new Flavor(resources));
-    }
 
     /** Returns the current version of Vespa running on this node, or empty if not known */
     public Optional<com.yahoo.component.Version> version() { return version; }
