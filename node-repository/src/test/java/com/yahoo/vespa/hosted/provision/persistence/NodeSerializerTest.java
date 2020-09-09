@@ -179,7 +179,7 @@ public class NodeSerializerTest {
                      (copy.history().event(History.Event.Type.retired).get()).agent());
         assertTrue(copy.allocation().get().membership().retired());
 
-        Node removable = copy.with(node.allocation().get().removable(true));
+        Node removable = copy.with(node.allocation().get().removable());
         Node removableCopy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(removable));
         assertTrue(removableCopy.allocation().get().isRemovable());
     }
