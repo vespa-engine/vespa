@@ -270,11 +270,6 @@ public class Flags {
             "Whether to provision and use endpoint certs for apps in shared routing zones",
             "Takes effect on next deployment of the application", APPLICATION_ID);
 
-    public static final UnboundBooleanFlag NLB_PROXY_PROTOCOL = defineFeatureFlag(
-            "nlb-proxy-protocol", false,
-            "Configure NLB to use proxy protocol",
-            "Takes effect on next application redeploy",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_CLOUD_INIT_FORMAT = defineFeatureFlag(
             "use-cloud-init", false,
