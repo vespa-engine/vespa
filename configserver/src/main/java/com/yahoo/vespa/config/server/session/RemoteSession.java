@@ -25,7 +25,7 @@ public class RemoteSession extends Session {
      * @param sessionId The session id for this session.
      * @param zooKeeperClient a SessionZooKeeperClient instance
      */
-    public RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient) {
+    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient) {
         this(tenant, sessionId, zooKeeperClient, Optional.empty());
     }
 
@@ -35,11 +35,12 @@ public class RemoteSession extends Session {
      * @param tenant The name of the tenant creating session
      * @param sessionId The session id for this session.
      * @param zooKeeperClient a SessionZooKeeperClient instance
+     * @param applicationSet current application set for this session
      */
-    private RemoteSession(TenantName tenant,
-                          long sessionId,
-                          SessionZooKeeperClient zooKeeperClient,
-                          Optional<ApplicationSet> applicationSet) {
+    RemoteSession(TenantName tenant,
+                  long sessionId,
+                  SessionZooKeeperClient zooKeeperClient,
+                  Optional<ApplicationSet> applicationSet) {
         super(tenant, sessionId, zooKeeperClient);
         this.applicationSet = applicationSet;
     }
@@ -59,6 +60,11 @@ public class RemoteSession extends Session {
 
     public Transaction createDeleteTransaction() {
         return sessionZooKeeperClient.createWriteStatusTransaction(Status.DELETE);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + ",application set=" + applicationSet;
     }
 
 }
