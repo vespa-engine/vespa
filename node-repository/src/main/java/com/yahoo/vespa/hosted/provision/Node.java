@@ -204,6 +204,11 @@ public final class Node {
         return with(requireAllocation("Cannot unretire").unretire());
     }
 
+    /** Returns a copy of this with removable set to the given value */
+    public Node removable(boolean removable) {
+        return with(requireAllocation("Cannot set removable").removable(removable));
+    }
+
     /** Returns a copy of this with the restart generation set to generation */
     public Node withRestart(Generation generation) {
         Allocation allocation = requireAllocation("Cannot set restart generation");

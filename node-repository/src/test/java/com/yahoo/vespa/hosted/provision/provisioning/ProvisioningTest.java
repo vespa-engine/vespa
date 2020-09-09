@@ -888,7 +888,7 @@ public class ProvisioningTest {
         // Application allocates two content nodes initially, with cluster type content
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         var initialNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                                       Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
+                                                                       Capacity.from(new ClusterResources(2, 1, defaultResources))));
 
         // Application is redeployed with cluster type combined
         cluster = ClusterSpec.request(ClusterSpec.Type.combined, ClusterSpec.Id.from("music"))
@@ -896,7 +896,7 @@ public class ProvisioningTest {
                              .combinedId(Optional.of(ClusterSpec.Id.from("qrs")))
                              .build();
         var newNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                                   Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
+                                                                   Capacity.from(new ClusterResources(2, 1, defaultResources))));
 
         assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
@@ -906,7 +906,7 @@ public class ProvisioningTest {
         // Application is redeployed with cluster type content again
         cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
         newNodes = tester.activate(application, tester.prepare(application, cluster,
-                                                               Capacity.from(new ClusterResources(2, 1, defaultResources), false, false)));
+                                                               Capacity.from(new ClusterResources(2, 1, defaultResources))));
         assertEquals("Node allocation remains the same", initialNodes, newNodes);
         assertEquals("Cluster type is updated",
                      Set.of(ClusterSpec.Type.content),

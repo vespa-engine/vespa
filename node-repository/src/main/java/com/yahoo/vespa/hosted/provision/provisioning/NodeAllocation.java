@@ -104,27 +104,23 @@ class NodeAllocation {
             Node offered = node.node;
 
             if (offered.allocation().isPresent()) {
-                ClusterMembership membership = offered.allocation().get().membership();
-                if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
+                Allocation allocation = offered.allocation().get();
+                ClusterMembership membership = allocation.membership();
+                if ( ! allocation.owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().satisfies(cluster)) continue; // wrong cluster id/type
                 if ((! node.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
-                if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
+                if ( offered.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
+                boolean resizeable = false;
+                boolean acceptToRetire = false;
                 if (requestedNodes.considerRetiring()) {
-                    boolean wantToRetireNode = false;
-                    if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) wantToRetireNode = true;
-                    if (violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
-                    if ( ! hasCompatibleFlavor(node)) wantToRetireNode = true;
-                    if (offered.status().wantToRetire()) wantToRetireNode = true;
-                    if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname()))
-                        wantToRetireNode = true;
-                    if ((! saturated() && hasCompatibleFlavor(node)) || acceptToRetire(node))
-                        accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
+                    resizeable = node.isResizable;
+                    acceptToRetire = acceptToRetire(node);
                 }
-                else {
-                    accepted.add(acceptNode(node, false, false));
-                }
+
+                if ((! saturated() && hasCompatibleFlavor(node) && requestedNodes.acceptable(offered)) || acceptToRetire)
+                    accepted.add(acceptNode(node, shouldRetire(node), resizeable));
             }
             else if (! saturated() && hasCompatibleFlavor(node)) {
                 if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) {
@@ -139,7 +135,7 @@ class NodeAllocation {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
-                if ( requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), application.application(), offered.parentHostname())) {
+                if ( requestedNodes.isExclusive() && ! hostsOnly(application, offered.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
@@ -157,6 +153,15 @@ class NodeAllocation {
         return accepted;
     }
 
+    private boolean shouldRetire(PrioritizableNode node) {
+        if ( ! requestedNodes.considerRetiring()) return false;
+        if ( ! nodeResourceLimits.isWithinRealLimits(node.node, cluster)) return true;
+        if (violatesParentHostPolicy(this.nodes, node.node)) return true;
+        if ( ! hasCompatibleFlavor(node)) return true;
+        if (node.node.status().wantToRetire()) return true;
+        if (requestedNodes.isExclusive() && ! hostsOnly(application, node.node.parentHostname())) return true;
+        return false;
+    }
 
     private boolean violatesParentHostPolicy(Collection<PrioritizableNode> accepted, Node offered) {
         return checkForClashingParentHost() && offeredNodeHasParentHostnameAlreadyAccepted(accepted, offered);
@@ -193,13 +198,13 @@ class NodeAllocation {
         return true;
     }
 
-    /** Returns true if this host only hosts the given applicaton (in any instance) */
-    private boolean hostsOnly(TenantName tenant, ApplicationName application, Optional<String> parentHostname) {
+    /** Returns true if this host only hosts the given application (in any instance) */
+    private boolean hostsOnly(ApplicationId application, Optional<String> parentHostname) {
         if (parentHostname.isEmpty()) return true; // yes, as host is exclusive
 
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( ! allocatedTo(tenant, application, nodeOnHost)) return false;
+            if ( ! allocatedTo(application.tenant(), application.application(), nodeOnHost)) return false;
         }
         return true;
     }
@@ -256,8 +261,8 @@ class NodeAllocation {
             if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
                 node = resize(node);
 
-            if (node.state() != Node.State.active) // reactivated node - make sure its not retired
-                node = node.unretire();
+            if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
+                node = node.unretire().removable(false);
         } else {
             ++wasRetiredJustNow;
             node = node.retire(nodeRepository.clock().instant());
