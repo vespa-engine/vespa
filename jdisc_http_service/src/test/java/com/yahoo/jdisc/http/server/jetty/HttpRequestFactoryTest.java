@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
  */
 public class HttpRequestFactoryTest {
 
-    private static final int LOCAL_PORT = 8080;
+    private static final int LOCAL_PORT = 80;
 
     @Test
     public final void testIllegalQuery() {
@@ -97,7 +97,7 @@ public class HttpRequestFactoryTest {
     public void request_uri_uses_local_port() {
         HttpRequest request = HttpRequestFactory.newJDiscRequest(
                 new MockContainer(),
-                createMockRequest("http", "example.com", "/search", "query=value"));
+                createMockRequest("https", "example.com", "/search", "query=value"));
         assertEquals(LOCAL_PORT, request.getUri().getPort());
     }
 

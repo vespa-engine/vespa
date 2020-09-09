@@ -55,12 +55,22 @@ class HttpRequestFactory {
                 builder.append('?').append(query);
             }
             URI uri = URI.create(builder.toString());
-            if ( ! scheme.equals(uri.getScheme()) || ! host.equals(uri.getHost()) || port != uri.getPort())
-                throw new IllegalArgumentException("Bad scheme, host or port");
+            validateSchemeHostPort(scheme, host, port, uri);
             return uri;
         } catch (IllegalArgumentException e) {
             throw createBadQueryException(e);
         }
+    }
+
+    private static void validateSchemeHostPort(String scheme, String host, int port, URI uri) {
+        if ( ! scheme.equals(uri.getScheme()))
+            throw new IllegalArgumentException("Bad scheme: " + scheme);
+
+        if ( ! host.equals(uri.getHost()))
+            throw new IllegalArgumentException("Bad host: " + host);
+
+        if (port != uri.getPort() && ! (port == 80 && scheme.equals("http")) && ! (port == 443 && scheme.equals("https")))
+            throw new IllegalArgumentException("Bad port: " + port);
     }
 
     private static RequestException createBadQueryException(IllegalArgumentException e) {
