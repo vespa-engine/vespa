@@ -67,12 +67,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Whether this model should be validated (only takes effect if prepared=false) */
     private final boolean validate;
 
-    /** Whether activation of this model should be forced */
-    private final boolean force;
+    private boolean ignoreSessionStaleFailure = false;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository,
                        Optional<Provisioner> hostProvisioner, Tenant tenant, Duration timeout,
-                       Clock clock, boolean prepared, boolean validate, boolean isBootstrap, boolean force) {
+                       Clock clock, boolean prepared, boolean validate, boolean isBootstrap) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.hostProvisioner = hostProvisioner;
@@ -85,21 +84,24 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.version = session.getVespaVersion();
         this.isBootstrap = isBootstrap;
         this.athenzDomain = session.getAthenzDomain();
-        this.force = force;
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> hostProvisioner, Tenant tenant,
                                         Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant, timeout, clock, false,
-                              validate, isBootstrap, false);
+                              validate, isBootstrap);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                      Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
+                                      Duration timeout, Clock clock, boolean isBootstrap) {
         return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, isBootstrap, force);
+                              timeout, clock, true, true, isBootstrap);
+    }
+
+    public void setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
+        this.ignoreSessionStaleFailure = ignoreSessionStaleFailure;
     }
 
     /** Prepares this. This does nothing if this is already prepared */
@@ -140,7 +142,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             CompletionWaiter waiter;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
                 previousActiveSession = applicationRepository.getActiveSession(applicationId);
-                waiter = applicationRepository.activate(session, previousActiveSession, applicationId, force);
+                waiter = applicationRepository.activate(session, previousActiveSession, applicationId, ignoreSessionStaleFailure);
             }
             catch (RuntimeException e) {
                 throw e;

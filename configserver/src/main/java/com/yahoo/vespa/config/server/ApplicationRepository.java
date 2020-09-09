@@ -285,11 +285,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams, Instant now) {
+    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams,
+                                boolean ignoreSessionStaleFailure, Instant now) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         PrepareResult prepareResult;
         try {
-            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, now);
+            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, ignoreSessionStaleFailure, now);
         } finally {
             cleanupTempDirectory(tempDir);
         }
@@ -297,15 +298,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
-        return deploy(applicationPackage, prepareParams, Instant.now());
+        return deploy(applicationPackage, prepareParams, false, Instant.now());
     }
 
-    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, Instant now) {
+    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams,
+                                boolean ignoreSessionStaleFailure, Instant now) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = getTenant(applicationId);
         PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
-        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), prepareParams.force());
+        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), ignoreSessionStaleFailure);
         return result;
     }
 
@@ -384,22 +386,23 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationId activate(Tenant tenant,
                                   long sessionId,
                                   TimeoutBudget timeoutBudget,
-                                  boolean force) {
+                                  boolean ignoreSessionStaleFailure) {
         LocalSession localSession = getLocalSession(tenant, sessionId);
-        Deployment deployment = deployment(localSession, tenant, timeoutBudget.timeLeft(), force);
+        Deployment deployment = deployFromPreparedSession(localSession, tenant, timeoutBudget.timeLeft());
+        deployment.setIgnoreSessionStaleFailure(ignoreSessionStaleFailure);
         deployment.activate();
         return localSession.getApplicationId();
     }
 
-    private Deployment deployment(LocalSession session, Tenant tenant, Duration timeout, boolean force) {
-        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false, force);
+    private Deployment deployFromPreparedSession(LocalSession session, Tenant tenant, Duration timeout) {
+        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false);
     }
 
-    public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean force) {
+    public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
         Tenant tenant = tenantRepository.getTenant(prepared.getTenantName());
         Transaction transaction = tenant.getSessionRepository().createActivateTransaction(prepared);
         if (active != null) {
-            checkIfActiveHasChanged(prepared, active, force);
+            checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
             checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
             transaction.add(active.createDeactivateTransaction().operations());
         }
@@ -739,10 +742,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
 
 
-    public CompletionWaiter activate(LocalSession session, Session previousActiveSession, ApplicationId applicationId, boolean force) {
+    public CompletionWaiter activate(LocalSession session, Session previousActiveSession, ApplicationId applicationId, boolean ignoreSessionStaleFailure) {
         CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
         NestedTransaction transaction = new NestedTransaction();
-        transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, force));
+        transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, ignoreSessionStaleFailure));
         hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
         transaction.commit();
         return waiter;

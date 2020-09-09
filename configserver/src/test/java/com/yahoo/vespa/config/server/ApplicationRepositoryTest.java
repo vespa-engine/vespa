@@ -704,7 +704,7 @@ public class ApplicationRepositoryTest {
     }
 
     private PrepareResult prepareAndActivate(File application) {
-        return applicationRepository.deploy(application, prepareParams(), Instant.now());
+        return applicationRepository.deploy(application, prepareParams(), false, Instant.now());
     }
 
     private PrepareResult deployApp(File applicationPackage) {
