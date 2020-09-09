@@ -61,5 +61,6 @@ vespa_define_module(
     src/tests/persistence/common
     src/tests/persistence/filestorage
     src/tests/storageserver
+    src/tests/storageserver/rpc
     src/tests/visiting
 )
