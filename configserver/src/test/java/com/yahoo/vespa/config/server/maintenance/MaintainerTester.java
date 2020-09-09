@@ -67,7 +67,10 @@ class MaintainerTester {
     }
 
     void deployApp(File applicationPath, PrepareParams.Builder prepareParams) {
-        applicationRepository.deploy(applicationPath, prepareParams.ignoreValidationErrors(true).build(), clock.instant());
+        applicationRepository.deploy(applicationPath,
+                                     prepareParams.ignoreValidationErrors(true).build(),
+                                     false,
+                                     clock.instant());
     }
 
     Curator curator() { return curator; }
