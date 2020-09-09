@@ -53,13 +53,10 @@ public class ApplicationApiHandler extends SessionHandler {
     @Override
     protected HttpResponse handlePOST(HttpRequest request) {
         validateDataAndHeader(request);
-        Tenant tenant = validateTenant(request);
-        PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenant.getName(), zookeeperBarrierTimeout);
+        TenantName tenantName = validateTenant(request);
+        PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
         CompressedApplicationInputStream compressedStream = createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader));
-        PrepareResult result = applicationRepository.deploy(compressedStream,
-                                                            prepareParams,
-                                                            shouldIgnoreSessionStaleFailure(request),
-                                                            Instant.now());
+        PrepareResult result = applicationRepository.deploy(compressedStream, prepareParams, Instant.now());
         return new SessionPrepareAndActivateResponse(result, request, prepareParams.getApplicationId(), zone);
     }
 
@@ -68,10 +65,10 @@ public class ApplicationApiHandler extends SessionHandler {
         return zookeeperBarrierTimeout.plus(Duration.ofSeconds(10));
     }
 
-    private Tenant validateTenant(HttpRequest request) {
+    private TenantName validateTenant(HttpRequest request) {
         TenantName tenantName = getTenantNameFromRequest(request);
         checkThatTenantExists(tenantRepository, tenantName);
-        return tenantRepository.getTenant(tenantName);
+        return tenantName;
     }
 
     public static TenantName getTenantNameFromRequest(HttpRequest request) {
