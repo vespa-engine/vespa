@@ -22,6 +22,10 @@ struct IOperationStorer
      */
     virtual void appendOperation(const FeedOperation &op, DoneCallback onDone) = 0;
     [[nodiscard]] virtual CommitResult startCommit(DoneCallback onDone) = 0;
+    void appendAndCommitOperation(const FeedOperation &op, DoneCallback onDone) {
+        appendOperation(op, onDone);
+        (void) startCommit(std::move(onDone));
+    }
 };
 
 } // namespace proton
