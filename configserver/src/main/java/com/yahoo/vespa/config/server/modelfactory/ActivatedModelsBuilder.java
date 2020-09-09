@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.modelfactory;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
@@ -57,7 +56,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
     private final Curator curator;
-    private final DeployLogger logger;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
 
@@ -76,7 +74,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
         this.curator = globalComponentRegistry.getCurator();
-        this.logger = new SilentDeployLogger();
         this.flagSource = globalComponentRegistry.getFlagSource();
         this.secretStore = globalComponentRegistry.getSecretStore();
     }
@@ -90,14 +87,14 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             Optional<AllocatedHosts> ignored // Ignored since we have this in the app package for activated models
     ) {
         log.log(Level.FINE, String.format("Loading model version %s for session %s application %s",
-                                              modelFactory.version(), appGeneration, applicationId));
+                                          modelFactory.version(), appGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);
         Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 Optional.empty(),
                 permanentApplicationPackage.applicationPackage(),
-                logger,
+                new SilentDeployLogger(),
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),
                 createStaticProvisioner(applicationPackage.getAllocatedHosts(),
