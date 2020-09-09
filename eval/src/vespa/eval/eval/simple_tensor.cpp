@@ -769,13 +769,20 @@ SimpleTensor::decode(nbostream &input)
     return builder.build();
 }
 
-size_t
-SimpleTensor::count_memory_used() const {
-    size_t result = sizeof(SimpleTensor);
-    size_t addr_size = sizeof(Label) * _type.dimensions().size();
-    size_t cell_size = sizeof(Cell) + addr_size;
-    result += _cells.size() * cell_size;
-    return result;
+vespalib::MemoryUsage
+SimpleTensor::get_memory_usage() const {
+    size_t addr_use = sizeof(Label) * _type.dimensions().size();
+    size_t cell_use = sizeof(Cell) + addr_use;
+    size_t cells_use = _cells.size() * cell_use;
+
+    size_t addr_alloc = sizeof(Label) * _type.dimensions().capacity();
+    size_t cell_alloc = sizeof(Cell) + addr_alloc;
+    size_t cells_alloc = _cells.capacity() * cell_alloc;
+
+    size_t mine_sz = sizeof(SimpleTensor);
+    size_t used = mine_sz + cells_use;
+    size_t allocated = mine_sz + cells_alloc;
+    return MemoryUsage(allocated, used, 0, 0);
 }
 
 } // namespace vespalib::eval

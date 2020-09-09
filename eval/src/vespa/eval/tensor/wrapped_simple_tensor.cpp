@@ -59,9 +59,11 @@ WrappedSimpleTensor::get_memory_usage() const
 {
     size_t used = sizeof(WrappedSimpleTensor);
     if (_space) {
-        used += _space->count_memory_used();
+        auto plus = _space->get_memory_usage();
+        plus.incUsedBytes(used);
+        plus.incAllocatedBytes(used);
+        return plus;
     }
-    // XXX - does not account for extra allocated memory
     return MemoryUsage(used, used, 0, 0);
 }
 
