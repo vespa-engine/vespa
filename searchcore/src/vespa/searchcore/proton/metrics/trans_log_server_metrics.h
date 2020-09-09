@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/metrics/metrics.h>
-#include <vespa/searchlib/transactionlog/domain.h>
+#include <vespa/searchlib/transactionlog/domainconfig.h>
 
 namespace proton {
 

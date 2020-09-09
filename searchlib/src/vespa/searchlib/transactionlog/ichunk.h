@@ -3,9 +3,6 @@
 #pragma once
 
 #include "common.h"
-#include <memory>
-
-namespace vespalib { class nbostream; }
 
 namespace search::transactionlog {
 
