@@ -415,6 +415,9 @@ Domain::doCommit(std::unique_ptr<Chunk> chunk) {
         dp->sync();
     }
     cleanSessions();
+    LOG(debug, "Releasing %zu acks and %zu entries and %zu bytes and age %ld us",
+        chunk->getNumCallBacks(), chunk->getPacket().size(),
+        chunk->sizeBytes(), vespalib::count_us(chunk->age()));
 }
 
 bool

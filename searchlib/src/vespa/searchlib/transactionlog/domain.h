@@ -67,6 +67,7 @@ private:
         size_t sizeBytes() const { return _data.sizeBytes(); }
         const Packet & getPacket() const { return _data; }
         vespalib::duration age() const;
+        size_t getNumCallBacks() const { return _callBacks.size(); }
     private:
         Packet                             _data;
         std::vector<Writer::DoneCallback>  _callBacks;
