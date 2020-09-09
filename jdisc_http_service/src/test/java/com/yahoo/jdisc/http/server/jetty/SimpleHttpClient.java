@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.jdisc.Request;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -36,6 +37,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * A simple http client for testing
@@ -87,23 +89,23 @@ public class SimpleHttpClient implements AutoCloseable {
         return URI.create(scheme + "://localhost:" + listenPort + path);
     }
 
-    public RequestExecutor newGet(final String path) {
+    public RequestExecutor newGet(String path) {
         return newRequest(new HttpGet(newUri(path)));
     }
 
-    public RequestExecutor newPost(final String path) {
+    public RequestExecutor newPost(String path) {
         return newRequest(new HttpPost(newUri(path)));
     }
 
-    public RequestExecutor newRequest(final HttpUriRequest request) {
+    public RequestExecutor newRequest(HttpUriRequest request) {
         return new RequestExecutor().setRequest(request);
     }
 
-    public ResponseValidator execute(final HttpUriRequest request) throws IOException {
+    public ResponseValidator execute(HttpUriRequest request) throws IOException {
         return newRequest(request).execute();
     }
 
-    public ResponseValidator get(final String path) throws IOException {
+    public ResponseValidator get(String path) throws IOException {
         return newGet(path).execute();
     }
 
@@ -164,37 +166,37 @@ public class SimpleHttpClient implements AutoCloseable {
         private final HttpResponse response;
         private final String content;
 
-        public ResponseValidator(final HttpResponse response) throws IOException {
+        public ResponseValidator(HttpResponse response) throws IOException {
             this.response = response;
 
-            final HttpEntity entity = response.getEntity();
-            this.content = entity == null ? null :
-                           EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            HttpEntity entity = response.getEntity();
+            this.content = entity == null ? null : EntityUtils.toString(entity, StandardCharsets.UTF_8);
         }
 
-        public ResponseValidator expectStatusCode(final Matcher<Integer> matcher) {
+        public ResponseValidator expectStatusCode(Matcher<Integer> matcher) {
             MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), matcher);
             return this;
         }
 
-        public ResponseValidator expectHeader(final String headerName, final Matcher<String> matcher) {
-            final Header firstHeader = response.getFirstHeader(headerName);
-            final String headerValue = firstHeader != null ? firstHeader.getValue() : null;
+        public ResponseValidator expectHeader(String headerName, Matcher<String> matcher) {
+            Header firstHeader = response.getFirstHeader(headerName);
+            String headerValue = firstHeader != null ? firstHeader.getValue() : null;
             MatcherAssert.assertThat(headerValue, matcher);
-            assertThat(firstHeader, is(not(nullValue())));
+            assertNotNull(firstHeader);
             return this;
         }
 
-        public ResponseValidator expectNoHeader(final String headerName) {
-            final Header firstHeader = response.getFirstHeader(headerName);
+        public ResponseValidator expectNoHeader(String headerName) {
+            Header firstHeader = response.getFirstHeader(headerName);
             assertThat(firstHeader, is(nullValue()));
             return this;
         }
 
-        public ResponseValidator expectContent(final Matcher<String> matcher) throws IOException {
+        public ResponseValidator expectContent(final Matcher<String> matcher) {
             MatcherAssert.assertThat(content, matcher);
             return this;
         }
 
     }
+
 }
