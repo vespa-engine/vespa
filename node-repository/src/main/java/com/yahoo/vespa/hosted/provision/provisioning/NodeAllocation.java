@@ -123,7 +123,7 @@ class NodeAllocation {
                     if ((! saturated() && hasCompatibleFlavor(node) && requestedNodes.acceptable(offered)) || acceptToRetire(node))
                         accepted.add(acceptNode(node, wantToRetireNode, node.isResizable));
                 }
-                else {
+                else if (! saturated()) {
                     accepted.add(acceptNode(node, false, false));
                 }
             }
