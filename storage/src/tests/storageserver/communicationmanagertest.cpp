@@ -167,7 +167,7 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     // Lower number == higher priority.
     std::vector<api::StorageMessage::Priority> pris{200, 0, 255, 128};
     for (auto pri : pris) {
-        storage.enqueue(createDummyCommand(pri));
+        storage.dispatch_async(createDummyCommand(pri));
     }
     storageLink->waitForMessages(pris.size(), MESSAGE_WAIT_TIME_SEC);
 
@@ -195,7 +195,7 @@ TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
 
     std::vector<api::StorageMessage::Priority> pris{200, 0, 255, 128};
     for (auto pri : pris) {
-        storage.enqueue(createDummyCommand(pri)->makeReply());
+        storage.dispatch_async(createDummyCommand(pri)->makeReply());
     }
     storageLink->waitForMessages(pris.size(), MESSAGE_WAIT_TIME_SEC);
 
