@@ -60,6 +60,9 @@ public interface NodeSpec {
     /** Returns whether the given node must be resized to match this spec */
     boolean needsResize(Node node);
 
+    /** Returns true if there exist some circumstance where we may accept to have this node allocated */
+    boolean acceptable(Node node);
+
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
      * in-place to resources in this spec.
@@ -157,6 +160,9 @@ public interface NodeSpec {
         }
 
         @Override
+        public boolean acceptable(Node node) { return true; }
+
+        @Override
         public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
 
     }
@@ -209,6 +215,12 @@ public interface NodeSpec {
 
         @Override
         public boolean needsResize(Node node) { return false; }
+
+        @Override
+        public boolean acceptable(Node node) {
+            // Since we consume all offered nodes we should not accept previously deactivated nodes
+            return node.state() != Node.State.inactive;
+        }
 
         @Override
         public String toString() { return "request for all nodes of type '" + type + "'"; }

@@ -241,7 +241,7 @@ public class NodeSerializer {
     }
 
     private Optional<Allocation> allocationFromSlime(NodeResources assignedResources, Inspector object) {
-        if ( ! object.valid()) return Optional.empty(); // TODO: Remove this line (and to the simplifications that follows) after November 2019
+        if ( ! object.valid()) return Optional.empty();
         return Optional.of(new Allocation(applicationIdFromSlime(object),
                                           clusterMembershipFromSlime(object),
                                           NodeResourcesSerializer.optionalResourcesFromSlime(object.field(requestedResourcesKey))
