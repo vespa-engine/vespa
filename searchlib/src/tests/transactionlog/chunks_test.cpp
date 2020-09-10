@@ -14,7 +14,7 @@ using vespalib::compression::CompressionConfig;
 constexpr const char * TEXT = "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz";
 
 void
-verifySerializationAndDeserialization(IChunk & org, size_t numEntries) {
+verifySerializationAndDeserialization(IChunk & org, size_t numEntries, Encoding expected) {
     for (size_t i(0); i < numEntries; i++) {
         const char *start = TEXT + (i%20);
         Packet::Entry entry(i, i%8, ConstBufferRef(start, strlen(start)));
@@ -23,6 +23,7 @@ verifySerializationAndDeserialization(IChunk & org, size_t numEntries) {
     nbostream os;
 
     Encoding encoding = org.encode(os);
+    EXPECT_EQUAL(expected, encoding);
     auto deserialized = IChunk::create(encoding.getRaw());
     deserialized->decode(os);
     EXPECT_TRUE(os.empty());
@@ -31,36 +32,41 @@ verifySerializationAndDeserialization(IChunk & org, size_t numEntries) {
 
 TEST("test serialization and deserialization of current default uncompressed xxh64") {
     XXH64NoneChunk chunk;
-    verifySerializationAndDeserialization(chunk, 1);
+    verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none));
 }
 
 TEST("test serialization and deserialization of legacy uncompressed ccittcrc32") {
     CCITTCRC32NoneChunk chunk;
-    verifySerializationAndDeserialization(chunk, 1);
+    verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none));
 }
 
 TEST("test serialization and deserialization of future multientry xxh64 lz4 compression") {
     for (size_t level(1); level < 9; level++) {
         XXH64CompressedChunk chunk(CompressionConfig::Type::LZ4, level);
-        verifySerializationAndDeserialization(chunk, 100);
+        verifySerializationAndDeserialization(chunk, 100, Encoding(Encoding::Crc::xxh64, Encoding::Compression::lz4));
     }
 }
 
 TEST("test serialization and deserialization of future multientry xxh64 zstd compression") {
     for (size_t level(1); level < 9; level++) {
         XXH64CompressedChunk chunk(CompressionConfig::Type::ZSTD, level);
-        verifySerializationAndDeserialization(chunk, 100);
+        verifySerializationAndDeserialization(chunk, 100, Encoding(Encoding::Crc::xxh64, Encoding::Compression::zstd));
     }
 }
 
 TEST("test serialization and deserialization of future multientry xxh64 no compression") {
     XXH64CompressedChunk chunk(CompressionConfig::Type::NONE_MULTI, 1);
-    verifySerializationAndDeserialization(chunk, 100);
+    verifySerializationAndDeserialization(chunk, 100, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
 }
 
 TEST("test serialization and deserialization of uncompressable lz4") {
     XXH64CompressedChunk chunk(CompressionConfig::Type::LZ4, 1);
-    verifySerializationAndDeserialization(chunk, 1);
+    verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
+}
+
+TEST("test serialization and deserialization of uncompressable zstd") {
+    XXH64CompressedChunk chunk(CompressionConfig::Type::ZSTD, 1);
+    verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
