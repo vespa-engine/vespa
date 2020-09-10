@@ -34,7 +34,6 @@ private:
 
     void runChild() __attribute__((noreturn));
     void setState(ServiceState state);
-    void runPreShutdownCommand();
     void runCommand(const std::string & command);
     const char *stateName(ServiceState state) const;
 
@@ -52,6 +51,7 @@ public:
 			StartMetrics &metrics);
     void reconfigure(const SentinelConfig::Service& config);
     int pid() const { return _pid; }
+    void prepare_for_shutdown();
     int terminate(bool catchable, bool dumpState);
     int terminate() {
         return terminate(true, false);

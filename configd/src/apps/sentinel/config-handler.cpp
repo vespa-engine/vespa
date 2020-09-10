@@ -59,6 +59,11 @@ ConfigHandler::terminateServices(bool catchable, bool printDebug)
 {
     for (const auto & entry : _services) {
         Service *service = entry.second.get();
+        service->setAutomatic(false);
+        service->prepare_for_shutdown();
+    }
+    for (const auto & entry : _services) {
+        Service *service = entry.second.get();
         if (printDebug && service->isRunning()) {
             LOG(info, "%s: killing", service->name().c_str());
         }
