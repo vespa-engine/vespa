@@ -25,7 +25,7 @@ import static org.junit.Assert.fail;
 public class JavaClassBuilderTest {
 
     private static final String TEST_DIR = "target/test-classes/";
-    private static final String DEF_NAME = TEST_DIR + "allfeatures.def";
+    private static final String DEF_NAME = TEST_DIR + "configgen.allfeatures.def";
     private static final String REFERENCE_NAME = TEST_DIR + "allfeatures.reference";
 
     @Ignore

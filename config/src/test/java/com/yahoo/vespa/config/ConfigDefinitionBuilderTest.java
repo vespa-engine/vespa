@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
 public class ConfigDefinitionBuilderTest {
 
     private static final String TEST_DIR = "src/test/resources/configs/def-files";
-    private static final String DEF_NAME = TEST_DIR + "/function-test.def";
+    private static final String DEF_NAME = TEST_DIR + "/foo.function-test.def";
 
 
     @Test

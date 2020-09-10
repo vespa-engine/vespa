@@ -94,7 +94,7 @@ public class ConfigInstanceUtilTest {
                 refval(":parent:").
                 refwithdef(":parent:").
                 fileVal("etc").
-                pathVal(FileReference.mockFileReferenceForUnitTesting(new File("src/test/resources/configs/def-files/function-test.def"))).
+                pathVal(FileReference.mockFileReferenceForUnitTesting(new File("src/test/resources/configs/def-files/foo.function-test.def"))).
                 boolarr(false).
                 longarr(9223372036854775807L).
                 longarr(-9223372036854775808L).
