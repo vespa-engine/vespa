@@ -94,13 +94,17 @@ XXH64CompressedChunk::decompress(nbostream & is, uint32_t uncompressedLen) {
     ::decompress(_type, uncompressedLen, compressed, uncompressed, false);
     nbostream data(uncompressed.getData(), uncompressed.getDataLen());
     deserializeEntries(data);
+    _backing = uncompressed.stealBuffer();
     is.adjustReadPos(is.size());
 }
 
 XXH64CompressedChunk::XXH64CompressedChunk(CompressionConfig::Type type, uint8_t level)
     : _type(type),
-      _level(level)
+      _level(level),
+      _backing()
 { }
+
+XXH64CompressedChunk::~XXH64CompressedChunk() = default;
 
 Encoding
 XXH64CompressedChunk::compress(nbostream & os, Encoding::Crc crc) const {

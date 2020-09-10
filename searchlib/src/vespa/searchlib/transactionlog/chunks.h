@@ -28,6 +28,7 @@ class XXH64CompressedChunk : public IChunk {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     XXH64CompressedChunk(CompressionConfig::Type, uint8_t level);
+    ~XXH64CompressedChunk() override;
 protected:
     void decompress(nbostream & os, uint32_t uncompressedLen);
     Encoding compress(nbostream & os, Encoding::Crc crc) const;
@@ -36,6 +37,7 @@ protected:
 private:
     CompressionConfig::Type _type;
     uint8_t                 _level;
+    vespalib::alloc::Alloc  _backing;
 };
 
 }
