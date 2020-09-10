@@ -301,6 +301,7 @@ FastAccessDocSubDB::onReplayDone()
     // Normalize attribute vector sizes
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
     assert(docIdLimit > 0);
+    _docIdLimit.set(docIdLimit);
     IFeedView::SP feedView = _iFeedView.get();
     IAttributeWriter::SP attrWriter = static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
     attrWriter->onReplayDone(docIdLimit);
