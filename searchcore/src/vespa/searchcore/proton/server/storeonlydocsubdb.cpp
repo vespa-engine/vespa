@@ -179,8 +179,12 @@ void
 StoreOnlyDocSubDB::onReplayDone()
 {
     _dms->constructFreeList();
+    auto stats = _dms->getLidUsageStats();
+    uint32_t docIdLimit = stats.getHighestUsedLid() + 1;
+    assert(docIdLimit <= _dms->getCommittedDocIdLimit());
+    _dms->compactLidSpace(docIdLimit);
+    _dms->unblockShrinkLidSpace();
     _dms->shrinkLidSpace();
-    uint32_t docIdLimit = _dms->getCommittedDocIdLimit();
     auto &docStore = _rSummaryMgr->getBackingStore();
     std::promise<void> promise;
     auto future = promise.get_future();
