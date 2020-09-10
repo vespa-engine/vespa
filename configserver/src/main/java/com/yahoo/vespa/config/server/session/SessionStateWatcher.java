@@ -6,6 +6,7 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
 
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,18 +25,21 @@ public class SessionStateWatcher {
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
-    private RemoteSession session;
+    private final RemoteSession remoteSession;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
     private final SessionRepository sessionRepository;
+    private Optional<LocalSession> localSession;
 
     SessionStateWatcher(Curator.FileCache fileCache,
-                        RemoteSession session,
+                        RemoteSession remoteSession,
+                        Optional<LocalSession> localSession,
                         MetricUpdater metrics,
                         Executor zkWatcherExecutor,
                         SessionRepository sessionRepository) {
         this.fileCache = fileCache;
-        this.session = session;
+        this.remoteSession = remoteSession;
+        this.localSession = localSession;
         this.metrics = metrics;
         this.fileCache.addListener(this::nodeChanged);
         this.fileCache.start();
@@ -44,24 +48,24 @@ public class SessionStateWatcher {
     }
 
     private void sessionStatusChanged(Status newStatus) {
-        long sessionId = session.getSessionId();
+        long sessionId = remoteSession.getSessionId();
         switch (newStatus) {
             case NEW:
             case NONE:
                 break;
             case PREPARE:
                 createLocalSession(sessionId);
-                sessionRepository.prepareRemoteSession(session);
+                sessionRepository.prepare(remoteSession);
                 break;
             case ACTIVATE:
                 createLocalSession(sessionId);
-                sessionRepository.activate(session);
+                sessionRepository.activate(remoteSession);
                 break;
             case DEACTIVATE:
-                sessionRepository.deactivate(session);
+                sessionRepository.deactivate(remoteSession);
                 break;
             case DELETE:
-                sessionRepository.deleteSession(session);
+                sessionRepository.delete(remoteSession, localSession);
                 break;
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
@@ -69,13 +73,13 @@ public class SessionStateWatcher {
     }
 
     private void createLocalSession(long sessionId) {
-        if (sessionRepository.distributeApplicationPackage()) {
-            sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        if (sessionRepository.distributeApplicationPackage() && localSession.isEmpty()) {
+            localSession = sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
         }
     }
 
     public long getSessionId() {
-        return session.getSessionId();
+        return remoteSession.getSessionId();
     }
 
     public void close() {
@@ -93,21 +97,20 @@ public class SessionStateWatcher {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
                     newStatus = Status.parse(Utf8.toString(node.getData()));
-                    final String statusName = newStatus.name();
-                    log.log(Level.FINE, () -> session.logPre() + "Session change: Session "
-                                              + getSessionId() + " changed status to " + statusName);
+                    log.log(Level.FINE, remoteSession.logPre() + "Session change: Session "
+                                        + remoteSession.getSessionId() + " changed status to " + newStatus.name());
                     sessionStatusChanged(newStatus);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, session.logPre() + "Error handling session change to " +
+                log.log(Level.WARNING, remoteSession.logPre() + "Error handling session change to " +
                                        newStatus.name() + " for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }
         });
     }
 
-    void setSession(RemoteSession session) {
-        this.session = session;
+    void addLocalSession(LocalSession session) {
+        localSession = Optional.of(session);
     }
 
 }

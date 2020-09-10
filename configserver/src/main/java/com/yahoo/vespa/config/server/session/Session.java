@@ -28,7 +28,7 @@ import java.util.Optional;
  */
 public abstract class Session implements Comparable<Session>  {
 
-    protected final long sessionId;
+    private final long sessionId;
     protected final TenantName tenant;
     protected final SessionZooKeeperClient sessionZooKeeperClient;
     protected final Optional<ApplicationPackage> applicationPackage;
