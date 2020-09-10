@@ -325,9 +325,6 @@ Service::runChild()
     if (_config->affinity.cpuSocket >= 0) {
         setenv("VESPA_AFFINITY_CPU_SOCKET", std::to_string(_config->affinity.cpuSocket).c_str(), 1);
     }
-    if (_config->command.find("proton") != vespalib::string::npos) {
-        setenv("OMP_NUM_THREADS", "1", 1);
-    }
     // ROOT is already set
 
     // Set up file descriptor 0 (1 and 2 should be setup already)
