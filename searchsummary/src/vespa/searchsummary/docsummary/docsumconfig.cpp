@@ -90,7 +90,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     } else if (overrideName == "attribute") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             fieldWriter = AttributeDFWFactory::create(*getEnvironment()->getAttributeManager(), argument);
-            rc = static_cast<bool>(fieldWriter);
+            rc = true; // Allow missing attribute vector
         }
     } else if (overrideName == "attributecombiner") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
