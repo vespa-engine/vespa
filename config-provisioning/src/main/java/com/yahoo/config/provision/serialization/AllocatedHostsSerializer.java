@@ -4,7 +4,6 @@ package com.yahoo.config.provision.serialization;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.slime.ArrayTraverser;
@@ -91,7 +90,6 @@ public class AllocatedHostsSerializer {
                 object.setString(hostSpecDockerImageRepoKey, repo.repository());
             });
         });
-        host.flavor().ifPresent(flavor -> toSlime(flavor, object)); // TODO: Remove this line when 7.272 has been released
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
         host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
@@ -104,13 +102,6 @@ public class AllocatedHostsSerializer {
         Cursor aliases = cursor.setArray(aliasesKey);
         for (String alias : spec.aliases())
             aliases.addString(alias);
-    }
-
-    private static void toSlime(Flavor flavor, Cursor object) {
-        if (flavor.isConfigured())
-            object.setString(flavorKey, flavor.name());
-        else
-            toSlime(flavor.resources(), object.setObject(resourcesKey));
     }
 
     private static void toSlime(NodeResources resources, Cursor resourcesObject) {
@@ -194,7 +185,6 @@ public class AllocatedHostsSerializer {
     }
 
     private static NodeResources.StorageType storageTypeFromSlime(Inspector storageType) {
-        if ( ! storageType.valid()) return NodeResources.StorageType.getDefault(); // TODO: Remove this line after December 2019
         switch (storageType.asString()) {
             case "remote" : return NodeResources.StorageType.remote;
             case "local" : return NodeResources.StorageType.local;
