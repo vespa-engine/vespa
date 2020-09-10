@@ -643,6 +643,10 @@ function(install_config_definition)
     endif()
 endfunction()
 
+function(install_config_definitions)
+    install(DIRECTORY ${ARGV0}/ DESTINATION share/vespa/configdefinitions)
+endfunction()
+
 function(install_java_artifact NAME)
     install(FILES "target/${NAME}.jar" DESTINATION lib/jars/)
 endfunction()
