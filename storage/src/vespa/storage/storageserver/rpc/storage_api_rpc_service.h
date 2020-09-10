@@ -6,7 +6,6 @@
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <atomic>
-#include <functional>
 #include <memory>
 
 class FRT_RPCRequest;
@@ -28,18 +27,19 @@ class StorageReply;
 
 namespace rpc {
 
-class SharedRpcResources;
 class CachingRpcTargetResolver;
+class MessageCodecProvider;
+class SharedRpcResources;
 
 class StorageApiRpcService : public FRT_Invokable, public FRT_IRequestWait {
-    MessageDispatcher&  _message_dispatcher;
-    SharedRpcResources& _rpc_resources;
+    MessageDispatcher&    _message_dispatcher;
+    SharedRpcResources&   _rpc_resources;
+    MessageCodecProvider& _message_codec_provider;
+    std::unique_ptr<CachingRpcTargetResolver> _target_resolver;
 public:
     StorageApiRpcService(MessageDispatcher& message_dispatcher,
                          SharedRpcResources& rpc_resources,
-                         // TODO temporary!
-                         std::function<std::shared_ptr<const document::DocumentTypeRepo>()> doctype_repo_func,
-                         std::function<std::shared_ptr<documentapi::LoadTypeSet>()> loadtype_set_func);
+                         MessageCodecProvider& message_codec_provider);
     ~StorageApiRpcService() override;
 
     void RPC_rpc_v1_send(FRT_RPCRequest* req);
@@ -58,10 +58,6 @@ private:
               _timeout(timeout)
         {}
     };
-
-    std::function<std::shared_ptr<const document::DocumentTypeRepo>()> _doctype_repo_func;
-    std::function<std::shared_ptr<documentapi::LoadTypeSet>()> _loadtype_set_func;
-    std::unique_ptr<CachingRpcTargetResolver> _target_resolver;
 
     void register_server_methods(SharedRpcResources&);
     template <typename PayloadCodecCallback>
