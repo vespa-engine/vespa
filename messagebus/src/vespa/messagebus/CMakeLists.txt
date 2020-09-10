@@ -36,5 +36,5 @@ vespa_add_library(messagebus
     INSTALL lib64
     DEPENDS
 )
-vespa_generate_config(messagebus ../../main/config/messagebus.def)
-install_config_definition(../../main/config/messagebus.def messagebus.messagebus.def)
+vespa_generate_config(messagebus ../../main/config/messagebus.messagebus.def)
+install_config_definitions(../../main/config)

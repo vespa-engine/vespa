@@ -2,8 +2,4 @@
 install_fat_java_artifact(jdisc_http_service)
 install_java_artifact_dependencies(jdisc_http_service)
 
-install_config_definition(src/main/resources/configdefinitions/jdisc.http.client.http-client.def)
-install_config_definition(src/main/resources/configdefinitions/jdisc.http.connector.def)
-install_config_definition(src/main/resources/configdefinitions/jdisc.http.server.def)
-install_config_definition(src/main/resources/configdefinitions/jdisc.http.servlet-paths.def)
-
+install_config_definitions(src/main/resources/configdefinitions)

@@ -3,6 +3,6 @@ vespa_add_library(document_documentconfig OBJECT
     SOURCES
     DEPENDS
 )
-vespa_generate_config(document_documentconfig documenttypes.def)
-install_config_definition(documenttypes.def document.documenttypes.def)
-install_config_definition(documentmanager.def document.config.documentmanager.def)
+vespa_generate_config(document_documentconfig document.documenttypes.def)
+vespa_generate_config(document_documentconfig document.config.documentmanager.def)
+install_config_definitions(src/vespa/document/config)
