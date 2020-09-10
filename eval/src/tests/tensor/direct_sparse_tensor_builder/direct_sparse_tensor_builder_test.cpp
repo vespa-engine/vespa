@@ -100,9 +100,14 @@ TEST("Test essential object sizes") {
     EXPECT_EQUAL(24u, sizeof(std::pair<SparseTensorAddressRef, double>));
     EXPECT_EQUAL(32u, sizeof(vespalib::hash_node<std::pair<SparseTensorAddressRef, double>>));
     Tensor::UP tensor = buildTensor();
-    size_t used = tensor->count_memory_used();
+    size_t used = tensor->get_memory_usage().usedBytes();
     EXPECT_GREATER(used, sizeof(SparseTensor));
     EXPECT_LESS(used, 10000u);
+    size_t allocated = tensor->get_memory_usage().allocatedBytes();
+    EXPECT_GREATER(allocated, used);
+    EXPECT_LESS(allocated, 50000u);
+    fprintf(stderr, "tensor using %zu bytes of %zu allocated\n",
+            used, allocated);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

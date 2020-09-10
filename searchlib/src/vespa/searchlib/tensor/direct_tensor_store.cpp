@@ -20,7 +20,7 @@ DirectTensorStore::TensorBufferType::cleanHold(void* buffer, size_t offset, size
 {
     TensorSP* elem = static_cast<TensorSP*>(buffer) + offset;
     for (size_t i = 0; i < num_elems; ++i) {
-        clean_ctx.extraBytesCleaned((*elem)->count_memory_used());
+        clean_ctx.extraBytesCleaned((*elem)->get_memory_usage().allocatedBytes());
         *elem = _emptyEntry;
         ++elem;
     }
@@ -31,7 +31,7 @@ DirectTensorStore::add_entry(TensorSP tensor)
 {
     auto ref = _tensor_store.addEntry(tensor);
     auto& state = _tensor_store.getBufferState(RefType(ref).bufferId());
-    state.incExtraUsedBytes(tensor->count_memory_used());
+    state.incExtraUsedBytes(tensor->get_memory_usage().allocatedBytes());
     return ref;
 }
 
@@ -70,7 +70,7 @@ DirectTensorStore::holdTensor(EntryRef ref)
     }
     const auto& tensor = _tensor_store.getEntry(ref);
     assert(tensor);
-    _tensor_store.holdElem(ref, 1, tensor->count_memory_used());
+    _tensor_store.holdElem(ref, 1, tensor->get_memory_usage().allocatedBytes());
 }
 
 EntryRef
@@ -82,7 +82,7 @@ DirectTensorStore::move(EntryRef ref)
     const auto& old_tensor = _tensor_store.getEntry(ref);
     assert(old_tensor);
     auto new_ref = add_entry(old_tensor);
-    _tensor_store.holdElem(ref, 1, old_tensor->count_memory_used());
+    _tensor_store.holdElem(ref, 1, old_tensor->get_memory_usage().allocatedBytes());
     return new_ref;
 }
 

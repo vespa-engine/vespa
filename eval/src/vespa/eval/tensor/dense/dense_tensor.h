@@ -22,9 +22,12 @@ public:
     template <typename RCT>
     bool operator==(const DenseTensor<RCT> &rhs) const;
 
-    size_t count_memory_used() const override {
-        return sizeof(DenseTensor) + (sizeof(CT) * _cells.size());
-    }
+    MemoryUsage get_memory_usage() const override {
+        size_t alloc = sizeof(DenseTensor) + (sizeof(CT) * _cells.capacity());
+        size_t used = sizeof(DenseTensor) + (sizeof(CT) * _cells.size());
+        // missing: extra memory used by _type
+        return MemoryUsage(alloc, used, 0, 0);
+    } 
     
 private:
     eval::ValueType _type;

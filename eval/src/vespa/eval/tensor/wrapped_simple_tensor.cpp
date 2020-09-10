@@ -54,14 +54,17 @@ WrappedSimpleTensor::accept(TensorVisitor &visitor) const
     }
 }
 
-size_t
-WrappedSimpleTensor::count_memory_used() const
+MemoryUsage
+WrappedSimpleTensor::get_memory_usage() const
 {
-    size_t result = sizeof(WrappedSimpleTensor);
+    size_t used = sizeof(WrappedSimpleTensor);
     if (_space) {
-        result += _space->count_memory_used();
+        auto plus = _space->get_memory_usage();
+        plus.incUsedBytes(used);
+        plus.incAllocatedBytes(used);
+        return plus;
     }
-    return result;
+    return MemoryUsage(used, used, 0, 0);
 }
 
 Tensor::UP

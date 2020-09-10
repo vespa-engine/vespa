@@ -5,6 +5,7 @@
 #include "cell_function.h"
 #include "tensor_address.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
@@ -59,7 +60,7 @@ public:
     virtual Tensor::UP clone() const = 0; // want to remove, but needed by document
     virtual eval::TensorSpec toSpec() const = 0;
     virtual void accept(TensorVisitor &visitor) const = 0;
-    virtual size_t count_memory_used() const = 0;
+    virtual MemoryUsage get_memory_usage() const = 0;
 
     using TypeList = std::initializer_list<std::reference_wrapper<const eval::ValueType>>;
     static bool supported(TypeList types);

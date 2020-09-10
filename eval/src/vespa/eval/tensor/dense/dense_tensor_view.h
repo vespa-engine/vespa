@@ -44,8 +44,9 @@ public:
     Tensor::UP clone() const override;
     eval::TensorSpec toSpec() const override;
     void accept(TensorVisitor &visitor) const override;
-    size_t count_memory_used() const override {
-        return sizeof(DenseTensorView);
+    MemoryUsage get_memory_usage() const override {
+        size_t sz = sizeof(DenseTensorView);
+        return MemoryUsage(sz, sz, 0, 0);
     }
 
     template <typename T> static ConstArrayRef<T> typify_cells(const eval::Value &self) {

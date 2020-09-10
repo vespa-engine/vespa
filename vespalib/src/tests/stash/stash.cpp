@@ -99,7 +99,7 @@ TEST("require that base types have expected size") {
     EXPECT_EQUAL(8u, char_ptr_size());
     EXPECT_EQUAL(16u, chunk_header_size());
     EXPECT_EQUAL(16u, dtor_hook_size());
-    EXPECT_EQUAL(16u, free_hook_size());
+    EXPECT_EQUAL(24u, free_hook_size());
     EXPECT_EQUAL(24u, array_dtor_hook_size());
 }
 

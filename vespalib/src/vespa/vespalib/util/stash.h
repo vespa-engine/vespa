@@ -4,6 +4,7 @@
 
 #include "traits.h"
 #include "arrayref.h"
+#include "memoryusage.h"
 #include <cstdlib>
 
 namespace vespalib {
@@ -19,8 +20,9 @@ protected:
 
 // used as header for memory allocated outside the stash
 struct DeleteMemory : public Cleanup {
-    explicit DeleteMemory(Cleanup *next_in) noexcept : Cleanup(next_in) {}
+    explicit DeleteMemory(size_t sz, Cleanup *next_in) noexcept : Cleanup(next_in), allocated(sz) {}
     void cleanup() override { free((void*)this); }
+    size_t allocated;
 };
 
 // used as prefix for objects to be destructed
@@ -140,6 +142,7 @@ public:
 
     size_t count_used() const;
     size_t get_chunk_size() const { return _chunk_size; }
+    MemoryUsage get_memory_usage() const;
 
     char *alloc(size_t size) {
         char *ret = __builtin_expect(is_small(size) && _chunks != nullptr, true)

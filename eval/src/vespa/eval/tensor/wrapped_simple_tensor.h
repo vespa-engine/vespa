@@ -33,7 +33,7 @@ public:
     eval::TensorSpec toSpec() const override;
     double as_double() const override;
     void accept(TensorVisitor &visitor) const override;
-    size_t count_memory_used() const override;
+    MemoryUsage get_memory_usage() const override;
     Tensor::UP clone() const override;
     // functions below should not be used for this implementation
     Tensor::UP apply(const CellFunction &) const override;
