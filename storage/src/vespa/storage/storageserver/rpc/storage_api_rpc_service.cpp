@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "storage_api_rpc_service.h"
 #include "caching_rpc_target_resolver.h"
+#include "message_codec_provider.h"
 #include "shared_rpc_resources.h"
 #include "rpc_envelope.pb.h"
 #include <vespa/fnet/frt/supervisor.h>
@@ -23,13 +24,10 @@ namespace storage::rpc {
 
 StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher,
                                            SharedRpcResources& rpc_resources,
-                                           std::function<std::shared_ptr<const document::DocumentTypeRepo>()> doctype_repo_func,
-                                           std::function<std::shared_ptr<documentapi::LoadTypeSet>()> loadtype_set_func)
+                                           MessageCodecProvider& message_codec_provider)
     : _message_dispatcher(message_dispatcher),
       _rpc_resources(rpc_resources),
-      // TODO these are temporary, need to be consolidated and moved out
-      _doctype_repo_func(std::move(doctype_repo_func)),
-      _loadtype_set_func(std::move(loadtype_set_func)),
+      _message_codec_provider(message_codec_provider),
       _target_resolver(std::make_unique<CachingRpcTargetResolver>(rpc_resources))
 {
     register_server_methods(rpc_resources);
@@ -117,12 +115,8 @@ void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload, FRT_Values& p
 
 template <typename MessageType>
 void StorageApiRpcService::encode_and_compress_rpc_payload(const MessageType& msg, FRT_Values& params) {
-    // Shared ptrs must stay alive
-    // TODO move out, cache
-    auto repo = _doctype_repo_func();
-    auto load_types = _loadtype_set_func();
-    mbusprot::ProtocolSerialization7 codec(repo, *load_types);
-    auto payload = codec.encode(msg);
+    auto wrapped_codec = _message_codec_provider.wrapped_codec();
+    auto payload = wrapped_codec->codec().encode(msg);
 
     compress_and_add_payload_to_rpc_params(payload, params);
 }
@@ -140,14 +134,9 @@ void StorageApiRpcService::uncompress_rpc_payload(
     decompress(compression_type, uncompressed_length, blob, uncompressed, true);
     assert(uncompressed_length == uncompressed.getDataLen());
     assert(uncompressed_length <= UINT32_MAX);
+    auto wrapped_codec = _message_codec_provider.wrapped_codec();
 
-    // Shared ptrs must stay alive
-    // TODO move out, cache
-    auto repo = _doctype_repo_func();
-    auto loadtypes = _loadtype_set_func();
-    mbusprot::ProtocolSerialization7 codec(repo, *loadtypes);
-
-    payload_callback(codec, mbus::BlobRef(uncompressed.getData(), uncompressed_length));
+    payload_callback(wrapped_codec->codec(), mbus::BlobRef(uncompressed.getData(), uncompressed_length));
 }
 
 void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
