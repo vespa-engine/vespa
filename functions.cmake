@@ -644,7 +644,7 @@ function(install_config_definition)
 endfunction()
 
 function(install_config_definitions)
-    install(DIRECTORY ${ARGV0} DESTINATION share/vespa/configdefinitions)
+    install(DIRECTORY ${ARGV0}/ DESTINATION share/vespa/configdefinitions)
 endfunction()
 
 function(install_java_artifact NAME)
