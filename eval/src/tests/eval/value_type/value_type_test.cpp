@@ -315,6 +315,14 @@ TEST("require that type-related predicate functions work as expected") {
     TEST_DO(verify_predicates(type("tensor<float>(x[5],y{})"), false, false, true, false, false));
 }
 
+TEST("require that mapped dimensions can be counted") {
+    EXPECT_EQUAL(type("double").count_mapped_dimensions(), 0u);
+    EXPECT_EQUAL(type("tensor(x[5],y[5])").count_mapped_dimensions(), 0u);
+    EXPECT_EQUAL(type("tensor(x{},y[5])").count_mapped_dimensions(), 1u);
+    EXPECT_EQUAL(type("tensor(x[5],y{})").count_mapped_dimensions(), 1u);
+    EXPECT_EQUAL(type("tensor(x{},y{})").count_mapped_dimensions(), 2u);
+}
+
 TEST("require that dense subspace size calculation works as expected") {
     EXPECT_EQUAL(type("error").dense_subspace_size(), 1u);
     EXPECT_EQUAL(type("double").dense_subspace_size(), 1u);

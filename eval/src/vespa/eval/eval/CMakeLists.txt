@@ -20,6 +20,7 @@ vespa_add_library(eval_eval OBJECT
     param_usage.cpp
     simple_tensor.cpp
     simple_tensor_engine.cpp
+    simple_value.cpp
     string_stuff.cpp
     tensor.cpp
     tensor_engine.cpp
