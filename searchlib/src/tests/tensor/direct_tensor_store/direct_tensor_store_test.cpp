@@ -61,12 +61,12 @@ TEST_F(DirectTensorStoreTest, heap_allocated_memory_is_tracked)
     store.store_tensor(make_tensor(5));
     auto mem_1 = store.getMemoryUsage();
     auto ref = store.store_tensor(make_tensor(10));
-    auto tensor_memory_used = store.get_tensor(ref)->get_memory_usage();
+    auto tensor_mem_usage = store.get_tensor(ref)->get_memory_usage();
     auto mem_2 = store.getMemoryUsage();
-    EXPECT_GT(tensor_memory_used.usedBytes(), 100);
-    EXPECT_GT(tensor_memory_used.allocatedBytes(), 500);
-    EXPECT_GE(mem_2.allocatedBytes(), mem_1.allocatedBytes() + tensor_memory_used.allocatedBytes());
-    EXPECT_GT(mem_2.usedBytes(), mem_1.usedBytes() + tensor_memory_used.allocatedBytes());
+    EXPECT_GT(tensor_mem_usage.usedBytes(), 100);
+    EXPECT_GT(tensor_mem_usage.allocatedBytes(), 500);
+    EXPECT_GE(mem_2.allocatedBytes(), mem_1.allocatedBytes() + tensor_mem_usage.allocatedBytes());
+    EXPECT_GT(mem_2.usedBytes(), mem_1.usedBytes() + tensor_mem_usage.allocatedBytes());
 }
 
 TEST_F(DirectTensorStoreTest, invalid_ref_returns_nullptr)
@@ -78,18 +78,18 @@ TEST_F(DirectTensorStoreTest, invalid_ref_returns_nullptr)
 TEST_F(DirectTensorStoreTest, hold_adds_entry_to_hold_list)
 {
     auto ref = store.store_tensor(make_tensor(5));
-    auto tensor_memory_used = store.get_tensor(ref)->get_memory_usage();
+    auto tensor_mem_usage = store.get_tensor(ref)->get_memory_usage();
     auto mem_1 = store.getMemoryUsage();
     store.holdTensor(ref);
     auto mem_2 = store.getMemoryUsage();
-    EXPECT_GT(mem_2.allocatedBytesOnHold(), mem_1.allocatedBytesOnHold() + tensor_memory_used.allocatedBytes());
+    EXPECT_GT(mem_2.allocatedBytesOnHold(), mem_1.allocatedBytesOnHold() + tensor_mem_usage.allocatedBytes());
 }
 
 TEST_F(DirectTensorStoreTest, move_allocates_new_entry_and_puts_old_entry_on_hold)
 {
     auto t = make_tensor(5);
     auto* exp = t.get();
-    auto tensor_memory_used = exp->get_memory_usage();
+    auto tensor_mem_usage = exp->get_memory_usage();
     auto ref_1 = store.store_tensor(std::move(t));
     auto mem_1 = store.getMemoryUsage();
 
@@ -98,7 +98,7 @@ TEST_F(DirectTensorStoreTest, move_allocates_new_entry_and_puts_old_entry_on_hol
     EXPECT_NE(ref_1, ref_2);
     expect_tensor(exp, ref_1);
     expect_tensor(exp, ref_2);
-    EXPECT_GT(mem_2.allocatedBytesOnHold(), mem_1.allocatedBytesOnHold() + tensor_memory_used.allocatedBytes());
+    EXPECT_GT(mem_2.allocatedBytesOnHold(), mem_1.allocatedBytesOnHold() + tensor_mem_usage.allocatedBytes());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
