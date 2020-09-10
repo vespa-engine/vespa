@@ -28,9 +28,12 @@ public:
     Compression getCompression() const { return Compression((_raw >> 4) & 0xf); }
     static int32_t calcCrc(Crc version, const void * buf, size_t sz);
     uint8_t getRaw() const { return _raw; }
+    bool operator == (Encoding rhs) const { return _raw == rhs._raw; }
 private:
     uint8_t _raw;
 };
+
+std::ostream & operator << (std::ostream & os, Encoding e);
 
 /**
  * Interface for different chunk formats.

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <xxhash.h>
 #include <cassert>
+#include <ostream>
 
 using std::make_unique;
 using vespalib::make_string_short::fmt;
@@ -110,4 +111,8 @@ Encoding::calcCrc(Crc version, const void * buf, size_t sz)
     }
 }
 
+std::ostream &
+operator << (std::ostream & os, Encoding e) {
+    return os << "crc=" << e.getCrc() << " compression=" << e.getCompression();
+}
 }
