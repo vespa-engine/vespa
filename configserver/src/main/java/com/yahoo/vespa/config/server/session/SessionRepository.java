@@ -8,9 +8,11 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
@@ -22,6 +24,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -36,6 +39,7 @@ import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.zookeeper.KeeperException;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -51,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -121,10 +126,8 @@ public class SessionRepository {
     // ---------------- Local sessions ----------------------------------------------------------------
 
     public synchronized void addLocalSession(LocalSession session) {
-        localSessionCache.addSession(session);
-        long sessionId = session.getSessionId();
-        RemoteSession remoteSession = createRemoteSession(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession, Optional.of(session));
+        localSessionCache.putSession(session);
+        createRemoteSession(session.getSessionId());
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -262,11 +265,6 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public void addRemoteSession(RemoteSession session) {
-        remoteSessionCache.addSession(session);
-        metrics.incAddedSessions();
-    }
-
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getRemoteSessions()) {
@@ -275,11 +273,24 @@ public class SessionRepository {
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
-                session.delete();
+                deleteRemoteSession(session);
                 deleted++;
             }
         }
         return deleted;
+    }
+
+    public void deactivate(RemoteSession remoteSession) {
+        RemoteSession session = remoteSession.deactivated();
+        remoteSessionCache.putSession(session);
+        updateSessionStateWatcher(session);
+    }
+
+    public void deleteRemoteSession(RemoteSession session) {
+        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
+        Transaction transaction = sessionZooKeeperClient.deleteTransaction();
+        transaction.commit();
+        transaction.close();
     }
 
     public int deleteExpiredLocks(Clock clock, Duration expiryTime) {
@@ -347,36 +358,27 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
         RemoteSession remoteSession = createRemoteSession(sessionId);
         loadSessionIfActive(remoteSession);
-        addRemoteSession(remoteSession);
-        Optional<LocalSession> localSession = Optional.empty();
         if (distributeApplicationPackage())
-            localSession = createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession, localSession);
+            createLocalSessionUsingDistributedApplicationPackage(sessionId);
     }
 
     void activate(RemoteSession session) {
         long sessionId = session.getSessionId();
         Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
         log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + sessionId);
-        ApplicationSet app = session.ensureApplicationLoaded();
+        ApplicationSet app = ensureApplicationLoaded(session);
         log.log(Level.FINE, () -> session.logPre() + "Reloading config for " + sessionId);
         applicationRepo.reloadConfig(app);
         log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
-        session.notifyCompletion(waiter);
+        notifyCompletion(waiter, session);
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
-    public void deactivate(RemoteSession remoteSession) {
-        remoteSession.deactivate();
-    }
-
-    public void delete(RemoteSession remoteSession, Optional<LocalSession> localSession) {
-        localSession.ifPresent(this::deleteLocalSession);
-        remoteSession.deactivate();
-    }
-
-    void prepare(RemoteSession session) {
-        session.prepare();
+    void deleteSession(RemoteSession remoteSession) {
+        LocalSession localSession = getLocalSession(remoteSession.getSessionId());
+        if (localSession != null)
+            deleteLocalSession(localSession);
+        deactivate(remoteSession);
     }
 
     boolean distributeApplicationPackage() {
@@ -394,11 +396,83 @@ public class SessionRepository {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
-                applicationRepo.reloadConfig(session.ensureApplicationLoaded());
+                applicationRepo.reloadConfig(ensureApplicationLoaded(session));
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }
         }
+    }
+
+    void prepareRemoteSession(RemoteSession session) {
+        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
+        Curator.CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
+        ensureApplicationLoaded(session);
+        notifyCompletion(waiter, session);
+    }
+
+    public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
+        try (var lock = lock(session.sessionId)) {
+            if (session.applicationSet().isPresent()) {
+                return session.applicationSet().get();
+            }
+
+            ApplicationSet applicationSet = loadApplication(session);
+            RemoteSession activated = session.activated(applicationSet);
+            remoteSessionCache.putSession(activated);
+            updateSessionStateWatcher(activated);
+
+            return applicationSet;
+        }
+    }
+
+    void confirmUpload(RemoteSession session) {
+        Curator.CompletionWaiter waiter = session.getSessionZooKeeperClient().getUploadWaiter();
+        long sessionId = session.getSessionId();
+        log.log(Level.FINE, "Notifying upload waiter for session " + sessionId);
+        notifyCompletion(waiter, session);
+        log.log(Level.FINE, "Done notifying upload for session " + sessionId);
+    }
+
+    void notifyCompletion(Curator.CompletionWaiter completionWaiter, RemoteSession session) {
+        try {
+            completionWaiter.notifyCompletion();
+        } catch (RuntimeException e) {
+            // Throw only if we get something else than NoNodeException or NodeExistsException.
+            // NoNodeException might happen when the session is no longer in use (e.g. the app using this session
+            // has been deleted) and this method has not been called yet for the previous session operation on a
+            // minority of the config servers.
+            // NodeExistsException might happen if an event for this node is delivered more than once, in that case
+            // this is a no-op
+            Set<Class<? extends KeeperException>> acceptedExceptions = Set.of(KeeperException.NoNodeException.class,
+                                                                              KeeperException.NodeExistsException.class);
+            Class<? extends Throwable> exceptionClass = e.getCause().getClass();
+            if (acceptedExceptions.contains(exceptionClass))
+                log.log(Level.FINE, "Not able to notify completion for session " + session.getSessionId() +
+                                    " (" + completionWaiter + ")," +
+                                    " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
+                        ? "has been deleted"
+                        : "already exists"));
+            else
+                throw e;
+        }
+    }
+
+    private ApplicationSet loadApplication(RemoteSession session) {
+        log.log(Level.FINE, () -> "Loading application for " + session);
+        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
+        ApplicationPackage applicationPackage = sessionZooKeeperClient.loadApplicationPackage();
+        ActivatedModelsBuilder builder = new ActivatedModelsBuilder(session.getTenantName(),
+                                                                    session.getSessionId(),
+                                                                    sessionZooKeeperClient,
+                                                                    componentRegistry);
+        // Read hosts allocated on the config server instance which created this
+        Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
+        return ApplicationSet.fromList(builder.buildModels(session.getApplicationId(),
+                                                           sessionZooKeeperClient.readDockerImageRepository(),
+                                                           sessionZooKeeperClient.readVespaVersion(),
+                                                           applicationPackage,
+                                                           new SettableOptional<>(allocatedHosts),
+                                                           clock.instant()));
     }
 
     private void nodeChanged() {
@@ -436,7 +510,7 @@ public class SessionRepository {
             RemoteSession session = remoteSessionCache.getSession(sessionId);
             if (session == null) continue; // session might have been deleted after getting session list
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
-            session.confirmUpload();
+            confirmUpload(session);
         }
     }
 
@@ -454,8 +528,16 @@ public class SessionRepository {
     }
 
     public RemoteSession createRemoteSession(long sessionId) {
+        return createRemoteSession(sessionId, Optional.empty());
+    }
+
+    public RemoteSession createRemoteSession(long sessionId, Optional<ApplicationSet> applicationSet) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient, applicationSet);
+        remoteSessionCache.putSession(session);
+        updateSessionStateWatcher(session);
+        metrics.incAddedSessions();
+        return session;
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
@@ -603,10 +685,11 @@ public class SessionRepository {
      * Returns a new local session for the given session id if it does not already exist.
      * Will also add the session to the local session cache if necessary
      */
-    public Optional<LocalSession> createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
+    public void createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.hasLocalSession(sessionId)) {
             log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
-            return Optional.of(createSessionFromId(sessionId));
+            createSessionFromId(sessionId);
+            return;
         }
 
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
@@ -621,17 +704,15 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
-                return Optional.empty();
+                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
             LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
             addLocalSession(localSession);
-            return Optional.of(localSession);
         }
-        return Optional.empty();
     }
 
     private Optional<Long> getActiveSessionId(ApplicationId applicationId) {
@@ -670,15 +751,15 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void addSessionStateWatcher(long sessionId, RemoteSession remoteSession, Optional<LocalSession> localSession) {
-        // Remote session will always be present in an existing state watcher, but local session might not
-        if (sessionStateWatchers.containsKey(sessionId)) {
-            localSession.ifPresent(session -> sessionStateWatchers.get(sessionId).addLocalSession(session));
-        } else {
+    private void updateSessionStateWatcher(RemoteSession session) {
+        long sessionId = session.getSessionId();
+        SessionStateWatcher sessionStateWatcher = sessionStateWatchers.get(sessionId);
+        if (sessionStateWatcher == null) {
             Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, localSession,
-                                                                        metrics, zkWatcherExecutor, this));
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, session, metrics, zkWatcherExecutor, this));
+        } else {
+            sessionStateWatcher.setSession(session);
         }
     }
 
