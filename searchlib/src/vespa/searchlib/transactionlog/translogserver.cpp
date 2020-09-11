@@ -72,6 +72,8 @@ SyncHandler::PerformTask()
     }
 }
 
+VESPA_THREAD_STACK_TAG(tls_executor);
+
 }
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
@@ -92,8 +94,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
       _name(name),
       _baseDir(baseDir),
       _domainConfig(cfg),
-      _commitExecutor(maxThreads, 128*1024),
-      _sessionExecutor(maxThreads, 128*1024),
+      _executor(maxThreads, 128 * 1024, tls_executor),
       _threadPool(std::make_unique<FastOS_ThreadPool>(1024*120)),
       _transport(std::make_unique<FNET_Transport>()),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
@@ -110,8 +111,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        auto domain = make_shared<Domain>(domainName, dir(), _commitExecutor,
-                                                          _sessionExecutor, cfg, _fileHeaderContext);
+                        auto domain = make_shared<Domain>(domainName, dir(), _executor, cfg, _fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
                         LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
@@ -147,10 +147,8 @@ TransLogServer::~TransLogServer()
 {
     stop();
     join();
-    _commitExecutor.shutdown();
-    _commitExecutor.sync();
-    _sessionExecutor.shutdown();
-    _sessionExecutor.sync();
+    _executor.shutdown();
+    _executor.sync();
     _transport->ShutDown(true);
 }
 
@@ -449,8 +447,7 @@ TransLogServer::createDomain(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor,
-                                              _sessionExecutor, _domainConfig, _fileHeaderContext);
+            domain = std::make_shared<Domain>(domainName, dir(), _executor, _domainConfig, _fileHeaderContext);
             Guard domainGuard(_domainMutex);
             _domains[domain->name()] = domain;
             writeDomainDir(domainGuard, dir(), domainList(), _domains);

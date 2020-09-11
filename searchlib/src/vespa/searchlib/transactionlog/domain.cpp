@@ -30,15 +30,12 @@ using std::make_shared;
 
 namespace search::transactionlog {
 
-VESPA_THREAD_STACK_TAG(domain_commit_executor);
-
-Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
-               Executor & sessionExecutor, const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
+Domain::Domain(const string &domainName, const string & baseDir, Executor & executor,
+               const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
     : _config(cfg),
       _lastSerial(0),
       _singleCommiter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128*1024)),
-      _commitExecutor(commitExecutor),
-      _sessionExecutor(sessionExecutor),
+      _executor(executor),
       _sessionId(1),
       _syncMonitor(),
       _pendingSync(false),
@@ -64,16 +61,21 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
     const int64_t lastPart = partIdVector.empty() ? 0 : partIdVector.back();
     for (const int64_t partId : partIdVector) {
         if ( partId != -1) {
-            _sessionExecutor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
+            _executor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
         }
     }
-    _sessionExecutor.sync();
+    _executor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
         _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _config.getEncoding(),
                                                         _config.getCompressionlevel(), _fileHeaderContext, false);
         vespalib::File::sync(dir());
     }
     _lastSerial = end();
+}
+
+vespalib::Executor::Task::UP
+Domain::execute(vespalib::Executor::Task::UP task) {
+    return _executor.execute(std::move(task));
 }
 
 Domain &
@@ -100,27 +102,6 @@ void Domain::addPart(int64_t partId, bool isLastPart) {
         }
     }
 }
-
-class Sync : public vespalib::Executor::Task
-{
-public:
-    Sync(Monitor &syncMonitor, const DomainPart::SP &dp, bool &pendingSync) :
-        _syncMonitor(syncMonitor),
-        _dp(dp),
-        _pendingSync(pendingSync)
-    { }
-private:
-    void run() override {
-        _dp->sync();
-        MonitorGuard guard(_syncMonitor);
-        _pendingSync = false;
-        guard.broadcast();
-    }
-    
-    Monitor           & _syncMonitor;
-    DomainPart::SP      _dp;
-    bool              & _pendingSync;
-};
 
 Domain::~Domain() { }
 
@@ -216,8 +197,12 @@ Domain::triggerSyncNow()
     MonitorGuard guard(_syncMonitor);
     if (!_pendingSync) {
         _pendingSync = true;
-        DomainPart::SP dp(_parts.rbegin()->second);
-        _commitExecutor.execute(std::make_unique<Sync>(_syncMonitor, dp, _pendingSync));
+        _executor.execute(makeLambdaTask([this, domainPart=_parts.rbegin()->second]() {
+            domainPart->sync();
+            MonitorGuard monitorGuard(_syncMonitor);
+            _pendingSync = false;
+            monitorGuard.broadcast();
+        }));
     }
 }
 
@@ -383,7 +368,7 @@ Domain::startSession(int sessionId)
 int
 Domain::closeSession(int sessionId)
 {
-    _commitExecutor.sync();
+    _executor.sync();
     int retval(-1);
     DurationSeconds sessionRunTime(0);
     {

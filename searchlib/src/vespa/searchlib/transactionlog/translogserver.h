@@ -83,8 +83,7 @@ private:
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
     DomainConfig                        _domainConfig;
-    vespalib::ThreadStackExecutor       _commitExecutor;
-    vespalib::ThreadStackExecutor       _sessionExecutor;
+    vespalib::ThreadStackExecutor       _executor;
     std::unique_ptr<FastOS_ThreadPool>  _threadPool;
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
