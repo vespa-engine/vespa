@@ -13,7 +13,7 @@ class RpcTarget;
  */
 class RpcTargetFactory {
 public:
-    virtual ~RpcTargetFactory() {}
+    virtual ~RpcTargetFactory() = default;
     virtual std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec, uint32_t slobrok_gen) const = 0;
 };
 

@@ -48,8 +48,7 @@ std::shared_ptr<RpcTarget>
 CachingRpcTargetResolver::consider_update_target(const vespalib::string& slobrok_id,
                                                  const vespalib::string& connection_spec,
                                                  uint32_t curr_slobrok_gen,
-                                                 const UniqueLock& targets_lock) {
-    (void) targets_lock;
+                                                 [[maybe_unused]] const UniqueLock& targets_lock) {
     // If address has the same spec as the existing target, just reuse it.
     auto itr = _targets.find(slobrok_id);
     if ((itr != _targets.end())
@@ -68,8 +67,7 @@ std::shared_ptr<RpcTarget>
 CachingRpcTargetResolver::insert_new_target_mapping(const vespalib::string& slobrok_id,
                                                     const vespalib::string& connection_spec,
                                                     uint32_t curr_slobrok_gen,
-                                                    const UniqueLock& targets_lock) {
-    (void) targets_lock;
+                                                    [[maybe_unused]] const UniqueLock& targets_lock) {
     auto target = _target_factory.make_target(connection_spec, curr_slobrok_gen); // TODO expensive inside lock?
     assert(target);
     std::shared_ptr<RpcTarget> rpc_target(std::move(target));
