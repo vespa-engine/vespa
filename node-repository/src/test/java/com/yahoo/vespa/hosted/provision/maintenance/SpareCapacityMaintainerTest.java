@@ -200,6 +200,22 @@ public class SpareCapacityMaintainerTest {
         assertEquals(0, tester.metric.values.get("spareHostCapacity"));
     }
 
+    @Test
+    public void retireFromOvercommitedHosts() {
+        var tester = new SpareCapacityMaintainerTester(5);
+
+        tester.addHosts(7, new NodeResources(10, 100, 1000, 1));
+
+        tester.addNodes(0, 5, new NodeResources( 7, 70, 700, 0.7), 0);
+        tester.addNodes(1, 4, new NodeResources( 2, 20, 200, 0.2), 0);
+        tester.addNodes(2, 2, new NodeResources( 1.1, 10, 100, 0.1), 1);
+
+        tester.maintainer.maintain();
+        assertEquals(2, tester.metric.values.get("overcommittedHosts"));
+        assertEquals(1, tester.deployer.redeployments);
+        assertEquals(List.of(new NodeResources( 1.1, 10, 100, 0.1)), tester.nodeRepository.list().retired().mapToList(Node::resources));
+    }
+
     /** Microbenchmark */
     @Test
     @Ignore
@@ -267,22 +283,18 @@ public class SpareCapacityMaintainerTest {
                 hosts.add(host);
                 hostIndex++;
             }
-            hosts = nodeRepository.addNodes(hosts, Agent.system);
-            hosts = nodeRepository.setReady(hosts, Agent.system, "Test");
-            var transaction = new NestedTransaction();
-            nodeRepository.activate(hosts, transaction);
-            transaction.commit();
+
+            ApplicationId application = ApplicationId.from("vespa", "tenant-host", "default");
+            ClusterSpec clusterSpec = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("tenant-host"))
+                                .group(ClusterSpec.Group.from(0))
+                                .vespaVersion("7")
+                                .build();
+            allocate(application, clusterSpec, hosts);
         }
 
         private void addNodes(int id, int count, NodeResources resources, int hostOffset) {
             List<Node> nodes = new ArrayList<>();
-            ApplicationId application = ApplicationId.from("tenant" + id, "application" + id, "default");
             for (int i = 0; i < count; i++) {
-                ClusterMembership membership = ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster" + id))
-                                                                                 .group(ClusterSpec.Group.from(0))
-                                                                                 .vespaVersion("7")
-                                                                                 .build(),
-                                                                      i);
                 Node node = nodeRepository.createNode("node" + nodeIndex,
                                                       "node" + nodeIndex + ".yahoo.com",
                                                       ipConfig(hostIndex + nodeIndex, false),
@@ -290,18 +302,23 @@ public class SpareCapacityMaintainerTest {
                                                       new Flavor(resources),
                                                       Optional.empty(),
                                                       NodeType.tenant);
-                node = node.allocate(application, membership, node.resources(), Instant.now());
                 nodes.add(node);
                 nodeIndex++;
             }
+
+            ApplicationId application = ApplicationId.from("tenant" + id, "application" + id, "default");
+            ClusterSpec clusterSpec = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster" + id))
+                    .group(ClusterSpec.Group.from(0))
+                    .vespaVersion("7")
+                    .build();
+            allocate(application, clusterSpec, nodes);
+        }
+
+        private void allocate(ApplicationId application, ClusterSpec clusterSpec, List<Node> nodes) {
             nodes = nodeRepository.addNodes(nodes, Agent.system);
-            for (int i = 0; i < count; i++) {
+            for (int i = 0; i < nodes.size(); i++) {
                 Node node = nodes.get(i);
-                ClusterMembership membership = ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster" + id))
-                                                                                 .group(ClusterSpec.Group.from(0))
-                                                                                 .vespaVersion("7")
-                                                                                 .build(),
-                                                                      i);
+                ClusterMembership membership = ClusterMembership.from(clusterSpec, i);
                 node = node.allocate(application, membership, node.resources(), Instant.now());
                 nodes.set(i, node);
             }

@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.jdisc.Metric;
@@ -10,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.MaintenanceDeployment.Move;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -67,15 +70,12 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         boolean success = true;
         if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return success;
 
-        CapacityChecker capacityChecker = new CapacityChecker(nodeRepository().list());
+        NodeList allNodes = nodeRepository().list();
+        CapacityChecker capacityChecker = new CapacityChecker(allNodes);
 
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
-        if (overcommittedHosts.size() != 0) {
-            log.log(Level.WARNING, String.format("%d nodes are overcommitted! [ %s ]",
-                                                 overcommittedHosts.size(),
-                                                 overcommittedHosts.stream().map(Node::hostname).collect(Collectors.joining(", "))));
-        }
         metric.set("overcommittedHosts", overcommittedHosts.size(), null);
+        retireOvercommitedHosts(allNodes, overcommittedHosts);
 
         Optional<CapacityChecker.HostFailurePath> failurePath = capacityChecker.worstCaseHostLossLeadingToFailure();
         if (failurePath.isPresent()) {
@@ -131,6 +131,46 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         }
         if (shortestMitigation == null || shortestMitigation.isEmpty()) return List.of();
         return shortestMitigation;
+    }
+
+    private int retireOvercomittedComparator(Node n1, Node n2) {
+        ClusterSpec.Type t1 = n1.allocation().get().membership().cluster().type();
+        ClusterSpec.Type t2 = n2.allocation().get().membership().cluster().type();
+
+        // Prefer to container nodes for faster retirement
+        if (t1 == ClusterSpec.Type.container && t2 != ClusterSpec.Type.container) return -1;
+        if (t1 != ClusterSpec.Type.container && t2 == ClusterSpec.Type.container) return 1;
+
+        return NodeResourceComparator.memoryDiskCpuOrder().compare(n1.resources(), n2.resources());
+    }
+
+    private void retireOvercommitedHosts(NodeList allNodes, List<Node> overcommittedHosts) {
+        if (overcommittedHosts.isEmpty()) return;
+        log.log(Level.WARNING, String.format("%d hosts are overcommitted: %s",
+                overcommittedHosts.size(),
+                overcommittedHosts.stream().map(Node::hostname).collect(Collectors.joining(", "))));
+
+        if (!Rebalancer.zoneIsStable(allNodes)) return;
+
+        // Find an active node on a overcommited host and retire it
+        Optional<Node> nodeToRetire = overcommittedHosts.stream().flatMap(parent -> allNodes.childrenOf(parent).stream())
+                .filter(node -> node.state() == Node.State.active)
+                .min(this::retireOvercomittedComparator);
+        if (nodeToRetire.isEmpty()) return;
+
+        ApplicationId application = nodeToRetire.get().allocation().get().owner();
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
+            if ( ! deployment.isValid()) return; // this will be done at another config server
+
+            Optional<Node> nodeWithWantToRetire = nodeRepository().getNode(nodeToRetire.get().hostname())
+                    .map(node -> node.withWantToRetire(true, Agent.SpareCapacityMaintainer, nodeRepository().clock().instant()));
+            if (nodeWithWantToRetire.isEmpty()) return;
+
+            nodeRepository().write(nodeWithWantToRetire.get(), deployment.applicationLock().get());
+            log.log(Level.INFO, String.format("Redeploying %s to relocate %s from overcommited host",
+                    application, nodeToRetire.get().hostname()));
+            deployment.activate();
+        }
     }
 
     private static class CapacitySolver {
