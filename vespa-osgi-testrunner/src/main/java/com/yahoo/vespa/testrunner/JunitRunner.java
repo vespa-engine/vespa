@@ -1,8 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
-import ai.vespa.cloud.Environment;
-import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.TestDescriptor;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.google.inject.Inject;
@@ -51,11 +49,10 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     @Inject
     public JunitRunner(OsgiFramework osgiFramework,
                        JunitTestRunnerConfig config,
-                       TestRuntimeProvider testRuntimeProvider,
-                       Zone zone) {
+                       TestRuntimeProvider testRuntimeProvider) {
         this.testRuntimeProvider = testRuntimeProvider;
         this.bundleContext = getUnrestrictedBundleContext(osgiFramework);
-        uglyHackSetCredentialsRootSystemProperty(config, zone);
+        uglyHackSetCredentialsRootSystemProperty(config);
     }
 
     // Hack to retrieve bundle context that allows access to other bundles
@@ -71,17 +68,14 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     }
 
     // TODO(bjorncs|tokle) Propagate credentials root without system property. Ideally move knowledge about path to test-runtime implementations
-    private static void uglyHackSetCredentialsRootSystemProperty(JunitTestRunnerConfig config, Zone zone) {
-        Optional<String> credentialsRoot;
+    private static void uglyHackSetCredentialsRootSystemProperty(JunitTestRunnerConfig config) {
+        String credentialsRoot;
         if (config.useAthenzCredentials()) {
-            credentialsRoot = Optional.of(Defaults.getDefaults().underVespaHome("var/vespa/sia"));
-        } else if (zone.environment() != Environment.prod){
-            // Only set credentials in non-prod zones where not available
-            credentialsRoot = Optional.of(config.artifactsPath().toString());
+            credentialsRoot = Defaults.getDefaults().underVespaHome("var/vespa/sia");
         } else {
-            credentialsRoot = Optional.empty();
+            credentialsRoot = config.artifactsPath().toString();
         }
-        credentialsRoot.ifPresent(root -> System.setProperty("vespa.test.credentials.root", root));
+        System.setProperty("vespa.test.credentials.root", credentialsRoot);
     }
 
     @Override
