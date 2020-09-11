@@ -187,7 +187,7 @@ public class ConfigUtilsTest {
     public void testCreateConfigDefinitionKeyFromDefFile() {
         ConfigDefinitionKey def = null;
         try {
-            def = ConfigUtils.createConfigDefinitionKeyFromDefFile(new File("src/test/resources/configs/def-files/foo.app.def"));
+            def = ConfigUtils.createConfigDefinitionKeyFromDefFile(new File("src/test/resources/configs/def-files/app.def"));
         } catch (IOException e) {
             e.printStackTrace();
             fail();
@@ -196,7 +196,7 @@ public class ConfigUtilsTest {
         assertThat(def.getNamespace(), is("foo"));
 
         try {
-            def = ConfigUtils.createConfigDefinitionKeyFromDefFile(new File("src/test/resources/configs/def-files/foo.testnamespace.def"));
+            def = ConfigUtils.createConfigDefinitionKeyFromDefFile(new File("src/test/resources/configs/def-files/testnamespace.def"));
         } catch (IOException e) {
             e.printStackTrace();
             fail();
@@ -205,7 +205,7 @@ public class ConfigUtilsTest {
         assertThat(def.getNamespace(), is("foo"));
 
         try {
-            byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files/foo.app.def"));
+            byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files/app.def"));
             def = ConfigUtils.createConfigDefinitionKeyFromDefContent("app", content);
         } catch (IOException e) {
             fail();
@@ -214,7 +214,7 @@ public class ConfigUtilsTest {
         assertThat(def.getNamespace(), is("foo"));
 
         try {
-            byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files-nogen/foo.bar.app.def"));
+            byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files-nogen/app.def"));
             def = ConfigUtils.createConfigDefinitionKeyFromDefContent("app", content);
         } catch (IOException e) {
             fail();
