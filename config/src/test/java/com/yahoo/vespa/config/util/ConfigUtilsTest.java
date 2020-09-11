@@ -214,7 +214,7 @@ public class ConfigUtilsTest {
         assertThat(def.getNamespace(), is("foo"));
 
         try {
-            byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files-nogen/foo.bar.app.def"));
+            byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files-nogen/app.def"));
             def = ConfigUtils.createConfigDefinitionKeyFromDefContent("app", content);
         } catch (IOException e) {
             fail();

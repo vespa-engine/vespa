@@ -10,4 +10,4 @@ vespa_define_module(
     src/vespa/fileacquirer
 )
 
-install_config_definition(src/main/resources/configdefinitions/filedistributorrpc.def cloud.config.filedistribution.filedistributorrpc.def)
+install_config_definitions(src/main/resources/configdefinitions)

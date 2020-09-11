@@ -270,7 +270,7 @@ public class DomConfigPayloadBuilderTest {
                 "<longval>invalid</longval>" +
                 "</config>");
         DefParser defParser = new DefParser("simpletypes",
-                new FileReader(new File("src/test/resources/configdefinitions/simpletypes.def")));
+                new FileReader(new File("src/test/resources/configdefinitions/test.simpletypes.def")));
         ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
         ConfigPayloadBuilder builder =  new DomConfigPayloadBuilder(def).build(configRoot);
         //assertThat(builder.warnings().size(), is(1));
