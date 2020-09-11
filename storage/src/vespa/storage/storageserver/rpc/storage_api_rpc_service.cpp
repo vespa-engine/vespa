@@ -28,7 +28,7 @@ StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher
     : _message_dispatcher(message_dispatcher),
       _rpc_resources(rpc_resources),
       _message_codec_provider(message_codec_provider),
-      _target_resolver(std::make_unique<CachingRpcTargetResolver>(rpc_resources))
+      _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory()))
 {
     register_server_methods(rpc_resources);
 }
@@ -212,7 +212,7 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
     auto& req_ctx = req->getStash().create<RpcRequestContext>(std::move(cmd), timeout);
     req->SetContext(FNET_Context(&req_ctx));
 
-    target->_target->InvokeAsync(req.release(), vespalib::to_s(timeout), this);
+    target->_target->get()->InvokeAsync(req.release(), vespalib::to_s(timeout), this);
 }
 
 namespace {
