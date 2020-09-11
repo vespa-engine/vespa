@@ -83,7 +83,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class JsonRendererTestCase {
 
-    private JsonRenderer originalRenderer;
+    private final JsonRenderer originalRenderer;
     private JsonRenderer renderer;
 
     public JsonRendererTestCase() {
@@ -333,7 +333,7 @@ public class JsonRendererTestCase {
         Result r = new Result(q);
 
         execution.search(q);
-        Execution e2 = new Execution(new Chain<Searcher>(), execution.context());
+        Execution e2 = new Execution(new Chain<>(), execution.context());
         Query subQuery = new Query("/?query=b&tracelevel=0");
         e2.search(subQuery);
         subQuery.trace("yellow", 1);

@@ -34,9 +34,9 @@ public interface RequestHandler extends SharedResource {
      * shutting down. The requirement to call {@link ResponseHandler#handleResponse(Response)} is regardless of any
      * subsequent errors that may occur while working with the returned ContentChannel.</p>
      *
-     * @param request The Request to handle.
-     * @param handler The handler to pass the corresponding {@link Response} to.
-     * @return The ContentChannel to write the Request content to. Notice that the ContentChannel itself also holds a
+     * @param request the Request to handle
+     * @param handler the handler to pass the corresponding {@link Response} to
+     * @return the ContentChannel to write the Request content to. Notice that the ContentChannel itself also holds a
      *         Container reference, so failure to close this will prevent the Container from ever shutting down.
      */
     ContentChannel handleRequest(Request request, ResponseHandler handler);

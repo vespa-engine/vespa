@@ -98,10 +98,15 @@ public class Response {
         int INSUFFICIENT_STORAGE = 507;
     }
 
+    public enum RequestType {
+        READ, WRITE, MONITORING
+    }
+
     private final Map<String, Object> context = new HashMap<>();
     private final HeaderFields headers = new HeaderFields();
     private Throwable error;
     private int status;
+    private RequestType requestType;
 
     /**
      * Creates a new instance of this class.
@@ -204,6 +209,12 @@ public class Response {
         this.error = error;
         return this;
     }
+
+    /** Sets the type classification of the request causing this, for metric collection purposes */
+    public void setRequestType(RequestType requestType) { this.requestType = requestType; }
+
+    /** Returns the type classification of the request causing this, for metric collection purposes, or null if not set */
+    public RequestType getRequestType() { return requestType; }
 
     /**
      * This is a convenience method for creating a Response with status {@link Status#GATEWAY_TIMEOUT} and passing

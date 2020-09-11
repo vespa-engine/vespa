@@ -465,8 +465,8 @@
       "public void populateAccessLogEntry(com.yahoo.container.logging.AccessLogEntry)",
       "public void complete()",
       "public java.lang.Iterable getLogValues()",
-      "public void setRequestType(com.yahoo.jdisc.Request$RequestType)",
-      "public com.yahoo.jdisc.Request$RequestType getRequestType()"
+      "public void setRequestType(com.yahoo.jdisc.Response$RequestType)",
+      "public com.yahoo.jdisc.Response$RequestType getRequestType()"
     ],
     "fields": [
       "public static final java.lang.String DEFAULT_MIME_TYPE",

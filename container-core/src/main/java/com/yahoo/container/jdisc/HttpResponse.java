@@ -27,8 +27,6 @@ public abstract class HttpResponse {
 
     private final Response parentResponse;
 
-    private Request.RequestType requestType;
-
     /**
      * Creates a new HTTP response
      *
@@ -126,12 +124,12 @@ public abstract class HttpResponse {
     }
 
     /** Sets the type classification of this request for metric collection purposes */
-    public void setRequestType(Request.RequestType requestType) { this.requestType = requestType; }
+    public void setRequestType(Response.RequestType requestType) { parentResponse.setRequestType(requestType); }
 
     /**
      * Returns the type classification of this request for metric collection purposes, or null if not set.
      * When not set, the request type will be "read" for GET requests and "write" for other request methods.
      */
-    public Request.RequestType getRequestType() { return requestType; }
+    public Response.RequestType getRequestType() { return parentResponse.getRequestType(); }
 
 }

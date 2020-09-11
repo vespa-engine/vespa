@@ -53,21 +53,21 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     }
 
     /**
-     * <p>Sets the timeout that this ThreadedRequestHandler sets on all handled {@link Request}s. If the
-     * <em>timeout</em> value is less than or equal to zero, no timeout will be applied.</p>
+     * Sets the timeout that this ThreadedRequestHandler sets on all handled {@link Request}s. If the
+     * <em>timeout</em> value is less than or equal to zero, no timeout will be applied.
      *
-     * @param timeout The allocated amount of time.
-     * @param unit    The time unit of the <em>timeout</em> argument.
+     * @param timeout the allocated amount of time
+     * @param unit    the time unit of the <em>timeout</em> argument
      */
     public final void setTimeout(long timeout, TimeUnit unit) {
         this.timeout = unit.toMillis(timeout);
     }
 
     /**
-     * <p>Returns the timeout that this ThreadedRequestHandler sets on all handled {@link Request}s.</p>
+     * Returns the timeout that this ThreadedRequestHandler sets on all handled {@link Request}s.
      *
-     * @param unit The unit to use for the return value.
-     * @return The timeout in the appropriate unit.
+     * @param unit the unit to use for the return value
+     * @return the timeout in the appropriate unit
      */
     public final long getTimeout(TimeUnit unit) {
         return unit.convert(timeout, TimeUnit.MILLISECONDS);
@@ -84,13 +84,13 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     }
 
     /**
-     * <p>Override this method if you want to access the {@link Request}'s content using a {@link
+     * Override this method if you want to access the {@link Request}'s content using a {@link
      * BufferedContentChannel}. If you do not override this method, it will call {@link #handleRequest(Request,
-     * ReadableContentChannel, ResponseHandler)}.</p>
+     * ReadableContentChannel, ResponseHandler)}.
      *
-     * @param request         The Request to handle.
-     * @param responseHandler The handler to pass the corresponding {@link Response} to.
-     * @param requestContent  The content of the Request.
+     * @param request         the Request to handle
+     * @param responseHandler the handler to pass the corresponding {@link Response} to
+     * @param requestContent  the content of the Request
      */
     protected void handleRequest(Request request, BufferedContentChannel requestContent,
                                  ResponseHandler responseHandler)
@@ -104,13 +104,13 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     }
 
     /**
-     * <p>Implement this method if you want to access the {@link Request}'s content using a {@link
+     * Implement this method if you want to access the {@link Request}'s content using a {@link
      * ReadableContentChannel}. If you do not override this method, it will call {@link #handleRequest(Request,
-     * ContentInputStream, ResponseHandler)}.</p>
+     * ContentInputStream, ResponseHandler)}.
      *
-     * @param request         The Request to handle.
-     * @param responseHandler The handler to pass the corresponding {@link Response} to.
-     * @param requestContent  The content of the Request.
+     * @param request         the Request to handle
+     * @param responseHandler the handler to pass the corresponding {@link Response} to
+     * @param requestContent  the content of the Request
      */
     protected void handleRequest(Request request, ReadableContentChannel requestContent,
                                  ResponseHandler responseHandler)
@@ -124,13 +124,13 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     }
 
     /**
-     * <p>Implement this method if you want to access the {@link Request}'s content using a {@link ContentInputStream}.
+     * Implement this method if you want to access the {@link Request}'s content using a {@link ContentInputStream}.
      * If you do not override this method, it will dispatch a {@link Response} to the {@link ResponseHandler} with a
-     * <code>Response.Status.NOT_IMPLEMENTED</code> status.</p>
+     * <code>Response.Status.NOT_IMPLEMENTED</code> status.
      *
-     * @param request         The Request to handle.
-     * @param responseHandler The handler to pass the corresponding {@link Response} to.
-     * @param requestContent  The content of the Request.
+     * @param request         the Request to handle
+     * @param responseHandler the handler to pass the corresponding {@link Response} to
+     * @param requestContent  the content of the Request
      */
     @SuppressWarnings("UnusedParameters")
     protected void handleRequest(Request request, ContentInputStream requestContent,
@@ -157,11 +157,11 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         public void run() {
             try (final ResourceReference ref = requestReference) {
                 ThreadedRequestHandler.this.handleRequest(request, content, responseHandler);
-                consumeRequestContent();
+                consumeLeftoverRequestContent();
             }
         }
 
-        private void consumeRequestContent() {
+        private void consumeLeftoverRequestContent() {
             if (content.isConnected()) return;
             try {
                 ReadableContentChannel requestContent = content.toReadable();
@@ -171,4 +171,5 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             } catch (IllegalStateException ignored) {}
         }
     }
+
 }

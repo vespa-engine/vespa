@@ -78,7 +78,6 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         try {
             channel = new LazyContentChannel(httpRequest, responseHandler, metric, log);
             HttpResponse httpResponse = handle(httpRequest, channel);
-            request.setRequestType(httpResponse.getRequestType());
             channel.setHttpResponse(httpResponse); // may or may not have already been done
             render(httpRequest, httpResponse, channel, jdiscRequest.creationTime(TimeUnit.MILLISECONDS));
         } catch (Exception e) {

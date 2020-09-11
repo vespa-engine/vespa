@@ -11,9 +11,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Responsible for metric reporting for JDisc http request handler support.
+ *
  * @author Tony Vaagenes
  */
 public class MetricReporter {
+
     private final Metric metric;
     private final Context context;
 
@@ -21,7 +23,6 @@ public class MetricReporter {
 
     //TODO: rename
     private final AtomicBoolean firstSetOfTimeToFirstByte = new AtomicBoolean(true);
-
 
     public MetricReporter(Metric metric, Context context, long requestStartTime) {
         this.metric = metric;

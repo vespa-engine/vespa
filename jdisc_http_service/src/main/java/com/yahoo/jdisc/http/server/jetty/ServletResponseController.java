@@ -32,7 +32,7 @@ import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMP
  */
 public class ServletResponseController {
 
-    private static Logger log = Logger.getLogger(ServletResponseController.class.getName());
+    private static final Logger log = Logger.getLogger(ServletResponseController.class.getName());
 
     /**
      * The servlet spec does not require (Http)ServletResponse nor ServletOutputStream to be thread-safe. Therefore,
@@ -42,27 +42,29 @@ public class ServletResponseController {
      */
     private final Object monitor = new Object();
 
-    //servletResponse must not be modified after the response has been committed.
+    // servletResponse must not be modified after the response has been committed.
     private final HttpServletRequest servletRequest;
     private final HttpServletResponse servletResponse;
+    private final HttpResponseStatisticsCollector responseStatisticsCollector;
     private final boolean developerMode;
     private final ErrorResponseContentCreator errorResponseContentCreator = new ErrorResponseContentCreator();
 
-    //all calls to the servletOutputStreamWriter must hold the monitor first to ensure visibility of servletResponse changes.
+    // all calls to the servletOutputStreamWriter must hold the monitor first to ensure visibility of servletResponse changes.
     private final ServletOutputStreamWriter servletOutputStreamWriter;
 
     // GuardedBy("monitor")
     private boolean responseCommitted = false;
 
-    public ServletResponseController(
-            HttpServletRequest servletRequest,
-            HttpServletResponse servletResponse,
-            Executor executor,
-            MetricReporter metricReporter,
-            boolean developerMode) throws IOException {
+    public ServletResponseController(HttpServletRequest servletRequest,
+                                     HttpServletResponse servletResponse,
+                                     Executor executor,
+                                     MetricReporter metricReporter,
+                                     HttpResponseStatisticsCollector responseStatisticsCollector,
+                                     boolean developerMode) throws IOException {
 
         this.servletRequest = servletRequest;
         this.servletResponse = servletResponse;
+        this.responseStatisticsCollector = responseStatisticsCollector;
         this.developerMode = developerMode;
         this.servletOutputStreamWriter =
                 new ServletOutputStreamWriter(servletResponse.getOutputStream(), executor, metricReporter);
@@ -164,6 +166,8 @@ public class ServletResponseController {
 
     private void setResponse(Response jdiscResponse) {
         synchronized (monitor) {
+            responseStatisticsCollector.observeEndOfRequest(servletRequest, jdiscResponse);
+
             if (responseCommitted) {
                 log.log(Level.FINE,
                         jdiscResponse.getError(),

@@ -11,11 +11,13 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import java.util.concurrent.Executor;
 
 public class JDiscContext {
+
     final BindingSet<RequestFilter> requestFilters;
     final BindingSet<ResponseFilter> responseFilters;
     final CurrentContainer container;
     final Executor janitor;
     final Metric metric;
+    final HttpResponseStatisticsCollector responseStatisticsCollector;
     final ServerConfig serverConfig;
 
     public JDiscContext(BindingSet<RequestFilter> requestFilters,
@@ -23,6 +25,7 @@ public class JDiscContext {
                         CurrentContainer container,
                         Executor janitor,
                         Metric metric,
+                        HttpResponseStatisticsCollector responseStatisticsCollector,
                         ServerConfig serverConfig) {
 
         this.requestFilters = requestFilters;
@@ -30,10 +33,12 @@ public class JDiscContext {
         this.container = container;
         this.janitor = janitor;
         this.metric = metric;
+        this.responseStatisticsCollector = responseStatisticsCollector;
         this.serverConfig = serverConfig;
     }
 
     public boolean developerMode() {
         return serverConfig.developerMode();
     }
+
 }

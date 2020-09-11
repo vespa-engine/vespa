@@ -18,6 +18,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.Response;
 import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
 import com.yahoo.net.HostName;
@@ -315,7 +316,7 @@ public class SearchHandler extends LoggingRequestHandler {
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer,
                                                              extractTraceNode(query));
-        response.setRequestType(Request.RequestType.READ);
+        response.setRequestType(Response.RequestType.READ);
         if (hostResponseHeaderKey.isPresent())
             response.headers().add(hostResponseHeaderKey.get(), selfHostname);
 

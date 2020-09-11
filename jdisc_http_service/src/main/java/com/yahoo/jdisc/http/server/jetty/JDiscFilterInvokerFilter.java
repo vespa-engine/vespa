@@ -37,6 +37,7 @@ import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
  * @author Tony Vaagenes
  */
 class JDiscFilterInvokerFilter implements Filter {
+
     private final JDiscContext jDiscContext;
     private final FilterInvoker filterInvoker;
 

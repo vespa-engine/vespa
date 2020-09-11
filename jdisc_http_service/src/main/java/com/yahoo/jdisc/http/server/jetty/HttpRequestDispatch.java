@@ -71,6 +71,7 @@ class HttpRequestDispatch {
                                                                        servletResponse,
                                                                        jDiscContext.janitor,
                                                                        metricReporter,
+                                                                       jDiscContext.responseStatisticsCollector,
                                                                        jDiscContext.developerMode());
         markConnectionAsNonPersistentIfThresholdReached(servletRequest);
         this.async = servletRequest.startAsync();
@@ -174,10 +175,8 @@ class HttpRequestDispatch {
 
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
-            requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
-            if (jdiscRequest.getRequestType() != null)
-                jettyRequest.setAttribute(HttpResponseStatisticsCollector.requestTypeAttribute,
-                                          jdiscRequest.getRequestType());
+            requestContentChannel = requestHandler.handleRequest(jdiscRequest,
+                                                                 servletResponseController.responseHandler);
         }
 
         ServletInputStream servletInputStream = jettyRequest.getInputStream();

@@ -126,6 +126,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private final Metric metric;
     private final Server server;
     private final List<Integer> listenedPorts = new ArrayList<>();
+    private final HttpResponseStatisticsCollector responseStatisticsCollector;
 
     @Inject
     public JettyHttpServer(CurrentContainer container,
@@ -159,11 +160,15 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         janitor = newJanitor(threadFactory);
 
+        responseStatisticsCollector = new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(),
+                                                                          serverConfig.metric().searchHandlerPaths());
+
         JDiscContext jDiscContext = new JDiscContext(filterBindings.getRequestFilters().activate(),
                                                      filterBindings.getResponseFilters().activate(),
                                                      container,
                                                      janitor,
                                                      metric,
+                                                     responseStatisticsCollector,
                                                      serverConfig);
 
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
@@ -246,13 +251,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
         gzipHandler.setHandler(authEnforcer);
 
-        HttpResponseStatisticsCollector statisticsCollector =
-                new HttpResponseStatisticsCollector(serverConfig.metric().monitoringHandlerPaths(),
-                                                    serverConfig.metric().searchHandlerPaths());
-        statisticsCollector.setHandler(gzipHandler);
-
         StatisticsHandler statisticsHandler = newStatisticsHandler();
-        statisticsHandler.setHandler(statisticsCollector);
+        statisticsHandler.setHandler(gzipHandler);
 
         HandlerCollection handlerCollection = new HandlerCollection();
         handlerCollection.setHandlers(new Handler[] { statisticsHandler });
@@ -338,16 +338,13 @@ public class JettyHttpServer extends AbstractServerProvider {
         return ((ServerConnector)server.getConnectors()[0]).getLocalPort();
     }
 
-    Server server() { return server; }
+    HttpResponseStatisticsCollector responseStatisticsCollector() { return responseStatisticsCollector; }
 
     private class MetricTask implements Runnable {
+
         @Override
         public void run() {
-            HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) server.getHandler())
-                    .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
-            if (statisticsCollector != null) {
-                setServerMetrics(statisticsCollector);
-            }
+            setServerMetrics(responseStatisticsCollector);
 
             // reset statisticsHandler to preserve earlier behavior
             StatisticsHandler statisticsHandler = ((AbstractHandlerContainer) server.getHandler())

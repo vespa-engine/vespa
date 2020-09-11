@@ -40,7 +40,6 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Rule;
 import org.junit.Test;
@@ -77,6 +76,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static com.yahoo.jdisc.Response.Status.FORBIDDEN;
 import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -147,10 +147,9 @@ public class HttpServerTest {
 
     @Test
     public void requireThatBindingSetNotFoundReturns404() throws Exception {
-        final TestDriver driver = TestDrivers.newConfiguredInstance(
+        TestDriver driver = TestDrivers.newConfiguredInstance(
                 mockRequestHandler(),
-                new ServerConfig.Builder()
-                        .developerMode(true),
+                new ServerConfig.Builder().developerMode(true),
                 new ConnectorConfig.Builder(),
                 newBindingSetSelector("unknown"));
         driver.client().get("/status.html")
@@ -573,47 +572,59 @@ public class HttpServerTest {
 
     @Test
     public void requireThatResponseStatsAreCollected() throws Exception {
-        RequestTypeHandler handler = new RequestTypeHandler();
+        ResponseOverridingHandler handler = new ResponseOverridingHandler();
         TestDriver driver = TestDrivers.newInstance(handler);
-        HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) driver.server().server().getHandler())
-                                                                      .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
+        HttpResponseStatisticsCollector statisticsCollector = driver.server().responseStatisticsCollector();
+        assertEquals(0, statisticsCollector.takeStatistics().size());
+        driver.client().newPost("/status.html").execute();
+        handler.status = NOT_FOUND;
+        driver.client().newPost("/notfound").execute();
+        driver.client().newPost("/notfound").execute();
+        driver.client().newPost("/notfound").execute();
+        driver.client().newPost("/notfound").execute();
+        handler.status = UNAUTHORIZED;
+        driver.client().newPost("/unauthorized").execute();
+        driver.client().newPost("/unauthorized").execute();
+        handler.status = FORBIDDEN;
+        driver.client().newPost("/forbidden").execute();
+        handler.status = null;
+        driver.client().newGet("/status.html").execute();
+        driver.client().newGet("/status.html").execute();
 
-        {
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
-            assertEquals(0, stats.size());
-        }
+        List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+        assertEquals(5, stats.size());
+        assertStatisticsEntry("http", "POST", "http.status.2xx", "write", 1, stats);
+        assertStatisticsEntry("http", "POST", "http.status.4xx", "write", 7, stats);
+        // 401 and 403 are also counted separately
+        assertStatisticsEntry("http", "POST", "http.status.401", "write", 2, stats);
+        assertStatisticsEntry("http", "POST", "http.status.403", "write", 1, stats);
+        assertStatisticsEntry("http", "GET", "http.status.2xx", "read", 2, stats);
+    }
 
-        {
-            driver.client().newPost("/status.html").execute();
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
-            assertEquals(1, stats.size());
-            assertEquals("http", stats.get(0).scheme);
-            assertEquals("POST", stats.get(0).method);
-            assertEquals("http.status.2xx", stats.get(0).name);
-            assertEquals("write", stats.get(0).requestType);
-            assertEquals(1, stats.get(0).value);
-        }
+    @Test
+    public void requireThatResponseStatsRequestTypeCanBeOverridden() throws Exception {
+        ResponseOverridingHandler handler = new ResponseOverridingHandler();
+        TestDriver driver = TestDrivers.newInstance(handler);
+        HttpResponseStatisticsCollector statisticsCollector = driver.server().responseStatisticsCollector();
+        handler.setRequestType(Response.RequestType.READ);
+        driver.client().newPost("/status.html").execute();
+        driver.client().newPost("/status.html").execute();
+        List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+        assertEquals(1, stats.size());
+        // Type overriden to read on post
+        assertStatisticsEntry("http", "POST", "http.status.2xx", "read", 2, stats);
+    }
 
-        {
-            driver.client().newGet("/status.html").execute();
-            driver.client().newGet("/status.html").execute();
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
-            assertEquals(1, stats.size());
-            assertEquals("http", stats.get(0).scheme);
-            assertEquals("GET", stats.get(0).method);
-            assertEquals("http.status.2xx", stats.get(0).name);
-            assertEquals("read", stats.get(0).requestType);
-            assertEquals(2, stats.get(0).value);
-        }
-
-        {
-            handler.setRequestType(Request.RequestType.READ);
-            driver.client().newPost("/status.html").execute();
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
-            assertEquals(1, stats.size());
-            assertEquals("Handler overrides request type", "read", stats.get(0).requestType);
-        }
-
+    @Test
+    public void requireThatResponseStatsAreResetWhenTaken() throws Exception {
+        ResponseOverridingHandler handler = new ResponseOverridingHandler();
+        TestDriver driver = TestDrivers.newInstance(handler);
+        HttpResponseStatisticsCollector statisticsCollector = driver.server().responseStatisticsCollector();
+        driver.client().newPost("/status.html").execute();
+        List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+        assertEquals(1, stats.size());
+        stats = statisticsCollector.takeStatistics();
+        assertEquals("Statistics are reset on get", 0, stats.size());
         assertTrue(driver.close());
     }
 
@@ -800,6 +811,20 @@ public class HttpServerTest {
 
         int clientPort = Integer.parseInt(response.getHeaders().get("Jdisc-Local-Port"));
         assertNotEquals(proxyLocalPort, clientPort);
+    }
+
+    private static void assertStatisticsEntry(String scheme,
+                                              String method,
+                                              String name,
+                                              String requestType,
+                                              long expectedValue,
+                                              List<HttpResponseStatisticsCollector.StatisticsEntry> result) {
+        long value = result.stream()
+                           .filter(entry -> entry.method.equals(method) && entry.scheme.equals(scheme) && entry.name.equals(name) && entry.requestType.equals(requestType))
+                           .mapToLong(entry -> entry.value)
+                           .reduce(Long::sum)
+                           .orElseThrow(() -> new AssertionError(String.format("Not matching entry in result (scheme=%s, method=%s, name=%s, type=%s)", scheme, method, name, requestType)));
+        assertEquals(expectedValue, value);
     }
 
     private ContentResponse sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)
@@ -1018,28 +1043,47 @@ public class HttpServerTest {
         }
     }
 
-    private static class RequestTypeHandler extends AbstractRequestHandler {
+    private static class ResponseOverridingHandler extends AbstractRequestHandler {
 
-        private Request.RequestType requestType = null;
+        private Response.RequestType requestType = null;
+        private Integer status = null;
 
-        public void setRequestType(Request.RequestType requestType) {
+        public void setRequestType(Response.RequestType requestType) {
             this.requestType = requestType;
         }
 
         @Override
         public ContentChannel handleRequest(Request request, ResponseHandler handler) {
-            ContentChannel channel = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
-            if (requestType != null)
-                request.setRequestType(requestType);
-            return channel;
+            return ResponseDispatch.newInstance(Response.Status.OK).connect(new ResponseHandlerWrapper(handler));
         }
+
+        private class ResponseHandlerWrapper implements ResponseHandler {
+
+            final ResponseHandler wrapped;
+
+            ResponseHandlerWrapper(ResponseHandler wrapped) {
+                this.wrapped = wrapped;
+            }
+
+            @Override
+            public ContentChannel handleResponse(Response response) {
+                if (requestType != null)
+                    response.setRequestType(requestType);
+                if (status != null)
+                    response.setStatus(status);
+                return wrapped.handleResponse(response);
+            }
+        }
+
     }
 
     private static class ThrowingHandler extends AbstractRequestHandler {
+
         @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
             throw new RuntimeException("Deliberately thrown exception");
         }
+
     }
 
     private static class UnresponsiveHandler extends AbstractRequestHandler {
