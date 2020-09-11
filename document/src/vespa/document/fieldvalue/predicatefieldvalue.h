@@ -13,13 +13,15 @@ class PredicateFieldValue : public FieldValue {
     std::unique_ptr<vespalib::Slime> _slime;
     bool _altered;
 
+    PredicateFieldValue & operator=(const PredicateFieldValue &rhs);
 public:
     PredicateFieldValue();
     PredicateFieldValue(std::unique_ptr<vespalib::Slime> s);
     PredicateFieldValue(const PredicateFieldValue &rhs);
-    ~PredicateFieldValue();
+    PredicateFieldValue(PredicateFieldValue && rhs) noexcept = default;
+    ~PredicateFieldValue() override;
 
-    PredicateFieldValue &operator=(const PredicateFieldValue &rhs);
+    PredicateFieldValue & operator=(PredicateFieldValue && rhs) noexcept = default;
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }

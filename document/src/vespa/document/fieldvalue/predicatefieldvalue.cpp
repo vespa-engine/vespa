@@ -34,9 +34,10 @@ PredicateFieldValue::PredicateFieldValue(const PredicateFieldValue &rhs)
     inject(rhs._slime->get(), SlimeInserter(*_slime));
 }
 
-PredicateFieldValue::~PredicateFieldValue() { }
+PredicateFieldValue::~PredicateFieldValue() = default;
 
-FieldValue &PredicateFieldValue::assign(const FieldValue &rhs) {
+FieldValue &
+PredicateFieldValue::assign(const FieldValue &rhs) {
     if (rhs.inherits(PredicateFieldValue::classId)) {
         operator=(static_cast<const PredicateFieldValue &>(rhs));
         return *this;
@@ -47,7 +48,8 @@ FieldValue &PredicateFieldValue::assign(const FieldValue &rhs) {
     }
 }
 
-PredicateFieldValue &PredicateFieldValue::operator=(const PredicateFieldValue &rhs)
+PredicateFieldValue &
+PredicateFieldValue::operator=(const PredicateFieldValue &rhs)
 {
     _slime = std::make_unique<Slime>();
     inject(rhs._slime->get(), SlimeInserter(*_slime));
@@ -55,18 +57,21 @@ PredicateFieldValue &PredicateFieldValue::operator=(const PredicateFieldValue &r
     return *this;
 }
 
-int PredicateFieldValue::compare(const FieldValue&rhs) const {
+int
+PredicateFieldValue::compare(const FieldValue&rhs) const {
     int diff = FieldValue::compare(rhs);
     if (diff != 0) return diff;
     const PredicateFieldValue &o = static_cast<const PredicateFieldValue &>(rhs);
     return Predicate::compare(*_slime, *o._slime);
 }
 
-void PredicateFieldValue::printXml(XmlOutputStream& out) const {
+void
+PredicateFieldValue::printXml(XmlOutputStream& out) const {
     out << XmlContent(PredicatePrinter::print(*_slime));
 }
 
-void PredicateFieldValue::print(std::ostream& out, bool, const std::string&) const {
+void
+PredicateFieldValue::print(std::ostream& out, bool, const std::string&) const {
     out << PredicatePrinter::print(*_slime) << "\n";
 }
 
