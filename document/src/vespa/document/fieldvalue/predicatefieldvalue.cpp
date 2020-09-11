@@ -40,12 +40,11 @@ FieldValue &
 PredicateFieldValue::assign(const FieldValue &rhs) {
     if (rhs.inherits(PredicateFieldValue::classId)) {
         operator=(static_cast<const PredicateFieldValue &>(rhs));
-        return *this;
     } else {
         _slime.reset();
         _altered = true;
-        return FieldValue::assign(rhs);
     }
+    return *this;
 }
 
 PredicateFieldValue &
