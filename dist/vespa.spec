@@ -58,7 +58,7 @@ BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
+BuildRequires: vespa-onnxruntime-devel = 1.3.0
 BuildRequires: vespa-openssl-devel >= 1.1.1g-1
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
@@ -70,7 +70,7 @@ BuildRequires: boost-devel >= 1.66
 BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
+BuildRequires: vespa-onnxruntime-devel = 1.3.0
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
@@ -79,7 +79,7 @@ BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
-BuildRequires: vespa-onnxruntime-devel >= 1.3.0-1
+BuildRequires: vespa-onnxruntime-devel = 1.3.0
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %if 0%{?fc31}
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
@@ -169,7 +169,7 @@ Requires: net-tools
 Requires: llvm7.0
 Requires: vespa-icu >= 65.1.0-1
 Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime >= 1.3.0-1
+Requires: vespa-onnxruntime = 1.3.0
 Requires: vespa-openssl >= 1.1.1g-1
 Requires: vespa-protobuf >= 3.7.0-4
 Requires: vespa-telegraf >= 1.1.1-1
@@ -184,7 +184,7 @@ Requires: llvm-libs >= 9.0.1
 %define _vespa_llvm_version 9
 Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime >= 1.3.0-1
+Requires: vespa-onnxruntime = 1.3.0
 Requires: vespa-protobuf >= 3.7.0-4
 Requires: vespa-zstd >= 1.4.5-2
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
@@ -193,7 +193,7 @@ Requires: vespa-zstd >= 1.4.5-2
 %if 0%{?fedora}
 Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime >= 1.3.0-1
+Requires: vespa-onnxruntime = 1.3.0
 Requires: vespa-zstd >= 1.4.5-2
 %if 0%{?fc31}
 Requires: vespa-protobuf >= 3.7.0-4
@@ -228,7 +228,7 @@ Requires: %{name}-tools = %{version}-%{release}
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function. Exclude automated reqires for libraries in /opt/vespa-deps/lib64.
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd)\\.so\\.[0-9.]*\\((OPENSSL_1_1_0)?\\))\\(64bit\\)$
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
 
 
 %description
