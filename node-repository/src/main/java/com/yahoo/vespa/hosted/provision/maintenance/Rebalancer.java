@@ -63,7 +63,7 @@ public class Rebalancer extends NodeRepositoryMaintainer {
         metric.set("hostedVespa.docker.skew", totalSkew/hostCount, null);
     }
 
-    private boolean zoneIsStable(NodeList allNodes) {
+    static boolean zoneIsStable(NodeList allNodes) {
         NodeList active = allNodes.state(Node.State.active);
         if (active.stream().anyMatch(node -> node.allocation().get().membership().retired())) return false;
         if (active.stream().anyMatch(node -> node.status().wantToRetire())) return false;

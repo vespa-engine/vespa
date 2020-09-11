@@ -71,7 +71,7 @@ public class CapacityCheckerTester {
     }
 
     private void updateCapacityChecker() {
-        this.capacityChecker = new CapacityChecker(this.nodeRepository);
+        this.capacityChecker = new CapacityChecker(nodeRepository.list());
     }
 
     List<NodeModel> createDistinctChildren(int amount, List<NodeResources> childResources) {
