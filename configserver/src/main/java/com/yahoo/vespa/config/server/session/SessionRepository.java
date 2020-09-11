@@ -121,7 +121,7 @@ public class SessionRepository {
     // ---------------- Local sessions ----------------------------------------------------------------
 
     public synchronized void addLocalSession(LocalSession session) {
-        localSessionCache.addSession(session);
+        localSessionCache.putSession(session);
         long sessionId = session.getSessionId();
         RemoteSession remoteSession = createRemoteSession(sessionId);
         addSessionStateWatcher(sessionId, remoteSession, Optional.of(session));
@@ -263,7 +263,7 @@ public class SessionRepository {
     }
 
     public void addRemoteSession(RemoteSession session) {
-        remoteSessionCache.addSession(session);
+        remoteSessionCache.putSession(session);
         metrics.incAddedSessions();
     }
 
