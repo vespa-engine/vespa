@@ -4,6 +4,7 @@ vespa_add_library(searchlib_transactionlog OBJECT
     chunks.cpp
     common.cpp
     domain.cpp
+    domainconfig.cpp
     domainpart.cpp
     ichunk.cpp
     nosyncproxy.cpp

@@ -409,7 +409,7 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
             _sz++;
             _range.to(entry.serial());
         } else {
-            throw runtime_error(fmt("Incomming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
+            throw runtime_error(fmt("Incoming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
                                     entry.serial(), _range.to()));
         }
     }
@@ -429,7 +429,8 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
     }
 }
 
-void DomainPart::sync()
+void
+DomainPart::sync()
 {
     SerialNum syncSerial(0);
     {
@@ -449,7 +450,7 @@ DomainPart::visit(SerialNumRange &r, Packet &packet)
 {
     bool retval(false);
     LockGuard guard(_lock);
-    LOG(debug, "Visit r(%" PRIu64 ", %" PRIu64 "] Checking %" PRIu64 " packets",
+    LOG(spam, "Visit r(%" PRIu64 ", %" PRIu64 "] Checking %" PRIu64 " packets",
                r.from(), r.to(), uint64_t(_packets.size()));
     if ( ! isClosed() ) {
         PacketList::const_iterator start(_packets.lower_bound(r.from() + 1));
@@ -474,7 +475,7 @@ DomainPart::visit(SerialNumRange &r, Packet &packet)
                 ((next != end) || ((next != _packets.end()) && ((r.to() + 1) == next->first))))
             {
                 packet = start->second;
-                LOG(debug, "Visit whole packet[%" PRIu64 ", %" PRIu64 "]", packet.range().from(), packet.range().to());
+                LOG(spam, "Visit whole packet[%" PRIu64 ", %" PRIu64 "]", packet.range().from(), packet.range().to());
                 if (next != _packets.end()) {
                     r.from(next->first - 1);
                     retval = true;
@@ -484,7 +485,7 @@ DomainPart::visit(SerialNumRange &r, Packet &packet)
             } else {
                 const nbostream & tmp = start->second.getHandle();
                 nbostream_longlivedbuf h(tmp.data(), tmp.size());
-                LOG(debug, "Visit partial[%" PRIu64 ", %" PRIu64 "] (%zd, %zd, %zd)",
+                LOG(spam, "Visit partial[%" PRIu64 ", %" PRIu64 "] (%zd, %zd, %zd)",
                            start->second.range().from(), start->second.range().to(), h.rp(), h.size(), h.capacity());
                 Packet newPacket(h.size());
                 for (; (h.size() > 0) && (r.from() < r.to()); ) {
@@ -546,6 +547,8 @@ DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
     if ( ! file.CheckedWrite(os.data(), os.size()) ) {
         throw runtime_error(handleWriteError("Failed writing the entry.", file, byteSize(), chunk.range(), os.size()));
     }
+    LOG(debug, "Wrote chunk with %zu entries and %zu bytes, range[%" PRIu64 ", %" PRIu64 "] encoding(wanted=%x, real=%x)",
+        chunk.getEntries().size(), os.size(), chunk.range().from(), chunk.range().to(), _encoding.getRaw(), realEncoding.getRaw());
     _writtenSerial = chunk.range().to();
     _byteSize.fetch_add(os.size(), std::memory_order_release);
 }

@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogserver.h"
+#include "domain.h"
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
@@ -42,7 +42,6 @@ public:
     void PerformTask() override;
 };
 
-
 SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
                          const TransLogServer::Session::SP &session, SerialNum syncTo)
     : FNET_Task(supervisor->GetScheduler()),
@@ -53,9 +52,7 @@ SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const 
 {
 }
 
-
 SyncHandler::~SyncHandler() = default;
-
 
 void
 SyncHandler::PerformTask()
@@ -207,10 +204,16 @@ TransLogServer::run()
     LOG(info, "TLS Stopped");
 }
 
+vespalib::duration
+TransLogServer::getChunkAgeLimit() const
+{
+    Guard domainGuard(_domainMutex);
+    return _domainConfig.getChunkAgeLimit();
+}
 
 TransLogServer &
 TransLogServer::setDomainConfig(const DomainConfig & cfg) {
-    Guard domainGuard(_lock);
+    Guard domainGuard(_domainMutex);
     _domainConfig = cfg;
     for(auto &domain: _domains) {
         domain.second->setConfig(cfg);
@@ -222,7 +225,7 @@ DomainStats
 TransLogServer::getDomainStats() const
 {
     DomainStats retval;
-    Guard domainGuard(_lock);
+    Guard domainGuard(_domainMutex);
     for (const auto &elem : _domains) {
         retval[elem.first] = elem.second->getDomainInfo();
     }
@@ -233,7 +236,7 @@ std::vector<vespalib::string>
 TransLogServer::getDomainNames()
 {
     std::vector<vespalib::string> names;
-    Guard guard(_lock);
+    Guard guard(_domainMutex);
     for(const auto &domain: _domains) {
         names.push_back(domain.first);
     }
@@ -243,7 +246,7 @@ TransLogServer::getDomainNames()
 Domain::SP
 TransLogServer::findDomain(stringref domainName)
 {
-    Guard domainGuard(_lock);
+    Guard domainGuard(_domainMutex);
     Domain::SP domain;
     DomainList::iterator found(_domains.find(domainName));
     if (found != _domains.end()) {
@@ -363,7 +366,7 @@ writeDomainDir(std::lock_guard<std::mutex> &guard,
     vespalib::File::sync(dir);
 }
 
-class RPCDestination : public Session::Destination {
+class RPCDestination : public Destination {
 public:
     RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
         : _supervisor(supervisor), _connection(connection), _ok(true)
@@ -448,7 +451,7 @@ TransLogServer::createDomain(FRT_RPCRequest *req)
         try {
             domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor,
                                               _sessionExecutor, _domainConfig, _fileHeaderContext);
-            Guard domainGuard(_lock);
+            Guard domainGuard(_domainMutex);
             _domains[domain->name()] = domain;
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
@@ -477,12 +480,12 @@ TransLogServer::deleteDomain(FRT_RPCRequest *req)
         try {
             if (domain) {
                 domain->markDeleted();
-                Guard domainGuard(_lock);
+                Guard domainGuard(_domainMutex);
                 _domains.erase(domainName);
             }
             vespalib::rmdir(Domain::getDir(dir(), domainName), true);
             vespalib::File::sync(dir());
-            Guard domainGuard(_lock);
+            Guard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
             msg = make_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
@@ -523,7 +526,7 @@ TransLogServer::listDomains(FRT_RPCRequest *req)
     LOG(debug, "listDomains()");
 
     vespalib::string domains;
-    Guard domainGuard(_lock);
+    Guard domainGuard(_domainMutex);
     for(DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
         domains += it->second->name();
         domains += "\n";
