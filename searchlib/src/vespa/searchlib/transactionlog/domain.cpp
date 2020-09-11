@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "domain.h"
+#include "domainpart.h"
+#include "session.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -15,10 +17,11 @@
 LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 using vespalib::LockGuard;
 using vespalib::makeTask;
 using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 using vespalib::Monitor;
 using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
@@ -28,14 +31,6 @@ using std::make_shared;
 namespace search::transactionlog {
 
 VESPA_THREAD_STACK_TAG(domain_commit_executor);
-
-DomainConfig::DomainConfig()
-    : _encoding(Encoding::Crc::xxh64, Encoding::Compression::none),
-      _compressionLevel(9),
-      _partSizeLimit(0x10000000), // 256M
-      _chunkSizeLimit(0x40000),   // 256k
-      _chunkAgeLimit(10ms)
-{ }
 
 Domain::Domain(const string &domainName, const string & baseDir, Executor & commitExecutor,
                Executor & sessionExecutor, const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
@@ -60,10 +55,10 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
-        throw runtime_error(make_string("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
+        throw runtime_error(fmt("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
     }
     if ((retval = makeDirectory(dir().c_str())) != 0) {
-        throw runtime_error(make_string("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
+        throw runtime_error(fmt("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
     }
     SerialNumList partIdVector = scanDir();
     const int64_t lastPart = partIdVector.empty() ? 0 : partIdVector.back();
@@ -356,7 +351,7 @@ Domain::erase(SerialNum to)
 
 int
 Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
-              std::unique_ptr<Session::Destination> dest)
+              std::unique_ptr<Destination> dest)
 {
     assert(this == domain.get());
     cleanSessions();
@@ -442,7 +437,7 @@ Domain::scanDir()
             continue;
         const char *p = ename + wantPrefixLen + 1;
         uint64_t num = strtoull(p, NULL, 10);
-        string checkName = make_string("%s-%016" PRIu64, _name.c_str(), num);
+        string checkName = fmt("%s-%016" PRIu64, _name.c_str(), num);
         if (strcmp(checkName.c_str(), ename) != 0)
             continue;
         res.push_back(static_cast<SerialNum>(num));
