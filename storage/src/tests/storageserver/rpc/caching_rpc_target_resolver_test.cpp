@@ -34,8 +34,8 @@ private:
     bool& _valid;
 public:
     MockWrappedFrtTarget(bool& valid) : _valid(valid) {}
-    FRT_Target* get() override { return nullptr; }
-    bool is_valid() const override { return _valid; }
+    FRT_Target* get() noexcept override { return nullptr; }
+    bool is_valid() const noexcept override { return _valid; }
 };
 
 class MockTargetFactory : public RpcTargetFactory {
@@ -73,7 +73,7 @@ public:
     void add_mapping(const StorageMessageAddress& address, const vespalib::string& connection_spec) {
         mirror.mappings[to_slobrok_id(address)] = {{to_slobrok_id(address), connection_spec}};
     }
-    vespalib::string to_slobrok_id(const storage::api::StorageMessageAddress& address) const {
+    static vespalib::string to_slobrok_id(const storage::api::StorageMessageAddress& address) {
         return CachingRpcTargetResolver::address_to_slobrok_id(address);
     }
 };

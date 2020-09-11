@@ -33,8 +33,8 @@ public:
     ~WrappedFrtTargetImpl() override {
         _target->SubRef();
     }
-    FRT_Target* get() override { return _target; }
-    bool is_valid() const override { return _target->IsValid(); }
+    FRT_Target* get() noexcept override { return _target; }
+    bool is_valid() const noexcept override { return _target->IsValid(); }
 };
 
 }
