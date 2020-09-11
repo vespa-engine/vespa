@@ -1,17 +1,14 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rpc_target.h"
-#include <vespa/fnet/frt/target.h>
 
 namespace storage::rpc {
 
-RpcTarget::RpcTarget(FRT_Target* target, vespalib::stringref spec, uint32_t sb_generation)
-    : _target(target),
+RpcTarget::RpcTarget(std::unique_ptr<WrappedFrtTarget> target, vespalib::stringref spec, uint32_t slobrok_gen)
+    : _target(std::move(target)),
       _spec(spec),
-      _sb_generation(sb_generation)
+      _slobrok_gen(slobrok_gen)
 {}
 
-RpcTarget::~RpcTarget() {
-    _target->SubRef();
-}
+RpcTarget::~RpcTarget() = default;
 
 }
