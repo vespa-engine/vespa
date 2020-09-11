@@ -2,6 +2,7 @@
 vespa_add_executable(storage_storageserver_rpc_gtest_runner_app TEST
     SOURCES
     cluster_controller_rpc_api_service_test.cpp
+    message_codec_provider_test.cpp
     gtest_runner.cpp
     DEPENDS
     storage_storageserver

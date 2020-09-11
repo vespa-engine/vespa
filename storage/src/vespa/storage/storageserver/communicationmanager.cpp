@@ -1,10 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "communicationmanager.h"
-#include "vespa/storage/storageserver/rpc/cluster_controller_api_rpc_service.h"
-#include "vespa/storage/storageserver/rpc/storage_api_rpc_service.h"
 #include "rpcrequestwrapper.h"
-#include "vespa/storage/storageserver/rpc/shared_rpc_resources.h"
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
@@ -13,6 +10,10 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageserver/configurable_bucket_resolver.h>
+#include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
+#include <vespa/storage/storageserver/rpc/cluster_controller_api_rpc_service.h>
+#include <vespa/storage/storageserver/rpc/message_codec_provider.h>
+#include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -419,15 +420,14 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         configureMessageBusLimits(*config);
     }
 
-    // TODO temporary!
-    auto repo_getter = [this]{ return _component.getTypeRepo()->documentTypeRepo; };
-    auto loadtype_getter = [this]{ return _component.getLoadTypes(); };
-
     _use_direct_storageapi_rpc = config->useDirectStorageapiRpc;
+    _message_codec_provider = std::make_unique<rpc::MessageCodecProvider>(_component.getTypeRepo()->documentTypeRepo,
+                                                                          _component.getLoadTypes());
     // TODO configurable thread pool size
     _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, 1/*pool size*/);
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
-    _storage_api_rpc_service = std::make_unique<rpc::StorageApiRpcService>(*this, *_shared_rpc_resources, std::move(repo_getter), std::move(loadtype_getter));
+    _storage_api_rpc_service = std::make_unique<rpc::StorageApiRpcService>(
+            *this, *_shared_rpc_resources, *_message_codec_provider);
 
     if (_mbus) {
         mbus::DestinationSessionParams dstParams;
@@ -780,7 +780,7 @@ CommunicationManager::print(std::ostream& out, bool verbose, const std::string& 
 }
 
 void CommunicationManager::updateMessagebusProtocol(
-        const std::shared_ptr<const document::DocumentTypeRepo> &repo) {
+        const std::shared_ptr<const document::DocumentTypeRepo>& repo) {
     if (_mbus) {
         framework::SecondTime now(_component.getClock().getTimeInSeconds());
         auto newDocumentProtocol = std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), repo);
@@ -788,6 +788,9 @@ void CommunicationManager::updateMessagebusProtocol(
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newDocumentProtocol)));
         auto newStorageProtocol = std::make_shared<mbusprot::StorageProtocol>(repo, *_component.getLoadTypes());
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newStorageProtocol)));
+    }
+    if (_message_codec_provider) {
+        _message_codec_provider->update_atomically(repo, _component.getLoadTypes());
     }
 }
 

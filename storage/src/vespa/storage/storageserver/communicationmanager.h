@@ -39,6 +39,7 @@ namespace storage {
 
 namespace rpc {
 class ClusterControllerApiRpcService;
+class MessageCodecProvider;
 class SharedRpcResources;
 class StorageApiRpcService;
 }
@@ -79,6 +80,7 @@ private:
     std::unique_ptr<rpc::SharedRpcResources> _shared_rpc_resources;
     std::unique_ptr<rpc::StorageApiRpcService> _storage_api_rpc_service;
     std::unique_ptr<rpc::ClusterControllerApiRpcService> _cc_rpc_service;
+    std::unique_ptr<rpc::MessageCodecProvider> _message_codec_provider;
     Queue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
