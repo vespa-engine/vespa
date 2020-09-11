@@ -323,7 +323,7 @@ public:
             }
         } else if (strcmp(_argv[2], "prepareRestart") == 0) {
             _req->SetMethodName("proton.prepareRestart");
-            invokeRPC(false, 86400.0);
+            invokeRPC(false, 600.0);
             invoked = true;
             if (! _req->IsError()) {
                 printf("OK: prepareRestart enabled\n");

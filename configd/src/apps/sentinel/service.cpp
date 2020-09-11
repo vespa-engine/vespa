@@ -87,11 +87,26 @@ Service::~Service()
     delete _config;
 }
 
+void
+Service::prepare_for_shutdown()
+{
+    auto cmd = _config->preShutdownCommand;
+    if (cmd.empty()) {
+        return;
+    }
+    if (_state == RUNNING) {
+        // only run this once, before signaling the service:
+        LOG(info, "prepare %s for shutdown: running %s", name().c_str(), cmd.c_str());
+        runCommand(cmd);
+    } else {
+        LOG(info, "%s: not running, skipping preShutdownCommand(%s)", name().c_str(), cmd.c_str());
+    }
+}
+
 int
 Service::terminate(bool catchable, bool dumpState)
 {
     if (isRunning()) {
-        runPreShutdownCommand();
         LOG(debug, "%s: terminate(%s)", name().c_str(), catchable ? "cleanly" : "NOW");
         resetRestartPenalty();
         kill(_pid, SIGCONT); // if it was stopped for some reason
@@ -132,20 +147,17 @@ Service::terminate(bool catchable, bool dumpState)
 }
 
 void
-Service::runPreShutdownCommand()
-{
-    if (_config->preShutdownCommand.length() > 0) {
-        LOG(debug, "%s: runPreShutdownCommand(%s)", name().c_str(), _config->preShutdownCommand.c_str());
-        runCommand(_config->preShutdownCommand);
-    }
-}
-
-void
 Service::runCommand(const std::string & command)
 {
     int ret = system(command.c_str());
-    if (ret != 0) {
-        LOG(info, "%s: unable to run showdown command (%s): %d (%s)", name().c_str(), command.c_str(), ret, strerror(ret));
+    if (ret == -1) {
+        LOG(error, "%s: unable to run shutdown command (%s): %s", name().c_str(), command.c_str(), strerror(errno));
+    } else if (WIFSIGNALED(ret)) {
+        LOG(error, "%s: shutdown command (%s) terminated by signal %d", name().c_str(), command.c_str(), WTERMSIG(ret));
+    } else if (ret != 0) {
+        LOG(warning, "%s: shutdown command (%s) failed with exit status %d", name().c_str(), command.c_str(), WEXITSTATUS(ret));
+    } else {
+        LOG(info, "%s: shutdown command (%s) completed normally.", name().c_str(), command.c_str());
     }
 }
 
