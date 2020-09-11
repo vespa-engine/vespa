@@ -480,7 +480,7 @@ public class ContentBuilderTest extends DomBuilderTest {
             assertEquals("VESPA_USE_VESPAMALLOC_D=\"distributord\" ", n.getVespaMallocDebugEnvVariable());
             assertEquals("storaged", n.getVespaMalloc());
             assertEquals("VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getVespaMallocDebugStackTraceEnvVariable());
-            assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getEnvVariables());
+            assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getEnvVariables());
         }
     }
 
@@ -509,10 +509,10 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
 
         assertThat(s.getSearchNodes().size(), is(4));
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" ", s.getSearchNodes().get(0).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_D=\"distributord\" ", s.getSearchNodes().get(1).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_DST=\"all\" ", s.getSearchNodes().get(2).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC=\"storaged\" ", s.getSearchNodes().get(3).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_NO_VESPAMALLOC=\"proton\" ", s.getSearchNodes().get(0).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_D=\"distributord\" ", s.getSearchNodes().get(1).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_DST=\"all\" ", s.getSearchNodes().get(2).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC=\"storaged\" ", s.getSearchNodes().get(3).getEnvVariables());
     }
 
     @Test

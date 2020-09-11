@@ -61,6 +61,9 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     // If this is true it will dump core when OOM
     private boolean coreOnOOM = false;
 
+    // If greater than 0, controls the number of threads used by open mp
+    private int ompNumThreads = 0;
+
     private String noVespaMalloc = "";
     private String vespaMalloc = "";
     private String vespaMallocDebug = "";
@@ -392,6 +395,8 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     public void setMMapNoCoreLimit(long noCoreLimit) { this.mmapNoCoreLimit = noCoreLimit; }
     public boolean getCoreOnOOM() { return coreOnOOM; }
     public void setCoreOnOOM(boolean coreOnOOM) { this.coreOnOOM = coreOnOOM; }
+    public int getOmpNumThreads() { return ompNumThreads; }
+    public void setOmpNumThreads(int value) { ompNumThreads = value; }
 
     public String getNoVespaMalloc() { return noVespaMalloc; }
     public String getVespaMalloc() { return vespaMalloc; }
@@ -410,6 +415,11 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     public String getCoreOnOOMEnvVariable() {
         return getCoreOnOOM() ? "" : "VESPA_SILENCE_CORE_ON_OOM=true ";
+    }
+    public String getOmpNumThreadsEnvVariable() {
+        return (getOmpNumThreads() == 0)
+            ? ""
+            : "OMP_NUM_THREADS=" + getOmpNumThreads() + " ";
     }
     public String getNoVespaMallocEnvVariable() {
         return "".equals(getNoVespaMalloc())
@@ -433,7 +443,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     public String getEnvVariables() {
-        return getCoreOnOOMEnvVariable() + getMMapNoCoreEnvVariable() + getNoVespaMallocEnvVariable() +
+        return getCoreOnOOMEnvVariable() + getOmpNumThreadsEnvVariable() + getMMapNoCoreEnvVariable() + getNoVespaMallocEnvVariable() +
                 getVespaMallocEnvVariable() + getVespaMallocDebugEnvVariable() + getVespaMallocDebugStackTraceEnvVariable();
     }
 
