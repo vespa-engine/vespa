@@ -88,7 +88,6 @@ private:
     std::unique_ptr<FastOS_ThreadPool>  _threadPool;
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
-    std::unique_ptr<std::thread>        _staleCommitThread;
     DomainList                          _domains;
     mutable std::mutex                  _domainMutex;          // Protects _domains
     std::condition_variable             _domainCondition;
