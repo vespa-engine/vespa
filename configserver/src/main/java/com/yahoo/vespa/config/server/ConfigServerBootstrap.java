@@ -10,9 +10,11 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
-import com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance;
+import com.yahoo.vespa.config.server.maintenance.FileDistributionMaintainer;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -70,25 +72,23 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                 ConfigServerMaintenance configServerMaintenance) {
+                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus, BOOTSTRAP_IN_CONSTRUCTOR, EXIT_JVM,
              applicationRepository.configserverConfig().hostedVespa()
                      ? VipStatusMode.VIP_STATUS_FILE
-                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY,
-             Optional.of(configServerMaintenance));
+                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY);
     }
 
     // For testing only
     ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
                           StateMonitor stateMonitor, VipStatus vipStatus, Mode mode, VipStatusMode vipStatusMode) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE, vipStatusMode, Optional.empty());
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE, vipStatusMode);
     }
 
     private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                   VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
                                   Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
-                                  VipStatusMode vipStatusMode, Optional<ConfigServerMaintenance> configServerMaintenance) {
+                                  VipStatusMode vipStatusMode) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -101,13 +101,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
         log.log(Level.FINE, "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
-
-        // Run maintainers that cleans up zookeeper and disk usage before bootstrapping
-        try {
-            configServerMaintenance.ifPresent(ConfigServerMaintenance::runBeforeBootstrap);
-        } catch (Exception e) {
-            log.log(Level.INFO, "Running maintainers before bootstrap failed, continuing with bootstrap", Exceptions.toMessageString(e));
-        }
 
         switch (mode) {
             case BOOTSTRAP_IN_SEPARATE_THREAD:

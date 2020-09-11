@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.ConfigServerBootstrap;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -15,7 +16,8 @@ import java.time.Duration;
 /**
  * Maintenance jobs of the config server.
  * Each maintenance job is a singleton instance of its implementing class, created and owned by this,
- * and running its own dedicated thread.
+ * and running its own dedicated thread. {@link ConfigServerBootstrap} is injected into this class, so
+ * no maintainers will run until bootstrapping is done
  *
  * @author hmusum
  */
@@ -27,7 +29,8 @@ public class ConfigServerMaintenance extends AbstractComponent {
     private final ApplicationPackageMaintainer applicationPackageMaintainer;
 
     @Inject
-    public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
+    public ConfigServerMaintenance(ConfigServerBootstrap configServerBootstrap,
+                                   ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
                                    FlagSource flagSource,
@@ -58,11 +61,6 @@ public class ConfigServerMaintenance extends AbstractComponent {
         DefaultTimes(ConfigserverConfig configserverConfig) {
             this.defaultInterval = Duration.ofMinutes(configserverConfig.maintainerIntervalMinutes());
         }
-    }
-
-    public void runBeforeBootstrap() {
-        fileDistributionMaintainer.lockAndMaintain();
-        sessionsMaintainer.lockAndMaintain();
     }
 
 }
