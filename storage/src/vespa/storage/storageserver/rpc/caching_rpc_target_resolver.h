@@ -40,8 +40,8 @@ private:
                                                          const UniqueLock& targets_lock);
 
 public:
-    explicit CachingRpcTargetResolver(const slobrok::api::IMirrorAPI& slobrok_mirror,
-                                      const RpcTargetFactory& target_factory);
+    CachingRpcTargetResolver(const slobrok::api::IMirrorAPI& slobrok_mirror,
+                             const RpcTargetFactory& target_factory);
     ~CachingRpcTargetResolver();
 
     static vespalib::string address_to_slobrok_id(const api::StorageMessageAddress& address);

@@ -14,8 +14,8 @@ namespace storage::rpc {
 class WrappedFrtTarget {
 public:
     virtual ~WrappedFrtTarget() = default;
-    virtual FRT_Target* get() = 0;
-    virtual bool is_valid() const = 0;
+    virtual FRT_Target* get() noexcept = 0;
+    virtual bool is_valid() const noexcept = 0;
 };
 
 struct RpcTarget {
