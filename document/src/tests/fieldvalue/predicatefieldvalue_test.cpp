@@ -1,18 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicatefieldvalue.
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicatefieldvalue_test");
-
-#include <vespa/document/predicate/predicate.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
-#include <sstream>
 #include <string>
+
+#include <vespa/log/log.h>
+LOG_SETUP("predicatefieldvalue_test");
 
 using std::ostringstream;
 using std::string;
@@ -29,7 +26,7 @@ void verifyEqual(const FieldValue & a, const FieldValue & b) {
     ASSERT_EQUAL(o1.str(), o2.str());
 }
 
-TEST("require that PredicateFieldValue can be cloned, assigned, and operator=") {
+TEST("require that PredicateFieldValue can be cloned, assigned") {
     PredicateSlimeBuilder builder;
     builder.neg().feature("foo").value("bar").value("baz");
     PredicateFieldValue val(builder.build());
@@ -42,7 +39,7 @@ TEST("require that PredicateFieldValue can be cloned, assigned, and operator=") 
     verifyEqual(val, assigned);
 
     PredicateFieldValue operatorAssigned;
-    operatorAssigned = val;
+    operatorAssigned = std::move(assigned);
     verifyEqual(val, operatorAssigned);
 }
 
