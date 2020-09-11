@@ -530,7 +530,7 @@ public:
     }
 
     size_t count_allocated_memory() const {
-        return sizeof(small_string) + isAllocated() ? _bufferSize : 0;
+        return sizeof(small_string) + (isAllocated() ? _bufferSize : 0);
     }
     size_t count_used_memory() const {
         return sizeof(small_string) - StackSize + size();
