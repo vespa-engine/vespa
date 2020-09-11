@@ -32,8 +32,8 @@ public class MiscTestCase {
     @Test
     public void testGetDefMd5() throws IOException {
         String defDir = "src/test/resources/configdefinitions/";
-        assertEquals(AppConfig.CONFIG_DEF_MD5, ConfigUtils.getDefMd5(file2lines(new File(defDir + "app.def"))));
-        assertEquals(Md5testConfig.CONFIG_DEF_MD5, ConfigUtils.getDefMd5(file2lines(new File(defDir + "md5test.def"))));
+        assertEquals(AppConfig.CONFIG_DEF_MD5, ConfigUtils.getDefMd5(file2lines(new File(defDir + "config.app.def"))));
+        assertEquals(Md5testConfig.CONFIG_DEF_MD5, ConfigUtils.getDefMd5(file2lines(new File(defDir + "config.md5test.def"))));
     }
 
     private static List<String> file2lines(File file) throws IOException {
