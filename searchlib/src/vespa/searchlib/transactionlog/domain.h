@@ -18,8 +18,8 @@ public:
     using SP = std::shared_ptr<Domain>;
     using Executor = vespalib::SyncableThreadExecutor;
     using DomainPartSP = std::shared_ptr<DomainPart>;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
-           Executor & sessionExecutor, const DomainConfig & cfg, const common::FileHeaderContext &fileHeaderContext);
+    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & executor,
+           const DomainConfig & cfg, const common::FileHeaderContext &fileHeaderContext);
 
     ~Domain();
 
@@ -51,9 +51,7 @@ public:
     getDir(const vespalib::string & base, const vespalib::string & domain) {
         return base + "/" + domain;
     }
-    vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) {
-        return _sessionExecutor.execute(std::move(task));
-    }
+    vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task);
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
@@ -76,8 +74,7 @@ private:
     DomainConfig           _config;
     SerialNum              _lastSerial;
     std::unique_ptr<Executor> _singleCommiter;
-    Executor             & _commitExecutor;
-    Executor             & _sessionExecutor;
+    Executor             & _executor;
     std::atomic<int>       _sessionId;
     vespalib::Monitor      _syncMonitor;
     bool                   _pendingSync;
