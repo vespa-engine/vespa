@@ -3,6 +3,5 @@ vespa_add_library(searchlib_sconfig OBJECT
     SOURCES
     DEPENDS
 )
-vespa_generate_config(searchlib_sconfig searchlib.translogserver.def)
-
-install_config_definitions(src/vespa/searchlib/config)
+vespa_generate_config(searchlib_sconfig translogserver.def)
+install_config_definition(translogserver.def searchlib.translogserver.def)

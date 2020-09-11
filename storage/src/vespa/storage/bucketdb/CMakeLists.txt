@@ -15,7 +15,7 @@ vespa_add_library(storage_bucketdb OBJECT
     storbucketdb.cpp
     DEPENDS
 )
-vespa_generate_config(storage_bucketdb vespa.config.content.core.stor-bucketdb.def)
-vespa_generate_config(storage_bucketdb vespa.config.content.core.stor-bucket-init.def)
-
-install_config_definitions(src/vespa/storage/bucketdb)
+vespa_generate_config(storage_bucketdb stor-bucketdb.def)
+install_config_definition(stor-bucketdb.def vespa.config.content.core.stor-bucketdb.def)
+vespa_generate_config(storage_bucketdb stor-bucket-init.def)
+install_config_definition(stor-bucket-init.def vespa.config.content.core.stor-bucket-init.def)

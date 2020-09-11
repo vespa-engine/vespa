@@ -13,6 +13,5 @@ vespa_add_library(storage_visitor OBJECT
     visitorthread.cpp
     DEPENDS
 )
-vespa_generate_config(storage_visitor vespa.config.content.core.stor-visitor.def)
-
-install_config_definitions(src/vespa/storage/visiting)
+vespa_generate_config(storage_visitor stor-visitor.def)
+install_config_definition(stor-visitor.def vespa.config.content.core.stor-visitor.def)

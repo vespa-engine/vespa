@@ -3,6 +3,5 @@ vespa_add_library(searchsummary_config OBJECT
     SOURCES
     DEPENDS
 )
-vespa_generate_config(searchsummary_config vespa.config.search.summary.juniperrc.def)
-
-install_config_definitions(src/vespa/searchsummary/config)
+vespa_generate_config(searchsummary_config juniperrc.def)
+install_config_definition(juniperrc.def vespa.config.search.summary.juniperrc.def)

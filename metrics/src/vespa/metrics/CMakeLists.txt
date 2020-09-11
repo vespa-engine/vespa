@@ -25,5 +25,5 @@ vespa_add_library(metrics
     INSTALL lib64
     DEPENDS
 )
-vespa_generate_config(metrics metrics.metricsmanager.def)
-install_config_definitions(src/vespa/metrics)
+vespa_generate_config(metrics metricsmanager.def)
+install_config_definition(metricsmanager.def metrics.metricsmanager.def)
