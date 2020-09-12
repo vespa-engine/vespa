@@ -652,10 +652,6 @@ function(install_config_definitions)
     install(DIRECTORY ${DEFINITIONS_DIR}/ DESTINATION share/vespa/configdefinitions FILES_MATCHING PATTERN "*.def")
 endfunction()
 
-function(install_config_definitions)
-    install(DIRECTORY ${ARGV0}/ DESTINATION share/vespa/configdefinitions FILES_MATCHING PATTERN "*.def")
-endfunction()
-
 function(install_java_artifact NAME)
     install(FILES "target/${NAME}.jar" DESTINATION lib/jars/)
 endfunction()
