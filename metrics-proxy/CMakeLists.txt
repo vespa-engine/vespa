@@ -4,4 +4,4 @@ install_fat_java_artifact(metrics-proxy)
 vespa_install_script(src/main/sh/start-telegraf.sh libexec/vespa)
 vespa_install_script(src/main/sh/stop-telegraf.sh libexec/vespa)
 
-install_config_definitions(src/main/resources/configdefinitions)
+install_config_definitions()

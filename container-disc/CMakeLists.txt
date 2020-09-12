@@ -3,4 +3,4 @@ install_fat_java_artifact(container-disc)
 
 vespa_install_script(src/main/sh/vespa-start-container-daemon.sh vespa-start-container-daemon bin)
 
-install_config_definitions(src/main/resources/configdefinitions)
+install_config_definitions()

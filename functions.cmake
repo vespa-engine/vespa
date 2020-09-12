@@ -644,7 +644,12 @@ function(install_config_definition)
 endfunction()
 
 function(install_config_definitions)
-    install(DIRECTORY ${ARGV0}/ DESTINATION share/vespa/configdefinitions FILES_MATCHING PATTERN "*.def")
+    if(ARGC EQUAL 0)
+        set(DEFINITIONS_DIR src/main/resources/configdefinitions)
+    else()
+        set(DEFINITIONS_DIR ${ARGV0})
+    endif()
+    install(DIRECTORY ${DEFINITIONS_DIR}/ DESTINATION share/vespa/configdefinitions FILES_MATCHING PATTERN "*.def")
 endfunction()
 
 function(install_java_artifact NAME)
