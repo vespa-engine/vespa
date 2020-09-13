@@ -15,20 +15,14 @@ public class SessionCache<SESSIONTYPE extends Session> {
 
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
-    public synchronized void addSession(SESSIONTYPE session) {
-        sessions.putIfAbsent(session.getSessionId(), session);
+    public synchronized void putSession(SESSIONTYPE session) {
+        sessions.put(session.getSessionId(), session);
     }
 
     synchronized void removeSession(long id) {
         sessions.remove(id);
     }
 
-    /**
-     * Gets a Session
-     *
-     * @param id session id
-     * @return a session belonging to the id supplied, or null if no session with the id was found
-     */
     public synchronized SESSIONTYPE getSession(long id) {
         return sessions.get(id);
     }

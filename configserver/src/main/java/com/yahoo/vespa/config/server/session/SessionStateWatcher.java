@@ -6,7 +6,6 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
 
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,17 +28,14 @@ public class SessionStateWatcher {
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
     private final SessionRepository sessionRepository;
-    private Optional<LocalSession> localSession;
 
     SessionStateWatcher(Curator.FileCache fileCache,
                         RemoteSession remoteSession,
-                        Optional<LocalSession> localSession,
                         MetricUpdater metrics,
                         Executor zkWatcherExecutor,
                         SessionRepository sessionRepository) {
         this.fileCache = fileCache;
         this.remoteSession = remoteSession;
-        this.localSession = localSession;
         this.metrics = metrics;
         this.fileCache.addListener(this::nodeChanged);
         this.fileCache.start();
@@ -65,7 +61,7 @@ public class SessionStateWatcher {
                 sessionRepository.deactivate(remoteSession);
                 break;
             case DELETE:
-                sessionRepository.delete(remoteSession, localSession);
+                sessionRepository.delete(remoteSession);
                 break;
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
@@ -73,8 +69,8 @@ public class SessionStateWatcher {
     }
 
     private void createLocalSession(long sessionId) {
-        if (sessionRepository.distributeApplicationPackage() && localSession.isEmpty()) {
-            localSession = sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        if (sessionRepository.distributeApplicationPackage()) {
+            sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
         }
     }
 
@@ -107,10 +103,6 @@ public class SessionStateWatcher {
                 metrics.incSessionChangeErrors();
             }
         });
-    }
-
-    void addLocalSession(LocalSession session) {
-        localSession = Optional.of(session);
     }
 
 }
