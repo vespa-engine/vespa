@@ -24,18 +24,18 @@ public class SessionStateWatcher {
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
-    private final RemoteSession remoteSession;
+    private final RemoteSession session;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
     private final SessionRepository sessionRepository;
 
     SessionStateWatcher(Curator.FileCache fileCache,
-                        RemoteSession remoteSession,
+                        RemoteSession session,
                         MetricUpdater metrics,
                         Executor zkWatcherExecutor,
                         SessionRepository sessionRepository) {
         this.fileCache = fileCache;
-        this.remoteSession = remoteSession;
+        this.session = session;
         this.metrics = metrics;
         this.fileCache.addListener(this::nodeChanged);
         this.fileCache.start();
@@ -44,24 +44,24 @@ public class SessionStateWatcher {
     }
 
     private void sessionStatusChanged(Status newStatus) {
-        long sessionId = remoteSession.getSessionId();
+        long sessionId = session.getSessionId();
         switch (newStatus) {
             case NEW:
             case NONE:
                 break;
             case PREPARE:
                 createLocalSession(sessionId);
-                sessionRepository.prepare(remoteSession);
+                sessionRepository.prepare(session);
                 break;
             case ACTIVATE:
                 createLocalSession(sessionId);
-                sessionRepository.activate(remoteSession);
+                sessionRepository.activate(session);
                 break;
             case DEACTIVATE:
-                sessionRepository.deactivate(remoteSession);
+                sessionRepository.deactivate(session);
                 break;
             case DELETE:
-                sessionRepository.delete(remoteSession);
+                sessionRepository.delete(session);
                 break;
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
@@ -75,7 +75,7 @@ public class SessionStateWatcher {
     }
 
     public long getSessionId() {
-        return remoteSession.getSessionId();
+        return session.getSessionId();
     }
 
     public void close() {
@@ -93,12 +93,12 @@ public class SessionStateWatcher {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
                     newStatus = Status.parse(Utf8.toString(node.getData()));
-                    log.log(Level.FINE, remoteSession.logPre() + "Session change: Session "
-                                        + remoteSession.getSessionId() + " changed status to " + newStatus.name());
+                    log.log(Level.FINE, session.logPre() + "Session change: Session "
+                                        + session.getSessionId() + " changed status to " + newStatus.name());
                     sessionStatusChanged(newStatus);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, remoteSession.logPre() + "Error handling session change to " +
+                log.log(Level.WARNING, session.logPre() + "Error handling session change to " +
                                        newStatus.name() + " for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }

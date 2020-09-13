@@ -123,8 +123,9 @@ public class SessionRepository {
     public synchronized void addLocalSession(LocalSession session) {
         localSessionCache.putSession(session);
         long sessionId = session.getSessionId();
-        RemoteSession remoteSession = createRemoteSession(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession);
+        if ( ! remoteSessionCache.sessionExists(sessionId)) {
+            createRemoteSession(sessionId);
+        }
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -331,7 +332,7 @@ public class SessionRepository {
 
     private void checkForAddedSessions(List<Long> sessions) {
         for (Long sessionId : sessions)
-            if (remoteSessionCache.getSession(sessionId) == null)
+            if ( ! remoteSessionCache.sessionExists(sessionId))
                 sessionAdded(sessionId);
     }
 
@@ -350,7 +351,7 @@ public class SessionRepository {
         addRemoteSession(remoteSession);
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession);
+        updateSessionStateWatcher(remoteSession);
     }
 
     void activate(RemoteSession session) {
@@ -455,8 +456,16 @@ public class SessionRepository {
     }
 
     public RemoteSession createRemoteSession(long sessionId) {
+        return createRemoteSession(sessionId, Optional.empty());
+    }
+
+    public RemoteSession createRemoteSession(long sessionId, Optional<ApplicationSet> applicationSet) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
+        remoteSessionCache.putSession(session);
+        updateSessionStateWatcher(session);
+        metrics.incAddedSessions();
+        return session;
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
@@ -623,7 +632,7 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
@@ -670,11 +679,12 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void addSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
+    private void updateSessionStateWatcher(RemoteSession session) {
+        long sessionId = session.getSessionId();
         if ( ! sessionStateWatchers.containsKey(sessionId)) {
             Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metrics, zkWatcherExecutor, this));
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, session, metrics, zkWatcherExecutor, this));
         }
     }
 
