@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/persistence/spi/result.h>
+#include <vespa/persistence/spi/operationcomplete.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/vespalib/util/sequence.h>
 #include <vespa/vespalib/util/count_down_latch.h>

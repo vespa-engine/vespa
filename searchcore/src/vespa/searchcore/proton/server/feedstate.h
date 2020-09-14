@@ -2,17 +2,16 @@
 
 #pragma once
 
-#include "packetwrapper.h"
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/executor.h>
 
+namespace vespalib {
+    class Executor;
+}
 namespace proton {
 
 class FeedOperation;
+class PacketWrapper;
 
 /**
  * Class representing the current state of a feed handler.
@@ -26,21 +25,20 @@ private:
 
 protected:
     using FeedOperationUP = std::unique_ptr<FeedOperation>;
+    using PacketWrapperSP = std::shared_ptr<PacketWrapper>;
     void throwExceptionInReceive(const vespalib::string &docType, uint64_t serialRangeFrom,
                                  uint64_t serialRangeTo, size_t packetSize);
     void throwExceptionInHandleOperation(const vespalib::string &docType, const FeedOperation &op);
 
 public:
-    typedef std::shared_ptr<FeedState> SP;
-
     FeedState(Type type) : _type(type) {}
-    virtual ~FeedState() {}
+    virtual ~FeedState() = default;
 
     Type getType() const { return _type; }
     vespalib::string getName() const;
 
     virtual void handleOperation(FeedToken token, FeedOperationUP op) = 0;
-    virtual void receive(const PacketWrapper::SP &wrap, vespalib::Executor &executor) = 0;
+    virtual void receive(const PacketWrapperSP &wrap, vespalib::Executor &executor) = 0;
 };
 
 }  // namespace proton

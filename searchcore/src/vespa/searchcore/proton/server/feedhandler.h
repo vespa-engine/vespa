@@ -13,7 +13,7 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
-#include <mutex>
+#include <shared_mutex>
 
 namespace searchcorespi { namespace index { struct IThreadingService; } }
 
@@ -56,6 +56,10 @@ private:
     typedef document::BucketId              BucketId;
     using FeedStateSP = std::shared_ptr<FeedState>;
     using FeedOperationUP = std::unique_ptr<FeedOperation>;
+    using ReadGuard = std::shared_lock<std::shared_mutex>;
+    using WriteGuard = std::unique_lock<std::shared_mutex>;
+    using IThreadingService = searchcorespi::index::IThreadingService;
+
 
     class TlsMgrWriter : public TlsWriter {
         TransactionLogManager &_tls_mgr;
@@ -70,7 +74,6 @@ private:
         bool erase(SerialNum oldest_to_keep) override;
         SerialNum sync(SerialNum syncTo) override;
     };
-    typedef searchcorespi::index::IThreadingService IThreadingService;
 
     IThreadingService                     &_writeService;
     DocTypeName                            _docTypeName;
@@ -85,7 +88,7 @@ private:
     SerialNum                              _serialNum;
     SerialNum                              _prunedSerialNum;
     bool                                   _delayedPrune;
-    mutable std::mutex                     _feedLock;
+    mutable std::shared_mutex              _feedLock;
     FeedStateSP                            _feedState;
     // used by master write thread tasks
     IFeedView                             *_activeFeedView;
@@ -132,7 +135,6 @@ private:
 
     FeedStateSP getFeedState() const;
     void changeFeedState(FeedStateSP newState);
-    void changeFeedState(FeedStateSP newState, const std::lock_guard<std::mutex> &feedGuard);
 public:
     FeedHandler(const FeedHandler &) = delete;
     FeedHandler & operator = (const FeedHandler &) = delete;
