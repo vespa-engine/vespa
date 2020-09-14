@@ -6,8 +6,8 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -18,8 +18,6 @@ import org.w3c.dom.Element;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
-import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_BINDING;
-import static com.yahoo.vespa.model.container.xml.ContainerModelBuilder.SEARCH_HANDLER_CLASS;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
@@ -105,7 +103,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 "<container id='default' version='1.0'>",
                 "  <search />",
                 "  <handler id='" + myHandler + "'>",
-                "    <binding>" + SEARCH_HANDLER_BINDING.patternString() + "</binding>",
+                "    <binding>" + SearchHandler.DEFAULT_BINDING.patternString() + "</binding>",
                 "  </handler>",
                 nodesXml,
                 "</container>");
@@ -113,8 +111,8 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
-        assertEquals(SEARCH_HANDLER_BINDING.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(0));
-        assertNull(discBindingsConfig.handlers(SEARCH_HANDLER_CLASS));
+        assertEquals(SearchHandler.DEFAULT_BINDING.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(0));
+        assertNull(discBindingsConfig.handlers(SearchHandler.HANDLER_CLASS));
     }
 
     // TODO: remove test when all containers are named 'container'

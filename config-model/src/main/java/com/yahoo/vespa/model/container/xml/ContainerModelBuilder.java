@@ -111,9 +111,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
-    static final String SEARCH_HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
-    static final BindingPattern SEARCH_HANDLER_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
-
     public enum Networking { disable, enable }
 
     private ApplicationPackage app;
@@ -439,7 +436,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addIncludes(processingElement);
         cluster.setProcessingChains(new DomProcessingBuilder(null).build(deployState, cluster, processingElement),
-                                    serverBindings(processingElement, ProcessingChains.defaultBindings));
+                                    serverBindings(processingElement, ProcessingChains.defaultBindings).toArray(BindingPattern[]::new));
         validateAndAddConfiguredComponents(deployState, cluster, processingElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
 
@@ -788,14 +785,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addComponent(new ProcessingHandler<>(cluster.getSearch().getChains(),
                                                      "com.yahoo.search.searchchain.ExecutionFactory"));
 
-        ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(cluster.getSearch().getChains(),
-                                                                                "com.yahoo.search.handler.SearchHandler");
-        BindingPattern[] defaultBindings = {SEARCH_HANDLER_BINDING};
-        for (BindingPattern binding: serverBindings(searchElement, defaultBindings)) {
-            searchHandler.addServerBindings(binding);
-        }
-
-        cluster.addComponent(searchHandler);
+        cluster.addComponent(
+                new SearchHandler(
+                        cluster.getSearch().getChains(), serverBindings(searchElement, SearchHandler.DEFAULT_BINDING)));
     }
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
@@ -805,15 +797,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
 
-    private BindingPattern[] serverBindings(Element searchElement, BindingPattern... defaultBindings) {
+    private List<BindingPattern> serverBindings(Element searchElement, BindingPattern... defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
         if (bindings.isEmpty())
-            return defaultBindings;
+            return List.of(defaultBindings);
 
         return toBindingList(bindings);
     }
 
-    private BindingPattern[] toBindingList(List<Element> bindingElements) {
+    private List<BindingPattern> toBindingList(List<Element> bindingElements) {
         List<BindingPattern> result = new ArrayList<>();
 
         for (Element element: bindingElements) {
@@ -822,7 +814,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 result.add(UserBindingPattern.fromPattern(text));
         }
 
-        return result.toArray(BindingPattern[]::new);
+        return result;
     }
 
     private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
