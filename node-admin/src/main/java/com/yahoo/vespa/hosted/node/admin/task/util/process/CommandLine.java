@@ -59,6 +59,7 @@ public class CommandLine {
     private Duration sigTermGracePeriod = DEFAULT_SIGTERM_GRACE_PERIOD;
     private Duration sigKillGracePeriod = DEFAULT_SIGKILL_GRACE_PERIOD;
     private Predicate<Integer> successfulExitCodePredicate = code -> code == 0;
+    private boolean waitForTermination = true;
 
     public CommandLine(TaskContext taskContext, ProcessFactory processFactory) {
         this.taskContext = taskContext;
@@ -242,6 +243,11 @@ public class CommandLine {
         return this;
     }
 
+    public CommandLine doNotWaitForTermination() {
+        this.waitForTermination = false;
+        return this;
+    }
+
     public List<String> getArguments() { return Collections.unmodifiableList(arguments); }
 
     // Accessor fields necessary for classes in this package. Could be public if necessary.
@@ -256,6 +262,12 @@ public class CommandLine {
 
     private CommandResult doExecute() {
         try (ChildProcess2 child = processFactory.spawn(this)) {
+            if (!waitForTermination) {
+                // WARNING: This will leave the child as a zombie process until this process dies.
+                // I.e. only use this just before or a limited number of times per host admin restart.
+                return new CommandResult(this, 0, "");
+            }
+
             child.waitForTermination();
             int exitCode = child.exitCode();
             if (!successfulExitCodePredicate.test(exitCode)) {
