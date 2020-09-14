@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace search::transactionlog {
 
@@ -101,6 +102,21 @@ public:
     virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
     virtual bool connected() const = 0;
     virtual bool ok() const = 0;
+};
+
+class CommitChunk {
+public:
+    CommitChunk();
+    ~CommitChunk();
+    void add(const Packet & packet, Writer::DoneCallback onDone);
+    size_t sizeBytes() const { return _data.sizeBytes(); }
+    const Packet & getPacket() const { return _data; }
+    vespalib::duration age() const;
+    size_t getNumCallBacks() const { return _callBacks.size(); }
+private:
+    Packet                             _data;
+    std::vector<Writer::DoneCallback>  _callBacks;
+    vespalib::steady_time              _firstArrivalTime;
 };
 
 }
