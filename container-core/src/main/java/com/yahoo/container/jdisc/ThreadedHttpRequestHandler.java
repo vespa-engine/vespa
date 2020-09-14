@@ -123,9 +123,9 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
                     "IO error while responding to " + " ["
                             + request.getUri() + "] " + "(total time "
                             + time + " ms) ", e);
-            try { if (output != null) output.flush(); } catch (Exception ignored) { } // TODO: Shouldn't this be channel.close()?
+            try { output.flush(); } catch (Exception ignored) { }
         } finally {
-            if (channel != null && !(httpResponse instanceof AsyncHttpResponse)) {
+            if (channel != null && ! (httpResponse instanceof AsyncHttpResponse)) {
                 channel.close(logOnCompletion);
             }
         }

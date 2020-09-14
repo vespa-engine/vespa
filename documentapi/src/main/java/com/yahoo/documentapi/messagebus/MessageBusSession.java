@@ -13,26 +13,26 @@ public interface MessageBusSession {
      *
      * @return The route string.
      */
-    public String getRoute();
+    String getRoute();
 
     /**
      * Sets the route to send all messages to when sending through this session.
      *
      * @param route The route string.
      */
-    public void setRoute(String route);
+    void setRoute(String route);
 
     /**
      * Returns the trace level used when sending messages through this session.
      *
      * @return The trace level.
      */
-    public int getTraceLevel();
+    int getTraceLevel();
 
     /**
      * Sets the trace level used when sending messages through this session.
      *
      * @param traceLevel The trace level to set.
      */
-    public void setTraceLevel(int traceLevel);
+    void setTraceLevel(int traceLevel);
 }
