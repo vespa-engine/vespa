@@ -2,6 +2,7 @@
 package com.yahoo.vespa.testrunner;
 
 import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.TestDescriptor;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
@@ -52,10 +53,10 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     public JunitRunner(OsgiFramework osgiFramework,
                        JunitTestRunnerConfig config,
                        TestRuntimeProvider testRuntimeProvider,
-                       Zone zone) {
+                       SystemInfo systemInfo) {
         this.testRuntimeProvider = testRuntimeProvider;
         this.bundleContext = getUnrestrictedBundleContext(osgiFramework);
-        uglyHackSetCredentialsRootSystemProperty(config, zone);
+        uglyHackSetCredentialsRootSystemProperty(config, systemInfo.zone());
     }
 
     // Hack to retrieve bundle context that allows access to other bundles
