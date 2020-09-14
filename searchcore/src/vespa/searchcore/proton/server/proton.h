@@ -86,7 +86,7 @@ private:
     };
 
     const config::ConfigUri         _configUri;
-    mutable std::shared_timed_mutex _mutex;
+    mutable std::shared_mutex _mutex;
     MetricsUpdateHook               _metricsHook;
     std::unique_ptr<MetricsEngine>  _metricsEngine;
     ProtonFileHeaderContext         _fileHeaderContext;

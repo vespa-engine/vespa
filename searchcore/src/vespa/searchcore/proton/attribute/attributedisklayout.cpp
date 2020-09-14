@@ -23,7 +23,7 @@ std::vector<vespalib::string>
 AttributeDiskLayout::listAttributes()
 {
     std::vector<vespalib::string> attributes;
-    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
+    std::shared_lock<std::shared_mutex> guard(_mutex);
     for (const auto &dir : _dirs)  {
         attributes.emplace_back(dir.first);
     }
@@ -46,7 +46,7 @@ AttributeDiskLayout::scanDir()
 std::shared_ptr<AttributeDirectory>
 AttributeDiskLayout::getAttributeDir(const vespalib::string &name)
 {
-    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
+    std::shared_lock<std::shared_mutex> guard(_mutex);
     auto itr = _dirs.find(name);
     if (itr == _dirs.end()) {
         return std::shared_ptr<AttributeDirectory>();
@@ -58,7 +58,7 @@ AttributeDiskLayout::getAttributeDir(const vespalib::string &name)
 std::shared_ptr<AttributeDirectory>
 AttributeDiskLayout::createAttributeDir(const vespalib::string &name)
 {
-    std::lock_guard<std::shared_timed_mutex> guard(_mutex);
+    std::lock_guard<std::shared_mutex> guard(_mutex);
     auto itr = _dirs.find(name);
     if (itr == _dirs.end()) {
         auto dir = std::make_shared<AttributeDirectory>(shared_from_this(), name);
@@ -80,7 +80,7 @@ AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::Se
             writer->invalidateOldSnapshots(serialNum);
             writer->removeInvalidSnapshots();
             if (writer->removeDiskDir()) {
-                std::lock_guard<std::shared_timed_mutex> guard(_mutex);
+                std::lock_guard<std::shared_mutex> guard(_mutex);
                 auto itr = _dirs.find(name);
                 assert(itr != _dirs.end());
                 assert(dir.get() == itr->second.get());
@@ -88,7 +88,7 @@ AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::Se
                 writer->detach();
             }
         } else {
-            std::lock_guard<std::shared_timed_mutex> guard(_mutex);
+            std::lock_guard<std::shared_mutex> guard(_mutex);
             auto itr = _dirs.find(name);
             if (itr != _dirs.end()) {
                 assert(dir.get() != itr->second.get());

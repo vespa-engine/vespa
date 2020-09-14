@@ -345,7 +345,7 @@ namespace {
 constexpr double NEVER(-1.0);
 
 void
-writeDomainDir(std::shared_lock<std::shared_timed_mutex> &guard,
+writeDomainDir(std::shared_lock<std::shared_mutex> &guard,
                vespalib::string dir,
                vespalib::string domainList,
                const std::map<vespalib::string, std::shared_ptr<Domain>> &domains)

@@ -740,7 +740,7 @@ PersistenceEngine::populateInitialBucketDB(const WriteGuard & guard, BucketSpace
     trHandler.await();
 }
 
-std::unique_lock<std::shared_timed_mutex>
+std::unique_lock<std::shared_mutex>
 PersistenceEngine::getWLock() const
 {
     return WriteGuard(_rwMutex);

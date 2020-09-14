@@ -232,9 +232,9 @@ protected:
 public:
     class EnumModifier
     {
-        std::unique_lock<std::shared_timed_mutex> _enumLock;
+        std::unique_lock<std::shared_mutex> _enumLock;
     public:
-        EnumModifier(std::shared_timed_mutex &lock, attribute::InterlockGuard &interlockGuard)
+        EnumModifier(std::shared_mutex &lock, attribute::InterlockGuard &interlockGuard)
             : _enumLock(lock)
         {
             (void) interlockGuard;
@@ -575,7 +575,7 @@ private:
     BaseName                              _baseFileName;
     Config                                _config;
     std::shared_ptr<attribute::Interlock> _interlock;
-    mutable std::shared_timed_mutex       _enumLock;
+    mutable std::shared_mutex       _enumLock;
     GenerationHandler                     _genHandler;
     GenerationHolder                      _genHolder;
     Status                                _status;
@@ -606,7 +606,7 @@ private:
      * Used to regulate access to critical resources. Apply the
      * reader/writer guards.
      */
-    std::shared_timed_mutex & getEnumLock() { return _enumLock; }
+    std::shared_mutex & getEnumLock() { return _enumLock; }
 
     friend class ComponentGuard<AttributeVector>;
     friend class AttributeValueGuard;
