@@ -45,36 +45,24 @@ public final class ConfigRetriever {
         this.componentSubscriber = subscribe.apply(componentSubscriberKeys);
     }
 
-    /**
-     * Loop forever until we get config
-     */
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
                                      long leastGeneration,
                                      boolean restartOnRedeploy) {
+        // Loop until we get config.
         while (true) {
-            if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty())
-                throw new IllegalArgumentException("Component config keys [" + componentConfigKeys +
-                                                   "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
-
-            log.log(FINE, "getConfigs: " + componentConfigKeys);
-            Set<ConfigKey<? extends ConfigInstance>> allKeys = new HashSet<>(componentConfigKeys);
-            allKeys.addAll(bootstrapKeys);
-            setupComponentSubscriber(allKeys);
-
-            Optional<ConfigSnapshot> maybeSnapshot = getConfigsOptional(leastGeneration, restartOnRedeploy);
+            Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, restartOnRedeploy);
             if (maybeSnapshot.isPresent()) {
-                ConfigSnapshot snapshot = maybeSnapshot.get();
-                resetComponentSubscriberIfBootstrap(snapshot);
-                return snapshot;
+                var configSnapshot = maybeSnapshot.get();
+                resetComponentSubscriberIfBootstrap(configSnapshot);
+                return configSnapshot;
             }
         }
     }
 
-    public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys, long leastGeneration) {
+    ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys, long leastGeneration) {
         return getConfigs(componentConfigKeys, leastGeneration, false);
     }
 
-    // TODO: duplicate code, let getConfigs call this.
     Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
                                             long leastGeneration,
                                             boolean restartOnRedeploy) {
@@ -88,9 +76,7 @@ public final class ConfigRetriever {
         allKeys.addAll(bootstrapKeys);
         setupComponentSubscriber(allKeys);
 
-        Optional<ConfigSnapshot> maybeSnapshot = getConfigsOptional(leastGeneration, restartOnRedeploy);
-        maybeSnapshot.ifPresent(this::resetComponentSubscriberIfBootstrap);
-        return maybeSnapshot;
+        return getConfigsOptional(leastGeneration, restartOnRedeploy);
     }
 
     private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean restartOnRedeploy) {
