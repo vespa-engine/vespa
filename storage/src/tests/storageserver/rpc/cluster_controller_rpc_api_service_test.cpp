@@ -11,7 +11,6 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vdstestlib/config/dirconfig.hpp>
 #include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>

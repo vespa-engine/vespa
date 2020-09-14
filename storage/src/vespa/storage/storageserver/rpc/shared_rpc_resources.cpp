@@ -80,7 +80,8 @@ SharedRpcResources::~SharedRpcResources() {
 }
 
 void SharedRpcResources::start_server_and_register_slobrok(vespalib::stringref my_handle) {
-    LOG(debug, "Starting main RPC supervisor on port %d", _rpc_server_port);
+    LOG(debug, "Starting main RPC supervisor on port %d with slobrok handle '%s'",
+        _rpc_server_port, vespalib::string(my_handle).c_str());
     if (!_orb->Listen(_rpc_server_port)) {
         throw vespalib::IllegalStateException(vespalib::make_string("Failed to listen to RPC port %d", _rpc_server_port),
                                               VESPA_STRLOC);
