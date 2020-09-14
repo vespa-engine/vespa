@@ -263,11 +263,6 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public void addRemoteSession(RemoteSession session) {
-        remoteSessionCache.putSession(session);
-        metrics.incAddedSessions();
-    }
-
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getRemoteSessions()) {
@@ -348,7 +343,6 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
         RemoteSession remoteSession = createRemoteSession(sessionId);
         loadSessionIfActive(remoteSession);
-        addRemoteSession(remoteSession);
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);
         updateSessionStateWatcher(remoteSession);
