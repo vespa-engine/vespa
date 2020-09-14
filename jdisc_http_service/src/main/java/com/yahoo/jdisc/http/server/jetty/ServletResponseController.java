@@ -164,6 +164,7 @@ public class ServletResponseController {
 
     private void setResponse(Response jdiscResponse) {
         synchronized (monitor) {
+            servletRequest.setAttribute(HttpResponseStatisticsCollector.requestTypeAttribute, jdiscResponse.getRequestType());
             if (responseCommitted) {
                 log.log(Level.FINE,
                         jdiscResponse.getError(),

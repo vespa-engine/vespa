@@ -1028,10 +1028,9 @@ public class HttpServerTest {
 
         @Override
         public ContentChannel handleRequest(Request request, ResponseHandler handler) {
-            ContentChannel channel = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
-            if (requestType != null)
-                request.setRequestType(requestType);
-            return channel;
+            Response response = new Response(OK);
+            response.setRequestType(requestType);
+            return handler.handleResponse(response);
         }
     }
 
