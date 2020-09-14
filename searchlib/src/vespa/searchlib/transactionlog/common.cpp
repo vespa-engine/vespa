@@ -121,11 +121,13 @@ Packet::add(const Packet::Entry & e)
     _range.to(e.serial());
 }
 
-CommitChunk::CommitChunk()
-        : _data(size_t(-1)),
-          _callBacks(),
-          _firstArrivalTime()
-{}
+CommitChunk::CommitChunk(size_t reserveBytes, size_t reserveCount)
+    : _data(reserveBytes),
+      _callBacks(),
+      _firstArrivalTime()
+{
+    _callBacks.reserve(reserveCount);
+}
 
 CommitChunk::~CommitChunk() = default;
 

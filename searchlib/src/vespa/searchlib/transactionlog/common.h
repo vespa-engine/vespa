@@ -106,7 +106,7 @@ public:
 
 class CommitChunk {
 public:
-    CommitChunk();
+    CommitChunk(size_t reserveBytes, size_t reserveCount);
     ~CommitChunk();
     void add(const Packet & packet, Writer::DoneCallback onDone);
     size_t sizeBytes() const { return _data.sizeBytes(); }
