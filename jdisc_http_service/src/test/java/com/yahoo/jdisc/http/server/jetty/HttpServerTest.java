@@ -596,14 +596,13 @@ public class HttpServerTest {
 
         {
             driver.client().newGet("/status.html").execute();
-            driver.client().newGet("/status.html").execute();
             List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
             assertEquals(1, stats.size());
             assertEquals("http", stats.get(0).scheme);
             assertEquals("GET", stats.get(0).method);
             assertEquals("http.status.2xx", stats.get(0).name);
             assertEquals("read", stats.get(0).requestType);
-            assertEquals(2, stats.get(0).value);
+            assertEquals(1, stats.get(0).value);
         }
 
         {
