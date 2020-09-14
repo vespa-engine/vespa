@@ -61,14 +61,15 @@ private:
     uint64_t size(const vespalib::LockGuard & guard) const;
     void cleanSessions();
     vespalib::string dir() const { return getDir(_baseDir, _name); }
-    void addPart(int64_t partId, bool isLastPart);
+    void addPart(SerialNum partId, bool isLastPart);
+    DomainPartSP optionallyRotateFile(SerialNum serialNum);
 
     using SerialNumList = std::vector<SerialNum>;
 
     SerialNumList scanDir();
 
     using SessionList = std::map<int, std::shared_ptr<Session>>;
-    using DomainPartList = std::map<int64_t, DomainPartSP>;
+    using DomainPartList = std::map<SerialNum, DomainPartSP>;
     using DurationSeconds = std::chrono::duration<double>;
 
     DomainConfig           _config;

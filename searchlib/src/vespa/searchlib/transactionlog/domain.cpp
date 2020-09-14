@@ -10,6 +10,7 @@
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -58,9 +59,9 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
         throw runtime_error(fmt("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
     }
     SerialNumList partIdVector = scanDir();
-    const int64_t lastPart = partIdVector.empty() ? 0 : partIdVector.back();
-    for (const int64_t partId : partIdVector) {
-        if ( partId != -1) {
+    const SerialNum lastPart = partIdVector.empty() ? 0 : partIdVector.back();
+    for (const SerialNum partId : partIdVector) {
+        if ( partId != std::numeric_limits<SerialNum>::max()) {
             _executor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
         }
     }
@@ -84,7 +85,8 @@ Domain::setConfig(const DomainConfig & cfg) {
     return *this;
 }
 
-void Domain::addPart(int64_t partId, bool isLastPart) {
+void
+Domain::addPart(SerialNum partId, bool isLastPart) {
     auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _config.getEncoding(),
                                            _config.getCompressionlevel(), _fileHeaderContext, isLastPart);
     if (dp->size() == 0) {
@@ -288,28 +290,34 @@ waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
-void
-Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
-{
-    (void) onDone;
+DomainPart::SP
+Domain::optionallyRotateFile(SerialNum serialNum) {
     DomainPart::SP dp(_parts.rbegin()->second);
-    vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
-    Packet::Entry entry;
-    entry.deserialize(is);
     if (dp->byteSize() > _config.getPartSizeLimit()) {
         waitPendingSync(_syncMonitor, _pendingSync);
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _config.getEncoding(),
+        dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _config.getEncoding(),
                                           _config.getCompressionlevel(), _fileHeaderContext, false);
         {
             LockGuard guard(_lock);
-            _parts[entry.serial()] = dp;
+            _parts[serialNum] = dp;
+            assert(_parts.rbegin()->first == serialNum);
         }
-        dp = _parts.rbegin()->second;
         vespalib::File::sync(dir());
     }
+    return dp;
+}
+
+void
+Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
+{
+    (void) onDone;
+    vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
+    Packet::Entry entry;
+    entry.deserialize(is);
+    DomainPart::SP dp = optionallyRotateFile(entry.serial());
     dp->commit(entry.serial(), packet);
     cleanSessions();
 }
