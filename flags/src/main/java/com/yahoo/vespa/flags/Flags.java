@@ -196,6 +196,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_DIRECT_STORAGE_API_RPC = defineFeatureFlag(
+            "use-direct-storage-api-rpc", false,
+            "Whether to use direct RPC for Storage API communication between content cluster nodes.",
+            "Takes effect at restart of distributor and content node process",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag HOST_HARDENING = defineFeatureFlag(
             "host-hardening", false,
             "Whether to enable host hardening Linux baseline.",
