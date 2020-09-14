@@ -9,17 +9,20 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.container.Container;
+import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
-import com.yahoo.container.core.config.HandlersConfigurerDi;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.osgi.MockOsgi;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -135,6 +138,14 @@ public class HandlersConfigurerTestWrapper {
             protected void configure() {
                 // Needed by e.g. SearchHandler
                 bind(Linguistics.class).to(SimpleLinguistics.class).in(Scopes.SINGLETON);
+                bind(ContainerThreadPool.class).toInstance(
+                        new ContainerThreadPool(
+                                new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder()),
+                                new Metric() {
+                                    @Override public void set(String key, Number val, Context ctx) {}
+                                    @Override public void add(String key, Number val, Context ctx) {}
+                                    @Override public Context createContext(Map<String, ?> properties) { return null;}
+                                }));
             }
         });
     }
