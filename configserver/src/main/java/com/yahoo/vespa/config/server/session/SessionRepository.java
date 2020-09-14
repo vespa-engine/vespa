@@ -208,6 +208,7 @@ public class SessionRepository {
         return candidate.getStatus() == Session.Status.ACTIVATE;
     }
 
+    // Will delete session data in ZooKeeper and file system
     public void deleteLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
         try (Lock lock = lock(sessionId)) {
@@ -366,9 +367,13 @@ public class SessionRepository {
 
     public void delete(RemoteSession remoteSession) {
         LocalSession localSession = getLocalSession(remoteSession.getSessionId());
-        if (localSession != null)
-            deleteLocalSession(localSession);
         remoteSession.deactivate();
+        if (localSession == null) {
+            // This change will be picked up by directoryCache in this class, which will do the rest of the cleanup
+            remoteSession.delete();
+        } else {
+            deleteLocalSession(localSession);
+        }
     }
 
     void prepare(RemoteSession session) {
