@@ -13,8 +13,6 @@ import com.yahoo.vespa.model.container.component.UserBindingPattern;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Einar M R Rosenvinge
@@ -110,17 +108,6 @@ public class ContainerDocumentApi {
             double vcpu = vcpu(cluster);
             if (vcpu == 0) return FALLBACK_CORE_POOL_SIZE;
             return Math.max(1, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactor * 0.5));
-        }
-
-        private static double vcpu(ContainerCluster<?> cluster) {
-            List<Double> vcpus = cluster.getContainers().stream()
-                    .filter(c -> c.getHostResource() != null && c.getHostResource().realResources() != null)
-                    .map(c -> c.getHostResource().realResources().vcpu())
-                    .distinct()
-                    .collect(Collectors.toList());
-            // We can only use host resource for calculation if all container nodes in the cluster are homogeneous (in terms of vcpu)
-            if (vcpus.size() != 1 || vcpus.get(0) == 0) return 0;
-            return vcpus.get(0);
         }
     }
 

@@ -11,7 +11,6 @@ import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Component definition for {@link com.yahoo.search.handler.SearchHandler}
@@ -52,7 +51,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
             builder.keepAliveTime(5.0);
 
             double threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
-            double vcpu = vcpu();
+            double vcpu = vcpu(cluster);
             if (threadPoolSizeFactor <= 0 || vcpu == 0) {
                 builder.maxThreads(500);
                 builder.minThreads(500);
@@ -70,15 +69,6 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
             }
         }
 
-        private double vcpu() {
-            List<Double> vcpus = cluster.getContainers().stream()
-                    .filter(c -> c.getHostResource() != null && c.getHostResource().realResources() != null)
-                    .map(c -> c.getHostResource().realResources().vcpu())
-                    .distinct()
-                    .collect(Collectors.toList());
-            // We can only use host resource for calculation if all container nodes in the cluster are homogeneous (in terms of vcpu)
-            if (vcpus.size() != 1 || vcpus.get(0) == 0) return 0;
-            return vcpus.get(0);
-        }
+
     }
 }

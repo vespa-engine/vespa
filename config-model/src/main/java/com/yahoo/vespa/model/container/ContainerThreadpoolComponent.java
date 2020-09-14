@@ -7,6 +7,9 @@ import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Component definition for a {@link java.util.concurrent.Executor} using {@link ContainerThreadPool}.
  *
@@ -26,4 +29,15 @@ public class ContainerThreadpoolComponent extends SimpleComponent implements Con
     }
 
     @Override public void getConfig(ContainerThreadpoolConfig.Builder builder) { builder.name(this.name); }
+
+    protected static double vcpu(ContainerCluster<?> cluster) {
+        List<Double> vcpus = cluster.getContainers().stream()
+                .filter(c -> c.getHostResource() != null && c.getHostResource().realResources() != null)
+                .map(c -> c.getHostResource().realResources().vcpu())
+                .distinct()
+                .collect(Collectors.toList());
+        // We can only use host resource for calculation if all container nodes in the cluster are homogeneous (in terms of vcpu)
+        if (vcpus.size() != 1 || vcpus.get(0) == 0) return 0;
+        return vcpus.get(0);
+    }
 }
