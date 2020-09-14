@@ -2,6 +2,7 @@
 
 #include <vespa/searchlib/transactionlog/chunks.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <atomic>
 
 #include <vespa/log/log.h>
 LOG_SETUP("translog_chunks_test");
@@ -12,6 +13,7 @@ using vespalib::nbostream;
 using vespalib::compression::CompressionConfig;
 
 constexpr const char * TEXT = "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz";
+constexpr const char * TEXT2 = "something else";
 
 void
 verifySerializationAndDeserialization(IChunk & org, size_t numEntries, Encoding expected) {
@@ -69,4 +71,51 @@ TEST("test serialization and deserialization of uncompressable zstd") {
     verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
 }
 
+TEST("test empty commitchunk") {
+    CommitChunk cc(1,1);
+    EXPECT_EQUAL(0ms, cc.age());
+    EXPECT_EQUAL(0u, cc.sizeBytes());
+    EXPECT_EQUAL(0u, cc.getNumCallBacks());
+}
+
+struct Counter : public search::IDestructorCallback {
+    std::atomic<uint32_t> & _counter;
+    Counter(std::atomic<uint32_t> & counter) : _counter(counter) { _counter++; }
+    ~Counter() override { _counter--; }
+};
+
+TEST("test single element commitchunk") {
+    std::atomic<uint32_t> counter(0);
+    {
+        Packet p(100);
+        p.add(Packet::Entry(1, 1, ConstBufferRef(TEXT, strlen(TEXT))));
+        CommitChunk cc(0, 0);
+
+        cc.add(p, std::make_shared<Counter>(counter));
+        EXPECT_EQUAL(1u, counter);
+        EXPECT_GREATER(cc.age(), 0ms);
+        EXPECT_EQUAL(150u, cc.sizeBytes());
+        EXPECT_EQUAL(1u, cc.getNumCallBacks());
+    }
+    EXPECT_EQUAL(0u, counter);
+}
+
+TEST("test multi element commitchunk") {
+    std::atomic<uint32_t> counter(0);
+    {
+        Packet p(100);
+        p.add(Packet::Entry(1, 3, ConstBufferRef(TEXT, strlen(TEXT))));
+        CommitChunk cc(1000, 10);
+
+        cc.add(p, std::make_shared<Counter>(counter));
+        Packet p2(100);
+        p2.add(Packet::Entry(2, 2, ConstBufferRef(TEXT2, strlen(TEXT2))));
+        cc.add(p2, std::make_shared<Counter>(counter));
+        EXPECT_EQUAL(2u, counter);
+        EXPECT_GREATER(cc.age(), 0ms);
+        EXPECT_EQUAL(180u, cc.sizeBytes());
+        EXPECT_EQUAL(2u, cc.getNumCallBacks());
+    }
+    EXPECT_EQUAL(0u, counter);
+}
 TEST_MAIN() { TEST_RUN_ALL(); }
