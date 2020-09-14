@@ -70,10 +70,10 @@ private:
     const IResourceWriteFilter             &_writeFilter;
     std::unordered_map<BucketSpace, ClusterState::SP, BucketSpace::hash> _clusterStates;
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
-    mutable std::shared_timed_mutex         _rwMutex;
+    mutable std::shared_mutex         _rwMutex;
 
-    using ReadGuard = std::shared_lock<std::shared_timed_mutex>;
-    using WriteGuard = std::unique_lock<std::shared_timed_mutex>;
+    using ReadGuard = std::shared_lock<std::shared_mutex>;
+    using WriteGuard = std::unique_lock<std::shared_mutex>;
 
     IPersistenceHandler * getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
     HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard) const;

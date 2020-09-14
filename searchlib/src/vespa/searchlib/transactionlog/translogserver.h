@@ -79,8 +79,8 @@ private:
     static const Session::SP & getSession(FRT_RPCRequest *req);
 
     using DomainList = std::map<vespalib::string, DomainSP >;
-    using ReadGuard = std::shared_lock<std::shared_timed_mutex>;
-    using WriteGuard = std::unique_lock<std::shared_timed_mutex>;
+    using ReadGuard = std::shared_lock<std::shared_mutex>;
+    using WriteGuard = std::unique_lock<std::shared_mutex>;
 
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
@@ -90,7 +90,7 @@ private:
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
     DomainList                          _domains;
-    mutable std::shared_timed_mutex     _domainMutex;;          // Protects _domains
+    mutable std::shared_mutex     _domainMutex;;          // Protects _domains
     std::condition_variable             _domainCondition;
     std::mutex                          _fileLock;      // Protects the creating and deleting domains including file system operations.
     document::Queue<FRT_RPCRequest *>   _reqQ;
