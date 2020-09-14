@@ -104,6 +104,8 @@ endfunction()
 
 function(setup_vespa_default_build_settings_debian_10)
   message("-- Setting up default build settings for debian 10")
+  set(DEFAULT_EXTRA_LINK_DIRECTORY "${VESPA_DEPS}/lib" PARENT_SCOPE)
+  set(DEFAULT_EXTRA_INCLUDE_DIRECTORY "${VESPA_DEPS}/include" PARENT_SCOPE)
   set(DEFAULT_VESPA_LLVM_VERSION "7" PARENT_SCOPE)
 endfunction()
 
