@@ -6,7 +6,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/util/queue.h>
 #include <vespa/fnet/frt/invokable.h>
-#include <mutex>
+#include <shared_mutex>
 
 class FRT_Supervisor;
 class FNET_Transport;
@@ -79,6 +79,8 @@ private:
     static const Session::SP & getSession(FRT_RPCRequest *req);
 
     using DomainList = std::map<vespalib::string, DomainSP >;
+    using ReadGuard = std::shared_lock<std::shared_timed_mutex>;
+    using WriteGuard = std::unique_lock<std::shared_timed_mutex>;
 
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
@@ -88,13 +90,11 @@ private:
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
     DomainList                          _domains;
-    mutable std::mutex                  _domainMutex;          // Protects _domains
+    mutable std::shared_timed_mutex     _domainMutex;;          // Protects _domains
     std::condition_variable             _domainCondition;
     std::mutex                          _fileLock;      // Protects the creating and deleting domains including file system operations.
     document::Queue<FRT_RPCRequest *>   _reqQ;
     const common::FileHeaderContext    &_fileHeaderContext;
-    using Guard = std::lock_guard<std::mutex>;
-    using MonitorGuard = std::unique_lock<std::mutex>;
 };
 
 }
