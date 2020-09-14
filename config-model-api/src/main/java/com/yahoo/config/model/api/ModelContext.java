@@ -89,6 +89,9 @@ public interface ModelContext {
 
         boolean useThreePhaseUpdates();
 
+        // TODO Remove on 7.XXX when this is default on.
+        boolean useDirectStorageApiRpc();
+
         default String proxyProtocol() { return "https+proxy-protocol"; } // TODO bjorncs: Remove after end of May
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 

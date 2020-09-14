@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
+import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -978,6 +979,33 @@ public class ContentClusterTest extends ContentBaseTest {
     public void default_distributor_three_phase_update_config_controlled_by_properties() {
         assertFalse(resolveThreePhaseUpdateConfigWithFeatureFlag(false));
         assertTrue(resolveThreePhaseUpdateConfigWithFeatureFlag(true));
+    }
+
+    void assertDirectStorageApiRpcConfig(boolean expUseDirectStorageApiRpc, ContentNode node) {
+        var builder = new StorCommunicationmanagerConfig.Builder();
+        node.getConfig(builder);
+        var config = new StorCommunicationmanagerConfig(builder);
+        assertEquals(expUseDirectStorageApiRpc, config.use_direct_storageapi_rpc());
+    }
+
+    void assertDirectStorageApiRpcFlagIsPropagatedToConfig(boolean useDirectStorageApiRpc) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseDirectStorageApiRpc(useDirectStorageApiRpc));
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        assertFalse(cc.getDistributorNodes().getChildren().isEmpty());
+        for (Distributor d : cc.getDistributorNodes().getChildren().values()) {
+            assertDirectStorageApiRpcConfig(useDirectStorageApiRpc, d);
+        }
+        assertFalse(cc.getStorageNodes().getChildren().isEmpty());
+        for (StorageNode node : cc.getStorageNodes().getChildren().values()) {
+            assertDirectStorageApiRpcConfig(useDirectStorageApiRpc, node);
+        }
+    }
+
+    @Test
+    public void use_direct_storage_api_rpc_config_is_controlled_by_properties() {
+        assertDirectStorageApiRpcFlagIsPropagatedToConfig(false);
+        assertDirectStorageApiRpcFlagIsPropagatedToConfig(true);
     }
 
 }
