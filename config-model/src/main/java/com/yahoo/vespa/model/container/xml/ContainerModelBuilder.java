@@ -416,7 +416,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addIncludes(searchElement);
         cluster.setSearch(buildSearch(deployState, cluster, searchElement));
 
-        addSearchHandler(cluster, searchElement);
+        addSearchHandler(cluster, searchElement, deployState);
         addGUIHandler(cluster);
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
@@ -780,14 +780,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
 
-    private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
+    private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement, DeployState deployState) {
         // Magic spell is needed to receive the chains config :-|
         cluster.addComponent(new ProcessingHandler<>(cluster.getSearch().getChains(),
                                                      "com.yahoo.search.searchchain.ExecutionFactory"));
 
         cluster.addComponent(
-                new SearchHandler(
-                        cluster.getSearch().getChains(), serverBindings(searchElement, SearchHandler.DEFAULT_BINDING)));
+                new SearchHandler(cluster, serverBindings(searchElement, SearchHandler.DEFAULT_BINDING), deployState));
     }
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
