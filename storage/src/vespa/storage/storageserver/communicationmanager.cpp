@@ -564,7 +564,7 @@ CommunicationManager::sendCommand(
     switch (address.getProtocol()) {
     case api::StorageMessageAddress::STORAGE:
     {
-        LOG(info, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
+        LOG(debug, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
         if (_use_direct_storageapi_rpc) {
             _storage_api_rpc_service->send_rpc_v1_request(msg);
         } else {

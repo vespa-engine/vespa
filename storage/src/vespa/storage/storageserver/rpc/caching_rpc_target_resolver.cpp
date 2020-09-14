@@ -55,7 +55,7 @@ CachingRpcTargetResolver::consider_update_target(const vespalib::string& slobrok
         && (itr->second->_target->is_valid())
         && (itr->second->_spec == connection_spec))
     {
-        LOG(info, "Updating existing mapping '%s' -> '%s' (gen %u) to gen %u",
+        LOG(debug, "Updating existing mapping '%s' -> '%s' (gen %u) to gen %u",
             slobrok_id.c_str(), connection_spec.c_str(), itr->second->_slobrok_gen, curr_slobrok_gen);
         itr->second->_slobrok_gen = curr_slobrok_gen;
         return itr->second;
@@ -72,7 +72,7 @@ CachingRpcTargetResolver::insert_new_target_mapping(const vespalib::string& slob
     assert(target);
     std::shared_ptr<RpcTarget> rpc_target(std::move(target));
     _targets[slobrok_id] = rpc_target;
-    LOG(info, "Added mapping '%s' -> '%s' at gen %u", slobrok_id.c_str(), connection_spec.c_str(), curr_slobrok_gen);
+    LOG(debug, "Added mapping '%s' -> '%s' at gen %u", slobrok_id.c_str(), connection_spec.c_str(), curr_slobrok_gen);
     return rpc_target;
 }
 
@@ -86,8 +86,7 @@ CachingRpcTargetResolver::resolve_rpc_target(const api::StorageMessageAddress& a
     }
     auto specs = _slobrok_mirror.lookup(slobrok_id); // FIXME string type mismatch; implicit conv!
     if (specs.empty()) {
-        // TODO: Replace all info logging with debug logging.
-        LOG(info, "Found no mapping for '%s'", slobrok_id.c_str());
+        LOG(debug, "Found no mapping for '%s'", slobrok_id.c_str());
         // TODO return potentially stale existing target if no longer existing in SB?
         // TODO or clear any existing mapping?
         return {};

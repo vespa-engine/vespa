@@ -141,7 +141,7 @@ void StorageApiRpcService::uncompress_rpc_payload(
 }
 
 void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
-    LOG(info, "Server: received rpc.v1 request");
+    LOG(debug, "Server: received rpc.v1 request");
     // TODO do we need to manually check the parameter/return spec here?
     const auto& params = *req->GetParams();
     protobuf::RequestHeader hdr;
@@ -168,7 +168,7 @@ void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
 }
 
 void StorageApiRpcService::encode_rpc_v1_response(FRT_RPCRequest& request, const api::StorageReply& reply) {
-    LOG(info, "Server: encoding rpc.v1 response header and payload");
+    LOG(debug, "Server: encoding rpc.v1 response header and payload");
     auto* ret = request.GetReturn();
 
     // TODO skip encoding header altogether if no relevant fields set?
@@ -182,7 +182,7 @@ void StorageApiRpcService::encode_rpc_v1_response(FRT_RPCRequest& request, const
 }
 
 void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageCommand> cmd) {
-    LOG(info, "Client: sending rpc.v1 request for message of type %s", cmd->getType().getName().c_str());
+    LOG(debug, "Client: sending rpc.v1 request for message of type %s", cmd->getType().getName().c_str());
 
     assert(cmd->getAddress() != nullptr);
     auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress());
@@ -247,14 +247,14 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     auto* req_ctx = static_cast<RpcRequestContext*>(req->GetContext()._value.VOIDP);
     if (!req->CheckReturnTypes("bixbix")) {
         api::ReturnCode error = map_frt_error_to_storage_api_error(*req, req_ctx->_timeout);
-        LOG(info, "Client: received rpc.v1 error response: %s", error.toString().c_str());
+        LOG(debug, "Client: received rpc.v1 error response: %s", error.toString().c_str());
         auto error_reply = req_ctx->_originator_cmd->makeReply();
         error_reply->setResult(std::move(error));
         // TODO needs tracing of received-event!
         _message_dispatcher.dispatch_sync(std::move(error_reply));
         return;
     }
-    LOG(info, "Client: received rpc.v1 OK response");
+    LOG(debug, "Client: received rpc.v1 OK response");
 
     const auto& ret = *req->GetReturn();
     protobuf::ResponseHeader hdr;
