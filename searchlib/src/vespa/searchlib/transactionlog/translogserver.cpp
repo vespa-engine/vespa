@@ -205,13 +205,13 @@ TransLogServer::run()
 vespalib::duration
 TransLogServer::getChunkAgeLimit() const
 {
-    Guard domainGuard(_domainMutex);
+    ReadGuard domainGuard(_domainMutex);
     return _domainConfig.getChunkAgeLimit();
 }
 
 TransLogServer &
 TransLogServer::setDomainConfig(const DomainConfig & cfg) {
-    Guard domainGuard(_domainMutex);
+    WriteGuard domainGuard(_domainMutex);
     _domainConfig = cfg;
     for(auto &domain: _domains) {
         domain.second->setConfig(cfg);
@@ -223,7 +223,7 @@ DomainStats
 TransLogServer::getDomainStats() const
 {
     DomainStats retval;
-    Guard domainGuard(_domainMutex);
+    ReadGuard domainGuard(_domainMutex);
     for (const auto &elem : _domains) {
         retval[elem.first] = elem.second->getDomainInfo();
     }
@@ -234,7 +234,7 @@ std::vector<vespalib::string>
 TransLogServer::getDomainNames()
 {
     std::vector<vespalib::string> names;
-    Guard guard(_domainMutex);
+    ReadGuard guard(_domainMutex);
     for(const auto &domain: _domains) {
         names.push_back(domain.first);
     }
@@ -244,13 +244,12 @@ TransLogServer::getDomainNames()
 Domain::SP
 TransLogServer::findDomain(stringref domainName)
 {
-    Guard domainGuard(_domainMutex);
-    Domain::SP domain;
+    ReadGuard domainGuard(_domainMutex);
     DomainList::iterator found(_domains.find(domainName));
     if (found != _domains.end()) {
-        domain = found->second;
+        return found->second;
     }
-    return domain;
+    return DomainSP();
 }
 
 void
@@ -346,10 +345,10 @@ namespace {
 constexpr double NEVER(-1.0);
 
 void
-writeDomainDir(std::lock_guard<std::mutex> &guard,
+writeDomainDir(std::shared_lock<std::shared_timed_mutex> &guard,
                vespalib::string dir,
                vespalib::string domainList,
-               std::map<vespalib::string, std::shared_ptr<Domain>> &domains)
+               const std::map<vespalib::string, std::shared_ptr<Domain>> &domains)
 {
     (void) guard;
     vespalib::string domainListTmp(domainList + ".tmp");
@@ -443,13 +442,16 @@ TransLogServer::createDomain(FRT_RPCRequest *req)
     const char * domainName = params[0]._string._str;
     LOG(debug, "createDomain(%s)", domainName);
 
-    Guard createDeleteGuard(_fileLock);
+    std::lock_guard createDeleteGuard(_fileLock);
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
             domain = std::make_shared<Domain>(domainName, dir(), _executor, _domainConfig, _fileHeaderContext);
-            Guard domainGuard(_domainMutex);
-            _domains[domain->name()] = domain;
+            {
+                WriteGuard domainGuard(_domainMutex);
+                _domains[domain->name()] = domain;
+            }
+            ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
             LOG(warning, "Failed creating %s domain. Exception = %s", domainName, e.what());
@@ -471,18 +473,18 @@ TransLogServer::deleteDomain(FRT_RPCRequest *req)
     const char * domainName = params[0]._string._str;
     LOG(debug, "deleteDomain(%s)", domainName);
 
-    Guard createDeleteGuard(_fileLock);
+    std::lock_guard createDeleteGuard(_fileLock);
     Domain::SP domain(findDomain(domainName));
     if ( !domain || (domain->getNumSessions() == 0)) {
         try {
             if (domain) {
                 domain->markDeleted();
-                Guard domainGuard(_domainMutex);
+                WriteGuard domainGuard(_domainMutex);
                 _domains.erase(domainName);
             }
             vespalib::rmdir(Domain::getDir(dir(), domainName), true);
             vespalib::File::sync(dir());
-            Guard domainGuard(_domainMutex);
+            ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
             msg = make_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
@@ -523,7 +525,7 @@ TransLogServer::listDomains(FRT_RPCRequest *req)
     LOG(debug, "listDomains()");
 
     vespalib::string domains;
-    Guard domainGuard(_domainMutex);
+    ReadGuard domainGuard(_domainMutex);
     for(DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
         domains += it->second->name();
         domains += "\n";
