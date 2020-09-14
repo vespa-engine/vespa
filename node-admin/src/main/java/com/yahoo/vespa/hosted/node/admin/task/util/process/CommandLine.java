@@ -243,6 +243,10 @@ public class CommandLine {
         return this;
     }
 
+    /**
+     * WARNING: This will leave the child as a zombie process until this process dies.
+     * I.e. only use this just before or a limited number of times per host admin restart.
+     */
     public CommandLine doNotWaitForTermination() {
         this.waitForTermination = false;
         return this;
@@ -263,8 +267,6 @@ public class CommandLine {
     private CommandResult doExecute() {
         try (ChildProcess2 child = processFactory.spawn(this)) {
             if (!waitForTermination) {
-                // WARNING: This will leave the child as a zombie process until this process dies.
-                // I.e. only use this just before or a limited number of times per host admin restart.
                 return new CommandResult(this, 0, "");
             }
 
