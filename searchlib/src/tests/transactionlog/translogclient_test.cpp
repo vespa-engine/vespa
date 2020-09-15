@@ -4,6 +4,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -15,17 +16,22 @@ using namespace document;
 using namespace vespalib;
 using namespace std::chrono_literals;
 using search::index::DummyFileHeaderContext;
+using search::transactionlog::client::TransLogClient;
+using search::transactionlog::client::Session;
+using search::transactionlog::client::Visitor;
+using search::transactionlog::client::RPC;
+using search::transactionlog::client::Callback;
 
 namespace {
 
 bool createDomainTest(TransLogClient & tls, const vespalib::string & name, size_t preExistingDomains=0);
-TransLogClient::Session::UP openDomainTest(TransLogClient & tls, const vespalib::string & name);
-bool fillDomainTest(TransLogClient::Session * s1, const vespalib::string & name);
-void fillDomainTest(TransLogClient::Session * s1, size_t numPackets, size_t numEntries);
-void fillDomainTest(TransLogClient::Session * s1, size_t numPackets, size_t numEntries, size_t entrySize);
+std::unique_ptr<Session> openDomainTest(TransLogClient & tls, const vespalib::string & name);
+bool fillDomainTest(Session * s1, const vespalib::string & name);
+void fillDomainTest(Session * s1, size_t numPackets, size_t numEntries);
+void fillDomainTest(Session * s1, size_t numPackets, size_t numEntries, size_t entrySize);
 uint32_t countFiles(const vespalib::string &dir);
-void checkFilledDomainTest(const TransLogClient::Session::UP &s1, size_t numEntries);
-bool visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, const vespalib::string & name);
+void checkFilledDomainTest(Session &s1, size_t numEntries);
+bool visitDomainTest(TransLogClient & tls, Session * s1, const vespalib::string & name);
 void createAndFillDomain(const vespalib::string & name, Encoding encoding, size_t preExistingDomains);
 void verifyDomain(const vespalib::string & name);
 
@@ -33,7 +39,7 @@ vespalib::string
 myhex(const void * b, size_t sz)
 {
     static const char * hextab="0123456789ABCDEF";
-    const unsigned char * c = static_cast<const unsigned char *>(b);
+    const auto * c = static_cast<const unsigned char *>(b);
     vespalib::string s;
     s.reserve(sz*2);
     for (size_t i=0; i < sz; i++) {
@@ -43,11 +49,11 @@ myhex(const void * b, size_t sz)
     return s;
 }
 
-class CallBackTest : public TransLogClient::Visitor::Callback
+class CallBackTest : public Callback
 {
 private:
-    virtual RPC::Result receive(const Packet & packet) override;
-    virtual void eof()    override { _eof = true; }
+    RPC::Result receive(const Packet & packet) override;
+    void eof()    override { _eof = true; }
     typedef std::map<SerialNum, std::unique_ptr<ByteBuffer>> PacketMap;
     PacketMap _packetMap;
 public:
@@ -65,7 +71,7 @@ CallBackTest::receive(const Packet & p)
 {
     nbostream_longlivedbuf  h(p.getHandle().data(), p.getHandle().size());
     LOG(info,"CallBackTest::receive (%zu, %zu, %zu)(%s)", h.rp(), h.size(), h.capacity(), myhex(h.peek(), h.size()).c_str());
-    while(h.size() > 0) {
+    while( ! h.empty()) {
         Packet::Entry e;
         e.deserialize(h);
         LOG(info,"CallBackTest::receive (%zu, %zu, %zu)(%s)", h.rp(), h.size(), h.capacity(), myhex(e.data().c_str(), e.data().size()).c_str());
@@ -74,13 +80,13 @@ CallBackTest::receive(const Packet & p)
     return RPC::OK;
 }
 
-class CallBackManyTest : public TransLogClient::Visitor::Callback
+class CallBackManyTest : public Callback
 {
 private:
-    virtual RPC::Result receive(const Packet & packet) override;
-    virtual void eof()    override { _eof = true; }
+    RPC::Result receive(const Packet & packet) override;
+    void eof()    override { _eof = true; }
 public:
-    CallBackManyTest(size_t start) : _eof(false), _count(start), _value(start) { }
+    explicit CallBackManyTest(size_t start) : _eof(false), _count(start), _value(start) { }
     void clear() { _eof = false; _count = 0; _value = 0; }
     bool      _eof;
     size_t    _count;
@@ -91,7 +97,7 @@ RPC::Result
 CallBackManyTest::receive(const Packet & p)
 {
     nbostream_longlivedbuf h(p.getHandle().data(), p.getHandle().size());
-    for(;h.size() > 0; _count++, _value++) {
+    for(; ! h.empty(); _count++, _value++) {
         Packet::Entry e;
         e.deserialize(h);
         assert(e.data().size() == 8);
@@ -103,17 +109,22 @@ CallBackManyTest::receive(const Packet & p)
     return RPC::OK;
 }
 
-class CallBackUpdate : public TransLogClient::Visitor::Callback
+class CallBackUpdate : public Callback
 {
 public:
     typedef std::map<SerialNum, Identifiable *> PacketMap;
 private:
-    virtual RPC::Result receive(const Packet & packet) override;
-    virtual void eof()    override { _eof = true; }
+    RPC::Result receive(const Packet & packet) override;
+    void eof()    override { _eof = true; }
     PacketMap _packetMap;
 public:
     CallBackUpdate() : _eof(false) { }
-    virtual ~CallBackUpdate()         { while (_packetMap.begin() != _packetMap.end()) { delete _packetMap.begin()->second; _packetMap.erase(_packetMap.begin()); } }
+    ~CallBackUpdate() override {
+        while (_packetMap.begin() != _packetMap.end()) {
+            delete _packetMap.begin()->second;
+            _packetMap.erase(_packetMap.begin());
+        }
+    }
     bool hasSerial(SerialNum n) const { return (_packetMap.find(n) != _packetMap.end()); }
     const PacketMap & map() const { return _packetMap; }
     bool      _eof;
@@ -124,14 +135,14 @@ RPC::Result
 CallBackUpdate::receive(const Packet & packet)
 {
     nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
-    while (h.size() > 0) {
+    while ( ! h.empty() ) {
         Packet::Entry e;
         e.deserialize(h);
         const vespalib::Identifiable::RuntimeClass * cl(vespalib::Identifiable::classFromId(e.type()));
         if (cl) {
             vespalib::Identifiable * obj(cl->create());
             if (obj->inherits(Identifiable::classId)) {
-                Identifiable * ser = static_cast<Identifiable *>(obj);
+                auto * ser = static_cast<Identifiable *>(obj);
                 nbostream is(e.data().c_str(), e.data().size());
                 try {
                     is >> *ser;
@@ -140,8 +151,8 @@ CallBackUpdate::receive(const Packet & packet)
                     assert(false);
                     return RPC::ERROR;
                 }
-                assert(is.state() == nbostream::ok);
-                assert(is.size() == 0);
+                ASSERT_TRUE(is.state() == nbostream::ok);
+                ASSERT_TRUE(is.empty());
                 _packetMap[e.serial()] = ser;
             } else {
                 LOG(warning, "Packet::Entry(%" PRId64 ", %s) is not a Identifiable", e.serial(), cl->name());
@@ -153,11 +164,11 @@ CallBackUpdate::receive(const Packet & packet)
     return RPC::OK;
 }
 
-class CallBackStatsTest : public TransLogClient::Session::Callback
+class CallBackStatsTest : public Callback
 {
 private:
-    virtual RPC::Result receive(const Packet & packet) override;
-    virtual void eof()    override { _eof = true; }
+    RPC::Result receive(const Packet & packet) override;
+    void eof()    override { _eof = true; }
 public:
     CallBackStatsTest() : _eof(false),
                           _count(0), _inOrder(0),
@@ -177,7 +188,7 @@ RPC::Result
 CallBackStatsTest::receive(const Packet & p)
 {
     nbostream_longlivedbuf h(p.getHandle().data(), p.getHandle().size());
-    for(;h.size() > 0; ++_count) {
+    for(; ! h.empty(); ++_count) {
         Packet::Entry e;
         e.deserialize(h);
         SerialNum s = e.serial();
@@ -219,8 +230,8 @@ createDomainTest(TransLogClient & tls, const vespalib::string & name, size_t pre
     std::vector<vespalib::string> dir;
     tls.listDomains(dir);
     EXPECT_EQUAL (dir.size(), preExistingDomains);
-    TransLogClient::Session::UP s1 = tls.open(name);
-    ASSERT_TRUE (s1.get() == NULL);
+    auto s1 = tls.open(name);
+    ASSERT_FALSE (s1);
     retval = tls.create(name);
     ASSERT_TRUE (retval);
     dir.clear();
@@ -230,16 +241,16 @@ createDomainTest(TransLogClient & tls, const vespalib::string & name, size_t pre
     return retval;
 }
 
-TransLogClient::Session::UP
+std::unique_ptr<Session>
 openDomainTest(TransLogClient & tls, const vespalib::string & name)
 {
-    TransLogClient::Session::UP s1 = tls.open(name);
-    ASSERT_TRUE (s1.get() != NULL);
+    auto s1 = tls.open(name);
+    ASSERT_TRUE (s1);
     return s1;
 }
 
 bool
-fillDomainTest(TransLogClient::Session * s1, const vespalib::string & name)
+fillDomainTest(Session * s1, const vespalib::string & name)
 {
     bool retval(true);
     Packet::Entry e1(1, 1, vespalib::ConstBufferRef("Content in buffer A", 20));
@@ -279,7 +290,7 @@ fillDomainTest(TransLogClient::Session * s1, const vespalib::string & name)
 }
 
 void
-fillDomainTest(TransLogClient::Session * s1, size_t numPackets, size_t numEntries)
+fillDomainTest(Session * s1, size_t numPackets, size_t numEntries)
 {
     size_t value(0);
     for(size_t i=0; i < numPackets; i++) {
@@ -289,7 +300,7 @@ fillDomainTest(TransLogClient::Session * s1, size_t numPackets, size_t numEntrie
             p->add(e);
             if (p->sizeBytes() > DEFAULT_PACKET_SIZE){
                 ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
-                p.reset(new Packet(DEFAULT_PACKET_SIZE));
+                p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
             }
         }
         ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
@@ -300,7 +311,7 @@ using Counter = std::atomic<size_t>;
 
 class CountDone : public IDestructorCallback {
 public:
-    CountDone(Counter & inFlight) : _inFlight(inFlight) { ++_inFlight; }
+    explicit CountDone(Counter & inFlight) : _inFlight(inFlight) { ++_inFlight; }
     ~CountDone() override { --_inFlight; }
 private:
     Counter & _inFlight;
@@ -318,7 +329,7 @@ fillDomainTest(TransLogServer & s1, const vespalib::string & domain, size_t numP
             p->add(e);
             if ( p->sizeBytes() > DEFAULT_PACKET_SIZE ) {
                 s1.commit(domain, *p, std::make_shared<CountDone>(inFlight));
-                p.reset(new Packet(DEFAULT_PACKET_SIZE));
+                p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
             }
         }
         s1.commit(domain, *p, std::make_shared<CountDone>(inFlight));
@@ -333,7 +344,7 @@ fillDomainTest(TransLogServer & s1, const vespalib::string & domain, size_t numP
 
 
 void
-fillDomainTest(TransLogClient::Session * s1, size_t numPackets, size_t numEntries, size_t entrySize)
+fillDomainTest(Session * s1, size_t numPackets, size_t numEntries, size_t entrySize)
 {
     size_t value(0);
     std::vector<char> entryBuffer(entrySize); 
@@ -344,7 +355,7 @@ fillDomainTest(TransLogClient::Session * s1, size_t numPackets, size_t numEntrie
             p->add(e);
             if (p->sizeBytes() > DEFAULT_PACKET_SIZE){
                 ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
-                p.reset(new Packet(DEFAULT_PACKET_SIZE));
+                p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
             }
         }
         ASSERT_TRUE(s1->commit(vespalib::ConstBufferRef(p->getHandle().data(), p->getHandle().size())));
@@ -368,18 +379,18 @@ countFiles(const vespalib::string &dir)
 }
 
 void
-checkFilledDomainTest(const TransLogClient::Session::UP &s1, size_t numEntries)
+checkFilledDomainTest(Session &s1, size_t numEntries)
 {
     SerialNum b(0), e(0);
     size_t c(0);
-    EXPECT_TRUE(s1->status(b, e, c));
+    EXPECT_TRUE(s1.status(b, e, c));
     EXPECT_EQUAL(b, 1u);
     EXPECT_EQUAL(e, numEntries);
     EXPECT_EQUAL(c, numEntries);
 }
 
 bool
-visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, const vespalib::string & name)
+visitDomainTest(TransLogClient & tls, Session * s1, const vespalib::string & name)
 {
     bool retval(true);
 
@@ -391,8 +402,8 @@ visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, const vespal
     EXPECT_EQUAL(c, 3u);
 
     CallBackTest ca;
-    TransLogClient::Visitor::UP visitor = tls.createVisitor(name, ca);
-    ASSERT_TRUE(visitor.get());
+    auto visitor = tls.createVisitor(name, ca);
+    ASSERT_TRUE(visitor);
     EXPECT_TRUE( visitor->visit(0, 1) );
     for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
     EXPECT_TRUE( ca._eof );
@@ -451,7 +462,7 @@ void createAndFillDomain(const vespalib::string & name, Encoding encoding, size_
     TransLogClient tls("tcp/localhost:18377");
 
     createDomainTest(tls, name, preExistingDomains);
-    TransLogClient::Session::UP s1 = openDomainTest(tls, name);
+    auto s1 = openDomainTest(tls, name);
     fillDomainTest(s1.get(), name);
 }
 
@@ -459,7 +470,7 @@ void verifyDomain(const vespalib::string & name) {
     DummyFileHeaderContext fileHeaderContext;
     TransLogServer tlss("test13", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
     TransLogClient tls("tcp/localhost:18377");
-    TransLogClient::Session::UP s1 = openDomainTest(tls, name);
+    auto s1 = openDomainTest(tls, name);
     visitDomainTest(tls, s1.get(), name);
 }
 
@@ -472,7 +483,7 @@ TEST("testVisitOverGeneratedDomain") {
 
     vespalib::string name("test1");
     createDomainTest(tls, name);
-    TransLogClient::Session::UP s1 = openDomainTest(tls, name);
+    auto s1 = openDomainTest(tls, name);
     fillDomainTest(s1.get(), name);
     EXPECT_EQUAL(0, getMaxSessionRunTime(tlss, "test1"));
     visitDomainTest(tls, s1.get(), name);
@@ -488,7 +499,7 @@ TEST("testVisitOverPreExistingDomain") {
     TransLogClient tls("tcp/localhost:18377");
 
     vespalib::string name("test1");
-    TransLogClient::Session::UP s1 = openDomainTest(tls, name);
+    auto s1 = openDomainTest(tls, name);
     visitDomainTest(tls, s1.get(), name);
 }
 
@@ -497,8 +508,8 @@ TEST("partialUpdateTest") {
     TransLogServer tlss("test7", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
     TransLogClient tls("tcp/localhost:18377");
 
-    TransLogClient::Session::UP s1 = openDomainTest(tls, "test1");
-    TransLogClient::Session & session = *s1;
+    auto s1 = openDomainTest(tls, "test1");
+    Session & session = *s1;
 
     TestIdentifiable du;
 
@@ -513,8 +524,8 @@ TEST("partialUpdateTest") {
     ASSERT_TRUE(session.commit(vespalib::ConstBufferRef(pa.getHandle().data(), pa.getHandle().size())));
 
     CallBackUpdate ca;
-    TransLogClient::Visitor::UP visitor = tls.createVisitor("test1", ca);
-    ASSERT_TRUE(visitor.get());
+    auto visitor = tls.createVisitor("test1", ca);
+    ASSERT_TRUE(visitor);
     ASSERT_TRUE( visitor->visit(5, 7) );
     for (size_t i(0); ! ca._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca._eof );
@@ -522,24 +533,24 @@ TEST("partialUpdateTest") {
     ASSERT_TRUE( ca.hasSerial(7) );
 
     CallBackUpdate ca1;
-    TransLogClient::Visitor::UP visitor1 = tls.createVisitor("test1", ca1);
-    ASSERT_TRUE(visitor1.get());
+    auto visitor1 = tls.createVisitor("test1", ca1);
+    ASSERT_TRUE(visitor1);
     ASSERT_TRUE( visitor1->visit(4, 5) );
     for (size_t i(0); ! ca1._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca1._eof );
-    ASSERT_TRUE( ca1.map().size() == 0);
+    ASSERT_TRUE( ca1.map().empty());
 
     CallBackUpdate ca2;
-    TransLogClient::Visitor::UP visitor2 = tls.createVisitor("test1", ca2);
-    ASSERT_TRUE(visitor2.get());
+    auto visitor2 = tls.createVisitor("test1", ca2);
+    ASSERT_TRUE(visitor2);
     ASSERT_TRUE( visitor2->visit(5, 6) );
     for (size_t i(0); ! ca2._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca2._eof );
-    ASSERT_TRUE( ca2.map().size() == 0);
+    ASSERT_TRUE( ca2.map().empty());
 
     CallBackUpdate ca3;
-    TransLogClient::Visitor::UP visitor3 = tls.createVisitor("test1", ca3);
-    ASSERT_TRUE(visitor3.get());
+    auto visitor3 = tls.createVisitor("test1", ca3);
+    ASSERT_TRUE(visitor3);
     ASSERT_TRUE( visitor3->visit(5, 1000) );
     for (size_t i(0); ! ca3._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca3._eof );
@@ -562,7 +573,7 @@ TEST("testRemove") {
 
     vespalib::string name("test-delete");
     createDomainTest(tls, name);
-    TransLogClient::Session::UP s1 = openDomainTest(tls, name);
+    auto s1 = openDomainTest(tls, name);
     fillDomainTest(s1.get(), name);
     visitDomainTest(tls, s1.get(), name);
     ASSERT_TRUE(tls.remove(name));
@@ -577,8 +588,8 @@ assertVisitStats(TransLogClient &tls, const vespalib::string &domain,
                  uint64_t expCount, uint64_t expInOrder)
 {
     CallBackStatsTest ca;
-    TransLogClient::Visitor::UP visitor = tls.createVisitor(domain, ca);
-    ASSERT_TRUE(visitor.get());
+    auto visitor = tls.createVisitor(domain, ca);
+    ASSERT_TRUE(visitor);
     ASSERT_TRUE( visitor->visit(visitStart, visitEnd) );
     for (size_t i(0); ! ca._eof && (i < 60000); i++ ) {
         std::this_thread::sleep_for(10ms);
@@ -591,9 +602,7 @@ assertVisitStats(TransLogClient &tls, const vespalib::string &domain,
 }
 
 void
-assertStatus(TransLogClient::Session &s,
-             SerialNum expFirstSerial, SerialNum expLastSerial,
-             uint64_t expCount)
+assertStatus(Session &s, SerialNum expFirstSerial, SerialNum expLastSerial, uint64_t expCount)
 {
     SerialNum b(0), e(0);
     size_t c(0);
@@ -618,7 +627,7 @@ TEST("test sending a lot of data") {
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, MANY, 0);
-        TransLogClient::Session::UP s1 = openDomainTest(tls, MANY);
+        auto s1 = openDomainTest(tls, MANY);
         fillDomainTest(s1.get(), NUM_PACKETS, NUM_ENTRIES);
         SerialNum b(0), e(0);
         size_t c(0);
@@ -627,8 +636,8 @@ TEST("test sending a lot of data") {
         EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
         EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
-        TransLogClient::Visitor::UP visitor = tls.createVisitor("many", ca);
-        ASSERT_TRUE(visitor.get());
+        auto visitor = tls.createVisitor("many", ca);
+        ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
         ASSERT_TRUE( ca._eof );
@@ -640,7 +649,7 @@ TEST("test sending a lot of data") {
         TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
-        TransLogClient::Session::UP s1 = openDomainTest(tls, "many");
+        auto s1 = openDomainTest(tls, "many");
         SerialNum b(0), e(0);
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
@@ -648,8 +657,8 @@ TEST("test sending a lot of data") {
         EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
         EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
-        TransLogClient::Visitor::UP visitor = tls.createVisitor(MANY, ca);
-        ASSERT_TRUE(visitor.get());
+        auto visitor = tls.createVisitor(MANY, ca);
+        ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
         ASSERT_TRUE( ca._eof );
@@ -661,7 +670,7 @@ TEST("test sending a lot of data") {
         TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
-        TransLogClient::Session::UP s1 = openDomainTest(tls, MANY);
+        auto s1 = openDomainTest(tls, MANY);
         SerialNum b(0), e(0);
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
@@ -669,8 +678,8 @@ TEST("test sending a lot of data") {
         EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
         EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
-        TransLogClient::Visitor::UP visitor = tls.createVisitor(MANY, ca);
-        ASSERT_TRUE(visitor.get());
+        auto visitor = tls.createVisitor(MANY, ca);
+        ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
         ASSERT_TRUE( ca._eof );
@@ -690,7 +699,7 @@ TEST("test sending a lot of data async") {
                 .setChunkAgeLimit(10ms));
         TransLogClient tls("tcp/localhost:18377");
         createDomainTest(tls, MANY, 1);
-        TransLogClient::Session::UP s1 = openDomainTest(tls, MANY);
+        auto s1 = openDomainTest(tls, MANY);
         fillDomainTest(tlss, MANY, NUM_PACKETS, NUM_ENTRIES);
         SerialNum b(0), e(0);
         size_t c(0);
@@ -699,8 +708,8 @@ TEST("test sending a lot of data async") {
         EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
         EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
-        TransLogClient::Visitor::UP visitor = tls.createVisitor(MANY, ca);
-        ASSERT_TRUE(visitor.get());
+        auto visitor = tls.createVisitor(MANY, ca);
+        ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
         ASSERT_TRUE( ca._eof );
@@ -712,7 +721,7 @@ TEST("test sending a lot of data async") {
         TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
-        TransLogClient::Session::UP s1 = openDomainTest(tls, MANY);
+        auto s1 = openDomainTest(tls, MANY);
         SerialNum b(0), e(0);
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
@@ -720,8 +729,8 @@ TEST("test sending a lot of data async") {
         EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
         EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
-        TransLogClient::Visitor::UP visitor = tls.createVisitor(MANY, ca);
-        ASSERT_TRUE(visitor.get());
+        auto visitor = tls.createVisitor(MANY, ca);
+        ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
         ASSERT_TRUE( ca._eof );
@@ -743,7 +752,7 @@ TEST("testErase") {
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, "erase", 0);
-        TransLogClient::Session::UP s1 = openDomainTest(tls, "erase");
+        auto s1 = openDomainTest(tls, "erase");
         fillDomainTest(s1.get(), NUM_PACKETS, NUM_ENTRIES);
     }
     {
@@ -751,7 +760,7 @@ TEST("testErase") {
         TransLogServer tlss("test12", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
-        TransLogClient::Session::UP s1 = openDomainTest(tls, "erase");
+        auto s1 = openDomainTest(tls, "erase");
 
         // Before erase
         TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
@@ -839,7 +848,7 @@ TEST("testSync") {
     TransLogClient tls("tcp/localhost:18377");
 
     createDomainTest(tls, "sync", 0);
-    TransLogClient::Session::UP s1 = openDomainTest(tls, "sync");
+    auto s1 = openDomainTest(tls, "sync");
     fillDomainTest(s1.get(), NUM_PACKETS, NUM_ENTRIES);
 
     SerialNum syncedTo(0);
@@ -861,7 +870,7 @@ TEST("test truncate on version mismatch") {
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, "sync", 0);
-        TransLogClient::Session::UP s1 = openDomainTest(tls, "sync");
+        auto s1 = openDomainTest(tls, "sync");
         fillDomainTest(s1.get(), NUM_PACKETS, NUM_ENTRIES);
         EXPECT_TRUE(s1->status(fromOld, toOld, countOld));
         SerialNum syncedTo(0);
@@ -880,7 +889,7 @@ TEST("test truncate on version mismatch") {
     {
         TransLogServer tlss("test11", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
         TransLogClient tls("tcp/localhost:18377");
-        TransLogClient::Session::UP s1 = openDomainTest(tls, "sync");
+        auto s1 = openDomainTest(tls, "sync");
         uint64_t from(0), to(0);
         size_t count(0);
         EXPECT_TRUE(s1->status(from, to, count));
@@ -906,7 +915,7 @@ TEST("test truncation after short read") {
         TransLogClient tls(tlsspec);
         
         createDomainTest(tls, domain, 0);
-        TransLogClient::Session::UP s1 = openDomainTest(tls, domain);
+        auto s1 = openDomainTest(tls, domain);
         fillDomainTest(s1.get(), NUM_PACKETS, NUM_ENTRIES, ENTRYSIZE);
         
         SerialNum syncedTo(0);
@@ -920,8 +929,8 @@ TEST("test truncation after short read") {
     {
         TransLogServer tlss(topdir, 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
         TransLogClient tls(tlsspec);
-        TransLogClient::Session::UP s1 = openDomainTest(tls, domain);
-        checkFilledDomainTest(s1, TOTAL_NUM_ENTRIES);
+        auto s1 = openDomainTest(tls, domain);
+        checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES);
     }
     {
         EXPECT_EQUAL(2u, countFiles(dir));
@@ -929,15 +938,15 @@ TEST("test truncation after short read") {
     {
         vespalib::string filename(dir + "/truncate-0000000000000017");
         FastOS_File trfile(filename.c_str());
-        EXPECT_TRUE(trfile.OpenReadWrite(NULL));
+        EXPECT_TRUE(trfile.OpenReadWrite(nullptr));
         trfile.SetSize(trfile.getSize() - 1);
         trfile.Close();
     }
     {
         TransLogServer tlss(topdir, 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
         TransLogClient tls(tlsspec);
-        TransLogClient::Session::UP s1 = openDomainTest(tls, domain);
-        checkFilledDomainTest(s1, TOTAL_NUM_ENTRIES - 1);
+        auto s1 = openDomainTest(tls, domain);
+        checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES - 1);
     }
     {
         EXPECT_EQUAL(2u, countFiles(dir));

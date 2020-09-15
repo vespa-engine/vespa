@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogserver.h"
 #include "domain.h"
+#include "client_common.h"
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -399,12 +400,12 @@ public:
 private:
     bool send(FRT_RPCRequest * req) {
         int32_t retval = rpc(req);
-        if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
+        if ( ! ((retval == client::RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
             LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
         }
         req->SubRef();
 
-        return (retval == RPC::OK);
+        return (retval == client::RPC::OK);
     }
     int32_t rpc(FRT_RPCRequest * req) {
         int32_t retval(-7);

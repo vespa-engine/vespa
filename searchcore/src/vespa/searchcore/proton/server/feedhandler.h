@@ -13,7 +13,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchlib/transactionlog/translogclient.h>
+#include <vespa/searchlib/transactionlog/client_common.h>
 #include <shared_mutex>
 
 namespace searchcorespi::index { struct IThreadingService; }
@@ -43,7 +43,7 @@ namespace bucketdb { class IBucketDBHandler; }
  * Class handling all aspects of feeding for a document database.
  * In addition to regular feeding this also includes handling the transaction log.
  */
-class FeedHandler: private search::transactionlog::TransLogClient::Session::Callback,
+class FeedHandler: private search::transactionlog::client::Callback,
                    public IDocumentMoveHandler,
                    public IPruneRemovedDocumentsHandler,
                    public IHeartBeatHandler,
@@ -52,7 +52,7 @@ class FeedHandler: private search::transactionlog::TransLogClient::Session::Call
 {
 private:
     using Packet = search::transactionlog::Packet;
-    using RPC = search::transactionlog::RPC;
+    using RPC = search::transactionlog::client::RPC;
     using SerialNum = search::SerialNum;
     using Timestamp = storage::spi::Timestamp;
     using BucketId =  document::BucketId;

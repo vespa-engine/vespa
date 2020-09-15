@@ -286,7 +286,7 @@ public:
  * and dispatches each packet entry to the ReplayPacketDispatcher that
  * transforms them into concrete operations.
  */
-class VisitorCallback : public TransLogClient::Session::Callback
+class VisitorCallback : public client::Callback
 {
 private:
     ReplayPacketDispatcher _dispatcher;
@@ -298,7 +298,7 @@ public:
           _eof(false)
     {
     }
-    virtual RPC::Result receive(const Packet &packet) override {
+    client::RPC::Result receive(const Packet &packet) override {
         vespalib::nbostream_longlivedbuf handle(packet.getHandle().data(), packet.getHandle().size());
         try {
             while (handle.size() > 0) {
@@ -309,11 +309,11 @@ public:
         } catch (const std::exception &e) {
             std::cerr << "Error while handling transaction log packet: '"
                 << std::string(e.what()) << "'" << std::endl;
-            return RPC::ERROR;
+            return client::RPC::ERROR;
         }
-        return RPC::OK;
+        return client::RPC::OK;
     }
-    virtual void eof() override { _eof = true; }
+    void eof() override { _eof = true; }
     bool isEof() const { return _eof; }
 };
 
@@ -371,7 +371,7 @@ protected:
     const BaseOptions     &_bopts;
     DummyFileHeaderContext _fileHeader;
     TransLogServer         _server;
-    TransLogClient         _client;
+    client::TransLogClient _client;
 
 public:
     BaseUtility(const BaseOptions &bopts)
@@ -416,7 +416,7 @@ public:
         _client.listDomains(domains);
         std::cout << "Listing status for " << domains.size() << " domain(s):" << std::endl;
         for (size_t i = 0; i < domains.size(); ++i) {
-            TransLogClient::Session::UP session = _client.open(domains[i]);
+            std::unique_ptr<client::Session> session = _client.open(domains[i]);
             SerialNum first;
             SerialNum last;
             size_t count;
@@ -484,7 +484,7 @@ protected:
         DocTypeRepo repo(_oopts.configDir);
         IReplayPacketHandlerUP handler = createHandler(repo.docTypeRepo);
         VisitorCallback callback(*handler);
-        TransLogClient::Visitor::UP visitor = _client.createVisitor(_oopts.domainName, callback);
+        std::unique_ptr<client::Visitor> visitor = _client.createVisitor(_oopts.domainName, callback);
         bool visitOk = visitor->visit(_oopts.firstSerialNum-1, _oopts.lastSerialNum);
         if (!visitOk) {
             std::cerr << "Visiting domain '" << _oopts.domainName << "' [" << _oopts.firstSerialNum << ","
