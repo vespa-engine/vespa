@@ -24,6 +24,7 @@ vespa_define_module(
     src/tests/eval/node_types
     src/tests/eval/param_usage
     src/tests/eval/simple_tensor
+    src/tests/eval/simple_value
     src/tests/eval/tensor_function
     src/tests/eval/tensor_lambda
     src/tests/eval/tensor_spec
