@@ -13,7 +13,7 @@ struct ConfigStore;
  **/
 class TransactionLogManager : public TransactionLogManagerBase
 {
-    TransLogClient::Visitor::UP _visitor;
+    std::unique_ptr<Visitor> _visitor;
 
     void doLogReplayComplete(const vespalib::string &domainName, vespalib::duration elapsedTime) const override;
 
@@ -51,7 +51,7 @@ public:
     /**
      * Start replay of the transaction log.
      **/
-    TlsReplayProgress::UP startReplay(SerialNum first, SerialNum syncToken, TransLogClient::Session::Callback &callback);
+    TlsReplayProgress::UP startReplay(SerialNum first, SerialNum syncToken, Callback &callback);
 
     /**
      * Indicate that replay is done.

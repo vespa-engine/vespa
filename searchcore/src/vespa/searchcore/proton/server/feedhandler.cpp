@@ -19,6 +19,7 @@
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/searchlib/transactionlog/client_session.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <unistd.h>
@@ -331,7 +332,7 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
                          IReplayConfig &replayConfig,
                          search::transactionlog::Writer & tlsDirectWriter,
                          TlsWriter * tlsWriter)
-    : search::transactionlog::TransLogClient::Session::Callback(),
+    : search::transactionlog::client::Callback(),
       IDocumentMoveHandler(),
       IPruneRemovedDocumentsHandler(),
       IHeartBeatHandler(),

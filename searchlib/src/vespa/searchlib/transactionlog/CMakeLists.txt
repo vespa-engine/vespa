@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_transactionlog OBJECT
     SOURCES
     chunks.cpp
+    client_session.cpp
     common.cpp
     domain.cpp
     domainconfig.cpp

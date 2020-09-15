@@ -16,7 +16,7 @@
 LOG_SETUP(".proton.server.feedstates");
 
 using search::transactionlog::Packet;
-using search::transactionlog::RPC;
+using search::transactionlog::client::RPC;
 using search::SerialNum;
 using vespalib::Executor;
 using vespalib::makeClosure;

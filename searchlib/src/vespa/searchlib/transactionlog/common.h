@@ -10,14 +10,7 @@
 namespace search::transactionlog {
 
 /// This represents a type of the entry. Fx update,remove
-typedef uint32_t Type;
-/// A channel represents one data stream.
-
-class RPC
-{
-public:
-enum Result { OK, FULL, ERROR };
-};
+using Type = uint32_t;
 
 class SerialNumRange
 {

@@ -27,8 +27,10 @@ using search::index::DummyFileHeaderContext;
 
 namespace search::transactionlog {
 
-using ClientSession = TransLogClient::Session;
-using Visitor = TransLogClient::Visitor;
+using ClientSession = client::Session;
+using client::Visitor;
+using client::TransLogClient;
+using client::RPC;
 
 //-----------------------------------------------------------------------------
 // BufferGenerator
@@ -287,7 +289,7 @@ FeederThread::doRun()
 //-----------------------------------------------------------------------------
 // Agent
 //-----------------------------------------------------------------------------
-class Agent : public ClientSession::Callback
+class Agent : public client::Callback
 {
 protected:
     std::string _tlsSpec;
@@ -301,12 +303,13 @@ protected:
 public:
     Agent(const std::string & tlsSpec, const std::string & domain,
           const EntryGenerator & generator, const std::string & name, uint32_t id, bool validate) :
-        ClientSession::Callback(),
+        client::Callback(),
         _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec),
-        _generator(generator), _name(name), _id(id), _validate(validate) {}
-    virtual ~Agent() {}
-    virtual RPC::Result receive(const Packet & packet) override = 0;
-    virtual void eof() override {}
+        _generator(generator), _name(name), _id(id), _validate(validate)
+    {}
+    ~Agent() override {}
+    RPC::Result receive(const Packet & packet) override = 0;
+    void eof() override {}
     virtual void failed() {}
 };
 

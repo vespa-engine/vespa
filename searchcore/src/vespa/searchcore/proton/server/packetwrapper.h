@@ -4,6 +4,7 @@
 
 #include "tls_replay_progress.h"
 #include <vespa/searchlib/transactionlog/common.h>
+#include <vespa/searchlib/transactionlog/client_common.h>
 #include <vespa/vespalib/util/gate.h>
 
 namespace proton {
@@ -16,14 +17,14 @@ struct PacketWrapper {
 
     const search::transactionlog::Packet &packet;
     TlsReplayProgress *progress;
-    search::transactionlog::RPC::Result result;
+    search::transactionlog::client::RPC::Result result;
     vespalib::Gate gate;
 
     PacketWrapper(const search::transactionlog::Packet &p,
                   TlsReplayProgress *progress_)
         : packet(p),
           progress(progress_),
-          result(search::transactionlog::RPC::ERROR),
+          result(search::transactionlog::client::RPC::ERROR),
           gate()
     {
     }
