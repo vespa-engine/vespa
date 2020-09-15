@@ -159,8 +159,9 @@ public class SessionZooKeeperClient {
                 : Optional.of(ApplicationId.fromSerializedForm(idString));
     }
 
-    void writeApplicationPackageReference(FileReference applicationPackageReference) {
-        configCurator.putData(applicationPackageReferencePath(), applicationPackageReference.value());
+    void writeApplicationPackageReference(Optional<FileReference> applicationPackageReference) {
+        applicationPackageReference.ifPresent(
+                reference -> configCurator.putData(applicationPackageReferencePath(), reference.value()));
     }
 
     FileReference readApplicationPackageReference() {

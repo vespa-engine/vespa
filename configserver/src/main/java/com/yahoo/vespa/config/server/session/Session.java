@@ -117,9 +117,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     void setApplicationPackageReference(FileReference applicationPackageReference) {
-        if (applicationPackageReference == null) throw new IllegalArgumentException(String.format(
-                "Null application package file reference for tenant %s, session id %d", tenant, sessionId));
-        sessionZooKeeperClient.writeApplicationPackageReference(applicationPackageReference);
+        sessionZooKeeperClient.writeApplicationPackageReference(Optional.ofNullable(applicationPackageReference));
     }
 
     public void setVespaVersion(Version version) {
