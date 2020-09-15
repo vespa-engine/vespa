@@ -123,9 +123,8 @@ public class SessionRepository {
     public synchronized void addLocalSession(LocalSession session) {
         localSessionCache.putSession(session);
         long sessionId = session.getSessionId();
-        if ( ! remoteSessionCache.sessionExists(sessionId)) {
-            createRemoteSession(sessionId);
-        }
+        RemoteSession remoteSession = createRemoteSession(sessionId);
+        addSessionStateWatcher(sessionId, remoteSession);
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -264,6 +263,11 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
+    public void addRemoteSession(RemoteSession session) {
+        remoteSessionCache.putSession(session);
+        metrics.incAddedSessions();
+    }
+
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getRemoteSessions()) {
@@ -328,7 +332,7 @@ public class SessionRepository {
 
     private void checkForAddedSessions(List<Long> sessions) {
         for (Long sessionId : sessions)
-            if ( ! remoteSessionCache.sessionExists(sessionId))
+            if (remoteSessionCache.getSession(sessionId) == null)
                 sessionAdded(sessionId);
     }
 
@@ -344,8 +348,10 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
         RemoteSession remoteSession = createRemoteSession(sessionId);
         loadSessionIfActive(remoteSession);
+        addRemoteSession(remoteSession);
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        addSessionStateWatcher(sessionId, remoteSession);
     }
 
     void activate(RemoteSession session) {
@@ -455,11 +461,7 @@ public class SessionRepository {
 
     public RemoteSession createRemoteSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
-        remoteSessionCache.putSession(session);
-        updateSessionStateWatcher(session);
-        metrics.incAddedSessions();
-        return session;
+        return new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
@@ -626,7 +628,7 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
@@ -673,12 +675,11 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void updateSessionStateWatcher(RemoteSession session) {
-        long sessionId = session.getSessionId();
+    private void addSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
         if ( ! sessionStateWatchers.containsKey(sessionId)) {
             Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, session, metrics, zkWatcherExecutor, this));
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metrics, zkWatcherExecutor, this));
         }
     }
 
