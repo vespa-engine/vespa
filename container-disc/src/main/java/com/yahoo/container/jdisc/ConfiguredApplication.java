@@ -143,7 +143,6 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class);
-        slobrokRegistrator = registerInSlobrok(qrConfig);
 
         hackToInitializeServer(qrConfig);
 
@@ -154,6 +153,7 @@ public final class ConfiguredApplication implements Application {
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
         portWatcher.start();
+        slobrokRegistrator = registerInSlobrok(qrConfig); // marks this as up
     }
 
     /**
