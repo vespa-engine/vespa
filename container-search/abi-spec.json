@@ -4218,6 +4218,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.search.searchchain.ExecutionFactory, java.util.Optional)",

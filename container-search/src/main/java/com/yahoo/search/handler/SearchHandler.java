@@ -10,6 +10,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -19,38 +20,37 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.Linguistics;
-import java.util.logging.Level;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.context.QueryContext;
-import com.yahoo.search.query.ranking.SoftTimeout;
-import com.yahoo.search.searchchain.ExecutionFactory;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.SlimeUtils;
-import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.query.properties.DefaultProperties;
+import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.statistics.ElapsedTime;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.statistics.Callback;
 import com.yahoo.statistics.Handle;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
@@ -62,6 +62,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -117,6 +118,16 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     @Inject
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
+                         ContainerThreadPool threadpool,
+                         AccessLog accessLog,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig config,
+                         ExecutionFactory executionFactory) {
+        this(statistics, metric, threadpool.executor(), accessLog, queryProfileRegistry, config, executionFactory);
+    }
+
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
