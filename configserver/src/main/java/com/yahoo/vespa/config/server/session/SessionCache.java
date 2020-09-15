@@ -15,9 +15,13 @@ public class SessionCache<SESSIONTYPE extends Session> {
 
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
-    public synchronized void putSession(SESSIONTYPE session) { sessions.put(session.getSessionId(), session); }
+    public synchronized void putSession(SESSIONTYPE session) {
+        sessions.put(session.getSessionId(), session);
+    }
 
-    synchronized void removeSession(long id) { sessions.remove(id); }
+    synchronized void removeSession(long id) {
+        sessions.remove(id);
+    }
 
     public synchronized SESSIONTYPE getSession(long id) {
         return sessions.get(id);
@@ -26,7 +30,5 @@ public class SessionCache<SESSIONTYPE extends Session> {
     public synchronized List<SESSIONTYPE> getSessions() {
         return new ArrayList<>(sessions.values());
     }
-
-    public synchronized boolean sessionExists(long id) { return sessions.containsKey(id); }
     
 }
