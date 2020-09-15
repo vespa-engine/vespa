@@ -423,8 +423,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
     _use_direct_storageapi_rpc = config->useDirectStorageapiRpc;
     _message_codec_provider = std::make_unique<rpc::MessageCodecProvider>(_component.getTypeRepo()->documentTypeRepo,
                                                                           _component.getLoadTypes());
-    // TODO configurable thread pool size
-    _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, 1/*pool size*/);
+    _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, config->rpc.numNetworkThreads);
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
     _storage_api_rpc_service = std::make_unique<rpc::StorageApiRpcService>(
             *this, *_shared_rpc_resources, *_message_codec_provider);
