@@ -85,7 +85,7 @@ void
 FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
 {
     assert(_writeService.master().isCurrentThread());
-    ReadGuard guard(_feedLock);
+    // Since _feedState is only modified in the master thread we can skip the lock here.
     _feedState->handleOperation(std::move(token), std::move(op));
 }
 
@@ -304,9 +304,19 @@ FeedHandler::getFeedState() const
     return _feedState;
 }
 
-
 void
 FeedHandler::changeFeedState(FeedStateSP newState)
+{
+    if (_writeService.master().isCurrentThread()) {
+        doChangeFeedState(std::move(newState));
+    } else {
+        _writeService.master().execute(makeLambdaTask([this, newState=std::move(newState)] () { doChangeFeedState(std::move(newState));}));
+        _writeService.master().sync();
+    }
+}
+
+void
+FeedHandler::doChangeFeedState(FeedStateSP newState)
 {
     WriteGuard guard(_feedLock);
     LOG(debug, "Change feed state from '%s' -> '%s'", _feedState->getName().c_str(), newState->getName().c_str());

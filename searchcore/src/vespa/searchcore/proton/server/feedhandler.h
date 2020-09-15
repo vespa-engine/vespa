@@ -135,6 +135,7 @@ private:
 
     FeedStateSP getFeedState() const;
     void changeFeedState(FeedStateSP newState);
+    void doChangeFeedState(FeedStateSP newState);
 public:
     FeedHandler(const FeedHandler &) = delete;
     FeedHandler & operator = (const FeedHandler &) = delete;

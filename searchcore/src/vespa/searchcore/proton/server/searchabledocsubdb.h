@@ -3,7 +3,6 @@
 
 #include "executorthreadingservice.h"
 #include "fast_access_doc_subdb.h"
-#include "feedhandler.h"
 #include "searchable_doc_subdb_configurer.h"
 #include "searchable_feed_view.h"
 #include "searchview.h"
