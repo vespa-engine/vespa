@@ -287,6 +287,15 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
             this.value = value;
         }
 
+        @Override
+        public String toString() {
+            return "scheme: " + scheme +
+                   ", method: " + method +
+                   ", name: " + name +
+                   ", requestType: " + requestType +
+                   ", value: " + value;
+        }
+
     }
 
 }

@@ -44,12 +44,12 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
 
     private final AccessLog accessLog;
 
-    public AccessLogRequestLog(final AccessLog accessLog) {
+    public AccessLogRequestLog(AccessLog accessLog) {
         this.accessLog = accessLog;
     }
 
     @Override
-    public void log(final Request request, final Response response) {
+    public void log(Request request, Response response) {
         try {
             AccessLogEntry accessLogEntry = Optional.ofNullable(request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY))
                     .map(AccessLogEntry.class::cast)
@@ -100,8 +100,8 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
                 accessLogEntry.addKeyValue("cipher-suite", cipherSuite);
             }
 
-            final long startTime = request.getTimeStamp();
-            final long endTime = System.currentTimeMillis();
+            long startTime = request.getTimeStamp();
+            long endTime = System.currentTimeMillis();
             accessLogEntry.setTimeStamp(startTime);
             accessLogEntry.setDurationBetweenRequestResponse(endTime - startTime);
             accessLogEntry.setReturnedContentSize(response.getHttpChannel().getBytesWritten());
@@ -121,7 +121,7 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
         }
     }
 
-    private static String getRemoteAddress(final HttpServletRequest request) {
+    private static String getRemoteAddress(HttpServletRequest request) {
         return Optional.ofNullable(request.getHeader(HEADER_NAME_X_FORWARDED_FOR))
                 .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RA)))
                 .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_YAHOOREMOTEIP)))
@@ -129,7 +129,7 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
                 .orElseGet(request::getRemoteAddr);
     }
 
-    private static int getRemotePort(final HttpServletRequest request) {
+    private static int getRemotePort(HttpServletRequest request) {
         return Optional.ofNullable(request.getHeader(HEADER_NAME_X_FORWARDED_PORT))
                 .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RP)))
                 .flatMap(AccessLogRequestLog::parsePort)
@@ -143,4 +143,5 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             return Optional.empty();
         }
     }
+
 }

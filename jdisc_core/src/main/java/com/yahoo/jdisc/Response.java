@@ -102,6 +102,7 @@ public class Response {
     private final HeaderFields headers = new HeaderFields();
     private Throwable error;
     private int status;
+    private Request.RequestType requestType;
 
     /**
      * Creates a new instance of this class.
@@ -204,6 +205,12 @@ public class Response {
         this.error = error;
         return this;
     }
+
+    /** Sets the type classification of this request for metric collection purposes */
+    public void setRequestType(Request.RequestType requestType) { this.requestType = requestType; }
+
+    /** Returns the type classification of this request for metric collection purposes, or null if not set */
+    public Request.RequestType getRequestType() { return requestType; }
 
     /**
      * This is a convenience method for creating a Response with status {@link Status#GATEWAY_TIMEOUT} and passing

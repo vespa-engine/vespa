@@ -28,7 +28,7 @@ public class HttpRequestTestCase {
 
     @Test
     public void requireThatSimpleServerConstructorsUseReasonableDefaults() {
-        final URI uri = URI.create("http://localhost/");
+        URI uri = URI.create("http://localhost/");
         HttpRequest request = HttpRequest.newServerRequest(mockContainer(), uri);
         assertTrue(request.isServerRequest());
         assertEquals(uri, request.getUri());
@@ -50,9 +50,9 @@ public class HttpRequestTestCase {
 
     @Test
     public void requireThatSimpleClientConstructorsUseReasonableDefaults() {
-        final Request parent = new Request(mockContainer(), URI.create("http://localhost/"));
+        Request parent = new Request(mockContainer(), URI.create("http://localhost/"));
 
-        final URI uri = URI.create("http://remotehost/");
+        URI uri = URI.create("http://remotehost/");
         HttpRequest request = HttpRequest.newClientRequest(parent, uri);
         assertFalse(request.isServerRequest());
         assertEquals(uri, request.getUri());

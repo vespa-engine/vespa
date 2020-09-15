@@ -175,9 +175,6 @@ class HttpRequestDispatch {
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
-            if (jdiscRequest.getRequestType() != null)
-                jettyRequest.setAttribute(HttpResponseStatisticsCollector.requestTypeAttribute,
-                                          jdiscRequest.getRequestType());
         }
 
         ServletInputStream servletInputStream = jettyRequest.getInputStream();

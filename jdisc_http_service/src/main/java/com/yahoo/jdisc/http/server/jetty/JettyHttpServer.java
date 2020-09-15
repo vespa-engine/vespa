@@ -338,6 +338,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         return ((ServerConnector)server.getConnectors()[0]).getLocalPort();
     }
 
+    Server server() { return server; }
+
     private class MetricTask implements Runnable {
         @Override
         public void run() {

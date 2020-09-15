@@ -18,8 +18,6 @@ import java.util.Set;
 
 /**
  * Servlet implementation for JDisc filter requests.
- *
- * @since 5.27
  */
 class ServletFilterRequest extends DiscFilterRequest {
 
