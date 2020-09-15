@@ -585,35 +585,46 @@ public class HttpServerTest {
 
         {
             driver.client().newPost("/status.html").execute();
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
-            assertEquals(1, stats.size());
-            assertEquals("http", stats.get(0).scheme);
-            assertEquals("POST", stats.get(0).method);
-            assertEquals("http.status.2xx", stats.get(0).name);
-            assertEquals("write", stats.get(0).requestType);
-            assertEquals(1, stats.get(0).value);
+            var entry = waitForStatistics(statisticsCollector);
+            assertEquals("http", entry.scheme);
+            assertEquals("POST", entry.method);
+            assertEquals("http.status.2xx", entry.name);
+            assertEquals("write", entry.requestType);
+            assertEquals(1, entry.value);
         }
 
         {
             driver.client().newGet("/status.html").execute();
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
-            assertEquals(1, stats.size());
-            assertEquals("http", stats.get(0).scheme);
-            assertEquals("GET", stats.get(0).method);
-            assertEquals("http.status.2xx", stats.get(0).name);
-            assertEquals("read", stats.get(0).requestType);
-            assertEquals(1, stats.get(0).value);
+            var entry = waitForStatistics(statisticsCollector);
+            assertEquals("http", entry.scheme);
+            assertEquals("GET", entry.method);
+            assertEquals("http.status.2xx", entry.name);
+            assertEquals("read", entry.requestType);
+            assertEquals(1, entry.value);
         }
 
         {
             handler.setRequestType(Request.RequestType.READ);
             driver.client().newPost("/status.html").execute();
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
-            assertEquals(1, stats.size());
-            assertEquals("Handler overrides request type", "read", stats.get(0).requestType);
+            var entry = waitForStatistics(statisticsCollector);
+            assertEquals("Handler overrides request type", "read", entry.requestType);
         }
 
         assertTrue(driver.close());
+    }
+
+    private HttpResponseStatisticsCollector.StatisticsEntry waitForStatistics(HttpResponseStatisticsCollector
+                                                                                      statisticsCollector) {
+        List<HttpResponseStatisticsCollector.StatisticsEntry> entries = Collections.emptyList();
+        int tries = 0;
+        while (entries.isEmpty() && tries < 10000) {
+            entries = statisticsCollector.takeStatistics();
+            if (entries.isEmpty())
+                try {Thread.sleep(100); } catch (InterruptedException e) {}
+            tries++;
+        }
+        assertEquals(1, entries.size());
+        return entries.get(0);
     }
 
     @Test
