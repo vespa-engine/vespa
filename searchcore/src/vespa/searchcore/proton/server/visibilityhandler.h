@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/common/icommitable.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/vespalib/util/time.h>
 #include <mutex>
 
 namespace proton {

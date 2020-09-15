@@ -90,7 +90,7 @@ private:
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
     DomainList                          _domains;
-    mutable std::shared_mutex     _domainMutex;;          // Protects _domains
+    mutable std::shared_mutex           _domainMutex;;          // Protects _domains
     std::condition_variable             _domainCondition;
     std::mutex                          _fileLock;      // Protects the creating and deleting domains including file system operations.
     document::Queue<FRT_RPCRequest *>   _reqQ;

@@ -4,6 +4,7 @@
 
 #include "feedhandler.h"
 #include "feedstate.h"
+#include "packetwrapper.h"
 #include "ireplaypackethandler.h"
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 
@@ -33,7 +34,7 @@ public:
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
-    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
+    void receive(const PacketWrapperSP &wrap, vespalib::Executor &) override {
         throwExceptionInReceive(_doc_type_name.c_str(), wrap->packet.range().from(),
                                 wrap->packet.range().to(), wrap->packet.size());
     }
@@ -60,7 +61,7 @@ public:
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
-    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &executor) override;
+    void receive(const PacketWrapperSP &wrap, vespalib::Executor &executor) override;
 };
 
 
@@ -81,7 +82,7 @@ public:
         _handler.performOperation(std::move(token), std::move(op));
     }
 
-    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
+    void receive(const PacketWrapperSP &wrap, vespalib::Executor &) override {
         throwExceptionInReceive(_handler.getDocTypeName().c_str(), wrap->packet.range().from(),
                                 wrap->packet.range().to(), wrap->packet.size());
     }

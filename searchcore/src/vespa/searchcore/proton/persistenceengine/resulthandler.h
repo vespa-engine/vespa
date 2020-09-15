@@ -8,7 +8,7 @@ namespace proton {
 template <typename ResultType>
 class IResultHandler {
 public:
-    virtual ~IResultHandler() { }
+    virtual ~IResultHandler() = default;
     virtual void handle(const ResultType &result) = 0;
 };
 

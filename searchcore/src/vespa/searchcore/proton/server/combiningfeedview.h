@@ -6,6 +6,8 @@
 #include "replaypacketdispatcher.h"
 #include "ibucketstatecalculator.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/document/bucket/bucketspace.h>
+#include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace proton {

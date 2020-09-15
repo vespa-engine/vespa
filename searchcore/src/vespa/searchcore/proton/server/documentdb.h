@@ -11,7 +11,6 @@
 #include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
-#include "feedhandler.h"
 #include "i_document_subdb_owner.h"
 #include "i_feed_handler_owner.h"
 #include "i_lid_space_compaction_handler.h"
@@ -38,7 +37,10 @@
 
 namespace search {
     namespace common { class FileHeaderContext; }
-    namespace transactionlog { class TransLogClient; }
+    namespace transactionlog {
+        class TransLogClient;
+        class Writer;
+    }
 }
 
 namespace vespa::config::search::core::internal { class InternalProtonType; }
@@ -136,7 +138,7 @@ private:
     DiskMemUsageForwarder         _dmUsageForwarder;
     AttributeUsageFilter          _writeFilter;
     std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
-    FeedHandler                   _feedHandler;
+    std::unique_ptr<FeedHandler>  _feedHandler;
     VisibilityHandler             _visibility;
     DocumentSubDBCollection       _subDBs;
     MaintenanceController         _maintenanceController;
@@ -338,7 +340,7 @@ public:
     /**
      * Returns the feed handler for this database.
      */
-    FeedHandler & getFeedHandler() { return _feedHandler; }
+    FeedHandler & getFeedHandler() { return *_feedHandler; }
 
     /**
      * Returns the bucket handler for this database.
@@ -371,24 +373,14 @@ public:
     virtual SerialNum getNewestFlushedSerial();
 
     std::unique_ptr<search::engine::SearchReply>
-    match(const search::engine::SearchRequest &req,
-          vespalib::ThreadBundle &threadBundle) const;
+    match(const search::engine::SearchRequest &req, vespalib::ThreadBundle &threadBundle) const;
 
     std::unique_ptr<search::engine::DocsumReply>
     getDocsums(const search::engine::DocsumRequest & request);
 
     IFlushTargetList getFlushTargets();
     void flushDone(SerialNum flushedSerial);
-
-    virtual SerialNum
-    getCurrentSerialNumber() const
-    {
-        // Called by flush scheduler thread, by executor task or
-        // visitor callback.
-        // XXX: Contains future value during replay.
-        return _feedHandler.getSerialNum();
-    }
-
+    virtual SerialNum getCurrentSerialNumber() const;
     StatusReportUP reportStatus() const;
 
     /**

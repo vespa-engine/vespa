@@ -2,6 +2,7 @@
 
 #include "persistencehandlerproxy.h"
 #include "documentdb.h"
+#include "feedhandler.h"
 #include <vespa/searchcore/proton/feedoperation/createbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/joinbucketsoperation.h>

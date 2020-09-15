@@ -2,19 +2,16 @@
 
 #pragma once
 
-#include <vespa/searchlib/transactionlog/translogclient.h>
+#include <vespa/searchlib/common/serialnum.h>
 
-namespace proton
-{
+namespace proton {
 
 class IReplayConfig
 {
 public:
-    virtual
-    ~IReplayConfig();
+    virtual ~IReplayConfig();
 
-    virtual void
-    replayConfig(search::SerialNum serialNum) = 0;
+    virtual void replayConfig(search::SerialNum serialNum) = 0;
 };
 
 } // namespace proton

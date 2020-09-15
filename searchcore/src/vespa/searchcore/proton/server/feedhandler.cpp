@@ -11,6 +11,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
@@ -84,7 +85,7 @@ void
 FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
 {
     assert(_writeService.master().isCurrentThread());
-    std::lock_guard<std::mutex> guard(_feedLock);
+    // Since _feedState is only modified in the master thread we can skip the lock here.
     _feedState->handleOperation(std::move(token), std::move(op));
 }
 
@@ -296,33 +297,31 @@ FeedHandler::considerDelayedPrune()
 }
 
 
-FeedState::SP
+std::shared_ptr<FeedState>
 FeedHandler::getFeedState() const
 {
-    FeedState::SP state;
-    {
-        std::lock_guard<std::mutex> guard(_feedLock);
-        state = _feedState;
+    ReadGuard guard(_feedLock);
+    return _feedState;
+}
+
+void
+FeedHandler::changeFeedState(FeedStateSP newState)
+{
+    if (_writeService.master().isCurrentThread()) {
+        doChangeFeedState(std::move(newState));
+    } else {
+        _writeService.master().execute(makeLambdaTask([this, newState=std::move(newState)] () { doChangeFeedState(std::move(newState));}));
+        _writeService.master().sync();
     }
-    return state;
 }
 
-
 void
-FeedHandler::changeFeedState(FeedState::SP newState)
+FeedHandler::doChangeFeedState(FeedStateSP newState)
 {
-    std::lock_guard<std::mutex> guard(_feedLock);
-    changeFeedState(std::move(newState), guard);
-}
-
-
-void
-FeedHandler::changeFeedState(FeedState::SP newState, const std::lock_guard<std::mutex> &)
-{
+    WriteGuard guard(_feedLock);
     LOG(debug, "Change feed state from '%s' -> '%s'", _feedState->getName().c_str(), newState->getName().c_str());
     _feedState = std::move(newState);
 }
-
 
 FeedHandler::FeedHandler(IThreadingService &writeService,
                          const vespalib::string &tlsSpec,
@@ -630,7 +629,7 @@ FeedHandler::receive(const Packet &packet)
     // Called directly when replaying transaction log
     // (by fnet thread).  Called via DocumentDB::recoverPacket() when
     // recovering from another node.
-    FeedState::SP state = getFeedState();
+    FeedStateSP state = getFeedState();
     auto wrap = make_shared<PacketWrapper>(packet, _tlsReplayProgress.get());
     state->receive(wrap, _writeService.master());
     wrap->gate.await();

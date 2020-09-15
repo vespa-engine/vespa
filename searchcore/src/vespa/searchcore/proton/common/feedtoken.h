@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <atomic>
 
+namespace storage::spi { class Result; }
 namespace proton {
 
 typedef std::unique_ptr<storage::spi::Result> ResultUP;
@@ -33,10 +33,7 @@ public:
     State(ITransport & transport);
     ~State() override;
     void fail();
-    void setResult(ResultUP result, bool documentWasFound) {
-        _documentWasFound = documentWasFound;
-        _result = std::move(result);
-    }
+    void setResult(ResultUP result, bool documentWasFound);
     const storage::spi::Result &getResult() { return *_result; }
 protected:
     void ack();
