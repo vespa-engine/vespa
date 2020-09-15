@@ -2,11 +2,8 @@
 
 #pragma once
 
-#include "documentdbconfig.h"
 #include "tls_replay_progress.h"
 #include "transactionlogmanagerbase.h"
-#include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchlib/transactionlog/translogclient.h>
 
 namespace proton {
 struct ConfigStore;

@@ -511,7 +511,6 @@ struct MyConfigStore : ConfigStore {
 
 
 struct ReplayTransactionLogContext {
-    IIndexWriter::SP iwriter;
     MyConfigStore config_store;
     DocumentDBConfig::SP cfgSnap;
 };

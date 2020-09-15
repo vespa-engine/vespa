@@ -37,7 +37,10 @@
 
 namespace search {
     namespace common { class FileHeaderContext; }
-    namespace transactionlog { class TransLogClient; }
+    namespace transactionlog {
+        class TransLogClient;
+        class Writer;
+    }
 }
 
 namespace vespa::config::search::core::internal { class InternalProtonType; }
