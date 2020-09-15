@@ -21,8 +21,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -49,7 +50,7 @@ class NodeAllocation {
     private final NodeSpec requestedNodes;
 
     /** The nodes this has accepted so far */
-    private final Set<PrioritizableNode> nodes = new LinkedHashSet<>();
+    private final Map<String, PrioritizableNode> nodes = new LinkedHashMap<>();
 
     /** The number of already allocated nodes accepted and not retired */
     private int accepted = 0;
@@ -127,7 +128,7 @@ class NodeAllocation {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
-                if ( violatesParentHostPolicy(this.nodes, offered)) {
+                if ( violatesParentHostPolicy(offered)) {
                     ++rejectedDueToClashingParentHost;
                     continue;
                 }
@@ -142,10 +143,10 @@ class NodeAllocation {
                 if (offered.status().wantToRetire()) {
                     continue;
                 }
-                node.node = offered.allocate(application,
-                                             ClusterMembership.from(cluster, highestIndex.add(1)),
-                                             requestedNodes.resources().orElse(node.node.resources()),
-                                             nodeRepository.clock().instant());
+                node = node.withNode(offered.allocate(application,
+                                                      ClusterMembership.from(cluster, highestIndex.add(1)),
+                                                      requestedNodes.resources().orElse(node.node.resources()),
+                                                      nodeRepository.clock().instant()));
                 accepted.add(acceptNode(node, false, false));
             }
         }
@@ -156,15 +157,15 @@ class NodeAllocation {
     private boolean shouldRetire(PrioritizableNode node) {
         if ( ! requestedNodes.considerRetiring()) return false;
         if ( ! nodeResourceLimits.isWithinRealLimits(node.node, cluster)) return true;
-        if (violatesParentHostPolicy(this.nodes, node.node)) return true;
+        if (violatesParentHostPolicy(node.node)) return true;
         if ( ! hasCompatibleFlavor(node)) return true;
         if (node.node.status().wantToRetire()) return true;
         if (requestedNodes.isExclusive() && ! hostsOnly(application, node.node.parentHostname())) return true;
         return false;
     }
 
-    private boolean violatesParentHostPolicy(Collection<PrioritizableNode> accepted, Node offered) {
-        return checkForClashingParentHost() && offeredNodeHasParentHostnameAlreadyAccepted(accepted, offered);
+    private boolean violatesParentHostPolicy(Node offered) {
+        return checkForClashingParentHost() && offeredNodeHasParentHostnameAlreadyAccepted(offered);
     }
 
     private boolean checkForClashingParentHost() {
@@ -173,8 +174,8 @@ class NodeAllocation {
                ! application.instance().isTester();
     }
 
-    private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<PrioritizableNode> accepted, Node offered) {
-        for (PrioritizableNode acceptedNode : accepted) {
+    private boolean offeredNodeHasParentHostnameAlreadyAccepted(Node offered) {
+        for (PrioritizableNode acceptedNode : nodes.values()) {
             if (acceptedNode.node.parentHostname().isPresent() && offered.parentHostname().isPresent() &&
                     acceptedNode.node.parentHostname().get().equals(offered.parentHostname().get())) {
                 return true;
@@ -271,11 +272,15 @@ class NodeAllocation {
             // group may be different
             node = setCluster(cluster, node);
         }
-        prioritizableNode.node = node;
+        prioritizableNode = prioritizableNode.withNode(node);
         indexes.add(node.allocation().get().membership().index());
         highestIndex.set(Math.max(highestIndex.get(), node.allocation().get().membership().index()));
-        nodes.add(prioritizableNode);
+        update(prioritizableNode);
         return node;
+    }
+
+    private void update(PrioritizableNode node) {
+        nodes.put(node.node.hostname(), node);
     }
 
     private Node resize(Node node) {
@@ -323,36 +328,39 @@ class NodeAllocation {
      * @return the final list of nodes
      */
     List<Node> finalNodes() {
-        int currentRetiredCount = (int) nodes.stream().filter(node -> node.node.allocation().get().membership().retired()).count();
+        int currentRetiredCount = (int) nodes.values().stream().filter(node -> node.node.allocation().get().membership().retired()).count();
         int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), currentRetiredCount) - currentRetiredCount;
 
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
-            for (PrioritizableNode node : byRetiringPriority(nodes)) {
+            for (PrioritizableNode node : byRetiringPriority(nodes.values())) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state() == Node.State.active) {
-                    node.node = node.node.retire(Agent.application, nodeRepository.clock().instant());
+                    PrioritizableNode newNode = node.withNode(node.node.retire(Agent.application, nodeRepository.clock().instant()));
+                    update(newNode);
                     if (--deltaRetiredCount == 0) break;
                 }
             }
         }
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
-            for (PrioritizableNode node : byUnretiringPriority(nodes)) {
+            for (PrioritizableNode node : byUnretiringPriority(nodes.values())) {
                 if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node) ) {
                     if (node.isResizable)
-                        node.node = resize(node.node);
-                    node.node = node.node.unretire();
+                        node = node.withNode(resize(node.node));
+                    node = node.withNode(node.node.unretire());
+                    update(node);
                     if (++deltaRetiredCount == 0) break;
                 }
             }
         }
         
-        for (PrioritizableNode node : nodes) {
+        for (PrioritizableNode node : nodes.values()) {
             // Set whether the node is exclusive
             Allocation allocation = node.node.allocation().get();
-            node.node = node.node.with(allocation.with(allocation.membership()
-                                .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive()))));
+            node = node.withNode(node.node.with(allocation.with(allocation.membership()
+                                .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive())))));
+            update(node);
         }
 
-        return nodes.stream().map(n -> n.node).collect(Collectors.toList());
+        return nodes.values().stream().map(n -> n.node).collect(Collectors.toList());
     }
 
     List<Node> reservableNodes() {
@@ -361,28 +369,24 @@ class NodeAllocation {
         return nodesFilter(n -> !n.isNewNode && reservableStates.contains(n.node.state()));
     }
 
-    List<Node> surplusNodes() {
-        return nodesFilter(n -> n.isSurplusNode);
-    }
-
     List<Node> newNodes() {
         return nodesFilter(n -> n.isNewNode);
     }
 
     private List<Node> nodesFilter(Predicate<PrioritizableNode> predicate) {
-        return nodes.stream()
+        return nodes.values().stream()
                 .filter(predicate)
                 .map(n -> n.node)
                 .collect(Collectors.toList());
     }
 
     /** Prefer to retire nodes we want the least */
-    private List<PrioritizableNode> byRetiringPriority(Set<PrioritizableNode> nodes) {
+    private List<PrioritizableNode> byRetiringPriority(Collection<PrioritizableNode> nodes) {
         return nodes.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
     }
 
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
-    private List<PrioritizableNode> byUnretiringPriority(Set<PrioritizableNode> nodes) {
+    private List<PrioritizableNode> byUnretiringPriority(Collection<PrioritizableNode> nodes) {
         return nodes.stream()
                     .sorted(Comparator.comparing((PrioritizableNode n) -> n.node.status().wantToRetire())
                                       .thenComparing(n -> n.node.allocation().get().membership().index()))

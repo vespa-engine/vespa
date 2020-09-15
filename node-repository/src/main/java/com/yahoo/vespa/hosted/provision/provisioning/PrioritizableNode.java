@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A node with additional information required to prioritize it for allocation.
+ * A node with additional information required to prioritize it for allocation. This is immutable.
  *
  * @author smorgrav
  */
@@ -21,8 +21,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     private static final NodeResources zeroResources =
             new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
-    // TODO: Make immutable
-    Node node;
+    final Node node;
 
     /** The free capacity on the parent of this node, before adding this node to it */
     private final NodeResources freeParentCapacity;
@@ -137,6 +136,11 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
 
     /** Returns the allocation skew of the parent of this after adding this node to it */
     double skewWithThis() { return skewWith(node.resources()); }
+
+    /** Returns a copy of this with node set to given value */
+    PrioritizableNode withNode(Node node) {
+        return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
+    }
 
     private boolean lessThanHalfTheHost(PrioritizableNode node) {
         var n = node.node.resources();

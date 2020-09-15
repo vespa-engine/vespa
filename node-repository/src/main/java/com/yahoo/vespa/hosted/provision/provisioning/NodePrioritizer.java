@@ -5,21 +5,20 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-
-import java.util.ArrayList;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -81,7 +80,7 @@ public class NodePrioritizer {
         this.isDocker = resources(requestedNodes) != null;
     }
 
-    /** Returns the list of nodes sorted by PrioritizableNode::compare */
+    /** Returns the list of nodes sorted by {@link PrioritizableNode#compareTo(PrioritizableNode)} */
     List<PrioritizableNode> prioritize() {
         return nodes.values().stream().sorted().collect(Collectors.toList());
     }
