@@ -46,11 +46,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,8 +73,8 @@ public class SessionRepository {
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSessionId = 0;
 
-    private final SessionCache<LocalSession> localSessionCache = new SessionCache<>();
-    private final SessionCache<RemoteSession> remoteSessionCache = new SessionCache<>();
+    private final Map<Long, LocalSession> localSessionCache = new ConcurrentHashMap<>();
+    private final Map<Long, RemoteSession> remoteSessionCache = new ConcurrentHashMap<>();
     private final Map<Long, SessionStateWatcher> sessionStateWatchers = new HashMap<>();
     private final Duration sessionLifetime;
     private final Clock clock;
@@ -121,18 +123,18 @@ public class SessionRepository {
     // ---------------- Local sessions ----------------------------------------------------------------
 
     public synchronized void addLocalSession(LocalSession session) {
-        localSessionCache.putSession(session);
+        localSessionCache.put(session.getSessionId(), session);
         long sessionId = session.getSessionId();
         RemoteSession remoteSession = createRemoteSession(sessionId);
         addSessionStateWatcher(sessionId, remoteSession);
     }
 
     public LocalSession getLocalSession(long sessionId) {
-        return localSessionCache.getSession(sessionId);
+        return localSessionCache.get(sessionId);
     }
 
-    public List<LocalSession> getLocalSessions() {
-        return localSessionCache.getSessions();
+    public Collection<LocalSession> getLocalSessions() {
+        return localSessionCache.values();
     }
 
     private void loadLocalSessions() {
@@ -173,7 +175,7 @@ public class SessionRepository {
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         try {
-            for (LocalSession candidate : localSessionCache.getSessions()) {
+            for (LocalSession candidate : localSessionCache.values()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
@@ -214,7 +216,7 @@ public class SessionRepository {
             log.log(Level.FINE, () -> "Deleting local session " + sessionId);
             SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
             if (watcher != null) watcher.close();
-            localSessionCache.removeSession(sessionId);
+            localSessionCache.remove(sessionId);
             deletePersistentData(sessionId);
         }
     }
@@ -247,7 +249,7 @@ public class SessionRepository {
     }
 
     private void deleteAllSessions() {
-        List<LocalSession> sessions = new ArrayList<>(localSessionCache.getSessions());
+        List<LocalSession> sessions = new ArrayList<>(localSessionCache.values());
         for (LocalSession session : sessions) {
             deleteLocalSession(session);
         }
@@ -256,7 +258,7 @@ public class SessionRepository {
     // ---------------- Remote sessions ----------------------------------------------------------------
 
     public RemoteSession getRemoteSession(long sessionId) {
-        return remoteSessionCache.getSession(sessionId);
+        return remoteSessionCache.get(sessionId);
     }
 
     public List<Long> getRemoteSessions() {
@@ -264,15 +266,15 @@ public class SessionRepository {
     }
 
     public void addRemoteSession(RemoteSession session) {
-        remoteSessionCache.putSession(session);
+        remoteSessionCache.put(session.getSessionId(), session);
         metrics.incAddedSessions();
     }
 
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getRemoteSessions()) {
-            RemoteSession session = remoteSessionCache.getSession(sessionId);
-            if (session == null) continue; // Internal sessions not in synch with zk, continue
+            RemoteSession session = remoteSessionCache.get(sessionId);
+            if (session == null) continue; // Internal sessions not in sync with zk, continue
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
@@ -325,14 +327,14 @@ public class SessionRepository {
     }
 
     private void checkForRemovedSessions(List<Long> sessions) {
-        for (RemoteSession session : remoteSessionCache.getSessions())
+        for (RemoteSession session : remoteSessionCache.values())
             if ( ! sessions.contains(session.getSessionId()))
                 sessionRemoved(session.getSessionId());
     }
 
     private void checkForAddedSessions(List<Long> sessions) {
         for (Long sessionId : sessions)
-            if (remoteSessionCache.getSession(sessionId) == null)
+            if (remoteSessionCache.get(sessionId) == null)
                 sessionAdded(sessionId);
     }
 
@@ -392,7 +394,7 @@ public class SessionRepository {
     private void sessionRemoved(long sessionId) {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
-        remoteSessionCache.removeSession(sessionId);
+        remoteSessionCache.remove(sessionId);
         metrics.incRemovedSessions();
     }
 
@@ -410,7 +412,7 @@ public class SessionRepository {
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
             Multiset<Session.Status> sessionMetrics = HashMultiset.create();
-            for (RemoteSession session : remoteSessionCache.getSessions()) {
+            for (RemoteSession session : remoteSessionCache.values()) {
                 sessionMetrics.add(session.getStatus());
             }
             metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
@@ -439,7 +441,7 @@ public class SessionRepository {
 
     private void synchronizeOnNew(List<Long> sessionList) {
         for (long sessionId : sessionList) {
-            RemoteSession session = remoteSessionCache.getSession(sessionId);
+            RemoteSession session = remoteSessionCache.get(sessionId);
             if (session == null) continue; // session might have been deleted after getting session list
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();
