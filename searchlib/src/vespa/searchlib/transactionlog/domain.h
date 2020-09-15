@@ -12,7 +12,7 @@ namespace search::transactionlog {
 class DomainPart;
 class Session;
 
-class Domain
+class Domain : public Writer
 {
 public:
     using SP = std::shared_ptr<Domain>;
@@ -21,13 +21,13 @@ public:
     Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & executor,
            const DomainConfig & cfg, const common::FileHeaderContext &fileHeaderContext);
 
-    ~Domain();
+    ~Domain() override;
 
     DomainInfo getDomainInfo() const;
     const vespalib::string & name() const { return _name; }
     bool erase(SerialNum to);
 
-    void commit(const Packet & packet, Writer::DoneCallback onDone);
+    void commit(const Packet & packet, Writer::DoneCallback onDone) override;
     int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest);
 
     SerialNum begin() const;

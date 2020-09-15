@@ -243,10 +243,10 @@ TransLogServer::getDomainNames()
 }
 
 Domain::SP
-TransLogServer::findDomain(stringref domainName)
+TransLogServer::findDomain(stringref domainName) const
 {
     ReadGuard domainGuard(_domainMutex);
-    DomainList::iterator found(_domains.find(domainName));
+    auto found(_domains.find(domainName));
     if (found != _domains.end()) {
         return found->second;
     }
@@ -556,12 +556,12 @@ TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-void
-TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
+std::shared_ptr<Writer>
+TransLogServer::getWriter(const vespalib::string & domainName) const
 {
     Domain::SP domain(findDomain(domainName));
     if (domain) {
-        domain->commit(packet, std::move(done));
+        return domain;
     } else {
         throw IllegalArgumentException("Could not find domain " + domainName);
     }

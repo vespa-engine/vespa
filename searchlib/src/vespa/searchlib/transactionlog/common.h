@@ -85,7 +85,13 @@ class Writer {
 public:
     using DoneCallback = std::shared_ptr<IDestructorCallback>;
     virtual ~Writer() = default;
-    virtual void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) = 0;
+    virtual void commit(const Packet & packet, DoneCallback done) = 0;
+};
+
+class WriterFactory {
+public:
+    virtual ~WriterFactory() = default;
+    virtual std::shared_ptr<Writer> getWriter(const vespalib::string & domainName) const = 0;
 };
 
 class Destination {

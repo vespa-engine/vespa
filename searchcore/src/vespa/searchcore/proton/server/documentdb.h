@@ -39,7 +39,7 @@ namespace search {
     namespace common { class FileHeaderContext; }
     namespace transactionlog {
         class TransLogClient;
-        class Writer;
+        class WriterFactory;
     }
 }
 
@@ -253,7 +253,7 @@ public:
                IDocumentDBOwner &owner,
                vespalib::SyncableThreadExecutor &warmupExecutor,
                vespalib::ThreadStackExecutorBase &sharedExecutor,
-               search::transactionlog::Writer &tlsDirectWriter,
+               const search::transactionlog::WriterFactory &tlsWriterFactory,
                MetricsWireService &metricsWireService,
                const search::common::FileHeaderContext &fileHeaderContext,
                ConfigStore::UP config_store,

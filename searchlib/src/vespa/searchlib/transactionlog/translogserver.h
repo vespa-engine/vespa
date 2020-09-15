@@ -18,7 +18,7 @@ namespace search::transactionlog {
 class TransLogServerExplorer;
 class Domain;
 
-class TransLogServer : public document::Runnable, private FRT_Invokable, public Writer
+class TransLogServer : public document::Runnable, private FRT_Invokable, public WriterFactory
 {
 public:
     friend class TransLogServerExplorer;
@@ -33,7 +33,7 @@ public:
     ~TransLogServer() override;
     DomainStats getDomainStats() const;
     bool commitIfStale();
-    void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) override;
+    std::shared_ptr<Writer> getWriter(const vespalib::string & domainName) const override;
     TransLogServer & setDomainConfig(const DomainConfig & cfg);
     vespalib::duration getChunkAgeLimit() const;
 
@@ -72,7 +72,7 @@ private:
     void downSession(FRT_RPCRequest *req);
 
     std::vector<vespalib::string> getDomainNames();
-    DomainSP findDomain(vespalib::stringref name);
+    DomainSP findDomain(vespalib::stringref name) const;
     vespalib::string dir()        const { return _baseDir + "/" + _name; }
     vespalib::string domainList() const { return dir() + "/" + _name + ".domains"; }
 
