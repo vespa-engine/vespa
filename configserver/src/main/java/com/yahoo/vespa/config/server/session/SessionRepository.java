@@ -346,7 +346,6 @@ public class SessionRepository {
         loadSessionIfActive(remoteSession);
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        updateSessionStateWatcher(remoteSession);
     }
 
     void activate(RemoteSession session) {
@@ -455,10 +454,6 @@ public class SessionRepository {
     }
 
     public RemoteSession createRemoteSession(long sessionId) {
-        return createRemoteSession(sessionId, Optional.empty());
-    }
-
-    public RemoteSession createRemoteSession(long sessionId, Optional<ApplicationSet> applicationSet) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
         remoteSessionCache.putSession(session);
