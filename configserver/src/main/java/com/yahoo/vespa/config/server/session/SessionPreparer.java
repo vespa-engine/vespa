@@ -240,8 +240,8 @@ public class SessionPreparer {
             }
         }
 
-        FileReference distributeApplicationPackage() {
-            if ( ! distributeApplicationPackage.value()) return null;
+        Optional<FileReference> distributeApplicationPackage() {
+            if ( ! distributeApplicationPackage.value()) return Optional.empty();
 
             FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addApplicationPackage();
@@ -252,7 +252,7 @@ public class SessionPreparer {
                     .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
             checkTimeout("distributeApplicationPackage");
-            return fileReference;
+            return Optional.of(fileReference);
         }
 
         void preprocess() {
@@ -277,7 +277,7 @@ public class SessionPreparer {
             checkTimeout("making result from models");
         }
 
-        void writeStateZK(FileReference distributedApplicationPackage) {
+        void writeStateZK(Optional<FileReference> distributedApplicationPackage) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
@@ -332,7 +332,7 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
-                                       FileReference distributedApplicationPackage,
+                                       Optional<FileReference> distributedApplicationPackage,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
                                        DeployLogger deployLogger,

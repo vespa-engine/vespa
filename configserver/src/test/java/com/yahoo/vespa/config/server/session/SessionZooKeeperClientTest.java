@@ -136,7 +136,7 @@ public class SessionZooKeeperClientTest {
     public void require_that_application_package_file_reference_can_be_written_and_read() {
         final FileReference testRef = new FileReference("test-ref");
         SessionZooKeeperClient zkc = createSessionZKClient(3);
-        zkc.writeApplicationPackageReference(testRef);
+        zkc.writeApplicationPackageReference(Optional.of(testRef));
         assertThat(zkc.readApplicationPackageReference(), is(testRef));
     }
 
