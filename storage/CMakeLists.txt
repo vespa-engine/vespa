@@ -39,6 +39,7 @@ vespa_define_module(
     src/vespa/storage/persistence
     src/vespa/storage/persistence/filestorage
     src/vespa/storage/storageserver
+    src/vespa/storage/storageserver/rpc
     src/vespa/storage/storageutil
     src/vespa/storage/tools
     src/vespa/storage/visiting
@@ -60,5 +61,6 @@ vespa_define_module(
     src/tests/persistence/common
     src/tests/persistence/filestorage
     src/tests/storageserver
+    src/tests/storageserver/rpc
     src/tests/visiting
 )

@@ -12,7 +12,7 @@
 
 #include "communicationmanagermetrics.h"
 #include "documentapiconverter.h"
-#include "message_enqueuer.h"
+#include "message_dispatcher.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
@@ -37,19 +37,24 @@ namespace mbus {
 }
 namespace storage {
 
+namespace rpc {
+class ClusterControllerApiRpcService;
+class MessageCodecProvider;
+class SharedRpcResources;
+class StorageApiRpcService;
+}
+
 struct BucketResolver;
-class VisitorMbusSession;
 class Visitor;
 class VisitorThread;
-class FNetListener;
 class RPCRequestWrapper;
 
 class StorageTransportContext : public api::TransportContext {
 public:
-    StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
-    StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
-    StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
-    ~StorageTransportContext();
+    explicit StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
+    explicit StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
+    explicit StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
+    ~StorageTransportContext() override;
 
     std::unique_ptr<documentapi::DocumentMessage> _docAPIMsg;
     std::unique_ptr<mbusprot::StorageCommand>     _storageProtocolMsg;
@@ -63,7 +68,7 @@ class CommunicationManager final
       public mbus::IMessageHandler,
       public mbus::IReplyHandler,
       private framework::MetricUpdateHook,
-      public MessageEnqueuer
+      public MessageDispatcher
 {
 private:
     CommunicationManager(const CommunicationManager&);
@@ -72,7 +77,10 @@ private:
     StorageComponent _component;
     CommunicationManagerMetrics _metrics;
 
-    std::unique_ptr<FNetListener> _listener;
+    std::unique_ptr<rpc::SharedRpcResources> _shared_rpc_resources;
+    std::unique_ptr<rpc::StorageApiRpcService> _storage_api_rpc_service;
+    std::unique_ptr<rpc::ClusterControllerApiRpcService> _cc_rpc_service;
+    std::unique_ptr<rpc::MessageCodecProvider> _message_codec_provider;
     Queue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
@@ -112,6 +120,7 @@ private:
     DocumentApiConverter  _docApiConverter;
     framework::Thread::UP _thread;
     bool                  _skip_thread;
+    bool                  _use_direct_storageapi_rpc;
 
     void updateMetrics(const MetricLockGuard &) override;
     void enqueue_or_process(std::shared_ptr<api::StorageMessage> msg);
@@ -122,9 +131,12 @@ private:
 public:
     CommunicationManager(StorageComponentRegister& compReg,
                          const config::ConfigUri & configUri);
-    ~CommunicationManager();
+    ~CommunicationManager() override;
 
-    void enqueue(std::shared_ptr<api::StorageMessage> msg) override;
+    // MessageDispatcher overrides
+    void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override;
+    void dispatch_async(std::shared_ptr<api::StorageMessage> msg) override;
+
     mbus::RPCMessageBus& getMessageBus() { assert(_mbus.get()); return *_mbus; }
     const PriorityConverter& getPriorityConverter() const { return _docApiConverter.getPriorityConverter(); }
 

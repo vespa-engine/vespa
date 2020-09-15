@@ -1,33 +1,37 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/storage/storageserver/fnetlistener.h>
-#include <vespa/storage/storageserver/message_enqueuer.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
-#include <vespa/storage/storageserver/slime_cluster_state_bundle_codec.h>
+#include <vespa/storage/storageserver/rpc/cluster_controller_api_rpc_service.h>
+#include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
+#include <vespa/storage/storageserver/rpc/slime_cluster_state_bundle_codec.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vdstestlib/config/dirconfig.hpp>
-#include <vespa/messagebus/testlib/slobrok.h>
 #include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 
-namespace storage {
+namespace storage::rpc {
 
 using document::FixedBucketSpaces;
 using namespace ::testing;
 
-struct FNetListenerTest : Test {
+struct ClusterControllerApiRpcServiceTest : Test {
 };
 
 namespace {
 
-struct MockOperationEnqueuer : MessageEnqueuer {
+struct MockOperationDispatcher : MessageDispatcher {
     std::vector<std::shared_ptr<api::StorageMessage>> _enqueued;
 
-    void enqueue(std::shared_ptr<api::StorageMessage> msg) override {
+    void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override {
+        _enqueued.emplace_back(std::move(msg));
+    }
+    void dispatch_async(std::shared_ptr<api::StorageMessage> msg) override {
         _enqueued.emplace_back(std::move(msg));
     }
 };
@@ -38,11 +42,11 @@ struct DummyReturnHandler : FRT_IReturnHandler {
 };
 
 struct FixtureBase {
-    // TODO factor out Slobrok code to avoid need to set up live ports for unrelated tests
     mbus::Slobrok slobrok;
     vdstestlib::DirConfig config;
-    MockOperationEnqueuer enqueuer;
-    std::unique_ptr<FNetListener> fnet_listener;
+    MockOperationDispatcher dispatcher;
+    std::unique_ptr<SharedRpcResources> shared_rpc_resources;
+    std::unique_ptr<ClusterControllerApiRpcService> cc_service;
     DummyReturnHandler return_handler;
     bool request_is_detached{false};
     FRT_RPCRequest* bound_request{nullptr};
@@ -52,13 +56,16 @@ struct FixtureBase {
     {
         config.getConfig("stor-server").set("node_index", "1");
         addSlobrokConfig(config, slobrok);
-        fnet_listener = std::make_unique<FNetListener>(enqueuer, config.getConfigId(), 0);
+
+        shared_rpc_resources = std::make_unique<SharedRpcResources>(config.getConfigId(), 0, 1);
+        cc_service = std::make_unique<ClusterControllerApiRpcService>(dispatcher, *shared_rpc_resources);
+        shared_rpc_resources->start_server_and_register_slobrok("my_cool_rpc_test");
     }
 
     virtual ~FixtureBase() {
         // Must destroy any associated message contexts that may have refs to FRT_Request
         // instance _before_ we destroy the request itself.
-        enqueuer._enqueued.clear();
+        dispatcher._enqueued.clear();
         if (bound_request) {
             bound_request->SubRef();
         }
@@ -92,29 +99,29 @@ struct SetStateFixture : FixtureBase {
     void assert_enqueued_operation_has_bundle(const lib::ClusterStateBundle& expectedBundle) {
         ASSERT_TRUE(bound_request != nullptr);
         ASSERT_TRUE(request_is_detached);
-        ASSERT_EQ(1, enqueuer._enqueued.size());
-        auto& state_request = dynamic_cast<const api::SetSystemStateCommand&>(*enqueuer._enqueued[0]);
+        ASSERT_EQ(1, dispatcher._enqueued.size());
+        auto& state_request = dynamic_cast<const api::SetSystemStateCommand&>(*dispatcher._enqueued[0]);
         ASSERT_EQ(expectedBundle, state_request.getClusterStateBundle());
     }
 
     void assert_request_received_and_propagated(const lib::ClusterStateBundle& bundle) {
         create_request(bundle);
-        fnet_listener->RPC_setDistributionStates(bound_request);
+        cc_service->RPC_setDistributionStates(bound_request);
         assert_enqueued_operation_has_bundle(bundle);
     }
 
     void assert_request_returns_error_response(RPCRequestWrapper::ErrorCode error_code) {
-        fnet_listener->RPC_setDistributionStates(bound_request);
+        cc_service->RPC_setDistributionStates(bound_request);
         ASSERT_FALSE(request_is_detached);
         ASSERT_TRUE(bound_request->IsError());
         ASSERT_EQ(static_cast<uint32_t>(error_code), bound_request->GetErrorCode());
     }
 
-    lib::ClusterStateBundle dummy_baseline_bundle() const {
+    static lib::ClusterStateBundle dummy_baseline_bundle() {
         return lib::ClusterStateBundle(lib::ClusterState("version:123 distributor:3 storage:3"));
     }
 
-    lib::ClusterStateBundle dummy_baseline_bundle_with_deferred_activation(bool deferred) const {
+    static lib::ClusterStateBundle dummy_baseline_bundle_with_deferred_activation(bool deferred) {
         return lib::ClusterStateBundle(lib::ClusterState("version:123 distributor:3 storage:3"), {}, deferred);
     }
 };
@@ -134,14 +141,14 @@ vespalib::string make_compressable_state_string() {
 
 } // anon namespace
 
-TEST_F(FNetListenerTest, baseline_set_distribution_states_rpc_enqueues_command_with_state_bundle) {
+TEST_F(ClusterControllerApiRpcServiceTest, baseline_set_distribution_states_rpc_enqueues_command_with_state_bundle) {
     SetStateFixture f;
     auto baseline = f.dummy_baseline_bundle();
 
     f.assert_request_received_and_propagated(baseline);
 }
 
-TEST_F(FNetListenerTest, set_distribution_states_rpc_with_derived_enqueues_command_with_state_bundle) {
+TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_states_rpc_with_derived_enqueues_command_with_state_bundle) {
     SetStateFixture f;
     lib::ClusterStateBundle spaces_bundle(
             lib::ClusterState("version:123 distributor:3 storage:3"),
@@ -151,7 +158,7 @@ TEST_F(FNetListenerTest, set_distribution_states_rpc_with_derived_enqueues_comma
     f.assert_request_received_and_propagated(spaces_bundle);
 }
 
-TEST_F(FNetListenerTest, compressed_bundle_is_transparently_uncompressed) {
+TEST_F(ClusterControllerApiRpcServiceTest, compressed_bundle_is_transparently_uncompressed) {
     SetStateFixture f;
     auto state_str = make_compressable_state_string();
     lib::ClusterStateBundle compressable_bundle{lib::ClusterState(state_str)};
@@ -160,38 +167,38 @@ TEST_F(FNetListenerTest, compressed_bundle_is_transparently_uncompressed) {
     // First verify that the bundle is sent in compressed form
     ASSERT_LT(f.bound_request->GetParams()->GetValue(2)._data._len, state_str.size());
     // Ensure we uncompress it to the original form
-    f.fnet_listener->RPC_setDistributionStates(f.bound_request);
+    f.cc_service->RPC_setDistributionStates(f.bound_request);
     f.assert_enqueued_operation_has_bundle(compressable_bundle);
 }
 
-TEST_F(FNetListenerTest, set_distribution_rpc_is_immediately_failed_if_listener_is_closed) {
+TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_rpc_is_immediately_failed_if_listener_is_closed) {
     SetStateFixture f;
     f.create_request(f.dummy_baseline_bundle());
-    f.fnet_listener->close();
+    f.cc_service->close();
     f.assert_request_returns_error_response(RPCRequestWrapper::ERR_NODE_SHUTTING_DOWN);
 }
 
-TEST_F(FNetListenerTest, overly_large_uncompressed_bundle_size_parameter_returns_rpc_error) {
+TEST_F(ClusterControllerApiRpcServiceTest, overly_large_uncompressed_bundle_size_parameter_returns_rpc_error) {
     SetStateFixture f;
     auto encoded_bundle = f.codec.encode(f.dummy_baseline_bundle());
-    f.bind_request_params(encoded_bundle, FNetListener::StateBundleMaxUncompressedSize + 1);
+    f.bind_request_params(encoded_bundle, ClusterControllerApiRpcService::StateBundleMaxUncompressedSize + 1);
     f.assert_request_returns_error_response(RPCRequestWrapper::ERR_BAD_REQUEST);
 }
 
-TEST_F(FNetListenerTest, mismatching_uncompressed_bundle_size_parameter_returns_rpc_error) {
+TEST_F(ClusterControllerApiRpcServiceTest, mismatching_uncompressed_bundle_size_parameter_returns_rpc_error) {
     SetStateFixture f;
     auto encoded_bundle = f.codec.encode(f.dummy_baseline_bundle());
     f.bind_request_params(encoded_bundle, encoded_bundle._buffer->getDataLen() + 100);
     f.assert_request_returns_error_response(RPCRequestWrapper::ERR_BAD_REQUEST);
 }
 
-TEST_F(FNetListenerTest, true_deferred_activation_flag_can_be_roundtrip_encoded) {
+TEST_F(ClusterControllerApiRpcServiceTest, true_deferred_activation_flag_can_be_roundtrip_encoded) {
     SetStateFixture f;
     f.assert_request_received_and_propagated(f.dummy_baseline_bundle_with_deferred_activation(true));
 
 }
 
-TEST_F(FNetListenerTest, false_deferred_activation_flag_can_be_roundtrip_encoded) {
+TEST_F(ClusterControllerApiRpcServiceTest, false_deferred_activation_flag_can_be_roundtrip_encoded) {
     SetStateFixture f;
     f.assert_request_received_and_propagated(f.dummy_baseline_bundle_with_deferred_activation(false));
 }
@@ -217,19 +224,19 @@ struct ActivateStateFixture : FixtureBase {
     void assert_enqueued_operation_has_activate_version(uint32_t version) {
         ASSERT_TRUE(bound_request != nullptr);
         ASSERT_TRUE(request_is_detached);
-        ASSERT_EQ(1, enqueuer._enqueued.size());
-        auto& state_request = dynamic_cast<const api::ActivateClusterStateVersionCommand&>(*enqueuer._enqueued[0]);
+        ASSERT_EQ(1, dispatcher._enqueued.size());
+        auto& state_request = dynamic_cast<const api::ActivateClusterStateVersionCommand&>(*dispatcher._enqueued[0]);
         ASSERT_EQ(version, state_request.version());
     }
 
     void assert_request_received_and_propagated(uint32_t activate_version) {
         create_request(activate_version);
-        fnet_listener->RPC_activateClusterStateVersion(bound_request);
+        cc_service->RPC_activateClusterStateVersion(bound_request);
         assert_enqueued_operation_has_activate_version(activate_version);
     }
 };
 
-TEST_F(FNetListenerTest, activate_cluster_state_version_rpc_enqueues_command_with_version) {
+TEST_F(ClusterControllerApiRpcServiceTest, activate_cluster_state_version_rpc_enqueues_command_with_version) {
     ActivateStateFixture f;
     f.assert_request_received_and_propagated(1234567);
 }

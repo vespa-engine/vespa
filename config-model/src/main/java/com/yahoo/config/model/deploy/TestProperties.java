@@ -37,6 +37,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useContentNodeBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
+    private boolean useDirectStorageApiRpc = false;
     private double defaultTermwiseLimit = 1.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
@@ -73,6 +74,7 @@ public class TestProperties implements ModelContext.Properties {
     }
     @Override public boolean useContentNodeBtreeDb() { return useContentNodeBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
+    @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
@@ -110,6 +112,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUseThreePhaseUpdates(boolean useThreePhaseUpdates) {
         this.useThreePhaseUpdates = useThreePhaseUpdates;
+        return this;
+    }
+
+    public TestProperties setUseDirectStorageApiRpc(boolean useDirectStorageApiRpc) {
+        this.useDirectStorageApiRpc = useDirectStorageApiRpc;
         return this;
     }
 
