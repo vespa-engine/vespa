@@ -61,21 +61,7 @@ private:
     using ReadGuard = std::shared_lock<std::shared_mutex>;
     using WriteGuard = std::unique_lock<std::shared_mutex>;
     using IThreadingService = searchcorespi::index::IThreadingService;
-
-
-    class TlsMgrWriter : public TlsWriter {
-        TransactionLogManager &_tls_mgr;
-        search::transactionlog::Writer *_tlsDirectWriter;
-    public:
-        TlsMgrWriter(TransactionLogManager &tls_mgr,
-                     search::transactionlog::Writer * tlsDirectWriter) :
-            _tls_mgr(tls_mgr),
-            _tlsDirectWriter(tlsDirectWriter)
-        { }
-        void storeOperation(const FeedOperation &op, DoneCallback onDone) override;
-        bool erase(SerialNum oldest_to_keep) override;
-        SerialNum sync(SerialNum syncTo) override;
-    };
+    using TlsWriterFactory = search::transactionlog::WriterFactory;
 
     IThreadingService                     &_writeService;
     DocTypeName                            _docTypeName;
@@ -83,8 +69,9 @@ private:
     const IResourceWriteFilter            &_writeFilter;
     IReplayConfig                         &_replayConfig;
     TransactionLogManager                  _tlsMgr;
-    TlsMgrWriter                           _tlsMgrWriter;
-    TlsWriter                             &_tlsWriter;
+    const TlsWriterFactory                &_tlsWriterfactory;
+    std::unique_ptr<TlsWriter>             _tlsMgrWriter;
+    TlsWriter                             *_tlsWriter;
     TlsReplayProgress::UP                  _tlsReplayProgress;
     // the serial num of the last message in the transaction log
     SerialNum                              _serialNum;
@@ -157,7 +144,7 @@ public:
                 IFeedHandlerOwner &owner,
                 const IResourceWriteFilter &writerFilter,
                 IReplayConfig &replayConfig,
-                search::transactionlog::Writer & writer,
+                const TlsWriterFactory & writer,
                 TlsWriter * tlsWriter = nullptr);
 
     ~FeedHandler() override;

@@ -5,7 +5,6 @@
 #include "feedstates.h"
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
-#include "tlcproxy.h"
 #include "configstore.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -47,22 +46,45 @@ namespace proton {
 
 namespace {
 
+using search::SerialNum;
+
 bool
 ignoreOperation(const DocumentOperation &op) {
     return (op.getPrevTimestamp() != 0) && (op.getTimestamp() < op.getPrevTimestamp());
 }
 
-}  // namespace
+class TlsMgrWriter : public TlsWriter {
+    TransactionLogManager &_tls_mgr;
+    std::shared_ptr<search::transactionlog::Writer> _writer;
+public:
+    TlsMgrWriter(TransactionLogManager &tls_mgr,
+                 const search::transactionlog::WriterFactory & factory) :
+            _tls_mgr(tls_mgr),
+            _writer(factory.getWriter(tls_mgr.getDomainName()))
+    { }
+    void storeOperation(const FeedOperation &op, DoneCallback onDone) override;
+    bool erase(SerialNum oldest_to_keep) override;
+    SerialNum sync(SerialNum syncTo) override;
+};
 
-void FeedHandler::TlsMgrWriter::storeOperation(const FeedOperation &op, DoneCallback onDone) {
-    TlcProxy(_tls_mgr.getDomainName(), *_tlsDirectWriter).storeOperation(op, std::move(onDone));
+
+void TlsMgrWriter::storeOperation(const FeedOperation &op, DoneCallback onDone) {
+    using Packet = search::transactionlog::Packet;
+    vespalib::nbostream stream;
+    op.serialize(stream);
+    LOG(debug, "storeOperation(): serialNum(%" PRIu64 "), type(%u), size(%zu)",
+        op.getSerialNum(), (uint32_t)op.getType(), stream.size());
+    Packet::Entry entry(op.getSerialNum(), op.getType(), vespalib::ConstBufferRef(stream.data(), stream.size()));
+    Packet packet(entry.serializedSize());
+    packet.add(entry);
+    _writer->commit(packet, std::move(onDone));
 }
-bool FeedHandler::TlsMgrWriter::erase(SerialNum oldest_to_keep) {
+bool TlsMgrWriter::erase(SerialNum oldest_to_keep) {
     return _tls_mgr.getSession()->erase(oldest_to_keep);
 }
 
-search::SerialNum
-FeedHandler::TlsMgrWriter::sync(SerialNum syncTo)
+SerialNum
+TlsMgrWriter::sync(SerialNum syncTo)
 {
     for (int retryCount = 0; retryCount < 10; ++retryCount) {
         SerialNum syncedTo(0);
@@ -81,6 +103,8 @@ FeedHandler::TlsMgrWriter::sync(SerialNum syncTo)
     }
     throw IllegalStateException(make_string("Failed to sync TLS to token %" PRIu64 ".", syncTo));
 }
+
+}  // namespace
 
 void
 FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
@@ -330,7 +354,7 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
                          IFeedHandlerOwner &owner,
                          const IResourceWriteFilter &writeFilter,
                          IReplayConfig &replayConfig,
-                         search::transactionlog::Writer & tlsDirectWriter,
+                         const TlsWriterFactory & tlsWriterFactory,
                          TlsWriter * tlsWriter)
     : search::transactionlog::client::Callback(),
       IDocumentMoveHandler(),
@@ -344,8 +368,9 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _writeFilter(writeFilter),
       _replayConfig(replayConfig),
       _tlsMgr(tlsSpec, docTypeName.getName()),
-      _tlsMgrWriter(_tlsMgr, &tlsDirectWriter),
-      _tlsWriter(tlsWriter ? *tlsWriter : _tlsMgrWriter),
+      _tlsWriterfactory(tlsWriterFactory),
+      _tlsMgrWriter(),
+      _tlsWriter(tlsWriter),
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
@@ -369,6 +394,10 @@ void
 FeedHandler::init(SerialNum oldestConfigSerial)
 {
     _tlsMgr.init(oldestConfigSerial, _prunedSerialNum, _serialNum);
+    if (_tlsWriter == nullptr) {
+        _tlsMgrWriter = std::make_unique<TlsMgrWriter>(_tlsMgr, _tlsWriterfactory);
+        _tlsWriter = _tlsMgrWriter.get();
+    }
     _allowSync = true;
     syncTls(_serialNum);
 }
@@ -442,7 +471,7 @@ FeedHandler::storeOperation(const FeedOperation &op, TlsWriter::DoneCallback onD
     if (!op.getSerialNum()) {
         const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
     }
-    _tlsWriter.storeOperation(op, std::move(onDone));
+    _tlsWriter->storeOperation(op, std::move(onDone));
 }
 
 void
@@ -454,7 +483,7 @@ FeedHandler::storeOperationSync(const FeedOperation &op) {
 
 void
 FeedHandler::tlsPrune(SerialNum oldest_to_keep) {
-    if (!_tlsWriter.erase(oldest_to_keep)) {
+    if (!_tlsWriter->erase(oldest_to_keep)) {
         throw IllegalStateException(make_string("Failed to prune TLS to token %" PRIu64 ".", oldest_to_keep));
     }
     _prunedSerialNum = oldest_to_keep;
@@ -666,7 +695,7 @@ FeedHandler::syncTls(SerialNum syncTo)
     if (!_allowSync) {
         throw IllegalStateException(make_string("Attempted to sync TLS to token %" PRIu64 " at wrong time.", syncTo));
     }
-    SerialNum syncedTo(_tlsWriter.sync(syncTo));
+    SerialNum syncedTo(_tlsWriter->sync(syncTo));
     {
         std::lock_guard<std::mutex> guard(_syncLock);
         if (_syncedSerialNum < syncedTo) 
