@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
@@ -54,7 +55,7 @@ public class NodeRepositoryTester {
         return nodeRepository.getNodes(type, inState);
     }
     
-    public Node addNode(String id, String hostname, String flavor, NodeType type) {
+    public Node addHost(String id, String hostname, String flavor, NodeType type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
                                               nodeFlavors.getFlavorOrThrow(flavor), type);
         return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
@@ -63,6 +64,12 @@ public class NodeRepositoryTester {
     public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
                                               nodeFlavors.getFlavorOrThrow(flavor), type);
+        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
+    }
+
+    public Node addNode(String id, String hostname, String parentHostname, NodeResources resources) {
+        Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
+                                              new Flavor(resources), NodeType.tenant);
         return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
     }
 

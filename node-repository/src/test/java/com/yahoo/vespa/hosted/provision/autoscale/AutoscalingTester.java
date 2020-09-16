@@ -67,7 +67,7 @@ class AutoscalingTester {
                                                              .build();
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);
-        db = new NodeMetricsDb();
+        db = new NodeMetricsDb(provisioningTester.nodeRepository());
         autoscaler = new Autoscaler(db, nodeRepository());
     }
 
