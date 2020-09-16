@@ -63,7 +63,7 @@ public class NodeMetricsDb {
     public void gc(Clock clock) {
         synchronized (lock) {
             // Each measurement is Object + long + float = 16 + 8 + 4 = 28 bytes
-            // 24 hours with 1k nodes and 3 resources and 1 measurement/sec is about 10Gb
+            // 12 hours with 1k nodes and 3 resources and 1 measurement/sec is about 5Gb
 
             for (Iterator<NodeMeasurements> i = db.values().iterator(); i.hasNext(); ) {
                 var measurements = i.next();

@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
  */
 public class Autoscaler {
 
-    private static final int minimumMeasurementsPerNode = 60; // 1 hour
-
     /** What cost difference factor is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
     /** What difference factor for a resource is worth a reallocation? */
@@ -106,16 +104,22 @@ public class Autoscaler {
 
         // Require a total number of measurements scaling with the number of nodes,
         // but don't require that we have at least that many from every node
-        if (window.measurementCount()/clusterNodes.size() < minimumMeasurementsPerNode) return Optional.empty();
+        if (window.measurementCount()/clusterNodes.size() < minimumMeasurementsPerNode(clusterType)) return Optional.empty();
         if (window.hostnames() != clusterNodes.size()) return Optional.empty();
 
         return Optional.of(window.average());
     }
 
-    /** The duration of the window we need to consider to make a scaling decision */
+    /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
     static Duration scalingWindow(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return Duration.ofHours(12);
         return Duration.ofHours(1);
+    }
+
+    /** Measurements are currently taken once a minute. See also scalingWindow */
+    static int minimumMeasurementsPerNode(ClusterSpec.Type clusterType) {
+        if (clusterType.isContent()) return 60;
+        return 20;
     }
 
     public static boolean unstable(List<Node> nodes) {
