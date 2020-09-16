@@ -87,8 +87,9 @@ public class PeriodicApplicationMaintainerTest {
         // Create applications
         fixture.activate();
 
-        // Exhaust initial wait period
+        // Exhaust initial wait period and set bootstrapping to be done
         clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+        fixture.setBootstrapping(false);
 
         // Fail and park some nodes
         nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
@@ -161,9 +162,15 @@ public class PeriodicApplicationMaintainerTest {
         // Exhaust initial wait period
         clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
 
-        // First deployment of applications
+        // Will not do any deployments, as bootstrapping is still in progress
+        fixture.runApplicationMaintainer();
+        assertEquals("No deployment expected", 2, fixture.deployer.redeployments);
+
+        // First deployment of applications will happen now, as bootstrapping is done
+        fixture.setBootstrapping(false);
         fixture.runApplicationMaintainer();
         assertEquals("No deployment expected", 4, fixture.deployer.redeployments);
+
         Instant firstDeployTime = clock.instant();
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
@@ -186,8 +193,9 @@ public class PeriodicApplicationMaintainerTest {
     public void queues_all_eligible_applications_for_deployment() throws Exception {
         fixture.activate();
 
-        // Exhaust initial wait period
+        // Exhaust initial wait period and set bootstrapping to be done
         clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+        fixture.setBootstrapping(false);
 
         // Lock deployer to simulate slow deployments
         fixture.deployer.lock().lockInterruptibly();
@@ -296,6 +304,10 @@ public class PeriodicApplicationMaintainerTest {
 
         NodeList getNodes(Node.State ... states) {
             return NodeList.copyOf(nodeRepository.getNodes(NodeType.tenant, states));
+        }
+
+        void setBootstrapping(boolean bootstrapping) {
+            deployer.setBootstrapping(bootstrapping);
         }
 
     }
