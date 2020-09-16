@@ -3,6 +3,7 @@ package com.yahoo.documentapi;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
@@ -44,7 +45,38 @@ public interface AsyncSession extends Session {
      * @return the synchronous result of this operation
      */
     default Result put(Document document, DocumentProtocol.Priority priority) {
-        return put(document);
+        return put(new DocumentPut(document), priority);
+    }
+
+    /**
+     * <p>Puts a document, with optional conditions on the operation. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentResponse} objects to appear within the timeout time of this session.
+     * The response returned later will either be a success, or contain the document submitted here.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param documentPut the DocumentPut to perform
+     * @return the synchronous result of this operation
+     */
+    default Result put(DocumentPut documentPut) {
+        return put(documentPut, DocumentProtocol.Priority.NORMAL_3);
+    }
+
+    /**
+     * <p>Puts a document, with optional conditions on the operation. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentResponse} objects to appear within the timeout time of this session.
+     * The response returned later will either be a success, or contain the document submitted here.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param documentPut the DocumentPut to perform
+     * @return the synchronous result of this operation
+     */
+    // TODO Vespa 8: Make this the one to implement.
+    default Result put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
+        return put(documentPut.getDocument());
     }
 
     /**

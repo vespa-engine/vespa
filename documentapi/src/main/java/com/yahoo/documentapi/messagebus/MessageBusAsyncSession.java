@@ -92,12 +92,12 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result put(Document document) {
-        return put(document, DocumentProtocol.Priority.NORMAL_3);
+        return put(new DocumentPut(document), DocumentProtocol.Priority.NORMAL_3);
     }
 
     @Override
-    public Result put(Document document, DocumentProtocol.Priority pri) {
-        PutDocumentMessage msg = new PutDocumentMessage(new DocumentPut(document));
+    public Result put(DocumentPut documentPut, DocumentProtocol.Priority pri) {
+        PutDocumentMessage msg = new PutDocumentMessage(documentPut);
         msg.setPriority(pri);
         return send(msg);
     }

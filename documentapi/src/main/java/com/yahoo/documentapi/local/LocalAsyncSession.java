@@ -53,17 +53,17 @@ public class LocalAsyncSession implements AsyncSession {
 
     @Override
     public Result put(Document document) {
-        return put(document, DocumentProtocol.Priority.NORMAL_3);
+        return put(new DocumentPut(document), DocumentProtocol.Priority.NORMAL_3);
     }
 
     @Override
-    public Result put(Document document, DocumentProtocol.Priority pri) {
+    public Result put(DocumentPut documentPut, DocumentProtocol.Priority pri) {
         long req = getNextRequestId();
         try {
-            syncSession.put(new DocumentPut(document), pri);
+            syncSession.put(documentPut, pri);
             addResponse(new DocumentResponse(req));
         } catch (Exception e) {
-            addResponse(new DocumentResponse(req, document, e.getMessage(), false));
+            addResponse(new DocumentResponse(req, documentPut.getDocument(), e.getMessage(), false));
         }
         return new Result(req);
     }
