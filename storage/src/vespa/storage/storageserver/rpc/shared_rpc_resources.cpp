@@ -8,6 +8,7 @@
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
 #include <chrono>
@@ -66,6 +67,7 @@ SharedRpcResources::SharedRpcResources(const config::ConfigUri& config_uri,
       _slobrok_register(std::make_unique<slobrok::api::RegisterAPI>(*_orb, config_uri)),
       _slobrok_mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, config_uri)),
       _target_factory(std::make_unique<RpcTargetFactoryImpl>(*_orb)),
+      _hostname(vespalib::HostName::get()),
       _rpc_server_port(rpc_server_port),
       _shutdown(false)
 {

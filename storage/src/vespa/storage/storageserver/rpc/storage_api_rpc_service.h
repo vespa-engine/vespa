@@ -4,6 +4,7 @@
 #include "rpc_target.h"
 #include <vespa/fnet/frt/invokable.h>
 #include <vespa/fnet/frt/invoker.h>
+#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <atomic>
 #include <memory>
@@ -51,11 +52,9 @@ private:
 
     struct RpcRequestContext {
         std::shared_ptr<api::StorageCommand> _originator_cmd;
-        std::chrono::nanoseconds _timeout;
 
-        RpcRequestContext(std::shared_ptr<api::StorageCommand> cmd, std::chrono::nanoseconds timeout)
-            : _originator_cmd(std::move(cmd)),
-              _timeout(timeout)
+        explicit RpcRequestContext(std::shared_ptr<api::StorageCommand> cmd)
+            : _originator_cmd(std::move(cmd))
         {}
     };
 
@@ -65,6 +64,9 @@ private:
     template <typename MessageType>
     void encode_and_compress_rpc_payload(const MessageType& msg, FRT_Values& params);
     void RequestDone(FRT_RPCRequest* request) override;
+
+    api::ReturnCode map_frt_error_to_storage_api_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);
+    api::ReturnCode make_no_address_for_service_error(const api::StorageMessageAddress& addr) const;
 };
 
 } // rpc

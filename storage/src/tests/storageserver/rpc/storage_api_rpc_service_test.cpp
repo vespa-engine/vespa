@@ -16,8 +16,12 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/host_name.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <gmock/gmock.h>
 #include <condition_variable>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
@@ -34,6 +38,7 @@ namespace storage::rpc {
 namespace {
 
 constexpr std::chrono::duration message_timeout = 60s;
+constexpr std::chrono::duration slobrok_register_timeout = 60s;
 
 class LockingMockOperationDispatcher : public MessageDispatcher {
     using MessageQueueType = std::deque<std::shared_ptr<api::StorageMessage>>;
@@ -125,8 +130,12 @@ public:
     }
 
     void wait_until_visible_in_slobrok(vespalib::stringref id) {
+        const auto deadline = std::chrono::steady_clock::now() + slobrok_register_timeout;
         while (_shared_rpc_resources->slobrok_mirror().lookup(id).empty()) {
-            std::this_thread::sleep_for(10ms); // TODO timeout handling
+            if (std::chrono::steady_clock::now() > deadline) {
+                throw std::runtime_error("Timed out waiting for node to be visible in Slobrok");
+            }
+            std::this_thread::sleep_for(10ms);
         }
     }
 
@@ -139,10 +148,18 @@ public:
         return std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), std::move(doc), 100);
     }
 
-    void send_request(std::shared_ptr<api::StorageCommand> req) {
-        ASSERT_TRUE(_messages.empty());
+    void send_request_verify_not_bounced(std::shared_ptr<api::StorageCommand> req) {
+        if (!_messages.empty()) {
+            throw std::runtime_error("Node had pending messages before send");
+        }
         _service->send_rpc_v1_request(std::move(req));
-        ASSERT_TRUE(_messages.empty()); // If non-empty, request was bounced (Slobrok lookup failed)
+        if (!_messages.empty()) {
+            throw std::runtime_error("RPC request was bounced. Most likely due to missing Slobrok mapping");
+        }
+    }
+
+    void send_request(std::shared_ptr<api::StorageCommand> req) {
+        _service->send_rpc_v1_request(std::move(req));
     }
 
     // TODO move StorageTransportContext away from communicationmanager.h
@@ -179,6 +196,44 @@ struct StorageApiRpcServiceTest : Test {
         _node_1->wait_until_visible_in_slobrok(to_slobrok_id(_node_0->node_address()));
     }
     ~StorageApiRpcServiceTest() override;
+
+    static api::StorageMessageAddress non_existing_address() {
+        return make_address(100, false);
+    }
+
+    [[nodiscard]] std::shared_ptr<api::PutCommand> send_and_receive_put_command_at_node_1(
+            const std::function<void(api::PutCommand&)>& req_mutator) {
+        auto cmd = _node_0->create_dummy_put_command();
+        cmd->setAddress(_node_1->node_address());
+        req_mutator(*cmd);
+        _node_0->send_request_verify_not_bounced(cmd);
+
+        auto recv_msg = _node_1->wait_and_receive_single_message();
+        auto recv_as_put = std::dynamic_pointer_cast<api::PutCommand>(recv_msg);
+        assert(recv_as_put);
+        return recv_as_put;
+    }
+    [[nodiscard]] std::shared_ptr<api::PutCommand> send_and_receive_put_command_at_node_1() {
+        return send_and_receive_put_command_at_node_1([]([[maybe_unused]] auto& cmd){});
+    }
+
+    [[nodiscard]] std::shared_ptr<api::PutReply> respond_and_receive_put_reply_at_node_0(
+            const std::shared_ptr<api::PutCommand>& cmd,
+            const std::function<void(api::StorageReply&)>& reply_mutator) {
+        auto reply = std::shared_ptr<api::StorageReply>(cmd->makeReply());
+        reply_mutator(*reply);
+        _node_1->send_response(reply);
+
+        auto recv_reply = _node_0->wait_and_receive_single_message();
+        auto recv_as_put_reply = std::dynamic_pointer_cast<api::PutReply>(recv_reply);
+        assert(recv_as_put_reply);
+        return recv_as_put_reply;
+    }
+
+    [[nodiscard]] std::shared_ptr<api::PutReply> respond_and_receive_put_reply_at_node_0(
+            const std::shared_ptr<api::PutCommand>& cmd) {
+        return respond_and_receive_put_reply_at_node_0(cmd, []([[maybe_unused]] auto& reply){});
+    }
 };
 
 StorageApiRpcServiceTest::~StorageApiRpcServiceTest() = default;
@@ -186,7 +241,7 @@ StorageApiRpcServiceTest::~StorageApiRpcServiceTest() = default;
 TEST_F(StorageApiRpcServiceTest, can_send_and_respond_to_request_end_to_end) {
     auto cmd = _node_0->create_dummy_put_command();
     cmd->setAddress(_node_1->node_address());
-    ASSERT_NO_FATAL_FAILURE(_node_0->send_request(cmd));
+    _node_0->send_request_verify_not_bounced(cmd);
 
     auto recv_msg = _node_1->wait_and_receive_single_message();
     auto* put_cmd = dynamic_cast<api::PutCommand*>(recv_msg.get());
@@ -197,6 +252,55 @@ TEST_F(StorageApiRpcServiceTest, can_send_and_respond_to_request_end_to_end) {
     auto recv_reply = _node_0->wait_and_receive_single_message();
     auto* put_reply = dynamic_cast<api::PutReply*>(recv_reply.get());
     ASSERT_TRUE(put_reply != nullptr);
+}
+
+TEST_F(StorageApiRpcServiceTest, send_to_unknown_address_bounces_with_error_reply) {
+    auto cmd = _node_0->create_dummy_put_command();
+    cmd->setAddress(non_existing_address());
+    _node_0->send_request(cmd);
+
+    auto bounced_msg = _node_0->wait_and_receive_single_message();
+    auto* put_reply = dynamic_cast<api::PutReply*>(bounced_msg.get());
+    ASSERT_TRUE(put_reply != nullptr);
+
+    auto expected_code = static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE);
+    auto expected_msg = vespalib::make_string(
+            "The address of service '%s' could not be resolved. It is not currently "
+            "registered with the Vespa name server. "
+            "The service must be having problems, or the routing configuration is wrong. "
+            "Address resolution attempted from host '%s'",
+            to_slobrok_id(non_existing_address()).c_str(), vespalib::HostName::get().c_str());
+
+    EXPECT_EQ(put_reply->getResult(), api::ReturnCode(expected_code, expected_msg));
+}
+
+TEST_F(StorageApiRpcServiceTest, request_metadata_is_propagated_to_receiver) {
+    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd){
+        cmd.getTrace().setLevel(7);
+        cmd.setTimeout(1337s);
+    });
+    EXPECT_EQ(recv_cmd->getTrace().getLevel(), 7);
+    EXPECT_EQ(recv_cmd->getTimeout(), 1337s);
+}
+
+TEST_F(StorageApiRpcServiceTest, response_trace_is_propagated_to_sender) {
+    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd){
+        cmd.getTrace().setLevel(1);
+    });
+    auto recv_reply = respond_and_receive_put_reply_at_node_0(recv_cmd, [](auto& reply){
+        reply.getTrace().trace(1, "Doing cool things", false);
+    });
+    auto trace_str = recv_reply->getTrace().toString();
+    EXPECT_THAT(trace_str, HasSubstr("Doing cool things"));
+}
+
+TEST_F(StorageApiRpcServiceTest, response_trace_only_propagated_if_trace_level_set) {
+    auto recv_cmd = send_and_receive_put_command_at_node_1();
+    auto recv_reply = respond_and_receive_put_reply_at_node_0(recv_cmd, [](auto& reply){
+        reply.getTrace().trace(1, "Doing cool things", false);
+    });
+    auto trace_str = recv_reply->getTrace().toString();
+    EXPECT_THAT(trace_str, Not(HasSubstr("Doing cool things")));
 }
 
 }

@@ -187,11 +187,8 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
     assert(cmd->getAddress() != nullptr);
     auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress());
     if (!target) {
-        // TODO need to bounce reply with TODO descriptive error code, mirroring that of RPCNetwork!
         auto reply = cmd->makeReply();
-        reply->setResult(api::ReturnCode(
-                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE),
-                "Couldn't find the darn thing in Slobrok")); // TODO :D
+        reply->setResult(make_no_address_for_service_error(*cmd->getAddress()));
         // Always dispatch async for synchronously generated replies, or we risk nuking the
         // stack if the reply receiver keeps resending synchronously as well.
         _message_dispatcher.dispatch_async(std::move(reply));
@@ -210,43 +207,17 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
 
     const auto timeout = cmd->getTimeout();
     // TODO verify it's fine that we alloc this on the request stash and use it this way
-    auto& req_ctx = req->getStash().create<RpcRequestContext>(std::move(cmd), timeout);
+    auto& req_ctx = req->getStash().create<RpcRequestContext>(std::move(cmd));
     req->SetContext(FNET_Context(&req_ctx));
 
     target->_target->get()->InvokeAsync(req.release(), vespalib::to_s(timeout), this);
-}
-
-namespace {
-
-api::ReturnCode map_frt_error_to_storage_api_error(FRT_RPCRequest& req, vespalib::duration timeout) {
-    // TODO determine all codes that must be (re)mapped. Current remapping adapted from RPCSend
-    // TODO need to keep enough state to give peer ID/spec in error messages
-    switch (req.GetErrorCode()) {
-    case FRTE_RPC_TIMEOUT:
-        return api::ReturnCode(
-                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::TIMEOUT),
-                vespalib::make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
-                                      "TODO", vespalib::to_s(timeout), req.GetErrorMessage()));
-    case FRTE_RPC_CONNECTION:
-        return api::ReturnCode(
-                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::CONNECTION_ERROR),
-                vespalib::make_string("A connection error occurred for '%s'; %s",
-                                      "TODO", req.GetErrorMessage()));
-    default:
-        return api::ReturnCode(
-                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NETWORK_ERROR),
-                vespalib::make_string("A network error occurred for '%s'; %s",
-                                      "TODO", req.GetErrorMessage()));
-    }
-}
-
 }
 
 void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     std::unique_ptr<FRT_RPCRequest, SubRefDeleter> req(raw_req);
     auto* req_ctx = static_cast<RpcRequestContext*>(req->GetContext()._value.VOIDP);
     if (!req->CheckReturnTypes("bixbix")) {
-        api::ReturnCode error = map_frt_error_to_storage_api_error(*req, req_ctx->_timeout);
+        api::ReturnCode error = map_frt_error_to_storage_api_error(*req, *req_ctx);
         LOG(debug, "Client: received rpc.v1 error response: %s", error.toString().c_str());
         auto error_reply = req_ctx->_originator_cmd->makeReply();
         error_reply->setResult(std::move(error));
@@ -280,10 +251,49 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     _message_dispatcher.dispatch_sync(std::move(reply));
 }
 
+api::ReturnCode
+StorageApiRpcService::map_frt_error_to_storage_api_error(FRT_RPCRequest& req,
+                                                         const RpcRequestContext& req_ctx) {
+    // TODO determine all codes that must be (re)mapped. Current remapping is adapted from RPCSend
+    const auto& cmd = *req_ctx._originator_cmd;
+    auto target_service = CachingRpcTargetResolver::address_to_slobrok_id(*cmd.getAddress());
+    switch (req.GetErrorCode()) {
+    case FRTE_RPC_TIMEOUT:
+        return api::ReturnCode(
+                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::TIMEOUT),
+                vespalib::make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
+                                      target_service.c_str(), vespalib::to_s(cmd.getTimeout()), req.GetErrorMessage()));
+    case FRTE_RPC_CONNECTION:
+        return api::ReturnCode(
+                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::CONNECTION_ERROR),
+                vespalib::make_string("A connection error occurred for '%s'; %s",
+                                      target_service.c_str(), req.GetErrorMessage()));
+    default:
+        return api::ReturnCode(
+                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NETWORK_ERROR),
+                vespalib::make_string("A network error occurred for '%s'; %s",
+                                      target_service.c_str(), req.GetErrorMessage()));
+    }
+}
+
+api::ReturnCode
+StorageApiRpcService::make_no_address_for_service_error(const api::StorageMessageAddress& addr) const {
+    auto error_code = static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE);
+    auto error_msg = vespalib::make_string(
+            "The address of service '%s' could not be resolved. It is not currently "
+            "registered with the Vespa name server. "
+            "The service must be having problems, or the routing configuration is wrong. "
+            "Address resolution attempted from host '%s'",
+            CachingRpcTargetResolver::address_to_slobrok_id(addr).c_str(),
+            _rpc_resources.hostname().c_str());
+    return api::ReturnCode(error_code, std::move(error_msg));
+}
+
 /*
  * Major TODOs:
  *   - tracing and trace propagation
  *   - forwards/backwards compatibility
+ *     - what to remap bounced Not Found errors to internally?
  *   - lifetime semantics of FRT targets vs requests created from them?
  *   - lifetime of document type/fieldset repos vs messages
  *     - is repo ref squirreled away into the messages anywhere?
