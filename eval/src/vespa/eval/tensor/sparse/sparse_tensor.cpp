@@ -106,6 +106,17 @@ SparseTensor::equals(const Tensor &arg) const
 Tensor::UP
 SparseTensor::clone() const
 {
+    size_t mem_use = _stash.get_memory_usage().usedBytes();
+    if (mem_use < (SparseTensor::STASH_CHUNK_SIZE / 4)) {
+        Stash stash_copy(mem_use);
+        Cells cells_copy;
+        copyCells(cells_copy, _cells, stash_copy);
+        assert(stash_copy.get_memory_usage().allocatedBytes() < mem_use + 128);
+        eval::ValueType type_copy = _type;
+        return std::make_unique<SparseTensor>(std::move(type_copy),
+                                              std::move(cells_copy),
+                                              std::move(stash_copy));
+    }
     return std::make_unique<SparseTensor>(_type, _cells);
 }
 
