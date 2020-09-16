@@ -124,6 +124,9 @@ public class SessionRepository {
 
     public synchronized void addLocalSession(LocalSession session) {
         localSessionCache.put(session.getSessionId(), session);
+        long sessionId = session.getSessionId();
+        RemoteSession remoteSession = createRemoteSession(sessionId);
+        addSessionStateWatcher(sessionId, remoteSession);
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -140,8 +143,7 @@ public class SessionRepository {
 
         for (File session : sessions) {
             try {
-                long sessionId = Long.parseLong(session.getName());
-                addLocalSession(createSessionFromId(sessionId));
+                addLocalSession(createSessionFromId(Long.parseLong(session.getName())));
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Could not load session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
@@ -461,11 +463,7 @@ public class SessionRepository {
 
     public RemoteSession createRemoteSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
-        remoteSessionCache.put(session.getSessionId(), session);
-        addSessionStateWatcher(session.getSessionId(), session);
-        metrics.incAddedSessions();
-        return session;
+        return new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
@@ -632,7 +630,7 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
