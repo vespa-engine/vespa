@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
  *
  * @author bjorncs
  */
-public class ContainerThreadpoolComponent extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
+public class ContainerThreadpool extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
 
     private final String name;
 
-    public ContainerThreadpoolComponent(String name) {
+    public ContainerThreadpool(String name) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(
                         "threadpool@" + name,

@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.ContainerThreadpoolComponent;
+import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -33,7 +33,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
         addComponent(threadpool);
     }
 
-    private static class Threadpool extends ContainerThreadpoolComponent {
+    private static class Threadpool extends ContainerThreadpool {
         private final ApplicationContainerCluster cluster;
         private final DeployState deployState;
 

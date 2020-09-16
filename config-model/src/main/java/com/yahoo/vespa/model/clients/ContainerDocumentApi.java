@@ -6,7 +6,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerThreadpoolComponent;
+import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
@@ -33,7 +33,7 @@ public class ContainerDocumentApi {
         var handler = newVespaClientHandler(
                 "com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
         cluster.addComponent(handler);
-        var executor = new ThreadpoolComponent("feedapi-handler", cluster, options);
+        var executor = new Threadpool("feedapi-handler", cluster, options);
         handler.inject(executor);
         handler.addComponent(executor);
     }
@@ -43,7 +43,7 @@ public class ContainerDocumentApi {
         var handler = newVespaClientHandler(
                 "com.yahoo.document.restapi.resource.RestApi", "/document/v1/*", options);
         cluster.addComponent(handler);
-        var executor = new ThreadpoolComponent("restapi-handler", cluster, options);
+        var executor = new Threadpool("restapi-handler", cluster, options);
         handler.inject(executor);
         handler.addComponent(executor);
     }
@@ -79,12 +79,12 @@ public class ContainerDocumentApi {
         }
     }
 
-    private static class ThreadpoolComponent extends ContainerThreadpoolComponent {
+    private static class Threadpool extends ContainerThreadpool {
 
         private final ContainerCluster<?> cluster;
         private final Options options;
 
-        ThreadpoolComponent(String name, ContainerCluster<?> cluster, Options options) {
+        Threadpool(String name, ContainerCluster<?> cluster, Options options) {
             super(name);
             this.cluster = cluster;
             this.options = options;
