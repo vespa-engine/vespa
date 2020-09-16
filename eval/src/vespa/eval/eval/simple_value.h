@@ -113,10 +113,10 @@ struct ValueBuilder : ValueBuilderBase {
 struct ValueBuilderFactory {
     template <typename T>
     std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType &type,
-            size_t num_mapped_in, size_t subspace_size_in, size_t expect_subspaces) const
+            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const
     {
         assert(check_cell_type<T>(type.cell_type()));
-        auto base = create_value_builder_base(type, num_mapped_in, subspace_size_in, expect_subspaces);
+        auto base = create_value_builder_base(type, num_mapped_dims_in, subspace_size_in, expected_subspaces);
         ValueBuilder<T> *builder = dynamic_cast<ValueBuilder<T>*>(base.get());
         assert(builder);
         base.release();
@@ -130,7 +130,7 @@ struct ValueBuilderFactory {
     virtual ~ValueBuilderFactory() {}
 protected:
     virtual std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,
-            size_t num_mapped_in, size_t subspace_size_in, size_t expect_subspaces) const = 0;
+            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const = 0;
 };
 
 /**
@@ -145,14 +145,14 @@ class SimpleValue : public NewValue, public NewValue::Index
 private:
     using Addr = std::vector<vespalib::string>;
     ValueType _type;
-    size_t _num_mapped;
+    size_t _num_mapped_dims;
     size_t _subspace_size;
     std::map<Addr,size_t> _index;
 protected:
     size_t subspace_size() const { return _subspace_size; }
     void add_mapping(const std::vector<vespalib::stringref> &addr);
 public:
-    SimpleValue(const ValueType &type, size_t num_mapped_in, size_t subspace_size_in);
+    SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValue() override;
     const ValueType &type() const override { return _type; }
     const NewValue::Index &index() const override { return *this; }
@@ -169,7 +169,7 @@ class SimpleValueT : public SimpleValue, public ValueBuilder<T>
 private:
     std::vector<T> _cells;
 public:
-    SimpleValueT(const ValueType &type, size_t num_mapped_in, size_t subspace_size_in);
+    SimpleValueT(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValueT() override;
     TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
     ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) override;
@@ -188,7 +188,49 @@ struct SimpleValueBuilderFactory : ValueBuilderFactory {
     ~SimpleValueBuilderFactory() override {}
 protected:
     std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,
-            size_t num_mapped_in, size_t subspace_size_in, size_t expect_subspaces) const override;    
+            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const override;    
+};
+
+/**
+ * Plan for how to traverse two partially overlapping dense subspaces
+ * in parallel, identifying all matching cell index combinations, in
+ * the exact order the joined cells will be stored in the result. The
+ * plan can be made up-front during tensor function compilation.
+ **/
+struct DenseJoinPlan {
+    size_t lhs_size;
+    size_t rhs_size;
+    size_t out_size;
+    std::vector<size_t> loop_cnt;
+    std::vector<size_t> lhs_stride;
+    std::vector<size_t> rhs_stride;
+    DenseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type);
+    ~DenseJoinPlan();
+    template <typename F> void execute(size_t idx, size_t lhs, size_t rhs, F &&f) const {
+        if (idx < loop_cnt.size()) {
+            for (size_t i = 0; i < loop_cnt[idx]; ++i) {
+                execute(idx + 1, lhs, rhs, std::forward<F>(f));
+                lhs += lhs_stride[idx];
+                rhs += rhs_stride[idx];
+            }
+        } else {
+            f(lhs, rhs);
+        }
+    }
+};
+
+/**
+ * Plan for how to join the sparse part (all mapped dimensions)
+ * between two values. The plan can be made up-front during tensor
+ * function compilation.
+ **/
+struct SparseJoinPlan {
+    enum class Source { LHS, RHS, BOTH };
+    std::vector<Source> sources;
+    std::vector<size_t> lhs_overlap;
+    std::vector<size_t> rhs_overlap;
+    SparseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type);
+    ~SparseJoinPlan();
 };
 
 /**

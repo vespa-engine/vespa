@@ -128,8 +128,8 @@ bool check_input_type(const ValueType &type, const DimList &relevant) {
 }
 
 bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::string &reduce_dim) {
-    auto dims_a = a.nontrivial_dimensions();
-    auto dims_b = b.nontrivial_dimensions();
+    auto dims_a = a.nontrivial_indexed_dimensions();
+    auto dims_b = b.nontrivial_indexed_dimensions();
     if (check_input_type(a, dims_a) && check_input_type(b, dims_b) && (a.cell_type() == b.cell_type())) {
         CommonDim cd_a(dims_a, reduce_dim);
         CommonDim cd_b(dims_b, reduce_dim);
@@ -144,8 +144,8 @@ bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::str
 const TensorFunction &create_multi_matmul(const TensorFunction &a, const TensorFunction &b,
                                           const vespalib::string &reduce_dim, const ValueType &result_type, Stash &stash)
 {
-    auto dims_a = a.result_type().nontrivial_dimensions();
-    auto dims_b = b.result_type().nontrivial_dimensions();
+    auto dims_a = a.result_type().nontrivial_indexed_dimensions();
+    auto dims_b = b.result_type().nontrivial_indexed_dimensions();
     CommonDim cd_a(dims_a, reduce_dim);
     CommonDim cd_b(dims_b, reduce_dim);
     DimPrefix prefix(dims_a, dims_b);
