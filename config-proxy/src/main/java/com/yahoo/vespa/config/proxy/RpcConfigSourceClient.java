@@ -51,12 +51,12 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     private final static TimingValues timingValues;
     private final ScheduledExecutorService nextConfigScheduler =
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("next config"));
-    private ScheduledFuture<?> nextConfigFuture;
+    private final ScheduledFuture<?> nextConfigFuture;
     private final JRTConfigRequester requester;
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
     private final ScheduledExecutorService delayedResponsesScheduler =
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("delayed responses"));
-    private ScheduledFuture<?> delayedResponsesFuture;
+    private final ScheduledFuture<?> delayedResponsesFuture;
 
     static {
         // Proxy should time out before clients upon subscription.
@@ -184,6 +184,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         delayedResponsesScheduler.shutdownNow();
         nextConfigFuture.cancel(true);
         nextConfigScheduler.shutdownNow();
+        requester.close();
     }
 
     /**
