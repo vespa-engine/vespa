@@ -114,8 +114,8 @@ public class Autoscaler {
 
     /** The duration of the window we need to consider to make a scaling decision */
     static Duration scalingWindow(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return Duration.ofHours(12); // Ideally we should use observed redistribution time
-        return Duration.ofHours(12); // TODO: Measure much more often to get this down to minutes. And, ideally we should take node startup time into account
+        if (clusterType.isContent()) return Duration.ofHours(12);
+        return Duration.ofHours(1);
     }
 
     public static boolean unstable(List<Node> nodes) {
