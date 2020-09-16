@@ -24,11 +24,14 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
 
     private final ApplicationContainerCluster cluster;
 
-    SearchHandler(ApplicationContainerCluster cluster, List<BindingPattern> bindings, DeployState deployState) {
+    SearchHandler(ApplicationContainerCluster cluster,
+                  List<BindingPattern> bindings,
+                  ContainerThreadpool.UserOptions threadpoolOptions,
+                  DeployState deployState) {
         super(cluster.getSearchChains(), HANDLER_CLASS);
         this.cluster = cluster;
         bindings.forEach(this::addServerBindings);
-        Threadpool threadpool = new Threadpool(cluster, deployState);
+        Threadpool threadpool = new Threadpool(cluster, threadpoolOptions, deployState);
         inject(threadpool);
         addComponent(threadpool);
     }
@@ -37,8 +40,8 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
         private final ApplicationContainerCluster cluster;
         private final DeployState deployState;
 
-        Threadpool(ApplicationContainerCluster cluster, DeployState deployState) {
-            super("search-handler");
+        Threadpool(ApplicationContainerCluster cluster, UserOptions options, DeployState deployState) {
+            super("search-handler", options);
             this.cluster = cluster;
             this.deployState = deployState;
         }
@@ -49,6 +52,9 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
 
             builder.maxThreadExecutionTimeSeconds(190);
             builder.keepAliveTime(5.0);
+
+            // User options overrides below configuration
+            if (hasUserOptions()) return;
 
             double threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
             double vcpu = vcpu(cluster);

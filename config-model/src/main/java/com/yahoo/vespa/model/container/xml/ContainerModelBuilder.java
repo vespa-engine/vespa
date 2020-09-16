@@ -54,6 +54,7 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
+import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -786,7 +787,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                      "com.yahoo.search.searchchain.ExecutionFactory"));
 
         cluster.addComponent(
-                new SearchHandler(cluster, serverBindings(searchElement, SearchHandler.DEFAULT_BINDING), deployState));
+                new SearchHandler(
+                        cluster,
+                        serverBindings(searchElement, SearchHandler.DEFAULT_BINDING),
+                        ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null),
+                        deployState));
     }
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {

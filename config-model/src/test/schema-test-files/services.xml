@@ -158,6 +158,20 @@
       <timeout>5.55</timeout>
       <route>default</route>
       <maxpendingdocs>100</maxpendingdocs>
+      <rest-api>
+        <threadpool>
+          <max-threads>50</max-threads>
+          <min-threads>10</min-threads>
+          <queue-size>1000</queue-size>
+        </threadpool>
+      </rest-api>
+      <http-client-api>
+        <threadpool>
+          <max-threads>50</max-threads>
+          <min-threads>10</min-threads>
+          <queue-size>1000</queue-size>
+        </threadpool>
+      </http-client-api>
     </document-api>
 
     <search>
@@ -184,6 +198,12 @@
       </chain>
 
       <chain id="achain" searchers="asearcher anothersearcher" inherits="wonkaparentchain" excludes="notneededsearcher"/>
+
+      <threadpool>
+        <max-threads>500</max-threads>
+        <min-threads>500</min-threads>
+        <queue-size>0</queue-size>
+      </threadpool>
     </search>
 
     <processing>

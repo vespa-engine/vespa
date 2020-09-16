@@ -33,7 +33,8 @@ public class ContainerDocumentApi {
         var handler = newVespaClientHandler(
                 "com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
         cluster.addComponent(handler);
-        var executor = new Threadpool("feedapi-handler", cluster, options);
+        var executor = new Threadpool(
+                "feedapi-handler", cluster, options.feedApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
         handler.inject(executor);
         handler.addComponent(executor);
     }
@@ -43,7 +44,8 @@ public class ContainerDocumentApi {
         var handler = newVespaClientHandler(
                 "com.yahoo.document.restapi.resource.RestApi", "/document/v1/*", options);
         cluster.addComponent(handler);
-        var executor = new Threadpool("restapi-handler", cluster, options);
+        var executor = new Threadpool(
+                "restapi-handler", cluster, options.restApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
         handler.inject(executor);
         handler.addComponent(executor);
     }
@@ -71,10 +73,17 @@ public class ContainerDocumentApi {
 
     public static final class Options {
         private final Collection<String> bindings;
+        private final ContainerThreadpool.UserOptions restApiThreadpoolOptions;
+        private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
         private final double feedThreadPoolSizeFactor;
 
-        public Options(Collection<String> bindings, double feedThreadPoolSizeFactor) {
+        public Options(Collection<String> bindings,
+                       ContainerThreadpool.UserOptions restApiThreadpoolOptions,
+                       ContainerThreadpool.UserOptions feedApiThreadpoolOptions,
+                       double feedThreadPoolSizeFactor) {
             this.bindings = Collections.unmodifiableCollection(bindings);
+            this.restApiThreadpoolOptions = restApiThreadpoolOptions;
+            this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
             this.feedThreadPoolSizeFactor = feedThreadPoolSizeFactor;
         }
     }
@@ -82,32 +91,39 @@ public class ContainerDocumentApi {
     private static class Threadpool extends ContainerThreadpool {
 
         private final ContainerCluster<?> cluster;
-        private final Options options;
+        private final double feedThreadPoolSizeFactor;
 
-        Threadpool(String name, ContainerCluster<?> cluster, Options options) {
-            super(name);
+        Threadpool(String name,
+                   ContainerCluster<?> cluster,
+                   ContainerThreadpool.UserOptions threadpoolOptions,
+                   double feedThreadPoolSizeFactor ) {
+            super(name, threadpoolOptions);
             this.cluster = cluster;
-            this.options = options;
+            this.feedThreadPoolSizeFactor = feedThreadPoolSizeFactor;
         }
 
         @Override
         public void getConfig(ContainerThreadpoolConfig.Builder builder) {
             super.getConfig(builder);
-            builder.maxThreads(maxPoolSize(cluster, options));
-            builder.minThreads(minPoolSize(cluster, options));
+
+            // User options overrides below configuration
+            if (hasUserOptions()) return;
+
+            builder.maxThreads(maxPoolSize());
+            builder.minThreads(minPoolSize());
             builder.queueSize(500);
         }
 
-        private static int maxPoolSize(ContainerCluster<?> cluster, Options options) {
+        private int maxPoolSize() {
             double vcpu = vcpu(cluster);
             if (vcpu == 0) return FALLBACK_MAX_POOL_SIZE;
-            return Math.max(2, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactor));
+            return Math.max(2, (int)Math.ceil(vcpu * feedThreadPoolSizeFactor));
         }
 
-        private static int minPoolSize(ContainerCluster<?> cluster, Options options) {
+        private int minPoolSize() {
             double vcpu = vcpu(cluster);
             if (vcpu == 0) return FALLBACK_CORE_POOL_SIZE;
-            return Math.max(1, (int)Math.ceil(vcpu * options.feedThreadPoolSizeFactor * 0.5));
+            return Math.max(1, (int)Math.ceil(vcpu * feedThreadPoolSizeFactor * 0.5));
         }
     }
 
