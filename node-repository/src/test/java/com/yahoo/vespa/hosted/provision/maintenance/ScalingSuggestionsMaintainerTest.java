@@ -44,7 +44,7 @@ public class ScalingSuggestionsMaintainerTest {
         ApplicationId app2 = tester.makeApplicationId("app2");
         ClusterSpec cluster2 = tester.contentClusterSpec();
 
-        NodeMetricsDb nodeMetricsDb = new NodeMetricsDb();
+        NodeMetricsDb nodeMetricsDb = new NodeMetricsDb(tester.nodeRepository());
 
         tester.makeReadyNodes(20, "flt", NodeType.host, 8);
         tester.deployZoneApp();

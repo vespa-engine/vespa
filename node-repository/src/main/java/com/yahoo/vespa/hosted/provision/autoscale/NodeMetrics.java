@@ -24,7 +24,7 @@ public interface NodeMetrics {
 
         private final String hostname;
         private final String name;
-        private long timestampSecond;
+        private final long timestampSecond;
         private final double value;
 
         public MetricValue(String hostname, String name, long timestampSecond, double value) {

@@ -54,7 +54,7 @@ public class AutoscalingMaintainerTest {
                 app2, new MockDeployer.ApplicationContext(app2, cluster2, Capacity.from(new ClusterResources(2, 1, highResources))));
         MockDeployer deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
 
-        NodeMetricsDb nodeMetricsDb = new NodeMetricsDb();
+        NodeMetricsDb nodeMetricsDb = new NodeMetricsDb(tester.nodeRepository());
         AutoscalingMaintainer maintainer = new AutoscalingMaintainer(tester.nodeRepository(),
                                                                      nodeMetricsDb,
                                                                      deployer,
