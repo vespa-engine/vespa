@@ -12,7 +12,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
 import java.time.Clock;
@@ -44,6 +43,7 @@ public class MockDeployer implements Deployer {
     private final ReentrantLock lock = new ReentrantLock();
 
     private boolean failActivate = false;
+    private boolean bootstrapping = true;
 
     /** Create a mock deployer which returns empty on every deploy request. */
     @Inject
@@ -83,6 +83,8 @@ public class MockDeployer implements Deployer {
 
     public void setFailActivate(boolean failActivate) { this.failActivate = failActivate; }
 
+    public void setBootstrapping(boolean bootstrapping) { this.bootstrapping = bootstrapping; }
+
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, boolean bootstrap) {
         return deployFromLocalActive(id, Duration.ofSeconds(60));
@@ -115,6 +117,11 @@ public class MockDeployer implements Deployer {
     @Override
     public Optional<Instant> lastDeployTime(ApplicationId application) {
         return Optional.ofNullable(lastDeployTimes.get(application));
+    }
+
+    @Override
+    public boolean bootstrapping() {
+        return bootstrapping;
     }
 
     public void removeApplication(ApplicationId applicationId) {
