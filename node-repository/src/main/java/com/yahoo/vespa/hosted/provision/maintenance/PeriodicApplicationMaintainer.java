@@ -7,7 +7,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -27,15 +26,11 @@ import java.util.stream.Collectors;
 public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     private final Duration minTimeBetweenRedeployments;
-    private final Clock clock;
-    private final Instant start;
 
     PeriodicApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository,
                                   Duration interval, Duration minTimeBetweenRedeployments) {
         super(deployer, metric, nodeRepository, interval);
         this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
-        this.clock = nodeRepository.clock();
-        this.start = clock.instant();
     }
 
     @Override
@@ -51,7 +46,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     // Returns the applications that need to be redeployed by this config server at this point in time.
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        if (waitInitially()) return Set.of();
+        if (deployer().bootstrapping()) return Set.of();
 
         // Collect all deployment times before sorting as deployments may happen while we build the set, breaking
         // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployWithLock
@@ -73,11 +68,6 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking-canary")) return false;
         if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking-rhel7")) return false;
         return true;
-    }
-
-    // TODO: Do not start deploying until some time has gone (ideally only until bootstrap of config server is finished)
-    private boolean waitInitially() {
-        return clock.instant().isBefore(start.plus(minTimeBetweenRedeployments));
     }
 
     protected List<Node> nodesNeedingMaintenance() {

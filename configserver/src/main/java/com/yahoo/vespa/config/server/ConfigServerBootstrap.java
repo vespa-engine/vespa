@@ -10,11 +10,8 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
-import com.yahoo.vespa.config.server.maintenance.FileDistributionMaintainer;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -166,6 +163,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 return; // Status will not be set to 'up' since we return here
             }
         }
+        applicationRepository.bootstrappingDone();
         startRpcServer();
         up();
     }

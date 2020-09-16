@@ -87,6 +87,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -111,6 +112,8 @@ import static java.nio.file.Files.readAttributes;
 public class ApplicationRepository implements com.yahoo.config.provision.Deployer {
 
     private static final Logger log = Logger.getLogger(ApplicationRepository.class.getName());
+
+    private final AtomicBoolean bootstrapping = new AtomicBoolean(true);
 
     private final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
@@ -268,6 +271,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Deploying ----------------------------------------------------------------
 
+    @Override
+    public boolean bootstrapping() {
+        return bootstrapping.get();
+    }
+
+    public void bootstrappingDone() {
+        bootstrapping.set(false);
+    }
+
     public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, Instant now) {
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
@@ -367,6 +379,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         SessionRepository sessionRepository = tenant.getSessionRepository();
         LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         sessionRepository.addLocalSession(newSession);
+        sessionRepository.createRemoteSession(newSession.getSessionId());
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
@@ -815,6 +828,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                            timeoutBudget,
                                                                            activeSessionId);
         tenant.getSessionRepository().addLocalSession(session);
+        tenant.getSessionRepository().createRemoteSession(session.getSessionId());
         return session.getSessionId();
     }
 

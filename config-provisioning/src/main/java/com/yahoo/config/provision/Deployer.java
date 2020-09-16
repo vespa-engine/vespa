@@ -65,4 +65,7 @@ public interface Deployer {
     /** Returns the time the current local active session was created, or empty if there is no local active session */
     Optional<Instant> lastDeployTime(ApplicationId application);
 
+    /** Whether the deployer is bootstrapping, some users of the deployer will want to hold off with deployments in that case. */
+    default boolean bootstrapping() { return false; };
+
 }
