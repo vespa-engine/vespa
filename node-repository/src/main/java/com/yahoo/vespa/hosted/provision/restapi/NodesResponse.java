@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -164,6 +165,10 @@ class NodesResponse extends HttpResponse {
             orchestrator.apply(new HostName(node.hostname()))
                         .ifPresent(info -> {
                             object.setBool("allowedToBeDown", info.status().isSuspended());
+                            // TODO: Remove allowedToBeDown as a special-case of orchestratorHostStatus
+                            if (info.status() != HostStatus.NO_REMARKS) {
+                                object.setString("orchestratorStatus", info.status().asString());
+                            }
                             info.suspendedSince().ifPresent(since -> object.setLong("suspendedSinceMillis", since.toEpochMilli()));
                         });
         });
