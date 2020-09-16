@@ -6,6 +6,7 @@
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <atomic>
 #include <memory>
 
@@ -33,14 +34,24 @@ class MessageCodecProvider;
 class SharedRpcResources;
 
 class StorageApiRpcService : public FRT_Invokable, public FRT_IRequestWait {
+public:
+    struct Params {
+        vespalib::compression::CompressionConfig compression_config;
+
+        Params();
+        ~Params();
+    };
+private:
     MessageDispatcher&    _message_dispatcher;
     SharedRpcResources&   _rpc_resources;
     MessageCodecProvider& _message_codec_provider;
+    const Params          _params;
     std::unique_ptr<CachingRpcTargetResolver> _target_resolver;
 public:
     StorageApiRpcService(MessageDispatcher& message_dispatcher,
                          SharedRpcResources& rpc_resources,
-                         MessageCodecProvider& message_codec_provider);
+                         MessageCodecProvider& message_codec_provider,
+                         const Params& params);
     ~StorageApiRpcService() override;
 
     void RPC_rpc_v1_send(FRT_RPCRequest* req);

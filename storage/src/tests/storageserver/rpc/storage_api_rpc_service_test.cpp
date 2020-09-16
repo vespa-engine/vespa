@@ -122,7 +122,8 @@ public:
         _shared_rpc_resources = std::make_unique<SharedRpcResources>(_config.getConfigId(), 0, 1);
         // TODO make codec provider into interface so we can test decode-failures more easily?
         _codec_provider = std::make_unique<MessageCodecProvider>(_doc_type_repo, _load_type_set);
-        _service = std::make_unique<StorageApiRpcService>(_messages, *_shared_rpc_resources, *_codec_provider);
+        StorageApiRpcService::Params params;
+        _service = std::make_unique<StorageApiRpcService>(_messages, *_shared_rpc_resources, *_codec_provider, params);
 
         _shared_rpc_resources->start_server_and_register_slobrok(_slobrok_id);
         // Explicitly wait until we are visible in Slobrok. Just waiting for mirror readiness is not enough.

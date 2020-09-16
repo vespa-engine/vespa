@@ -21,20 +21,28 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.storage_api_rpc_service");
 
+using vespalib::compression::CompressionConfig;
+
 namespace storage::rpc {
 
 StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher,
                                            SharedRpcResources& rpc_resources,
-                                           MessageCodecProvider& message_codec_provider)
+                                           MessageCodecProvider& message_codec_provider,
+                                           const Params& params)
     : _message_dispatcher(message_dispatcher),
       _rpc_resources(rpc_resources),
       _message_codec_provider(message_codec_provider),
+      _params(params),
       _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory()))
 {
     register_server_methods(rpc_resources);
 }
 
 StorageApiRpcService::~StorageApiRpcService() = default;
+
+StorageApiRpcService::Params::Params() = default;
+
+StorageApiRpcService::Params::~Params() = default;
 
 void StorageApiRpcService::register_server_methods(SharedRpcResources& rpc_resources) {
     FRT_ReflectionBuilder rb(&rpc_resources.supervisor());
@@ -98,13 +106,13 @@ void encode_header_into_rpc_params(HeaderType& hdr, FRT_Values& params) {
     hdr.SerializeWithCachedSizesToArray(header_buf);
 }
 
-void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload, FRT_Values& params) {
+void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload,
+                                            FRT_Values& params,
+                                            const CompressionConfig& compression_cfg) {
     assert(payload.size() <= UINT32_MAX);
     vespalib::ConstBufferRef to_compress(payload.data(), payload.size());
     vespalib::DataBuffer buf(vespalib::roundUp2inN(payload.size()));
-    // TODO configurable compression config?
-    vespalib::compression::CompressionConfig comp_cfg(vespalib::compression::CompressionConfig::Type::LZ4);
-    auto comp_type = compress(comp_cfg, to_compress, buf, false);
+    auto comp_type = compress(compression_cfg, to_compress, buf, false);
     assert(buf.getDataLen() <= UINT32_MAX);
 
     params.AddInt8(comp_type);
@@ -119,7 +127,7 @@ void StorageApiRpcService::encode_and_compress_rpc_payload(const MessageType& ms
     auto wrapped_codec = _message_codec_provider.wrapped_codec();
     auto payload = wrapped_codec->codec().encode(msg);
 
-    compress_and_add_payload_to_rpc_params(payload, params);
+    compress_and_add_payload_to_rpc_params(payload, params, _params.compression_config);
 }
 
 template <typename PayloadCodecCallback>
