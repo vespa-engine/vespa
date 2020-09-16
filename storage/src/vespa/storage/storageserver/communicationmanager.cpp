@@ -246,6 +246,15 @@ struct PlaceHolderBucketResolver : public BucketResolver {
     }
 };
 
+vespalib::compression::CompressionConfig
+convert_to_rpc_compression_config(const vespa::config::content::core::StorCommunicationmanagerConfig& mgr_config) {
+    using vespalib::compression::CompressionConfig;
+    using vespa::config::content::core::StorCommunicationmanagerConfig;
+    auto compression_type = CompressionConfig::toType(
+            StorCommunicationmanagerConfig::Rpc::Compress::getTypeName(mgr_config.rpc.compress.type).c_str());
+    return CompressionConfig(compression_type, mgr_config.rpc.compress.level, 90, mgr_config.rpc.compress.limit);
+}
+
 }
 
 CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
@@ -425,8 +434,10 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
                                                                           _component.getLoadTypes());
     _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, config->rpc.numNetworkThreads);
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
+    rpc::StorageApiRpcService::Params rpc_params;
+    rpc_params.compression_config = convert_to_rpc_compression_config(*config);
     _storage_api_rpc_service = std::make_unique<rpc::StorageApiRpcService>(
-            *this, *_shared_rpc_resources, *_message_codec_provider);
+            *this, *_shared_rpc_resources, *_message_codec_provider, rpc_params);
 
     if (_mbus) {
         mbus::DestinationSessionParams dstParams;

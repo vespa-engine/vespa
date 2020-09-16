@@ -62,3 +62,12 @@ use_direct_storageapi_rpc bool default=false
 
 ## The number of network (FNET) threads used by the shared rpc resource.
 rpc.num_network_threads int default=1
+
+# Minimum size of packets to compress (0 means no compression)
+rpc.compress.limit int default=1024
+
+## Compression level for packets
+rpc.compress.level int default=3
+
+## Compression type for packets.
+rpc.compress.type enum {NONE, LZ4, ZSTD} default=LZ4
