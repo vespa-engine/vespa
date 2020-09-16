@@ -63,7 +63,7 @@ Stash::do_alloc(size_t size)
 Stash::Stash(size_t chunk_size) noexcept
     : _chunks(nullptr),
       _cleanup(nullptr),
-      _chunk_size(std::max(size_t(96), chunk_size))
+      _chunk_size(std::max(size_t(128), chunk_size))
 {
 }
 

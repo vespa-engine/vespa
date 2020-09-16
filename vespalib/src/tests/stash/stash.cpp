@@ -253,9 +253,9 @@ TEST("require that the chunk size can be adjusted") {
     EXPECT_EQUAL(64000u, stash.get_chunk_size());
 }
 
-TEST("require that minimal chunk size is 96") {
+TEST("require that minimal chunk size is 128") {
     Stash stash(50);
-    EXPECT_EQUAL(96u, stash.get_chunk_size());
+    EXPECT_EQUAL(128u, stash.get_chunk_size());
 }
 
 TEST("require that a stash can be moved by construction") {
