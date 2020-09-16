@@ -179,7 +179,7 @@ public class DynamicProvisioningMaintainerTest {
         tester.maintainer.maintain(); // Resume provisioning of new hosts
         List<Node> provisioned = tester.nodeRepository.list().state(Node.State.provisioned).asList();
         tester.nodeRepository.setReady(provisioned, Agent.system, this.getClass().getSimpleName());
-        tester.provisioningTester.deployZoneApp();
+        tester.provisioningTester.activateTenantHosts();
 
         // Allocating nodes to a host does not result in provisioning of additional capacity
         ApplicationId application = tester.provisioningTester.makeApplicationId();

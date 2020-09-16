@@ -320,7 +320,7 @@ public class ProvisioningTester {
         return makeReadyNodes(n, flavor, NodeType.tenant);
     }
 
-    /** Call deployZoneApp() after this before deploying applications */
+    /** Call {@link this#activateTenantHosts()} after this before deploying applications */
     public ProvisioningTester makeReadyHosts(int n, NodeResources resources) {
         makeReadyNodes(n, resources, NodeType.host, 5);
         return this;
@@ -494,7 +494,7 @@ public class ProvisioningTester {
         return nodes;
     }
 
-    public void deployZoneApp() {
+    public void activateTenantHosts() {
         ApplicationId applicationId = makeApplicationId();
         List<HostSpec> list = prepare(applicationId,
                                       ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),

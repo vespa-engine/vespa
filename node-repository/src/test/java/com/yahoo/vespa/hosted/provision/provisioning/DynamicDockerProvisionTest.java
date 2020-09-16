@@ -81,7 +81,7 @@ public class DynamicDockerProvisionTest {
     @Test
     public void does_not_allocate_to_available_empty_hosts() {
         tester.makeReadyNodes(3, "small", NodeType.host, 10);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         ApplicationId application = tester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
@@ -109,7 +109,7 @@ public class DynamicDockerProvisionTest {
             tester.nodeRepository().setReady(List.of(host), Agent.system, getClass().getSimpleName());
             nameResolver.addRecord(hostname + "-2", "::" + i + ":2");
         }
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor);
@@ -136,7 +136,7 @@ public class DynamicDockerProvisionTest {
 
         // Allocate 10 hosts
         tester.makeReadyNodes(10, resources, NodeType.host, 1);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         // Prepare & activate an application with 8 nodes and 2 groups
         tester.activate(app, tester.prepare(app, clusterSpec("content"), 8, 2, resources));
@@ -170,7 +170,7 @@ public class DynamicDockerProvisionTest {
                                                                     .resourcesCalculator(memoryTax, 0)
                                                                     .build();
 
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -216,7 +216,7 @@ public class DynamicDockerProvisionTest {
                                                                     .resourcesCalculator(memoryTax, 0)
                                                                     .build();
 
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -291,7 +291,7 @@ public class DynamicDockerProvisionTest {
                                                                     .resourcesCalculator(memoryTax, 0)
                                                                     .build();
 
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -326,7 +326,7 @@ public class DynamicDockerProvisionTest {
                                                                     .resourcesCalculator(memoryTax, localDiskTax)
                                                                     .build();
 
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         ApplicationId app1 = tester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();

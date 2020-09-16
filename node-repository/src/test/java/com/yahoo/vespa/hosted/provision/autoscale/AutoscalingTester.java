@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -51,7 +50,7 @@ class AutoscalingTester {
     public AutoscalingTester(NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
         this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
-        provisioningTester.deployZoneApp();
+        provisioningTester.activateTenantHosts();
     }
 
     public AutoscalingTester(Zone zone, List<Flavor> flavors) {
@@ -87,7 +86,7 @@ class AutoscalingTester {
         List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.from(new ClusterResources(nodes, groups, resources)));
         for (HostSpec host : hosts)
             makeReady(host.hostname());
-        provisioningTester.deployZoneApp();
+        provisioningTester.activateTenantHosts();
         provisioningTester.activate(application, hosts);
         return hosts;
     }

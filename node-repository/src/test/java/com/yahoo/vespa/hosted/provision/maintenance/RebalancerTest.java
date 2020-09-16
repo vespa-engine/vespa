@@ -54,7 +54,7 @@ public class RebalancerTest {
 
         // --- Making a more suitable node configuration available causes rebalancing
         Node newCpuHost = tester.makeReadyNode("cpu");
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         tester.maintain();
         assertTrue("Rebalancer retired the node we wanted to move away from", tester.isNodeRetired(cpuSkewedNode));
@@ -74,7 +74,7 @@ public class RebalancerTest {
         // --- Adding a more suitable node reconfiguration causes no action as the system is not stable
         Node memSkewedNode = tester.getNode(memoryApp);
         Node newMemHost = tester.makeReadyNode("mem");
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         tester.maintain();
         assertFalse("No rebalancing happens because cpuSkewedNode is still retired", tester.isNodeRetired(memSkewedNode));
@@ -117,7 +117,7 @@ public class RebalancerTest {
 
         // --- Making a more suitable node configuration available causes rebalancing
         Node newCpuHost = tester.makeReadyNode("cpu");
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         tester.deployApp(cpuApp, false /* skip advancing clock after deployment */);
         tester.maintain();
@@ -152,7 +152,7 @@ public class RebalancerTest {
             deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
             rebalancer = new Rebalancer(deployer, tester.nodeRepository(), metric, tester.clock(), Duration.ofMinutes(1));
             tester.makeReadyNodes(3, "flat", NodeType.host, 8);
-            tester.deployZoneApp();
+            tester.activateTenantHosts();
         }
 
         void maintain() { rebalancer.maintain(); }
@@ -163,7 +163,7 @@ public class RebalancerTest {
 
         NodeRepository nodeRepository() { return tester.nodeRepository(); }
 
-        void deployZoneApp() { tester.deployZoneApp(); }
+        void activateTenantHosts() { tester.activateTenantHosts(); }
 
         void deployApp(ApplicationId id) { deployApp(id, true); }
 
