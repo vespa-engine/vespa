@@ -19,6 +19,18 @@ PackedMappings::subspace_of_address(const Address &address) const
 }
 
 int32_t
+PackedMappings::subspace_of_enums(const InternalAddress &address) const
+{
+    int32_t idx = sortid_of_enums(address);
+    if (idx < 0) {
+        return -1;
+    }
+    uint32_t internal_idx = idx;
+    assert (internal_idx < _num_mappings);
+    return subspace_of_sortid(internal_idx);
+}
+
+int32_t
 PackedMappings::sortid_of_address(const Address &address) const
 {
     if (_num_dims == 0) return 0;

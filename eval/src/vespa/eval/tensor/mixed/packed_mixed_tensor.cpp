@@ -4,6 +4,8 @@
 
 namespace vespalib::eval {
 
+/*********************************************************************************/
+
 class PackedMixedTensorIndexView : public NewValue::Index::View
 {
 private:
@@ -103,14 +105,122 @@ PackedMixedTensorIndexView::next_result(const std::vector<vespalib::stringref*> 
     return false;
 }
 
+/*********************************************************************************/
+
+class PackedMixedTensorLookup : public NewValue::Index::View
+{
+private:
+    const PackedMappings& _mappings;
+    std::vector<uint32_t> _lookup_enums;
+    bool _first_time;
+
+    size_t num_full_dims() const { return _mappings.num_sparse_dims(); }
+public:
+    PackedMixedTensorLookup(const PackedMappings& mappings)
+        : _mappings(mappings),
+          _lookup_enums(),
+          _first_time(false)
+    {
+        _lookup_enums.reserve(num_full_dims());
+    }
+
+    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
+    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    ~PackedMixedTensorLookup() override = default;
+};
+
+void
+PackedMixedTensorLookup::lookup(const std::vector<const vespalib::stringref*> &addr)
+{
+    assert(addr.size() == num_full_dims());
+    _lookup_enums.clear();
+    for (const vespalib::stringref * label_ptr : addr) {
+        int32_t label_enum = _mappings.label_store().find_label(*label_ptr);
+        if (label_enum < 0) {
+            // cannot match
+            _first_time = false;
+            return;
+        }
+        _lookup_enums.push_back(label_enum);
+    }
+    _first_time = true;
+}
+
+bool
+PackedMixedTensorLookup::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
+{
+    assert(addr_out.size() == 0);
+    if (_first_time) {
+        _first_time = false;
+        int32_t subspace = _mappings.subspace_of_enums(_lookup_enums);
+        if (subspace >= 0) {
+            idx_out = subspace;
+            return true;
+        }
+    }
+    return false;
+}
+
+/*********************************************************************************/
+
+class PackedMixedTensorAllMappings : public NewValue::Index::View
+{
+private:
+    const PackedMappings& _mappings;
+    std::vector<vespalib::stringref> _full_address;
+    size_t _index;
+
+public:
+    PackedMixedTensorAllMappings(const PackedMappings& mappings)
+        : _mappings(mappings),
+          _full_address(),
+          _index(0)
+    {
+        _full_address.resize(_mappings.num_sparse_dims());
+    }
+
+    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
+    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    ~PackedMixedTensorAllMappings() override = default;
+};
+
+void
+PackedMixedTensorAllMappings::lookup(const std::vector<const vespalib::stringref*> &addr)
+{
+    _index = 0;
+    assert(addr.size() == 0);
+}
+
+bool
+PackedMixedTensorAllMappings::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
+{
+    assert(addr_out.size() == _mappings.num_sparse_dims());
+    while (_index < _mappings.size()) {
+        idx_out = _mappings.fill_by_subspace(_index++, _full_address);
+        for (size_t i = 0; i < _mappings.num_sparse_dims(); ++i) {
+            *addr_out[i] = _full_address[i];
+        }
+        return true;
+    }
+    return false;
+}
+
+/*********************************************************************************/
+
 PackedMixedTensor::~PackedMixedTensor() = default;
 
 std::unique_ptr<NewValue::Index::View>
 PackedMixedTensor::create_view(const std::vector<size_t> &dims) const
 {
+    if (dims.size() == 0) {
+        return std::make_unique<PackedMixedTensorAllMappings>(_mappings);
+    }
     for (size_t i = 1; i < dims.size(); ++i) {
         assert(dims[i-1] < dims[i]);
         assert(dims[i] < _mappings.num_sparse_dims());
+    }
+    if (dims.size() == _mappings.num_sparse_dims()) {
+        return std::make_unique<PackedMixedTensorLookup>(_mappings);
     }
     return std::make_unique<PackedMixedTensorIndexView>(_mappings, dims);
 }
