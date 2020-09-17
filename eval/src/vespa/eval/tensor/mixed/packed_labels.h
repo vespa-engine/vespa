@@ -7,6 +7,13 @@
 
 namespace vespalib::eval {
 
+/**
+ *  Stores labels for sparse (mapped) tensor dimensions,
+ *  where each unique label value is stored only once,
+ *  and the values are sorted.  References data that
+ *  must be constant and owned by some object with
+ *  enclosing lifetime.
+ **/
 class PackedLabels {
 public:
     PackedLabels(uint32_t num_labels,

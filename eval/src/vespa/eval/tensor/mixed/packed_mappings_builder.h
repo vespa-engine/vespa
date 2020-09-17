@@ -11,6 +11,13 @@
 
 namespace vespalib::eval {
 
+/**
+ *  Builder for PackedMappings.
+ *  Copies label values in all addresses added
+ *  and packs all resulting data into a block of memory
+ *  held by the built object (or optionally some
+ *  larger aggregating object by target_memory).
+ **/
 class PackedMappingsBuilder {
 public:
     using SparseAddress = std::vector<vespalib::stringref>;

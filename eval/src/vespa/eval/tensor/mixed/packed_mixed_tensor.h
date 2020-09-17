@@ -11,6 +11,13 @@
 
 namespace vespalib::eval {
 
+/**
+ * An implementation of NewValue modeling a mixed tensor,
+ * where all the data (cells and sparse address mappings)
+ * can reside in a self-contained, contigous block of memory.
+ * Currently must be built by a PackedMixedBuilder.
+ * Immutable (all data always const).
+ **/
 class PackedMixedTensor : public NewValue, public NewValue::Index
 {
 private:
@@ -18,8 +25,9 @@ private:
     const TypedCells _cells;
     const PackedMappings _mappings;
 
-    PackedMixedTensor(const ValueType &type, TypedCells cells,
-                      PackedMappings mappings)
+    PackedMixedTensor(const ValueType &type,
+                      TypedCells cells,
+                      const PackedMappings &mappings)
       : _type(type),
         _cells(cells),
         _mappings(mappings)

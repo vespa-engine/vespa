@@ -6,6 +6,10 @@
 
 namespace vespalib::eval {
 
+/**
+ * A factory that can generate PackedMixedBuilder
+ * objects appropriate for the requested CellType.
+ */
 struct PackedMixedFactory : ValueBuilderFactory {
     ~PackedMixedFactory() override {}
 protected:

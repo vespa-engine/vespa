@@ -6,6 +6,10 @@
 
 namespace vespalib::eval {
 
+/**
+ * A builder for PackedMixedTensor objects
+ * appropriate for cell type T.
+ **/
 template <typename T>
 class PackedMixedBuilder : public ValueBuilder<T>
 {

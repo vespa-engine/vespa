@@ -7,6 +7,27 @@
 
 namespace vespalib::eval {
 
+/**
+ *  Mappings for sparse tensor dimensions.
+ *  Each address (conceptually "array of string")
+ *  has two indexes: The subspace_index (the
+ *  order that addresses were added to a builder),
+ *  and the internal_index AKA "sortid", which
+ *  indexes into a lexicographically sorted array
+ *  of addresses.
+ *  (Note: we may want to change this so subspaces
+ *  are always sorted by address, making these two
+ *  indexes equivalent).
+ *
+ *  Has various methods for mapping back and forth
+ *  between addresses and indexes, and also allows
+ *  using the internal label enumerations instead
+ *  of working with strings all the time.
+ *
+ *  NOTE: Making a copy of PackedMappings will not copy
+ *  the underlying data, these must then stay alive
+ *  and unchanged for the lifetime of the copy as well.
+ **/
 class PackedMappings {
 public:
     using Address = std::vector<vespalib::stringref>;
