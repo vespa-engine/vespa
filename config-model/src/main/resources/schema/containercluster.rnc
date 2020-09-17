@@ -105,6 +105,12 @@ SslProvider = element ssl-provider {
     BundleSpec
 }
 
+Threadpool = element threadpool {
+    element max-threads { xsd:nonNegativeInteger } &
+    element min-threads { xsd:nonNegativeInteger } &
+    element queue-size { xsd:nonNegativeInteger }
+}
+
 # REST-API:
 
 RestApi = element rest-api {
@@ -142,7 +148,8 @@ SearchInContainer = element search {
     SearchChain* &
     Provider* &
     Renderer* &
-    GenericConfig*
+    GenericConfig* &
+    Threadpool?
 }
 
 SearchChain = element chain {
@@ -207,10 +214,18 @@ DocumentApi = element document-api {
    element retrydelay { xsd:double { minInclusive = "0.0" } }? &
    element timeout { xsd:double { minInclusive = "0.0" } }? &
    element tracelevel { xsd:positiveInteger }? &
-   element mbusport { xsd:positiveInteger }?
+   element mbusport { xsd:positiveInteger }? &
+   DocumentRestApi? &
+   HttpClientApi?
 }
 
+DocumentRestApi = element rest-api {
+    Threadpool?
+}
 
+HttpClientApi = element http-client-api {
+    Threadpool?
+}
 
 # NODES:
 

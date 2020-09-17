@@ -247,6 +247,27 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(0, config.queueSize());
     }
 
+    @Test
+    public void threadpool_configuration_can_be_overridden() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <search>",
+                "    <threadpool>",
+                "      <max-threads>100</max-threads>",
+                "      <min-threads>80</min-threads>",
+                "      <queue-size>10</queue-size>",
+                "    </threadpool>",
+                "  </search>",
+                nodesXml,
+                "</container>");
+        createModel(root, clusterElem);
+        ContainerThreadpoolConfig config = root.getConfig(
+                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");
+        assertEquals(100, config.maxThreads());
+        assertEquals(80, config.minThreads());
+        assertEquals(10, config.queueSize());
+    }
+
     private VespaModel getVespaModelWithMusic(String hosts, String services) {
         return new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSchemas("music")).create();
     }

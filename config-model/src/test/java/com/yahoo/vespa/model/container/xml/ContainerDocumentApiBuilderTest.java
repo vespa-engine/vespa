@@ -121,6 +121,43 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertEquals(8, config.minThreads());
     }
 
+    @Test
+    public void threadpools_configuration_can_be_overridden() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api>",
+                "    <rest-api>",
+                "      <threadpool>",
+                "        <max-threads>20</max-threads>",
+                "        <min-threads>10</min-threads>",
+                "        <queue-size>0</queue-size>",
+                "      </threadpool>",
+                "    </rest-api>",
+                "    <http-client-api>",
+                "      <threadpool>",
+                "        <max-threads>50</max-threads>",
+                "        <min-threads>25</min-threads>",
+                "        <queue-size>1000</queue-size>",
+                "      </threadpool>",
+                "    </http-client-api>",
+                "  </document-api>",
+                nodesXml,
+                "</container>");
+        createModel(root, elem);
+
+        ContainerThreadpoolConfig restApiThreadpoolConfig = root.getConfig(
+                ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.document.restapi.resource.RestApi/threadpool@restapi-handler");
+        assertEquals(20, restApiThreadpoolConfig.maxThreads());
+        assertEquals(10, restApiThreadpoolConfig.minThreads());
+        assertEquals(0, restApiThreadpoolConfig.queueSize());
+
+        ContainerThreadpoolConfig feedThreadpoolConfig = root.getConfig(
+                ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
+        assertEquals(50, feedThreadpoolConfig.maxThreads());
+        assertEquals(25, feedThreadpoolConfig.minThreads());
+        assertEquals(1000, feedThreadpoolConfig.queueSize());
+    }
+
     private static class HostProvisionerWithCustomRealResource implements HostProvisioner {
 
         @Override
