@@ -24,17 +24,19 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
     private final ThreadPoolMetric metric;
     private final ProcessTerminator processTerminator;
     private final long maxThreadExecutionTimeMillis;
+    private final int queueCapacity;
     private final Thread metricReporter;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     ExecutorServiceWrapper(
             WorkerCompletionTimingThreadPoolExecutor wrapped,
             ThreadPoolMetric metric, ProcessTerminator processTerminator,
-            long maxThreadExecutionTimeMillis, String name) {
+            long maxThreadExecutionTimeMillis, String name, int queueCapacity) {
         this.wrapped = wrapped;
         this.metric = metric;
         this.processTerminator = processTerminator;
         this.maxThreadExecutionTimeMillis = maxThreadExecutionTimeMillis;
+        this.queueCapacity = queueCapacity;
 
         metric.reportThreadPoolSize(wrapped.getPoolSize());
         metric.reportActiveThreads(wrapped.getActiveCount());
@@ -44,13 +46,13 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
         metricReporter.start();
     }
 
-    int queuedTasks() { return wrapped.getQueue().size(); }
-
     private void reportMetrics() {
         try {
             while (!closed.get()) {
                 metric.reportThreadPoolSize(wrapped.getPoolSize());
                 metric.reportActiveThreads(wrapped.getActiveCount());
+                metric.reportWorkQueueSize(wrapped.getQueue().size());
+                metric.reportWorkQueueCapacity(queueCapacity);
                 Thread.sleep(100);
             }
         } catch (InterruptedException e) { }
