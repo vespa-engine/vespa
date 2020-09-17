@@ -13,8 +13,6 @@ private:
     const std::vector<size_t> _view_dims;
     std::vector<uint32_t> _lookup_enums;
     std::vector<uint32_t> _full_enums;
-    std::vector<vespalib::stringref> _lookup_addr;
-    std::vector<vespalib::stringref> _full_address;
     size_t _index;
 
     size_t num_full_dims() const { return _mappings.num_sparse_dims(); }
@@ -26,14 +24,10 @@ public:
         : _mappings(mappings),
           _view_dims(dims),
           _lookup_enums(),
-          _lookup_addr(),
-          _full_address(),
           _index(0)
     {
         _lookup_enums.reserve(num_view_dims());
-        _lookup_addr.reserve(num_view_dims());
         _full_enums.resize(num_full_dims());
-        _full_address.resize(num_full_dims());
     }
 
     void lookup(const std::vector<const vespalib::stringref*> &addr) override;
@@ -47,7 +41,6 @@ PackedMixedTensorIndexView::lookup(const std::vector<const vespalib::stringref*>
     _index = 0;
     assert(addr.size() == num_view_dims());
     _lookup_enums.clear();
-    _lookup_addr.clear();
  // printf("lookup %zu/%zu dims:", num_view_dims(), num_full_dims());
     for (const vespalib::stringref * label_ptr : addr) {
         int32_t label_enum = _mappings.label_store().find_label(*label_ptr);
@@ -57,7 +50,6 @@ PackedMixedTensorIndexView::lookup(const std::vector<const vespalib::stringref*>
             break;
         }
         _lookup_enums.push_back(label_enum);
-        _lookup_addr.push_back(*label_ptr);
  //     printf(" '%s'", label_ptr->data());
     }
  // printf(" [in %u mappings]\n", _mappings.size());
@@ -90,7 +82,6 @@ PackedMixedTensorIndexView::next_result(const std::vector<vespalib::stringref*> 
             // not a view dimension:
             uint32_t label_enum = _full_enums[i];
             auto label_value = _mappings.label_store().label_value(label_enum);
-            _full_address[i] = label_value;
             *addr_out[ao_idx] = label_value;
             ++ao_idx;
         }
