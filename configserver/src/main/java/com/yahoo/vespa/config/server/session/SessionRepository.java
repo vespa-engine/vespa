@@ -630,7 +630,7 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.INFO, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
