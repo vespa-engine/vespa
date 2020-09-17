@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartF
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.InputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,6 +55,16 @@ public interface ConfigServer {
      * If the "hostname" query parameter is present, it limits the entries to be from that host.
      */
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);
+
+    /**
+     * Gets the contents of a file inside the current application package for a given deployment. If the path is to
+     * a directly, a JSON list with URLs to contents is returned.
+     *
+     * @param deployment deployment to get application package content for
+     * @param path path within package to get
+     * @param requestUri request URI on the controller, used to rewrite paths in response from config server
+     */
+    ProxyResponse getApplicationPackageContent(DeploymentId deployment, String path, URI requestUri);
 
     List<ClusterMetrics> getDeploymentMetrics(DeploymentId deployment);
 

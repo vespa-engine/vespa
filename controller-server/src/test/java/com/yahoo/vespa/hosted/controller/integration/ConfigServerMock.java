@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -42,6 +43,7 @@ import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -514,6 +516,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
         return new ByteArrayInputStream(log.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public ProxyResponse getApplicationPackageContent(DeploymentId deployment, String path, URI requestUri) {
+        return new ProxyResponse("{\"path\":\"" + path + "\"}", "application/json", 200);
     }
 
     public void setLogStream(String log) {
