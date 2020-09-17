@@ -495,6 +495,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .userIdentity(USER_ID),
                 "INFO - All good");
 
+        // Get content - root
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-central-1/content/", GET).userIdentity(USER_ID),
+                "{\"path\":\"/\"}");
+        // Get content - ignore query params
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-central-1/content/bar/file.json?query=param", GET).userIdentity(USER_ID),
+                "{\"path\":\"/bar/file.json\"}");
+
+
         updateMetrics();
 
         // GET metrics
