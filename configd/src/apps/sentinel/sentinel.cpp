@@ -120,8 +120,7 @@ main(int argc, char **argv)
         lastTv = tv;
     }
 
-    int rv = handler.terminate();
-
     EV_STOPPING("config-sentinel", "normal exit");
+    int rv = handler.terminate();
     return rv;
 }
