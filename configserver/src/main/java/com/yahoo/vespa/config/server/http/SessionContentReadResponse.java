@@ -4,12 +4,12 @@ package com.yahoo.vespa.config.server.http;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.container.jdisc.HttpResponse;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -51,10 +51,13 @@ public class SessionContentReadResponse extends HttpResponse {
     }
 
     private static Map<String, String> loadContentTypeByExtension() {
-        try {
-            Pattern whitespace = Pattern.compile("\\s");
-            Map<String, String> map = new HashMap<>();
-            for (String line : Files.readAllLines(Paths.get("src/main/resources/mime.types"))) {
+        ClassLoader classLoader = SessionContentReadResponse.class.getClassLoader();
+        Pattern whitespace = Pattern.compile("\\s");
+        Map<String, String> map = new HashMap<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(classLoader.getResourceAsStream("mime.types")))) {
+            while (reader.ready()) {
+                String line = reader.readLine();
                 if (line.isEmpty() || line.charAt(0) == '#') continue;
 
                 String[] parts = whitespace.split(line);
