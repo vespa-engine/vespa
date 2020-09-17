@@ -44,7 +44,12 @@ time_t steady_time() {
     return duration_cast<seconds>(steady_clock::now().time_since_epoch()).count();
 }
 
+bool whole_seconds(int cnt, int secs) {
+    cnt %= (secs * 10);
+    return cnt == 0;
 }
+
+} // namespace
 
 class PidFile
 {
@@ -387,20 +392,36 @@ int main(int argc, char *argv[])
                 if (system(killcmd) != 0) {
                     fprintf(stderr, "WARNING: stop command '%s' had some problem\n", killcmd);
                 }
+                fflush(stdout);
             } else {
                 fprintf(stdout, "%s was running with pid %d, sending SIGTERM\n",
                     service, pid);
                 if (kill(pid, SIGTERM) != 0) {
                     fprintf(stderr, "could not signal %d: %s\n", pid,
                             strerror(errno));
+                    killpg(pid, SIGTERM);
                     return 1;
                 }
             }
             fprintf(stdout, "Waiting for exit (up to 15 minutes)\n");
-            for (int cnt(0); cnt < 86400; cnt++) {
+            fflush(stdout);
+            const int one_day = 24 * 60 * 60 * 10;
+            const int twelve_minutes = 12 * 60 * 10;
+            const int fifteen_minutes = 15 * 60 * 10;
+            for (int cnt(0); cnt < one_day; cnt++) {
                 usleep(100000); // wait 0.1 seconds
-                if ((cnt > 7200) && (cnt % 100 == 0)) {
+                if ((cnt < twelve_minutes) && (kill(pid, 0) != 0)) {
+                    if (killpg(pid, SIGTERM) == 0) {
+                        fprintf(stdout, " %s exited, terminating strays in its progress groups\n", service);
+                        fflush(stdout);
+                    }
+                    cnt = twelve_minutes;
+                }
+                if ((cnt > twelve_minutes) && whole_seconds(cnt, 10)) {
+                    fprintf(stdout, " %s or its children not stopping: sending SIGTERM to process group %d\n",
+                            service, pid);
                     killpg(pid, SIGTERM);
+                    fflush(stdout);
                 }
                 if (killpg(pid, 0) == 0) {
                     if (cnt%10 == 0) {
@@ -408,12 +429,14 @@ int main(int argc, char *argv[])
                         fflush(stdout);
                     }
                 } else {
-                    fprintf(stdout, "DONE\n");
+                    fprintf(stdout, " DONE\n");
+                    fflush(stdout);
                     break;
                 }
-                if (cnt == 9000) {
-                    printf("\ngiving up, sending KILL signal\n");
+                if ((cnt >= fifteen_minutes) && whole_seconds(cnt, 5)) {
+                    printf(" giving up, sending KILL signal\n");
                     killpg(pid, SIGKILL);
+                    fflush(stdout);
                 }
             }
         } else {
