@@ -18,6 +18,9 @@
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <vespa/vespalib/util/array_equal.hpp>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.tensor.sparse.sparse_tensor");
+
 using vespalib::eval::TensorSpec;
 
 namespace vespalib::tensor {
@@ -106,6 +109,21 @@ SparseTensor::equals(const Tensor &arg) const
 Tensor::UP
 SparseTensor::clone() const
 {
+    size_t mem_use = _stash.get_memory_usage().usedBytes();
+    if (mem_use < (STASH_CHUNK_SIZE / 4)) {
+        size_t aligned_size = (mem_use + 63) & ~(sizeof(char *) - 1);
+        Stash stash_copy(aligned_size);
+        Cells cells_copy;
+        copyCells(cells_copy, _cells, stash_copy);
+        if (stash_copy.get_memory_usage().allocatedBytes() * 2 > STASH_CHUNK_SIZE) {
+            LOG(warning, "shrink failed, %zu bytes -> chunksize %zu -> allocated %zu",
+                mem_use, aligned_size, stash_copy.get_memory_usage().allocatedBytes());
+        }
+        eval::ValueType type_copy = _type;
+        return std::make_unique<SparseTensor>(std::move(type_copy),
+                                              std::move(cells_copy),
+                                              std::move(stash_copy));
+    }
     return std::make_unique<SparseTensor>(_type, _cells);
 }
 
