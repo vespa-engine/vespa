@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.yahoo.vespa.model.admin.monitoring.AutoscalingMetrics.autoscalingMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetrics.defaultMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
@@ -19,7 +20,7 @@ import static java.util.Collections.unmodifiableList;
 /**
  * A metric consumer is a set of metrics given an id that can be requested at runtime.
  *
- * @author trygve
+ * @author Trygve Berdal
  * @author gjoranv
  */
 // TODO: This construct seems redundant when we have metrics sets
@@ -30,6 +31,9 @@ public class MetricsConsumer {
             consumer(VespaMetrics.vespaMetricsConsumerId.id, vespaMetricSet, systemMetricSet, networkMetricSet);
     public static final MetricsConsumer defaultConsumer =
             consumer(ValuesFetcher.defaultMetricsConsumerId.id, defaultMetricSet, systemMetricSet);
+    // Referenced from com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsFetcher
+    public static final MetricsConsumer autoscaling =
+            consumer("autoscaling", autoscalingMetricSet);
 
     private final String id;
     private final MetricSet metricSet;
