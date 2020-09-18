@@ -8,11 +8,18 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author hakonhall
  */
 class StateV1HealthUpdater implements HealthUpdater {
+    private static final Logger logger = Logger.getLogger(StateV1HealthUpdater.class.getName());
+
+    private static final Pattern CONFIG_SERVER_ENDPOINT_PATTERN = Pattern.compile("^http://(cfg[0-9]+)\\.");
+
 
     private final String endpoint;
     private final StateV1HealthClient healthClient;
@@ -46,8 +53,18 @@ class StateV1HealthUpdater implements HealthUpdater {
         }
 
         ServiceStatus newServiceStatus = healthInfo.isHealthy() ? ServiceStatus.UP : ServiceStatus.DOWN;
-        Optional<Instant> newSince = newServiceStatus == serviceStatusInfo.serviceStatus() ?
-                serviceStatusInfo.since() : Optional.of(now);
+
+        final Optional<Instant> newSince;
+        if (newServiceStatus == serviceStatusInfo.serviceStatus()) {
+            newSince = serviceStatusInfo.since();
+        } else {
+            newSince = Optional.of(now);
+
+            Matcher matcher = CONFIG_SERVER_ENDPOINT_PATTERN.matcher(endpoint);
+            if (matcher.find()) {
+                logger.info("New health status for " + matcher.group(1) + ": " + healthInfo.toString());
+            }
+        }
 
         serviceStatusInfo = new ServiceStatusInfo(newServiceStatus, newSince, Optional.of(now),
                 healthInfo.getErrorDescription(), Optional.of(endpoint));
