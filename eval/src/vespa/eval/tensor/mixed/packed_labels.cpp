@@ -42,6 +42,7 @@ PackedLabels::validate_labels(uint32_t num_labels)
     for (uint32_t i = 0; i < num_labels; ++i) {
         assert(_offsets[i] < _offsets[i+1]);
         uint32_t last_byte_index = _offsets[i+1] - 1;
+        assert(last_byte_index < _label_store.size());
         assert(_label_store[last_byte_index] == 0);
     }
     assert(_label_store.size() == _offsets[num_labels]);
