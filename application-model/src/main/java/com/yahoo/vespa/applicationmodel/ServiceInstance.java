@@ -66,6 +66,27 @@ public class ServiceInstance {
                 '}';
     }
 
+    /**
+     * Get a name that can be used in e.g. config server logs that makes it easy to understand which
+     * service instance this is.
+     */
+    public String descriptiveName() {
+        if (getServiceCluster().isController() || getServiceCluster().isConfigServer()) {
+            return getHostnamePrefix();
+        } else if (getServiceCluster().isControllerHost() || getServiceCluster().isConfigServerHost()) {
+            return "host-admin on " + getHostnamePrefix();
+        } else if (getServiceCluster().isTenantHost()) {
+            return "host-admin on " + hostName.s();
+        } else {
+            return configId.s();
+        }
+    }
+
+    private String getHostnamePrefix() {
+        int dotIndex = hostName.s().indexOf('.');
+        return dotIndex == -1 ? hostName().s() : hostName.s().substring(0, dotIndex);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

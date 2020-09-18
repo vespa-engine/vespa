@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -8,15 +9,19 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
+import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,6 +48,7 @@ public class ClusterApiImplTest {
 
     private final ApplicationApi applicationApi = mock(ApplicationApi.class);
     private final ModelTestUtils modelUtils = new ModelTestUtils();
+    private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(1600436659));
 
     @Test
     public void testServicesDownAndNotInGroup() {
@@ -76,7 +82,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), hostName5),
                 modelUtils.getHostInfos(),
-                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, clock);
 
         assertEquals("{ clusterId=cluster, serviceType=service-type }", clusterApi.clusterInfo());
         assertFalse(clusterApi.isStorageCluster());
@@ -139,16 +145,30 @@ public class ClusterApiImplTest {
         HostName hostName3 = new HostName("host3");
         HostName hostName4 = new HostName("host4");
         HostName hostName5 = new HostName("host5");
+        HostName hostName6 = new HostName("host6");
+
+        ServiceInstance service2 = modelUtils.createServiceInstance("service-2", hostName2, ServiceStatus.DOWN);
+
+        // Within down moratorium
+        Instant downSince5 = clock.instant().minus(ClusterApiImpl.downMoratorium).plus(Duration.ofSeconds(5));
+        ServiceInstance service5 = modelUtils.createServiceInstance("service-5", hostName5,
+                new ServiceStatusInfo(ServiceStatus.DOWN, downSince5, downSince5, Optional.empty(), Optional.empty()));
+
+        // After down moratorium
+        Instant downSince6 = clock.instant().minus(ClusterApiImpl.downMoratorium).minus(Duration.ofSeconds(5));
+        ServiceInstance service6 = modelUtils.createServiceInstance("service-6", hostName6,
+                new ServiceStatusInfo(ServiceStatus.DOWN, downSince6, downSince6, Optional.empty(), Optional.empty()));
 
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
                 new ServiceType("service-type"),
                 Arrays.asList(
                         modelUtils.createServiceInstance("service-1", hostName1, ServiceStatus.UP),
-                        modelUtils.createServiceInstance("service-2", hostName2, ServiceStatus.DOWN),
+                        service2,
                         modelUtils.createServiceInstance("service-3", hostName3, ServiceStatus.UP),
                         modelUtils.createServiceInstance("service-4", hostName4, ServiceStatus.DOWN),
-                        modelUtils.createServiceInstance("service-5", hostName5, ServiceStatus.UP)
+                        service5,
+                        service6
                 )
         );
         modelUtils.createApplicationInstance(Collections.singletonList(serviceCluster));
@@ -158,21 +178,33 @@ public class ClusterApiImplTest {
         modelUtils.createNode(hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
         modelUtils.createNode(hostName4, HostStatus.ALLOWED_TO_BE_DOWN);
         modelUtils.createNode(hostName5, HostStatus.NO_REMARKS);
+        modelUtils.createNode(hostName6, HostStatus.NO_REMARKS);
 
-        verifyNoServices(serviceCluster, false, false, hostName1);
-        verifyNoServices(serviceCluster, true, false, hostName2);
-        verifyNoServices(serviceCluster, true, false, hostName3);
-        verifyNoServices(serviceCluster, true, false, hostName4);
-        verifyNoServices(serviceCluster, false, false, hostName5);
+        var reason2 = SuspensionReasons.isDown(service2);
+        var reason6 = SuspensionReasons.downSince(service6, downSince6, Duration.ofSeconds(35));
+        var reasons2and6 = new SuspensionReasons().mergeWith(reason2).mergeWith(reason6);
 
-        verifyNoServices(serviceCluster, false, false, hostName1, hostName2);
-        verifyNoServices(serviceCluster, true, false, hostName2, hostName3);
-        verifyNoServices(serviceCluster, true, true, hostName2, hostName3, hostName4);
-        verifyNoServices(serviceCluster, false, true, hostName1, hostName2, hostName3, hostName4);
+        verifyNoServices(serviceCluster, Optional.empty(), false, hostName1);
+        verifyNoServices(serviceCluster, Optional.of(reason2), false, hostName2);
+        verifyNoServices(serviceCluster, Optional.of(SuspensionReasons.nothingNoteworthy()), false, hostName3);
+        verifyNoServices(serviceCluster, Optional.of(SuspensionReasons.nothingNoteworthy()), false, hostName4);
+        verifyNoServices(serviceCluster, Optional.empty(), false, hostName5);
+        verifyNoServices(serviceCluster, Optional.of(reason6), false, hostName6);
+
+        verifyNoServices(serviceCluster, Optional.empty(), false, hostName1, hostName2);
+        verifyNoServices(serviceCluster, Optional.of(reasons2and6), false, hostName2, hostName3, hostName6);
+        verifyNoServices(serviceCluster, Optional.of(reasons2and6), false,
+                hostName2, hostName3, hostName4, hostName6);
+        verifyNoServices(serviceCluster, Optional.empty(), true,
+                hostName2, hostName3, hostName4, hostName5, hostName6);
+        verifyNoServices(serviceCluster, Optional.empty(), false,
+                hostName1, hostName2, hostName3, hostName4, hostName6);
+        verifyNoServices(serviceCluster, Optional.empty(), true,
+                hostName1, hostName2, hostName3, hostName4, hostName5, hostName6);
     }
 
     private void verifyNoServices(ServiceCluster serviceCluster,
-                                  boolean expectedNoServicesInGroupIsUp,
+                                  Optional<SuspensionReasons> expectedNoServicesInGroupIsUp,
                                   boolean expectedNoServicesOutsideGroupIsDown,
                                   HostName... groupNodes) {
         ClusterApiImpl clusterApi = new ClusterApiImpl(
@@ -180,9 +212,10 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), groupNodes),
                 modelUtils.getHostInfos(),
-                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, clock);
 
-        assertEquals(expectedNoServicesInGroupIsUp, clusterApi.noServicesInGroupIsUp());
+        assertEquals(expectedNoServicesInGroupIsUp.map(SuspensionReasons::getMessagesInOrder),
+                     clusterApi.reasonsForNoServicesInGroupIsUp().map(SuspensionReasons::getMessagesInOrder));
         assertEquals(expectedNoServicesOutsideGroupIsDown, clusterApi.noServicesOutsideGroupIsDown());
     }
 
@@ -210,7 +243,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(applicationInstance, hostName1, hostName3),
                 new HostInfos(),
-                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, clock);
 
         assertTrue(clusterApi.isStorageCluster());
         assertEquals(Optional.of(hostName1), clusterApi.storageNodeInGroup().map(storageNode -> storageNode.hostName()));
@@ -233,6 +266,9 @@ public class ClusterApiImplTest {
                 ServiceType.CONFIG_SERVER,
                 instances
         );
+        for (var instance : instances) {
+            instance.setServiceCluster(serviceCluster);
+        }
 
         Set<ServiceCluster> serviceClusterSet = Set.of(serviceCluster);
 
@@ -250,7 +286,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(application, hostnames.get(0)),
                 modelUtils.getHostInfos(),
-                modelUtils.getClusterControllerClientFactory(), clusterSize);
+                modelUtils.getClusterControllerClientFactory(), clusterSize, clock);
 
         assertEquals(clusterSize - serviceStatusList.size(), clusterApi.missingServices());
         assertEquals(clusterSize == serviceStatusList.size(), clusterApi.noServicesOutsideGroupIsDown());

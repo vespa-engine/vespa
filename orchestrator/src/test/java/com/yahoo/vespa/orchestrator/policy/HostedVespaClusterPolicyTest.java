@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.model.ClusterApi;
@@ -10,6 +11,8 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -71,30 +74,31 @@ public class HostedVespaClusterPolicyTest {
 
     @Test
     public void verifyGroupGoingDownIsFine_noServicesOutsideGroupIsDownIsFine() {
-        verifyGroupGoingDownIsFine(true, false, 13, true);
+        verifyGroupGoingDownIsFine(true, Optional.empty(), 13, true);
     }
 
     @Test
     public void verifyGroupGoingDownIsFine_noServicesInGroupIsUp() {
-        verifyGroupGoingDownIsFine(false, true, 13, true);
+        var reasons = new SuspensionReasons().addReason(new HostName("host1"), "supension reason 1");
+        verifyGroupGoingDownIsFine(false, Optional.of(reasons), 13, true);
     }
 
     @Test
     public void verifyGroupGoingDownIsFine_percentageIsFine() {
-        verifyGroupGoingDownIsFine(false, false, 9, true);
+        verifyGroupGoingDownIsFine(false, Optional.empty(), 9, true);
     }
 
     @Test
     public void verifyGroupGoingDownIsFine_fails() {
-        verifyGroupGoingDownIsFine(false, false, 13, false);
+        verifyGroupGoingDownIsFine(false, Optional.empty(), 13, false);
     }
 
     private void verifyGroupGoingDownIsFine(boolean noServicesOutsideGroupIsDown,
-                                            boolean noServicesInGroupIsUp,
+                                            Optional<SuspensionReasons> noServicesInGroupIsUp,
                                             int percentageOfServicesDownIfGroupIsAllowedToBeDown,
                                             boolean expectSuccess) {
         when(clusterApi.noServicesOutsideGroupIsDown()).thenReturn(noServicesOutsideGroupIsDown);
-        when(clusterApi.noServicesInGroupIsUp()).thenReturn(noServicesInGroupIsUp);
+        when(clusterApi.reasonsForNoServicesInGroupIsUp()).thenReturn(noServicesInGroupIsUp);
         when(clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()).thenReturn(20);
         doReturn(ConcurrentSuspensionLimitForCluster.TEN_PERCENT).when(policy).getConcurrentSuspensionLimit(clusterApi);
 
@@ -107,11 +111,14 @@ public class HostedVespaClusterPolicyTest {
         when(clusterApi.getNodeGroup()).thenReturn(nodeGroup);
         when(nodeGroup.toCommaSeparatedString()).thenReturn("node-group");
 
-        when(clusterApi.noServicesInGroupIsUp()).thenReturn(false);
         try {
-            policy.verifyGroupGoingDownIsFine(clusterApi);
+            SuspensionReasons reasons = policy.verifyGroupGoingDownIsFine(clusterApi);
             if (!expectSuccess) {
                 fail();
+            }
+
+            if (noServicesInGroupIsUp.isPresent()) {
+                assertEquals(noServicesInGroupIsUp.get().getMessagesInOrder(), reasons.getMessagesInOrder());
             }
         } catch (HostStateChangeDeniedException e) {
             if (!expectSuccess) {

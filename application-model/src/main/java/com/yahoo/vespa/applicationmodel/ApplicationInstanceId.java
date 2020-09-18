@@ -12,6 +12,10 @@ import java.util.Objects;
 public class ApplicationInstanceId {
     public static final ApplicationInstanceId CONFIG_SERVER = new ApplicationInstanceId("zone-config-servers");
     public static final ApplicationInstanceId CONTROLLER = new ApplicationInstanceId("controller");
+    // Unfortunately, for config server host the ApplicationInstanceId is: configserver-host:prod:cd-us-central-1:default
+    public boolean isConfigServerHost() { return id.startsWith("configserver-host:"); }
+    public static final ApplicationInstanceId CONTROLLER_HOST = new ApplicationInstanceId("controller-host:prod:default:default");
+    public boolean isTenantHost() { return id.startsWith("tenant-host:"); }
 
     private final String id;
 
