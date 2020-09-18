@@ -127,7 +127,7 @@ public class NodeCandidateTest {
         return new Node(hostname, new IP.Config(Set.of("::1"), Set.of()), hostname, Optional.empty(),
                         new Flavor(new NodeResources(2, 2, 2, 2)),
                         Status.initial(), state, Optional.empty(), History.empty(), NodeType.tenant, new Reports(),
-                        Optional.empty(), Optional.empty());
+                        Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     private static NodeCandidate node(String hostname,
@@ -137,11 +137,11 @@ public class NodeCandidateTest {
         Node node = new Node(hostname, new IP.Config(Set.of("::1"), Set.of()), hostname, Optional.of(hostname + "parent"),
                              new Flavor(nodeResources),
                              Status.initial(), Node.State.ready, Optional.empty(), History.empty(), NodeType.tenant,
-                             new Reports(), Optional.empty(), Optional.empty());
+                             new Reports(), Optional.empty(), Optional.empty(), Optional.empty());
         Node parent = new Node(hostname + "parent", new IP.Config(Set.of("::1"), Set.of()), hostname, Optional.empty(),
                                new Flavor(totalHostResources),
                                Status.initial(), Node.State.ready, Optional.empty(), History.empty(), NodeType.host,
-                               new Reports(), Optional.empty(), Optional.empty());
+                               new Reports(), Optional.empty(), Optional.empty(), Optional.empty());
         return new NodeCandidate(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent),
                                  false, false, true, false);
     }
