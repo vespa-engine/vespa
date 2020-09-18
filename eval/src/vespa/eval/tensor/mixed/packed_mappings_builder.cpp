@@ -16,10 +16,8 @@ PackedMappingsBuilder::add_mapping_for(SparseAddress address)
         auto iter = _labels.insert(label_value).first;
         label_value = *iter;
     }
-
     uint32_t next_index = _mappings.size();
-    IndexMap::value_type new_val(address, next_index);
-    auto iter = _mappings.insert(new_val).first;
+    auto iter = _mappings.emplace(address, next_index).first;
     return iter->second;
 }
 
