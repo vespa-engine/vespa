@@ -53,17 +53,17 @@ public class LocalAsyncSession implements AsyncSession {
 
     @Override
     public Result put(Document document) {
-        return put(document, DocumentProtocol.Priority.NORMAL_3);
+        return put(new DocumentPut(document), DocumentProtocol.Priority.NORMAL_3);
     }
 
     @Override
-    public Result put(Document document, DocumentProtocol.Priority pri) {
+    public Result put(DocumentPut documentPut, DocumentProtocol.Priority pri) {
         long req = getNextRequestId();
         try {
-            syncSession.put(new DocumentPut(document), pri);
+            syncSession.put(documentPut, pri);
             addResponse(new DocumentResponse(req));
         } catch (Exception e) {
-            addResponse(new DocumentResponse(req, document, e.getMessage(), false));
+            addResponse(new DocumentResponse(req, documentPut.getDocument(), e.getMessage(), Response.Outcome.ERROR));
         }
         return new Result(req);
     }
@@ -85,7 +85,7 @@ public class LocalAsyncSession implements AsyncSession {
         try {
             addResponse(new DocumentResponse(req, syncSession.get(id)));
         } catch (Exception e) {
-            addResponse(new DocumentResponse(req, e.getMessage(), false));
+            addResponse(new DocumentResponse(req, e.getMessage(), Response.Outcome.ERROR));
         }
         return new Result(req);
     }
@@ -101,7 +101,7 @@ public class LocalAsyncSession implements AsyncSession {
         if (syncSession.remove(new DocumentRemove(id), pri)) {
             addResponse(new RemoveResponse(req, true));
         } else {
-            addResponse(new DocumentIdResponse(req, id, "Document not found.", false));
+            addResponse(new DocumentIdResponse(req, id, "Document not found.", Response.Outcome.NOT_FOUND));
         }
         return new Result(req);
     }
@@ -117,7 +117,7 @@ public class LocalAsyncSession implements AsyncSession {
         if (syncSession.update(update, pri)) {
             addResponse(new UpdateResponse(req, true));
         } else {
-            addResponse(new DocumentUpdateResponse(req, update, "Document not found.", false));
+            addResponse(new DocumentUpdateResponse(req, update, "Document not found.", Response.Outcome.NOT_FOUND));
         }
         return new Result(req);
     }

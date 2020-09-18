@@ -182,6 +182,26 @@ public class ReplyMergerTestCase {
     }
 
     @Test
+    // TODO: This seems wrong, and is probably a consequence of TAS being added later than this logic was written.
+    public void returnErrorDocumentReplyWhereDocWasFoundWhichIsProbablyWrong() {
+        Error e1 = new Error(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED, "fail");
+        UpdateDocumentReply r1 = new UpdateDocumentReply();
+        UpdateDocumentReply r2 = new UpdateDocumentReply();
+        UpdateDocumentReply r3 = new UpdateDocumentReply();
+        r1.addError(e1); // return error
+        r2.setWasFound(true);
+        r3.setWasFound(true);
+
+        merger.merge(0, r1);
+        merger.merge(1, r2);
+        merger.merge(2, r3);
+        Tuple2<Integer, Reply> ret = merger.mergedReply();
+        assertNull(ret.first);
+        assertNotSame(r1, ret.second);
+        assertThatErrorsMatch(new Error[] { e1 }, ret);
+    }
+
+    @Test
     public void returnUpdateDocumentReplyWhereDocWasFound() {
         UpdateDocumentReply r1 = new UpdateDocumentReply();
         UpdateDocumentReply r2 = new UpdateDocumentReply();

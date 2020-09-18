@@ -55,8 +55,11 @@ public abstract class DocumentAccess {
      * while attempting to create such an object, this method will throw an
      * exception.
      *
+     * @deprecated Inject a DocumentManagerConfig and create a MessageBusDocumentAccess from this instead.
+     *
      * @return a running document access object with all default configuration
      */
+    @Deprecated(since = "7")
     public static DocumentAccess createDefault() {
         return new com.yahoo.documentapi.messagebus.MessageBusDocumentAccess();
     }
@@ -67,12 +70,11 @@ public abstract class DocumentAccess {
      * @param params the parameters to use for setup
      */
     protected DocumentAccess(DocumentAccessParams params) {
-        super();
         if (params.documentmanagerConfig().isPresent()) { // our config has been injected into the creator
             documentTypeManager = new DocumentTypeManager(params.documentmanagerConfig().get());
             documentTypeConfigSubscriber = null;
         }
-        else { // fallback to old style subscription
+        else { // fallback to old style subscription — this should be avoided
             documentTypeManager = new DocumentTypeManager();
             documentTypeConfigSubscriber = DocumentTypeManagerConfigurer.configure(documentTypeManager, params.getDocumentManagerConfigId());
         }

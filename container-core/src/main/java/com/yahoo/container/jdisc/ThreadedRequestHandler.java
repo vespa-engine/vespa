@@ -15,6 +15,8 @@ import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
+
+import java.util.Objects;
 import java.util.logging.Level;
 
 import java.net.URI;
@@ -73,14 +75,13 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     @Inject
     protected ThreadedRequestHandler(Executor executor, Metric metric, boolean allowAsyncResponse) {
-        executor.getClass(); // throws NullPointerException
-        this.executor = executor;
+        this.executor = Objects.requireNonNull(executor);
         this.metric = (metric == null) ? new NullRequestMetric() : metric;
         this.allowAsyncResponse = allowAsyncResponse;
     }
 
     Metric.Context contextFor(Request request, Map<String, String> extraDimensions) {
-        BindingMatch match = request.getBindingMatch();
+        BindingMatch<?> match = request.getBindingMatch();
         if (match == null) return null;
         UriPattern matched = match.matched();
         if (matched == null) return null;

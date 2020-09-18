@@ -61,7 +61,7 @@ public class Result {
      * Returns the id of this operation. The asynchronous response to this operation
      * will contain the same id to allow clients who desire to, to match operations to responses.
      *
-     * @return the if of this operation
+     * @return the id of this operation
      */
     public long getRequestId() { return requestId; }
 
@@ -82,6 +82,7 @@ public class Result {
         /** The request failed, and retrying is pointless. */
         FATAL_ERROR,
         /** Condition specified in operation not met error  */
+        @Deprecated(since = "7", forRemoval = true) // TODO: Remove on Vespa 8 — this is a Response outcome, not a Result outcome.
         CONDITION_NOT_MET_ERROR
     }
 

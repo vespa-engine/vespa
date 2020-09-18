@@ -138,7 +138,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
         return version;
     }
 
-    /** Returns the remove address, or null if unresolved */
+    /** Returns the remote address, or null if unresolved */
     @Override
     public String getRemoteHostAddress() {
         if (remoteAddress instanceof InetSocketAddress) {
