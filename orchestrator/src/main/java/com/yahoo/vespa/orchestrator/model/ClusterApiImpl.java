@@ -8,9 +8,13 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,12 +28,14 @@ import java.util.stream.Stream;
  * @author hakonhall
  */
 class ClusterApiImpl implements ClusterApi {
+    static final Duration downMoratorium = Duration.ofSeconds(30);
 
     private final ApplicationApi applicationApi;
     private final ServiceCluster serviceCluster;
     private final NodeGroup nodeGroup;
     private final HostInfos hostInfos;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
+    private final Clock clock;
     private final Set<ServiceInstance> servicesInGroup;
     private final Set<ServiceInstance> servicesDownInGroup;
     private final Set<ServiceInstance> servicesNotInGroup;
@@ -53,12 +59,14 @@ class ClusterApiImpl implements ClusterApi {
                           NodeGroup nodeGroup,
                           HostInfos hostInfos,
                           ClusterControllerClientFactory clusterControllerClientFactory,
-                          int numberOfConfigServers) {
+                          int numberOfConfigServers,
+                          Clock clock) {
         this.applicationApi = applicationApi;
         this.serviceCluster = serviceCluster;
         this.nodeGroup = nodeGroup;
         this.hostInfos = hostInfos;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
+        this.clock = clock;
 
         Map<Boolean, Set<ServiceInstance>> serviceInstancesByLocality =
                 serviceCluster.serviceInstances().stream()
@@ -73,7 +81,7 @@ class ClusterApiImpl implements ClusterApi {
         servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
 
         int serviceInstances = serviceCluster.serviceInstances().size();
-        if (serviceCluster.isConfigServerClusterLike() && serviceInstances < numberOfConfigServers) {
+        if (serviceCluster.isConfigServerLike() && serviceInstances < numberOfConfigServers) {
             missingServices = numberOfConfigServers - serviceInstances;
             descriptionOfMissingServices = missingServices + " missing config server" + (missingServices > 1 ? "s" : "");
         } else {
@@ -108,8 +116,36 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
-    public boolean noServicesInGroupIsUp() {
-        return servicesDownInGroup.size() == servicesInGroup.size();
+    public Optional<SuspensionReasons> reasonsForNoServicesInGroupIsUp() {
+        SuspensionReasons reasons = new SuspensionReasons();
+
+        for (ServiceInstance service : servicesInGroup) {
+            if (hostStatus(service.hostName()).isSuspended()) {
+                reasons.mergeWith(SuspensionReasons.nothingNoteworthy());
+                continue;
+            }
+
+            if (service.serviceStatus() == ServiceStatus.DOWN) {
+                Optional<Instant> since = service.serviceStatusInfo().since();
+                if (since.isEmpty()) {
+                    reasons.mergeWith(SuspensionReasons.isDown(service));
+                    continue;
+                }
+
+                // Make sure services truly are down for some period of time before we allow suspension.
+                // On the other hand, a service coming down and up repeatedly should probably
+                // also be allowed... difficult without keeping track of history in a better way.
+                final Duration downDuration = Duration.between(since.get(), clock.instant());
+                if (downDuration.compareTo(downMoratorium) > 0) {
+                    reasons.mergeWith(SuspensionReasons.downSince(service, since.get(), downDuration));
+                    continue;
+                }
+            }
+
+            return Optional.empty();
+        }
+
+        return Optional.of(reasons);
     }
 
     int missingServices() { return missingServices; }

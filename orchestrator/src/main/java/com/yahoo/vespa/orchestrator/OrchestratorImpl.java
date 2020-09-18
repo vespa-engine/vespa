@@ -29,6 +29,7 @@ import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.Policy;
+import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
@@ -76,13 +77,13 @@ public class OrchestratorImpl implements Orchestrator {
     {
         this(new HostedVespaPolicy(new HostedVespaClusterPolicy(),
                                    clusterControllerClientFactory,
-                                   new ApplicationApiFactory(configServerConfig.zookeeperserver().size())),
+                                   new ApplicationApiFactory(configServerConfig.zookeeperserver().size(), Clock.systemUTC())),
                 clusterControllerClientFactory,
                 statusService,
                 serviceMonitor,
                 orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
                 Clock.systemUTC(),
-                new ApplicationApiFactory(configServerConfig.zookeeperserver().size()),
+                new ApplicationApiFactory(configServerConfig.zookeeperserver().size(), Clock.systemUTC()),
                 flagSource);
     }
 
@@ -227,6 +228,7 @@ public class OrchestratorImpl implements Orchestrator {
     void suspendGroup(OrchestratorContext context, NodeGroup nodeGroup) throws HostStateChangeDeniedException {
         ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
 
+        final SuspensionReasons suspensionReasons;
         try (ApplicationLock lock = statusService.lockApplication(context, applicationReference)) {
             ApplicationInstanceStatus appStatus = lock.getApplicationInstanceStatus();
             if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
@@ -235,8 +237,10 @@ public class OrchestratorImpl implements Orchestrator {
 
             ApplicationApi applicationApi = applicationApiFactory.create(
                     nodeGroup, lock, clusterControllerClientFactory);
-            policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
+            suspensionReasons = policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
         }
+
+        suspensionReasons.makeLogMessage().ifPresent(log::info);
     }
 
     @Override

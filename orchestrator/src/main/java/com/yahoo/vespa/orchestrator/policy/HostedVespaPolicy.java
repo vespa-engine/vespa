@@ -39,11 +39,13 @@ public class HostedVespaPolicy implements Policy {
     }
 
     @Override
-    public void grantSuspensionRequest(OrchestratorContext context, ApplicationApi application)
+    public SuspensionReasons grantSuspensionRequest(OrchestratorContext context, ApplicationApi application)
             throws HostStateChangeDeniedException {
+        var suspensionReasons = new SuspensionReasons();
+
         // Apply per-cluster policy
         for (ClusterApi cluster : application.getClusters()) {
-            clusterPolicy.verifyGroupGoingDownIsFine(cluster);
+            suspensionReasons.mergeWith(clusterPolicy.verifyGroupGoingDownIsFine(cluster));
         }
 
         // Ask Cluster Controller to set UP storage nodes in maintenance.
@@ -56,6 +58,8 @@ public class HostedVespaPolicy implements Policy {
         for (HostName hostName : application.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)) {
             application.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
         }
+
+        return suspensionReasons;
     }
 
     @Override

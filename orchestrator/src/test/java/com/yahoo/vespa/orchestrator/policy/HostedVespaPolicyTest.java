@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.policy;
 
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -34,7 +35,8 @@ public class HostedVespaPolicyTest {
 
     private final ClusterControllerClientFactory clientFactory = mock(ClusterControllerClientFactory.class);
     private final ClusterControllerClient client = mock(ClusterControllerClient.class);
-    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
+    private final ManualClock clock = new ManualClock();
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
 
     @Before
     public void setUp() {
@@ -44,6 +46,7 @@ public class HostedVespaPolicyTest {
     @Test
     public void testGrantSuspension() throws HostStateChangeDeniedException {
         final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
+        when(clusterPolicy.verifyGroupGoingDownIsFine(any())).thenReturn(SuspensionReasons.nothingNoteworthy());
         final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory, applicationApiFactory);
         final ApplicationApi applicationApi = mock(ApplicationApi.class);
         when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("tenant:app:default"));
