@@ -8,8 +8,10 @@ import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
@@ -20,6 +22,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -37,10 +40,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     /** A reusable compressor with default settings */
     private static final Compressor compressor = new Compressor();
-    
+
     private final String keyEndMarker = "\r=";
     private final String valueEndMarker = "\r\n";
-    
+
     // TODO: These are to expose coupling between the strings used here and elsewhere
     public final static String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
     public final static String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
@@ -63,7 +66,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
         this(rankProfile, queryProfiles, importedModels, attributeFields, new TestProperties());
     }
-    
+
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
         StringBuilder b = new StringBuilder();
         for (Pair<String, String> property : properties)
@@ -109,12 +112,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         b.fef(fefB);
     }
 
-    /** 
+    /**
      * Returns the properties of this as an unmodifiable list.
      * Note: This method is expensive.
      */
     public List<Pair<String, String>> configProperties() { return decompress(compressedProperties); }
-    
+
     private static class Deriver {
 
         /**
@@ -194,6 +197,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             ignoreDefaultRankFeatures = rankProfile.getIgnoreDefaultRankFeatures();
             rankProperties = new ArrayList<>(rankProfile.getRankProperties());
             derivePropertiesAndSummaryFeaturesFromFunctions(rankProfile.getFunctions());
+            deriveOnnxModelFunctionsAndSummaryFeatures(rankProfile);
         }
 
         private void derivePropertiesAndSummaryFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions) {
@@ -431,6 +435,40 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>("rankingExpression(" + name + ").rankingScript", expression.getRoot().toString()));
             }
             return properties;
+        }
+
+        private void deriveOnnxModelFunctionsAndSummaryFeatures(RankProfile rankProfile) {
+            if (rankProfile.getSearch() == null) return;
+            if (rankProfile.getSearch().onnxModels().asMap().isEmpty()) return;
+            replaceOnnxFunctionInputs(rankProfile);
+            replaceImplicitOnnxConfigSummaryFeatures(rankProfile);
+        }
+
+        private void replaceOnnxFunctionInputs(RankProfile rankProfile) {
+            Set<String> functionNames = rankProfile.getFunctions().keySet();
+            if (functionNames.isEmpty()) return;
+            for (OnnxModel onnxModel: rankProfile.getSearch().onnxModels().asMap().values()) {
+                for (OnnxModel.OnnxNameMapping mapping : onnxModel.getInputMap()) {
+                    String source = mapping.getVespaName();
+                    if (functionNames.contains(source)) {
+                        mapping.setVespaName("rankingExpression(" + source + ")");
+                    }
+                }
+            }
+        }
+
+        private void replaceImplicitOnnxConfigSummaryFeatures(RankProfile rankProfile) {
+            if (summaryFeatures == null || summaryFeatures.isEmpty()) return;
+            Set<ReferenceNode> replacedSummaryFeatures = new HashSet<>();
+            for (Iterator<ReferenceNode> i = summaryFeatures.iterator(); i.hasNext(); ) {
+                ReferenceNode referenceNode = i.next();
+                ReferenceNode replacedNode = OnnxModelTransformer.transformFeature(referenceNode, rankProfile.getSearch());
+                if (referenceNode != replacedNode) {
+                    replacedSummaryFeatures.add(replacedNode);
+                    i.remove();
+                }
+            }
+            summaryFeatures.addAll(replacedSummaryFeatures);
         }
 
     }
