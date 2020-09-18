@@ -377,7 +377,9 @@ public class SessionRepository {
         remoteSession.deactivate();
         if (localSession == null) {
             // This change will be picked up by directoryCache in this class, which will do the rest of the cleanup
-            remoteSession.delete();
+            try (Lock lock = lock(remoteSession.getSessionId())) {
+                remoteSession.delete();
+            }
         } else {
             deleteLocalSession(localSession);
         }
