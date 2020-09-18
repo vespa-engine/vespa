@@ -168,48 +168,49 @@ public:
     }
 };
 
-// Index references, possibly swapped to make sure the first index is
-// smaller than the second one. This will affect how the JoinSparseAddress
-// is set up as well.
-struct IndexRefs {
-    bool swapped;
-    const NewValue::Index &first;
-    const NewValue::Index &second;
-    IndexRefs(const NewValue::Index &lhs, const NewValue::Index &rhs)
-        : swapped(rhs.size() < lhs.size()), first(swapped ? rhs : lhs), second(swapped ? lhs : rhs) {}
-};
-
-// contains the full address used when joining sparse indexes as well
-// as helper structures needed to use the value api.
-struct JoinSparseAddress {
-    std::vector<vespalib::stringref>        address;
-    std::vector<vespalib::stringref*>       first;
-    std::vector<const vespalib::stringref*> overlap;
-    std::vector<vespalib::stringref*>       second_only;
+// Contains various state needed to perform the sparse part (all
+// mapped dimensions) of the join operation. Performs swapping of
+// sparse indexes to ensure that we look up entries from the smallest
+// index in the largest index.
+struct SparseJoinState {
+    bool                                    swapped;
+    const NewValue::Index                  &first_index;
+    const NewValue::Index                  &second_index;
+    const std::vector<size_t>              &second_view_dims;
+    std::vector<vespalib::stringref>        full_address;
+    std::vector<vespalib::stringref*>       first_address;
+    std::vector<const vespalib::stringref*> address_overlap;
+    std::vector<vespalib::stringref*>       second_only_address;
     size_t                                  lhs_subspace;
     size_t                                  rhs_subspace;
     size_t                                 &first_subspace;
     size_t                                 &second_subspace;
-    JoinSparseAddress(const SparseJoinPlan &plan, bool swap)
-        : address(plan.sources.size()), first(), overlap(), second_only(),
+
+    SparseJoinState(const SparseJoinPlan &plan, const NewValue::Index &lhs, const NewValue::Index &rhs)
+        : swapped(rhs.size() < lhs.size()),
+          first_index(swapped ? rhs : lhs), second_index(swapped ? lhs : rhs),
+          second_view_dims(swapped ? plan.lhs_overlap : plan.rhs_overlap),
+          full_address(plan.sources.size()),
+          first_address(), address_overlap(), second_only_address(),
           lhs_subspace(), rhs_subspace(),
-          first_subspace(swap ? rhs_subspace : lhs_subspace),
-          second_subspace(swap ? lhs_subspace : rhs_subspace)
+          first_subspace(swapped ? rhs_subspace : lhs_subspace),
+          second_subspace(swapped ? lhs_subspace : rhs_subspace)
     {
-        for (size_t i = 0; i < address.size(); ++i) {
+        auto first_source = swapped ? SparseJoinPlan::Source::RHS : SparseJoinPlan::Source::LHS;
+        for (size_t i = 0; i < full_address.size(); ++i) {
             if (plan.sources[i] == SparseJoinPlan::Source::BOTH) {
-                first.push_back(&address[i]);
-                overlap.push_back(&address[i]);
-            } else if ((plan.sources[i] == SparseJoinPlan::Source::RHS) == swap) {
-                first.push_back(&address[i]);
+                first_address.push_back(&full_address[i]);
+                address_overlap.push_back(&full_address[i]);
+            } else if (plan.sources[i] == first_source) {
+                first_address.push_back(&full_address[i]);
             } else {
-                second_only.push_back(&address[i]);
+                second_only_address.push_back(&full_address[i]);
             }
         }
     }
-    ~JoinSparseAddress();
+    ~SparseJoinState();
 };
-JoinSparseAddress::~JoinSparseAddress() = default;
+SparseJoinState::~SparseJoinState() = default;
 
 // Treats all values as mixed tensors. Needs output cell type as well
 // as input cell types since output cell type cannot always be
@@ -223,18 +224,17 @@ struct GenericJoin {
         Fun fun(function);
         auto lhs_cells = lhs.cells().typify<LCT>();
         auto rhs_cells = rhs.cells().typify<RCT>();
-        IndexRefs index_refs(lhs.index(), rhs.index());
-        JoinSparseAddress addr(sparse_plan, index_refs.swapped);
-        auto builder = factory.create_value_builder<OCT>(res_type, sparse_plan.sources.size(), dense_plan.out_size, index_refs.first.size());
-        auto outer = index_refs.first.create_view({});
-        auto inner = index_refs.second.create_view(index_refs.swapped ? sparse_plan.lhs_overlap : sparse_plan.rhs_overlap);
+        SparseJoinState state(sparse_plan, lhs.index(), rhs.index());
+        auto builder = factory.create_value_builder<OCT>(res_type, sparse_plan.sources.size(), dense_plan.out_size, state.first_index.size());
+        auto outer = state.first_index.create_view({});
+        auto inner = state.second_index.create_view(state.second_view_dims);
         outer->lookup({});
-        while (outer->next_result(addr.first, addr.first_subspace)) {
-            inner->lookup(addr.overlap);
-            while (inner->next_result(addr.second_only, addr.second_subspace)) {
-                OCT *dst = builder->add_subspace(addr.address).begin();
+        while (outer->next_result(state.first_address, state.first_subspace)) {
+            inner->lookup(state.address_overlap);
+            while (inner->next_result(state.second_only_address, state.second_subspace)) {
+                OCT *dst = builder->add_subspace(state.full_address).begin();
                 auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
-                dense_plan.execute(dense_plan.lhs_size * addr.lhs_subspace, dense_plan.rhs_size * addr.rhs_subspace, join_cells);
+                dense_plan.execute(dense_plan.lhs_size * state.lhs_subspace, dense_plan.rhs_size * state.rhs_subspace, join_cells);
             }
         }
         return builder->build(std::move(builder));
