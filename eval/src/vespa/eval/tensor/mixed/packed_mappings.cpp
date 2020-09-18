@@ -94,7 +94,7 @@ PackedMappings::fill_address_by_sortid(uint32_t internal_index, Address &address
     address.resize(_num_dims);
     for (uint32_t i = 0; i < _num_dims; ++i) {
         uint32_t label_idx = _int_store[offset++];
-        address[i] = _label_store.label_value(label_idx);
+        address[i] = _label_store.get_label(label_idx);
     }
     return _int_store[offset];
 }

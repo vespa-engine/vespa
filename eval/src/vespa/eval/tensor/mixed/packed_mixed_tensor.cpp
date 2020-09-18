@@ -41,7 +41,6 @@ PackedMixedTensorIndexView::lookup(const std::vector<const vespalib::stringref*>
     _index = 0;
     assert(addr.size() == num_view_dims());
     _lookup_enums.clear();
- // printf("lookup %zu/%zu dims:", num_view_dims(), num_full_dims());
     for (const vespalib::stringref * label_ptr : addr) {
         int32_t label_enum = _mappings.label_store().find_label(*label_ptr);
         if (label_enum < 0) {
@@ -50,9 +49,7 @@ PackedMixedTensorIndexView::lookup(const std::vector<const vespalib::stringref*>
             break;
         }
         _lookup_enums.push_back(label_enum);
- //     printf(" '%s'", label_ptr->data());
     }
- // printf(" [in %u mappings]\n", _mappings.size());
 }
 
 bool
@@ -81,18 +78,15 @@ PackedMixedTensorIndexView::next_result(const std::vector<vespalib::stringref*> 
             }
             // not a view dimension:
             uint32_t label_enum = _full_enums[i];
-            auto label_value = _mappings.label_store().label_value(label_enum);
-            *addr_out[ao_idx] = label_value;
+            *addr_out[ao_idx] = _mappings.label_store().get_label(label_enum);
             ++ao_idx;
         }
         if (couldmatch) {
- //         printf("matches at %zu/%u\n", _index, _mappings.size());
             assert(vd_idx == num_view_dims());
             assert(ao_idx == num_rest_dims());
             return true;
         }
     }
- // printf("no more matches %zu/%u\n", _index, _mappings.size());
     return false;
 }
 

@@ -12,26 +12,28 @@ PackedLabels::find_label(vespalib::stringref to_find) const
     uint32_t hi = num_labels();
     while (lo < hi) {
         uint32_t mid = (lo + hi) / 2;
-        if (label_value(mid) < to_find) {
+        if (get_label(mid) < to_find) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
     assert(lo == hi);
-    if (lo < num_labels() && label_value(lo) == to_find) {
+    if (lo < num_labels() && get_label(lo) == to_find) {
         return lo;
     }
     return -1;
 }
 
 vespalib::stringref
-PackedLabels::label_value(uint32_t index) const
+PackedLabels::get_label(uint32_t index) const
 {
     assert(index < num_labels());
 
-    auto p = get_label_start(index);
-    auto sz = get_label_size(index);
+    uint32_t this_offset = _offsets[index];
+    uint32_t next_offset = _offsets[index+1];
+    auto p = &_label_store[this_offset];
+    size_t sz = next_offset - this_offset - 1;
     return vespalib::stringref(p, sz);
 }
 
@@ -47,19 +49,8 @@ PackedLabels::validate_labels(uint32_t num_labels)
     }
     assert(_label_store.size() == _offsets[num_labels]);
     for (uint32_t i = 0; i+1 < num_labels; ++i) {
-        assert(label_value(i) < label_value(i+1));
+        assert(get_label(i) < get_label(i+1));
     }
-}
-
-const char *
-PackedLabels::get_label_start(uint32_t index) const {
-    uint32_t offset = _offsets[index];
-    return &_label_store[offset];
-}
-
-uint32_t
-PackedLabels::get_label_size(uint32_t index) const {
-    return _offsets[index+1] - _offsets[index] - 1;
 }
 
 } // namespace
