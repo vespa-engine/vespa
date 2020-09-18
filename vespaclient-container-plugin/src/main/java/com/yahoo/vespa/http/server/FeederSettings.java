@@ -18,7 +18,6 @@ public class FeederSettings {
     private static final Route DEFAULT_ROUTE = Route.parse("default");
     public final boolean drain; // TODO: Implement drain=true
     public final Route route;
-    public final boolean denyIfBusy;
     public final DataFormat dataFormat;
     public final String priority;
     public final Integer traceLevel;
@@ -26,7 +25,6 @@ public class FeederSettings {
     public FeederSettings(HttpRequest request) {
         this.drain = Optional.ofNullable(request.getHeader(Headers.DRAIN)).map(Boolean::parseBoolean).orElse(false);
         this.route = Optional.ofNullable(request.getHeader(Headers.ROUTE)).map(Route::parse).orElse(DEFAULT_ROUTE);
-        this.denyIfBusy = Optional.ofNullable(request.getHeader(Headers.DENY_IF_BUSY)).map(Boolean::parseBoolean).orElse(false);
         // TODO: Change default to JSON on Vespa 8:
         this.dataFormat = Optional.ofNullable(request.getHeader(Headers.DATA_FORMAT)).map(DataFormat::valueOf).orElse(DataFormat.XML_UTF8);
         this.priority = request.getHeader(Headers.PRIORITY);
