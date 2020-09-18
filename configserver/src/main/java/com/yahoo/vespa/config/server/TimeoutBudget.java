@@ -25,6 +25,10 @@ public class TimeoutBudget {
         this.endTime = startTime.plus(duration);
     }
 
+    public Duration timeout() {
+        return Duration.between(startTime, endTime);
+    }
+
     public Duration timeLeft() {
         Instant now = clock.instant();
         measurements.add(new Measurement(now));

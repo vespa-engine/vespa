@@ -28,6 +28,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -234,9 +235,11 @@ public class SessionPreparer {
         }
 
         void checkTimeout(String step) {
-            if (! params.getTimeoutBudget().hasTimeLeft(step)) {
-                String used = params.getTimeoutBudget().timesUsed();
-                throw new RuntimeException("prepare timed out " + used + " after " + step + " step: " + applicationId);
+            TimeoutBudget timeoutBudget = params.getTimeoutBudget();
+            if (! timeoutBudget.hasTimeLeft(step)) {
+                String used = timeoutBudget.timesUsed();
+                throw new RuntimeException("prepare timed out " + used + " after " + step +
+                                           " step (timeout " + timeoutBudget.timeout() + "): " + applicationId);
             }
         }
 
@@ -343,7 +346,7 @@ public class SessionPreparer {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
-            // Note: When changing the below you need to also change similar calls in SessionFactoryImpl.createSessionFromExisting()
+            // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
             if (distributeApplicationPackage.value()) zooKeeperClient.writeApplicationPackageReference(distributedApplicationPackage);
             zooKeeperClient.writeVespaVersion(vespaVersion);
