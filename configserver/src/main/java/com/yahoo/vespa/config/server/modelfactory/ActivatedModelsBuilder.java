@@ -50,7 +50,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private static final Logger log = Logger.getLogger(ActivatedModelsBuilder.class.getName());
 
     private final TenantName tenant;
-    private final long appGeneration;
+    private final long applicationGeneration;
     private final SessionZooKeeperClient zkClient;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigDefinitionRepo configDefinitionRepo;
@@ -60,7 +60,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final SecretStore secretStore;
 
     public ActivatedModelsBuilder(TenantName tenant,
-                                  long appGeneration,
+                                  long applicationGeneration,
                                   SessionZooKeeperClient zkClient,
                                   GlobalComponentRegistry globalComponentRegistry) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
@@ -68,7 +68,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
               globalComponentRegistry.getZone(),
               HostProvisionerProvider.from(globalComponentRegistry.getHostProvisioner()));
         this.tenant = tenant;
-        this.appGeneration = appGeneration;
+        this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;
         this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
         this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
@@ -87,7 +87,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             Optional<AllocatedHosts> ignored // Ignored since we have this in the app package for activated models
     ) {
         log.log(Level.FINE, String.format("Loading model version %s for session %s application %s",
-                                          modelFactory.version(), appGeneration, applicationId));
+                                          modelFactory.version(), applicationGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);
         Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
@@ -110,7 +110,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         ServerCache serverCache = new ServerCache(configDefinitionRepo, zkClient.getUserConfigDefinitions());
         return new Application(modelFactory.createModel(modelContext),
                                serverCache,
-                               appGeneration,
+                               applicationGeneration,
                                applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.version(),
                                applicationMetricUpdater,
