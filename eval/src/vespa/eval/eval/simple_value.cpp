@@ -337,11 +337,11 @@ DenseJoinPlan::DenseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_typ
                  [](const auto &a, const auto &b){ return (a.name < b.name); });
     for (size_t i = loop_cnt.size(); i-- > 0; ) {
         out_size *= loop_cnt[i];
-        if (lhs_stride[i]) {
+        if (lhs_stride[i] != 0) {
             lhs_stride[i] = lhs_size;
             lhs_size *= loop_cnt[i];
         }
-        if (rhs_stride[i]) {
+        if (rhs_stride[i] != 0) {
             rhs_stride[i] = rhs_size;
             rhs_size *= loop_cnt[i];
         }
