@@ -16,8 +16,7 @@ public class DocumentResponse extends Response {
 
     /** Creates a successful response */
     public DocumentResponse(long requestId) {
-        super(requestId);
-        document = null;
+        this(requestId, null);
     }
 
     /**
@@ -36,9 +35,20 @@ public class DocumentResponse extends Response {
      * @param textMessage the message to encapsulate in the Response
      * @param success     true if the response represents a successful call
      */
+    @Deprecated(since = "7") // TODO: Remove on Vespa 8
     public DocumentResponse(long requestId, String textMessage, boolean success) {
         super(requestId, textMessage, success);
         document = null;
+    }
+
+    /**
+     * Creates a response containing a textual message
+     *
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of this operation
+     */
+    public DocumentResponse(long requestId, String textMessage, Outcome outcome) {
+        this(requestId, null, textMessage, outcome);
     }
 
     /**
@@ -48,8 +58,21 @@ public class DocumentResponse extends Response {
      * @param textMessage the message to encapsulate in the Response
      * @param success     true if the response represents a successful call
      */
+    @Deprecated(since = "7") // TODO: Remove on Vespa 8
     public DocumentResponse(long requestId, Document document, String textMessage, boolean success) {
-        super(requestId, textMessage, success);
+        this(requestId, document, textMessage, success ? Outcome.SUCCESS : Outcome.ERROR);
+    }
+
+
+    /**
+     * Creates a response containing a textual message and/or a document
+     *
+     * @param document    the Document to encapsulate in the Response
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of this operation
+     */
+    public DocumentResponse(long requestId, Document document, String textMessage, Outcome outcome) {
+        super(requestId, textMessage, outcome);
         this.document = document;
     }
 

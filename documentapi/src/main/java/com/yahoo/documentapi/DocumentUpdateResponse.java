@@ -12,11 +12,11 @@ import com.yahoo.document.DocumentUpdate;
 public class DocumentUpdateResponse extends Response {
 
     /** The document update of this response, if any */
-    private DocumentUpdate documentUpdate = null;
+    private final DocumentUpdate documentUpdate;
 
     /** Creates a successful response */
     public DocumentUpdateResponse(long requestId) {
-        super(requestId);
+        this(requestId, null);
     }
 
     /**
@@ -35,8 +35,19 @@ public class DocumentUpdateResponse extends Response {
      * @param textMessage the message to encapsulate in the Response
      * @param success     true if the response represents a successful call
      */
+    @Deprecated(since = "7") // TODO: Remove on Vespa 8
     public DocumentUpdateResponse(long requestId, String textMessage, boolean success) {
-        super(requestId, textMessage, success);
+        this(requestId, null, textMessage, success ? Outcome.SUCCESS : Outcome.ERROR);
+    }
+
+    /**
+     * Creates a response containing a textual message
+     *
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of this operation
+     */
+    public DocumentUpdateResponse(long requestId, String textMessage, Outcome outcome) {
+        this(requestId, null, textMessage, outcome);
     }
 
     /**
@@ -46,8 +57,21 @@ public class DocumentUpdateResponse extends Response {
      * @param textMessage    the message to encapsulate in the Response
      * @param success        true if the response represents a successful call
      */
+    @Deprecated(since = "7") // TODO: Remove on Vespa 8
     public DocumentUpdateResponse(long requestId, DocumentUpdate documentUpdate, String textMessage, boolean success) {
-        super(requestId, textMessage, success);
+        this(requestId, documentUpdate, textMessage, success ? Outcome.SUCCESS : Outcome.ERROR);
+    }
+
+
+    /**
+     * Creates a response containing a textual message and/or a document update
+     *
+     * @param documentUpdate the DocumentUpdate to encapsulate in the Response
+     * @param textMessage    the message to encapsulate in the Response
+     * @param outcome        the outcome of this operation
+     */
+    public DocumentUpdateResponse(long requestId, DocumentUpdate documentUpdate, String textMessage, Outcome outcome) {
+        super(requestId, textMessage, outcome);
         this.documentUpdate = documentUpdate;
     }
 

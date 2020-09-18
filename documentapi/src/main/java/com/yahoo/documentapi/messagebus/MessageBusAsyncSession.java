@@ -41,6 +41,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
+import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
+import static com.yahoo.documentapi.Response.Outcome.ERROR;
+import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
+
 /**
  * An access session which wraps a messagebus source session sending document messages.
  * The sessions are multithread safe.
@@ -257,19 +261,23 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     private static Response toError(Reply reply, long reqId) {
+        boolean definitelyNotFound =    reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
+                                     || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound();
+        boolean conditionFailed = reply.getErrorCodes().contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED);
+        Response.Outcome outcome = definitelyNotFound ? NOT_FOUND : conditionFailed ? CONDITION_FAILED : ERROR;
         Message msg = reply.getMessage();
         String err = getErrorMessage(reply);
         switch (msg.getType()) {
         case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-            return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, false);
+            return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, outcome);
         case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-            return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), err, false);
+            return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), err, outcome);
         case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-            return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), err, false);
+            return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), err, outcome);
         case DocumentProtocol.MESSAGE_GETDOCUMENT:
-            return new DocumentIdResponse(reqId, ((GetDocumentMessage)msg).getDocumentId(), err, false);
+            return new DocumentIdResponse(reqId, ((GetDocumentMessage)msg).getDocumentId(), err, outcome);
         default:
-            return new Response(reqId, err, false);
+            return new Response(reqId, err, outcome);
         }
     }
 

@@ -16,8 +16,7 @@ public class DocumentIdResponse extends Response {
 
     /** Creates a successful response */
     public DocumentIdResponse(long requestId) {
-        super(requestId);
-        documentId = null;
+        this(requestId, null);
     }
 
     /**
@@ -36,9 +35,9 @@ public class DocumentIdResponse extends Response {
      * @param textMessage the message to encapsulate in the Response
      * @param success     true if the response represents a successful call
      */
+    @Deprecated(since = "7") // TODO: Remove on Vespa 8
     public DocumentIdResponse(long requestId, String textMessage, boolean success) {
-        super(requestId, textMessage, success);
-        documentId = null;
+        this(requestId, null, textMessage, success ? Outcome.SUCCESS : Outcome.ERROR);
     }
 
     /**
@@ -48,8 +47,21 @@ public class DocumentIdResponse extends Response {
      * @param textMessage the message to encapsulate in the Response
      * @param success     true if the response represents a successful call
      */
+    @Deprecated(since = "7") // TODO: Remove on Vespa 8
     public DocumentIdResponse(long requestId, DocumentId documentId, String textMessage, boolean success) {
-        super(requestId, textMessage, success);
+        this(requestId, documentId, textMessage, success ? Outcome.SUCCESS : Outcome.ERROR);
+    }
+
+
+    /**
+     * Creates a response containing a textual message and/or a document id
+     *
+     * @param documentId  the DocumentId to encapsulate in the Response
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of the operation
+     */
+    public DocumentIdResponse(long requestId, DocumentId documentId, String textMessage, Outcome outcome) {
+        super(requestId, textMessage, outcome);
         this.documentId = documentId;
     }
 
