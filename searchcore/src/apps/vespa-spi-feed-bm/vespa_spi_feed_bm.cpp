@@ -97,6 +97,7 @@ std::shared_ptr<DocumenttypesConfig> make_document_type() {
 std::shared_ptr<AttributesConfig> make_attributes_config() {
     AttributesConfigBuilder builder;
     AttributesConfig::Attribute attribute;
+    attribute.name = "int";
     attribute.datatype = AttributesConfig::Attribute::Datatype::INT32;
     builder.attribute.emplace_back(attribute);
     return std::make_shared<AttributesConfig>(builder);
