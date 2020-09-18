@@ -28,12 +28,12 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
         applicationRepository.deleteExpiredLocalSessions();
 
         if (hostedVespa) {
-            Duration expiryTime = Duration.ofHours(2);
+            Duration expiryTime = Duration.ofMinutes(90);
             int deleted = applicationRepository.deleteExpiredRemoteSessions(expiryTime);
             log.log(LogLevel.FINE, () -> "Deleted " + deleted + " expired remote sessions older than " + expiryTime);
         }
 
-        Duration lockExpiryTime = Duration.ofHours(2);
+        Duration lockExpiryTime = Duration.ofMinutes(90);
         int deleted = applicationRepository.deleteExpiredSessionLocks(lockExpiryTime);
         log.log(LogLevel.FINE, () -> "Deleted " + deleted + " locks older than " + lockExpiryTime);
 
