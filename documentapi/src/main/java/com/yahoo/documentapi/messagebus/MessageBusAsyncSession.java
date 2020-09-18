@@ -238,7 +238,6 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     private static Result.ResultType messageBusErrorToResultType(int messageBusError) {
         switch (messageBusError) {
             case ErrorCode.SEND_QUEUE_FULL: return Result.ResultType.TRANSIENT_ERROR;
-            case DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED: return Result.ResultType.CONDITION_NOT_MET_ERROR;
             default: return Result.ResultType.FATAL_ERROR;
         }
     }
