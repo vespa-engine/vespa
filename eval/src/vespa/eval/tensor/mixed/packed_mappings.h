@@ -65,8 +65,6 @@ private:
     /*
        _int_store contains data corresponding to this model:
        struct IntStore {
-           // map to index in next table:
-           uint32_t index_of_subspace[num_mappings];
            // sorted lexicographically by label_enums:
            struct MappingData {
                uint32_t label_enums[num_dims];
@@ -86,7 +84,7 @@ private:
     }
 
     uint32_t offset_of_mapping_data(uint32_t idx) const {
-        return (idx * (1 + _num_dims)) + _num_mappings;
+        return (idx * (1 + _num_dims));
     }
     uint32_t subspace_of_sortid(uint32_t internal_index) const {
         uint32_t offset = offset_of_mapping_data(internal_index);

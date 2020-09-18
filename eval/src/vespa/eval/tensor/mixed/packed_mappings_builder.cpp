@@ -40,7 +40,7 @@ PackedMappingsBuilder::extra_memory() const
 PackedMappings
 PackedMappingsBuilder::target_memory(char *mem_start, char *mem_end) const
 {
-    size_t int_store_cnt = (2 + _num_dims) * _mappings.size();
+    size_t int_store_cnt = (1 + _num_dims) * _mappings.size();
     size_t int_store_size = int_store_cnt * sizeof(uint32_t);
     size_t label_cnt = _labels.size();
     size_t label_offsets_size = (1 + label_cnt) * sizeof(uint32_t);
@@ -61,6 +61,7 @@ PackedMappingsBuilder::target_memory(char *mem_start, char *mem_end) const
     ArrayRef<uint32_t> int_store_data(int_store_mem, int_store_cnt);
     ArrayRef<uint32_t> label_offsets(offsets_mem, 1 + label_cnt);
     ArrayRef<char> labels_data(labels_mem, label_bytes);
+    assert(labels_data.end() <= mem_end);
 
     size_t byte_idx = 0;
     size_t label_num = 0;
@@ -73,10 +74,11 @@ PackedMappingsBuilder::target_memory(char *mem_start, char *mem_end) const
     assert(label_num == label_cnt);
     label_offsets[label_num] = byte_idx;
 
+    assert(labels_data.begin() + byte_idx == labels_data.end());
+
     PackedLabels stored_labels(label_cnt, label_offsets, labels_data);
 
-    size_t mapping_idx = 0;
-    size_t int_store_offset = _mappings.size();
+    size_t int_store_offset = 0;
     for (const auto & kv : _mappings) {
         const SparseAddress & k = kv.first;
         uint32_t v = kv.second;
@@ -87,10 +89,8 @@ PackedMappingsBuilder::target_memory(char *mem_start, char *mem_end) const
             int_store_data[int_store_offset++] = label_idx;
         }
         int_store_data[int_store_offset++] = v;
-        int_store_data[v] = mapping_idx++;
     }
     assert(int_store_offset == int_store_cnt);
-    assert(mapping_idx == _mappings.size());
 
     return PackedMappings(_num_dims, _mappings.size(),
                           int_store_data, stored_labels);
@@ -99,13 +99,13 @@ PackedMappingsBuilder::target_memory(char *mem_start, char *mem_end) const
 std::unique_ptr<PackedMappings>
 PackedMappingsBuilder::build_mappings() const
 {
-    size_t meta_size = sizeof(PackedMappings);
-    size_t total_size = meta_size + extra_memory();
+    size_t self_size = sizeof(PackedMappings);
+    size_t total_size = self_size + extra_memory();
 
     char * mem = (char *) operator new(total_size);
-    auto meta_data = target_memory(mem + meta_size, mem + total_size);
+    auto self_data = target_memory(mem + self_size, mem + total_size);
 
-    PackedMappings * built = new (mem) PackedMappings(meta_data);
+    PackedMappings * built = new (mem) PackedMappings(self_data);
 
     return std::unique_ptr<PackedMappings>(built);
 }

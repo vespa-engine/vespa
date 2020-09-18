@@ -20,18 +20,18 @@ PackedMixedBuilder<T>::add_subspace(const std::vector<vespalib::stringref> &addr
 
 template <typename T>
 std::unique_ptr<NewValue>
-PackedMixedBuilder<T>::build(std::unique_ptr<ValueBuilder<T>> self)
+PackedMixedBuilder<T>::build(std::unique_ptr<ValueBuilder<T>>)
 {
-    size_t meta_size = sizeof(PackedMixedTensor);
+    size_t self_size = sizeof(PackedMixedTensor);
     size_t mappings_size = _mappings_builder.extra_memory();
     // align:
     mappings_size += 15ul;
     mappings_size &= ~15ul;
     size_t cells_size = sizeof(T) * _cells.size();
-    size_t total_size = sizeof(PackedMixedTensor) + mappings_size + cells_size;
+    size_t total_size = self_size + mappings_size + cells_size;
 
     char *mem = (char *) operator new(total_size);
-    char *mappings_mem = mem + meta_size;
+    char *mappings_mem = mem + self_size;
     char *cells_mem = mappings_mem + mappings_size;
 
     // fill mapping data:
@@ -44,8 +44,6 @@ PackedMixedBuilder<T>::build(std::unique_ptr<ValueBuilder<T>> self)
     PackedMixedTensor * built =
         new (mem) PackedMixedTensor(_type, TypedCells(cells), mappings);
 
-    // keep "this" alive until this point:
-    (void) self;
     return std::unique_ptr<PackedMixedTensor>(built);
 }
 

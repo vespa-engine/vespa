@@ -72,6 +72,7 @@ PackedMappings::sortid_of_enums(const InternalAddress &address) const
     return -1;
 }
 
+/** returns subspace_index */
 uint32_t
 PackedMappings::fill_enums_by_sortid(uint32_t internal_index, InternalAddress &address) const
 {
@@ -101,12 +102,8 @@ PackedMappings::fill_address_by_sortid(uint32_t internal_index, Address &address
 void
 PackedMappings::validate() const
 {
-    assert((_num_mappings * (2 + _num_dims)) == _int_store.size());
+    assert((_num_mappings * (1 + _num_dims)) == _int_store.size());
     auto iter = _int_store.cbegin();
-    for (uint32_t i = 0; i < _num_mappings; ++i) {
-        uint32_t internal_index = *iter++;
-        assert(internal_index < _num_mappings);
-    }
     std::vector<uint32_t> prev;
     std::vector<uint32_t> next;
     for (uint32_t i = 0; i < _num_mappings; ++i) {
