@@ -72,34 +72,8 @@ PackedMappings::sortid_of_enums(const InternalAddress &address) const
     return -1;
 }
 
-std::vector<vespalib::stringref>
-PackedMappings::address_of_sortid(uint32_t internal_index) const
-{
-    std::vector<vespalib::stringref> result;
-    fill_by_sortid(internal_index, result);
-    return result;
-}
-
-std::vector<vespalib::stringref>
-PackedMappings::address_of_subspace(uint32_t subspace_index) const
-{
-    std::vector<vespalib::stringref> result;
-    fill_by_subspace(subspace_index, result);
-    return result;
-}
-
 uint32_t
-PackedMappings::fill_by_subspace(uint32_t subspace_index, InternalAddress &address) const
-{
-    assert(subspace_index < _num_mappings);
-    uint32_t internal_index = sortid_of_subspace(subspace_index);
-    uint32_t subspace = fill_by_sortid(internal_index, address);
-    assert(subspace == subspace_index);
-    return internal_index;
-}
-
-uint32_t
-PackedMappings::fill_by_sortid(uint32_t internal_index, InternalAddress &address) const
+PackedMappings::fill_enums_by_sortid(uint32_t internal_index, InternalAddress &address) const
 {
     assert(internal_index < _num_mappings);
     uint32_t offset = offset_of_mapping_data(internal_index);
@@ -112,7 +86,7 @@ PackedMappings::fill_by_sortid(uint32_t internal_index, InternalAddress &address
 
 /** returns subspace_index */
 uint32_t
-PackedMappings::fill_by_sortid(uint32_t internal_index, Address &address) const
+PackedMappings::fill_address_by_sortid(uint32_t internal_index, Address &address) const
 {
     assert(internal_index < _num_mappings);
     uint32_t offset = offset_of_mapping_data(internal_index);
@@ -122,17 +96,6 @@ PackedMappings::fill_by_sortid(uint32_t internal_index, Address &address) const
         address[i] = _label_store.label_value(label_idx);
     }
     return _int_store[offset];
-}
-
-/** returns internal_index */
-uint32_t
-PackedMappings::fill_by_subspace(uint32_t subspace_index, Address &address) const
-{
-    assert(subspace_index < _num_mappings);
-    uint32_t internal_index = sortid_of_subspace(subspace_index);
-    uint32_t subspace = fill_by_sortid(internal_index, address);
-    assert(subspace == subspace_index);
-    return internal_index;
 }
 
 void
@@ -166,27 +129,5 @@ PackedMappings::validate() const
     }
     assert(iter == _int_store.cend());
 }
-
-std::vector<uint32_t>
-PackedMappings::enums_of_subspace(uint32_t subspace_index) const
-{
-    assert(subspace_index < _num_mappings);
-    uint32_t internal_index = sortid_of_subspace(subspace_index);
-    return enums_of_sortid(internal_index);
-}
-
-std::vector<uint32_t>
-PackedMappings::enums_of_sortid(uint32_t internal_index) const
-{
-    std::vector<uint32_t> result;
-    result.reserve(_num_dims);
-    assert(internal_index < _num_mappings);
-    uint32_t offset = offset_of_mapping_data(internal_index);
-    for (uint32_t i = 0; i < _num_dims; ++i) {
-        result.push_back(_int_store[offset++]);
-    }
-    return result;
-}
-
 
 } // namespace

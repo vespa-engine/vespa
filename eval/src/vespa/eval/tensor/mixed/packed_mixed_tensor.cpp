@@ -60,7 +60,7 @@ PackedMixedTensorIndexView::next_result(const std::vector<vespalib::stringref*> 
 {
     assert(addr_out.size() == num_rest_dims());
     while (_index < _mappings.size()) {
-        idx_out = _mappings.fill_by_sortid(_index++, _full_enums);
+        idx_out = _mappings.fill_enums_by_sortid(_index++, _full_enums);
         bool couldmatch = true;
         size_t vd_idx = 0;
         size_t ao_idx = 0;
@@ -187,7 +187,7 @@ PackedMixedTensorAllMappings::next_result(const std::vector<vespalib::stringref*
 {
     assert(addr_out.size() == _mappings.num_mapped_dims());
     while (_index < _mappings.size()) {
-        idx_out = _mappings.fill_by_sortid(_index++, _full_address);
+        idx_out = _mappings.fill_address_by_sortid(_index++, _full_address);
         for (size_t i = 0; i < _mappings.num_mapped_dims(); ++i) {
             *addr_out[i] = _full_address[i];
         }

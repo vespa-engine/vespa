@@ -87,7 +87,7 @@ public:
         EXPECT_EQ(builder->size(), built->size());
         for (size_t idx = 0; idx < built->size(); ++idx) {
             std::vector<vespalib::stringref> got(builder->num_mapped_dims());
-            built->fill_by_sortid(idx, got);
+            built->fill_address_by_sortid(idx, got);
             printf("Got address:");
             for (auto ref : got) {
                 printf(" '%s'", ref.data());

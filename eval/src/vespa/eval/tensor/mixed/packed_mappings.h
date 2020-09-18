@@ -41,8 +41,8 @@ public:
     int32_t subspace_of_address(const Address &address) const;
 
     /** returns subspace_index */
-    uint32_t fill_by_sortid(uint32_t sortid, Address &address) const;
-    uint32_t fill_by_sortid(uint32_t sortid, InternalAddress &address) const;
+    uint32_t fill_address_by_sortid(uint32_t sortid, Address &address) const;
+    uint32_t fill_enums_by_sortid(uint32_t sortid, InternalAddress &address) const;
 
     const PackedLabels & label_store() const { return _label_store; }
 private:
@@ -92,25 +92,12 @@ private:
         uint32_t offset = offset_of_mapping_data(internal_index);
         return _int_store[offset + _num_dims];
     }
-    uint32_t sortid_of_subspace(uint32_t subspace_index) const {
-        return _int_store[subspace_index];
-    }
     const uint32_t * ptr_of_sortid(uint32_t internal_index) const {
         return &_int_store[offset_of_mapping_data(internal_index)];
     }
 
     int32_t sortid_of_address(const Address &address) const;
     int32_t sortid_of_enums(const InternalAddress &address) const;
-
-    /** returns sortid */
-    uint32_t fill_by_subspace(uint32_t subspace_index, Address &address) const;
-    uint32_t fill_by_subspace(uint32_t subspace_index, InternalAddress &address) const;
-
-    InternalAddress enums_of_subspace(uint32_t subspace_index) const;
-    InternalAddress enums_of_sortid(uint32_t internal_index) const;
-
-    Address address_of_sortid(uint32_t internal_index) const;
-    Address address_of_subspace(uint32_t subspace_index) const;
 };
 
 } // namespace
