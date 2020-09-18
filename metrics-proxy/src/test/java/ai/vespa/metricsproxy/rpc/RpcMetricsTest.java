@@ -19,7 +19,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
-import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
+import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.CUSTOM_CONSUMER_ID;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.MONITORING_SYSTEM;
@@ -144,7 +144,7 @@ public class RpcMetricsTest {
             assertThat(jsonObject.getJSONObject("routing").getJSONObject("yamas").getJSONArray("namespaces").length(), is(1));
             if (jsonObject.getJSONObject("metrics").has("foo_count")) {
                 assertThat(jsonObject.getJSONObject("metrics").getInt("foo_count"), is(1));
-                assertThat(jsonObject.getJSONObject("routing").getJSONObject("yamas").getJSONArray("namespaces").get(0), is(VESPA_CONSUMER_ID.id));
+                assertThat(jsonObject.getJSONObject("routing").getJSONObject("yamas").getJSONArray("namespaces").get(0), is(vespaMetricsConsumerId.id));
             } else {
                 assertThat(jsonObject.getJSONObject("metrics").getInt("foo.count"), is(1));
                 assertThat(jsonObject.getJSONObject("routing").getJSONObject("yamas").getJSONArray("namespaces").get(0), is(CUSTOM_CONSUMER_ID.id));
@@ -190,7 +190,7 @@ public class RpcMetricsTest {
             assertNotNull("Did not find expected metric with name 'bar'", m2);
 
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
-                String response = getAllMetricNamesForService(services.get(0).getMonitoringName(), VESPA_CONSUMER_ID, rpcClient);
+                String response = getAllMetricNamesForService(services.get(0).getMonitoringName(), vespaMetricsConsumerId, rpcClient);
                 assertThat(response, is("foo.count=ON;output-name=foo_count,bar.count=OFF,"));
             }
         }

@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
@@ -50,7 +50,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     // Non-final for testing
     private Duration taskTimeout;
 
-
     @Inject
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
         clients = createNodeClients(nodesConfig);
@@ -66,7 +65,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     }
 
     public Map<Node, List<MetricsPacket>> getMetrics() {
-        return getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        return getMetrics(defaultMetricsConsumerId);
     }
 
     public Map<Node, List<MetricsPacket>> getMetrics(ConsumerId consumer) {

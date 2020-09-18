@@ -56,9 +56,9 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.LEGACY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.SYSTEM;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.getDefaultPublicConsumer;
-import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.getVespaMetricsConsumer;
+import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.defaultPublicConsumer;
+import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.vespaMetricsConsumer;
+import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
 
 /**
  * Container cluster for metrics proxy containers.
@@ -161,10 +161,10 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     @Override
     public void getConfig(ConsumersConfig.Builder builder) {
-        var amendedVespaConsumer = addMetrics(getVespaMetricsConsumer(), getAdditionalDefaultMetrics().getMetrics());
+        var amendedVespaConsumer = addMetrics(vespaMetricsConsumer(), getAdditionalDefaultMetrics().getMetrics());
         builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers()));
 
-        builder.consumer.add(toConsumerBuilder(getDefaultPublicConsumer()));
+        builder.consumer.add(toConsumerBuilder(defaultPublicConsumer()));
     }
 
     @Override
@@ -210,7 +210,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private MetricSet getAdditionalDefaultMetrics() {
         return getAdmin()
                 .map(Admin::getAdditionalDefaultMetrics)
-                .orElse(emptyMetricSet());
+                .orElse(empty());
     }
 
     // Returns the metrics consumers from services.xml

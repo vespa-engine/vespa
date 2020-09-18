@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_CONSUMER_ID;
+import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.vespaMetricsConsumerId;
 
 /**
  * Helper class to generate config for metrics consumers.
@@ -22,14 +22,15 @@ import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_
 class ConsumersConfigGenerator {
 
     /**
-     * @param userConsumers The consumers set up by the user in services.xml
-     * @return A list of consumer builders (a mapping from consumer to its metrics)
+     * @param userConsumers the consumers set up by the user in services.xml
+     * @return a list of consumer builders (a mapping from consumer to its metrics)
      */
     static List<Consumer.Builder> generateConsumers(MetricsConsumer defaultConsumer,
                                                     Map<String, MetricsConsumer> userConsumers) {
-        // Normally, the user given consumers should not contain VESPA_CONSUMER_ID, but it's allowed for some internally used applications.
+        // Normally, the user given consumers should not contain VESPA_CONSUMER_ID,
+        // but it's allowed for some internally used applications.
         var allConsumers = new LinkedHashMap<>(userConsumers);
-        allConsumers.put(VESPA_CONSUMER_ID, combineConsumers(defaultConsumer, allConsumers.get(VESPA_CONSUMER_ID)));
+        allConsumers.put(vespaMetricsConsumerId, combineConsumers(defaultConsumer, allConsumers.get(vespaMetricsConsumerId)));
 
         return allConsumers.values().stream()
                 .map(ConsumersConfigGenerator::toConsumerBuilder)

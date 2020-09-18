@@ -12,12 +12,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
 /**
  * @author olaa
  */
 public class ServiceHealthGatherer {
-
 
     protected static List<MetricsPacket.Builder> gatherServiceHealthMetrics(VespaServices vespaServices)  {
         return vespaServices.getVespaServices()
@@ -33,4 +31,5 @@ public class ServiceHealthGatherer {
                 )
                 .collect(Collectors.toList());
     }
+
 }

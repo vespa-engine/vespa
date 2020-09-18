@@ -8,6 +8,7 @@ import java.util.Optional;
  * @author gjoranv
  */
 public class CloudWatch {
+
     private final String region;
     private final String namespace;
     private final MetricsConsumer consumer;

@@ -114,7 +114,6 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
             }
         }
 
-
     }
 
 }

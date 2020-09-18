@@ -24,21 +24,19 @@ public class MetricSet {
     private final Map<String, Metric> metrics;
     private final Set<MetricSet> children;
 
-
-    public MetricSet(String id, Collection<Metric> metrics, Collection<MetricSet> children) {
-        Objects.requireNonNull(id, "Id cannot be null or empty.");
-
-        this.id = id;
-        this.metrics = toMapByName(metrics);
-        this.children = new LinkedHashSet<>(children);
-    }
-
     public MetricSet(String id, Collection<Metric> metrics) {
         this(id, metrics, Collections.emptySet());
     }
 
-    public static MetricSet emptyMetricSet() {
-        return new MetricSet("empty", Collections.emptySet());
+    public MetricSet(String id, Collection<Metric> metrics, Collection<MetricSet> children) {
+        this.id = Objects.requireNonNull(id, "Id cannot be null or empty.");
+
+        this.metrics = toMapByName(metrics);
+        this.children = new LinkedHashSet<>(children);
+    }
+
+    public static MetricSet empty() {
+        return new MetricSet("empty", Set.of());
     }
 
     public final String getId() { return id; }

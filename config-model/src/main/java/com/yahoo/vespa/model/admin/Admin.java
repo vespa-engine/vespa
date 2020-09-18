@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
 
 /**
  * This is the admin pseudo-plugin of the Vespa model, responsible for
@@ -49,7 +49,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     private final Metrics metrics;
     private MetricsProxyContainerCluster metricsProxyCluster;
-    private MetricSet additionalDefaultMetrics = emptyMetricSet();
+    private MetricSet additionalDefaultMetrics = empty();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
     private Configserver defaultConfigserver;

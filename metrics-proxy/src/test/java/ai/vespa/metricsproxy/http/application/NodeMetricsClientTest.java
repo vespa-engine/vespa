@@ -16,7 +16,7 @@ import java.net.URI;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -56,12 +56,12 @@ public class NodeMetricsClientTest {
     @BeforeClass
     public static void setupWireMock() {
         node = new Node("id", "localhost", wireMockRule.port(), MetricsV1Handler.VALUES_PATH);
-        URI metricsUri = node.metricsUri(DEFAULT_PUBLIC_CONSUMER_ID);
+        URI metricsUri = node.metricsUri(defaultMetricsConsumerId);
         wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
-                                     .withQueryParam("consumer", equalTo(DEFAULT_PUBLIC_CONSUMER_ID.id))
+                                     .withQueryParam("consumer", equalTo(defaultMetricsConsumerId.id))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         // Add a slightly different response for a custom consumer.
@@ -85,34 +85,34 @@ public class NodeMetricsClientTest {
 
     @Test
     public void metrics_are_retrieved_upon_first_request() {
-        List<MetricsPacket> metrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        List<MetricsPacket> metrics = nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, metrics.size());
    }
 
     @Test
     public void cached_metrics_are_used_when_ttl_has_not_expired() {
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
 
         clock.advance(NodeMetricsClient.METRICS_TTL.minusMillis(1));
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
     }
 
     @Test
     public void metrics_are_refreshed_when_ttl_has_expired() {
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
 
         clock.advance(NodeMetricsClient.METRICS_TTL.plusMillis(1));
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(2, nodeMetricsClient.snapshotsRetrieved());
     }
 
     @Test
     public void metrics_for_different_consumers_are_cached_separately() {
-        List<MetricsPacket> defaultMetrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        List<MetricsPacket> defaultMetrics = nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, defaultMetrics.size());
 

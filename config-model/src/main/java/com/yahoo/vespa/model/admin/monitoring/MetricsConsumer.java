@@ -10,11 +10,12 @@ import java.util.Objects;
 import static java.util.Collections.unmodifiableList;
 
 /**
- * Represents an arbitrary metric consumer
+ * A metric consumer is a set of metrics given an id that can be requested at runtime.
  *
  * @author trygve
  * @author gjoranv
  */
+// TODO: This construct seems redundant when we have metrics sets
 @Immutable
 public class MetricsConsumer {
 
@@ -39,7 +40,7 @@ public class MetricsConsumer {
     public MetricSet getMetricSet() { return metricSet; }
 
     /**
-     * @return Map of metric with metric name as key
+     * @return map of metric with metric name as key
      */
     public Map<String, Metric> getMetrics() {
         return metricSet.getMetrics();
