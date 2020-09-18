@@ -130,8 +130,8 @@ Primary select_primary(const TensorFunction &lhs, const TensorFunction &rhs, Val
 }
 
 std::optional<Overlap> detect_overlap(const TensorFunction &primary, const TensorFunction &secondary) {
-    std::vector<ValueType::Dimension> a = primary.result_type().nontrivial_dimensions();
-    std::vector<ValueType::Dimension> b = secondary.result_type().nontrivial_dimensions();
+    std::vector<ValueType::Dimension> a = primary.result_type().nontrivial_indexed_dimensions();
+    std::vector<ValueType::Dimension> b = secondary.result_type().nontrivial_indexed_dimensions();
     if (b.size() > a.size()) {
         return std::nullopt;
     } else if (b == a) {

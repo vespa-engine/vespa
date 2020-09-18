@@ -198,10 +198,21 @@ ValueType::dense_subspace_size() const
 }
 
 std::vector<ValueType::Dimension>
-ValueType::nontrivial_dimensions() const {
+ValueType::nontrivial_indexed_dimensions() const {
     std::vector<ValueType::Dimension> result;
     for (const auto &dim: dimensions()) {
-        if (!dim.is_trivial()) {
+        if (dim.is_indexed() && !dim.is_trivial()) {
+            result.push_back(dim);
+        }
+    }
+    return result;
+}
+
+std::vector<ValueType::Dimension>
+ValueType::mapped_dimensions() const {
+    std::vector<ValueType::Dimension> result;
+    for (const auto &dim: dimensions()) {
+        if (dim.is_mapped()) {
             result.push_back(dim);
         }
     }

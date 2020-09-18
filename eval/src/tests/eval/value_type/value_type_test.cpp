@@ -266,18 +266,28 @@ TEST("require that dimension names can be obtained") {
     EXPECT_EQUAL(type("tensor<float>(y[10],x[30],z{})").dimension_names(), str_list({"x", "y", "z"}));
 }
 
-TEST("require that nontrivial dimensions can be obtained") {
+TEST("require that nontrivial indexed dimensions can be obtained") {
     auto my_check = [](const auto &list)
                     {
-                        ASSERT_EQUAL(list.size(), 2u);
+                        ASSERT_EQUAL(list.size(), 1u);
                         EXPECT_EQUAL(list[0].name, "x");
                         EXPECT_EQUAL(list[0].size, 10u);
-                        EXPECT_EQUAL(list[1].name, "y");
-                        EXPECT_TRUE(list[1].is_mapped());
                     };
-    EXPECT_TRUE(type("double").nontrivial_dimensions().empty());
-    TEST_DO(my_check(type("tensor(x[10],y{})").nontrivial_dimensions()));
-    TEST_DO(my_check(type("tensor(a[1],b[1],x[10],y{},z[1])").nontrivial_dimensions()));
+    EXPECT_TRUE(type("double").nontrivial_indexed_dimensions().empty());
+    TEST_DO(my_check(type("tensor(x[10],y{})").nontrivial_indexed_dimensions()));
+    TEST_DO(my_check(type("tensor(a[1],b[1],x[10],y{},z[1])").nontrivial_indexed_dimensions()));
+}
+
+TEST("require that mapped dimensions can be obtained") {
+    auto my_check = [](const auto &list)
+                    {
+                        ASSERT_EQUAL(list.size(), 1u);
+                        EXPECT_EQUAL(list[0].name, "x");
+                        EXPECT_TRUE(list[0].is_mapped());
+                    };
+    EXPECT_TRUE(type("double").mapped_dimensions().empty());
+    TEST_DO(my_check(type("tensor(x{},y[10])").mapped_dimensions()));
+    TEST_DO(my_check(type("tensor(a[1],b[1],x{},y[10],z[1])").mapped_dimensions()));
 }
 
 TEST("require that dimension index can be obtained") {
