@@ -38,6 +38,8 @@
     "methods": [
       "public abstract com.yahoo.documentapi.Result put(com.yahoo.document.Document)",
       "public com.yahoo.documentapi.Result put(com.yahoo.document.Document, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result put(com.yahoo.document.DocumentPut)",
+      "public com.yahoo.documentapi.Result put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public abstract com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, boolean, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
@@ -126,6 +128,7 @@
       "public void <init>(long, com.yahoo.document.DocumentId)",
       "public void <init>(long, java.lang.String, boolean)",
       "public void <init>(long, com.yahoo.document.DocumentId, java.lang.String, boolean)",
+      "public void <init>(long, com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public com.yahoo.document.DocumentId getDocumentId()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -155,7 +158,9 @@
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.Document)",
       "public void <init>(long, java.lang.String, boolean)",
+      "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public void <init>(long, com.yahoo.document.Document, java.lang.String, boolean)",
+      "public void <init>(long, com.yahoo.document.Document, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public com.yahoo.document.Document getDocument()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -173,7 +178,9 @@
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.DocumentUpdate)",
       "public void <init>(long, java.lang.String, boolean)",
+      "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public void <init>(long, com.yahoo.document.DocumentUpdate, java.lang.String, boolean)",
+      "public void <init>(long, com.yahoo.document.DocumentUpdate, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public com.yahoo.document.DocumentUpdate getDocumentUpdate()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -353,6 +360,25 @@
     ],
     "fields": []
   },
+  "com.yahoo.documentapi.Response$Outcome": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.documentapi.Response$Outcome[] values()",
+      "public static com.yahoo.documentapi.Response$Outcome valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.documentapi.Response$Outcome SUCCESS",
+      "public static final enum com.yahoo.documentapi.Response$Outcome CONDITION_FAILED",
+      "public static final enum com.yahoo.documentapi.Response$Outcome NOT_FOUND",
+      "public static final enum com.yahoo.documentapi.Response$Outcome ERROR"
+    ]
+  },
   "com.yahoo.documentapi.Response": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -363,11 +389,13 @@
       "public void <init>(long)",
       "public void <init>(long, java.lang.String)",
       "public void <init>(long, java.lang.String, boolean)",
+      "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public java.lang.String getTextMessage()",
       "public boolean isSuccess()",
+      "public com.yahoo.documentapi.Response$Outcome outcome()",
       "public long getRequestId()",
-      "public int hashCode()",
       "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -902,7 +930,7 @@
       "public void <init>(com.yahoo.documentapi.AsyncParameters, com.yahoo.documentapi.local.LocalDocumentAccess)",
       "public double getCurrentWindowSize()",
       "public com.yahoo.documentapi.Result put(com.yahoo.document.Document)",
-      "public com.yahoo.documentapi.Result put(com.yahoo.document.Document, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, boolean, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
@@ -990,7 +1018,7 @@
     ],
     "methods": [
       "public com.yahoo.documentapi.Result put(com.yahoo.document.Document)",
-      "public com.yahoo.documentapi.Result put(com.yahoo.document.Document, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
+      "public com.yahoo.documentapi.Result put(com.yahoo.document.DocumentPut, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, boolean, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
       "public com.yahoo.documentapi.Result get(com.yahoo.document.DocumentId, com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
