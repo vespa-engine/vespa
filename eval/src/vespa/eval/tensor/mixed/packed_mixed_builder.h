@@ -22,13 +22,13 @@ public:
     PackedMixedBuilder(const ValueType &type,
                              size_t num_mapped_in,
                              size_t subspace_size_in,
-                             size_t expect_subspaces)
+                             size_t expected_subspaces)
       : _type(type),
         _subspace_size(subspace_size_in),
         _cells(),
         _mappings_builder(num_mapped_in)
     {
-        _cells.reserve(_subspace_size * expect_subspaces);
+        _cells.reserve(_subspace_size * expected_subspaces);
     }
 
     ~PackedMixedBuilder() override = default;

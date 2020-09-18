@@ -24,10 +24,10 @@ std::unique_ptr<ValueBuilderBase>
 PackedMixedFactory::create_value_builder_base(const ValueType &type,
                                               size_t num_mapped_in,
                                               size_t subspace_size_in,
-                                              size_t expect_subspaces) const
+                                              size_t expected_subspaces) const
 {
     return typify_invoke<1,TypifyCellType,CreatePackedMixedBuilder>(type.cell_type(),
-		type, num_mapped_in, subspace_size_in, expect_subspaces);
+                    type, num_mapped_in, subspace_size_in, expected_subspaces);
 }
 
 } // namespace

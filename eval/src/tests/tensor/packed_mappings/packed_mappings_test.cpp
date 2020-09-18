@@ -82,17 +82,19 @@ public:
         ASSERT_TRUE(builder);
         built = builder->build_mappings();
         ASSERT_TRUE(built);
-        EXPECT_EQ(builder->num_sparse_dims(), built->num_sparse_dims());
+        EXPECT_EQ(builder->num_mapped_dims(), built->num_mapped_dims());
         EXPECT_EQ(builder->size(), built->size());
         for (size_t idx = 0; idx < built->size(); ++idx) {
-            auto got = built->address_of_subspace(idx);
+            std::vector<vespalib::stringref> got(builder->num_mapped_dims());
+            built->fill_by_sortid(idx, got);
             printf("Got address:");
             for (auto ref : got) {
                 printf(" '%s'", ref.data());
             }
+            uint32_t subspace = built->subspace_of_address(got);
             uint32_t original = builder->add_mapping_for(got);
             printf(" -> %u\n", original);
-            EXPECT_EQ(idx, original);
+            EXPECT_EQ(subspace, original);
         }
     }
 };

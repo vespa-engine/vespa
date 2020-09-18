@@ -22,8 +22,8 @@ class PackedMappingsBuilder {
 public:
     using SparseAddress = std::vector<vespalib::stringref>;
 
-    PackedMappingsBuilder(uint32_t num_sparse_dims)
-      : _num_dims(num_sparse_dims),
+    PackedMappingsBuilder(uint32_t num_mapped_dims)
+      : _num_dims(num_mapped_dims),
         _labels(),
         _mappings()
     {}
@@ -37,7 +37,7 @@ public:
     size_t extra_memory() const;
     PackedMappings target_memory(char *mem_start, char *mem_end) const;
 
-    uint32_t num_sparse_dims() const { return _num_dims; }
+    uint32_t num_mapped_dims() const { return _num_dims; }
     size_t size() const { return _mappings.size(); }
 private:
     uint32_t _num_dims;

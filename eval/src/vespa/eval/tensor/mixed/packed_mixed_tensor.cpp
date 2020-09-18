@@ -15,7 +15,7 @@ private:
     std::vector<uint32_t> _full_enums;
     size_t _index;
 
-    size_t num_full_dims() const { return _mappings.num_sparse_dims(); }
+    size_t num_full_dims() const { return _mappings.num_mapped_dims(); }
     size_t num_view_dims() const { return _view_dims.size(); }
     size_t num_rest_dims() const { return num_full_dims() - num_view_dims(); }
 public:
@@ -60,7 +60,7 @@ PackedMixedTensorIndexView::next_result(const std::vector<vespalib::stringref*> 
 {
     assert(addr_out.size() == num_rest_dims());
     while (_index < _mappings.size()) {
-        idx_out = _mappings.fill_by_subspace(_index++, _full_enums);
+        idx_out = _mappings.fill_by_sortid(_index++, _full_enums);
         bool couldmatch = true;
         size_t vd_idx = 0;
         size_t ao_idx = 0;
@@ -105,7 +105,7 @@ private:
     std::vector<uint32_t> _lookup_enums;
     bool _first_time;
 
-    size_t num_full_dims() const { return _mappings.num_sparse_dims(); }
+    size_t num_full_dims() const { return _mappings.num_mapped_dims(); }
 public:
     PackedMixedTensorLookup(const PackedMappings& mappings)
         : _mappings(mappings),
@@ -167,7 +167,7 @@ public:
           _full_address(),
           _index(0)
     {
-        _full_address.resize(_mappings.num_sparse_dims());
+        _full_address.resize(_mappings.num_mapped_dims());
     }
 
     void lookup(const std::vector<const vespalib::stringref*> &addr) override;
@@ -185,10 +185,10 @@ PackedMixedTensorAllMappings::lookup(const std::vector<const vespalib::stringref
 bool
 PackedMixedTensorAllMappings::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
 {
-    assert(addr_out.size() == _mappings.num_sparse_dims());
+    assert(addr_out.size() == _mappings.num_mapped_dims());
     while (_index < _mappings.size()) {
-        idx_out = _mappings.fill_by_subspace(_index++, _full_address);
-        for (size_t i = 0; i < _mappings.num_sparse_dims(); ++i) {
+        idx_out = _mappings.fill_by_sortid(_index++, _full_address);
+        for (size_t i = 0; i < _mappings.num_mapped_dims(); ++i) {
             *addr_out[i] = _full_address[i];
         }
         return true;
@@ -208,9 +208,9 @@ PackedMixedTensor::create_view(const std::vector<size_t> &dims) const
     }
     for (size_t i = 1; i < dims.size(); ++i) {
         assert(dims[i-1] < dims[i]);
-        assert(dims[i] < _mappings.num_sparse_dims());
+        assert(dims[i] < _mappings.num_mapped_dims());
     }
-    if (dims.size() == _mappings.num_sparse_dims()) {
+    if (dims.size() == _mappings.num_mapped_dims()) {
         return std::make_unique<PackedMixedTensorLookup>(_mappings);
     }
     return std::make_unique<PackedMixedTensorIndexView>(_mappings, dims);
