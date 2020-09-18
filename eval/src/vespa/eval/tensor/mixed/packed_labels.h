@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>
 
-namespace vespalib::eval {
+namespace vespalib::eval::packed_mixed_tensor {
 
 /**
  *  Stores labels for sparse (mapped) tensor dimensions,

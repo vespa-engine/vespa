@@ -3,7 +3,7 @@
 #include "packed_mappings_builder.h"
 #include <assert.h>
 
-namespace vespalib::eval {
+namespace vespalib::eval::packed_mixed_tensor {
 
 PackedMappingsBuilder::~PackedMappingsBuilder() = default;
 

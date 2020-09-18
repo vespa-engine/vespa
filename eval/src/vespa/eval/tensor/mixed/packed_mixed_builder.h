@@ -4,7 +4,7 @@
 
 #include "packed_mixed_tensor.h"
 
-namespace vespalib::eval {
+namespace vespalib::eval::packed_mixed_tensor {
 
 /**
  * A builder for PackedMixedTensor objects

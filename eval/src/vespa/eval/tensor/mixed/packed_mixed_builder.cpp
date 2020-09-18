@@ -2,7 +2,7 @@
 
 #include "packed_mixed_builder.h"
 
-namespace vespalib::eval {
+namespace vespalib::eval::packed_mixed_tensor {
 
 template <typename T>
 ArrayRef<T> 

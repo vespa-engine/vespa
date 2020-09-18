@@ -12,6 +12,7 @@
 #include <set>
 
 using namespace vespalib::eval;
+using namespace vespalib::eval::packed_mixed_tensor;
 
 namespace {
 

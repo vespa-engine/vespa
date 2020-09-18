@@ -9,7 +9,7 @@
 #include <vespa/eval/tensor/mixed/packed_mappings.h>
 #include <vespa/eval/tensor/mixed/packed_mappings_builder.h>
 
-namespace vespalib::eval {
+namespace vespalib::eval::packed_mixed_tensor {
 
 /**
  * An implementation of NewValue modeling a mixed tensor,

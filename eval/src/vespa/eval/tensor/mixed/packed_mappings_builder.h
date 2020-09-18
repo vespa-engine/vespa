@@ -9,7 +9,7 @@
 #include <set>
 #include <vector>
 
-namespace vespalib::eval {
+namespace vespalib::eval::packed_mixed_tensor {
 
 /**
  *  Builder for PackedMappings.

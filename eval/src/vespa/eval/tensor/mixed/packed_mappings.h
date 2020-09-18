@@ -5,7 +5,7 @@
 #include "packed_labels.h"
 #include <vector>
 
-namespace vespalib::eval {
+namespace vespalib::eval::packed_mixed_tensor {
 
 /**
  *  Mappings for sparse tensor dimensions.

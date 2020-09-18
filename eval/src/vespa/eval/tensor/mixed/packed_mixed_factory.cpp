@@ -14,7 +14,7 @@ struct CreatePackedMixedBuilder {
     static std::unique_ptr<ValueBuilderBase> invoke(const ValueType &type, Args &&...args)
     {
         assert(check_cell_type<T>(type.cell_type()));
-        return std::make_unique<PackedMixedBuilder<T>>(type, std::forward<Args>(args)...);
+        return std::make_unique<packed_mixed_tensor::PackedMixedBuilder<T>>(type, std::forward<Args>(args)...);
     }
 };
 
