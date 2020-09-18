@@ -32,7 +32,6 @@ import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
-import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
@@ -84,7 +83,7 @@ public class HostResourceTest {
     private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
             new MockCurator(), mock(Metric.class), new TestTimer(), new DummyAntiServiceMonitor());
-    private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
+    private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
     static {
         when(serviceMonitor.getApplication(any(HostName.class)))
@@ -108,8 +107,7 @@ public class HostResourceTest {
 
     private static class AlwaysAllowPolicy implements Policy {
         @Override
-        public SuspensionReasons grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) {
-            return SuspensionReasons.nothingNoteworthy();
+        public void grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) {
         }
 
         @Override
@@ -210,18 +208,18 @@ public class HostResourceTest {
 
     private static class AlwaysFailPolicy implements Policy {
         @Override
-        public SuspensionReasons grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException {
-            throw newHostStateChangeDeniedException();
+        public void grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+            doThrow();
         }
 
         @Override
         public void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application) throws HostStateChangeDeniedException {
-            throw newHostStateChangeDeniedException();
+            doThrow();
         }
 
         @Override
         public void acquirePermissionToRemove(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException {
-            throw newHostStateChangeDeniedException();
+            doThrow();
         }
 
         @Override
@@ -229,11 +227,11 @@ public class HostResourceTest {
                 OrchestratorContext context, ApplicationInstance applicationInstance,
                 HostName hostName,
                 ApplicationLock hostStatusRegistry) throws HostStateChangeDeniedException {
-            throw newHostStateChangeDeniedException();
+            doThrow();
         }
 
-        private static HostStateChangeDeniedException newHostStateChangeDeniedException() {
-            return new HostStateChangeDeniedException(
+        private static void doThrow() throws HostStateChangeDeniedException {
+            throw new HostStateChangeDeniedException(
                     new HostName("some-host"),
                     "impossible-policy",
                     "This policy rejects all requests");

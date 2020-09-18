@@ -13,7 +13,6 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -73,10 +72,9 @@ class ModelTestUtils {
                                                                    new ManualClock(),
                                                                    applicationApiFactory(),
                                                                    flagSource);
-    private final ManualClock clock = new ManualClock();
 
     ApplicationApiFactory applicationApiFactory() {
-        return new ApplicationApiFactory(NUMBER_OF_CONFIG_SERVERS, clock);
+        return new ApplicationApiFactory(NUMBER_OF_CONFIG_SERVERS);
     }
 
     HostInfos getHostInfos() {
@@ -144,19 +142,21 @@ class ModelTestUtils {
             ServiceType serviceType,
             List<ServiceInstance> serviceInstances) {
         Set<ServiceInstance> serviceInstanceSet = new HashSet<>(serviceInstances);
-        var cluster = new ServiceCluster(new ClusterId(clusterId), serviceType, serviceInstanceSet);
-        for (var service : serviceInstanceSet) {
-            service.setServiceCluster(cluster);
-        }
-        return cluster;
+
+        return new ServiceCluster(
+                new ClusterId(clusterId),
+                serviceType,
+                serviceInstanceSet);
     }
 
-    ServiceInstance createServiceInstance(String configId, HostName hostName, ServiceStatus status) {
-        return new ServiceInstance(new ConfigId(configId), hostName, status);
-    }
-
-    ServiceInstance createServiceInstance(String configId, HostName hostName, ServiceStatusInfo statusInfo) {
-        return new ServiceInstance(new ConfigId(configId), hostName, statusInfo);
+    ServiceInstance createServiceInstance(
+            String configId,
+            HostName hostName,
+            ServiceStatus status) {
+        return new ServiceInstance(
+                new ConfigId(configId),
+                hostName,
+                status);
     }
 
     ClusterControllerClientFactory getClusterControllerClientFactory() {

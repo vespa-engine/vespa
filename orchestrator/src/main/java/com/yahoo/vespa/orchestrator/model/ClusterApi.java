@@ -3,7 +3,6 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 
 import java.util.Optional;
 
@@ -18,8 +17,7 @@ public interface ClusterApi {
     ServiceType serviceType();
     boolean isStorageCluster();
 
-    /** Returns the reasons no services are up in the implied group, or empty if some services are up. */
-    Optional<SuspensionReasons> reasonsForNoServicesInGroupIsUp();
+    boolean noServicesInGroupIsUp();
     boolean noServicesOutsideGroupIsDown();
 
     int percentageOfServicesDown();

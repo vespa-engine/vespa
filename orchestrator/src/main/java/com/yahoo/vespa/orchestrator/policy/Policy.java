@@ -15,7 +15,7 @@ public interface Policy {
     /**
      * Decide whether to grant a request for temporarily suspending the services on all hosts in the group.
      */
-    SuspensionReasons grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException;
+    void grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException;
 
     void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application) throws HostStateChangeDeniedException;
 

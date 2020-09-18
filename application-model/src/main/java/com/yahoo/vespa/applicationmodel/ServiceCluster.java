@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * Represents a collection of service instances that together make up a service with a single cluster id.
@@ -52,53 +51,24 @@ public class ServiceCluster {
         return applicationInstance.get();
     }
 
-    public boolean isConfigServerLike() {
-        return isConfigServer() || isController();
-    }
-
-    public boolean isController() {
-        return isHostedVespaApplicationWithId(ApplicationInstanceId.CONTROLLER) &&
-                Objects.equals(clusterId, ClusterId.CONTROLLER) &&
-                Objects.equals(serviceType, ServiceType.CONTROLLER);
-    }
-
-    /** Is a config server (and not controller!) */
-    public boolean isConfigServer() {
-        return isHostedVespaApplicationWithId(ApplicationInstanceId.CONFIG_SERVER) &&
+    public boolean isConfigServerClusterLike() {
+        // config server
+        if (Objects.equals(applicationInstance.map(ApplicationInstance::tenantId), Optional.of(TenantId.HOSTED_VESPA)) &&
+                Objects.equals(applicationInstance.map(ApplicationInstance::applicationInstanceId), Optional.of(ApplicationInstanceId.CONFIG_SERVER)) &&
                 Objects.equals(clusterId, ClusterId.CONFIG_SERVER) &&
-                Objects.equals(serviceType, ServiceType.CONFIG_SERVER);
-    }
+                Objects.equals(serviceType, ServiceType.CONFIG_SERVER)) {
+            return true;
+        }
 
-    public boolean isConfigServerHost() {
-        return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isConfigServerHost) &&
-                Objects.equals(clusterId, ClusterId.CONFIG_SERVER_HOST) &&
-                Objects.equals(serviceType, ServiceType.HOST_ADMIN);
-    }
+        // controller
+        if (Objects.equals(applicationInstance.map(ApplicationInstance::tenantId), Optional.of(TenantId.HOSTED_VESPA)) &&
+                Objects.equals(applicationInstance.map(ApplicationInstance::applicationInstanceId), Optional.of(ApplicationInstanceId.CONTROLLER)) &&
+                Objects.equals(clusterId, ClusterId.CONTROLLER) &&
+                Objects.equals(serviceType, ServiceType.CONTROLLER)) {
+            return true;
+        }
 
-    public boolean isControllerHost() {
-        return isHostedVespaApplicationWithId(ApplicationInstanceId.CONTROLLER_HOST) &&
-                Objects.equals(clusterId, ClusterId.CONTROLLER_HOST) &&
-                Objects.equals(serviceType, ServiceType.HOST_ADMIN);
-    }
-
-    public boolean isTenantHost() {
-        return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isTenantHost) &&
-                Objects.equals(clusterId, ClusterId.TENANT_HOST) &&
-                Objects.equals(serviceType, ServiceType.HOST_ADMIN);
-    }
-
-    private boolean isHostedVespaApplicationWithId(ApplicationInstanceId id) {
-        return isHostedVespaTenant() &&
-               applicationInstance.map(app -> Objects.equals(app.applicationInstanceId(), id)).orElse(false);
-    }
-
-    private boolean isHostedVespaApplicationWithPredicate(Predicate<ApplicationInstanceId> predicate) {
-        return isHostedVespaTenant() &&
-                applicationInstance.map(app -> predicate.test(app.applicationInstanceId())).orElse(false);
-    }
-
-    private boolean isHostedVespaTenant() {
-        return applicationInstance.map(a -> Objects.equals(a.tenantId(), TenantId.HOSTED_VESPA)).orElse(false);
+        return false;
     }
 
     @Override

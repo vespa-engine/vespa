@@ -14,7 +14,6 @@ import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
-import java.time.Clock;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -34,18 +33,16 @@ public class ApplicationApiImpl implements ApplicationApi {
     private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;
     private final ApplicationLock lock;
-    private final Clock clock;
     private final List<ClusterApi> clusterInOrder;
     private final HostInfos hostInfos;
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
                               ApplicationLock lock,
                               ClusterControllerClientFactory clusterControllerClientFactory,
-                              int numberOfConfigServers, Clock clock) {
+                              int numberOfConfigServers) {
         this.applicationInstance = nodeGroup.getApplication();
         this.nodeGroup = nodeGroup;
         this.lock = lock;
-        this.clock = clock;
         Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
         this.hostInfos = lock.getHostInfos();
         this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, numberOfConfigServers);
@@ -125,8 +122,7 @@ public class ApplicationApiImpl implements ApplicationApi {
                         nodeGroup,
                         hostInfos,
                         clusterControllerClientFactory,
-                        numberOfConfigServers,
-                        clock))
+                        numberOfConfigServers))
                 .sorted(ApplicationApiImpl::compareClusters)
                 .collect(Collectors.toList());
     }

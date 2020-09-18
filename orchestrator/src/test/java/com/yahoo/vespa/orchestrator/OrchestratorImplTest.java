@@ -26,7 +26,6 @@ import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
-import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
@@ -74,8 +73,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.atLeastO
  */
 public class OrchestratorImplTest {
 
-    private final ManualClock clock = new ManualClock();
-    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final MockCurator curator = new MockCurator();
     private ZkStatusService statusService = new ZkStatusService(
@@ -346,7 +344,6 @@ public class OrchestratorImplTest {
         var applicationApiFactory = mock(ApplicationApiFactory.class);
         var lock = mock(ApplicationLock.class);
 
-        when(policy.grantSuspensionRequest(any(), any())).thenReturn(SuspensionReasons.nothingNoteworthy());
         when(serviceMonitor.getApplication(any(HostName.class))).thenReturn(Optional.of(applicationInstance));
         when(applicationInstance.reference()).thenReturn(applicationInstanceReference);
         when(zookeeperStatusService.lockApplication(any(), any())).thenReturn(lock);
