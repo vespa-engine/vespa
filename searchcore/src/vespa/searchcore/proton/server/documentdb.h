@@ -430,6 +430,7 @@ public:
     void waitForOnlineState();
     IDiskMemUsageListener *diskMemUsageListener() { return &_dmUsageForwarder; }
     std::shared_ptr<const ITransientMemoryUsageProvider> transient_memory_usage_provider();
+    ExecutorThreadingService & getWriteService() { return _writeService; }
 };
 
 } // namespace proton
