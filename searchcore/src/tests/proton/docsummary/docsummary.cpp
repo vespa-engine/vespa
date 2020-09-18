@@ -257,11 +257,14 @@ public:
         storage::spi::Timestamp ts(0);
         DbDocumentId dbdId(lid);
         DbDocumentId prevDbdId(0);
-        PutOperation op(bucketId, ts, std::make_shared<document::Document>(doc));
-        op.setSerialNum(serialNum);
-        op.setDbDocumentId(dbdId);
-        op.setPrevDbDocumentId(prevDbdId);
-        _ddb->getFeedHandler().storeOperation(op, std::make_shared<search::IgnoreCallback>());
+        auto op = std::make_unique<PutOperation>(bucketId, ts, std::make_shared<document::Document>(doc));
+        op->setSerialNum(serialNum);
+        op->setDbDocumentId(dbdId);
+        op->setPrevDbDocumentId(prevDbdId);
+        _ddb->getWriteService().master().execute(vespalib::makeLambdaTask([this, op = std::move(op)]() {
+            _ddb->getFeedHandler().storeOperation(*op, std::make_shared<search::IgnoreCallback>());
+        }));
+        _ddb->getWriteService().master().sync();
         SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));
         if (sv != nullptr) {
             // cf. FeedView::putAttributes()
@@ -272,12 +275,16 @@ public:
     }
 };
 
-class Test : public vespalib::TestApp
+class Fixture
 {
 private:
     std::unique_ptr<vespa::config::search::SummaryConfig> _summaryCfg;
-    ResultConfig          _resultCfg;
+    ResultConfig               _resultCfg;
     std::set<vespalib::string> _markupFields;
+
+public:
+    Fixture();
+    ~Fixture();
 
     const ResultConfig &getResultConfig() const{
         return _resultCfg;
@@ -286,43 +293,10 @@ private:
     const std::set<vespalib::string> &getMarkupFields() const{
         return _markupFields;
     }
-
-    GeneralResultPtr
-    getResult(DocumentStoreAdapter & dsa, uint32_t docId);
-
-    GeneralResultPtr
-    getResult(const DocsumReply & reply, uint32_t id, uint32_t resultClassID);
-
-    bool assertString(const std::string & exp, const std::string & fieldName, DocumentStoreAdapter &dsa, uint32_t id);
-
-    void assertTensor(const Tensor::UP &exp, const std::string &fieldName, const DocsumReply &reply,
-                      uint32_t id, uint32_t resultClassID);
-
-    bool assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id,bool relaxed = false);
-
-    void requireThatAdapterHandlesAllFieldTypes();
-    void requireThatAdapterHandlesMultipleDocuments();
-    void requireThatAdapterHandlesDocumentIdField();
-    void requireThatDocsumRequestIsProcessed();
-    void requireThatRewritersAreUsed();
-    void requireThatAttributesAreUsed();
-    void requireThatSummaryAdapterHandlesPutAndRemove();
-    void requireThatAnnotationsAreUsed();
-    void requireThatUrisAreUsed();
-    void requireThatPositionsAreUsed();
-    void requireThatRawFieldsWorks();
-    void requireThatFieldCacheRepoCanReturnDefaultFieldCache();
-    void requireThatSummariesTimeout();
-
-public:
-    Test();
-    ~Test();
-    int Main() override;
 };
 
-
 GeneralResultPtr
-Test::getResult(DocumentStoreAdapter & dsa, uint32_t docId)
+getResult(DocumentStoreAdapter & dsa, uint32_t docId)
 {
     DocsumStoreValue docsum = dsa.getMappedDocsum(docId);
     ASSERT_TRUE(docsum.pt() != nullptr);
@@ -332,20 +306,8 @@ Test::getResult(DocumentStoreAdapter & dsa, uint32_t docId)
     return retval;
 }
 
-
-GeneralResultPtr
-Test::getResult(const DocsumReply & reply, uint32_t id, uint32_t resultClassID)
-{
-    auto retval = std::make_unique<GeneralResult>(getResultConfig().LookupResultClass(resultClassID));
-    const DocsumReply::Docsum & docsum = reply.docsums[id];
-    // skip the 4 byte class id
-    ASSERT_TRUE(retval->unpack(docsum.data.c_str() + 4, docsum.data.size() - 4));
-    return retval;
-}
-
-
 bool
-Test::assertString(const std::string & exp, const std::string & fieldName,
+assertString(const std::string & exp, const std::string & fieldName,
                    DocumentStoreAdapter &dsa, uint32_t id)
 {
     GeneralResultPtr res = getResult(dsa, id);
@@ -354,7 +316,7 @@ Test::assertString(const std::string & exp, const std::string & fieldName,
 }
 
 void
-Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
+assertTensor(const Tensor::UP & exp, const std::string & fieldName,
                    const DocsumReply & reply, uint32_t id, uint32_t)
 {
     const DocsumReply::Docsum & docsum = reply.docsums[id];
@@ -404,7 +366,7 @@ getSlime(const DocsumReply &reply, uint32_t id, bool relaxed)
 }
 
 bool
-Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id, bool relaxed)
+assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id, bool relaxed)
 {
     vespalib::Slime slime = getSlime(reply, id, relaxed);
     vespalib::Slime expSlime;
@@ -413,8 +375,7 @@ Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id,
     return EXPECT_EQUAL(expSlime, slime);
 }
 
-void
-Test::requireThatAdapterHandlesAllFieldTypes()
+TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT8));
@@ -448,9 +409,9 @@ Test::requireThatAdapterHandlesAllFieldTypes()
 
     DocumentStoreAdapter dsa(bc._str,
                              *bc._repo,
-                             getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
-                             getMarkupFields());
+                             f.getResultConfig(), "class0",
+                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
+                             f.getMarkupFields());
     GeneralResultPtr res = getResult(dsa, 0);
     EXPECT_EQUAL(255u,        res->GetEntry("a")->_intval);
     EXPECT_EQUAL(32767u,      res->GetEntry("b")->_intval);
@@ -473,8 +434,7 @@ Test::requireThatAdapterHandlesAllFieldTypes()
 }
 
 
-void
-Test::requireThatAdapterHandlesMultipleDocuments()
+TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT32));
@@ -490,9 +450,9 @@ Test::requireThatAdapterHandlesMultipleDocuments()
         addInt(2000).endField();
     bc.endDocument(1);
 
-    DocumentStoreAdapter dsa(bc._str, *bc._repo, getResultConfig(), "class1",
-                             bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class1"),
-                             getMarkupFields());
+    DocumentStoreAdapter dsa(bc._str, *bc._repo, f.getResultConfig(), "class1",
+                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class1"),
+                             f.getMarkupFields());
     { // doc 0
         GeneralResultPtr res = getResult(dsa, 0);
         EXPECT_EQUAL(1000u, res->GetEntry("a")->_intval);
@@ -515,8 +475,7 @@ Test::requireThatAdapterHandlesMultipleDocuments()
 }
 
 
-void
-Test::requireThatAdapterHandlesDocumentIdField()
+TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("documentid", schema::DataType::STRING));
@@ -526,9 +485,9 @@ Test::requireThatAdapterHandlesDocumentIdField()
         addStr("foo").
         endField();
     bc.endDocument(0);
-    DocumentStoreAdapter dsa(bc._str, *bc._repo, getResultConfig(), "class4",
-                             bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class4"),
-                             getMarkupFields());
+    DocumentStoreAdapter dsa(bc._str, *bc._repo, f.getResultConfig(), "class4",
+                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class4"),
+                             f.getMarkupFields());
     GeneralResultPtr res = getResult(dsa, 0);
     EXPECT_EQUAL("id:ns:searchdocument::0", std::string(res->GetEntry("documentid")->_stringval,
                                      res->GetEntry("documentid")->_stringlen));
@@ -541,8 +500,7 @@ GlobalId gid3 = DocumentId("id:ns:searchdocument::3").getGlobalId(); // lid 3
 GlobalId gid4 = DocumentId("id:ns:searchdocument::4").getGlobalId(); // lid 4
 GlobalId gid9 = DocumentId("id:ns:searchdocument::9").getGlobalId(); // not existing
 
-void
-Test::requireThatDocsumRequestIsProcessed()
+TEST("requireThatDocsumRequestIsProcessed")
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT32));
@@ -600,8 +558,7 @@ Test::requireThatDocsumRequestIsProcessed()
 }
 
 
-void
-Test::requireThatRewritersAreUsed()
+TEST("requireThatRewritersAreUsed")
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("aa", schema::DataType::INT32));
@@ -627,8 +584,7 @@ Test::requireThatRewritersAreUsed()
     EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, false));
 }
 
-void
-Test::requireThatSummariesTimeout()
+TEST("requireThatSummariesTimeout")
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("aa", schema::DataType::INT32));
@@ -672,8 +628,7 @@ addField(Schema & s,
 }
 
 
-void
-Test::requireThatAttributesAreUsed()
+TEST("requireThatAttributesAreUsed")
 {
     Schema s;
     addField(s, "ba", schema::DataType::INT32, CollectionType::SINGLE);
@@ -816,8 +771,7 @@ Test::requireThatAttributesAreUsed()
 }
 
 
-void
-Test::requireThatSummaryAdapterHandlesPutAndRemove()
+TEST("requireThatSummaryAdapterHandlesPutAndRemove")
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("f1", schema::DataType::STRING, CollectionType::SINGLE));
@@ -849,8 +803,7 @@ namespace
   const std::string empty;
 }
 
-void
-Test::requireThatAnnotationsAreUsed()
+TEST_F("requireThatAnnotationsAreUsed", Fixture)
 {
     Schema s;
     s.addIndexField(Schema::IndexField("g", schema::DataType::STRING, CollectionType::SINGLE));
@@ -890,9 +843,9 @@ Test::requireThatAnnotationsAreUsed()
     EXPECT_EQUAL("foo bar", act->getValue("g")->getAsString());
     EXPECT_EQUAL("foo bar", act->getValue("dynamicstring")->getAsString());
 
-    DocumentStoreAdapter dsa(store, *bc._repo, getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
-                             getMarkupFields());
+    DocumentStoreAdapter dsa(store, *bc._repo, f.getResultConfig(), "class0",
+                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
+                             f.getMarkupFields());
     EXPECT_TRUE(assertString("foo bar", "g", dsa, 1));
     EXPECT_TRUE(assertString(TERM_EMPTY + "foo" + TERM_SEP +
                             " " + TERM_SEP +
@@ -901,8 +854,7 @@ Test::requireThatAnnotationsAreUsed()
                             "dynamicstring", dsa, 1));
 }
 
-void
-Test::requireThatUrisAreUsed()
+TEST_F("requireThatUrisAreUsed", Fixture)
 {
     Schema s;
     s.addUriIndexFields(Schema::IndexField("urisingle", schema::DataType::STRING, CollectionType::SINGLE));
@@ -1042,9 +994,9 @@ Test::requireThatUrisAreUsed()
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
-    DocumentStoreAdapter dsa(store, *bc._repo, getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
-                             getMarkupFields());
+    DocumentStoreAdapter dsa(store, *bc._repo, f.getResultConfig(), "class0",
+                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
+                             f.getMarkupFields());
 
     EXPECT_TRUE(assertString("http://www.example.com:81/fluke?ab=2#4", "urisingle", dsa, 1));
     GeneralResultPtr res = getResult(dsa, 1);
@@ -1069,8 +1021,7 @@ Test::requireThatUrisAreUsed()
 }
 
 
-void
-Test::requireThatPositionsAreUsed()
+TEST("requireThatPositionsAreUsed")
 {
     Schema s;
     s.addAttributeField(Schema::AttributeField("sp2", schema::DataType::INT64));
@@ -1121,8 +1072,7 @@ Test::requireThatPositionsAreUsed()
 }
 
 
-void
-Test::requireThatRawFieldsWorks()
+TEST_F("requireThatRawFieldsWorks", Fixture)
 {
     Schema s;
     s.addSummaryField(Schema::AttributeField("i", schema::DataType::RAW));
@@ -1179,9 +1129,9 @@ Test::requireThatRawFieldsWorks()
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
-    DocumentStoreAdapter dsa(store, *bc._repo, getResultConfig(), "class0",
-                             bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
-                             getMarkupFields());
+    DocumentStoreAdapter dsa(store, *bc._repo, f.getResultConfig(), "class0",
+                             bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
+                             f.getMarkupFields());
 
     ASSERT_TRUE(assertString(raw1s, "i", dsa, 1));
 
@@ -1207,13 +1157,12 @@ Test::requireThatRawFieldsWorks()
 }
 
 
-void
-Test::requireThatFieldCacheRepoCanReturnDefaultFieldCache()
+TEST_F("requireThatFieldCacheRepoCanReturnDefaultFieldCache", Fixture)
 {
     Schema s;
     s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT32));
     BuildContext bc(s);
-    FieldCacheRepo::UP repo = bc.createFieldCacheRepo(getResultConfig());
+    FieldCacheRepo::UP repo = bc.createFieldCacheRepo(f.getResultConfig());
     FieldCache::CSP cache = repo->getFieldCache("");
     EXPECT_TRUE(cache.get() == repo->getFieldCache("class1").get());
     EXPECT_EQUAL(1u, cache->size());
@@ -1221,7 +1170,7 @@ Test::requireThatFieldCacheRepoCanReturnDefaultFieldCache()
 }
 
 
-Test::Test()
+Fixture::Fixture()
     : _summaryCfg(),
       _resultCfg(),
       _markupFields()
@@ -1246,33 +1195,8 @@ Test::Test()
     }
 }
 
-Test::~Test() = default;
-
-int
-Test::Main()
-{
-    TEST_INIT("docsummary_test");
-
-    if (_argc > 0) {
-        DummyFileHeaderContext::setCreator(_argv[0]);
-    }
-    TEST_DO(requireThatSummaryAdapterHandlesPutAndRemove());
-    TEST_DO(requireThatAdapterHandlesAllFieldTypes());
-    TEST_DO(requireThatAdapterHandlesMultipleDocuments());
-    TEST_DO(requireThatAdapterHandlesDocumentIdField());
-    TEST_DO(requireThatDocsumRequestIsProcessed());
-    TEST_DO(requireThatRewritersAreUsed());
-    TEST_DO(requireThatAttributesAreUsed());
-    TEST_DO(requireThatAnnotationsAreUsed());
-    TEST_DO(requireThatUrisAreUsed());
-    TEST_DO(requireThatPositionsAreUsed());
-    TEST_DO(requireThatRawFieldsWorks());
-    TEST_DO(requireThatFieldCacheRepoCanReturnDefaultFieldCache());
-    TEST_DO(requireThatSummariesTimeout());
-
-    TEST_DONE();
-}
+Fixture::~Fixture() = default;
 
 }
 
-TEST_APPHOOK(proton::Test);
+TEST_MAIN() { TEST_RUN_ALL(); }
