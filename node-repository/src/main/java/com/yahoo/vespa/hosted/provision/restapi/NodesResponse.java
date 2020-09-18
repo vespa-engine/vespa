@@ -189,6 +189,7 @@ class NodesResponse extends HttpResponse {
         ipAddressesToSlime(node.ipConfig().pool().asSet(), object.setArray("additionalIpAddresses"));
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
+        node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
     }
 
     private void toSlime(ApplicationId id, Cursor object) {
