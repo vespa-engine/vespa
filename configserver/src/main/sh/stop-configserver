@@ -95,11 +95,4 @@ if [ "$cloudconfig_server__multitenant" = "true" ] || [ "$VESPA_CONFIGSERVER_MUL
     vespa-run-as-vespa-user vespa-runserver -s logd -p $PIDFILE_LOGD -S
 fi
 
-# Try shutting down this way in case of upgrade. Can be removed in later versions.
 vespa-run-as-vespa-user vespa-runserver -s configserver -p $PIDFILE_CONFIGSERVER -S
-
-if [ -e "$PIDFILE_CONFIGSERVER" ]; then
-    export UNPRIVILEGED=1
-    export PID_FILE=$PIDFILE_CONFIGSERVER
-    exec vespa-run-as-vespa-user ${ROOT}/bin/jdisc_container_stop
-fi
