@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -273,20 +272,11 @@ public class OsVersionsTest {
     }
 
     private void setWantedVersion(List<Node> nodes, Version wantedVersion) {
-        writeNode(nodes, node -> node.with(node.status().withOsVersion(node.status().osVersion().withWanted(Optional.of(wantedVersion)))));
+        tester.patchNodes(nodes, node -> node.with(node.status().withOsVersion(node.status().osVersion().withWanted(Optional.of(wantedVersion)))));
     }
 
     private void setCurrentVersion(List<Node> nodes, Version currentVersion) {
-        writeNode(nodes, node -> node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(Optional.of(currentVersion)))));
-    }
-
-    private void writeNode(List<Node> nodes, UnaryOperator<Node> updateFunc) {
-        for (var node : nodes) {
-            try (var lock = tester.nodeRepository().lock(node)) {
-                node = tester.nodeRepository().getNode(node.hostname()).get();
-                tester.nodeRepository().write(updateFunc.apply(node), lock);
-            }
-        }
+        tester.patchNodes(nodes, node -> node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(Optional.of(currentVersion)))));
     }
 
     private void completeUpgradeOf(List<Node> nodes) {
@@ -294,7 +284,8 @@ public class OsVersionsTest {
     }
 
     private void completeUpgradeOf(List<Node> nodes, NodeType nodeType) {
-        writeNode(nodes, (node) -> {
+        // Complete upgrade by deprovisioning stale hosts and provisioning new ones
+        tester.patchNodes(nodes, (node) -> {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToDeprovision()) {
                 // Complete upgrade by deprovisioning stale hosts and provisioning new ones

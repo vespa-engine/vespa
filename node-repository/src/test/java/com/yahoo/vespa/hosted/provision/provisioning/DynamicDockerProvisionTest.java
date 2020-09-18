@@ -128,8 +128,7 @@ public class DynamicDockerProvisionTest {
         NodeResources resources = new NodeResources(10, 10, 10, 10);
         ApplicationId app = tester.makeApplicationId();
 
-        Function<Node, Node> retireNode = node ->
-                tester.nodeRepository().write(node.withWantToRetire(true, Agent.system, Instant.now()), () -> {});
+        Function<Node, Node> retireNode = node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, Instant.now()));
         Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().getNodes(app).stream()
                 .filter(node -> node.allocation().get().membership().cluster().group().get().index() == group)
                 .findAny().orElseThrow();
