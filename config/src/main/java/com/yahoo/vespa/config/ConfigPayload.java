@@ -22,6 +22,7 @@ import java.io.OutputStream;
  * @author Ulf Lilleengen
  */
 public class ConfigPayload {
+
     private final Slime slime;
 
     public ConfigPayload(Slime slime) {

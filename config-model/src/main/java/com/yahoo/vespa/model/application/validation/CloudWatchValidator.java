@@ -31,7 +31,7 @@ public class CloudWatchValidator extends Validator {
     }
 
     private List<String> consumerIds(List<MetricsConsumer> offendingConsumers) {
-        return offendingConsumers.stream().map(MetricsConsumer::getId).collect(toList());
+        return offendingConsumers.stream().map(MetricsConsumer::id).collect(toList());
     }
 
 }

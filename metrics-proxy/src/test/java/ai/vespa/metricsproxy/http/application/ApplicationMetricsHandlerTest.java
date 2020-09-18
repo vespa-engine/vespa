@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_V1_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_VALUES_PATH;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.PROMETHEUS_VALUES_PATH;
@@ -89,7 +89,7 @@ public class ApplicationMetricsHandlerTest {
     private void setupWireMock() {
         port = wireMockRule.port();
         wireMockRule.stubFor(get(urlPathEqualTo(MOCK_METRICS_PATH))
-                                     .withQueryParam("consumer", equalTo(DEFAULT_PUBLIC_CONSUMER_ID.id))
+                                     .withQueryParam("consumer", equalTo(defaultMetricsConsumerId.id))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         // Add a slightly different response for a custom consumer.
@@ -132,7 +132,7 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void response_contains_node() {
-        GenericApplicationModel jsonModel = getResponseAsJsonModel(DEFAULT_PUBLIC_CONSUMER_ID.id);
+        GenericApplicationModel jsonModel = getResponseAsJsonModel(defaultMetricsConsumerId.id);
 
         assertEquals(1, jsonModel.nodes.size());
         GenericJsonModel nodeModel = jsonModel.nodes.get(0);
@@ -161,7 +161,7 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void response_contains_services_with_metrics() {
-        GenericApplicationModel jsonModel = getResponseAsJsonModel(DEFAULT_PUBLIC_CONSUMER_ID.id);
+        GenericApplicationModel jsonModel = getResponseAsJsonModel(defaultMetricsConsumerId.id);
 
         GenericJsonModel nodeModel = jsonModel.nodes.get(0);
         assertEquals(2, nodeModel.services.size());
@@ -174,7 +174,7 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void metrics_processors_are_applied() {
-        GenericApplicationModel jsonModel = getResponseAsJsonModel(DEFAULT_PUBLIC_CONSUMER_ID.id);
+        GenericApplicationModel jsonModel = getResponseAsJsonModel(defaultMetricsConsumerId.id);
 
         GenericService searchnode = jsonModel.nodes.get(0).services.get(0);
         Map<String, String> dimensions = searchnode.metrics.get(0).dimensions;
@@ -233,7 +233,7 @@ public class ApplicationMetricsHandlerTest {
     private static MetricsConsumers getMetricsConsumers() {
         return new MetricsConsumers(new ConsumersConfig.Builder()
                                             .consumer(new ConsumersConfig.Consumer.Builder()
-                                                              .name(DEFAULT_PUBLIC_CONSUMER_ID.id))
+                                                              .name(defaultMetricsConsumerId.id))
                                             .consumer(new ConsumersConfig.Consumer.Builder()
                                                               .name(CUSTOM_CONSUMER))
                                             .build());

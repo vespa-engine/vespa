@@ -28,7 +28,7 @@ import java.util.Map;
 
 import static ai.vespa.metricsproxy.core.MetricsManager.VESPA_VERSION;
 import static ai.vespa.metricsproxy.core.VespaMetrics.METRIC_TYPE_DIMENSION_ID;
-import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
+import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.ROLE_DIMENSION;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
@@ -241,7 +241,7 @@ public class MetricsManagerTest {
 
         return new MetricsConsumers(new ConsumersConfig.Builder()
                                             .consumer(new Consumer.Builder()
-                                                              .name(VESPA_CONSUMER_ID.id)
+                                                              .name(vespaMetricsConsumerId.id)
                                                               .metric(new Consumer.Metric.Builder()
                                                                               .name(WHITELISTED_METRIC_ID)
                                                                               .outputname(WHITELISTED_METRIC_ID))

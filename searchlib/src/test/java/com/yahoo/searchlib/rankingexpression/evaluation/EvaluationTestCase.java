@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
  */
 public class EvaluationTestCase {
 
-    private double tolerance = 0.000001;
+    private final double tolerance = 0.000001;
 
     @Test
     public void testEvaluation() {

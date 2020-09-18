@@ -18,14 +18,13 @@ import com.yahoo.vespa.model.admin.ModelConfigProvider;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
+import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets.predefinedMetricSets;
 
 /**
  * A base class for admin model builders, to support common functionality across versions.
@@ -69,8 +68,8 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     @Override
     protected Admin doBuild(DeployState deployState, AbstractConfigProducer parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
-        Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
-                .buildMetrics(XML.getChild(adminElement, "metrics"));
+        Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
+                                  .buildMetrics(XML.getChild(adminElement, "metrics"));
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent, deployState.isHosted());
 
         Admin admin = new Admin(parent, monitoring, metrics, multitenant, fileDistributionConfigProducer, deployState.isHosted());

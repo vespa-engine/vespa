@@ -37,7 +37,9 @@ import java.util.Set;
 public class Application implements ModelResult {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Application.class.getName());
-    private final long appGeneration; // The config generation for this application
+
+    /** The config generation for this application. */
+    private final long applicationGeneration;
     private final boolean internalRedeploy;
     private final Version vespaVersion;
     private final Model model;
@@ -45,12 +47,12 @@ public class Application implements ModelResult {
     private final MetricUpdater metricUpdater;
     private final ApplicationId app;
 
-    public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
+    public Application(Model model, ServerCache cache, long applicationGeneration, boolean internalRedeploy,
                        Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
         Objects.requireNonNull(model, "The model cannot be null");
         this.model = model;
         this.cache = cache;
-        this.appGeneration = appGeneration;
+        this.applicationGeneration = applicationGeneration;
         this.internalRedeploy = internalRedeploy;
         this.vespaVersion = vespaVersion;
         this.metricUpdater = metricUpdater;
@@ -62,7 +64,7 @@ public class Application implements ModelResult {
      *
      * @return the config generation
      */
-    public Long getApplicationGeneration() { return appGeneration; }
+    public Long getApplicationGeneration() { return applicationGeneration; }
 
     /** Returns the application model, never null */
     @Override
@@ -72,13 +74,13 @@ public class Application implements ModelResult {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("application '").append(app.application().value()).append("', ");
-        sb.append("generation ").append(appGeneration).append(", ");
+        sb.append("generation ").append(applicationGeneration).append(", ");
         sb.append("vespa version ").append(vespaVersion);
         return sb.toString();
     }
 
     public ApplicationInfo toApplicationInfo() {
-        return new ApplicationInfo(app, appGeneration, model);
+        return new ApplicationInfo(app, applicationGeneration, model);
     }
 
     public ServerCache getCache() {
@@ -134,7 +136,7 @@ public class Application implements ModelResult {
             throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
         }
 
-        ConfigResponse configResponse = responseFactory.createResponse(payload, appGeneration, internalRedeploy);
+        ConfigResponse configResponse = responseFactory.createResponse(payload, applicationGeneration, internalRedeploy);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
         if (useCache(req)) {
             cache.put(cacheKey, configResponse, configResponse.getConfigMd5());

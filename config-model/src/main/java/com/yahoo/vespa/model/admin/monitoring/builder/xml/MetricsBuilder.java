@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 
@@ -85,11 +83,11 @@ public class MetricsBuilder {
     }
 
     private void throwIfIllegalConsumerId(Metrics metrics, String consumerId) {
-        if (consumerId.equalsIgnoreCase(VESPA_CONSUMER_ID) && applicationType != ApplicationType.HOSTED_INFRASTRUCTURE)
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.vespa.id()) && applicationType != ApplicationType.HOSTED_INFRASTRUCTURE)
             throw new IllegalArgumentException("'Vespa' is not allowed as metrics consumer id (case is ignored.)");
 
-        if (consumerId.equalsIgnoreCase(DEFAULT_PUBLIC_CONSUMER_ID))
-            throw new IllegalArgumentException("'" + DEFAULT_PUBLIC_CONSUMER_ID + "' is not allowed as metrics consumer id (case is ignored.)");
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.defaultConsumer.id()))
+            throw new IllegalArgumentException("'" + MetricsConsumer.defaultConsumer.id() + "' is not allowed as metrics consumer id (case is ignored.)");
 
         if (metrics.hasConsumerIgnoreCase(consumerId))
             throw new IllegalArgumentException("'" + consumerId + "' is used as id for two metrics consumers (case is ignored.)");

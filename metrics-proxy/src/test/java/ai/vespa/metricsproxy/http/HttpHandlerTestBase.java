@@ -22,7 +22,7 @@ import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import java.time.Instant;
 import java.util.List;
 
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
 import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;
@@ -71,7 +71,7 @@ public class HttpHandlerTestBase {
 
         return new MetricsConsumers(new ConsumersConfig.Builder()
                                             .consumer(new ConsumersConfig.Consumer.Builder()
-                                                              .name(DEFAULT_PUBLIC_CONSUMER_ID.id)
+                                                              .name(defaultMetricsConsumerId.id)
                                                               .metric(new ConsumersConfig.Consumer.Metric.Builder()
                                                                               .name(CPU_METRIC)
                                                                               .outputname(CPU_METRIC))

@@ -26,10 +26,11 @@ public interface ConfigResponseFactory {
 
     /**
      * Creates a {@link ConfigResponse} for a given payload and generation.
-     * @param payload          the {@link ConfigPayload} to put in the response.
-     * @param generation       the payload generation.  @return A {@link ConfigResponse} that can be sent to the client.
-     * @param internalRedeploy whether this config generation was produced by an internal redeployment,
+     * @param payload          the {@link ConfigPayload} to put in the response
+     * @param generation       the payload generation
+     * @param internalRedeploy whether this config generation was produced by an internal redeployment
      *                         not a change to the application package
+     * @return a {@link ConfigResponse} that can be sent to the client
      */
     ConfigResponse createResponse(ConfigPayload payload, long generation, boolean internalRedeploy);
 

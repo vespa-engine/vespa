@@ -24,7 +24,7 @@ public class ValuesFetcher {
 
     private static final Logger log = Logger.getLogger(ValuesFetcher.class.getName());
 
-    public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default");
+    public static final ConsumerId defaultMetricsConsumerId = toConsumerId("default");
 
     private final MetricsManager metricsManager;
     private final VespaServices vespaServices;
@@ -62,12 +62,12 @@ public class ValuesFetcher {
     }
 
     public static ConsumerId getConsumerOrDefault(String requestedConsumer, MetricsConsumers consumers) {
-        if (requestedConsumer == null) return DEFAULT_PUBLIC_CONSUMER_ID;
+        if (requestedConsumer == null) return defaultMetricsConsumerId;
 
         ConsumerId consumerId = toConsumerId(requestedConsumer);
         if (! consumers.getAllConsumers().contains(consumerId)) {
             log.info("No consumer with id '" + requestedConsumer + "' - using the default consumer instead.");
-            return DEFAULT_PUBLIC_CONSUMER_ID;
+            return defaultMetricsConsumerId;
         }
         return consumerId;
     }

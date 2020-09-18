@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_SERVICE_ID;
@@ -31,14 +30,11 @@ import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
- * @author Unknown
  * @author gjoranv
  */
 public class VespaMetrics {
 
-    private static final Logger log = Logger.getLogger(VespaMetrics.class.getPackage().getName());
-
-    public static final ConsumerId VESPA_CONSUMER_ID = toConsumerId("Vespa");
+    public static final ConsumerId vespaMetricsConsumerId = toConsumerId("Vespa");
 
     public static final DimensionId METRIC_TYPE_DIMENSION_ID = toDimensionId("metrictype");
     public static final DimensionId INSTANCE_DIMENSION_ID = toDimensionId(INTERNAL_SERVICE_ID);
@@ -68,8 +64,8 @@ public class VespaMetrics {
     }
 
     /**
-     * @param services The services to get metrics for
-     * @return A list of metrics packet builders (to allow modification by the caller).
+     * @param services the services to get metrics for
+     * @return a list of metrics packet builders (to allow modification by the caller)
      */
     public List<MetricsPacket.Builder> getMetrics(List<VespaService> services) {
         List<MetricsPacket.Builder> metricsPackets = new ArrayList<>();
@@ -253,7 +249,7 @@ public class VespaMetrics {
                 String alias = key;
 
                 boolean isForwarded = false;
-                for (ConsumersConfig.Consumer.Metric metricConsumer : getMetricDefinitions(VESPA_CONSUMER_ID)) {
+                for (ConsumersConfig.Consumer.Metric metricConsumer : getMetricDefinitions(vespaMetricsConsumerId)) {
                     if (metricConsumer.name().equals(key)) {
                         alias = metricConsumer.outputname();
                         isForwarded = true;

@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.joining;
  * @author gjoranv
  */
 public class MetricsPacket {
+
     public final int statusCode;
     public final String statusMessage;
     public final long timestamp;
@@ -80,7 +81,8 @@ public class MetricsPacket {
     }
 
     public static class Builder {
-        // Set sensible defaults here, and use null guard in all setters.
+
+        // Set defaults here, and use null guard in all setters.
         // Except for 'service' for which we require an explicit non-null value.
         private ServiceId service;
         private int statusCode = 0;

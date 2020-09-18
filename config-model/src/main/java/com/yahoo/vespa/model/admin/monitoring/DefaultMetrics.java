@@ -9,7 +9,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 
 /**
@@ -18,14 +17,14 @@ import static java.util.Collections.singleton;
  *
  * @author gjoranv
  */
-public class DefaultPublicMetrics {
+public class DefaultMetrics {
 
-    public static final String DEFAULT_METRIC_SET_ID = "default";
+    public static final String defaultMetricSetId = "default";
 
-    public static MetricSet defaultPublicMetricSet = createMetricSet();
+    public static MetricSet defaultMetricSet = createMetricSet();
 
     private static MetricSet createMetricSet() {
-        return new MetricSet(DEFAULT_METRIC_SET_ID,
+        return new MetricSet(defaultMetricSetId,
                              getAllMetrics(),
                              singleton(defaultVespaMetricSet));
     }
@@ -95,6 +94,6 @@ public class DefaultPublicMetrics {
         return metrics;
     }
 
-    private DefaultPublicMetrics() { }
+    private DefaultMetrics() { }
 
 }
