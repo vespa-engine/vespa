@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.feedhandler.v3;
+package com.yahoo.vespa.http.server;
 
 import com.google.common.base.Splitter;
 import com.yahoo.container.handler.ThreadpoolConfig;
@@ -23,9 +23,6 @@ import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
-import com.yahoo.vespa.http.server.FeedHandlerV3;
-import com.yahoo.vespa.http.server.MetricNames;
-import com.yahoo.vespa.http.server.ReplyContext;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
