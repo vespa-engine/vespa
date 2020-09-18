@@ -146,7 +146,7 @@ TEST(SimpleValueTest, dense_join_plan_can_be_executed) {
     ASSERT_EQ(plan.out_size, 6);
     int *dst = &c[0];
     auto cell_join = [&](size_t a_idx, size_t b_idx) { *dst++ = (a[a_idx] * b[b_idx]); };
-    plan.execute(0, 0, 0, cell_join);
+    plan.execute(0, 0, cell_join);
     EXPECT_EQ(c, expect);
 }
 

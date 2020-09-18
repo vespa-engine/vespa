@@ -234,7 +234,7 @@ struct GenericJoin {
             while (inner->next_result(addr.second_only, addr.second_subspace)) {
                 OCT *dst = builder->add_subspace(addr.address).begin();
                 auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
-                dense_plan.execute(0, dense_plan.lhs_size * addr.lhs_subspace, dense_plan.rhs_size * addr.rhs_subspace, join_cells);
+                dense_plan.execute(dense_plan.lhs_size * addr.lhs_subspace, dense_plan.rhs_size * addr.rhs_subspace, join_cells);
             }
         }
         return builder->build(std::move(builder));
