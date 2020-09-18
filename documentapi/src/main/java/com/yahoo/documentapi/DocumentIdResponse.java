@@ -7,7 +7,7 @@ import com.yahoo.document.DocumentId;
  * The asynchronous response to a document remove operation.
  * This is a <i>value object</i>.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentIdResponse extends Response {
 

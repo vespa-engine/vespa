@@ -7,7 +7,7 @@ import com.yahoo.document.Document;
  * The asynchronous response to a document put or get operation.
  * This is a <i>value object</i>.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentResponse extends Response {
 

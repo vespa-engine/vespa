@@ -61,7 +61,7 @@ public class Result {
      * Returns the id of this operation. The asynchronous response to this operation
      * will contain the same id to allow clients who desire to, to match operations to responses.
      *
-     * @return the if of this operation
+     * @return the id of this operation
      */
     public long getRequestId() { return requestId; }
 

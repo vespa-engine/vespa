@@ -1,11 +1,8 @@
 package com.yahoo.documentapi.local;
 
 import com.yahoo.document.Document;
-import com.yahoo.document.DocumentGet;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
-import com.yahoo.document.Field;
-import com.yahoo.document.fieldset.FieldCollection;
 import com.yahoo.document.fieldset.FieldSet;
 import com.yahoo.document.fieldset.FieldSetRepo;
 import com.yahoo.document.select.DocumentSelector;

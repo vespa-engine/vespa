@@ -9,7 +9,7 @@ import java.util.HashSet;
 /**
  * General exception thrown from various methods in the Vespa Document API.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentAccessException extends RuntimeException {
 
