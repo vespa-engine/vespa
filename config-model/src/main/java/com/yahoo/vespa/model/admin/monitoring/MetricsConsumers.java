@@ -22,7 +22,7 @@ public class MetricsConsumers {
     public static final String defaultMetricsConsumerId = ValuesFetcher.defaultMetricsConsumerId.id;
     public static final String vespaMetricsConsumerId = VespaMetrics.vespaMetricsConsumerId.id;
 
-    public static MetricsConsumer defaultPublicConsumer() {
+    public static MetricsConsumer defaultMetricsConsumer() {
         return consumer("default-consumer-metrics", defaultMetricSet, systemMetricSet);
     }
 

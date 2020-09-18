@@ -56,7 +56,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.LEGACY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.SYSTEM;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
-import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.defaultPublicConsumer;
+import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.defaultMetricsConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.vespaMetricsConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
 
@@ -164,7 +164,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         var amendedVespaConsumer = addMetrics(vespaMetricsConsumer(), getAdditionalDefaultMetrics().getMetrics());
         builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers()));
 
-        builder.consumer.add(toConsumerBuilder(defaultPublicConsumer()));
+        builder.consumer.add(toConsumerBuilder(defaultMetricsConsumer()));
     }
 
     @Override
