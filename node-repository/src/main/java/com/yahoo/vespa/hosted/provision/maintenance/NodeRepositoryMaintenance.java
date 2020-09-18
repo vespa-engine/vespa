@@ -182,7 +182,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             provisionedExpiry = Duration.ofHours(4);
             rebalancerInterval = Duration.ofMinutes(40);
             redeployMaintainerInterval = Duration.ofMinutes(1);
-            reservationExpiry = Duration.ofMinutes(15); // Need to be long enough for deployment to be finished for all config model versions
+            // Need to be long enough for deployment to be finished for all config model versions
+            // Should be equal to timeout for deployments
+            reservationExpiry = zone.system().isCd() ? Duration.ofMinutes(5) : Duration.ofMinutes(30);
             scalingSuggestionsInterval = Duration.ofMinutes(31);
             spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
