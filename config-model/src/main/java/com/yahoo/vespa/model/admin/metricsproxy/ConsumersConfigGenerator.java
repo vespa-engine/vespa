@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.vespaMetricsConsumerId;
-
 /**
  * Helper class to generate config for metrics consumers.
  *
@@ -30,7 +28,8 @@ class ConsumersConfigGenerator {
         // Normally, the user given consumers should not contain VESPA_CONSUMER_ID,
         // but it's allowed for some internally used applications.
         var allConsumers = new LinkedHashMap<>(userConsumers);
-        allConsumers.put(vespaMetricsConsumerId, combineConsumers(defaultConsumer, allConsumers.get(vespaMetricsConsumerId)));
+        allConsumers.put(MetricsConsumer.vespa.id(),
+                         combineConsumers(defaultConsumer, allConsumers.get(MetricsConsumer.vespa.id())));
 
         return allConsumers.values().stream()
                 .map(ConsumersConfigGenerator::toConsumerBuilder)
@@ -46,18 +45,18 @@ class ConsumersConfigGenerator {
      */
     private static MetricsConsumer combineConsumers(MetricsConsumer original, MetricsConsumer overriding) {
         if (overriding == null) return original;
-        return addMetrics(original, overriding.getMetrics());
+        return addMetrics(original, overriding.metrics());
     }
 
     static MetricsConsumer addMetrics(MetricsConsumer original, Map<String, Metric> metrics) {
         if (metrics == null) return original;
 
-        Map<String, Metric> combinedMetrics = new LinkedHashMap<>(original.getMetrics());
+        Map<String, Metric> combinedMetrics = new LinkedHashMap<>(original.metrics());
         metrics.forEach((name, newMetric) ->
-                                combinedMetrics.put(name, combineMetrics(original.getMetrics().get(name), newMetric)));
+                                combinedMetrics.put(name, combineMetrics(original.metrics().get(name), newMetric)));
 
-        return new MetricsConsumer(original.getId(),
-                                   new MetricSet(original.getMetricSet().getId(), combinedMetrics.values()));
+        return new MetricsConsumer(original.id(),
+                                   new MetricSet(original.metricSet().getId(), combinedMetrics.values()));
     }
 
     private static Metric combineMetrics(Metric original, Metric newMetric) {
@@ -65,8 +64,8 @@ class ConsumersConfigGenerator {
     }
 
     static Consumer.Builder toConsumerBuilder(MetricsConsumer consumer) {
-        Consumer.Builder builder = new Consumer.Builder().name(consumer.getId());
-        consumer.getMetrics().values().forEach(metric -> builder.metric(toConsumerMetricBuilder(metric)));
+        Consumer.Builder builder = new Consumer.Builder().name(consumer.id());
+        consumer.metrics().values().forEach(metric -> builder.metric(toConsumerMetricBuilder(metric)));
         return builder;
     }
 

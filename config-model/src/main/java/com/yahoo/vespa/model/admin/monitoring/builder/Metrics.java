@@ -17,7 +17,7 @@ public class Metrics {
     private final Map<String, MetricsConsumer> consumers = new LinkedHashMap<>();
 
     public void addConsumer(MetricsConsumer consumer) {
-        consumers.put(consumer.getId(), consumer);
+        consumers.put(consumer.id(), consumer);
     }
 
     public Map<String, MetricsConsumer> getConsumers() {

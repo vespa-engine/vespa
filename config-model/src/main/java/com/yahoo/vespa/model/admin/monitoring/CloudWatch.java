@@ -24,7 +24,7 @@ public class CloudWatch {
 
     public String region() { return region; }
     public String namespace() { return namespace; }
-    public String consumer() { return consumer.getId(); }
+    public String consumer() { return consumer.id(); }
 
     public Optional<HostedAuth> hostedAuth() {return Optional.ofNullable(hostedAuth); }
     public Optional<SharedCredentials> sharedCredentials() {return Optional.ofNullable(sharedCredentials); }

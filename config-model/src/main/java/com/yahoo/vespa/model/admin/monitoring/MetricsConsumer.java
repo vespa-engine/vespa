@@ -1,12 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
-import javax.annotation.concurrent.Immutable;
+import ai.vespa.metricsproxy.core.VespaMetrics;
+import ai.vespa.metricsproxy.http.ValuesFetcher;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetrics.defaultMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
 import static java.util.Collections.unmodifiableList;
 
 /**
@@ -16,12 +23,18 @@ import static java.util.Collections.unmodifiableList;
  * @author gjoranv
  */
 // TODO: This construct seems redundant when we have metrics sets
-@Immutable
 public class MetricsConsumer {
+
+    // Pre-defined consumers
+    public static final MetricsConsumer vespa =
+            consumer(VespaMetrics.vespaMetricsConsumerId.id, vespaMetricSet, systemMetricSet, networkMetricSet);
+    public static final MetricsConsumer defaultConsumer =
+            consumer(ValuesFetcher.defaultMetricsConsumerId.id, defaultMetricSet, systemMetricSet);
 
     private final String id;
     private final MetricSet metricSet;
 
+    // TODO: This shouldn't be here
     private final List<CloudWatch> cloudWatches = new ArrayList<>();
 
     /**
@@ -33,16 +46,16 @@ public class MetricsConsumer {
         this.metricSet = Objects.requireNonNull(metricSet, "A consumer must have a non-null metric set.");
     }
 
-    public String getId() {
+    public String id() {
         return id;
     }
 
-    public MetricSet getMetricSet() { return metricSet; }
+    public MetricSet metricSet() { return metricSet; }
 
     /**
      * @return map of metric with metric name as key
      */
-    public Map<String, Metric> getMetrics() {
+    public Map<String, Metric> metrics() {
         return metricSet.getMetrics();
     }
 
@@ -52,6 +65,10 @@ public class MetricsConsumer {
 
     public List<CloudWatch> cloudWatches() {
         return unmodifiableList(cloudWatches);
+    }
+
+    private static MetricsConsumer consumer(String id, MetricSet ... metricSets) {
+        return new MetricsConsumer(id, new MetricSet(id + "-consumer-metrics", List.of(), Arrays.asList(metricSets)));
     }
 
 }

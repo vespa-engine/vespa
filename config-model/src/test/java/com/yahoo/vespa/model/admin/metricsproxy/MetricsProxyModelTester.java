@@ -14,12 +14,11 @@ import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.test.VespaModelTester;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
-import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.defaultMetricsConsumerId;
-import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.vespaMetricsConsumerId;
 
 /**
  * @author gjoranv
@@ -76,7 +75,8 @@ class MetricsProxyModelTester {
     static ConsumersConfig.Consumer getCustomConsumer(String servicesXml) {
         ConsumersConfig config = consumersConfigFromXml(servicesXml, self_hosted);
         for (ConsumersConfig.Consumer consumer : config.consumer()) {
-            if (! consumer.name().equals(vespaMetricsConsumerId) && ! consumer.name().equals(defaultMetricsConsumerId))
+            if (! consumer.name().equals(MetricsConsumer.vespa.id()) &&
+                ! consumer.name().equals(MetricsConsumer.defaultConsumer.id()))
                 return consumer;
         }
         throw new RuntimeException("Custom consumer not found!");

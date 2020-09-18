@@ -4,6 +4,7 @@ import ai.vespa.metricsproxy.core.ConsumersConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -16,13 +17,11 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.c
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
-import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.defaultMetricsConsumerId;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetrics.defaultMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.MetricsConsumers.vespaMetricsConsumerId;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -48,7 +47,7 @@ public class MetricsConsumersTest {
     public void default_public_consumer_is_set_up_for_self_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), self_hosted);
         assertEquals(2, config.consumer().size());
-        assertEquals(config.consumer(1).name(), defaultMetricsConsumerId);
+        assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(1).name());
 
         int numMetricsForPublicDefaultConsumer = defaultMetricSet.getMetrics().size() + numSystemMetrics;
         assertEquals(numMetricsForPublicDefaultConsumer, config.consumer(1).metric().size());
@@ -58,14 +57,14 @@ public class MetricsConsumersTest {
     public void vespa_consumer_and_default_public_consumer_is_set_up_for_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), hosted);
         assertEquals(2, config.consumer().size());
-        assertEquals(config.consumer(0).name(), vespaMetricsConsumerId);
-        assertEquals(config.consumer(1).name(), defaultMetricsConsumerId);
+        assertEquals(MetricsConsumer.vespa.id(), config.consumer(0).name());
+        assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(1).name());
     }
 
     @Test
     public void vespa_consumer_is_always_present_and_has_all_vespa_metrics_and_all_system_metrics() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), self_hosted);
-        assertEquals(config.consumer(0).name(), vespaMetricsConsumerId);
+        assertEquals(MetricsConsumer.vespa.id(), config.consumer(0).name());
         assertEquals(numMetricsForVespaConsumer, config.consumer(0).metric().size());
     }
 
