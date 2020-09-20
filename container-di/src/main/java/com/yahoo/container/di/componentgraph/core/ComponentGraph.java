@@ -50,8 +50,8 @@ public class ComponentGraph {
 
     private static final Logger log = Logger.getLogger(ComponentGraph.class.getName());
 
-    private long generation;
-    private Map<ComponentId, Node> nodesById = new HashMap<>();
+    private final long generation;
+    private final Map<ComponentId, Node> nodesById = new HashMap<>();
 
     public ComponentGraph(long generation) {
         this.generation = generation;

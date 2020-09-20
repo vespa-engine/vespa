@@ -50,24 +50,6 @@ public class HandlersConfigurerDi {
 
     private static final Logger log = Logger.getLogger(HandlersConfigurerDi.class.getName());
 
-    public static class RegistriesHack {
-
-        @Inject
-        public RegistriesHack(com.yahoo.container.Container vespaContainer,
-                              ComponentRegistry<AbstractComponent> allComponents,
-                              ComponentRegistry<RequestHandler> requestHandlerRegistry,
-                              ComponentRegistry<ClientProvider> clientProviderRegistry,
-                              ComponentRegistry<ServerProvider> serverProviderRegistry) {
-            log.log(Level.FINE, "RegistriesHack.init " + System.identityHashCode(this));
-
-            vespaContainer.setComponentRegistry(allComponents);
-            vespaContainer.setRequestHandlerRegistry(requestHandlerRegistry);
-            vespaContainer.setClientProviderRegistry(clientProviderRegistry);
-            vespaContainer.setServerProviderRegistry(serverProviderRegistry);
-        }
-
-    }
-
     private final com.yahoo.container.Container vespaContainer;
     private final Container container;
 
@@ -154,7 +136,6 @@ public class HandlersConfigurerDi {
                                                       restartOnRedeploy);
     }
 
-    @SuppressWarnings("deprecation")
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {
         return discInjector.createChildInjector(new AbstractModule() {
             @Override
@@ -180,6 +161,27 @@ public class HandlersConfigurerDi {
 
     public void shutdown(ComponentDeconstructor deconstructor) {
         container.shutdown(currentGraph, deconstructor);
+    }
+
+    /** Returns the currently active application configuration generation */
+    public long generation() { return currentGraph.generation(); }
+
+    public static class RegistriesHack {
+
+        @Inject
+        public RegistriesHack(com.yahoo.container.Container vespaContainer,
+                              ComponentRegistry<AbstractComponent> allComponents,
+                              ComponentRegistry<RequestHandler> requestHandlerRegistry,
+                              ComponentRegistry<ClientProvider> clientProviderRegistry,
+                              ComponentRegistry<ServerProvider> serverProviderRegistry) {
+            log.log(Level.FINE, "RegistriesHack.init " + System.identityHashCode(this));
+
+            vespaContainer.setComponentRegistry(allComponents);
+            vespaContainer.setRequestHandlerRegistry(requestHandlerRegistry);
+            vespaContainer.setClientProviderRegistry(clientProviderRegistry);
+            vespaContainer.setServerProviderRegistry(serverProviderRegistry);
+        }
+
     }
 
 }

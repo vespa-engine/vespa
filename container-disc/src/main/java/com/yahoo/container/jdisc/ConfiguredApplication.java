@@ -65,20 +65,12 @@ import static com.yahoo.collections.CollectionUtil.first;
  */
 public final class ConfiguredApplication implements Application {
 
-    public static final class ApplicationContext {
-
-        final JdiscBindingsConfig discBindingsConfig;
-
-        public ApplicationContext(com.yahoo.container.jdisc.JdiscBindingsConfig discBindingsConfig) {
-            this.discBindingsConfig = discBindingsConfig;
-        }
-    }
-
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
     private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
 
     private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
     private final SubscriberFactory subscriberFactory;
+    private final Metric metric;
     private final ContainerActivator activator;
     private final String configId;
     private final OsgiFramework osgiFramework;
@@ -97,7 +89,6 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>());
     private final OsgiFramework restrictedOsgiFramework;
-    private volatile int applicationSerialNo = 0;
     private HandlersConfigurerDi configurer;
     private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
     private Thread reconfigurerThread;
@@ -127,11 +118,13 @@ public final class ConfiguredApplication implements Application {
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
                                  com.yahoo.jdisc.Timer timer,
-                                 SubscriberFactory subscriberFactory) {
+                                 SubscriberFactory subscriberFactory,
+                                 Metric metric) {
         this.activator = activator;
         this.osgiFramework = osgiFramework;
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
+        this.metric = metric;
         this.configId = System.getProperty("config.id");
         this.slobrokConfigSubscriber = (subscriberFactory instanceof CloudSubscriberFactory)
                 ? Optional.of(new SlobrokConfigSubscriber(configId))
@@ -256,7 +249,8 @@ public final class ConfiguredApplication implements Application {
         startAndStopServers();
 
         log.info("Switching to the latest deployed set of configurations and components. " +
-                 "Application switch number: " + (applicationSerialNo++));
+                 "Application config generation: " + configurer.generation());
+        metric.set("application_generation", configurer.generation(), metric.createContext(Map.of()));
     }
 
     private ContainerBuilder createBuilderWithGuiceBindings() {
@@ -424,6 +418,15 @@ public final class ConfiguredApplication implements Application {
                                 RequestHandler target) {
         for (String uri : uriPatterns) {
             bindings.bind(uri, target);
+        }
+    }
+
+    public static final class ApplicationContext {
+
+        final JdiscBindingsConfig discBindingsConfig;
+
+        public ApplicationContext(com.yahoo.container.jdisc.JdiscBindingsConfig discBindingsConfig) {
+            this.discBindingsConfig = discBindingsConfig;
         }
     }
 
