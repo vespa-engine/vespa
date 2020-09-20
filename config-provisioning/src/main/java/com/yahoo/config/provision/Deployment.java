@@ -15,8 +15,12 @@ public interface Deployment {
      */
     void prepare();
 
-    /** Activates this deployment. This will prepare it if necessary. */
-    void activate();
+    /**
+     * Activates this deployment. This will prepare it if necessary.
+     *
+     * @return the application config generation that became active by this invocation
+     */
+    long activate();
 
     /**
      * Request a restart of services of this application on hosts matching the filter.

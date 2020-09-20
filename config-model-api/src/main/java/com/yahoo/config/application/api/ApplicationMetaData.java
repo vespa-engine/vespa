@@ -59,18 +59,16 @@ public class ApplicationMetaData {
     public ApplicationId getApplicationId() { return applicationId; }
 
     /**
-     * Gets the time the application was deployed
-     * Will return null if a problem occurred while getting metadata
+     * Gets the time the application was deployed.
+     * Will return null if a problem occurred while getting metadata.
      *
-     * @return timestamp for when "deploy-application" was run. In ms.
+     * @return when this application version was deployed in epoch ms
      */
     public Long getDeployTimestamp() { return deployTimestamp; }
 
     /**
-     * Gets the time the application was deployed.
-     * Will return null if a problem occurred while getting metadata
-     *
-     * @return timestamp for when "deploy-application" was run. In ms.
+     * Returns the config generation of this application instance.
+     * Will return null if a problem occurred while getting metadata.
      */
     public Long getGeneration() { return generation; }
 

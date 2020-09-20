@@ -13,6 +13,7 @@ import java.util.Optional;
  * @author hakonhall
  */
 public interface DuperModelInfraApi {
+
     /** Returns the list of supported infrastructure applications. */
     List<InfraApplicationApi> getSupportedInfraApplications();
 
@@ -30,4 +31,5 @@ public interface DuperModelInfraApi {
 
     /** All infra applications that are supposed to activate on config server bootstrap has been activated. */
     void infraApplicationsIsNowComplete();
+
 }

@@ -96,7 +96,7 @@ public class InfraDeployerImpl implements InfraDeployer {
         }
 
         @Override
-        public void activate() {
+        public long activate() {
             try (Mutex lock = nodeRepository.lock(application.getApplicationId())) {
                 prepare();
 
@@ -114,6 +114,8 @@ public class InfraDeployerImpl implements InfraDeployer {
 
                     logger.log(Level.FINE, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
                 }
+
+                return 0; // No application config version here
             }
         }
 
@@ -142,4 +144,5 @@ public class InfraDeployerImpl implements InfraDeployer {
         }
         return "Infrastructure application " + applicationId + " activated" + detail;
     }
+
 }
