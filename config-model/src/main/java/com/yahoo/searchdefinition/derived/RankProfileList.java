@@ -122,10 +122,14 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         for (OnnxModel model : onnxModels.asMap().values()) {
             if ("".equals(model.getFileReference()))
                 log.warning("Illegal file reference " + model); // Let tests pass ... we should find a better way
-            else
-                builder.model(new OnnxModelsConfig.Model.Builder()
-                        .name(model.getName())
-                        .fileref(model.getFileReference()));
+            else {
+                OnnxModelsConfig.Model.Builder modelBuilder = new OnnxModelsConfig.Model.Builder();
+                modelBuilder.name(model.getName());
+                modelBuilder.fileref(model.getFileReference());
+                model.getInputMap().forEach(mapper -> modelBuilder.input(new OnnxModelsConfig.Model.Input.Builder().name(mapper.getOnnxName()).source(mapper.getVespaName())));
+                model.getOutputMap().forEach(mapper -> modelBuilder.output(new OnnxModelsConfig.Model.Output.Builder().name(mapper.getOnnxName()).as(mapper.getVespaName())));
+                builder.model(modelBuilder);
+            }
         }
     }
 }

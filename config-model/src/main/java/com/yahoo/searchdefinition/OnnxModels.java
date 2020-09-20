@@ -27,6 +27,10 @@ public class OnnxModels {
         return models.get(name);
     }
 
+    public boolean has(String name) {
+        return models.containsKey(name);
+    }
+
     public Map<String, OnnxModel> asMap() {
         return Collections.unmodifiableMap(models);
     }

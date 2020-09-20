@@ -32,6 +32,7 @@ import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
 import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.DocumentsOnlyRankProfile;
@@ -231,6 +232,7 @@ TOKEN :
 | < SUBSTRING: "substring" >
 | < SUFFIX: "suffix" >
 | < CONSTANT: "constant">
+| < ONNXMODEL: "onnx-model">
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
@@ -379,6 +381,8 @@ TOKEN :
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
 | < VARIABLE: "$" <IDENTIFIER> >
+| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<QUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<QUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
 }
 
 // Declare a special skip token for comments.
@@ -451,7 +455,8 @@ Object rootSchemaItem(Search search) : { }
       | structOutside(search)
       | annotationOutside(search)
       | fieldSet(search)
-      | importField(search) )
+      | importField(search)
+      | onnxModel(search) )
     { return null; }
 }
 
@@ -1844,6 +1849,60 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
     ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
       | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); }
       | <MULTITHREADEDINDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
+}
+
+/**
+ * Consumes a onnx-model block of a search element.
+ *
+ * @param search The search object to add content to.
+ */
+void onnxModel(Search search) :
+{
+    String name;
+    OnnxModel onnxModel;
+}
+{
+    ( <ONNXMODEL> name = identifier()
+        {
+            onnxModel = new OnnxModel(name);
+        }
+      lbrace() (onnxModelItem(onnxModel) (<NL>)*)+ <RBRACE> )
+    {
+        if (documentsOnly) return;
+        search.onnxModels().add(onnxModel);
+    }
+}
+
+/**
+ * This rule consumes an onnx-model block.
+ *
+ * @param onnxModel The onnxModel to modify.
+ * @return Null.
+ */
+Object onnxModelItem(OnnxModel onnxModel) :
+{
+    String path = null;
+}
+{
+    (
+        (<FILE> <COLON> path = filePath() { } (<NL>)*) { onnxModel.setFileName(path); } |
+        (<URI> <COLON> path = uriPath() { } (<NL>)*) { onnxModel.setUri(path); } |
+        (<ONNX_INPUT_SL>) {
+            String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String source = token.image.substring(token.image.lastIndexOf(":") + 1).trim();
+            onnxModel.addInputNameMapping(name, source);
+        } |
+        (<ONNX_OUTPUT_SL>) {
+            String name = token.image.substring(6, token.image.lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String as = token.image.substring(token.image.lastIndexOf(":") + 1).trim();
+            onnxModel.addOutputNameMapping(name, as);
+        }
+    )
+    {
+        return null;
+    }
 }
 
 /**
