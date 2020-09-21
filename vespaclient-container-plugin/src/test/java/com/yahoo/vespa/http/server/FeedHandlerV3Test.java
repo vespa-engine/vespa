@@ -22,7 +22,6 @@ import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
-import com.yahoo.vespa.http.server.ClientFeederV3.HttpThrottlePolicy;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
@@ -34,7 +33,6 @@ import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -42,13 +40,11 @@ import static org.mockito.Mockito.when;
 
 public class FeedHandlerV3Test {
     final CollectingMetric metric = new CollectingMetric();
-
-    private static final HttpThrottlePolicy NON_THROTTLE = () -> false;
-    private static final HttpThrottlePolicy THROTTLE_ALWAYS = () -> true;
+    private final Executor simpleThreadpool = Executors.newCachedThreadPool();
 
     @Test
     public void feedOneDocument() throws Exception {
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(NON_THROTTLE);
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(simpleThreadpool);
         HttpResponse httpResponse = feedHandlerV3.handle(createRequest(1));
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpResponse.render(outStream);
@@ -58,7 +54,7 @@ public class FeedHandlerV3Test {
 
     @Test
     public void feedOneBrokenDocument() throws Exception {
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(NON_THROTTLE);
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(simpleThreadpool);
         HttpResponse httpResponse = feedHandlerV3.handle(createBrokenRequest());
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpResponse.render(outStream);
@@ -69,22 +65,13 @@ public class FeedHandlerV3Test {
 
     @Test
     public void feedManyDocument() throws Exception {
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(NON_THROTTLE);
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(simpleThreadpool);
         HttpResponse httpResponse = feedHandlerV3.handle(createRequest(100));
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         httpResponse.render(outStream);
         assertThat(httpResponse.getContentType(), is("text/plain"));
         String result = Utf8.toString(outStream.toByteArray());
         assertThat(Splitter.on("\n").splitToList(result).size(), is(101));
-    }
-
-    @Test
-    public void response_has_status_code_429_when_throttling() throws Exception {
-        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler(THROTTLE_ALWAYS);
-        HttpResponse httpResponse = feedHandlerV3.handle(createRequest(100));
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        httpResponse.render(outStream);
-        assertEquals(httpResponse.getStatus(), 429);
     }
 
     private static DocumentTypeManager createDoctypeManager() {
@@ -96,7 +83,7 @@ public class FeedHandlerV3Test {
         return docTypeManager;
     }
 
-    private static HttpRequest createRequest(int numberOfDocs) {
+    static HttpRequest createRequest(int numberOfDocs) {
         StringBuilder wireData = new StringBuilder();
         for (int x = 0; x < numberOfDocs; x++) {
             String docData = "[{\"put\": \"id:testdocument:testdocument::c\", \"fields\": { \"title\": \"fooKey\", \"body\": \"value\"}}]";
@@ -112,7 +99,7 @@ public class FeedHandlerV3Test {
         return createRequestWithPayload(wireData);
     }
 
-    private static HttpRequest createRequestWithPayload(String payload) {
+    static HttpRequest createRequestWithPayload(String payload) {
         InputStream inputStream = new ByteArrayInputStream(payload.getBytes());
         HttpRequest request = HttpRequest.createTestRequest("http://dummyhostname:19020/reserved-for-internal-use/feedapi",
                 com.yahoo.jdisc.http.HttpRequest.Method.POST, inputStream);
@@ -126,13 +113,10 @@ public class FeedHandlerV3Test {
         return request;
     }
 
-    private FeedHandlerV3 setupFeederHandler(HttpThrottlePolicy policy) throws Exception {
-        Executor threadPool = Executors.newCachedThreadPool();
-
+    private FeedHandlerV3 setupFeederHandler(Executor threadPool) {
         DocumentmanagerConfig docMan = new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true));
         FeedHandlerV3 feedHandlerV3 = new FeedHandlerV3(
                 threadPool,
-                policy,
                 metric,
                 AccessLog.voidAccessLog(),
                 docMan,

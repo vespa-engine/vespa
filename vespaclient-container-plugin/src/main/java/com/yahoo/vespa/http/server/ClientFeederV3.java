@@ -49,7 +49,6 @@ class ClientFeederV3 {
     private final String clientId;
     private final ReplyHandler feedReplyHandler;
     private final Metric metric;
-    private final HttpThrottlePolicy httpThrottlePolicy;
     private Instant prevOpsPerSecTime = Instant.now();
     private double operationsForOpsPerSec = 0d;
     private final Object monitor = new Object();
@@ -63,13 +62,11 @@ class ClientFeederV3 {
             DocumentTypeManager docTypeManager,
             String clientId,
             Metric metric,
-            ReplyHandler feedReplyHandler,
-            HttpThrottlePolicy httpThrottlePolicy) {
+            ReplyHandler feedReplyHandler) {
         this.sourceSession = sourceSession;
         this.clientId = clientId;
         this.feedReplyHandler = feedReplyHandler;
         this.metric = metric;
-        this.httpThrottlePolicy = httpThrottlePolicy;
         this.streamReaderV3 = new StreamReaderV3(feedReaderFactory, docTypeManager);
         this.hostName = HostName.getLocalhost();
     }
@@ -105,10 +102,6 @@ class ClientFeederV3 {
         ongoingRequests.incrementAndGet();
         try {
             FeederSettings feederSettings = new FeederSettings(request);
-            if (httpThrottlePolicy.shouldThrottle()) {
-                return new ErrorHttpResponse(getOverloadReturnCode(request), "Gateway overloaded");
-            }
-
             InputStream inputStream = StreamReaderV3.unzipStreamIfNeeded(request);
             BlockingQueue<OperationStatus> replies = new LinkedBlockingQueue<>();
             try {
@@ -131,11 +124,6 @@ class ClientFeederV3 {
         } finally {
             ongoingRequests.decrementAndGet();
         }
-    }
-
-    private int getOverloadReturnCode(HttpRequest request) {
-        if (request.getHeader(Headers.SILENTUPGRADE) != null ) return 299;
-        return 429;
     }
 
     private Optional<DocumentOperationMessageV3> pullMessageFromRequest(FeederSettings settings,
@@ -294,26 +282,4 @@ class ClientFeederV3 {
             }
         }
     }
-
-    /*
-     * The gateway handle overload from clients in different ways.
-     *
-     * If the backend is overloaded, but not the gateway, it will fill the backend, messagebus throttler
-     * will start to block new documents and finally all threadsAvailableForFeeding will be blocking.
-     * However, as more threads are added, the gateway will not block on messagebus but return
-     * transitive errors on the documents that can not be processed. These errors will cause the client(s) to
-     * back off a bit.
-     *
-     * However, we can also have the case that the gateway becomes the bottleneck (e.g. CPU). In this case
-     * we need to stop processing of new messages as early as possible and reject the request. This
-     * will cause the client(s) to back off for a while. We want some slack before we enter this mode.
-     * If we can simply transitively fail each document, it is nicer. Therefor we allow some threads to be
-     * busy processing requests with transitive errors before entering this mode. Since we already
-     * have flooded the backend, have several threads hanging and waiting for capacity, the number should
-     * not be very large. Too much slack can lead to too many threads handling feed and impacting query traffic.
-     */
-    interface HttpThrottlePolicy {
-        boolean shouldThrottle();
-    }
-
 }
