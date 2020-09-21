@@ -40,7 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class FeedTesterV3 {
+public class FeedHandlerV3Test {
     final CollectingMetric metric = new CollectingMetric();
 
     private static final HttpThrottlePolicy NON_THROTTLE = () -> false;
