@@ -9,8 +9,7 @@ DomainConfig::DomainConfig()
       _compressionLevel(9),
       _fSyncOnCommit(false),
       _partSizeLimit(0x10000000), // 256M
-      _chunkSizeLimit(0x40000),   // 256k
-      _chunkAgeLimit(10ms)
+      _chunkSizeLimit(0x40000)   // 256k
 { }
 
 }

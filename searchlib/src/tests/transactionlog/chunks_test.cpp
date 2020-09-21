@@ -73,7 +73,6 @@ TEST("test serialization and deserialization of uncompressable zstd") {
 
 TEST("test empty commitchunk") {
     CommitChunk cc(1,1);
-    EXPECT_EQUAL(0ms, cc.age());
     EXPECT_EQUAL(0u, cc.sizeBytes());
     EXPECT_EQUAL(0u, cc.getNumCallBacks());
 }
@@ -93,7 +92,6 @@ TEST("test single element commitchunk") {
 
         cc.add(p, std::make_shared<Counter>(counter));
         EXPECT_EQUAL(1u, counter);
-        EXPECT_GREATER(cc.age(), 0ms);
         EXPECT_EQUAL(150u, cc.sizeBytes());
         EXPECT_EQUAL(1u, cc.getNumCallBacks());
     }
@@ -112,7 +110,6 @@ TEST("test multi element commitchunk") {
         p2.add(Packet::Entry(2, 2, ConstBufferRef(TEXT2, strlen(TEXT2))));
         cc.add(p2, std::make_shared<Counter>(counter));
         EXPECT_EQUAL(2u, counter);
-        EXPECT_GREATER(cc.age(), 0ms);
         EXPECT_EQUAL(180u, cc.sizeBytes());
         EXPECT_EQUAL(2u, cc.getNumCallBacks());
     }

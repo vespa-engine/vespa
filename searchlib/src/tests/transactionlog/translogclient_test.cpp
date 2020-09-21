@@ -623,8 +623,7 @@ TEST("test sending a lot of data") {
     const vespalib::string MANY("many");
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000)
-                .setChunkAgeLimit(100us));
+        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000));
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, MANY, 0);
@@ -696,8 +695,7 @@ TEST("test sending a lot of data async") {
     const vespalib::string MANY("many-async");
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000)
-                .setChunkAgeLimit(10ms));
+        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000));
         TransLogClient tls("tcp/localhost:18377");
         createDomainTest(tls, MANY, 1);
         auto s1 = openDomainTest(tls, MANY);

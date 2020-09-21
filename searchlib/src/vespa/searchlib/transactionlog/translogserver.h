@@ -32,10 +32,8 @@ public:
                    const common::FileHeaderContext &fileHeaderContext);
     ~TransLogServer() override;
     DomainStats getDomainStats() const;
-    bool commitIfStale();
     std::shared_ptr<Writer> getWriter(const vespalib::string & domainName) const override;
     TransLogServer & setDomainConfig(const DomainConfig & cfg);
-    vespalib::duration getChunkAgeLimit() const;
 
     class Session
     {

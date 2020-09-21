@@ -123,8 +123,7 @@ Packet::add(const Packet::Entry & e)
 
 CommitChunk::CommitChunk(size_t reserveBytes, size_t reserveCount)
     : _data(reserveBytes),
-      _callBacks(),
-      _firstArrivalTime()
+      _callBacks()
 {
     _callBacks.reserve(reserveCount);
 }
@@ -133,19 +132,8 @@ CommitChunk::~CommitChunk() = default;
 
 void
 CommitChunk::add(const Packet &packet, Writer::DoneCallback onDone) {
-    if (_callBacks.empty()) {
-        _firstArrivalTime = vespalib::steady_clock::now();
-    }
     _data.merge(packet);
     _callBacks.emplace_back(std::move(onDone));
-}
-
-vespalib::duration
-CommitChunk::age() const {
-    if (_callBacks.empty()) {
-        return 0ms;
-    }
-    return (vespalib::steady_clock::now() - _firstArrivalTime);
 }
 
 }

@@ -81,7 +81,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                                const FileHeaderContext &fileHeaderContext)
     : TransLogServer(name, listenPort, baseDir, fileHeaderContext,
                      DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::none))
-                                        .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000).setChunkAgeLimit( 100us))
+                                        .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000))
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
@@ -201,13 +201,6 @@ TransLogServer::run()
         }
     } while (running() && !(hasPacket && (req == nullptr)));
     LOG(info, "TLS Stopped");
-}
-
-vespalib::duration
-TransLogServer::getChunkAgeLimit() const
-{
-    ReadGuard domainGuard(_domainMutex);
-    return _domainConfig.getChunkAgeLimit();
 }
 
 TransLogServer &
