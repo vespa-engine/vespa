@@ -14,13 +14,11 @@ public:
     DomainConfig & setEncoding(Encoding v)          { _encoding = v; return *this; }
     DomainConfig & setPartSizeLimit(size_t v)       { _partSizeLimit = v; return *this; }
     DomainConfig & setChunkSizeLimit(size_t v)      { _chunkSizeLimit = v; return *this; }
-    DomainConfig & setChunkAgeLimit(vespalib::duration v) { _chunkAgeLimit = v; return *this; }
     DomainConfig & setCompressionLevel(uint8_t v)   { _compressionLevel = v; return *this; }
     DomainConfig & setFSyncOnCommit(bool v)         { _fSyncOnCommit = v; return *this; }
     Encoding          getEncoding() const { return _encoding; }
     size_t       getPartSizeLimit() const { return _partSizeLimit; }
     size_t      getChunkSizeLimit() const { return _chunkSizeLimit; }
-    duration     getChunkAgeLimit() const { return _chunkAgeLimit; }
     uint8_t   getCompressionlevel() const { return _compressionLevel; }
     bool         getFSyncOnCommit() const { return _fSyncOnCommit; }
 private:
@@ -29,7 +27,6 @@ private:
     bool         _fSyncOnCommit;
     size_t       _partSizeLimit;
     size_t       _chunkSizeLimit;
-    duration     _chunkAgeLimit;
 };
 
 struct PartInfo {

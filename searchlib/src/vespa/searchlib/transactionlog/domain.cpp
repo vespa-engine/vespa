@@ -343,8 +343,7 @@ Domain::erase(SerialNum to)
 }
 
 int
-Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
-              std::unique_ptr<Destination> dest)
+Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest)
 {
     assert(this == domain.get());
     cleanSessions();
