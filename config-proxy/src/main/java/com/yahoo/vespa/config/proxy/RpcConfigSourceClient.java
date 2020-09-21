@@ -185,6 +185,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         nextConfigFuture.cancel(true);
         nextConfigScheduler.shutdownNow();
         requester.close();
+        supervisor.transport().shutdown().join();
     }
 
     /**
