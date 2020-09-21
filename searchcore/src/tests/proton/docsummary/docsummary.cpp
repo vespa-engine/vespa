@@ -262,7 +262,7 @@ public:
         op->setDbDocumentId(dbdId);
         op->setPrevDbDocumentId(prevDbdId);
         _ddb->getWriteService().master().execute(vespalib::makeLambdaTask([this, op = std::move(op)]() {
-            _ddb->getFeedHandler().storeOperation(*op, std::make_shared<search::IgnoreCallback>());
+            _ddb->getFeedHandler().appendOperation(*op, std::make_shared<search::IgnoreCallback>());
         }));
         _ddb->getWriteService().master().sync();
         SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));

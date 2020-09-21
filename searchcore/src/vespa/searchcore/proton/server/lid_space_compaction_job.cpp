@@ -57,7 +57,7 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
             } else {
                 MoveOperation::UP op = _handler.createMoveOperation(document, stats.getLowestFreeLid());
                 search::IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
-                _opStorer.storeOperation(*op, context);
+                _opStorer.appendOperation(*op, context);
                 _handler.handleMove(*op, std::move(context));
                 if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                     return true;
@@ -82,7 +82,7 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
     uint32_t wantedLidLimit = stats.getHighestUsedLid() + 1;
     CompactLidSpaceOperation op(_handler.getSubDbId(), wantedLidLimit);
     vespalib::Gate gate;
-    _opStorer.storeOperation(op, std::make_shared<search::GateCallback>(gate));
+    _opStorer.appendOperation(op, std::make_shared<search::GateCallback>(gate));
     gate.await();
     _handler.handleCompactLidSpace(op);
     EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);

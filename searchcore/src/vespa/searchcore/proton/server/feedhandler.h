@@ -225,7 +225,7 @@ public:
     void eof() override;
     void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
     void syncTls(SerialNum syncTo);
-    void storeOperation(const FeedOperation &op, DoneCallback onDone) override;
+    void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
     void storeOperationSync(const FeedOperation & op);
     void considerDelayedPrune();
 };
