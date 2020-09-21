@@ -251,15 +251,17 @@ ILidCommitState &
 StoreOnlyFeedView::getUncommittedLidsTracker() {
     return *_pendingLidsForCommit;
 }
+
 void
-StoreOnlyFeedView::forceCommit(SerialNum serialNum)
+StoreOnlyFeedView::forceCommit(SerialNum serialNum, DoneCallback onDone)
 {
-    forceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
-                                                                _pendingLidsForCommit->produceSnapshot()));
+    internalForceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
+                                                                        _pendingLidsForCommit->produceSnapshot(),
+                                                                        std::move(onDone)));
 }
 
 void
-StoreOnlyFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
+StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
     (void) serialNum;
     _writeService.summary().execute(makeLambdaTask([onDone=onCommitDone]() {(void) onDone;}));
@@ -857,9 +859,10 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
     if (useDocumentMetaStore(serialNum)) {
         getDocumentMetaStore()->get().compactLidSpace(op.getLidLimit());
         auto commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
-                                                                _pendingLidsForCommit->produceSnapshot()));
+                                                                _pendingLidsForCommit->produceSnapshot(),
+                                                                DoneCallback()));
         commitContext->holdUnblockShrinkLidSpace();
-        forceCommit(serialNum, commitContext);
+        internalForceCommit(serialNum, commitContext);
     }
     if (useDocumentStore(serialNum)) {
         _writeService.summary().execute(makeLambdaTask([this, &op]() { _summaryAdapter->compactLidSpace(op.getLidLimit()); }));

@@ -210,9 +210,9 @@ SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 }
 
 void
-SearchableFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
+SearchableFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
-    Parent::forceCommit(serialNum, onCommitDone);
+    Parent::internalForceCommit(serialNum, onCommitDone);
     _writeService.index().execute(makeLambdaTask([=]() { performIndexForceCommit(serialNum, onCommitDone); }));
 }
 

@@ -88,11 +88,11 @@ FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 }
 
 void
-FastAccessFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
+FastAccessFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
     _attributeWriter->forceCommit(serialNum, onCommitDone);
     onCommitDone->registerCommittedDocIdLimit(_metaStore.getCommittedDocIdLimit(), &_docIdLimit);
-    Parent::forceCommit(serialNum, onCommitDone);
+    Parent::internalForceCommit(serialNum, onCommitDone);
 }
 
 

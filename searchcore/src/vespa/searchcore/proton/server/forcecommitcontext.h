@@ -22,16 +22,19 @@ class DocIdLimit;
  */
 class ForceCommitContext : public search::IDestructorCallback
 {
+    using IDestructorCallback = search::IDestructorCallback;
     vespalib::Executor                   &_executor;
     std::unique_ptr<ForceCommitDoneTask>  _task;
     uint32_t                              _committedDocIdLimit;
     DocIdLimit                           *_docIdLimit;
     PendingLidTrackerBase::Snapshot       _lidsToCommit;
+    std::shared_ptr<IDestructorCallback> _onDone;
 
 public:
     ForceCommitContext(vespalib::Executor &executor,
                        IDocumentMetaStore &documentMetaStore,
-                       PendingLidTrackerBase::Snapshot lidsToCommit);
+                       PendingLidTrackerBase::Snapshot lidsToCommit,
+                       std::shared_ptr<IDestructorCallback> onDone);
 
     ~ForceCommitContext() override;
 

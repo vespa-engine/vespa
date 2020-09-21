@@ -29,11 +29,12 @@ class IFeedView
 protected:
     IFeedView() = default;
 public:
-    typedef std::shared_ptr<IFeedView> SP;
+    using SP = std::shared_ptr<IFeedView>;
+    using DoneCallback = std::shared_ptr<search::IDestructorCallback>;
 
     IFeedView(const IFeedView &) = delete;
     IFeedView & operator = (const IFeedView &) = delete;
-    virtual ~IFeedView() { }
+    virtual ~IFeedView() = default;
 
     virtual const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const = 0;
 
@@ -56,10 +57,11 @@ public:
     virtual void prepareDeleteBucket(DeleteBucketOperation &delOp) = 0;
     virtual void handleDeleteBucket(const DeleteBucketOperation &delOp) = 0;
     virtual void prepareMove(MoveOperation &putOp) = 0;
-    virtual void handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) = 0;
+    virtual void handleMove(const MoveOperation &putOp, DoneCallback onDone) = 0;
     virtual void heartBeat(search::SerialNum serialNum) = 0;
     virtual void sync() = 0;
-    virtual void forceCommit(search::SerialNum serialNum) = 0;
+    virtual void forceCommit(search::SerialNum serialNum, DoneCallback onDone) = 0;
+    void forceCommit(search::SerialNum serialNum) { forceCommit(serialNum, DoneCallback()); }
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp) = 0;
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) = 0;
     virtual ILidCommitState & getUncommittedLidsTracker() = 0;

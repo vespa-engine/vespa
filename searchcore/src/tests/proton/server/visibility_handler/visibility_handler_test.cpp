@@ -56,7 +56,7 @@ public:
         }
     }
 
-    void forceCommit(SerialNum serialNum) override
+    void forceCommit(SerialNum serialNum, DoneCallback) override
     {
         EXPECT_TRUE(serialNum >= _committedSerialNum);
         _committedSerialNum = serialNum;
