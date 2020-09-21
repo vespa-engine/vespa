@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
+import com.yahoo.container.handler.threadpool.DefaultContainerThreadpool;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
 
@@ -25,11 +26,11 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
 
     @Inject
     public ThreadPoolProvider(ThreadpoolConfig config, Metric metric) {
-        this.threadpool = new ContainerThreadPool(translateConfig(config), metric);
+        this.threadpool = new DefaultContainerThreadpool(translateConfig(config), metric);
     }
 
     public ThreadPoolProvider(ThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator) {
-        this.threadpool = new ContainerThreadPool(translateConfig(config), metric, processTerminator);
+        this.threadpool = new DefaultContainerThreadpool(translateConfig(config), metric, processTerminator);
     }
 
     /**
