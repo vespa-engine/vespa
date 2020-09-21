@@ -4,7 +4,6 @@ package com.yahoo.search.dispatch.rpc;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.ComponentId;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.compress.Compressor.Compression;
@@ -35,17 +34,19 @@ public class RpcResourcePool extends AbstractComponent {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
+    private final RpcClient client;
 
     RpcResourcePool(Map<Integer, NodeConnection> nodeConnections) {
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(Collections.singletonList(connection))));
         this.nodeConnectionPools = builder.build();
+        client = null;
     }
 
     @Inject
     public RpcResourcePool(DispatchConfig dispatchConfig) {
         super();
-        var client = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
+        client = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
 
         // Create rpc node connection pools indexed by the node distribution key
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
@@ -82,6 +83,9 @@ public class RpcResourcePool extends AbstractComponent {
     public void deconstruct() {
         super.deconstruct();
         nodeConnectionPools.values().forEach(NodeConnectionPool::release);
+        if (client != null) {
+            client.close();
+        }
     }
 
     private class NodeConnectionPool {
