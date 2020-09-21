@@ -16,13 +16,11 @@ import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 
-import java.util.Objects;
-import java.util.logging.Level;
-
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -163,6 +161,14 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     protected abstract void handleRequest(Request request, BufferedContentChannel requestContent,
                                           ResponseHandler responseHandler);
 
+    /**
+     * Invoked to write an error response when the worker pool is overloaded.
+     * A subclass may override this method to define a custom response.
+     */
+    protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
+        ResponseDispatch.newInstance(Response.Status.SERVICE_UNAVAILABLE).dispatch(responseHandler);
+    }
+
     private class RequestTask implements ResponseHandler, Runnable {
 
         final Request request;
@@ -237,14 +243,15 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             }
         }
 
+
         /**
          * Clean up when the task can not be executed because no worker thread is available.
          */
-        public void failOnOverload() {
+        void failOnOverload() {
             try (ResourceReference reference = requestReference) {
                 incrementRejectedRequests();
                 logRejectedRequests();
-                ResponseDispatch.newInstance(Response.Status.SERVICE_UNAVAILABLE).dispatch(responseHandler);
+                writeErrorResponseOnOverload(request, responseHandler);
             }
         }
     }
