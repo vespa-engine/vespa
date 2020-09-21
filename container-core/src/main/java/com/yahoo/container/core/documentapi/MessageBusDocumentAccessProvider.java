@@ -33,9 +33,10 @@ public class MessageBusDocumentAccessProvider extends AbstractComponent implemen
     public DocumentAccess get() {
         synchronized (monitor) {
             if (access == null) {
-                access = new MessageBusDocumentAccess((MessageBusParams) new MessageBusParams(new LoadTypeSet(loadTypeConfig)).setDocumentmanagerConfig(documentmanagerConfig));
                 if (shutDown)
-                    access.shutdown();
+                    throw new IllegalStateException("This document access has been shut down");
+
+                access = new MessageBusDocumentAccess((MessageBusParams) new MessageBusParams(new LoadTypeSet(loadTypeConfig)).setDocumentmanagerConfig(documentmanagerConfig));
             }
             return access;
         }
@@ -44,11 +45,9 @@ public class MessageBusDocumentAccessProvider extends AbstractComponent implemen
     @Override
     public void deconstruct() {
         synchronized (monitor) {
-            if ( ! shutDown) {
-                shutDown = true;
-                if (access != null)
-                    access.shutdown();
-            }
+            shutDown = true;
+            if (access != null)
+                access.shutdown();
         }
     }
 
