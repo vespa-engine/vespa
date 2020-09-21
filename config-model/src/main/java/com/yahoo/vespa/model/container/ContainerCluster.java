@@ -181,6 +181,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(com.yahoo.metrics.simple.jdisc.JdiscMetricsFactory.class.getName(), null, MetricProperties.BUNDLE_SYMBOLIC_NAME);
         addSimpleComponent("com.yahoo.container.jdisc.state.StateMonitor");
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
+        addSimpleComponent(com.yahoo.container.core.documentapi.MessageBusDocumentAccessProvider.class.getName());
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
