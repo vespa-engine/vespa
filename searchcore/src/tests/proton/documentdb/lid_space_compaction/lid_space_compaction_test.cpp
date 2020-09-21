@@ -172,6 +172,9 @@ struct MyStorer : public IOperationStorer {
             ++_compactCnt;
         }
     }
+    CommitResult startCommit(DoneCallback) override {
+        return CommitResult();
+    }
 };
 
 struct MyFrozenBucketHandler : public IFrozenBucketHandler {

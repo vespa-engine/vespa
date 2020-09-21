@@ -572,7 +572,8 @@ TransLogServer::domainCommit(FRT_RPCRequest *req)
         Packet packet(params[1]._data._buf, params[1]._data._len);
         try {
             vespalib::Gate gate;
-            domain->commit(packet, make_shared<GateCallback>(gate));
+            domain->append(packet, make_shared<GateCallback>(gate));
+            domain->startCommit(make_shared<IgnoreCallback>());
             gate.await();
             ret.AddInt32(0);
             ret.AddString("ok");

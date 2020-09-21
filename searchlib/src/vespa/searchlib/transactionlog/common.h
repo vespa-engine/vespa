@@ -100,7 +100,8 @@ public:
         CommitPayload _callBacks;
     };
     virtual ~Writer() = default;
-    virtual void commit(const Packet & packet, DoneCallback done) = 0;
+    virtual void append(const Packet & packet, DoneCallback done) = 0;
+    virtual CommitResult startCommit(DoneCallback onDone) = 0;
 };
 
 class WriterFactory {

@@ -27,7 +27,8 @@ public:
     const vespalib::string & name() const { return _name; }
     bool erase(SerialNum to);
 
-    void commit(const Packet & packet, Writer::DoneCallback onDone) override;
+    void append(const Packet & packet, Writer::DoneCallback onDone) override;
+    CommitResult startCommit(DoneCallback onDone) override;
     int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest);
 
     SerialNum begin() const;

@@ -310,8 +310,14 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
     return dp;
 }
 
+Domain::CommitResult
+Domain::startCommit(DoneCallback onDone) {
+    (void) onDone;
+    return CommitResult();
+}
+
 void
-Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
+Domain::append(const Packet & packet, Writer::DoneCallback onDone)
 {
     (void) onDone;
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
