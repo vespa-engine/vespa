@@ -2,7 +2,6 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -43,34 +42,16 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     private final SessionCache sessionCache;
     protected final ReplyHandler feedReplyHandler;
     private final Metric metric;
-    private final ClientFeederV3.HttpThrottlePolicy httpThrottlePolicy;
     private final Object monitor = new Object();
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
-    public FeedHandlerV3(ContainerThreadPool threadpool,
+    public FeedHandlerV3(Executor executor,
                          Metric metric,
                          AccessLog accessLog,
                          DocumentmanagerConfig documentManagerConfig,
                          SessionCache sessionCache,
                          DocumentApiMetrics metricsHelper) {
-        this(threadpool.executor(),
-                () -> threadpool.queuedTasks() > 0,
-                metric,
-                accessLog,
-                documentManagerConfig,
-                sessionCache,
-                metricsHelper);
-    }
-
-    FeedHandlerV3(Executor executor,
-                  ClientFeederV3.HttpThrottlePolicy httpThrottlePolicy,
-                  Metric metric,
-                  AccessLog accessLog,
-                  DocumentmanagerConfig documentManagerConfig,
-                  SessionCache sessionCache,
-                  DocumentApiMetrics metricsHelper) {
         super(executor, accessLog, metric);
-        this.httpThrottlePolicy = httpThrottlePolicy;
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
@@ -98,8 +79,7 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
                                                               docTypeManager,
                                                               clientId,
                                                               metric,
-                                                              feedReplyHandler,
-                                                              httpThrottlePolicy));
+                                                              feedReplyHandler));
             }
             clientFeederV3 = clientFeederByClientId.get(clientId);
         }

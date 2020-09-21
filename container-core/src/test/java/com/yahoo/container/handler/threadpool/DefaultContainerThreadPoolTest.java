@@ -20,11 +20,11 @@ import static org.junit.Assert.fail;
  * @author Steinar Knutsen
  * @author bjorncs
  */
-public class ContainerThreadPoolTest {
+public class DefaultContainerThreadPoolTest {
     @Test
     public final void testThreadPool() throws InterruptedException {
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1));
-        ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class));
+        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, Mockito.mock(Metric.class));
         Executor exec = threadPool.executor();
         Tuple2<Receiver.MessageState, Boolean> reply;
         FlipIt command = new FlipIt();
@@ -56,7 +56,7 @@ public class ContainerThreadPoolTest {
 
     private ThreadPoolExecutor createPool(int maxThreads, int queueSize) {
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(maxThreads).queueSize(queueSize));
-        ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class));
+        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, Mockito.mock(Metric.class));
         ExecutorServiceWrapper wrapper = (ExecutorServiceWrapper) threadPool.executor();
         WorkerCompletionTimingThreadPoolExecutor executor = (WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
         return executor;
@@ -104,7 +104,7 @@ public class ContainerThreadPoolTest {
                         .maxThreads(2)
                         .maxThreadExecutionTimeSeconds(1));
         MockProcessTerminator terminator = new MockProcessTerminator();
-        ContainerThreadPool threadPool = new ContainerThreadPool(config, Mockito.mock(Metric.class), terminator);
+        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, Mockito.mock(Metric.class), terminator);
 
         // No dying when threads hang shorter than max thread execution time
         threadPool.executor().execute(new Hang(500));

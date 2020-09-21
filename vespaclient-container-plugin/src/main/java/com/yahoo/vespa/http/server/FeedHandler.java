@@ -11,6 +11,9 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.handler.ResponseDispatch;
+import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.http.client.core.Headers;
@@ -49,7 +52,7 @@ public class FeedHandler extends LoggingRequestHandler {
                        MetricReceiver metricReceiver) {
         super(threadpool.executor(), accessLog, metric);
         metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
-        feedHandlerV3 = new FeedHandlerV3(threadpool, metric, accessLog, documentManagerConfig, sessionCache, metricsHelper);
+        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, accessLog, documentManagerConfig, sessionCache, metricsHelper);
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
     }
 
@@ -113,6 +116,12 @@ public class FeedHandler extends LoggingRequestHandler {
             return protocolVersion.first;
         }
         return feedHandlerV3.handle(request);
+    }
+
+    @Override
+    protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
+        int responseCode = request.headers().getFirst(Headers.SILENTUPGRADE) != null ? 299 : 429;
+        ResponseDispatch.newInstance(responseCode).dispatch(responseHandler);
     }
 
     private static Optional<String> findClientVersion(HttpRequest request) {
