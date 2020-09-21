@@ -30,6 +30,11 @@ class RpcClient implements Client {
     }
 
     @Override
+    public void close() {
+        supervisor.transport().shutdown().join();
+    }
+
+    @Override
     public NodeConnection createConnection(String hostname, int port) {
         return new RpcNodeConnection(hostname, port, supervisor);
     }

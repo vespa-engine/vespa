@@ -80,6 +80,8 @@ public class RpcSearchInvokerTest {
             AtomicInteger lengthHolder) {
         return new Client() {
             @Override
+            public void close() { }
+            @Override
             public NodeConnection createConnection(String hostname, int port) {
                 return new NodeConnection() {
                     @Override
@@ -97,8 +99,7 @@ public class RpcSearchInvokerTest {
                     }
 
                     @Override
-                    public void close() {
-                    }
+                    public void close() { }
                 };
             }
         };

@@ -16,6 +16,7 @@ interface Client {
 
     /** Creates a connection to a particular node in this */
     NodeConnection createConnection(String hostname, int port);
+    void close();
 
     interface ResponseReceiver {
         void receive(ResponseOrError<ProtobufResponse> response);
