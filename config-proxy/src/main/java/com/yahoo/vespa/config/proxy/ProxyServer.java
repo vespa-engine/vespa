@@ -60,6 +60,7 @@ public class ProxyServer implements Runnable {
         if (rpcServer != null) {
             Thread t = new Thread(rpcServer);
             t.setName("RpcServer");
+            t.setDaemon(true);
             t.start();
         }
     }
@@ -147,6 +148,7 @@ public class ProxyServer implements Runnable {
         proxyServer.setupSignalHandler();
         Thread proxyserverThread = new Thread(proxyServer);
         proxyserverThread.setName("configproxy");
+        proxyserverThread.setDaemon(true);
         proxyserverThread.start();
         proxyServer.waitForShutdown();
     }
