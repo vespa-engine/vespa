@@ -42,7 +42,14 @@ public class SimplifierTestCase {
         assertEquals("attribute(number) * 1.5 - 0.001 * attribute(number)", s.transform(new RankingExpression("attribute(number) * 1.5 - 0.001 * attribute(number)"), c).toString());
     }
 
-    // A black box test verifying we are not screwing up real expressions
+    @Test
+    public void testNaNExpression() throws ParseException {
+        Simplifier s = new Simplifier();
+        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        assertEquals("0 / 0", s.transform(new RankingExpression("0/0"), c).toString());
+        assertEquals("1 + 0.0 / 0.0", s.transform(new RankingExpression("1 + (1-1)/(2-2)"), c).toString());
+    }
+
     @Test
     public void testSimplifyComplexExpression() throws ParseException {
         RankingExpression initial = new RankingExpression("sqrt(if (if (INFERRED * 0.9 < INFERRED, GMP, (1 + 1.1) * INFERRED) < INFERRED * INFERRED - INFERRED, if (GMP < 85.80799542793133 * GMP, INFERRED, if (GMP < GMP, tanh(INFERRED), log(76.89956221113943))), tanh(tanh(INFERRED))) * sqrt(sqrt(GMP + INFERRED)) * GMP ) + 13.5 * (1 - GMP) * pow(GMP * 0.1, 2 + 1.1 * 0)");
