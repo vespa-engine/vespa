@@ -123,10 +123,11 @@ public class SessionRepository {
     // ---------------- Local sessions ----------------------------------------------------------------
 
     public synchronized void addLocalSession(LocalSession session) {
-        localSessionCache.put(session.getSessionId(), session);
         long sessionId = session.getSessionId();
-        RemoteSession remoteSession = createRemoteSession(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession);
+        localSessionCache.put(sessionId, session);
+        if (remoteSessionCache.get(sessionId) == null) {
+            createRemoteSession(sessionId);
+        }
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -347,13 +348,10 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         if (sessionZKClient.readStatus().equals(Session.Status.DELETE)) return;
 
-        log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
-        RemoteSession remoteSession = createRemoteSession(sessionId);
-        loadSessionIfActive(remoteSession);
-        addRemoteSession(remoteSession);
+        log.log(Level.FINE, () -> "Adding remote session " + sessionId);
+        createRemoteSession(sessionId);
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession);
     }
 
     void activate(RemoteSession session) {
@@ -463,9 +461,13 @@ public class SessionRepository {
         return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
     }
 
-    public RemoteSession createRemoteSession(long sessionId) {
+    public synchronized RemoteSession createRemoteSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
+        remoteSessionCache.put(sessionId, session);
+        loadSessionIfActive(session);
+        addSessionStateWatcher(sessionId, session);
+        return session;
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
