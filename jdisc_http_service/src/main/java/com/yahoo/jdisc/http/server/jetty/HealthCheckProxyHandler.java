@@ -104,8 +104,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                     }
                 } catch (Exception e) { // Typically timeouts which are reported as SSLHandshakeException
                     String message = String.format("Health check request from port %d to %d failed: %s", localPort, proxyTarget.port, e.getMessage());
-                    log.log(Level.INFO, message);
-                    log.log(Level.FINE, e.toString(), e);
+                    log.log(Level.FINE, message, e);
                     servletResponse.sendError(Response.Status.INTERNAL_SERVER_ERROR, message);
                 }
             } else {
