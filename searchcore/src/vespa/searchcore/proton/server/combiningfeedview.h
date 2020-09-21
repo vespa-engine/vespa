@@ -49,7 +49,7 @@ private:
     }
 
     bool shouldBeReady(const document::BucketId &bucket) const;
-    void forceCommit(search::SerialNum serialNum) override;
+    void forceCommit(search::SerialNum serialNum, DoneCallback onDone) override;
 public:
     typedef std::shared_ptr<CombiningFeedView> SP;
 
