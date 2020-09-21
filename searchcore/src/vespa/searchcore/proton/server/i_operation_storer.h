@@ -19,7 +19,7 @@ struct IOperationStorer
     /**
      * Assign serial number to (if not set) and store the given operation.
      */
-    virtual void storeOperation(const FeedOperation &op, DoneCallback onDone) = 0;
+    virtual void appendOperation(const FeedOperation &op, DoneCallback onDone) = 0;
 };
 
 } // namespace proton
