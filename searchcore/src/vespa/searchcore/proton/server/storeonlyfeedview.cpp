@@ -346,7 +346,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 
 bool
 StoreOnlyFeedView::needCommit() const {
-    return _lidReuseDelayer.getImmediateCommit();
+    return false;
 }
 
 void
