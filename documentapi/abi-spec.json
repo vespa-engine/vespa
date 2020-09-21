@@ -354,6 +354,7 @@
     "methods": [
       "public void <init>(long, boolean)",
       "public boolean wasFound()",
+      "public boolean isSuccess()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
@@ -561,6 +562,7 @@
     "methods": [
       "public void <init>(long, boolean)",
       "public boolean wasFound()",
+      "public boolean isSuccess()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
