@@ -30,6 +30,11 @@
                 <extensions>true</extensions>
             </plugin>
             <plugin>
+                <!-- Only added to make IntelliJ use correct language level -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <executions>
