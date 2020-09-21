@@ -9,20 +9,21 @@ namespace vespalib::eval::packed_mixed_tensor {
 
 /**
  *  Mappings for sparse tensor dimensions.
- *  Each address (conceptually "array of string")
- *  has two indexes: The subspace_index (the
- *  order that addresses were added to a builder),
- *  and the internal_index AKA "sortid", which
- *  indexes into a lexicographically sorted array
- *  of addresses.
- *  (Note: we may want to change this so subspaces
- *  are always sorted by address, making these two
- *  indexes equivalent).
  *
- *  Has various methods for mapping back and forth
- *  between addresses and indexes, and also allows
- *  using the internal label enumerations instead
- *  of working with strings all the time.
+ *  Each address (conceptually "array of string")
+ *  maps to a "subspace" (currently in the
+ *  order that addresses were added to a builder).
+ *
+ *  Internally addresses are lexicographically
+ *  sorted, and you can iterate over them in sort
+ *  order with the fill_*() methods.
+ *  
+ *  (Note: we may want to change this so subspaces
+ *  are always sorted by address, so the "subspace"
+ *  index and the "sortid" index become equivalent).
+ * 
+ *  Allows using the internal label enumerations
+ *  instead of working with strings all the time.
  *
  *  NOTE: Making a copy of PackedMappings will not copy
  *  the underlying data, these must then stay alive
@@ -40,10 +41,11 @@ public:
     int32_t subspace_of_enums(const InternalAddress &address) const;
     int32_t subspace_of_address(const Address &address) const;
 
-    /** returns subspace_index */
+    /** returns "subspace" index */
     uint32_t fill_address_by_sortid(uint32_t sortid, Address &address) const;
     uint32_t fill_enums_by_sortid(uint32_t sortid, InternalAddress &address) const;
 
+    // mapping from label enum to stringref (and vice versa)
     const PackedLabels & label_store() const { return _label_store; }
 private:
     PackedMappings(uint32_t num_dims, uint32_t num_mappings,
