@@ -43,6 +43,8 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
         metricReporter.start();
     }
 
+    int queuedTasks() { return wrapped.getQueue().size(); }
+
     private final void reportMetrics() {
         try {
             while (!closed.get()) {

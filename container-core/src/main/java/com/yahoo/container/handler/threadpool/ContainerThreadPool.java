@@ -49,6 +49,7 @@ public class ContainerThreadPool extends AbstractComponent implements AutoClosea
     }
 
     public Executor executor() { return threadpool; }
+    public int queuedTasks() { return threadpool.queuedTasks(); }
     @Override public void close() { closeInternal(); }
     @Override public void deconstruct() { closeInternal(); super.deconstruct(); }
 

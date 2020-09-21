@@ -2,7 +2,7 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,31 +43,40 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     private final SessionCache sessionCache;
     protected final ReplyHandler feedReplyHandler;
     private final Metric metric;
+    private final ClientFeederV3.HttpThrottlePolicy httpThrottlePolicy;
     private final Object monitor = new Object();
-    private final AtomicInteger threadsAvailableForFeeding;
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
-    public FeedHandlerV3(Executor executor,
+    public FeedHandlerV3(ContainerThreadPool threadpool,
                          Metric metric,
                          AccessLog accessLog,
                          DocumentmanagerConfig documentManagerConfig,
                          SessionCache sessionCache,
-                         ThreadpoolConfig threadpoolConfig,
                          DocumentApiMetrics metricsHelper) {
+        this(threadpool.executor(),
+                () -> threadpool.queuedTasks() > 0,
+                metric,
+                accessLog,
+                documentManagerConfig,
+                sessionCache,
+                metricsHelper);
+    }
+
+    FeedHandlerV3(Executor executor,
+                  ClientFeederV3.HttpThrottlePolicy httpThrottlePolicy,
+                  Metric metric,
+                  AccessLog accessLog,
+                  DocumentmanagerConfig documentManagerConfig,
+                  SessionCache sessionCache,
+                  DocumentApiMetrics metricsHelper) {
         super(executor, accessLog, metric);
+        this.httpThrottlePolicy = httpThrottlePolicy;
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
         cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
         this.metric = metric;
-        // 40% of the threads can be blocking on feeding before we deny requests.
-        if (threadpoolConfig != null) {
-            threadsAvailableForFeeding = new AtomicInteger(Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1));
-        } else {
-            log.warning("No config for threadpool, using 200 for max blocking threads for feeding.");
-            threadsAvailableForFeeding = new AtomicInteger(200);
-        }
     }
 
     public void injectDocumentManangerForTests(DocumentTypeManager docTypeManager) {
@@ -91,7 +99,7 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
                                                               clientId,
                                                               metric,
                                                               feedReplyHandler,
-                                                              threadsAvailableForFeeding));
+                                                              httpThrottlePolicy));
             }
             clientFeederV3 = clientFeederByClientId.get(clientId);
         }

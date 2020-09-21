@@ -2,7 +2,6 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.collections.Tuple2;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -47,11 +46,10 @@ public class FeedHandler extends LoggingRequestHandler {
                        AccessLog accessLog,
                        DocumentmanagerConfig documentManagerConfig,
                        SessionCache sessionCache,
-                       ThreadpoolConfig threadpoolConfig,
-                       MetricReceiver metricReceiver) throws Exception {
+                       MetricReceiver metricReceiver) {
         super(threadpool.executor(), accessLog, metric);
         metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
-        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, accessLog, documentManagerConfig, sessionCache, threadpoolConfig, metricsHelper);
+        feedHandlerV3 = new FeedHandlerV3(threadpool, metric, accessLog, documentManagerConfig, sessionCache, metricsHelper);
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
     }
 
