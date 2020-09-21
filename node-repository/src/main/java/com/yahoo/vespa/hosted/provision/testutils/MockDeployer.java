@@ -150,10 +150,9 @@ public class MockDeployer implements Deployer {
         }
 
         @Override
-        public void activate() {
+        public long activate() {
             if (preparedHosts == null)
                 prepare();
-            redeployments++;
             if (failActivate)
                 throw new IllegalStateException("failActivate is true");
             try (NestedTransaction t = new NestedTransaction()) {
@@ -161,6 +160,7 @@ public class MockDeployer implements Deployer {
                 t.commit();
                 lastDeployTimes.put(application.id, clock.instant());
             }
+            return redeployments++;
         }
 
         @Override
@@ -182,12 +182,12 @@ public class MockDeployer implements Deployer {
         public void prepare() { }
 
         @Override
-        public void activate() {
-            redeployments++;
+        public long activate() {
             lastDeployTimes.put(applicationId, clock.instant());
 
             for (Node node : nodeRepository.list().owner(applicationId).state(Node.State.active).wantToRetire().asList())
                 nodeRepository.write(node.retire(nodeRepository.clock().instant()), nodeRepository.lock(node));
+            return redeployments++;
         }
 
         @Override

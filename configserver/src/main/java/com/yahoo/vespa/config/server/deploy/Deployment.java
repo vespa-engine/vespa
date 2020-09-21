@@ -126,9 +126,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     /** Activates this. If it is not already prepared, this will call prepare first. */
     @Override
-    public void activate() {
-        if ( ! prepared)
-            prepare();
+    public long activate() {
+        prepare();
 
         validateSessionStatus(session);
         ApplicationId applicationId = session.getApplicationId();
@@ -155,6 +154,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 ". Config generation " + session.getMetaData().getGeneration() +
                                 (previousActiveSession != null ? ". Based on session " + previousActiveSession.getSessionId() : "") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
+            return session.getMetaData().getGeneration();
         }
     }
 
