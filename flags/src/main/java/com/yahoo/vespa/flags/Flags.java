@@ -368,6 +368,13 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag USE_CONFIG_SERVER_VIP = defineFeatureFlag(
+            "use-config-server-vip",
+            false,
+            "Whether the controller should use a config server VIP or not",
+            "Takes effect immediately"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
