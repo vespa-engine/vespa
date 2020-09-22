@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -51,7 +50,7 @@ class AutoscalingTester {
     public AutoscalingTester(NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
         this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
-        provisioningTester.deployZoneApp();
+        provisioningTester.activateTenantHosts();
     }
 
     public AutoscalingTester(Zone zone, List<Flavor> flavors) {
@@ -87,14 +86,14 @@ class AutoscalingTester {
         List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.from(new ClusterResources(nodes, groups, resources)));
         for (HostSpec host : hosts)
             makeReady(host.hostname());
-        provisioningTester.deployZoneApp();
+        provisioningTester.activateTenantHosts();
         provisioningTester.activate(application, hosts);
         return hosts;
     }
 
     public void makeReady(String hostname) {
         Node node = nodeRepository().getNode(hostname).get();
-        nodeRepository().write(node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of())), nodeRepository().lock(node));
+        provisioningTester.patchNode(node, (n) -> n.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of())));
         Node host = nodeRepository().getNode(node.parentHostname().get()).get();
         host = host.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
         if (host.state() == Node.State.provisioned)
