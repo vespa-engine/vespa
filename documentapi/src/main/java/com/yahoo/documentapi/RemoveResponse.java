@@ -12,13 +12,17 @@ public class RemoveResponse extends Response {
     private final boolean wasFound;
 
     public RemoveResponse(long requestId, boolean wasFound) {
-        super(requestId);
+        super(requestId, null, wasFound ? Outcome.SUCCESS : Outcome.NOT_FOUND);
         this.wasFound = wasFound;
     }
 
     public boolean wasFound() {
         return wasFound;
     }
+
+    @Override
+    // TODO: fix this when/if NOT_FOUND is no longer a success.
+    public boolean isSuccess() { return super.isSuccess() || outcome() == Outcome.NOT_FOUND; }
 
     @Override
     public int hashCode() {

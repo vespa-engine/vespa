@@ -27,9 +27,9 @@ import com.yahoo.config.subscription.ConfigSubscriber;
  * <p>This class is the factory for creating the four session types mentioned above.</p>
  *
  * <p>There may be multiple implementations of the document api classes. If
- * default configuration is sufficient, use the {@link #createDefault} method to
- * return a running document access. Note that there are running threads within
- * an access object, so you must shut it down when done.</p>
+ * default configuration is sufficient, simply inject a {@code DocumentAccess} to
+ * obtain a running document access. If you instead create a concrete implementation, note that
+ * there are running threads within an access object, so you must shut it down when done.</p>
  *
  * <p>An implementation of the Document Api may support just a subset of the
  * access types defined in this interface. For example, some document
