@@ -29,10 +29,19 @@ using std::runtime_error;
 using std::make_shared;
 
 namespace search::transactionlog {
+namespace {
+
+std::unique_ptr<CommitChunk>
+createCommitChunk(const DomainConfig &cfg) {
+    return std::make_unique<CommitChunk>(cfg.getChunkSizeLimit(), cfg.getChunkSizeLimit()/256);
+}
+
+}
 
 Domain::Domain(const string &domainName, const string & baseDir, Executor & executor,
                const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
     : _config(cfg),
+      _currentChunk(createCommitChunk(cfg)),
       _lastSerial(0),
       _singleCommitter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024)),
       _executor(executor),
