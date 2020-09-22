@@ -200,6 +200,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.flushOnShutdown = flushOnShutdown;
         this.combined = combined;
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
+        visibilityDelay = featureFlags.visibilityDelay();
     }
 
     public void setVisibilityDelay(double delay) {

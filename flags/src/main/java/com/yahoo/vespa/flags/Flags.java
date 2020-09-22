@@ -196,6 +196,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundDoubleFlag VISIBILITY_DELAY = defineDoubleFlag(
+            "visibility-delay", 0.0,
+            "Default visibility-delay",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_DIRECT_STORAGE_API_RPC = defineFeatureFlag(
             "use-direct-storage-api-rpc", false,
             "Whether to use direct RPC for Storage API communication between content cluster nodes.",
