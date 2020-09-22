@@ -20,5 +20,8 @@ vespa_add_executable(searchcore_vespa_spi_feed_bm_app
     searchcore_grouping
     searchcore_proton_metrics
     searchcore_fconfig
+    storageserver_storageapp
+    messagebus_messagebus-test
+    messagebus
     searchlib_searchlib_uca
 )
