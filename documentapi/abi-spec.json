@@ -159,10 +159,10 @@
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.Document)",
       "public void <init>(long, java.lang.String, boolean)",
-      "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public void <init>(long, com.yahoo.document.Document, java.lang.String, boolean)",
       "public void <init>(long, com.yahoo.document.Document, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public com.yahoo.document.Document getDocument()",
+      "public boolean isSuccess()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
