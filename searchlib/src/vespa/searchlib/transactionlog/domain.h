@@ -73,23 +73,24 @@ private:
     using DomainPartList = std::map<SerialNum, DomainPartSP>;
     using DurationSeconds = std::chrono::duration<double>;
 
-    DomainConfig              _config;
-    SerialNum                 _lastSerial;
-    std::unique_ptr<Executor> _singleCommitter;
-    Executor                 &_executor;
-    std::atomic<int>          _sessionId;
-    vespalib::Monitor         _syncMonitor;
-    bool                      _pendingSync;
-    vespalib::string          _name;
-    DomainPartList            _parts;
-    vespalib::Lock            _lock;
-    vespalib::Monitor         _currentChunkMonitor;
-    vespalib::Lock            _sessionLock;
-    SessionList               _sessions;
-    DurationSeconds           _maxSessionRunTime;
-    vespalib::string          _baseDir;
-    const FileHeaderContext  &_fileHeaderContext;
-    bool                      _markedDeleted;
+    DomainConfig                 _config;
+    std::unique_ptr<CommitChunk> _currentChunk;
+    SerialNum                    _lastSerial;
+    std::unique_ptr<Executor>    _singleCommitter;
+    Executor                    &_executor;
+    std::atomic<int>             _sessionId;
+    vespalib::Monitor            _syncMonitor;
+    bool                         _pendingSync;
+    vespalib::string             _name;
+    DomainPartList               _parts;
+    vespalib::Lock               _lock;
+    vespalib::Monitor            _currentChunkMonitor;
+    vespalib::Lock               _sessionLock;
+    SessionList                  _sessions;
+    DurationSeconds              _maxSessionRunTime;
+    vespalib::string             _baseDir;
+    const FileHeaderContext     &_fileHeaderContext;
+    bool                         _markedDeleted;
 };
 
 }
