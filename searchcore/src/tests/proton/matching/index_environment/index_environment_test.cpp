@@ -8,6 +8,7 @@ using namespace proton::matching;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::Properties;
+using search::fef::OnnxModel;
 using search::index::Schema;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
@@ -16,8 +17,8 @@ using SIAF = Schema::ImportedAttributeField;
 
 OnnxModels make_models() {
     OnnxModels::Vector list;
-    list.emplace_back("model1", "path1");
-    list.emplace_back("model2", "path2");
+    list.emplace_back(OnnxModel("model1", "path1").input_feature("input1","feature1").output_name("output1", "out1"));
+    list.emplace_back(OnnxModel("model2", "path2"));
     return OnnxModels(list);
 }
 
@@ -104,10 +105,22 @@ TEST_F("require that imported attribute fields are extracted in index environmen
     EXPECT_EQUAL("[documentmetastore]", f.env.getField(2)->name());
 }
 
-TEST_F("require that onnx model paths can be obtained", Fixture(buildEmptySchema())) {
-    EXPECT_EQUAL(f1.env.getOnnxModelFullPath("model1").value(), vespalib::string("path1"));
-    EXPECT_EQUAL(f1.env.getOnnxModelFullPath("model2").value(), vespalib::string("path2"));
-    EXPECT_FALSE(f1.env.getOnnxModelFullPath("model3").has_value());
+TEST_F("require that onnx model config can be obtained", Fixture(buildEmptySchema())) {
+    {
+        auto model = f1.env.getOnnxModel("model1");
+        ASSERT_TRUE(model != nullptr);
+        EXPECT_EQUAL(model->file_path(), vespalib::string("path1"));
+        EXPECT_EQUAL(model->input_feature("input1").value(), vespalib::string("feature1"));
+        EXPECT_EQUAL(model->output_name("output1").value(), vespalib::string("out1"));
+    }
+    {
+        auto model = f1.env.getOnnxModel("model2");
+        ASSERT_TRUE(model != nullptr);
+        EXPECT_EQUAL(model->file_path(), vespalib::string("path2"));
+        EXPECT_FALSE(model->input_feature("input1").has_value());
+        EXPECT_FALSE(model->output_name("output1").has_value());
+    }
+    EXPECT_TRUE(f1.env.getOnnxModel("model3") == nullptr);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

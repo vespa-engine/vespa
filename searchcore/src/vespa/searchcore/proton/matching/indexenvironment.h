@@ -69,7 +69,7 @@ public:
         return _constantValueRepo.getConstant(name);
     }
 
-    std::optional<vespalib::string> getOnnxModelFullPath(const vespalib::string &name) const override;
+    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const override;
     ~IndexEnvironment() override;
 };
 
