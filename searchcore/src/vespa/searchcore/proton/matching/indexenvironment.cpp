@@ -131,13 +131,10 @@ IndexEnvironment::hintFieldAccess(uint32_t ) const { }
 void
 IndexEnvironment::hintAttributeAccess(const string &) const { }
 
-std::optional<vespalib::string>
-IndexEnvironment::getOnnxModelFullPath(const vespalib::string &name) const
+const search::fef::OnnxModel *
+IndexEnvironment::getOnnxModel(const vespalib::string &name) const
 {
-    if (const auto model = _onnxModels.getModel(name)) {
-        return model->filePath;
-    }
-    return std::nullopt;
+    return _onnxModels.getModel(name);
 }
 
 IndexEnvironment::~IndexEnvironment() = default;

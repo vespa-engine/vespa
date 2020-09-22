@@ -58,8 +58,8 @@ struct OnnxFeatureTest : ::testing::Test {
         vespalib::string expr_name = feature_name + ".rankingScript";
         indexEnv.getProperties().add(expr_name, expr);
     }
-    void add_onnx(const vespalib::string &name, const vespalib::string &file) {
-        indexEnv.addOnnxModel(name, file);
+    void add_onnx(const OnnxModel &model) {
+        indexEnv.addOnnxModel(model);
     }
     void compile(const vespalib::string &seed) {
         resolver->addSeed(seed);
@@ -89,7 +89,7 @@ TEST_F(OnnxFeatureTest, simple_onnx_model_can_be_calculated) {
     add_expr("query_tensor", "tensor<float>(a[1],b[4]):[[docid,2,3,4]]");
     add_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     add_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
-    add_onnx("simple", simple_model);
+    add_onnx(OnnxModel("simple", simple_model));
     compile(onnx_feature("simple"));
     EXPECT_EQ(get(1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get("onnxModel(simple).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
@@ -101,7 +101,7 @@ TEST_F(OnnxFeatureTest, dynamic_onnx_model_can_be_calculated) {
     add_expr("query_tensor", "tensor<float>(a[1],b[4]):[[docid,2,3,4]]");
     add_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     add_expr("bias_tensor", "tensor<float>(a[1],b[2]):[[4,5]]");
-    add_onnx("dynamic", dynamic_model);
+    add_onnx(OnnxModel("dynamic", dynamic_model));
     compile(onnx_feature("dynamic"));
     EXPECT_EQ(get(1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get("onnxModel(dynamic).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
@@ -112,13 +112,29 @@ TEST_F(OnnxFeatureTest, dynamic_onnx_model_can_be_calculated) {
 TEST_F(OnnxFeatureTest, strange_input_and_output_names_are_normalized) {
     add_expr("input_0", "tensor<float>(a[2]):[10,20]");
     add_expr("input_1", "tensor<float>(a[2]):[5,10]");
-    add_onnx("strange_names", strange_names_model);
+    add_onnx(OnnxModel("strange_names", strange_names_model));
     compile(onnx_feature("strange_names"));
     auto expect_add = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},15).add({{"d0",1}},30);
     auto expect_sub = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},5).add({{"d0",1}},10);
     EXPECT_EQ(get(1), expect_add);
     EXPECT_EQ(get("onnxModel(strange_names).foo_bar", 1), expect_add);
     EXPECT_EQ(get("onnxModel(strange_names)._baz_0", 1), expect_sub);
+}
+
+TEST_F(OnnxFeatureTest, input_features_and_output_names_can_be_specified) {
+    add_expr("my_first_input", "tensor<float>(a[2]):[10,20]");
+    add_expr("my_second_input", "tensor<float>(a[2]):[5,10]");
+    add_onnx(OnnxModel("custom_names", strange_names_model)
+             .input_feature("input:0", "rankingExpression(my_first_input)")
+             .input_feature("input/1", "rankingExpression(my_second_input)")
+             .output_name("foo/bar", "my_first_output")
+             .output_name("-baz:0", "my_second_output"));
+    compile(onnx_feature("custom_names"));
+    auto expect_add = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},15).add({{"d0",1}},30);
+    auto expect_sub = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},5).add({{"d0",1}},10);
+    EXPECT_EQ(get(1), expect_add);
+    EXPECT_EQ(get("onnxModel(custom_names).my_first_output", 1), expect_add);
+    EXPECT_EQ(get("onnxModel(custom_names).my_second_output", 1), expect_sub);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
