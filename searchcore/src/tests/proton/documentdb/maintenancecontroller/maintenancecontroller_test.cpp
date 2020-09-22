@@ -235,6 +235,9 @@ public:
 
     // Implements IOperationStorer
     void appendOperation(const FeedOperation &op, DoneCallback) override;
+    CommitResult startCommit(DoneCallback) override {
+        return CommitResult();
+    }
 
     uint32_t getHeartBeats() const {
         return _heartBeats;

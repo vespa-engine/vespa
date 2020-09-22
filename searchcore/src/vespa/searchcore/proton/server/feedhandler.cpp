@@ -58,17 +58,20 @@ class TlsMgrWriter : public TlsWriter {
     std::shared_ptr<search::transactionlog::Writer> _writer;
 public:
     TlsMgrWriter(TransactionLogManager &tls_mgr,
-                 const search::transactionlog::WriterFactory & factory) :
-            _tls_mgr(tls_mgr),
-            _writer(factory.getWriter(tls_mgr.getDomainName()))
+                 const search::transactionlog::WriterFactory & factory)
+        : _tls_mgr(tls_mgr),
+          _writer(factory.getWriter(tls_mgr.getDomainName()))
     { }
     void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
+    [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override {
+        return _writer->startCommit(std::move(onDone));
+    }
     bool erase(SerialNum oldest_to_keep) override;
     SerialNum sync(SerialNum syncTo) override;
 };
 
-
-void TlsMgrWriter::appendOperation(const FeedOperation &op, DoneCallback onDone) {
+void
+TlsMgrWriter::appendOperation(const FeedOperation &op, DoneCallback onDone) {
     using Packet = search::transactionlog::Packet;
     vespalib::nbostream stream;
     op.serialize(stream);
@@ -77,9 +80,11 @@ void TlsMgrWriter::appendOperation(const FeedOperation &op, DoneCallback onDone)
     Packet::Entry entry(op.getSerialNum(), op.getType(), vespalib::ConstBufferRef(stream.data(), stream.size()));
     Packet packet(entry.serializedSize());
     packet.add(entry);
-    _writer->commit(packet, std::move(onDone));
+    _writer->append(packet, std::move(onDone));
 }
-bool TlsMgrWriter::erase(SerialNum oldest_to_keep) {
+
+bool
+TlsMgrWriter::erase(SerialNum oldest_to_keep) {
     return _tls_mgr.getSession()->erase(oldest_to_keep);
 }
 
@@ -104,6 +109,24 @@ TlsMgrWriter::sync(SerialNum syncTo)
     throw IllegalStateException(make_string("Failed to sync TLS to token %" PRIu64 ".", syncTo));
 }
 
+class OnCommitDone : public search::IDestructorCallback {
+public:
+    OnCommitDone(Executor & executor, std::unique_ptr<Executor::Task> task)
+        : _executor(executor),
+          _task(std::move(task))
+    {}
+    ~OnCommitDone() override { _executor.execute(std::move(_task)); }
+private:
+    Executor & _executor;
+    std::unique_ptr<Executor::Task> _task;
+};
+
+template <typename T>
+struct KeepAlive : public search::IDestructorCallback {
+    explicit KeepAlive(T toKeep) : _toKeep(std::move(toKeep)) { }
+    ~KeepAlive() override = default;
+    T _toKeep;
+};
 }  // namespace
 
 void
@@ -477,6 +500,11 @@ FeedHandler::appendOperation(const FeedOperation &op, TlsWriter::DoneCallback on
         const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
     }
     _tlsWriter->appendOperation(op, std::move(onDone));
+}
+
+FeedHandler::CommitResult
+FeedHandler::startCommit(DoneCallback onDone) {
+    return _tlsWriter->startCommit(std::move(onDone));
 }
 
 void

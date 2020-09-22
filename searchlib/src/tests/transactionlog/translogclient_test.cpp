@@ -329,11 +329,12 @@ fillDomainTest(TransLogServer & s1, const vespalib::string & domain, size_t numP
             Packet::Entry e(value+1, j+1, vespalib::ConstBufferRef((const char *)&value, sizeof(value)));
             p->add(e);
             if ( p->sizeBytes() > DEFAULT_PACKET_SIZE ) {
-                domainWriter->commit(*p, std::make_shared<CountDone>(inFlight));
+                domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
                 p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
             }
         }
-        domainWriter->commit(*p, std::make_shared<CountDone>(inFlight));
+        domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
+        auto keep = domainWriter->startCommit(Writer::DoneCallback());
         LOG(info, "Inflight %ld", inFlight.load());
     }
     while (inFlight.load() != 0) {

@@ -3,40 +3,22 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib
-{
-
-class GenericHeader;
-
+namespace vespalib {
+    class GenericHeader;
 }
 
-namespace search
-{
-
-namespace common
-{
+namespace search::common {
 
 class FileHeaderContext
 {
 public:
     FileHeaderContext();
+    virtual ~FileHeaderContext();
 
-    virtual
-    ~FileHeaderContext();
+    virtual void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const = 0;
 
-    virtual void
-    addTags(vespalib::GenericHeader &header,
-            const vespalib::string &name) const = 0;
-
-    static void
-    addCreateAndFreezeTime(vespalib::GenericHeader &header);
-
-    static void
-    setFreezeTime(vespalib::GenericHeader &header);
+    static void addCreateAndFreezeTime(vespalib::GenericHeader &header);
+    static void setFreezeTime(vespalib::GenericHeader &header);
 };
 
-
-} // namespace common
-
-} // namespace search
-
+}
