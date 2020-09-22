@@ -376,9 +376,9 @@ Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorG
 
 void
 Domain::doCommit(std::unique_ptr<CommitChunk> chunk) {
-    if (chunk->empty()) return;
-
     const Packet & packet = chunk->getPacket();
+    if (packet.empty()) return;
+    
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
