@@ -54,7 +54,14 @@ public class VespaTestRuntime implements TestRuntime {
 
     private static TestConfig configFromPropertyOrController() {
         String configPath = System.getProperty("vespa.test.config");
-        return configPath != null ? fromFile(configPath) : fromController();
+        if (configPath != null) {
+            System.out.println("TestRuntime: Using test config from " + configPath);
+            return fromFile(configPath);
+        }
+        else {
+            System.out.println("TestRuntime: Using test config from Vespa Cloud");
+            return fromController();
+        }
     }
 
     private static TestConfig fromFile(String path) {
@@ -76,6 +83,8 @@ public class VespaTestRuntime implements TestRuntime {
         Environment environment = Properties.environment().orElse(Environment.dev);
         ZoneId zone = Properties.region().map(region -> ZoneId.from(environment, region))
                 .orElseGet(() -> controller.defaultZone(environment));
+        System.out.println("TestRuntime: Requesting endpoint config for tenant.application.instance: " + id.toFullString());
+        System.out.println("TestRuntime: Zone: " + zone.toString());
         return controller.testConfig(id, zone);
     }
 }
