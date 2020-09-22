@@ -573,7 +573,7 @@ TransLogServer::domainCommit(FRT_RPCRequest *req)
         try {
             vespalib::Gate gate;
             domain->append(packet, make_shared<GateCallback>(gate));
-            domain->startCommit(make_shared<IgnoreCallback>());
+            auto keep = domain->startCommit(make_shared<IgnoreCallback>());
             gate.await();
             ret.AddInt32(0);
             ret.AddString("ok");

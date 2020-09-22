@@ -63,7 +63,7 @@ public:
           _writer(factory.getWriter(tls_mgr.getDomainName()))
     { }
     void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
-    CommitResult startCommit(DoneCallback onDone) override {
+    [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override {
         return _writer->startCommit(std::move(onDone));
     }
     bool erase(SerialNum oldest_to_keep) override;

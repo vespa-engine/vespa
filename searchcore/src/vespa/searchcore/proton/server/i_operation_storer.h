@@ -21,11 +21,7 @@ struct IOperationStorer
      * Assign serial number to (if not set) and store the given operation.
      */
     virtual void appendOperation(const FeedOperation &op, DoneCallback onDone) = 0;
-    void storeOperation(const FeedOperation &op, DoneCallback onDone) {
-        appendOperation(op, onDone);
-        startCommit(std::move(onDone));
-    }
-    virtual CommitResult startCommit(DoneCallback onDone) = 0;
+    [[nodiscard]] virtual CommitResult startCommit(DoneCallback onDone) = 0;
 };
 
 } // namespace proton

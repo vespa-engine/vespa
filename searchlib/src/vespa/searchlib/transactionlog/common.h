@@ -16,7 +16,7 @@ class SerialNumRange
 {
 public:
     SerialNumRange() : _from(0), _to(0) { }
-    SerialNumRange(SerialNum f) : _from(f), _to(f ? f-1 : f) { }
+    explicit SerialNumRange(SerialNum f) : _from(f), _to(f ? f-1 : f) { }
     SerialNumRange(SerialNum f, SerialNum t) : _from(f), _to(t) { }
     bool operator == (const SerialNumRange & b) const { return cmp(b) == 0; }
     bool operator <  (const SerialNumRange & b) const { return cmp(b) < 0; }
@@ -63,7 +63,7 @@ public:
         vespalib::ConstBufferRef _data;
     };
 public:
-    Packet(size_t reserved) : _count(0), _range(), _buf(reserved) { }
+    explicit Packet(size_t reserved) : _count(0), _range(), _buf(reserved) { }
     Packet(const void * buf, size_t sz);
     void add(const Entry & data);
     void clear() { _buf.clear(); _count = 0; _range.from(0); _range.to(0); }
@@ -101,7 +101,7 @@ public:
     };
     virtual ~Writer() = default;
     virtual void append(const Packet & packet, DoneCallback done) = 0;
-    virtual CommitResult startCommit(DoneCallback onDone) = 0;
+    [[nodiscard]] virtual CommitResult startCommit(DoneCallback onDone) = 0;
 };
 
 class WriterFactory {

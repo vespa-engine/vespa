@@ -226,7 +226,7 @@ public:
     void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
     void syncTls(SerialNum syncTo);
     void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
-    CommitResult startCommit(DoneCallback onDone) override;
+    [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override;
     void storeOperationSync(const FeedOperation & op);
     void considerDelayedPrune();
 };
