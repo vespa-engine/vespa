@@ -84,6 +84,9 @@ public interface ModelContext {
         boolean skipCommunicationManagerThread();
         boolean skipMbusRequestThread();
         boolean skipMbusReplyThread();
+        boolean tlsUseFSync();
+        String tlsCompressionType();
+        double visibilityDelay();
 
         boolean useContentNodeBtreeDb();
 

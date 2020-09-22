@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A node with additional information required to prioritize it for allocation.
+ * A node candidate containing the details required to prioritize it for allocation. This is immutable.
  *
  * @author smorgrav
  */
-class PrioritizableNode implements Comparable<PrioritizableNode> {
+class NodeCandidate implements Comparable<NodeCandidate> {
 
     /** List of host states ordered by preference (ascending) */
     private static final List<Node.State> HOST_STATE_PRIORITY =
@@ -21,8 +21,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     private static final NodeResources zeroResources =
             new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
-    // TODO: Make immutable
-    Node node;
+    final Node node;
 
     /** The free capacity on the parent of this node, before adding this node to it */
     private final NodeResources freeParentCapacity;
@@ -42,7 +41,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** This node can be resized to the new NodeResources */
     final boolean isResizable;
 
-    PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
+    NodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
         if (isResizeable && isNewNode)
             throw new IllegalArgumentException("A new node cannot be resizable");
 
@@ -56,12 +55,12 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     }
 
     /**
-     * Compares two prioritizable nodes
+     * Compare this candidate to another
      *
      * @return negative if first priority is higher than second node
      */
     @Override
-    public int compareTo(PrioritizableNode other) {
+    public int compareTo(NodeCandidate other) {
         // First always pick nodes without violation above nodes with violations
         if (!this.violatesSpares && other.violatesSpares) return -1;
         if (!other.violatesSpares && this.violatesSpares) return 1;
@@ -138,7 +137,12 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** Returns the allocation skew of the parent of this after adding this node to it */
     double skewWithThis() { return skewWith(node.resources()); }
 
-    private boolean lessThanHalfTheHost(PrioritizableNode node) {
+    /** Returns a copy of this with node set to given value */
+    NodeCandidate withNode(Node node) {
+        return new NodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
+    }
+
+    private boolean lessThanHalfTheHost(NodeCandidate node) {
         var n = node.node.resources();
         var h = node.parent.get().resources();
         if (h.vcpu()     < n.vcpu()     * 2) return false;
@@ -172,8 +176,8 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
-        if ( ! (other instanceof PrioritizableNode)) return false;
-        return this.node.equals(((PrioritizableNode)other).node);
+        if ( ! (other instanceof NodeCandidate)) return false;
+        return this.node.equals(((NodeCandidate)other).node);
     }
 
     static class Builder {
@@ -222,8 +226,8 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
             return this;
         }
         
-        PrioritizableNode build() {
-            return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
+        NodeCandidate build() {
+            return new NodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
         }
     }
 

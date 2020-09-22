@@ -3,6 +3,8 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchlib/fef/onnx_model.h>
+#include <vespa/searchcore/config/config-onnx-models.h>
 #include <map>
 #include <vector>
 
@@ -14,16 +16,8 @@ namespace proton::matching {
  */
 class OnnxModels {
 public:
-    struct Model {
-        vespalib::string name;
-        vespalib::string filePath;
-
-        Model(const vespalib::string &name_in,
-              const vespalib::string &filePath_in);
-        ~Model();
-        bool operator==(const Model &rhs) const;
-    };
-
+    using ModelConfig = vespa::config::search::core::OnnxModelsConfig::Model;
+    using Model = search::fef::OnnxModel;
     using Vector = std::vector<Model>;
 
 private:
@@ -38,6 +32,7 @@ public:
     bool operator==(const OnnxModels &rhs) const;
     const Model *getModel(const vespalib::string &name) const;
     size_t size() const { return _models.size(); }
+    static void configure(const ModelConfig &config, Model &model);
 };
 
 }

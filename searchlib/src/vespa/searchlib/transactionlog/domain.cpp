@@ -25,17 +25,25 @@ using vespalib::makeClosure;
 using vespalib::makeLambdaTask;
 using vespalib::Monitor;
 using vespalib::MonitorGuard;
-using search::common::FileHeaderContext;
 using std::runtime_error;
 using std::make_shared;
 
 namespace search::transactionlog {
+namespace {
+
+std::unique_ptr<CommitChunk>
+createCommitChunk(const DomainConfig &cfg) {
+    return std::make_unique<CommitChunk>(cfg.getChunkSizeLimit(), cfg.getChunkSizeLimit()/256);
+}
+
+}
 
 Domain::Domain(const string &domainName, const string & baseDir, Executor & executor,
                const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
     : _config(cfg),
+      _currentChunk(createCommitChunk(cfg)),
       _lastSerial(0),
-      _singleCommiter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128*1024)),
+      _singleCommitter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024)),
       _executor(executor),
       _sessionId(1),
       _syncMonitor(),
@@ -310,8 +318,14 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
     return dp;
 }
 
+Domain::CommitResult
+Domain::startCommit(DoneCallback onDone) {
+    (void) onDone;
+    return CommitResult();
+}
+
 void
-Domain::commit(const Packet & packet, Writer::DoneCallback onDone)
+Domain::append(const Packet & packet, Writer::DoneCallback onDone)
 {
     (void) onDone;
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());

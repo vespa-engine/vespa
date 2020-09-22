@@ -261,8 +261,13 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                            modelName,
                            flavorFromSlime(inspector),
                            reservedToFromSlime(inspector.field("reservedTo")),
-                           nodeTypeFromSlime(inspector.field("type"))
-        );
+                           nodeTypeFromSlime(inspector.field("type")),
+                           switchHostnameFromSlime(inspector.field("switchHostname")));
+    }
+
+    private Optional<String> switchHostnameFromSlime(Inspector field) {
+        if (!field.valid()) return Optional.empty();
+        return Optional.of(field.asString());
     }
 
     private Flavor flavorFromSlime(Inspector inspector) {

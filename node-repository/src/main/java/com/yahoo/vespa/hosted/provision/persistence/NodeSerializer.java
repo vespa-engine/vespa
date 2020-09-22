@@ -79,6 +79,7 @@ public class NodeSerializer {
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
     private static final String reservedToKey = "reservedTo";
+    private static final String switchHostnameKey = "switchHostname";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -143,6 +144,7 @@ public class NodeSerializer {
         node.status().osVersion().current().ifPresent(version -> object.setString(osVersionKey, version.toString()));
         node.status().osVersion().wanted().ifPresent(version -> object.setString(wantedOsVersionKey, version.toFullString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
+        node.switchHostname().ifPresent(switchHostname -> object.setString(switchHostnameKey, switchHostname));
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
@@ -212,7 +214,8 @@ public class NodeSerializer {
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
                         modelNameFromSlime(object),
-                        reservedToFromSlime(object.field(reservedToKey)));
+                        reservedToFromSlime(object.field(reservedToKey)),
+                        switchHostnameFromSlime(object.field(switchHostnameKey)));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -225,6 +228,11 @@ public class NodeSerializer {
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
                                         versionFromSlime(object.field(wantedOsVersionKey))),
                           instantFromSlime(object.field(firmwareCheckKey)));
+    }
+
+    private Optional<String> switchHostnameFromSlime(Inspector field) {
+        if (!field.valid()) return Optional.empty();
+        return Optional.of(field.asString());
     }
 
     private Flavor flavorFromSlime(Inspector object) {

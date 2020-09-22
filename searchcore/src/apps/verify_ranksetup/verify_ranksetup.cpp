@@ -59,6 +59,7 @@ OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupC
     for (const auto &entry: modelsCfg.model) {
         if (auto file = get_file(entry.fileref, myCfg)) {
             model_list.emplace_back(entry.name, file.value());
+            OnnxModels::configure(entry, model_list.back());
         } else {
             LOG(warning, "could not find file for onnx model '%s' (ref:'%s')\n",
                 entry.name.c_str(), entry.fileref.c_str());

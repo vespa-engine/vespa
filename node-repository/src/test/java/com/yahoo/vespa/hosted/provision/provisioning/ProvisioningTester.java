@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -139,7 +140,22 @@ public class ProvisioningTester {
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return NodeList.copyOf(nodeRepository.getNodes(id, inState)); }
 
-    public void patchNode(Node node) { nodeRepository.write(node, () -> {}); }
+    public Node patchNode(Node node, UnaryOperator<Node> patcher) {
+        return patchNodes(List.of(node), patcher).get(0);
+    }
+
+    public List<Node> patchNodes(List<Node> nodes, UnaryOperator<Node> patcher) {
+        List<Node> updated = new ArrayList<>();
+        for (var node : nodes) {
+            try (var lock = nodeRepository.lock(node)) {
+                node = nodeRepository.getNode(node.hostname()).get();
+                node = patcher.apply(node);
+                nodeRepository.write(node, lock);
+                updated.add(node);
+            }
+        }
+        return updated;
+    }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, NodeResources resources) {
         return prepare(application, cluster, nodeCount, groups, false, resources);
@@ -320,7 +336,7 @@ public class ProvisioningTester {
         return makeReadyNodes(n, flavor, NodeType.tenant);
     }
 
-    /** Call deployZoneApp() after this before deploying applications */
+    /** Call {@link this#activateTenantHosts()} after this before deploying applications */
     public ProvisioningTester makeReadyHosts(int n, NodeResources resources) {
         makeReadyNodes(n, resources, NodeType.host, 5);
         return this;
@@ -494,7 +510,7 @@ public class ProvisioningTester {
         return nodes;
     }
 
-    public void deployZoneApp() {
+    public void activateTenantHosts() {
         ApplicationId applicationId = makeApplicationId();
         List<HostSpec> list = prepare(applicationId,
                                       ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),

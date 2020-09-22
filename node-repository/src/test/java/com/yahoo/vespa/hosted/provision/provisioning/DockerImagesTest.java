@@ -27,7 +27,7 @@ public class DockerImagesTest {
         // Host uses tenant default image (for preload purposes)
         var defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
         var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
         for (var host : hosts) {
             assertEquals(defaultImage, tester.nodeRepository().dockerImages().dockerImageFor(host.type()));
         }

@@ -44,8 +44,9 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
         // get the dreaded thread locals initialized even if they will never run.
         // That counters what we we want to achieve with the Q that will prefer thread locality.
         executor.prestartAllCoreThreads();
-        threadpool = new ExecutorServiceWrapper(executor, threadPoolMetric, processTerminator,
-                config.maxThreadExecutionTimeSeconds() * 1000L);
+        threadpool = new ExecutorServiceWrapper(
+                executor, threadPoolMetric, processTerminator, config.maxThreadExecutionTimeSeconds() * 1000L,
+                config.name(), config.queueSize());
     }
 
     @Override public Executor executor() { return threadpool; }
