@@ -83,7 +83,7 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
             if ( ! deployment.isValid()) return false; // this will be done at another config server
             if ( ! canDeployNow(application)) return false; // redeployment is no longer needed
             log.log(Level.INFO, application + " will be deployed, last deploy time " + getLastDeployTime(application));
-            return deployment.activate();
+            return deployment.activate().isPresent();
         } finally {
             pendingDeployments.remove(application);
         }
