@@ -341,7 +341,6 @@ Domain::startCommit(DoneCallback onDone) {
     vespalib::MonitorGuard guard(_currentChunkMonitor);
     if ( !_currentChunk->empty() ) {
         auto completed = grabCurrentChunk(guard);
-        assert(completed);
         completed->setCommitDoneCallback(std::move(onDone));
         CommitResult result(completed->createCommitResult());
         commitChunk(std::move(completed), guard);
@@ -355,9 +354,7 @@ Domain::commitIfFull(const vespalib::MonitorGuard &guard) {
     if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
         auto completed = std::move(_currentChunk);
         _currentChunk = std::make_unique<CommitChunk>(_config.getChunkSizeLimit(), completed->stealCallbacks());
-        if (completed) {
-            commitChunk(std::move(completed), guard);
-        }
+        commitChunk(std::move(completed), guard);
     }
 }
 
@@ -369,20 +366,18 @@ Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
     return chunk;
 }
 
-bool
+void
 Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard) {
     assert(chunkOrderGuard.monitors(_currentChunkMonitor));
-    if ( ! chunk->getPacket().empty()) {
-        _singleCommitter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
-            doCommit(std::move(chunk));
-        }));
-        return true;
-    }
-    return false;
+    _singleCommitter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
+        doCommit(std::move(chunk));
+    }));
 }
 
 void
 Domain::doCommit(std::unique_ptr<CommitChunk> chunk) {
+    if (chunk->empty()) return;
+
     const Packet & packet = chunk->getPacket();
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;

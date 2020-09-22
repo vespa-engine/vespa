@@ -59,7 +59,7 @@ private:
     void commitIfFull(const vespalib::MonitorGuard & guard);
 
     std::unique_ptr<CommitChunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
-    bool commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
+    void commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
     void doCommit(std::unique_ptr<CommitChunk> chunk);
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;
