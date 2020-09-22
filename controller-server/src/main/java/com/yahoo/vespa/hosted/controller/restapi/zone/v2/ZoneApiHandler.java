@@ -11,6 +11,8 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -33,12 +35,14 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
 
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
+    private final BooleanFlag useConfigServerVip;
 
     public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry,
                           ConfigServerRestExecutor proxy, Controller controller) {
         super(parentCtx, controller.auditLogger());
         this.zoneRegistry = serviceRegistry.zoneRegistry();
         this.proxy = proxy;
+        this.useConfigServerVip = Flags.USE_CONFIG_SERVER_VIP.bindTo(controller.flagSource());
     }
 
     @Override
@@ -108,8 +112,8 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     }
 
     private ProxyRequest proxyRequest(ZoneId zoneId, String path, HttpRequest request) {
-        // TODO: Use config server VIP for all zones that have one
-        if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
+        // TODO: Still need to hardcode AWS since flag cannot be set until flag has been rolled out
+        if (zoneId.region().value().startsWith("aws-") || useConfigServerVip.value()) {
             return ProxyRequest.tryOne(zoneRegistry.getConfigServerVipUri(zoneId), path, request);
         }
         return ProxyRequest.tryAll(zoneRegistry.getConfigServerUris(zoneId), path, request);
