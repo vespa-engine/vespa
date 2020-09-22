@@ -41,6 +41,7 @@ public class TestProperties implements ModelContext.Properties {
     private double defaultTermwiseLimit = 1.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
+    private double visibilityDelay = 0.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
     private String responseSequencerType = "ADAPTIVE";
@@ -83,6 +84,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
     @Override public Quota quota() { return quota; }
+    @Override public double visibilityDelay() { return visibilityDelay; }
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
@@ -136,6 +138,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setHostedVespa(boolean hostedVespa) {
         this.hostedVespa = hostedVespa;
+        return this;
+    }
+
+    public TestProperties setVisibilityDelay(double visibilityDelay) {
+        this.visibilityDelay = visibilityDelay;
         return this;
     }
 

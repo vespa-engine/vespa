@@ -84,6 +84,7 @@ public interface ModelContext {
         boolean skipCommunicationManagerThread();
         boolean skipMbusRequestThread();
         boolean skipMbusReplyThread();
+        double visibilityDelay();
 
         boolean useContentNodeBtreeDb();
 
