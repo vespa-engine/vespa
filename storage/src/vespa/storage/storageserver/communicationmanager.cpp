@@ -581,7 +581,7 @@ CommunicationManager::sendCommand(
             auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);
 
             cmd->setContext(mbus::Context(msg->getMsgId()));
-            cmd->setRetryEnabled(address.retryEnabled());
+            cmd->setRetryEnabled(false);
             cmd->setTimeRemaining(msg->getTimeout());
             cmd->setTrace(msg->getTrace());
             sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
@@ -597,7 +597,7 @@ CommunicationManager::sendCommand(
         if (mbusMsg) {
             MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converted OK");
             mbusMsg->setTrace(msg->getTrace());
-            mbusMsg->setRetryEnabled(address.retryEnabled());
+            mbusMsg->setRetryEnabled(false);
 
             {
                 vespalib::LockGuard lock(_messageBusSentLock);

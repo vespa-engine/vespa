@@ -1,5 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(storageapi_testmessageapi INTERFACE
+vespa_add_library(storageapi_testmessageapi
     SOURCES
+    storage_message_address_test.cpp
     DEPENDS
+    storageapi
+    GTest::GTest
 )
