@@ -87,6 +87,7 @@ public class Response {
         int UNPROCESSABLE_ENTITY = 422;
         int LOCKED = 423;
         int FAILED_DEPENDENCY = 424;
+        int TOO_MANY_REQUESTS = 429;
 
         /** 5xx: Server Error - The server failed to fulfill an apparently valid request. */
         int INTERNAL_SERVER_ERROR = 500;

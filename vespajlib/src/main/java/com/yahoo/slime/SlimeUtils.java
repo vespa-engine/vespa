@@ -94,8 +94,12 @@ public class SlimeUtils {
     }
 
     public static byte[] toJsonBytes(Slime slime) throws IOException {
+        return toJsonBytes(slime.get());
+    }
+
+    public static byte[] toJsonBytes(Inspector inspector) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new JsonFormat(true).encode(baos, slime);
+        new JsonFormat(true).encode(baos, inspector);
         return baos.toByteArray();
     }
 

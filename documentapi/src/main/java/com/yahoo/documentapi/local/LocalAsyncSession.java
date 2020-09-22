@@ -61,7 +61,7 @@ public class LocalAsyncSession implements AsyncSession {
         long req = getNextRequestId();
         try {
             syncSession.put(documentPut, pri);
-            addResponse(new DocumentResponse(req));
+            addResponse(new DocumentResponse(req, documentPut.getDocument()));
         } catch (Exception e) {
             addResponse(new DocumentResponse(req, documentPut.getDocument(), e.getMessage(), Response.Outcome.ERROR));
         }
@@ -85,7 +85,7 @@ public class LocalAsyncSession implements AsyncSession {
         try {
             addResponse(new DocumentResponse(req, syncSession.get(id)));
         } catch (Exception e) {
-            addResponse(new DocumentResponse(req, e.getMessage(), Response.Outcome.ERROR));
+            addResponse(new DocumentResponse(req, null, e.getMessage(), Response.Outcome.ERROR));
         }
         return new Result(req);
     }

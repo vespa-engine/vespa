@@ -299,6 +299,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             default:
                 return new Response(reqId);
         }
+        // TODO jonmv: Why on earth is this relevant!?
         Message msg = reply.getMessage();
         switch (msg.getType()) {
             case DocumentProtocol.MESSAGE_PUTDOCUMENT:
