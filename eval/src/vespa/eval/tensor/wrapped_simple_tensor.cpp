@@ -41,7 +41,7 @@ WrappedSimpleTensor::accept(TensorVisitor &visitor) const
 {
     TensorAddressBuilder addr;
     const auto &dimensions = _tensor.type().dimensions();
-    for (const auto &cell: _tensor.cells()) {
+    for (const auto &cell: _tensor.my_cells()) {
         addr.clear();
         for (size_t i = 0; i < dimensions.size(); ++i) {
             if (dimensions[i].is_indexed()) {
@@ -70,7 +70,7 @@ WrappedSimpleTensor::get_memory_usage() const
 Tensor::UP
 WrappedSimpleTensor::clone() const
 {
-    auto tensor = std::make_unique<eval::SimpleTensor>(_tensor.type(), _tensor.cells());
+    auto tensor = std::make_unique<eval::SimpleTensor>(_tensor.type(), _tensor.my_cells());
     return std::make_unique<WrappedSimpleTensor>(std::move(tensor));
 }
 

@@ -138,7 +138,7 @@ TEST_F(MappingsBuilderTest, some_random)
 class MixedBuilderTest : public ::testing::Test {
 public:
     std::unique_ptr<PackedMixedBuilder<float>> builder;
-    std::unique_ptr<NewValue> built;
+    std::unique_ptr<Value> built;
 
     MixedBuilderTest() = default;
 

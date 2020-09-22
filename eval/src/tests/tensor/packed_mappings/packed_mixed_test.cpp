@@ -26,8 +26,8 @@ std::vector<Layout> layouts = {
 TEST(PackedMixedTest, packed_mixed_tensors_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         TensorSpec expect = spec(layout, N());
-        std::unique_ptr<NewValue> value = new_value_from_spec(expect, PackedMixedFactory());
-        TensorSpec actual = spec_from_new_value(*value);
+        std::unique_ptr<Value> value = value_from_spec(expect, PackedMixedFactory());
+        TensorSpec actual = spec_from_value(*value);
         EXPECT_EQ(actual, expect);
     }
 }
@@ -47,7 +47,7 @@ TEST(PackedMixedTest, packed_mixed_tensors_can_be_built_and_inspected) {
         }
         seq += 100.0;
     }
-    std::unique_ptr<NewValue> value = builder->build(std::move(builder));
+    std::unique_ptr<Value> value = builder->build(std::move(builder));
     EXPECT_EQ(value->index().size(), 6);
     auto view = value->index().create_view({0});
     vespalib::stringref query = "b";

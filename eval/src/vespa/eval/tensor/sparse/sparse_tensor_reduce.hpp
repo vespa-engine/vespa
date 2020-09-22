@@ -12,8 +12,8 @@ std::unique_ptr<Tensor>
 reduceAll(const SparseTensor &tensor,
           DirectSparseTensorBuilder &builder, Function &&func)
 {
-    auto itr = tensor.cells().begin();
-    auto itrEnd = tensor.cells().end();
+    auto itr = tensor.my_cells().begin();
+    auto itrEnd = tensor.my_cells().end();
     double result = 0.0;
     if (itr != itrEnd) {
         result = itr->second;
@@ -47,8 +47,8 @@ reduce(const SparseTensor &tensor,
         return reduceAll(tensor, builder, func);
     }
     TensorAddressReducer addressReducer(tensor.fast_type(), dimensions);
-    builder.reserve(tensor.cells().size()*2);
-    for (const auto &cell : tensor.cells()) {
+    builder.reserve(tensor.my_cells().size()*2);
+    for (const auto &cell : tensor.my_cells()) {
         addressReducer.reduce(cell.first);
         builder.insertCell(addressReducer.getAddressRef(), cell.second, func);
     }

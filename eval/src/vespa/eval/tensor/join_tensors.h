@@ -18,8 +18,8 @@ joinTensors(const TensorImplType &lhs,
             Function &&func)
 {
     DirectSparseTensorBuilder
-        builder(lhs.combineDimensionsWith(rhs), lhs.cells());
-    for (const auto &rhsCell : rhs.cells()) {
+        builder(lhs.combineDimensionsWith(rhs), lhs.my_cells());
+    for (const auto &rhsCell : rhs.my_cells()) {
         builder.insertCell(rhsCell.first, rhsCell.second, func);
     }
     return builder.build();
@@ -36,8 +36,8 @@ joinTensorsNegated(const TensorImplType &lhs,
                    Function &&func)
 {
     DirectSparseTensorBuilder
-        builder(lhs.combineDimensionsWith(rhs), lhs.cells());
-    for (const auto &rhsCell : rhs.cells()) {
+        builder(lhs.combineDimensionsWith(rhs), lhs.my_cells());
+    for (const auto &rhsCell : rhs.my_cells()) {
         builder.insertCell(rhsCell.first, -rhsCell.second, func);
     }
     return builder.build();

@@ -19,7 +19,7 @@ PackedMixedBuilder<T>::add_subspace(const std::vector<vespalib::stringref> &addr
 
 
 template <typename T>
-std::unique_ptr<NewValue>
+std::unique_ptr<Value>
 PackedMixedBuilder<T>::build(std::unique_ptr<ValueBuilder<T>>)
 {
     size_t self_size = sizeof(PackedMixedTensor);

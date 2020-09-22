@@ -6,7 +6,7 @@ namespace vespalib::eval::packed_mixed_tensor {
 
 /*********************************************************************************/
 
-class PackedMixedTensorIndexView : public NewValue::Index::View
+class PackedMixedTensorIndexView : public Value::Index::View
 {
 private:
     const PackedMappings& _mappings;
@@ -92,7 +92,7 @@ PackedMixedTensorIndexView::next_result(const std::vector<vespalib::stringref*> 
 
 /*********************************************************************************/
 
-class PackedMixedTensorLookup : public NewValue::Index::View
+class PackedMixedTensorLookup : public Value::Index::View
 {
 private:
     const PackedMappings& _mappings;
@@ -148,7 +148,7 @@ PackedMixedTensorLookup::next_result(const std::vector<vespalib::stringref*> &ad
 
 /*********************************************************************************/
 
-class PackedMixedTensorAllMappings : public NewValue::Index::View
+class PackedMixedTensorAllMappings : public Value::Index::View
 {
 private:
     const PackedMappings& _mappings;
@@ -194,7 +194,7 @@ PackedMixedTensorAllMappings::next_result(const std::vector<vespalib::stringref*
 
 PackedMixedTensor::~PackedMixedTensor() = default;
 
-std::unique_ptr<NewValue::Index::View>
+std::unique_ptr<Value::Index::View>
 PackedMixedTensor::create_view(const std::vector<size_t> &dims) const
 {
     if (dims.size() == 0) {

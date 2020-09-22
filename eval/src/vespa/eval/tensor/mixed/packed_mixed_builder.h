@@ -34,7 +34,7 @@ public:
     ~PackedMixedBuilder() override = default;
         
     ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) override;
-    std::unique_ptr<NewValue> build(std::unique_ptr<ValueBuilder<T>> self) override;
+    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override;
 };
 
 } // namespace

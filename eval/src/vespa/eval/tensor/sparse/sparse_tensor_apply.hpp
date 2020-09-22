@@ -14,13 +14,13 @@ apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
 {
     DirectSparseTensorBuilder builder(lhs.combineDimensionsWith(rhs));
     TensorAddressCombiner addressCombiner(lhs.fast_type(), rhs.fast_type());
-    size_t estimatedCells = (lhs.cells().size() * rhs.cells().size());
+    size_t estimatedCells = (lhs.my_cells().size() * rhs.my_cells().size());
     if (addressCombiner.numOverlappingDimensions() != 0) {
-        estimatedCells = std::min(lhs.cells().size(), rhs.cells().size());
+        estimatedCells = std::min(lhs.my_cells().size(), rhs.my_cells().size());
     }
     builder.reserve(estimatedCells*2);
-    for (const auto &lhsCell : lhs.cells()) {
-        for (const auto &rhsCell : rhs.cells()) {
+    for (const auto &lhsCell : lhs.my_cells()) {
+        for (const auto &rhsCell : rhs.my_cells()) {
             bool combineSuccess = addressCombiner.combine(lhsCell.first, rhsCell.first);
             if (combineSuccess) {
                 builder.insertCell(addressCombiner.getAddressRef(),

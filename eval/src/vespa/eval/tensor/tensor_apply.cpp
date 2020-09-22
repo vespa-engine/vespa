@@ -10,7 +10,7 @@ TensorApply<TensorT>::TensorApply(const TensorImplType &tensor,
                                   const CellFunction &func)
     : Parent(tensor.fast_type())
 {
-    for (const auto &cell : tensor.cells()) {
+    for (const auto &cell : tensor.my_cells()) {
         _builder.insertCell(cell.first, func.apply(cell.second));
     }
 }

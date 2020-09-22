@@ -336,7 +336,7 @@ public:
     View(const SimpleTensor &tensor, const IndexList &selector)
         : _less(selector), _refs()
     {
-        for (const auto &cell: tensor.cells()) {
+        for (const auto &cell: tensor.my_cells()) {
             _refs.emplace_back(cell);
         }
         std::sort(_refs.begin(), _refs.end(), _less);
@@ -738,7 +738,7 @@ SimpleTensor::encode(const SimpleTensor &tensor, nbostream &output)
     Format format(meta);
     output.putInt1_4Bytes(format.tag);
     encode_type(output, format, tensor.type(), meta);
-    maybe_encode_num_blocks(output, meta, tensor.cells().size() / meta.block_size);
+    maybe_encode_num_blocks(output, meta, tensor.my_cells().size() / meta.block_size);
     View view(tensor, meta.mapped);
     for (auto block = view.first_range(); !block.empty(); block = view.next_range(block)) {
         encode_mapped_labels(output, meta, block.begin()->get().address);
