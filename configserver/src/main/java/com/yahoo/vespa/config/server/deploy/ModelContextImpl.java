@@ -166,6 +166,8 @@ public class ModelContextImpl implements ModelContext {
         private final double feedCoreThreadPoolSizeFactor;
         private final double visibilityDelay;
         private final Quota quota;
+        private final boolean tlsUseFSync;
+        private final String tlsCompressionType;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -206,6 +208,10 @@ public class ModelContextImpl implements ModelContext {
             threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             visibilityDelay = Flags.VISIBILITY_DELAY.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            tlsCompressionType = Flags.TLS_COMPRESSION_TYPE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            tlsUseFSync = Flags.TLS_USE_FSYNC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             queueSizefactor = Flags.DEFAULT_QUEUE_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -317,7 +323,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public double feedCoreThreadPoolSizeFactor() { return feedCoreThreadPoolSizeFactor; }
         @Override public double visibilityDelay() { return visibilityDelay; }
-
+        @Override public boolean tlsUseFSync() { return tlsUseFSync; }
+        @Override public String tlsCompressionType() { return tlsCompressionType; }
         @Override public Quota quota() { return quota; }
     }
 

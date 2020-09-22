@@ -268,7 +268,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState.getDeployLogger());
 
-            tls = new TransactionLogServer(searchNode, clusterName);
+            tls = new TransactionLogServer(searchNode, clusterName, deployState.getProperties());
             tls.setHostResource(searchNode.getHostResource());
             tls.initService(deployState.getDeployLogger());
         } else {
