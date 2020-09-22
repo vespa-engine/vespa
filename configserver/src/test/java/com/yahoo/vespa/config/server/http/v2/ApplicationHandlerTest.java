@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
@@ -31,7 +32,9 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import javax.ws.rs.client.Client;
 import java.io.ByteArrayInputStream;
@@ -73,12 +76,21 @@ public class ApplicationHandlerTest {
     private SessionHandlerTest.MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         List<ModelFactory> modelFactories = List.of(DeployTester.createModelFactory(vespaVersion));
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .provisioner(provisioner)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
+                .configServerConfig(configserverConfig)
                 .build();
         tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenantName);
@@ -91,6 +103,7 @@ public class ApplicationHandlerTest {
                 .withClock(componentRegistry.getClock())
                 .withTesterClient(testerClient)
                 .withLogRetriever(logRetriever)
+                .withConfigserverConfig(configserverConfig)
                 .build();
     }
 
@@ -357,7 +370,7 @@ public class ApplicationHandlerTest {
         assertEquals(200, response.getStatus());
         String renderedString = SessionHandlerTest.getRenderedString(response);
         assertEquals("{\"generation\":" + expectedGeneration +
-                     ",\"applicationPackageFileReference\":\"\"" +
+                     ",\"applicationPackageFileReference\":\"./\"" +
                      ",\"modelVersions\":[\"" + expectedVersion.toFullString() + "\"]}", renderedString);
     }
 

@@ -25,7 +25,9 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -54,17 +56,30 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private static final File app = new File("src/test/resources/deploy/validapp");
 
     private final Curator curator = new MockCurator();
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-    private final Clock clock = componentRegistry.getClock();
-    private final TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
+    private TimeoutBudget timeoutBudget;
     private ApplicationRepository applicationRepository;
 
+    private TestComponentRegistry componentRegistry;
     private String preparedMessage = " prepared.\"}";
     private String tenantMessage = "";
     private TenantRepository tenantRepository;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupRepo() {
+    public void setupRepo() throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .configServerConfig(configserverConfig)
+                .build();
+        Clock clock = componentRegistry.getClock();
+        timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
         tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenant);
         applicationRepository = new ApplicationRepository.Builder()
@@ -72,6 +87,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .withProvisioner(new SessionHandlerTest.MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .withClock(clock)
+                .withConfigserverConfig(configserverConfig)
                 .build();
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";

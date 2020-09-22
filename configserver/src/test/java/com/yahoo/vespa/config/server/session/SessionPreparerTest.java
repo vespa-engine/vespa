@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -65,6 +66,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -181,7 +183,10 @@ public class SessionPreparerTest {
                                                .dryRun(true)
                                                .build(),
                                        1);
-        assertTrue(result.getFileRegistries().get(version321).export().isEmpty());
+        Map<Version, FileRegistry> fileRegistries = result.getFileRegistries();
+        System.out.println(fileRegistries);
+        assertEquals(1, fileRegistries.get(version321).export().size());
+        assertEquals("./", fileRegistries.get(version321).export().get(0).reference.value());
     }
 
     @Test

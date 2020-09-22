@@ -393,6 +393,7 @@ public class HostedDeployTest {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                                              .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                                               .hostedVespa(true)
                                               .multitenant(true)
                                               .region(zone.region().value())

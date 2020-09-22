@@ -82,7 +82,8 @@ public class RpcTester implements AutoCloseable {
         spec = createSpec(port);
         configBuilder.rpcport(port)
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
-                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath());
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath());
         configserverConfig = new ConfigserverConfig(configBuilder);
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configDefinitionRepo(new TestConfigDefinitionRepo())

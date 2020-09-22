@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -19,7 +20,9 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -37,14 +40,25 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     private static final TenantName tenantName = TenantName.from("contenttest");
     private static final File testApp = new File("src/test/apps/content");
 
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-
+    private TestComponentRegistry componentRegistry;
     private TenantRepository tenantRepository;
     private SessionContentHandler handler = null;
     private long sessionId;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupHandler() {
+    public void setupHandler() throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        componentRegistry = new TestComponentRegistry.Builder()
+                .configServerConfig(configserverConfig)
+                .build();
+
         tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName);
 
@@ -52,6 +66,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new SessionHandlerTest.MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
+                .withConfigserverConfig(configserverConfig)
                 .build();
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
         Tenant tenant = applicationRepository.getTenant(applicationId());

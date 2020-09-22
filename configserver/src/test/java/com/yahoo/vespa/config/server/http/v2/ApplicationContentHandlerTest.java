@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -17,7 +18,9 @@ import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,8 +38,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     private static final File testApp = new File("src/test/apps/content");
     private static final File testApp2 = new File("src/test/apps/content2");
 
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-    private final Clock clock = componentRegistry.getClock();
+
 
     private final TenantName tenantName1 = TenantName.from("mofet");
     private final TenantName tenantName2 = TenantName.from("bla");
@@ -48,8 +50,22 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     private ApplicationRepository applicationRepository;
     private ApplicationHandler handler;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupHandler() {
+    public void setupHandler() throws IOException {
+
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .configServerConfig(configserverConfig)
+                .build();
+        Clock clock = componentRegistry.getClock();
+
         TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
@@ -59,6 +75,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .withClock(clock)
+                .withConfigserverConfig(configserverConfig)
                 .build();
 
         applicationRepository.deploy(testApp, prepareParams(appId1));

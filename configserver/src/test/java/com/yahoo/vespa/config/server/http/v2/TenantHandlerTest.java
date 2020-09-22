@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -25,12 +26,14 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import org.junit.rules.TemporaryFolder;
 
 public class TenantHandlerTest {
 
@@ -41,13 +44,26 @@ public class TenantHandlerTest {
     private TenantHandler handler;
     private final TenantName a = TenantName.from("a");
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setup() {
-        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().curator(new MockCurator()).build());
+    public void setup() throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
+                                                        .curator(new MockCurator())
+                                                        .configServerConfig(configserverConfig)
+                                                        .build());
+
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new SessionHandlerTest.MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
+                .withConfigserverConfig(configserverConfig)
                 .build();
         handler = new TenantHandler(TenantHandler.testOnlyContext(), applicationRepository);
     }
