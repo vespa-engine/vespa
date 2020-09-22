@@ -30,6 +30,11 @@ public abstract class Value {
         return new DoubleValue(asDouble());
     }
 
+    /** Returns true if this has a double value which is NaN */
+    public boolean isNaN() {
+        return hasDouble() && Double.isNaN(asDouble());
+    }
+
     /** Returns this as a tensor value */
     public abstract Tensor asTensor();
 

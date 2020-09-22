@@ -728,6 +728,7 @@
       "public abstract com.yahoo.tensor.TensorType type()",
       "public abstract double asDouble()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue asDoubleValue()",
+      "public boolean isNaN()",
       "public abstract com.yahoo.tensor.Tensor asTensor()",
       "protected com.yahoo.tensor.Tensor doubleAsTensor(double)",
       "public abstract boolean hasDouble()",
