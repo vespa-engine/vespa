@@ -252,7 +252,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
 
 DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding encoding,
                        uint8_t compressionLevel, const FileHeaderContext &fileHeaderContext, bool allowTruncate)
-    : _encoding(encoding),
+    : _encoding(encoding.getCrc(), Encoding::Compression::none), //TODO We do not yet support compression
       _compressionLevel(compressionLevel),
       _lock(),
       _fileLock(),
@@ -396,28 +396,22 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
     if (_range.from() == 0) {
         _range.from(firstSerial);
     }
-    IChunk::UP chunk = IChunk::create(_encoding, _compressionLevel);
     for (size_t i(0); h.size() > 0; i++) {
         //LOG(spam,
         //"Pos(%d) Len(%d), Lim(%d), Remaining(%d)",
         //h.getPos(), h.getLength(), h.getLimit(), h.getRemaining());
+        IChunk::UP chunk = IChunk::create(_encoding, _compressionLevel);
         Packet::Entry entry;
         entry.deserialize(h);
         if (_range.to() < entry.serial()) {
             chunk->add(entry);
-            if (_encoding.getCompression() == Encoding::Compression::none) {
-                write(*_transLog, *chunk);
-                chunk = IChunk::create(_encoding, _compressionLevel);
-            }
+            write(*_transLog, *chunk);
             _sz++;
             _range.to(entry.serial());
         } else {
             throw runtime_error(fmt("Incoming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
                                     entry.serial(), _range.to()));
         }
-    }
-    if ( ! chunk->getEntries().empty()) {
-        write(*_transLog, *chunk);
     }
 
     bool merged(false);

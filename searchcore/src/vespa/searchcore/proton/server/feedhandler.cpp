@@ -402,8 +402,6 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
-      _numPendingCommit(0),
-      _numCommitsCompleted(0),
       _delayedPrune(false),
       _feedLock(),
       _feedState(make_shared<InitState>(getDocTypeName())),
@@ -497,39 +495,11 @@ FeedHandler::getTransactionLogReplayDone() const {
 }
 
 void
-FeedHandler::onCommitDone(uint64_t numPendingAtStart) {
-    assert(numPendingAtStart <= _numPendingCommit);
-    _numPendingCommit -= numPendingAtStart;
-    if (_numPendingCommit > 0) {
-        enqueCommitTask();
-    }
-}
-
-void FeedHandler::enqueCommitTask() {
-    _writeService.master().execute(makeLambdaTask([this]() { initiateCommit(); }));
-}
-
-void
-FeedHandler::initiateCommit() {
-    auto commitResult = _tlsWriter->startCommit(std::make_shared<OnCommitDone>(
-            _writeService.master(),
-            makeLambdaTask([this, numPendingAtStart=_numPendingCommit]() {
-                onCommitDone(numPendingAtStart);
-            })));
-    if (_activeFeedView) {
-        _activeFeedView->forceCommit(_serialNum, std::make_shared<KeepAlive<CommitResult>>(std::move(commitResult)));
-    }
-}
-
-void
 FeedHandler::appendOperation(const FeedOperation &op, TlsWriter::DoneCallback onDone) {
     if (!op.getSerialNum()) {
         const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
     }
     _tlsWriter->appendOperation(op, std::move(onDone));
-    if (++_numPendingCommit == 1) {
-        enqueCommitTask();
-    }
 }
 
 FeedHandler::CommitResult
@@ -540,7 +510,7 @@ FeedHandler::startCommit(DoneCallback onDone) {
 void
 FeedHandler::storeOperationSync(const FeedOperation &op) {
     vespalib::Gate gate;
-    appendAndCommitOperation(op, make_shared<search::GateCallback>(gate));
+    appendOperation(op, make_shared<search::GateCallback>(gate));
     gate.await();
 }
 
