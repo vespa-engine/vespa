@@ -6,10 +6,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
@@ -45,11 +42,15 @@ public class NodeMetricsDbTest {
         // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
         clock.advance(Duration.ofMinutes(1));
 
-        assertEquals(35, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.cpu,    List.of(node0)).measurementCount());
-        assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0)).measurementCount());
+        assertEquals(35, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.cpu, List.of(node0))));
+        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0))));
         db.gc(clock);
-        assertEquals( 5, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.cpu,    List.of(node0)).measurementCount());
-        assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0)).measurementCount());
+        assertEquals( 5, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.cpu, List.of(node0))));
+        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0))));
+    }
+
+    private int measurementCount(List<NodeMetricsDb.NodeMeasurements> measurements) {
+        return measurements.stream().mapToInt(m -> m.size()).sum();
     }
 
 }
