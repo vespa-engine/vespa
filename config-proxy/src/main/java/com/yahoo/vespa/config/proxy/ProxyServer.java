@@ -8,12 +8,19 @@ import com.yahoo.jrt.Transport;
 import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionAndUrlDownload;
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -28,6 +35,7 @@ import static com.yahoo.vespa.config.proxy.Mode.ModeName.DEFAULT;
  */
 public class ProxyServer implements Runnable {
 
+    private static final DaemonThreadFactory threadFactory = new DaemonThreadFactory("ProxyServer");
     private static final int DEFAULT_RPC_PORT = 19090;
     private static final int JRT_TRANSPORT_THREADS = 4;
     static final String DEFAULT_PROXY_CONFIG_SOURCES = "tcp/localhost:19070";
@@ -58,9 +66,8 @@ public class ProxyServer implements Runnable {
     @Override
     public void run() {
         if (rpcServer != null) {
-            Thread t = new Thread(rpcServer);
+            Thread t = threadFactory.newThread(rpcServer);
             t.setName("RpcServer");
-            t.setDaemon(true);
             t.start();
         }
     }
@@ -125,7 +132,15 @@ public class ProxyServer implements Runnable {
                 }
             }
         }
-        stop();
+        ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
+        Callable<String> stopper = () -> { stop(); return "clean shutdown"; };
+        Future<String> future = executor.submit(stopper);
+        try {
+            String result = future.get(5, TimeUnit.SECONDS);
+            Event.stopping("configproxy", result);
+        } catch (Exception e) {
+            System.exit(1);
+        }
         System.exit(0);
     }
 
@@ -146,9 +161,8 @@ public class ProxyServer implements Runnable {
         ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources, new MemoryCache(), null);
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
-        Thread proxyserverThread = new Thread(proxyServer);
+        Thread proxyserverThread = threadFactory.newThread(proxyServer);
         proxyserverThread.setName("configproxy");
-        proxyserverThread.setDaemon(true);
         proxyserverThread.start();
         proxyServer.waitForShutdown();
     }
@@ -174,11 +188,15 @@ public class ProxyServer implements Runnable {
     }
 
     void stop() {
-        Event.stopping("configproxy", "shutdown");
+        Event.stopping("configproxy", "shutdown rpcServer");
         if (rpcServer != null) rpcServer.shutdown();
+        Event.stopping("configproxy", "cancel configClient");
         if (configClient != null) configClient.cancel();
+        Event.stopping("configproxy", "flush");
         flush();
+        Event.stopping("configproxy", "close fileDistribution");
         fileDistributionAndUrlDownload.close();
+        Event.stopping("configproxy", "stop complete");
     }
 
     MemoryCache getMemoryCache() {
