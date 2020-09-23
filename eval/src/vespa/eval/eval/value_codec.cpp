@@ -238,6 +238,33 @@ struct CreateTensorSpecFromValue {
 
 } // namespace <unnamed>
 
+struct EncodeState {
+    size_t num_mapped_dims;
+    size_t subspace_size;
+};
+
+struct ContentEncoder {
+    template<typename T>
+    static void invoke(const Value &value, const EncodeState &state, nbostream &output) {
+        std::vector<vespalib::stringref> address(state.num_mapped_dims);
+        std::vector<vespalib::stringref*> a_refs(state.num_mapped_dims);;
+        for (size_t i = 0; i < state.num_mapped_dims; ++i) {
+            a_refs[i] = &address[i];
+        }
+        auto view = value.index().create_view({});
+        view->lookup({});
+        size_t subspace;
+        while (view->next_result(a_refs, subspace)) {
+            encode_mapped_labels(output, state.num_mapped_dims, address);
+            auto iter = value.cells().typify<T>().begin();
+            iter += (subspace * state.subspace_size);
+            for (size_t i = 0; i < state.subspace_size; ++i) {
+                output << *iter++;
+            }
+        }
+    }
+};
+    
 void new_encode(const Value &value, nbostream &output) {
     size_t num_mapped_dims = value.type().count_mapped_dimensions();
     size_t dense_subspace_size = value.type().dense_subspace_size();
@@ -245,30 +272,8 @@ void new_encode(const Value &value, nbostream &output) {
     output.putInt1_4Bytes(format.tag);
     encode_type(output, format, value.type());
     maybe_encode_num_blocks(output, (num_mapped_dims > 0), value.cells().size / dense_subspace_size);
-    std::vector<vespalib::stringref> address(num_mapped_dims);
-    std::vector<vespalib::stringref*> a_refs(num_mapped_dims);
-    for (size_t i = 0; i < num_mapped_dims; ++i) {
-        a_refs[i] = &address[i];
-    }
-    auto view = value.index().create_view({});
-    view->lookup({});
-    size_t subspace;
-    while (view->next_result(a_refs, subspace)) {
-        encode_mapped_labels(output, num_mapped_dims, address);
-        if (value.type().cell_type() == CellType::FLOAT) {
-            auto iter = value.cells().typify<float>().begin();
-            iter += (subspace * dense_subspace_size);
-            for (size_t i = 0; i < dense_subspace_size; ++i) {
-                output << (float) *iter++;
-            }
-        } else {
-            auto iter = value.cells().typify<double>().begin();
-            iter += (subspace * dense_subspace_size);
-            for (size_t i = 0; i < dense_subspace_size; ++i) {
-                output << *iter++;
-            }
-        }
-    }
+    EncodeState state{num_mapped_dims, dense_subspace_size};
+    typify_invoke<1,TypifyCellType,ContentEncoder>(value.type().cell_type(), value, state, output);
 }
 
 std::unique_ptr<Value> new_decode(nbostream &input, const ValueBuilderFactory &factory) {
