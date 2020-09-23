@@ -12,7 +12,15 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-using vespalib::make_string_short::fmt;
+struct Factory {
+    SimpleValueBuilderFactory simple;
+    std::unique_ptr<Value> from_spec(const TensorSpec &spec) {
+        return value_from_spec(spec, simple);
+    }
+    std::unique_ptr<Value> decode(nbostream &input) {
+        return new_decode(input, simple);
+    }
+} simple_factory;
 
 std::vector<Layout> layouts = {
     {},
@@ -29,15 +37,6 @@ std::vector<Layout> layouts = {
     float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
 };
 
-struct Factory {
-    SimpleValueBuilderFactory simple;
-    std::unique_ptr<Value> from_spec(const TensorSpec &spec) {
-        return value_from_spec(spec, simple);
-    }
-    std::unique_ptr<Value> decode(nbostream &input) {
-        return new_decode(input, simple);
-    }
-} simple_factory;
 
 TEST(ValueCodecTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
@@ -48,8 +47,7 @@ TEST(ValueCodecTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     }
 }
 
-
-TEST(ValueCodecTest, require_that_simple_tensors_can_be_built_using_tensor_spec) {
+TEST(ValueCodecTest, simple_values_can_be_built_using_tensor_spec) {
     TensorSpec spec("tensor(w{},x[2],y{},z[2])");
     spec.add({{"w", "xxx"}, {"x", 0}, {"y", "xxx"}, {"z", 0}}, 1.0)
         .add({{"w", "xxx"}, {"x", 0}, {"y", "yyy"}, {"z", 1}}, 2.0)
@@ -163,7 +161,7 @@ struct SparseTensorExample : TensorExample {
     }
 };
 
-TEST(ValueCodecTest, require_that_sparse_tensors_can_be_encoded_and_decoded) {
+TEST(ValueCodecTest, sparse_tensors_can_be_encoded_and_decoded) {
     SparseTensorExample f1;
     f1.verify_encode_decode();
 }
@@ -213,7 +211,7 @@ struct DenseTensorExample : TensorExample {
     }
 };
 
-TEST(ValueCodecTest, require_that_dense_tensors_can_be_encoded_and_decoded) {
+TEST(ValueCodecTest, dense_tensors_can_be_encoded_and_decoded) {
     DenseTensorExample f1;
     f1.verify_encode_decode();
 }
@@ -271,7 +269,7 @@ struct MixedTensorExample : TensorExample {
     }
 };
 
-TEST(ValueCodecTest, require_that_mixed_tensors_can_be_encoded_and_decoded) {
+TEST(ValueCodecTest, mixed_tensors_can_be_encoded_and_decoded) {
     MixedTensorExample f1;
     f1.verify_encode_decode();
 }
