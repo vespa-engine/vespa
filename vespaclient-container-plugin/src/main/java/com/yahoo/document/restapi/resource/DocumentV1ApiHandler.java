@@ -225,46 +225,41 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private ContentChannel getRoot(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         Cursor root = responseRoot(request);
         Cursor documents = root.setArray("documents");
-        executor.visit(parseOptions(request, path).build(),
-                       new VisitorContext((type, message) -> handleError(request, type, message, root, handler),
-                                          token -> {
-                                              token.ifPresent(value -> root.setString("continuation", value));
-                                              respond(root, handler);
-                                          },
-                                          document -> SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
-                                                                            documents.addObject())));
+        executor.visit(parseOptions(request, path).build(), visitorContext(request, root, root.setArray("documents"), handler));
         return ignoredContent;
     }
 
     private ContentChannel getDocumentType(HttpRequest request, DocumentPath path, ResponseHandler handler) {
-        // TODO jonmv: make streaming — first doc indicates 200 OK anyway.
         Cursor root = responseRoot(request);
-        Cursor documents = root.setArray("documents");
         VisitorOptions.Builder options = parseOptions(request, path);
         options = options.documentType(path.documentType());
         options = options.namespace(path.namespace());
         options = path.group().map(options::group).orElse(options);
-        executor.visit(options.build(),
-                       new VisitorContext((type, message) -> {
-                                              synchronized (documents) {
-                                                  handleError(request, type, message, root, handler);
-                                              }
-                                          },
-                                          token -> {
-                                              token.ifPresent(value -> root.setString("continuation", value));
-                                              synchronized (documents) {
-                                                  respond(root, handler);
-                                              }
-                                          },
-                                          document -> {
-                                              synchronized (documents) { // Putting things into the slime is not thread safe, so need synchronization.
-                                                  SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
-                                                                        documents.addObject());
-                                              }
-                                          }));
+        executor.visit(options.build(), visitorContext(request, root, root.setArray("documents"), handler));
         return ignoredContent;
     }
 
+    private static VisitorContext visitorContext(HttpRequest request, Cursor root, Cursor documents, ResponseHandler handler) {
+        Object monitor = new Object();
+        return new VisitorContext((type, message) -> {
+                                      synchronized (monitor) {
+                                          handleError(request, type, message, root, handler);
+                                      }
+                                  },
+                                  token -> {
+                                      token.ifPresent(value -> root.setString("continuation", value));
+                                      synchronized (monitor) {
+                                          respond(root, handler);
+                                      }
+                                  },
+                                  // TODO jonmv: make streaming — first doc indicates 200 OK anyway.
+                                  document -> {
+                                      synchronized (monitor) { // Putting things into the slime is not thread safe, so need synchronization.
+                                          SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
+                                                                documents.addObject());
+                                      }
+                                  });
+    }
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         DocumentId id = path.id();
         executor.get(id,
