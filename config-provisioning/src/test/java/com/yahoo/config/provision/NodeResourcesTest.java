@@ -16,8 +16,8 @@ public class NodeResourcesTest {
                      new NodeResources(1., 10., 100., 0).toString());
         assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk 33.3 Gb, bandwidth: 0.3 Gbps]",
                      new NodeResources(1/3., 10/3., 100/3., 0.3).toString());
-        assertEquals("[vcpu: 0.7, memory: 6.7 Gb, disk 66.7 Gb, bandwidth: 0.7 Gbps]",
-                new NodeResources(2/3., 20/3., 200/3., 0.67).toString());
+        assertEquals("[vcpu: 0.7, memory: 9.0 Gb, disk 66.7 Gb, bandwidth: 0.7 Gbps]",
+                new NodeResources(2/3., 8.97, 200/3., 0.67).toString());
     }
 
     private long runTest(NodeResources [] resouces, int num) {

@@ -219,7 +219,8 @@ public class NodeResources {
     }
 
     private static StringBuffer appendDouble(StringBuffer sb, double d) {
-        sb.append((long)d).append('.').append(Math.round(d*10)%10);
+        long x10 = Math.round(d*10);
+        sb.append(x10/10).append('.').append(x10%10);
         return sb;
     }
     @Override
