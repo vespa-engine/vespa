@@ -3,7 +3,7 @@ package com.yahoo.document;
 
 /**
  * Class containing static utility function related to documents.
- * @author einarmr
+ * @author Einar M Rosenvinge
  * @since 5.1.9
  */
 public class DocumentUtil {

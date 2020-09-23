@@ -23,7 +23,7 @@ import com.yahoo.vespaxmlparser.RemoveFeedOperation;
  * The feed reader will take ownership of the input stream and close it when the
  * last parseable document has been read.
  *
- * @author steinar
+ * @author Steinar Knutsen
  */
 public class JsonFeedReader implements FeedReader {
 
