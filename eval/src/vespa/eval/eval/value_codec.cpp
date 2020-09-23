@@ -31,70 +31,45 @@ inline CellType id_to_cell_type(uint32_t id) {
     abort();
 }
 
-/**
- * Meta information about how a type can be decomposed into mapped and
- * indexed dimensions and also how large each block is. A block is a
- * dense-subspace consisting of all indexed dimensions that is
- * uniquely specified by the labels of all mapped dimensions.
- **/
-struct TypeMeta {
-    IndexList mapped;
-    IndexList indexed;
-    CellType cell_type;
-    explicit TypeMeta(const ValueType &type)
-        : mapped(),
-          indexed(),
-          cell_type(type.cell_type())
-    {
-        for (size_t i = 0; i < type.dimensions().size(); ++i) {
-            const auto &dimension = type.dimensions()[i];
-            if (dimension.is_mapped()) {
-                mapped.push_back(i);
-            } else {
-                indexed.push_back(i);
-            }
-        }
-    }
-    ~TypeMeta() {}
-};
-
 struct Format {
-    bool     is_sparse;
-    bool     is_dense;
+    bool     has_sparse;
+    bool     has_dense;
     bool     with_cell_type;
     uint32_t tag;
-    explicit Format(const TypeMeta &meta)
-        : is_sparse(meta.mapped.size() > 0),
-          is_dense((meta.indexed.size() > 0) || !is_sparse),
-          with_cell_type(meta.cell_type != CellType::DOUBLE),
-          tag((is_sparse ? 0x1 : 0) | (is_dense ? 0x2 : 0) | (with_cell_type ? 0x4 : 0)) {}
+    explicit Format(const ValueType &type)
+        : has_sparse(type.count_mapped_dimensions() > 0),
+          has_dense((type.count_indexed_dimensions() > 0) || !has_sparse),
+          with_cell_type(type.cell_type() != CellType::DOUBLE),
+          tag((has_sparse ? 0x1 : 0) | (has_dense ? 0x2 : 0) | (with_cell_type ? 0x4 : 0)) {}
     explicit Format(uint32_t tag_in)
-        : is_sparse((tag_in & 0x1) != 0),
-          is_dense((tag_in & 0x2) != 0),
+        : has_sparse((tag_in & 0x1) != 0),
+          has_dense((tag_in & 0x2) != 0),
           with_cell_type((tag_in & 0x4) != 0),
           tag(tag_in) {}
     ~Format() {}
 };
 
-void maybe_encode_cell_type(nbostream &output, const Format &format, const TypeMeta &meta) {
+void maybe_encode_cell_type(nbostream &output, const Format &format, CellType cell_type) {
     if (format.with_cell_type) {
-        output.putInt1_4Bytes(cell_type_to_id(meta.cell_type));
+        output.putInt1_4Bytes(cell_type_to_id(cell_type));
     }
 }
 
-void encode_type(nbostream &output, const Format &format, const ValueType &type, const TypeMeta &meta) {
-    maybe_encode_cell_type(output, format, meta);
-    if (format.is_sparse) {
-        output.putInt1_4Bytes(type.count_mapped_dimensions());
-        for (size_t idx: meta.mapped) {
-            output.writeSmallString(type.dimensions()[idx].name);
+void encode_type(nbostream &output, const Format &format, const ValueType &type) {
+    maybe_encode_cell_type(output, format, type.cell_type());
+    if (format.has_sparse) {
+        const auto & dims = type.mapped_dimensions();
+        output.putInt1_4Bytes(dims.size());
+        for (const auto & dim : dims) {
+            output.writeSmallString(dim.name);
         }
     }
-    if (format.is_dense) {
-        output.putInt1_4Bytes(meta.indexed.size());
-        for (size_t idx: meta.indexed) {
-            output.writeSmallString(type.dimensions()[idx].name);
-            output.putInt1_4Bytes(type.dimensions()[idx].size);
+    if (format.has_dense) {
+        const auto & dims = type.indexed_dimensions();
+        output.putInt1_4Bytes(dims.size());
+        for (const auto & dim : dims) {
+            output.writeSmallString(dim.name);
+            output.putInt1_4Bytes(dim.size);
         }
     }
 }
@@ -115,7 +90,7 @@ CellType maybe_decode_cell_type(nbostream &input, const Format &format) {
 ValueType decode_type(nbostream &input, const Format &format) {
     CellType cell_type = maybe_decode_cell_type(input, format);
     std::vector<ValueType::Dimension> dim_list;
-    if (format.is_sparse) {
+    if (format.has_sparse) {
         size_t cnt = input.getInt1_4Bytes();
         for (size_t i = 0; i < cnt; ++i) {
             vespalib::string name;
@@ -123,7 +98,7 @@ ValueType decode_type(nbostream &input, const Format &format) {
             dim_list.emplace_back(name);
         }
     }
-    if (format.is_dense) {
+    if (format.has_dense) {
         size_t cnt = input.getInt1_4Bytes();
         for (size_t i = 0; i < cnt; ++i) {
             vespalib::string name;
@@ -135,7 +110,7 @@ ValueType decode_type(nbostream &input, const Format &format) {
 }
 
 size_t maybe_decode_num_blocks(nbostream &input, bool has_mapped_dims, const Format &format) {
-    if (has_mapped_dims || !format.is_dense) {
+    if (has_mapped_dims || !format.has_dense) {
         return input.getInt1_4Bytes();
     }
     return 1;
@@ -264,12 +239,11 @@ struct CreateTensorSpecFromValue {
 } // namespace <unnamed>
 
 void new_encode(const Value &value, nbostream &output) {
-    TypeMeta meta(value.type());
     size_t num_mapped_dims = value.type().count_mapped_dimensions();
     size_t dense_subspace_size = value.type().dense_subspace_size();
-    Format format(meta);
+    Format format(value.type());
     output.putInt1_4Bytes(format.tag);
-    encode_type(output, format, value.type(), meta);
+    encode_type(output, format, value.type());
     maybe_encode_num_blocks(output, (num_mapped_dims > 0), value.cells().size / dense_subspace_size);
     std::vector<vespalib::stringref> address(num_mapped_dims);
     std::vector<vespalib::stringref*> a_refs(num_mapped_dims);
@@ -281,7 +255,7 @@ void new_encode(const Value &value, nbostream &output) {
     size_t subspace;
     while (view->next_result(a_refs, subspace)) {
         encode_mapped_labels(output, num_mapped_dims, address);
-        if (meta.cell_type == CellType::FLOAT) {
+        if (value.type().cell_type() == CellType::FLOAT) {
             auto iter = value.cells().typify<float>().begin();
             iter += (subspace * dense_subspace_size);
             for (size_t i = 0; i < dense_subspace_size; ++i) {
@@ -302,10 +276,9 @@ std::unique_ptr<Value> new_decode(nbostream &input, const ValueBuilderFactory &f
     ValueType type = decode_type(input, format);
     size_t num_mapped_dims = type.count_mapped_dimensions();
     size_t dense_subspace_size = type.dense_subspace_size();
-    TypeMeta meta(type);
     const size_t num_blocks = maybe_decode_num_blocks(input, (num_mapped_dims > 0), format);
     DecodeState state{type, dense_subspace_size, num_blocks, num_mapped_dims};
-    return typify_invoke<1,TypifyCellType,ContentDecoder>(meta.cell_type, input, state, factory);
+    return typify_invoke<1,TypifyCellType,ContentDecoder>(type.cell_type(), input, state, factory);
 }
 
 //-----------------------------------------------------------------------------

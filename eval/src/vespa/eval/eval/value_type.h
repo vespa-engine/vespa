@@ -60,10 +60,12 @@ public:
     bool is_tensor() const { return (_type == Type::TENSOR); }
     bool is_sparse() const;
     bool is_dense() const;
+    size_t count_indexed_dimensions() const;
     size_t count_mapped_dimensions() const;
     size_t dense_subspace_size() const;
     const std::vector<Dimension> &dimensions() const { return _dimensions; }
     std::vector<Dimension> nontrivial_indexed_dimensions() const;
+    std::vector<Dimension> indexed_dimensions() const;
     std::vector<Dimension> mapped_dimensions() const;
     size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
