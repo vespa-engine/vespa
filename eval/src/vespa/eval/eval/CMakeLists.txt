@@ -4,7 +4,6 @@ vespa_add_library(eval_eval OBJECT
     aggr.cpp
     basic_nodes.cpp
     call_nodes.cpp
-    codec.cpp
     compile_tensor_function.cpp
     delete_node.cpp
     fast_forest.cpp

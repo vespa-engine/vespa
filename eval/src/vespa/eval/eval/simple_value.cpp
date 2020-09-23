@@ -3,7 +3,6 @@
 #include "simple_value.h"
 #include "tensor_spec.h"
 #include "inline_operation.h"
-#include "codec.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/util/overload.h>
