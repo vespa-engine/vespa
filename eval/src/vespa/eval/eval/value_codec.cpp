@@ -210,9 +210,9 @@ struct CreateValueFromTensorSpec {
             }
             map[sparse_key][dense_key] = entry.second;
         }
-        // hack for passing some (invalid?) unit tests
-        if (spec.cells().empty() && type.count_mapped_dimensions() == 0) {
-            map[SparseKey()][0] = 0;
+        // if spec is missing the required dense space, add it here:
+        if (map.empty() && type.count_mapped_dimensions() == 0) {
+            map[{}][0] = 0;
         }
         auto builder = factory.create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), map.size());
         for (const auto &entry: map) {
