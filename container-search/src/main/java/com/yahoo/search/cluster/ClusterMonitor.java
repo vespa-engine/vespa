@@ -62,6 +62,8 @@ public class ClusterMonitor<T> {
     /** Returns the configuration of this cluster monitor */
     public MonitorConfiguration getConfiguration() { return configuration; }
 
+    public boolean isClosed() { return closed.get(); }
+
     /**
      * Adds a new node for monitoring.
      * The object representing the node must

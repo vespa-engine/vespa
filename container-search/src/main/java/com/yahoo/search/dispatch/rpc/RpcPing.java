@@ -86,6 +86,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
 
     @Override
     public void receive(ResponseOrError<ProtobufResponse> response) {
+        if (clusterMonitor.isClosed()) return;
         if (node.isLastReceivedPong(pingSequenceId)) {
             pongHandler.handle(toPong(response));
         } else {
