@@ -304,6 +304,7 @@ class BMParams {
     uint32_t _put_passes;
     uint32_t _update_passes;
     uint32_t _remove_passes;
+    uint32_t _rpc_network_threads;
     bool     _enable_service_layer;
     uint32_t get_start(uint32_t thread_id) const {
         return (_documents / _threads) * thread_id + std::min(thread_id, _documents % _threads);
@@ -315,6 +316,7 @@ public:
           _put_passes(2),
           _update_passes(1),
           _remove_passes(2),
+          _rpc_network_threads(1),
           _enable_service_layer(false)
     {
     }
@@ -326,12 +328,14 @@ public:
     uint32_t get_put_passes() const { return _put_passes; }
     uint32_t get_update_passes() const { return _update_passes; }
     uint32_t get_remove_passes() const { return _remove_passes; }
+    uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
     bool get_enable_service_layer() const { return _enable_service_layer; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_threads(uint32_t threads_in) { _threads = threads_in; }
     void set_put_passes(uint32_t put_passes_in) { _put_passes = put_passes_in; }
     void set_update_passes(uint32_t update_passes_in) { _update_passes = update_passes_in; }
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
+    void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }
     void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
     bool check() const;
 };
@@ -353,6 +357,10 @@ BMParams::check() const
     }
     if (_put_passes < 1) {
         std::cerr << "Put passes too low: " << _put_passes << std::endl;
+        return false;
+    }
+    if (_rpc_network_threads < 1) {
+        std::cerr << "Too few rpc network threads: " << _rpc_network_threads << std::endl;
         return false;
     }
     return true;
@@ -418,7 +426,7 @@ struct MyStorageConfig
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
 
-    MyStorageConfig(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in, int slobrok_port, int status_port)
+    MyStorageConfig(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in, int slobrok_port, int status_port, uint32_t rpc_network_threads)
         : config_id(config_id_in),
           documenttypes(documenttypes_in),
           persistence(),
@@ -464,6 +472,7 @@ struct MyStorageConfig
             slobroks.slobrok.push_back(std::move(slobrok));
         }
         stor_communicationmanager.useDirectStorageapiRpc = true;
+        stor_communicationmanager.rpc.numNetworkThreads = rpc_network_threads;
         stor_status.httpport = status_port;
     }
 
@@ -623,7 +632,7 @@ struct PersistenceProviderFixture {
     std::unique_ptr<MyMessageDispatcher>       _rpc_message_dispatcher;
     std::unique_ptr<StorageApiRpcService>      _rpc_client;
 
-    PersistenceProviderFixture();
+    PersistenceProviderFixture(const BMParams& params);
     ~PersistenceProviderFixture();
     void create_document_db();
     uint32_t num_buckets() const { return (1u << _bucket_bits); }
@@ -638,7 +647,7 @@ struct PersistenceProviderFixture {
     void send_rpc(std::shared_ptr<storage::api::StorageCommand> cmd, MyPendingTracker& pending_tracker);
 };
 
-PersistenceProviderFixture::PersistenceProviderFixture()
+PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
     : _document_types(make_document_type()),
       _repo(DocumentTypeRepoFactory::make(*_document_types)),
       _doc_type_name("test"),
@@ -666,7 +675,7 @@ PersistenceProviderFixture::PersistenceProviderFixture()
       _persistence_engine(),
       _context(default_load_type, Priority(0), Trace::TraceLevel(0)),
       _bucket_bits(16),
-      _service_layer_config("bm-servicelayer", *_document_types, _slobrok_port, _status_port),
+      _service_layer_config("bm-servicelayer", *_document_types, _slobrok_port, _status_port, params.get_rpc_network_threads()),
       _rpc_client_config("bm-rpc-client", _slobrok_port),
       _config_set(),
       _config_context(std::make_shared<ConfigContext>(_config_set)),
@@ -1017,7 +1026,7 @@ run_remove_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
 void benchmark_async_spi(const BMParams &bm_params)
 {
     vespalib::rmdir(base_dir, true);
-    PersistenceProviderFixture f;
+    PersistenceProviderFixture f(bm_params);
     auto &provider = *f._persistence_engine;
     LOG(info, "start initialize");
     provider.initialize();
@@ -1075,6 +1084,7 @@ App::usage()
         "[--put-passes put-passes]\n"
         "[--update-passes update-passes]\n"
         "[--remove-passes remove-passes]\n"
+        "[--rpc-network-threads threads]\n"
         "[--enable-service-layer]" << std::endl;
 }
 
@@ -1090,6 +1100,7 @@ App::get_options()
         { "put-passes", 1, nullptr, 0 },
         { "update-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
+        { "rpc-network-threads", 1, nullptr, 0 },
         { "enable-service-layer", 0, nullptr, 0 }
     };
     enum longopts_enum {
@@ -1098,6 +1109,7 @@ App::get_options()
         LONGOPT_PUT_PASSES,
         LONGOPT_UPDATE_PASSES,
         LONGOPT_REMOVE_PASSES,
+        LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_ENABLE_SERVICE_LAYER
     };
     int opt_index = 1;
@@ -1120,6 +1132,9 @@ App::get_options()
                 break;
             case LONGOPT_REMOVE_PASSES:
                 _bm_params.set_remove_passes(atoi(opt_argument));
+                break;
+            case LONGOPT_RPC_NETWORK_THREADS:
+                _bm_params.set_rpc_network_threads(atoi(opt_argument));
                 break;
             case LONGOPT_ENABLE_SERVICE_LAYER:
                 _bm_params.set_enable_service_layer(true);
