@@ -390,7 +390,8 @@ public class Flags {
             "use-config-server-vip",
             false,
             "Whether the controller should use a config server VIP or not",
-            "Takes effect immediately"
+            "Takes effect immediately",
+            ZONE_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
