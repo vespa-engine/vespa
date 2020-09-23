@@ -55,6 +55,11 @@ public class RoutingApiTest extends ControllerContainerTest {
                                               Request.Method.GET),
                               new File("discovery/root.json"));
 
+        // GET root with api prefix
+        tester.assertResponse(operatorRequest("http://localhost:8080/api/routing/v1/", "",
+                Request.Method.GET),
+                new File("discovery/root.json"));
+
         // GET tenant
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1", "",
                                               Request.Method.GET),
