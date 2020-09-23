@@ -12,13 +12,13 @@
 namespace vespalib::eval::packed_mixed_tensor {
 
 /**
- * An implementation of NewValue modeling a mixed tensor,
+ * An implementation of Value modeling a mixed tensor,
  * where all the data (cells and sparse address mappings)
  * can reside in a self-contained, contigous block of memory.
  * Currently must be built by a PackedMixedBuilder.
  * Immutable (all data always const).
  **/
-class PackedMixedTensor : public NewValue, public NewValue::Index
+class PackedMixedTensor : public Value, public Value::Index
 {
 private:
     const ValueType _type;
@@ -38,12 +38,12 @@ private:
 public:
     ~PackedMixedTensor() override;
 
-    // NewValue API:
+    // Value API:
     const ValueType &type() const override { return _type; }
-    const NewValue::Index &index() const override { return *this; }
+    const Value::Index &index() const override { return *this; }
     TypedCells cells() const override { return _cells; }
 
-    // NewValue::Index API:
+    // Value::Index API:
     size_t size() const override { return _mappings.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 };

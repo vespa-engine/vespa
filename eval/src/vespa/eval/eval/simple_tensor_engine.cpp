@@ -63,7 +63,7 @@ SimpleTensorEngine::to_spec(const Value &value) const
     const auto &dimensions = value.type().dimensions();
     with_simple(value, [&spec,&dimensions](const SimpleTensor &simple_tensor)
                 {
-                    for (const auto &cell: simple_tensor.cells()) {
+                    for (const auto &cell: simple_tensor.my_cells()) {
                         TensorSpec::Address addr;
                         assert(cell.address.size() == dimensions.size());
                         for (size_t i = 0; i < cell.address.size(); ++i) {

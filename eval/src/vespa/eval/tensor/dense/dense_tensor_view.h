@@ -28,6 +28,8 @@ public:
 
     const eval::ValueType &fast_type() const { return _typeRef; }
     const TypedCells &cellsRef() const { return _cellsRef; }
+    TypedCells cells() const override { return _cellsRef; }
+    const Index &index() const override { return eval::TrivialIndex::get(); }
     bool operator==(const DenseTensorView &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_typeRef, _cellsRef); }
 

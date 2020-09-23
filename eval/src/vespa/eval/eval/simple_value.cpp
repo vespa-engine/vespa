@@ -26,7 +26,7 @@ struct CreateSimpleValueBuilderBase {
 };
 
 struct CreateValueFromTensorSpec {
-    template <typename T> static std::unique_ptr<NewValue> invoke(const ValueType &type, const TensorSpec &spec, const ValueBuilderFactory &factory) {
+    template <typename T> static std::unique_ptr<Value> invoke(const ValueType &type, const TensorSpec &spec, const ValueBuilderFactory &factory) {
         using SparseKey = std::vector<vespalib::stringref>;
         using DenseMap = std::map<size_t,T>;
         std::map<SparseKey,DenseMap> map;
@@ -57,7 +57,7 @@ struct CreateValueFromTensorSpec {
 };
 
 struct CreateTensorSpecFromValue {
-    template <typename T> static TensorSpec invoke(const NewValue &value) {
+    template <typename T> static TensorSpec invoke(const Value &value) {
         auto cells = value.cells().typify<T>();
         TensorSpec spec(value.type().to_spec());
         size_t subspace_id = 0;
@@ -95,7 +95,7 @@ struct CreateTensorSpecFromValue {
     }
 };
 
-class SimpleValueView : public NewValue::Index::View {
+class SimpleValueView : public Value::Index::View {
 private:
     using Addr = std::vector<vespalib::string>;
     using Map = std::map<Addr,size_t>;
@@ -174,8 +174,8 @@ public:
 // index in the largest index.
 struct SparseJoinState {
     bool                                    swapped;
-    const NewValue::Index                  &first_index;
-    const NewValue::Index                  &second_index;
+    const Value::Index                     &first_index;
+    const Value::Index                     &second_index;
     const std::vector<size_t>              &second_view_dims;
     std::vector<vespalib::stringref>        full_address;
     std::vector<vespalib::stringref*>       first_address;
@@ -186,7 +186,7 @@ struct SparseJoinState {
     size_t                                 &first_subspace;
     size_t                                 &second_subspace;
 
-    SparseJoinState(const SparseJoinPlan &plan, const NewValue::Index &lhs, const NewValue::Index &rhs)
+    SparseJoinState(const SparseJoinPlan &plan, const Value::Index &lhs, const Value::Index &rhs)
         : swapped(rhs.size() < lhs.size()),
           first_index(swapped ? rhs : lhs), second_index(swapped ? lhs : rhs),
           second_view_dims(swapped ? plan.lhs_overlap : plan.rhs_overlap),
@@ -216,8 +216,8 @@ SparseJoinState::~SparseJoinState() = default;
 // as input cell types since output cell type cannot always be
 // directly inferred.
 struct GenericJoin {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static std::unique_ptr<NewValue>
-    invoke(const NewValue &lhs, const NewValue &rhs, join_fun_t function,
+    template <typename LCT, typename RCT, typename OCT, typename Fun> static std::unique_ptr<Value>
+    invoke(const Value &lhs, const Value &rhs, join_fun_t function,
            const SparseJoinPlan &sparse_plan, const DenseJoinPlan &dense_plan,
            const ValueType &res_type, const ValueBuilderFactory &factory)
     {
@@ -269,7 +269,7 @@ SimpleValue::SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_
 
 SimpleValue::~SimpleValue() = default;
 
-std::unique_ptr<NewValue::Index::View>
+std::unique_ptr<Value::Index::View>
 SimpleValue::create_view(const std::vector<size_t> &dims) const
 {
     return std::make_unique<SimpleValueView>(_index, dims, _num_mapped_dims);
@@ -385,7 +385,7 @@ SparseJoinPlan::~SparseJoinPlan() = default;
 
 using JoinTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
 
-std::unique_ptr<NewValue> new_join(const NewValue &a, const NewValue &b, join_fun_t function, const ValueBuilderFactory &factory) {
+std::unique_ptr<Value> new_join(const Value &a, const Value &b, join_fun_t function, const ValueBuilderFactory &factory) {
     auto res_type = ValueType::join(a.type(), b.type());
     assert(!res_type.is_error());
     SparseJoinPlan sparse_plan(a.type(), b.type());
@@ -396,7 +396,7 @@ std::unique_ptr<NewValue> new_join(const NewValue &a, const NewValue &b, join_fu
 
 //-----------------------------------------------------------------------------
 
-std::unique_ptr<NewValue> new_value_from_spec(const TensorSpec &spec, const ValueBuilderFactory &factory) {
+std::unique_ptr<Value> value_from_spec(const TensorSpec &spec, const ValueBuilderFactory &factory) {
     ValueType type = ValueType::from_spec(spec.type());
     assert(!type.is_error());
     return typify_invoke<1,TypifyCellType,CreateValueFromTensorSpec>(type.cell_type(), type, spec, factory);
@@ -404,7 +404,7 @@ std::unique_ptr<NewValue> new_value_from_spec(const TensorSpec &spec, const Valu
 
 //-----------------------------------------------------------------------------
 
-TensorSpec spec_from_new_value(const NewValue &value) {
+TensorSpec spec_from_value(const Value &value) {
     return typify_invoke<1,TypifyCellType,CreateTensorSpecFromValue>(value.type().cell_type(), value);
 }
 

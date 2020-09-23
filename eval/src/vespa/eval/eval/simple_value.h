@@ -3,8 +3,6 @@
 #pragma once
 
 #include "value.h"
-#include "value_type.h"
-#include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
@@ -16,62 +14,6 @@ namespace vespalib::eval {
 class TensorSpec;
 
 using TypedCells = ::vespalib::tensor::TypedCells;
-
-/**
- * Experimental interface layer that will be moved into Value when all
- * existing implementations are able to implement it. This interface
- * will try to unify scalars, dense tensors, sparse tensors and mixed
- * tensors while also enabling operations to be implemented
- * efficiently using this interface without having knowledge about the
- * actual implementation. Baseline operations will treat all values as
- * mixed tensors. Simplified and optimized variants may replace them
- * as done today based on type knowledge.
- *
- * All values are expected to be separated into a continuous area
- * storing cells as concatenated dense subspaces, and an index
- * structure used to look up label combinations; mapping them into a
- * set of dense subspaces.
- **/
-struct NewValue : Value {
-
-    // Root lookup structure for mapping labels to dense subspace indexes
-    struct Index {
-
-        // A view able to look up dense subspace indexes from labels
-        // specifying a partial address for the dimensions given to
-        // create_view. A view is re-usable. Lookups are performed by
-        // calling the lookup function and lookup results are
-        // extracted using the next_result function.
-        struct View {
-
-            // look up dense subspace indexes from labels specifying a
-            // partial address for the dimensions given to
-            // create_view. Results from the lookup is extracted using
-            // the next_result function.
-            virtual void lookup(const std::vector<const vespalib::stringref*> &addr) = 0;
-
-            // Extract the next result (if any) from the previous
-            // lookup into the given partial address and index. Only
-            // the labels for the dimensions NOT specified in
-            // create_view will be extracted here.
-            virtual bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) = 0;
-
-            virtual ~View() {}
-        };
-
-        // total number of mappings (equal to the number of dense subspaces)
-        virtual size_t size() const = 0;
-
-        // create a view able to look up dense subspaces based on
-        // labels from a subset of the mapped dimensions.
-        virtual std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const = 0;
-
-        virtual ~Index() {}
-    };
-    virtual TypedCells cells() const = 0;
-    virtual const Index &index() const = 0;
-    virtual ~NewValue() {}
-};
 
 /**
  * Tagging interface used as return type from factories before
@@ -98,7 +40,7 @@ struct ValueBuilder : ValueBuilderBase {
     // Given the ownership of the builder itself, produce the newly
     // created value. This means that builders can only be used once,
     // it also means values can build themselves.
-    virtual std::unique_ptr<NewValue> build(std::unique_ptr<ValueBuilder> self) = 0;
+    virtual std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder> self) = 0;
 };
 
 /**
@@ -140,7 +82,7 @@ protected:
  * test the correctness of tensor operations as they are moved away
  * from the implementation of individual tensor classes.
  **/
-class SimpleValue : public NewValue, public NewValue::Index
+class SimpleValue : public Value, public Value::Index
 {
 private:
     using Addr = std::vector<vespalib::string>;
@@ -155,7 +97,7 @@ public:
     SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValue() override;
     const ValueType &type() const override { return _type; }
-    const NewValue::Index &index() const override { return *this; }
+    const Value::Index &index() const override { return *this; }
     size_t size() const override { return _index.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 };
@@ -173,11 +115,11 @@ public:
     ~SimpleValueT() override;
     TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
     ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) override;
-    std::unique_ptr<NewValue> build(std::unique_ptr<ValueBuilder<T>> self) override {
+    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         ValueBuilder<T>* me = this;
         assert(me == self.get());
         self.release();
-        return std::unique_ptr<NewValue>(this);
+        return std::unique_ptr<Value>(this);
     }
 };
 
@@ -259,17 +201,17 @@ struct SparseJoinPlan {
  * dimensional overlap and result type.
  **/
 using join_fun_t = double (*)(double, double);
-std::unique_ptr<NewValue> new_join(const NewValue &a, const NewValue &b, join_fun_t function, const ValueBuilderFactory &factory);
+std::unique_ptr<Value> new_join(const Value &a, const Value &b, join_fun_t function, const ValueBuilderFactory &factory);
 
 /**
  * Make a value from a tensor spec using a value builder factory
  * interface, making it work with any value implementation.
  **/
-std::unique_ptr<NewValue> new_value_from_spec(const TensorSpec &spec, const ValueBuilderFactory &factory);
+std::unique_ptr<Value> value_from_spec(const TensorSpec &spec, const ValueBuilderFactory &factory);
 
 /**
  * Convert a generic value to a tensor spec.
  **/
-TensorSpec spec_from_new_value(const NewValue &value);
+TensorSpec spec_from_value(const Value &value);
 
 }
