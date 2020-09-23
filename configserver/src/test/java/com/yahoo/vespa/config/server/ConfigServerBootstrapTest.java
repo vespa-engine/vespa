@@ -220,6 +220,7 @@ public class ConfigServerBootstrapTest {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
+                                              .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
                                               .hostedVespa(hosted)
                                               .multitenant(hosted)
                                               .maxDurationOfBootstrap(2) /* seconds */

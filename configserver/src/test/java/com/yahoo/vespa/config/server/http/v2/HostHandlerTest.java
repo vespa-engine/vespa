@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -19,7 +20,9 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,10 +43,19 @@ public class HostHandlerTest {
     private final static Zone zone = Zone.defaultZone();
     private ApplicationRepository applicationRepository;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setup() {
+    public void setup() throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .zone(zone)
+                .configServerConfig(configserverConfig)
                 .build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenant);
@@ -51,6 +63,7 @@ public class HostHandlerTest {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new SessionHandlerTest.MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
+                .withConfigserverConfig(configserverConfig)
                 .build();
         handler = new HostHandler(HostHandler.testOnlyContext(), applicationRepository);
     }

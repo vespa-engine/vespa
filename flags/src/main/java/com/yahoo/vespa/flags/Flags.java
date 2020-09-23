@@ -296,7 +296,7 @@ public class Flags {
             ZONE_ID);
 
     public static final UnboundBooleanFlag CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE = defineFeatureFlag(
-            "configserver-distribute-application-package", false,
+            "configserver-distribute-application-package", true,
             "Whether the application package should be distributed to other config servers during a deployment",
             "Takes effect immediately");
 

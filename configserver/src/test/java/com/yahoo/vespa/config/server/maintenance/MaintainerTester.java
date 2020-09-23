@@ -47,6 +47,7 @@ class MaintainerTester {
                 .hostedVespa(true)
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)

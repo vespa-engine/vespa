@@ -382,6 +382,7 @@ public class ApplicationRepositoryTest {
                 new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                .configServerDBDir(serverdb.getAbsolutePath())
                                                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
+                                               .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
                                                .sessionLifetime(60));
         DeployTester tester = new DeployTester(configserverConfig, clock);
         tester.deployApp("src/test/apps/app", clock.instant()); // session 2 (numbering starts at 2)

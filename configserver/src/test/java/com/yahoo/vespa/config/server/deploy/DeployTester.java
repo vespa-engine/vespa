@@ -78,7 +78,8 @@ public class DeployTester {
         this(modelFactories,
              new ConfigserverConfig(new ConfigserverConfig.Builder()
                      .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
-                     .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())),
+                     .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
+                     .fileReferencesDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())),
              Clock.systemUTC());
     }
 
