@@ -27,6 +27,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
     private final FileDistributionMaintainer fileDistributionMaintainer;
     private final SessionsMaintainer sessionsMaintainer;
     private final ApplicationPackageMaintainer applicationPackageMaintainer;
+    private final LocksMaintainer locksMaintainer;
 
     @Inject
     public ConfigServerMaintenance(ConfigServerBootstrap configServerBootstrap,
@@ -40,6 +41,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
         applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
+        locksMaintainer = new LocksMaintainer(applicationRepository, curator, Duration.ofSeconds(10), flagSource);
     }
 
     @Override
@@ -48,6 +50,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         sessionsMaintainer.close();
         applicationPackageMaintainer.close();
         tenantsMaintainer.close();
+        locksMaintainer.close();
     }
 
     /*
