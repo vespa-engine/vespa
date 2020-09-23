@@ -9,7 +9,6 @@ import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -180,7 +179,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
-            periodicRedeployInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(90) : Duration.ofMinutes(30);
+            periodicRedeployInterval = Duration.ofMinutes(30);
             provisionedExpiry = Duration.ofHours(4);
             rebalancerInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(120) : Duration.ofMinutes(40);
             redeployMaintainerInterval = Duration.ofMinutes(1);
