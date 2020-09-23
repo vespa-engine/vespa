@@ -14,11 +14,13 @@ public class NodeEntity {
     private final String hostname;
     private final Optional<String> model;
     private final Optional<String> manufacturer;
+    private final Optional<String> switchHostname;
 
-    public NodeEntity(String hostname, String model, String manufacturer) {
+    public NodeEntity(String hostname, String model, String manufacturer, String switchHostname) {
         this.hostname = Objects.requireNonNull(hostname);
         this.model = nonBlank(model);
         this.manufacturer = nonBlank(manufacturer);
+        this.switchHostname = nonBlank(switchHostname);
     }
 
     public String hostname() {
@@ -33,6 +35,11 @@ public class NodeEntity {
     /** The manufacturer of this node */
     public Optional<String> manufacturer() {
         return manufacturer;
+    }
+
+    /** The hostname of network switch this node is connected to */
+    public Optional<String> switchHostname() {
+        return switchHostname;
     }
 
     private static Optional<String> nonBlank(String s) {
