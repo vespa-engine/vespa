@@ -116,7 +116,7 @@ public class UpgraderTest {
 
         assertEquals("New system version: Should upgrade Canaries", 4, tester.jobs().active().size());
         canary0.runJob(systemTest);
-        canary0.timeOutUpgrade(stagingTest);
+        canary0.failDeployment(stagingTest);
 
         tester.controllerTester().computeVersionStatus();
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
@@ -153,7 +153,7 @@ public class UpgraderTest {
         assertEquals("Canaries done: Should upgrade defaults", 6, tester.jobs().active().size());
 
         default0.runJob(systemTest);
-        default0.timeOutConvergence(stagingTest);
+        default0.failDeployment(stagingTest);
         default1.deployPlatform(version3);
         default2.deployPlatform(version3);
 
@@ -1035,7 +1035,7 @@ public class UpgraderTest {
         assertEquals(v3, application.instanceJobs().get(stagingTest).lastSuccess().get().versions().targetPlatform());
 
         // First deployment fails and then successfully upgrades to v3
-        application.timeOutUpgrade(productionUsCentral1);
+        application.failDeployment(productionUsCentral1);
         application.runJob(productionUsCentral1);
 
         // Deployments are now on 3 versions
