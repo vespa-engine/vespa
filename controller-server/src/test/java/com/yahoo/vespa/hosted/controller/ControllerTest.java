@@ -185,10 +185,9 @@ public class ControllerTest {
         assertNull("Deployment job was removed", context.instanceJobs().get(productionUsWest1));
 
         // Submission has stored application meta.
-        assertArrayEquals(applicationPackage.metaDataZip(),
-                          tester.controllerTester().serviceRegistry().applicationStore()
-                                .getMeta(context.instanceId())
-                                .get(tester.clock().instant()));
+        assertNotNull(tester.controllerTester().serviceRegistry().applicationStore()
+                            .getMeta(context.instanceId())
+                            .get(tester.clock().instant()));
 
         // Meta data tombstone placed on delete
         tester.clock().advance(Duration.ofSeconds(1));
