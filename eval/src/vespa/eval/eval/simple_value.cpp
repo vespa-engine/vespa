@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simple_value.h"
-#include "tensor_spec.h"
 #include "inline_operation.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
@@ -22,80 +21,6 @@ struct CreateSimpleValueBuilderBase {
     {
         assert(check_cell_type<T>(type.cell_type()));
         return std::make_unique<SimpleValueT<T>>(type, num_mapped_dims_in, subspace_size_in);
-    }
-};
-
-struct CreateValueFromTensorSpec {
-    template <typename T> static std::unique_ptr<Value> invoke(const ValueType &type, const TensorSpec &spec, const ValueBuilderFactory &factory) {
-        using SparseKey = std::vector<vespalib::stringref>;
-        using DenseMap = std::map<size_t,T>;
-        std::map<SparseKey,DenseMap> map;
-        for (const auto &entry: spec.cells()) {
-            SparseKey sparse_key;
-            size_t dense_key = 0;
-            for (const auto &dim: type.dimensions()) {
-                auto pos = entry.first.find(dim.name);
-                assert(pos != entry.first.end());
-                assert(pos->second.is_mapped() == dim.is_mapped());
-                if (dim.is_mapped()) {
-                    sparse_key.emplace_back(pos->second.name);
-                } else {
-                    dense_key = (dense_key * dim.size) + pos->second.index;
-                }
-            }
-            map[sparse_key][dense_key] = entry.second;
-        }
-        // hack for passing some (invalid?) unit tests
-        if (spec.cells().empty() && type.count_mapped_dimensions() == 0) {
-            map[SparseKey()][0] = 0;
-        }
-        auto builder = factory.create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), map.size());
-        for (const auto &entry: map) {
-            auto subspace = builder->add_subspace(entry.first);
-            for (const auto &cell: entry.second) {
-                subspace[cell.first] = cell.second;
-            }
-        }
-        return builder->build(std::move(builder));
-    }
-};
-
-struct CreateTensorSpecFromValue {
-    template <typename T> static TensorSpec invoke(const Value &value) {
-        auto cells = value.cells().typify<T>();
-        TensorSpec spec(value.type().to_spec());
-        size_t subspace_id = 0;
-        size_t subspace_size = value.type().dense_subspace_size();
-        std::vector<vespalib::stringref> labels(value.type().count_mapped_dimensions());
-        std::vector<vespalib::stringref*> label_refs;
-        for (auto &label: labels) {
-            label_refs.push_back(&label);
-        }
-        auto view = value.index().create_view({});
-        view->lookup({});
-        while (view->next_result(label_refs, subspace_id)) {
-            size_t label_idx = 0;
-            TensorSpec::Address addr;
-            for (const auto &dim: value.type().dimensions()) {
-                if (dim.is_mapped()) {
-                    addr.emplace(dim.name, labels[label_idx++]);
-                }
-            }
-            for (size_t i = 0; i < subspace_size; ++i) {
-                size_t dense_key = i;
-                for (auto dim = value.type().dimensions().rbegin();
-                     dim != value.type().dimensions().rend(); ++dim)
-                {
-                    if (dim->is_indexed()) {
-                        size_t label = dense_key % dim->size;
-                        addr.emplace(dim->name, label).first->second = TensorSpec::Label(label);
-                        dense_key /= dim->size;
-                    }
-                }
-                spec.add(addr, cells[(subspace_size * subspace_id) + i]);
-            }
-        }
-        return spec;
     }
 };
 
@@ -396,20 +321,6 @@ std::unique_ptr<Value> new_join(const Value &a, const Value &b, join_fun_t funct
     DenseJoinPlan dense_plan(a.type(), b.type());
     return typify_invoke<4,JoinTypify,GenericJoin>(a.type().cell_type(), b.type().cell_type(), res_type.cell_type(), function,
                                                    a, b, function, sparse_plan, dense_plan, res_type, factory);
-}
-
-//-----------------------------------------------------------------------------
-
-std::unique_ptr<Value> value_from_spec(const TensorSpec &spec, const ValueBuilderFactory &factory) {
-    ValueType type = ValueType::from_spec(spec.type());
-    assert(!type.is_error());
-    return typify_invoke<1,TypifyCellType,CreateValueFromTensorSpec>(type.cell_type(), type, spec, factory);
-}
-
-//-----------------------------------------------------------------------------
-
-TensorSpec spec_from_value(const Value &value) {
-    return typify_invoke<1,TypifyCellType,CreateTensorSpecFromValue>(value.type().cell_type(), value);
 }
 
 //-----------------------------------------------------------------------------
