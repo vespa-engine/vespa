@@ -4,6 +4,7 @@ vespa_add_library(eval_eval OBJECT
     aggr.cpp
     basic_nodes.cpp
     call_nodes.cpp
+    codec.cpp
     compile_tensor_function.cpp
     delete_node.cpp
     fast_forest.cpp
@@ -28,6 +29,7 @@ vespa_add_library(eval_eval OBJECT
     tensor_nodes.cpp
     tensor_spec.cpp
     value.cpp
+    value_codec.cpp
     value_type.cpp
     value_type_spec.cpp
     visit_stuff.cpp

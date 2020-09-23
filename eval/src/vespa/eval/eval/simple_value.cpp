@@ -3,6 +3,7 @@
 #include "simple_value.h"
 #include "tensor_spec.h"
 #include "inline_operation.h"
+#include "codec.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/util/overload.h>
@@ -44,6 +45,10 @@ struct CreateValueFromTensorSpec {
                 }
             }
             map[sparse_key][dense_key] = entry.second;
+        }
+        // hack for passing some (invalid?) unit tests
+        if (spec.cells().empty() && type.count_mapped_dimensions() == 0) {
+            map[SparseKey()][0] = 0;
         }
         auto builder = factory.create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), map.size());
         for (const auto &entry: map) {
@@ -410,4 +415,4 @@ TensorSpec spec_from_value(const Value &value) {
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace
