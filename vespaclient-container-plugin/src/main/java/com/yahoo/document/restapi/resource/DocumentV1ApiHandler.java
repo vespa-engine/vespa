@@ -280,11 +280,16 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         DocumentId id = path.id();
         ResponseHandler handler = new MeasuringResponseHandler(rawHandler, DocumentOperationType.PUT, clock.instant());
         return new ForwardingContentChannel(in -> {
-            DocumentPut put = parser.parsePut(in, id.toString());
-            getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
-            executor.put(put,
-                         new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
-                                              __ -> respond(responseRoot(request, id), handler)));
+            try {
+                DocumentPut put = parser.parsePut(in, id.toString());
+                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
+                executor.put(put,
+                             new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
+                                                  __ -> respond(responseRoot(request, id), handler)));
+            }
+            catch (IllegalArgumentException e) {
+                badRequest(request, Exceptions.toMessageString(e), responseRoot(request, id), handler);
+            }
         });
     }
 
@@ -292,12 +297,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         DocumentId id = path.id();
         ResponseHandler handler = new MeasuringResponseHandler(rawHandler, DocumentOperationType.UPDATE, clock.instant());
         return new ForwardingContentChannel(in -> {
-            DocumentUpdate update = parser.parseUpdate(in, id.toString());
-            getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
-            getProperty(request, CREATE).map(booleanParser::parse).ifPresent(update::setCreateIfNonExistent);
-            executor.update(update,
-                            new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
-                                                 __ -> respond(responseRoot(request, id), handler)));
+            try {
+                DocumentUpdate update = parser.parseUpdate(in, id.toString());
+                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
+                getProperty(request, CREATE).map(booleanParser::parse).ifPresent(update::setCreateIfNonExistent);
+                executor.update(update,
+                                new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
+                                                     __ -> respond(responseRoot(request, id), handler)));
+            }
+            catch (IllegalArgumentException e) {
+                badRequest(request, Exceptions.toMessageString(e), responseRoot(request, id), handler);
+            }
         });
     }
 
