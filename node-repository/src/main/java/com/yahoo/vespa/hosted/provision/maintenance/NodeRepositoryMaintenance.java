@@ -169,7 +169,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Zone zone, boolean deploymentExistsOnAllConfigServers) {
-            autoscalingInterval = Duration.ofMinutes(5);
+            autoscalingInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(15) : Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             failedExpirerInterval = Duration.ofMinutes(10);
             failGrace = Duration.ofMinutes(30);
@@ -177,7 +177,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
-            operatorChangeRedeployInterval = Duration.ofMinutes(1);
+            operatorChangeRedeployInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(3) : Duration.ofMinutes(1);
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             periodicRedeployInterval = Duration.ofMinutes(30);
             provisionedExpiry = Duration.ofHours(4);
@@ -192,7 +192,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
-                retiredInterval = Duration.ofMinutes(10);
+                retiredInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(30) : Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
                 retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             } else {
