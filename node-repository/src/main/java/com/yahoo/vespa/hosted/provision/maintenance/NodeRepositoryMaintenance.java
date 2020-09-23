@@ -9,7 +9,9 @@ import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
@@ -70,7 +72,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
                                      NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
-        DefaultTimes defaults = new DefaultTimes(zone);
+        DefaultTimes defaults = new DefaultTimes(zone, Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource).value());
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval);
@@ -167,7 +169,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
-        DefaultTimes(Zone zone) {
+        DefaultTimes(Zone zone, boolean deploymentExistsOnAllConfigServers) {
             autoscalingInterval = Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             failedExpirerInterval = Duration.ofMinutes(10);
@@ -178,14 +180,14 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
-            periodicRedeployInterval = Duration.ofMinutes(30);
+            periodicRedeployInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(90) : Duration.ofMinutes(30);
             provisionedExpiry = Duration.ofHours(4);
-            rebalancerInterval = Duration.ofMinutes(40);
+            rebalancerInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(120) : Duration.ofMinutes(40);
             redeployMaintainerInterval = Duration.ofMinutes(1);
             // Need to be long enough for deployment to be finished for all config model versions
             // Should be equal to timeout for deployments
             reservationExpiry = zone.system().isCd() ? Duration.ofMinutes(5) : Duration.ofMinutes(30);
-            scalingSuggestionsInterval = Duration.ofMinutes(31);
+            scalingSuggestionsInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(91) : Duration.ofMinutes(31);
             spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
