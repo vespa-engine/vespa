@@ -252,7 +252,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                           respond(root, handler);
                                       }
                                   },
-                                  // TODO jonmv: make streaming — first doc indicates 200 OK anyway.
+                                  // TODO jonmv: make streaming — first doc indicates 200 OK anyway — unless session dies, which is a semi-200 anyway
                                   document -> {
                                       synchronized (monitor) { // Putting things into the slime is not thread safe, so need synchronization.
                                           SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),

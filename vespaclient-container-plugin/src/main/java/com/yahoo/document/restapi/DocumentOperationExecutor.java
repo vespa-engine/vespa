@@ -147,6 +147,7 @@ public class DocumentOperationExecutor {
                             if ( ! hasVisitedAnyBuckets())
                                 context.error(TIMEOUT, "No buckets visited within timeout of " + visitTimeout);
                         case SUCCESS:
+                        case ABORTED:
                             context.success(Optional.ofNullable(getProgress())
                                                     .filter(progress -> ! progress.isFinished())
                                                     .map(ProgressToken::serializeToString));
