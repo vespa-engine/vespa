@@ -20,11 +20,9 @@ import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.MessageBusAsyncSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
@@ -146,7 +144,7 @@ public class DocumentOperationExecutor {
                         case TIMEOUT:
                             if ( ! hasVisitedAnyBuckets())
                                 context.error(TIMEOUT, "No buckets visited within timeout of " + visitTimeout);
-                        case SUCCESS:
+                        case SUCCESS: // intentional fallthrough
                         case ABORTED:
                             context.success(Optional.ofNullable(getProgress())
                                                     .filter(progress -> ! progress.isFinished())
@@ -180,19 +178,16 @@ public class DocumentOperationExecutor {
         switch (result.type()) {
             case SUCCESS:
                 outstanding.put(result.getRequestId(), context);
-                return;
+                break;
             case TRANSIENT_ERROR:
-                if (throttled.size() > maxThrottled) {
+                if (throttled.size() > maxThrottled)
                     context.error(OVERLOAD, maxThrottled + " requests already in retry queue");
-                    break;
-                }
-                else {
+                else
                     throttled.add(new Delayed(clock.instant().plus(resendDelay), operation, context));
-                    return;
-                }
+                break;
             default:
                 log.log(Level.WARNING, "Unknown result type '" + result.type() + "'");
-            case FATAL_ERROR:
+            case FATAL_ERROR: // intentional fallthrough
                 context.error(ERROR, result.getError().getMessage());
         }
     }
@@ -217,7 +212,7 @@ public class DocumentOperationExecutor {
                 return PRECONDITION_FAILED;
             default:
                 log.log(Level.WARNING, "Unexpected response outcome: " + outcome);
-            case ERROR:
+            case ERROR: // intentional fallthrough
                 return ERROR;
         }
     }

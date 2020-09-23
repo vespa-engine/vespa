@@ -339,7 +339,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 break;
             default:
                 log.log(WARNING, "Unexpected error type '" + type + "'");
-            case ERROR:
+            case ERROR: // intentional fallthrough
                 serverError(request, message, root, handler);
         }
     }
