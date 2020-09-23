@@ -58,18 +58,20 @@ void maybe_encode_cell_type(nbostream &output, const Format &format, CellType ce
 void encode_type(nbostream &output, const Format &format, const ValueType &type) {
     maybe_encode_cell_type(output, format, type.cell_type());
     if (format.has_sparse) {
-        const auto & dims = type.mapped_dimensions();
-        output.putInt1_4Bytes(dims.size());
-        for (const auto & dim : dims) {
-            output.writeSmallString(dim.name);
+        output.putInt1_4Bytes(type.count_mapped_dimensions());
+        for (const auto & dim : type.dimensions()) {
+            if (dim.is_mapped()) {
+                output.writeSmallString(dim.name);
+            }
         }
     }
     if (format.has_dense) {
-        const auto & dims = type.indexed_dimensions();
-        output.putInt1_4Bytes(dims.size());
-        for (const auto & dim : dims) {
-            output.writeSmallString(dim.name);
-            output.putInt1_4Bytes(dim.size);
+        output.putInt1_4Bytes(type.count_indexed_dimensions());
+        for (const auto & dim : type.dimensions()) {
+            if (dim.is_indexed()) {
+                output.writeSmallString(dim.name);
+                output.putInt1_4Bytes(dim.size);
+            }
         }
     }
 }
@@ -236,8 +238,6 @@ struct CreateTensorSpecFromValue {
     }
 };
 
-} // namespace <unnamed>
-
 struct EncodeState {
     size_t num_mapped_dims;
     size_t subspace_size;
@@ -264,6 +264,8 @@ struct ContentEncoder {
         }
     }
 };
+
+} // namespace <unnamed>
     
 void encode_value(const Value &value, nbostream &output) {
     size_t num_mapped_dims = value.type().count_mapped_dimensions();

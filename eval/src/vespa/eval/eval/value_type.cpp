@@ -221,17 +221,6 @@ ValueType::nontrivial_indexed_dimensions() const {
 }
 
 std::vector<ValueType::Dimension>
-ValueType::indexed_dimensions() const {
-    std::vector<ValueType::Dimension> result;
-    for (const auto &dim: dimensions()) {
-        if (dim.is_indexed()) {
-            result.push_back(dim);
-        }
-    }
-    return result;
-}
-
-std::vector<ValueType::Dimension>
 ValueType::mapped_dimensions() const {
     std::vector<ValueType::Dimension> result;
     for (const auto &dim: dimensions()) {
