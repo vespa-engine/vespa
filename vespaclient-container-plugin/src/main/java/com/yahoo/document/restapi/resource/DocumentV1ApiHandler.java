@@ -18,7 +18,7 @@ import com.yahoo.document.restapi.DocumentOperationExecutor;
 import com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType;
 import com.yahoo.document.restapi.DocumentOperationExecutor.Group;
 import com.yahoo.document.restapi.DocumentOperationExecutor.OperationContext;
-import com.yahoo.document.restapi.DocumentOperationExecutor.VisitorContext;
+import com.yahoo.document.restapi.DocumentOperationExecutor.VisitOperationsContext;
 import com.yahoo.document.restapi.DocumentOperationExecutor.VisitorOptions;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
@@ -146,17 +146,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return rawResponseHandler.handleResponse(response);
         };
 
-        if ( ! (rawRequest instanceof HttpRequest)) {
-            log.log(SEVERE, "Expected a " + HttpRequest.class.getName() + ", but got a " + rawRequest.getClass().getName());
-            try {
-                rawResponseHandler.handleResponse(new Response(500)).close(logException);
-            }
-            catch (RuntimeException e) {
-                log.log(FINE, () -> "Problems writing data to jDisc content channel: " + Exceptions.toMessageString(e));
-            }
-            return ignoredContent;
-        }
-
         HttpRequest request = (HttpRequest) rawRequest;
         try {
             Path requestPath = new Path(request.getUri());
@@ -239,9 +228,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         return ignoredContent;
     }
 
-    private static VisitorContext visitorContext(HttpRequest request, Cursor root, Cursor documents, ResponseHandler handler) {
+    private static VisitOperationsContext visitorContext(HttpRequest request, Cursor root, Cursor documents, ResponseHandler handler) {
         Object monitor = new Object();
-        return new VisitorContext((type, message) -> {
+        return new VisitOperationsContext((type, message) -> {
                                       synchronized (monitor) {
                                           handleError(request, type, message, root, handler);
                                       }
@@ -252,8 +241,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                           respond(root, handler);
                                       }
                                   },
-                                  // TODO jonmv: make streaming — first doc indicates 200 OK anyway — unless session dies, which is a semi-200 anyway
-                                  document -> {
+                                          // TODO jonmv: make streaming — first doc indicates 200 OK anyway — unless session dies, which is a semi-200 anyway
+                                          document -> {
                                       synchronized (monitor) { // Putting things into the slime is not thread safe, so need synchronization.
                                           SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
                                                                 documents.addObject());

@@ -130,7 +130,7 @@ public class DocumentOperationExecutor {
         accept(() -> asyncSession.remove(id), context);
     }
 
-    public void visit(VisitorOptions options, VisitorContext context) {
+    public void visit(VisitorOptions options, VisitOperationsContext context) {
         try {
             VisitorParameters parameters = options.asParameters(clusters, visitTimeout);
             parameters.setLocalDataHandler(new DumpVisitorDataHandler() {
@@ -285,11 +285,11 @@ public class DocumentOperationExecutor {
     }
 
     /** Context for reacting to the progress of a visitor session. Completion signalled by an optional progress token. */
-    public static class VisitorContext extends Context<Optional<String>> {
+    public static class VisitOperationsContext extends Context<Optional<String>> {
 
         private final Consumer<Document> onDocument;
 
-        public VisitorContext(BiConsumer<ErrorType, String> onError, Consumer<Optional<String>> onSuccess, Consumer<Document> onDocument) {
+        public VisitOperationsContext(BiConsumer<ErrorType, String> onError, Consumer<Optional<String>> onSuccess, Consumer<Document> onDocument) {
             super(onError, onSuccess);
             this.onDocument = onDocument;
         }
@@ -378,7 +378,7 @@ public class DocumentOperationExecutor {
                                                                            namespace.map("id.namespace=="::concat),
                                                                            group.map(Group::selection))
                                                                        .flatMap(Optional::stream)
-                                                                       .reduce(new StringJoiner(") and (", "(", ")").setEmptyValue(""),
+                                                                       .reduce(new StringJoiner(") and (", "(", ")").setEmptyValue(""), // don't mind the lonely chicken to the right
                                                                                StringJoiner::add,
                                                                                StringJoiner::merge)
                                                                        .toString());
