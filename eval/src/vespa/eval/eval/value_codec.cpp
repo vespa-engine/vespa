@@ -265,7 +265,7 @@ struct ContentEncoder {
     }
 };
     
-void new_encode(const Value &value, nbostream &output) {
+void encode_value(const Value &value, nbostream &output) {
     size_t num_mapped_dims = value.type().count_mapped_dimensions();
     size_t dense_subspace_size = value.type().dense_subspace_size();
     Format format(value.type());
@@ -276,7 +276,7 @@ void new_encode(const Value &value, nbostream &output) {
     typify_invoke<1,TypifyCellType,ContentEncoder>(value.type().cell_type(), value, state, output);
 }
 
-std::unique_ptr<Value> new_decode(nbostream &input, const ValueBuilderFactory &factory) {
+std::unique_ptr<Value> decode_value(nbostream &input, const ValueBuilderFactory &factory) {
     Format format(input.getInt1_4Bytes());
     ValueType type = decode_type(input, format);
     size_t num_mapped_dims = type.count_mapped_dimensions();

@@ -18,7 +18,7 @@ struct Factory {
         return value_from_spec(spec, simple);
     }
     std::unique_ptr<Value> decode(nbostream &input) {
-        return new_decode(input, simple);
+        return decode_value(input, simple);
     }
 } simple_factory;
 
@@ -104,8 +104,8 @@ struct TensorExample {
         encode_with_float(expect_float);
         nbostream data_double;
         nbostream data_float;
-        new_encode(*make_tensor(false), data_double);
-        new_encode(*make_tensor(true), data_float);
+        encode_value(*make_tensor(false), data_double);
+        encode_value(*make_tensor(true), data_float);
         EXPECT_EQ(Memory(data_double.peek(), data_double.size()),
                   Memory(expect_default.peek(), expect_default.size()));
         EXPECT_EQ(Memory(data_float.peek(), data_float.size()),

@@ -53,9 +53,9 @@ TensorSpec verify_new_value_serialized(const ExpBuffer &exp, const TensorSpec &s
     auto new_value = vespalib::eval::value_from_spec(spec, factory);
     auto new_value_spec = vespalib::eval::spec_from_value(*new_value);
     nbostream actual;
-    vespalib::eval::new_encode(*new_value, actual);
+    vespalib::eval::encode_value(*new_value, actual);
     ASSERT_EQUAL(exp, actual);
-    auto new_decoded = vespalib::eval::new_decode(actual, factory);
+    auto new_decoded = vespalib::eval::decode_value(actual, factory);
     auto new_decoded_spec = vespalib::eval::spec_from_value(*new_decoded);
     EXPECT_EQUAL(0u, actual.size());
     EXPECT_EQUAL(new_value_spec, new_decoded_spec);

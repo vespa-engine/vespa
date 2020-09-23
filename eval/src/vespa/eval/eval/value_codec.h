@@ -10,14 +10,14 @@ namespace vespalib { class nbostream; }
 namespace vespalib::eval {
 
 /**
- * encode a value to binary format
+ * encode a value (which must support the new APIs) to binary format
  **/
-void new_encode(const Value &value, nbostream &output);
+void encode_value(const Value &value, nbostream &output);
 
 /**
  * decode a value from binary format
  **/
-std::unique_ptr<Value> new_decode(nbostream &input, const ValueBuilderFactory &factory);
+std::unique_ptr<Value> decode_value(nbostream &input, const ValueBuilderFactory &factory);
 
 /**
  * Make a value from a tensor spec using a value builder factory
