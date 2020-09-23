@@ -141,20 +141,18 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     @Override
     public ContentChannel handleRequest(Request rawRequest, ResponseHandler rawResponseHandler) {
         metric.add("handled.requests", 1, contextFor(rawRequest));
-        ResponseHandler responseHandler = new ResponseHandler() {
-            @Override public ContentChannel handleResponse(Response response) {
-                return null;
-            }
+        ResponseHandler responseHandler = response -> {
+            metric.set("handled.latency", rawRequest.timeElapsed(TimeUnit.MILLISECONDS), contextFor(rawRequest));
+            return rawResponseHandler.handleResponse(response);
         };
 
         if ( ! (rawRequest instanceof HttpRequest)) {
-            metric.add("rendering_errors", 1, null);
             log.log(SEVERE, "Expected a " + HttpRequest.class.getName() + ", but got a " + rawRequest.getClass().getName());
             try {
                 rawResponseHandler.handleResponse(new Response(500)).close(logException);
             }
             catch (RuntimeException e) {
-                log.log(FINE, () -> "Error ");
+                log.log(FINE, () -> "Problems writing data to jDisc content channel: " + Exceptions.toMessageString(e));
             }
             return ignoredContent;
         }
@@ -432,12 +430,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static ContentChannel respond(int status, Inspector root, ResponseHandler handler) {
         Response response = new Response(status);
         response.headers().put("Content-Type", "application/json; charset=UTF-8");
-        ContentChannel out = handler.handleResponse(new Response(status));
+        ContentChannel out = null;
         try {
+            out = handler.handleResponse(new Response(status));
             out.write(ByteBuffer.wrap(Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(root))), logException);
         }
+        catch (Exception e) {
+            log.log(FINE, () -> "Problems writing data to jDisc content channel: " + Exceptions.toMessageString(e));
+        }
         finally {
-            out.close(logException);
+            if (out != null)
+                out.close(logException);
         }
         return ignoredContent;
     }
