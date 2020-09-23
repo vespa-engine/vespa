@@ -227,9 +227,9 @@ StorageMessageAddress::operator==(const StorageMessageAddress& other) const
     if (_protocol != other._protocol) return false;
     if (_type != other._type) return false;
     if (_type) {
-        if (_cluster != other._cluster) return false;
         if (_index != other._index) return false;
         if (_type != other._type) return false;
+        if (_cluster != other._cluster) return false;
     }
     return true;
 }
