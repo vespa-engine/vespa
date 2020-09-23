@@ -186,7 +186,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             // Need to be long enough for deployment to be finished for all config model versions
             // Should be equal to timeout for deployments
             reservationExpiry = zone.system().isCd() ? Duration.ofMinutes(5) : Duration.ofMinutes(30);
-            scalingSuggestionsInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(91) : Duration.ofMinutes(31);
+            scalingSuggestionsInterval = Duration.ofMinutes(31);
             spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
