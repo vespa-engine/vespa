@@ -49,7 +49,7 @@ void verify_cells_only(const ExpBuffer &exp, const TensorSpec &spec) {
 }
 
 TensorSpec verify_new_value_serialized(const ExpBuffer &exp, const TensorSpec &spec) {
-    auto factory = vespalib::eval::SimpleValueBuilderFactory();
+    const auto &factory = vespalib::eval::SimpleValueBuilderFactory::get();
     auto new_value = vespalib::eval::value_from_spec(spec, factory);
     auto new_value_spec = vespalib::eval::spec_from_value(*new_value);
     nbostream actual;

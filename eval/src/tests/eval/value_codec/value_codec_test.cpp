@@ -12,15 +12,7 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-struct Factory {
-    SimpleValueBuilderFactory simple;
-    std::unique_ptr<Value> from_spec(const TensorSpec &spec) {
-        return value_from_spec(spec, simple);
-    }
-    std::unique_ptr<Value> decode(nbostream &input) {
-        return decode_value(input, simple);
-    }
-} simple_factory;
+const ValueBuilderFactory &factory = SimpleValueBuilderFactory::get();
 
 std::vector<Layout> layouts = {
     {},
@@ -41,7 +33,7 @@ std::vector<Layout> layouts = {
 TEST(ValueCodecTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = simple_factory.from_spec(expect);
+        std::unique_ptr<Value> value = value_from_spec(expect, factory);
         TensorSpec actual = spec_from_value(*value);
         EXPECT_EQ(actual, expect);
     }
@@ -53,7 +45,7 @@ TEST(ValueCodecTest, simple_values_can_be_built_using_tensor_spec) {
         .add({{"w", "xxx"}, {"x", 0}, {"y", "yyy"}, {"z", 1}}, 2.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "xxx"}, {"z", 0}}, 3.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 1}}, 4.0);
-    Value::UP tensor = simple_factory.from_spec(spec);
+    Value::UP tensor = value_from_spec(spec, factory);
     TensorSpec full_spec("tensor(w{},x[2],y{},z[2])");
     full_spec
         .add({{"w", "xxx"}, {"x", 0}, {"y", "xxx"}, {"z", 0}}, 1.0)
@@ -72,7 +64,7 @@ TEST(ValueCodecTest, simple_values_can_be_built_using_tensor_spec) {
         .add({{"w", "yyy"}, {"x", 1}, {"y", "xxx"}, {"z", 1}}, 0.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 0}}, 0.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 1}}, 4.0);
-    Value::UP full_tensor = simple_factory.from_spec(full_spec);
+    Value::UP full_tensor = value_from_spec(full_spec, factory);
     EXPECT_EQUAL(full_spec, spec_from_value(*tensor));
     EXPECT_EQUAL(full_spec, spec_from_value(*full_tensor));
 };
@@ -110,9 +102,9 @@ struct TensorExample {
                   Memory(expect_default.peek(), expect_default.size()));
         EXPECT_EQ(Memory(data_float.peek(), data_float.size()),
                   Memory(expect_float.peek(), expect_float.size()));
-        EXPECT_EQ(spec_from_value(*simple_factory.decode(expect_default)), make_spec(false));
-        EXPECT_EQ(spec_from_value(*simple_factory.decode(expect_double)), make_spec(false));
-        EXPECT_EQ(spec_from_value(*simple_factory.decode(expect_float)), make_spec(true));
+        EXPECT_EQ(spec_from_value(*decode_value(expect_default, factory)), make_spec(false));
+        EXPECT_EQ(spec_from_value(*decode_value(expect_double, factory)), make_spec(false));
+        EXPECT_EQ(spec_from_value(*decode_value(expect_float, factory)), make_spec(true));
     }
 };
 TensorExample::~TensorExample() = default;
@@ -127,7 +119,7 @@ struct SparseTensorExample : TensorExample {
             .add({{"x","b"},{"y","a"}}, 3);
     }
     std::unique_ptr<Value> make_tensor(bool use_float) const override {
-        return simple_factory.from_spec(make_spec(use_float));
+        return value_from_spec(make_spec(use_float), factory);
     }
     template <typename T>
     void encode_inner(nbostream &dst) const {
@@ -179,7 +171,7 @@ struct DenseTensorExample : TensorExample {
             .add({{"x",2},{"y",1}}, 6);
     }
     std::unique_ptr<Value> make_tensor(bool use_float) const override {
-        return simple_factory.from_spec(make_spec(use_float));
+        return value_from_spec(make_spec(use_float), factory);
     }
     template <typename T>
     void encode_inner(nbostream &dst) const {
@@ -229,7 +221,7 @@ struct MixedTensorExample : TensorExample {
             .add({{"x","b"},{"y","a"},{"z",1}}, 6);
     }
     std::unique_ptr<Value> make_tensor(bool use_float) const override {
-        return simple_factory.from_spec(make_spec(use_float));
+        return value_from_spec(make_spec(use_float), factory);
     }
     template <typename T>
     void encode_inner(nbostream &dst) const {
