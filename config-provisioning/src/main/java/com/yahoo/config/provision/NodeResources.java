@@ -1,6 +1,9 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.text.DecimalFormat;
+import java.text.FieldPosition;
+import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -215,13 +218,32 @@ public class NodeResources {
         return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
+    private static StringBuffer appendDouble(StringBuffer sb, double d) {
+        sb.append((long)d).append('.').append(Math.round(d*10)%10);
+        return sb;
+    }
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "[vcpu: %1$.1f, memory: %2$.1f Gb, disk %3$.1f Gb" +
-                            (bandwidthGbps > 0 ? ", bandwidth: %4$.1f Gbps" : "") +
-                            ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
-                            ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]",
-                            vcpu, memoryGb, diskGb, bandwidthGbps);
+        StringBuffer sb = new StringBuffer("[vcpu: ");
+        appendDouble(sb, vcpu);
+        sb.append(", memory: ");
+        appendDouble(sb, memoryGb);
+        sb.append(" Gb, disk ");
+        appendDouble(sb, diskGb);
+        sb.append(" Gb");
+        if (bandwidthGbps > 0) {
+            sb.append(", bandwidth: ");
+            appendDouble(sb, bandwidthGbps);
+            sb.append(" Gbps");
+        }
+        if ( !diskSpeed.isDefault()) {
+            sb.append(", disk speed: ").append(diskSpeed);
+        }
+        if ( !storageType.isDefault()) {
+            sb.append(", storage type: ").append(storageType);
+        }
+        sb.append(']');
+        return sb.toString();
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
