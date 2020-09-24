@@ -4,8 +4,8 @@
 #include <vespa/eval/tensor/mixed/packed_mappings.h>
 #include <vespa/eval/tensor/mixed/packed_mappings_builder.h>
 #include <vespa/eval/tensor/mixed/packed_mixed_tensor.h>
-#include <vespa/eval/tensor/mixed/packed_mixed_builder.h>
-#include <vespa/eval/tensor/mixed/packed_mixed_factory.h>
+#include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder.h>
+#include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -137,7 +137,7 @@ TEST_F(MappingsBuilderTest, some_random)
 
 class MixedBuilderTest : public ::testing::Test {
 public:
-    std::unique_ptr<PackedMixedBuilder<float>> builder;
+    std::unique_ptr<PackedMixedTensorBuilder<float>> builder;
     std::unique_ptr<Value> built;
 
     MixedBuilderTest() = default;
@@ -170,7 +170,7 @@ TEST_F(MixedBuilderTest, empty_mapping)
         size_t dsss = type.dense_subspace_size();
         EXPECT_GT(dims, 0);
         EXPECT_GT(dsss, 0);
-        builder = std::make_unique<PackedMixedBuilder<float>>(type, dims, dsss, 3);
+        builder = std::make_unique<PackedMixedTensorBuilder<float>>(type, dims, dsss, 3);
         build_and_compare(0);
     }
 }
@@ -183,7 +183,7 @@ TEST_F(MixedBuilderTest, just_one)
         size_t dims = type.count_mapped_dimensions();
         size_t dsss = type.dense_subspace_size();
         EXPECT_GT(dsss, 0);
-        builder = std::make_unique<PackedMixedBuilder<float>>(type, dims, dsss, 3);
+        builder = std::make_unique<PackedMixedTensorBuilder<float>>(type, dims, dsss, 3);
         auto address = generate_random_address(dims);
         auto ref = builder->add_subspace(address);
         EXPECT_EQ(ref.size(), dsss);
@@ -203,7 +203,7 @@ TEST_F(MixedBuilderTest, some_random)
         uint32_t dsss = type.dense_subspace_size();
         EXPECT_GT(dims, 0);
         EXPECT_GT(dsss, 0);
-        builder = std::make_unique<PackedMixedBuilder<float>>(type, dims, dsss, 3);
+        builder = std::make_unique<PackedMixedTensorBuilder<float>>(type, dims, dsss, 3);
 
         uint32_t cnt = random_range(dims*5, dims*20);
         printf("MixBuild: generate %u addresses for %u dims\n", cnt, dims);

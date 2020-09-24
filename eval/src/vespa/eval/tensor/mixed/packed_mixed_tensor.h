@@ -15,7 +15,7 @@ namespace vespalib::eval::packed_mixed_tensor {
  * An implementation of Value modeling a mixed tensor,
  * where all the data (cells and sparse address mappings)
  * can reside in a self-contained, contigous block of memory.
- * Currently must be built by a PackedMixedBuilder.
+ * Currently must be built by a PackedMixedTensorBuilder.
  * Immutable (all data always const).
  **/
 class PackedMixedTensor : public Value, public Value::Index
@@ -33,7 +33,7 @@ private:
         _mappings(mappings)
     {}
 
-    template<typename T> friend class PackedMixedBuilder;
+    template<typename T> friend class PackedMixedTensorBuilder;
 
 public:
     ~PackedMixedTensor() override;

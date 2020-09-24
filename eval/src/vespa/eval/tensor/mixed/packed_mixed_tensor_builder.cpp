@@ -1,12 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "packed_mixed_builder.h"
+#include "packed_mixed_tensor_builder.h"
 
 namespace vespalib::eval::packed_mixed_tensor {
 
 template <typename T>
 ArrayRef<T> 
-PackedMixedBuilder<T>::add_subspace(const std::vector<vespalib::stringref> &addr)
+PackedMixedTensorBuilder<T>::add_subspace(const std::vector<vespalib::stringref> &addr)
 {
     uint32_t idx = _mappings_builder.add_mapping_for(addr);
     size_t offset = idx * _subspace_size;
@@ -20,7 +20,7 @@ PackedMixedBuilder<T>::add_subspace(const std::vector<vespalib::stringref> &addr
 
 template <typename T>
 std::unique_ptr<Value>
-PackedMixedBuilder<T>::build(std::unique_ptr<ValueBuilder<T>>)
+PackedMixedTensorBuilder<T>::build(std::unique_ptr<ValueBuilder<T>>)
 {
     size_t self_size = sizeof(PackedMixedTensor);
     size_t mappings_size = _mappings_builder.extra_memory();
@@ -47,7 +47,7 @@ PackedMixedBuilder<T>::build(std::unique_ptr<ValueBuilder<T>>)
     return std::unique_ptr<PackedMixedTensor>(built);
 }
 
-template class PackedMixedBuilder<float>;
-template class PackedMixedBuilder<double>;
+template class PackedMixedTensorBuilder<float>;
+template class PackedMixedTensorBuilder<double>;
 
 } // namespace

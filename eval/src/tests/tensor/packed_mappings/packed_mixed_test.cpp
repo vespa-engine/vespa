@@ -3,7 +3,7 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
-#include <vespa/eval/tensor/mixed/packed_mixed_factory.h>
+#include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
@@ -27,7 +27,7 @@ std::vector<Layout> layouts = {
 TEST(PackedMixedTest, packed_mixed_tensors_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = value_from_spec(expect, PackedMixedFactory());
+        std::unique_ptr<Value> value = value_from_spec(expect, PackedMixedTensorBuilderFactory());
         TensorSpec actual = spec_from_value(*value);
         EXPECT_EQ(actual, expect);
     }
@@ -35,7 +35,7 @@ TEST(PackedMixedTest, packed_mixed_tensors_can_be_converted_from_and_to_tensor_s
 
 TEST(PackedMixedTest, packed_mixed_tensors_can_be_built_and_inspected) {
     ValueType type = ValueType::from_spec("tensor<float>(x{},y[2],z{})");
-    PackedMixedFactory factory;
+    PackedMixedTensorBuilderFactory factory;
     std::unique_ptr<ValueBuilder<float>> builder = factory.create_value_builder<float>(type);
     float seq = 0.0;
     for (vespalib::string x: {"a", "b", "c"}) {

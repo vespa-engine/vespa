@@ -7,11 +7,11 @@
 namespace vespalib::eval {
 
 /**
- * A factory that can generate PackedMixedBuilder
+ * A factory that can generate PackedMixedTensorBuilder
  * objects appropriate for the requested CellType.
  */
-struct PackedMixedFactory : ValueBuilderFactory {
-    ~PackedMixedFactory() override {}
+struct PackedMixedTensorBuilderFactory : ValueBuilderFactory {
+    ~PackedMixedTensorBuilderFactory() override {}
 protected:
     std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,
             size_t num_mapped_in, size_t subspace_size_in, size_t expect_subspaces) const override;
