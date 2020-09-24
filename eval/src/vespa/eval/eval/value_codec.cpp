@@ -3,6 +3,7 @@
 #include "value_codec.h"
 #include "tensor_spec.h"
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/typify.h>
 
 namespace vespalib::eval {
@@ -10,7 +11,6 @@ namespace vespalib::eval {
 namespace {
 
 using CellType = ValueType::CellType;
-using IndexList = std::vector<size_t>;
 
 constexpr uint32_t DOUBLE_CELL_TYPE = 0;
 constexpr uint32_t FLOAT_CELL_TYPE = 1;
@@ -132,7 +132,6 @@ void decode_mapped_labels(nbostream &input, size_t num_mapped_dims, std::vector<
     }
 }
 
-
 template<typename T>
 void decode_cells(nbostream &input, size_t num_cells, ArrayRef<T> dst)
 {
@@ -154,6 +153,9 @@ struct ContentDecoder {
     template<typename T>
     static std::unique_ptr<Value> invoke(nbostream &input, const DecodeState &state, const ValueBuilderFactory &factory) {
         std::vector<vespalib::stringref> address(state.num_mapped_dims);
+        if (state.num_blocks * state.subspace_size * sizeof(T) > input.size()) {
+            throw IllegalStateException("serialized input too big");
+        }
         auto builder = factory.create_value_builder<T>(state.type, state.num_mapped_dims, state.subspace_size, state.num_blocks);
         for (size_t i = 0; i < state.num_blocks; ++i) {
             decode_mapped_labels(input, state.num_mapped_dims, address);
