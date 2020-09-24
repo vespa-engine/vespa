@@ -2,6 +2,9 @@
 
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/tensor_plans.h>
+#include <vespa/eval/eval/tensor_instructions.h>
+#include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -63,16 +66,19 @@ TensorSpec simple_tensor_join(const TensorSpec &a, const TensorSpec &b, join_fun
 }
 
 TensorSpec simple_value_new_join(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
-    auto lhs = value_from_spec(a, SimpleValueBuilderFactory());
-    auto rhs = value_from_spec(b, SimpleValueBuilderFactory());
-    auto result = new_join(*lhs, *rhs, function, SimpleValueBuilderFactory());
-    return spec_from_value(*result);
+    Stash stash;
+    const auto &factory = SimpleValueBuilderFactory::get();
+    auto lhs = value_from_spec(a, factory);
+    auto rhs = value_from_spec(b, factory);
+    auto my_op = tensor_instruction::make_join(lhs->type(), rhs->type(), function, factory, stash);
+    InterpretedFunction::EvalSingle single(my_op);
+    return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
 
 TEST(SimpleValueTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory());
+        std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
         TensorSpec actual = spec_from_value(*value);
         EXPECT_EQ(actual, expect);
     }
@@ -80,7 +86,7 @@ TEST(SimpleValueTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
 
 TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
     ValueType type = ValueType::from_spec("tensor<float>(x{},y[2],z{})");
-    SimpleValueBuilderFactory factory;
+    const auto &factory = SimpleValueBuilderFactory::get();
     std::unique_ptr<ValueBuilder<float>> builder = factory.create_value_builder<float>(type);
     float seq = 0.0;
     for (vespalib::string x: {"a", "b", "c"}) {

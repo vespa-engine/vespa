@@ -99,6 +99,66 @@ public:
     static const ValueType &double_type() { return _type; }
 };
 
+/**
+ * Tagging interface used as return type from factories before
+ * downcasting to actual builder with specialized cell type.
+ **/
+struct ValueBuilderBase {
+    virtual ~ValueBuilderBase() {}
+};
+
+/**
+ * Interface used to build a value one dense subspace at a
+ * time. Enables decoupling of what the value should contain from how
+ * to store the value.
+ **/
+template <typename T>
+struct ValueBuilder : ValueBuilderBase {
+    // add a dense subspace for the given address (label for all
+    // mapped dimensions in canonical order). Note that previously
+    // returned subspaces will be invalidated when new subspaces are
+    // added. Also note that adding the same subspace multiple times
+    // is not allowed.
+    virtual ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) = 0;
+
+    // Given the ownership of the builder itself, produce the newly
+    // created value. This means that builders can only be used once,
+    // it also means values can build themselves.
+    virtual std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder> self) = 0;
+};
+
+/**
+ * Factory able to create appropriate value builders. We do not really
+ * care about the full mathematical type here, but it needs to be
+ * passed since it is exposed in the value api. The expected number of
+ * subspaces is also passed since it enables the builder to pre-size
+ * internal structures appropriately. Note that since we are not able
+ * to have virtual templated functions we need to cast the created
+ * builder. With interoperability between all values.
+ **/
+struct ValueBuilderFactory {
+    template <typename T>
+    std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType &type,
+            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const
+    {
+        assert(check_cell_type<T>(type.cell_type()));
+        auto base = create_value_builder_base(type, num_mapped_dims_in, subspace_size_in, expected_subspaces);
+        ValueBuilder<T> *builder = dynamic_cast<ValueBuilder<T>*>(base.get());
+        assert(builder);
+        base.release();
+        return std::unique_ptr<ValueBuilder<T>>(builder);
+    }
+    template <typename T>
+    std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType &type) const
+    {
+        return create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), 1);
+    }
+    virtual ~ValueBuilderFactory() {}
+protected:
+    virtual std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,
+            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const = 0;
+};
+
 }
 
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);

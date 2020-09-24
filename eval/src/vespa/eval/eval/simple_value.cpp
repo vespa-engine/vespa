@@ -97,79 +97,6 @@ public:
     }
 };
 
-// Contains various state needed to perform the sparse part (all
-// mapped dimensions) of the join operation. Performs swapping of
-// sparse indexes to ensure that we look up entries from the smallest
-// index in the largest index.
-struct SparseJoinState {
-    bool                                    swapped;
-    const Value::Index                     &first_index;
-    const Value::Index                     &second_index;
-    const std::vector<size_t>              &second_view_dims;
-    std::vector<vespalib::stringref>        full_address;
-    std::vector<vespalib::stringref*>       first_address;
-    std::vector<const vespalib::stringref*> address_overlap;
-    std::vector<vespalib::stringref*>       second_only_address;
-    size_t                                  lhs_subspace;
-    size_t                                  rhs_subspace;
-    size_t                                 &first_subspace;
-    size_t                                 &second_subspace;
-
-    SparseJoinState(const SparseJoinPlan &plan, const Value::Index &lhs, const Value::Index &rhs)
-        : swapped(rhs.size() < lhs.size()),
-          first_index(swapped ? rhs : lhs), second_index(swapped ? lhs : rhs),
-          second_view_dims(swapped ? plan.lhs_overlap : plan.rhs_overlap),
-          full_address(plan.sources.size()),
-          first_address(), address_overlap(), second_only_address(),
-          lhs_subspace(), rhs_subspace(),
-          first_subspace(swapped ? rhs_subspace : lhs_subspace),
-          second_subspace(swapped ? lhs_subspace : rhs_subspace)
-    {
-        auto first_source = swapped ? SparseJoinPlan::Source::RHS : SparseJoinPlan::Source::LHS;
-        for (size_t i = 0; i < full_address.size(); ++i) {
-            if (plan.sources[i] == SparseJoinPlan::Source::BOTH) {
-                first_address.push_back(&full_address[i]);
-                address_overlap.push_back(&full_address[i]);
-            } else if (plan.sources[i] == first_source) {
-                first_address.push_back(&full_address[i]);
-            } else {
-                second_only_address.push_back(&full_address[i]);
-            }
-        }
-    }
-    ~SparseJoinState();
-};
-SparseJoinState::~SparseJoinState() = default;
-
-// Treats all values as mixed tensors. Needs output cell type as well
-// as input cell types since output cell type cannot always be
-// directly inferred.
-struct GenericJoin {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static std::unique_ptr<Value>
-    invoke(const Value &lhs, const Value &rhs, join_fun_t function,
-           const SparseJoinPlan &sparse_plan, const DenseJoinPlan &dense_plan,
-           const ValueType &res_type, const ValueBuilderFactory &factory)
-    {
-        Fun fun(function);
-        auto lhs_cells = lhs.cells().typify<LCT>();
-        auto rhs_cells = rhs.cells().typify<RCT>();
-        SparseJoinState state(sparse_plan, lhs.index(), rhs.index());
-        auto builder = factory.create_value_builder<OCT>(res_type, sparse_plan.sources.size(), dense_plan.out_size, state.first_index.size());
-        auto outer = state.first_index.create_view({});
-        auto inner = state.second_index.create_view(state.second_view_dims);
-        outer->lookup({});
-        while (outer->next_result(state.first_address, state.first_subspace)) {
-            inner->lookup(state.address_overlap);
-            while (inner->next_result(state.second_only_address, state.second_subspace)) {
-                OCT *dst = builder->add_subspace(state.full_address).begin();
-                auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
-                dense_plan.execute(dense_plan.lhs_size * state.lhs_subspace, dense_plan.rhs_size * state.rhs_subspace, join_cells);
-            }
-        }
-        return builder->build(std::move(builder));
-    }
-};
-
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
@@ -229,6 +156,9 @@ SimpleValueT<T>::add_subspace(const std::vector<vespalib::stringref> &addr)
 
 //-----------------------------------------------------------------------------
 
+SimpleValueBuilderFactory::SimpleValueBuilderFactory() = default;
+SimpleValueBuilderFactory SimpleValueBuilderFactory::_factory;
+
 std::unique_ptr<ValueBuilderBase>
 SimpleValueBuilderFactory::create_value_builder_base(const ValueType &type,
                                                      size_t num_mapped_dims_in, size_t subspace_size_in, size_t) const
@@ -238,91 +168,4 @@ SimpleValueBuilderFactory::create_value_builder_base(const ValueType &type,
 
 //-----------------------------------------------------------------------------
 
-DenseJoinPlan::DenseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type)
-    : lhs_size(1), rhs_size(1), out_size(1), loop_cnt(), lhs_stride(), rhs_stride()
-{
-    enum class Case { NONE, LHS, RHS, BOTH };
-    Case prev_case = Case::NONE;
-    auto update_plan = [&](Case my_case, size_t my_size, size_t in_lhs, size_t in_rhs) {
-        if (my_case == prev_case) {
-            assert(!loop_cnt.empty());
-            loop_cnt.back() *= my_size;
-        } else {
-            loop_cnt.push_back(my_size);
-            lhs_stride.push_back(in_lhs);
-            rhs_stride.push_back(in_rhs);
-            prev_case = my_case;
-        }
-    };
-    auto visitor = overload
-                   {
-                       [&](visit_ranges_first, const auto &a) { update_plan(Case::LHS, a.size, 1, 0); },
-                       [&](visit_ranges_second, const auto &b) { update_plan(Case::RHS, b.size, 0, 1); },
-                       [&](visit_ranges_both, const auto &a, const auto &) { update_plan(Case::BOTH, a.size, 1, 1); }
-                   };
-    auto lhs_dims = lhs_type.nontrivial_indexed_dimensions();
-    auto rhs_dims = rhs_type.nontrivial_indexed_dimensions();
-    visit_ranges(visitor, lhs_dims.begin(), lhs_dims.end(), rhs_dims.begin(), rhs_dims.end(),
-                 [](const auto &a, const auto &b){ return (a.name < b.name); });
-    for (size_t i = loop_cnt.size(); i-- > 0; ) {
-        out_size *= loop_cnt[i];
-        if (lhs_stride[i] != 0) {
-            lhs_stride[i] = lhs_size;
-            lhs_size *= loop_cnt[i];
-        }
-        if (rhs_stride[i] != 0) {
-            rhs_stride[i] = rhs_size;
-            rhs_size *= loop_cnt[i];
-        }
-    }
 }
-
-DenseJoinPlan::~DenseJoinPlan() = default;
-
-//-----------------------------------------------------------------------------
-
-SparseJoinPlan::SparseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type)
-    : sources(), lhs_overlap(), rhs_overlap()
-{
-    size_t lhs_idx = 0;
-    size_t rhs_idx = 0;
-    auto visitor = overload
-                   {
-                       [&](visit_ranges_first, const auto &) {
-                           sources.push_back(Source::LHS);
-                           ++lhs_idx;
-                       },
-                       [&](visit_ranges_second, const auto &) {
-                           sources.push_back(Source::RHS);
-                           ++rhs_idx;
-                       },
-                       [&](visit_ranges_both, const auto &, const auto &) {
-                           sources.push_back(Source::BOTH);
-                           lhs_overlap.push_back(lhs_idx++);
-                           rhs_overlap.push_back(rhs_idx++);
-                       }
-                   };
-    auto lhs_dims = lhs_type.mapped_dimensions();
-    auto rhs_dims = rhs_type.mapped_dimensions();
-    visit_ranges(visitor, lhs_dims.begin(), lhs_dims.end(), rhs_dims.begin(), rhs_dims.end(),
-                 [](const auto &a, const auto &b){ return (a.name < b.name); });
-}
-
-SparseJoinPlan::~SparseJoinPlan() = default;
-
-//-----------------------------------------------------------------------------
-
-using JoinTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
-
-std::unique_ptr<Value> new_join(const Value &a, const Value &b, join_fun_t function, const ValueBuilderFactory &factory) {
-    auto res_type = ValueType::join(a.type(), b.type());
-    assert(!res_type.is_error());
-    SparseJoinPlan sparse_plan(a.type(), b.type());
-    DenseJoinPlan dense_plan(a.type(), b.type());
-    return typify_invoke<4,JoinTypify,GenericJoin>(a.type().cell_type(), b.type().cell_type(), res_type.cell_type(), function,
-                                                   a, b, function, sparse_plan, dense_plan, res_type, factory);
-}
-
-//-----------------------------------------------------------------------------
-
-} // namespace

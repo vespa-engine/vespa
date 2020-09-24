@@ -25,7 +25,9 @@ vespa_add_library(eval_eval OBJECT
     tensor.cpp
     tensor_engine.cpp
     tensor_function.cpp
+    tensor_instructions.cpp
     tensor_nodes.cpp
+    tensor_plans.cpp
     tensor_spec.cpp
     value.cpp
     value_codec.cpp

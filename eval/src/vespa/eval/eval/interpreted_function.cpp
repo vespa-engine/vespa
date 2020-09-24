@@ -7,6 +7,7 @@
 #include "tensor_engine.h"
 #include "make_tensor_function.h"
 #include "compile_tensor_function.h"
+#include "simple_tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
@@ -115,6 +116,28 @@ InterpretedFunction::detect_issues(const Function &function)
     } checker;
     function.root().traverse(checker);
     return Function::Issues(std::move(checker.issues));
+}
+
+InterpretedFunction::EvalSingle::EvalSingle(Instruction op)
+    : _state(SimpleTensorEngine::ref()),
+      _op(op)
+{
+}
+
+InterpretedFunction::EvalSingle::EvalSingle(const TensorEngine &engine, Instruction op)
+    : _state(engine),
+      _op(op)
+{
+}
+
+const Value &
+InterpretedFunction::EvalSingle::eval(const std::vector<Value::CREF> &stack)
+{
+    _state.stash.clear();
+    _state.stack = stack;
+    _op.perform(_state);
+    assert(_state.stack.size() == 1);
+    return _state.stack.back();
 }
 
 }
