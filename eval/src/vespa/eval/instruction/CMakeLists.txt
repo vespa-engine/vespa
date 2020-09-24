@@ -2,5 +2,6 @@
 
 vespa_add_library(eval_instruction OBJECT
     SOURCES
+    generic_join
     generic_rename
 )

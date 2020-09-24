@@ -2,13 +2,23 @@
 
 #pragma once
 
-#include "value_type.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/interpreted_function.h>
 
-namespace vespalib::eval {
+namespace vespalib { class Stash; }
+namespace vespalib::eval { class ValueBuilderFactory; }
 
-class ValueBuilderFactory;
+namespace vespalib::eval::instruction {
+
+using join_fun_t = double (*)(double, double);
+
+//-----------------------------------------------------------------------------
+
+struct GenericJoin {
+    static InterpretedFunction::Instruction
+    make_instruction(const ValueType &lhs_type, const ValueType &rhs_type, join_fun_t function,
+                     const ValueBuilderFactory &factory, Stash &stash);
+};
 
 //-----------------------------------------------------------------------------
 
@@ -74,4 +84,4 @@ struct SparseJoinPlan {
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace
