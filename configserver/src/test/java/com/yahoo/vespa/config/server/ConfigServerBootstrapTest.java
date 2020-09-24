@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -32,7 +31,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -63,7 +61,8 @@ public class ConfigServerBootstrapTest {
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
@@ -96,7 +95,8 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
@@ -121,7 +121,8 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).build();
         tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
@@ -158,13 +159,15 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapNonHostedOneConfigModel() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
         String vespaVersion = "1.2.3";
-        List<ModelFactory> modelFactories = Collections.singletonList(DeployTester.createModelFactory(Version.fromString(vespaVersion)));
         List<Host> hosts = createHosts(vespaVersion);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
         Curator curator = new MockCurator();
-        DeployTester tester = new DeployTester(modelFactories, configserverConfig,
-                                               Clock.systemUTC(), new Zone(Environment.dev, RegionName.defaultName()),
-                                               provisioner, curator);
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(DeployTester.createModelFactory(Version.fromString(vespaVersion)))
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true))
+                .configserverConfig(configserverConfig)
+                .zone(new Zone(Environment.dev, RegionName.defaultName()))
+                .curator(curator)
+                .build();
         tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
         ApplicationId applicationId = tester.applicationId();
 

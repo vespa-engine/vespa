@@ -27,7 +27,7 @@ public class RedeployTest {
 
     @Test
     public void testRedeploy() {
-        DeployTester tester = new DeployTester();
+        DeployTester tester = new DeployTester.Builder().build();
         tester.deployApp("src/test/apps/app");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
@@ -45,7 +45,7 @@ public class RedeployTest {
     public void testNoRedeploy() {
         List<ModelFactory> modelFactories = List.of(createModelFactory(Clock.systemUTC()),
                                                     createFailingModelFactory(Version.fromString("1.0.0")));
-        DeployTester tester = new DeployTester(modelFactories);
+        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).build();
         ApplicationId id = ApplicationId.from(tester.tenant().getName(),
                                               ApplicationName.from("default"),
                                               InstanceName.from("default"));
