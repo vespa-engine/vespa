@@ -325,19 +325,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             case DocumentProtocol.REPLY_UPDATEDOCUMENT:
                 return new UpdateResponse(reqId, ((UpdateDocumentReply)reply).wasFound(), reply.getTrace());
             case DocumentProtocol.REPLY_PUTDOCUMENT:
-                break;
-            default:
-                return new Response(reqId, null, SUCCESS, reply.getTrace());
-        }
-        // TODO jonmv: Why on earth is this relevant!?
-        Message msg = reply.getMessage();
-        switch (msg.getType()) {
-            case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-                return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), null, SUCCESS, reply.getTrace());
-            case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-                return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), null, SUCCESS, reply.getTrace());
-            case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-                return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), null, SUCCESS, reply.getTrace());
+                return new DocumentResponse(reqId, ((PutDocumentMessage)reply.getMessage()).getDocumentPut().getDocument(), reply.getTrace());
             default:
                 return new Response(reqId, null, SUCCESS, reply.getTrace());
         }
