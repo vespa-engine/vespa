@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.configchange;
 import com.yahoo.config.model.api.ConfigChangeAction;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Contains an aggregated view of which actions that must be performed to handle config
@@ -18,13 +19,16 @@ public class ConfigChangeActions {
     private final RefeedActions refeedActions;
 
     public ConfigChangeActions() {
-        this.restartActions = new RestartActions();
-        this.refeedActions = new RefeedActions();
+        this(new RestartActions(), new RefeedActions());
     }
 
     public ConfigChangeActions(List<ConfigChangeAction> actions) {
-        this.restartActions = new RestartActions(actions);
-        this.refeedActions = new RefeedActions(actions);
+        this(new RestartActions(actions), new RefeedActions(actions));
+    }
+
+    public ConfigChangeActions(RestartActions restartActions, RefeedActions refeedActions) {
+        this.restartActions = Objects.requireNonNull(restartActions);
+        this.refeedActions = Objects.requireNonNull(refeedActions);
     }
 
     public RestartActions getRestartActions() {

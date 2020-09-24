@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -84,7 +85,8 @@ public class TenantRepository {
     private final ExecutorService zkCacheExecutor;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService bootstrapExecutor;
-    private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
+    private final ScheduledExecutorService checkForRemovedApplicationsService =
+            new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
     private final Optional<Curator.DirectoryCache> directoryCache;
 
     /**
@@ -96,7 +98,8 @@ public class TenantRepository {
     public TenantRepository(GlobalComponentRegistry componentRegistry) {
         this.componentRegistry = componentRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
-        this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders());
+        this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
+                                                              new DaemonThreadFactory("bootstrap tenants"));
         this.curator = componentRegistry.getCurator();
         metricUpdater = componentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(componentRegistry.getTenantListener());

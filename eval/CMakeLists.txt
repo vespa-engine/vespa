@@ -32,6 +32,7 @@ vespa_define_module(
     src/tests/eval/value_codec
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
+    src/tests/instruction/generic_rename
     src/tests/tensor/dense_add_dimension_optimizer
     src/tests/tensor/dense_dimension_combiner
     src/tests/tensor/dense_dot_product_function
@@ -72,6 +73,7 @@ vespa_define_module(
     src/vespa/eval/eval/test
     src/vespa/eval/eval/value_cache
     src/vespa/eval/gp
+    src/vespa/eval/instruction
     src/vespa/eval/tensor
     src/vespa/eval/tensor/dense
     src/vespa/eval/tensor/mixed

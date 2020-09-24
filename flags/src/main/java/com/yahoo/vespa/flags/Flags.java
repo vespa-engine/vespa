@@ -410,6 +410,12 @@ public class Flags {
             "Takes effect on next deploy from controller",
             APPLICATION_ID, ZONE_ID);
 
+    public static final UnboundLongFlag NODE_OBJECT_CACHE_SIZE = defineLongFlag(
+            "node-object-cache-size",
+            1000,
+            "The number of deserialized Node objects to store in-memory.",
+            "Takes effect on config server restart");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

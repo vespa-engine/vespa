@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -25,6 +24,7 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -32,7 +32,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -56,6 +55,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class ConfigServerBootstrapTest {
 
+    private final MockCurator curator = new MockCurator();
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -63,11 +64,11 @@ public class ConfigServerBootstrapTest {
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
@@ -96,11 +97,11 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
@@ -121,11 +122,11 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         // Manipulate application package so that it will fail deployment when config server starts
@@ -158,18 +159,19 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapNonHostedOneConfigModel() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
         String vespaVersion = "1.2.3";
-        List<ModelFactory> modelFactories = Collections.singletonList(DeployTester.createModelFactory(Version.fromString(vespaVersion)));
         List<Host> hosts = createHosts(vespaVersion);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
         Curator curator = new MockCurator();
-        DeployTester tester = new DeployTester(modelFactories, configserverConfig,
-                                               Clock.systemUTC(), new Zone(Environment.dev, RegionName.defaultName()),
-                                               provisioner, curator);
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(DeployTester.createModelFactory(Version.fromString(vespaVersion)))
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true))
+                .configserverConfig(configserverConfig)
+                .zone(new Zone(Environment.dev, RegionName.defaultName()))
+                .curator(curator)
+                .build();
         tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
         ApplicationId applicationId = tester.applicationId();
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         // Ugly hack, but I see no other way of doing it:
@@ -240,6 +242,10 @@ public class ConfigServerBootstrapTest {
                              new VipStatusConfig.Builder().build(),
                              new ClustersStatus(),
                              stateMonitor);
+    }
+
+    private VersionState createVersionState() throws IOException {
+        return new VersionState(temporaryFolder.newFile(), curator, new InMemoryFlagSource());
     }
 
     public static class MockRpcServer extends com.yahoo.vespa.config.server.rpc.MockRpcServer {

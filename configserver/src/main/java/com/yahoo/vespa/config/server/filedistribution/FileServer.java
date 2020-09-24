@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
@@ -79,8 +80,10 @@ public class FileServer {
     private FileServer(ConnectionPool connectionPool, File rootDir) {
         this.downloader = new FileDownloader(connectionPool);
         this.root = new FileDirectory(rootDir);
-        this.pushExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()));
-        this.pullExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()));
+        this.pushExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
+                                                         new DaemonThreadFactory("file server push"));
+        this.pullExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
+                                                         new DaemonThreadFactory("file server pull"));
     }
 
     boolean hasFile(String fileReference) {
@@ -191,6 +194,8 @@ public class FileServer {
 
     public void close() {
         downloader.close();
+        pullExecutor.shutdown();
+        pushExecutor.shutdown();
     }
 
 }

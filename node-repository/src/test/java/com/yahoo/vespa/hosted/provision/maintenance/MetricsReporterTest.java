@@ -123,6 +123,10 @@ public class MetricsReporterTest {
         expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
 
+        expectedMetrics.put("cache.nodeObject.hitRate", 1.0D);
+        expectedMetrics.put("cache.nodeObject.evictionCount", 0L);
+        expectedMetrics.put("cache.nodeObject.size", 2L);
+
         ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
 
         Orchestrator orchestrator = mock(Orchestrator.class);

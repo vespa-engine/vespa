@@ -79,8 +79,9 @@ public class CuratorDatabaseClient {
     private final CuratorCounter provisionIndexCounter;
     private final boolean logStackTracesOnLockTimeout;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache, boolean logStackTracesOnLockTimeout) {
-        this.nodeSerializer = new NodeSerializer(flavors);
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache, boolean logStackTracesOnLockTimeout,
+                                 long nodeObjectCacheSize) {
+        this.nodeSerializer = new NodeSerializer(flavors, nodeObjectCacheSize);
         this.zone = zone;
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
@@ -586,6 +587,10 @@ public class CuratorDatabaseClient {
         return IntStream.range(0, numIndexes)
                 .mapToObj(i -> firstProvisionIndex + i)
                 .collect(Collectors.toList());
+    }
+
+    public NodeSerializer.CacheStats nodeSerializerCacheStats() {
+        return nodeSerializer.cacheStats();
     }
 
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {

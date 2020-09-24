@@ -313,11 +313,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, Instant now) {
+        if (prepareParams.internalRestart() && hostProvisioner.isEmpty())
+            throw new IllegalArgumentException("Internal restart not supported without HostProvisioner");
+
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = getTenant(applicationId);
         PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
         activate(tenant, sessionId, prepareParams.getTimeoutBudget(), prepareParams.force());
+
+        if (prepareParams.internalRestart() && !result.configChangeActions().getRestartActions().isEmpty()) {
+            Set<String> hostnames = result.configChangeActions().getRestartActions().getEntries().stream()
+                    .flatMap(entry -> entry.getServices().stream())
+                    .map(ServiceInfo::getHostName)
+                    .collect(Collectors.toUnmodifiableSet());
+
+            hostProvisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
+            ConfigChangeActions newActions = new ConfigChangeActions(new RestartActions(), result.configChangeActions().getRefeedActions());
+            return new PrepareResult(result.sessionId(), newActions, result.deployLog());
+        }
+
         return result;
     }
 

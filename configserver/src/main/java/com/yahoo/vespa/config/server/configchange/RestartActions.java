@@ -97,6 +97,6 @@ public class RestartActions {
     }
 
     public boolean isEmpty() {
-        return getEntries().isEmpty();
+        return actions.isEmpty();
     }
 }
