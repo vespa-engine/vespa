@@ -9,6 +9,7 @@ import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentIdResponse;
+import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.DocumentResponse;
 import com.yahoo.documentapi.DocumentUpdateResponse;
 import com.yahoo.documentapi.RemoveResponse;
@@ -16,6 +17,7 @@ import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.ResponseHandler;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.UpdateResponse;
+import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
@@ -33,6 +35,7 @@ import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSession;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.ThrottlePolicy;
+import com.yahoo.messagebus.routing.Route;
 
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -41,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
+import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
@@ -96,19 +100,24 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result put(Document document) {
-        return put(new DocumentPut(document), DocumentProtocol.Priority.NORMAL_3);
+        return put(new DocumentPut(document), parameters());
     }
 
     @Override
     public Result put(DocumentPut documentPut, DocumentProtocol.Priority pri) {
+        return put(documentPut, parameters().withPriority(pri));
+    }
+
+    @Override
+    public Result put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
-        msg.setPriority(pri);
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_3);
         return send(msg);
     }
 
     @Override
     public Result get(DocumentId id) {
-        return get(id, DocumentProtocol.Priority.NORMAL_1);
+        return get(id, parameters());
     }
 
     @Override
@@ -119,35 +128,52 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result get(DocumentId id, DocumentProtocol.Priority pri) {
-        GetDocumentMessage msg = new GetDocumentMessage(id, AllFields.NAME);
-        msg.setPriority(pri);
+        return get(id, parameters().withPriority(pri));
+    }
+
+    @Override
+    public Result get(DocumentId id, DocumentOperationParameters parameters) {
+        GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_1);
         return send(msg);
     }
 
     @Override
     public Result remove(DocumentId id) {
-        return remove(id, DocumentProtocol.Priority.NORMAL_2);
+        return remove(id, parameters());
     }
 
     @Override
     public Result remove(DocumentId id, DocumentProtocol.Priority pri) {
+        return remove(id, parameters().withPriority(pri));
+    }
+
+    @Override
+    public Result remove(DocumentId id, DocumentOperationParameters parameters) {
         RemoveDocumentMessage msg = new RemoveDocumentMessage(id);
-        msg.setPriority(pri);
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
         return send(msg);
     }
 
     @Override
     public Result update(DocumentUpdate update) {
-        return update(update, DocumentProtocol.Priority.NORMAL_2);
+        return update(update, parameters());
     }
 
     @Override
     public Result update(DocumentUpdate update, DocumentProtocol.Priority pri) {
+        return update(update, parameters().withPriority(pri));
+    }
+
+    @Override
+    public Result update(DocumentUpdate update, DocumentOperationParameters parameters) {
         UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
-        msg.setPriority(pri);
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
         return send(msg);
     }
 
+    // TODO jonmv: Was this done to remedy get route no longer being possible to set through doc/v1 after default-get was added?
+    // TODO jonmv: If so, this is no longer needed with doc/v1.1 and later.
     private boolean mayOverrideWithGetOnlyRoute(Message msg) {
         // Only allow implicitly overriding the default Get route if the message is attempted sent
         // with the default route originally. Otherwise it's reasonable to assume that the caller
@@ -168,7 +194,9 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             long reqId = requestId.incrementAndGet();
             msg.setContext(reqId);
             msg.getTrace().setLevel(traceLevel);
-            String toRoute = (mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
+            // Use message route if set, or session route if non-default, or finally, defaults for get and non-get, if set. Phew!
+            String toRoute = msg.getRoute() != null ? msg.getRoute().toString()
+                                                    : (mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
             if (toRoute != null) {
                 return toResult(reqId, session.send(msg, toRoute, true));
             } else {
@@ -334,6 +362,13 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 queue.add(response);
             }
         }
+    }
+
+    static void setParameters(DocumentMessage message, DocumentOperationParameters parameters,
+                              DocumentProtocol.Priority defaultPriority) {
+        message.setPriority(parameters.priority().orElse(defaultPriority));
+        parameters.route().map(Route::parse).ifPresent(message::setRoute);
+        parameters.traceLevel().ifPresent(message.getTrace()::setLevel);
     }
 
 }
