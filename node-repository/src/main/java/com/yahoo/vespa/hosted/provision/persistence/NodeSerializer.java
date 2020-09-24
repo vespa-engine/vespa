@@ -139,8 +139,8 @@ public class NodeSerializer {
 
     /** Returns cache statistics for this serializer */
     public CacheStats cacheStats() {
-        com.google.common.cache.CacheStats cacheStats = cache.stats();
-        return new CacheStats(cacheStats.hitRate(), cacheStats.evictionCount(), cache.size());
+        var stats = cache.stats();
+        return new CacheStats(stats.hitRate(), stats.evictionCount(), cache.size());
     }
 
     private void toSlime(Node node, Cursor object) {
@@ -481,33 +481,6 @@ public class NodeSerializer {
             case devhost: return "devhost";
         }
         throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
-    }
-
-    /** Cache statistics for this serializer's object cache */
-    public static class CacheStats {
-
-        private final double hitRate;
-        private final long evictionCount;
-        private final long size;
-
-        public CacheStats(double hitRate, long evictionCount, long size) {
-            this.hitRate = hitRate;
-            this.evictionCount = evictionCount;
-            this.size = size;
-        }
-
-        public double hitRate() {
-            return hitRate;
-        }
-
-        public long evictionCount() {
-            return evictionCount;
-        }
-
-        public long size() {
-            return size;
-        }
-
     }
 
 }
