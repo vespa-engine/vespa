@@ -290,7 +290,7 @@ public class CuratorDatabaseClient {
     }
 
     /**
-     * Returns a particular node, or empty if this noe is not in any of the given states.
+     * Returns a particular node, or empty if this node is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.
      */
     public Optional<Node> readNode(CuratorDatabase.Session session, String hostname, Node.State ... states) {
