@@ -1,7 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.hash.Hashing;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -32,11 +36,13 @@ import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.UnaryOperator;
 
 /**
@@ -106,6 +112,12 @@ public class NodeSerializer {
 
     // Network port fields
     private static final String networkPortsKey = "networkPorts";
+
+    // A cache of deserialized Node objects. The cache is keyed on the hash of serialized node data.
+    //
+    // Deserializing a Node from slime is expensive, and happens frequently. Node instances that have already been
+    // deserialized are returned from this cache instead of being deserialized again.
+    private final Cache<Long, Node> cache = CacheBuilder.newBuilder().maximumSize(1000).build();
 
     // ---------------- Serialization ----------------------------------------------------
 
@@ -196,7 +208,15 @@ public class NodeSerializer {
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
-        return nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get());
+        var key = Hashing.sipHash24().newHasher()
+                         .putString(state.name(), StandardCharsets.UTF_8)
+                         .putBytes(data).hash()
+                         .asLong();
+        try {
+            return cache.get(key, () -> nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get()));
+        } catch (ExecutionException e) {
+            throw new UncheckedExecutionException(e);
+        }
     }
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
