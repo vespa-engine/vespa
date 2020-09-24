@@ -404,6 +404,12 @@ public class Flags {
             "Takes effect at next run of maintainer",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DEPLOY_WITH_INTERNAL_RESTART = defineFeatureFlag(
+            "deploy-with-internal-restart", false,
+            "Whether controller should deploy application with internal restart parameter set",
+            "Takes effect on next deploy from controller",
+            APPLICATION_ID, ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
