@@ -83,7 +83,7 @@ public class FileServer {
         this.pushExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                          new DaemonThreadFactory("file server push"));
         this.pullExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
-                                                         new DaemonThreadFactory("file server push"));
+                                                         new DaemonThreadFactory("file server pull"));
     }
 
     boolean hasFile(String fileReference) {
