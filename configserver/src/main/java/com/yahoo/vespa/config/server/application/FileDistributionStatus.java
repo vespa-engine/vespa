@@ -147,6 +147,11 @@ public class FileDistributionStatus extends AbstractComponent {
         }
     }
 
+    @Override
+    public void deconstruct() {
+        rpcExecutor.shutdownNow();
+    }
+
     static class HostStatus {
 
         private final String hostname;

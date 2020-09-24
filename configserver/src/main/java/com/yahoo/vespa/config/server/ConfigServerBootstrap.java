@@ -57,7 +57,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
-    private final Optional<Thread> serverThread;
     private final VersionState versionState;
     private final StateMonitor stateMonitor;
     private final VipStatus vipStatus;
@@ -66,6 +65,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final Duration sleepTimeWhenRedeployingFails;
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
+    private final Optional<ExecutorService> bootstrapExecutor;
 
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
@@ -96,20 +96,21 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
+
         log.log(Level.FINE, "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
 
         switch (mode) {
             case BOOTSTRAP_IN_SEPARATE_THREAD:
-                this.serverThread = Optional.of(new Thread(this, "config server bootstrap thread"));
-                serverThread.get().start();
+                bootstrapExecutor = Optional.of(Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server bootstrap")));
+                bootstrapExecutor.get().execute(this);
                 break;
             case BOOTSTRAP_IN_CONSTRUCTOR:
-                this.serverThread = Optional.empty();
+                bootstrapExecutor = Optional.empty();
                 start();
                 break;
             case INITIALIZE_ONLY:
-                this.serverThread = Optional.empty();
+                bootstrapExecutor = Optional.empty();
                 break;
             default:
                 throw new IllegalArgumentException("Unknown bootstrap mode " + mode + ", legal values: " + Arrays.toString(Mode.values()));
@@ -123,13 +124,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         server.stop();
         log.log(Level.FINE, "RPC server stopped");
         rpcServerExecutor.shutdown();
-        serverThread.ifPresent(thread -> {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                log.log(Level.WARNING, "Error joining server thread on shutdown: " + e.getMessage());
-            }
-        });
+        bootstrapExecutor.ifPresent(ExecutorService::shutdownNow);
     }
 
     @Override
