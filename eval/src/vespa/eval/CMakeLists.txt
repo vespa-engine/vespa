@@ -2,6 +2,7 @@
 vespa_add_library(vespaeval
     SOURCES
     $<TARGET_OBJECTS:eval_eval>
+    $<TARGET_OBJECTS:eval_instruction>
     $<TARGET_OBJECTS:eval_eval_llvm>
     $<TARGET_OBJECTS:eval_eval_test>
     $<TARGET_OBJECTS:eval_eval_value_cache>
