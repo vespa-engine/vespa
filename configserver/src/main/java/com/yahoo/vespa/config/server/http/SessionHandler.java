@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 
 import java.time.Clock;
@@ -65,14 +62,6 @@ public class SessionHandler extends HttpHandler {
 
     public static TimeoutBudget getTimeoutBudget(HttpRequest request, Duration defaultTimeout) {
         return new TimeoutBudget(Clock.systemUTC(), getRequestTimeout(request, defaultTimeout));
-    }
-
-    public static DeployHandlerLogger createLogger(Slime deployLog, HttpRequest request, ApplicationId app) {
-        return createLogger(deployLog, request.getBooleanProperty("verbose"), app);
-    }
-
-    public static DeployHandlerLogger createLogger(Slime deployLog, boolean verbose, ApplicationId app) {
-        return new DeployHandlerLogger(deployLog.get().setArray("log"), verbose, app);
     }
 
     /**

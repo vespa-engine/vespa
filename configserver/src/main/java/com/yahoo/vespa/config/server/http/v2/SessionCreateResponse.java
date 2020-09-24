@@ -2,10 +2,9 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.http.SessionResponse;
 
 /**
  * Creates a response for SessionCreateHandler.
@@ -13,22 +12,17 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
  * @author hmusum
  * @since 5.1.27
  */
-public class SessionCreateResponse extends SessionResponse {
-    private final TenantName tenantName;
+public class SessionCreateResponse extends SlimeJsonResponse {
 
-    public SessionCreateResponse(TenantName tenantName, Slime deployLog, Cursor root) {
-        super(deployLog, root);
-        this.tenantName = tenantName;
-    }
-
-    public HttpResponse createResponse(String hostName, int port, long sessionId) {
+    public SessionCreateResponse(Slime deployLog, TenantName tenantName, String hostName, int port, long sessionId) {
+        super(deployLog);
         String path = "http://" + hostName + ":" + port + "/application/v2/tenant/" + tenantName.value() + "/session/" + sessionId;
+        Cursor root = deployLog.get();
 
-        this.root.setString("tenant", tenantName.value());
-        this.root.setString("session-id", Long.toString(sessionId));
-        this.root.setString("prepared", path + "/prepared");
-        this.root.setString("content", path + "/content/");
-        this.root.setString("message", "Session " + sessionId + " for tenant '" + tenantName.value() + "' created.");
-        return this;
+        root.setString("tenant", tenantName.value());
+        root.setString("session-id", Long.toString(sessionId));
+        root.setString("prepared", path + "/prepared");
+        root.setString("content", path + "/content/");
+        root.setString("message", "Session " + sessionId + " for tenant '" + tenantName.value() + "' created.");
     }
 }

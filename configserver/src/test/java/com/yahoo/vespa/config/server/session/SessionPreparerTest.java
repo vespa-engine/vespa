@@ -28,7 +28,6 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -388,8 +387,8 @@ public class SessionPreparerTest {
     }
 
     private DeployHandlerLogger getLogger() {
-        return new DeployHandlerLogger(new Slime().get(), false /*verbose */,
-                                       new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
+        return DeployHandlerLogger.forApplication(
+                new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build(), false /*verbose */);
     }
 
 

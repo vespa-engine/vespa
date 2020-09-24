@@ -2,8 +2,7 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
-import com.yahoo.vespa.config.server.http.SessionResponse;
+import com.yahoo.restapi.MessageResponse;
 
 /**
  * Response for tenant create
@@ -11,16 +10,10 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
  * @author vegardh
  *
  */
-public class TenantCreateResponse extends SessionResponse {
+public class TenantCreateResponse extends MessageResponse {
 
     public TenantCreateResponse(TenantName tenant) {
-        super();
-        this.root.setString("message", "Tenant "+tenant+" created.");
-    }
-    
-    @Override
-    public String getContentType() {
-        return HttpConfigResponse.JSON_CONTENT_TYPE;
+        super("Tenant " + tenant + " created.");
     }
     
 }
