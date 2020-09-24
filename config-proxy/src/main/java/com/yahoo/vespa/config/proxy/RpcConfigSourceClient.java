@@ -182,9 +182,6 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         shutdownSourceConnections();
         delayedResponsesFuture.cancel(true);
         delayedResponsesScheduler.shutdownNow();
-        nextConfigFuture.cancel(true);
-        nextConfigScheduler.shutdownNow();
-        requester.close();
         supervisor.transport().shutdown().join();
     }
 
@@ -195,6 +192,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     public void shutdownSourceConnections() {
         activeSubscribers.values().forEach(Subscriber::cancel);
         activeSubscribers.clear();
+        nextConfigFuture.cancel(true);
         nextConfigScheduler.shutdownNow();
         requester.close();
     }
