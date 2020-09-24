@@ -23,6 +23,7 @@ import com.yahoo.document.restapi.RestApiException;
 import com.yahoo.document.restapi.RestUri;
 import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.document.select.parser.ParseException;
+import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;

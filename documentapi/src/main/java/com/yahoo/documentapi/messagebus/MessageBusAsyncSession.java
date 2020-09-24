@@ -17,7 +17,6 @@ import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.ResponseHandler;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.UpdateResponse;
-import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
@@ -35,7 +34,6 @@ import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSession;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.ThrottlePolicy;
-import com.yahoo.messagebus.routing.Route;
 
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -48,6 +46,7 @@ import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
+import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
 
 /**
  * An access session which wraps a messagebus source session sending document messages.
@@ -111,8 +110,8 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     @Override
     public Result put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_3);
-        return send(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_3));
+        return send(msg, parameters);
     }
 
     @Override
@@ -134,8 +133,8 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     @Override
     public Result get(DocumentId id, DocumentOperationParameters parameters) {
         GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_1);
-        return send(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_1));
+        return send(msg, parameters);
     }
 
     @Override
@@ -151,8 +150,8 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     @Override
     public Result remove(DocumentId id, DocumentOperationParameters parameters) {
         RemoveDocumentMessage msg = new RemoveDocumentMessage(id);
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
-        return send(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
+        return send(msg, parameters);
     }
 
     @Override
@@ -168,8 +167,8 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     @Override
     public Result update(DocumentUpdate update, DocumentOperationParameters parameters) {
         UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
-        return send(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
+        return send(msg, parameters);
     }
 
     // TODO jonmv: Was this done to remedy get route no longer being possible to set through doc/v1 after default-get was added?
@@ -182,21 +181,13 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 && ("default".equals(route) || "route:default".equals(route)));
     }
 
-    /**
-     * A convenience method for assigning the internal trace level and route string to a message before sending it
-     * through the internal mbus session object.
-     *
-     * @param msg the message to send.
-     * @return the document api result object.
-     */
-    public Result send(Message msg) {
+    Result send(Message msg, DocumentOperationParameters parameters) {
         try {
             long reqId = requestId.incrementAndGet();
             msg.setContext(reqId);
-            msg.getTrace().setLevel(traceLevel);
-            // Use message route if set, or session route if non-default, or finally, defaults for get and non-get, if set. Phew!
-            String toRoute = msg.getRoute() != null ? msg.getRoute().toString()
-                                                    : (mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
+            msg.getTrace().setLevel(parameters.traceLevel().orElse(traceLevel));
+            // Use route from parameters, or session route if non-default, or finally, defaults for get and non-get, if set. Phew!
+            String toRoute = parameters.route().orElse(mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
             if (toRoute != null) {
                 return toResult(reqId, session.send(msg, toRoute, true));
             } else {
@@ -205,6 +196,17 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         } catch (Exception e) {
             return new Result(Result.ResultType.FATAL_ERROR, new Error(e.getMessage(), e));
         }
+    }
+
+    /**
+     * A convenience method for assigning the internal trace level and route string to a message before sending it
+     * through the internal mbus session object.
+     *
+     * @param msg the message to send.
+     * @return the document api result object.
+     */
+    public Result send(Message msg) {
+        return send(msg, null);
     }
 
     @Override
@@ -284,7 +286,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     private static Response toResponse(Reply reply) {
-        long reqId = (Long)reply.getContext();
+        long reqId = (Long) reply.getContext();
         return reply.hasErrors() ? toError(reply, reqId) : toSuccess(reply, reqId);
     }
 
@@ -297,15 +299,15 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         String err = getErrorMessage(reply);
         switch (msg.getType()) {
         case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-            return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, outcome);
+            return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, outcome, reply.getTrace());
         case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-            return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), err, outcome);
+            return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), err, outcome, reply.getTrace());
         case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-            return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), err, outcome);
+            return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), err, outcome, reply.getTrace());
         case DocumentProtocol.MESSAGE_GETDOCUMENT:
-            return new DocumentIdResponse(reqId, ((GetDocumentMessage)msg).getDocumentId(), err, outcome);
+            return new DocumentIdResponse(reqId, ((GetDocumentMessage)msg).getDocumentId(), err, outcome, reply.getTrace());
         default:
-            return new Response(reqId, err, outcome);
+            return new Response(reqId, err, outcome, reply.getTrace());
         }
     }
 
@@ -317,26 +319,26 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 if (getDoc != null) {
                     getDoc.setLastModified(docReply.getLastModified());
                 }
-                return new DocumentResponse(reqId, getDoc);
+                return new DocumentResponse(reqId, getDoc, reply.getTrace());
             case DocumentProtocol.REPLY_REMOVEDOCUMENT:
-                return new RemoveResponse(reqId, ((RemoveDocumentReply)reply).wasFound());
+                return new RemoveResponse(reqId, ((RemoveDocumentReply)reply).wasFound(), reply.getTrace());
             case DocumentProtocol.REPLY_UPDATEDOCUMENT:
-                return new UpdateResponse(reqId, ((UpdateDocumentReply)reply).wasFound());
+                return new UpdateResponse(reqId, ((UpdateDocumentReply)reply).wasFound(), reply.getTrace());
             case DocumentProtocol.REPLY_PUTDOCUMENT:
                 break;
             default:
-                return new Response(reqId);
+                return new Response(reqId, null, SUCCESS, reply.getTrace());
         }
         Message msg = reply.getMessage();
         switch (msg.getType()) {
             case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-                return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument());
+                return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), null, SUCCESS, reply.getTrace());
             case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-                return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId());
+                return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), null, SUCCESS, reply.getTrace());
             case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-                return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate());
+                return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), null, SUCCESS, reply.getTrace());
             default:
-                return new Response(reqId);
+                return new Response(reqId, null, SUCCESS, reply.getTrace());
         }
     }
 
@@ -362,13 +364,6 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 queue.add(response);
             }
         }
-    }
-
-    static void setParameters(DocumentMessage message, DocumentOperationParameters parameters,
-                              DocumentProtocol.Priority defaultPriority) {
-        message.setPriority(parameters.priority().orElse(defaultPriority));
-        parameters.route().map(Route::parse).ifPresent(message::setRoute);
-        parameters.traceLevel().ifPresent(message.getTrace()::setLevel);
     }
 
 }

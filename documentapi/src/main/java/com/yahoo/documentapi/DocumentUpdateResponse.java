@@ -2,6 +2,7 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.messagebus.Trace;
 
 /**
  * The asynchronous response to a document update operation.
@@ -71,7 +72,19 @@ public class DocumentUpdateResponse extends Response {
      * @param outcome        the outcome of this operation
      */
     public DocumentUpdateResponse(long requestId, DocumentUpdate documentUpdate, String textMessage, Outcome outcome) {
-        super(requestId, textMessage, outcome);
+        this(requestId, documentUpdate, textMessage, outcome, null);
+    }
+
+
+    /**
+     * Creates a response containing a textual message and/or a document update
+     *
+     * @param documentUpdate the DocumentUpdate to encapsulate in the Response
+     * @param textMessage    the message to encapsulate in the Response
+     * @param outcome        the outcome of this operation
+     */
+    public DocumentUpdateResponse(long requestId, DocumentUpdate documentUpdate, String textMessage, Outcome outcome, Trace trace) {
+        super(requestId, textMessage, outcome, trace);
         this.documentUpdate = documentUpdate;
     }
 

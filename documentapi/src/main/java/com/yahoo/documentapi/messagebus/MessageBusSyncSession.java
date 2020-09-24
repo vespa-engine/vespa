@@ -26,12 +26,10 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
-import com.yahoo.messagebus.routing.Route;
 
 import java.time.Duration;
 
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
-import static com.yahoo.documentapi.messagebus.MessageBusAsyncSession.setParameters;
 
 /**
  * An implementation of the SyncSession interface running over message bus.
@@ -89,10 +87,14 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
      * @return The reply received.
      */
     public Reply syncSend(Message msg) {
-        return syncSend(msg, defaultTimeout);
+        return syncSend(msg, parameters());
     }
 
-    private Reply syncSend(Message msg, Duration timeout) {
+    private Reply syncSend(Message msg, DocumentOperationParameters parameters) {
+        return syncSend(msg, defaultTimeout, parameters());
+    }
+
+    private Reply syncSend(Message msg, Duration timeout, DocumentOperationParameters parameters) {
         if (timeout != null) {
             msg.setTimeRemaining(timeout.toMillis());
         }
@@ -102,7 +104,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
             msg.pushHandler(this); // store monitor
             Result result = null;
             while (result == null || result.type() == Result.ResultType.TRANSIENT_ERROR) {
-                result = session.send(msg);
+                result = session.send(msg, parameters);
                 if (result != null && result.isSuccess()) {
                     break;
                 }
@@ -130,8 +132,11 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     @Override
     public void put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_3);
-        syncSendPutDocumentMessage(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_3));
+        Reply reply = syncSend(msg, parameters);
+        if (reply.hasErrors()) {
+            throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());
+        }
     }
 
     @Override
@@ -147,9 +152,9 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     @Override
     public Document get(DocumentId id, DocumentOperationParameters parameters, Duration timeout) {
         GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_1);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_1));
 
-        Reply reply = syncSend(msg, timeout != null ? timeout : defaultTimeout);
+        Reply reply = syncSend(msg, timeout != null ? timeout : defaultTimeout, parameters);
         if (reply.hasErrors()) {
             throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply));
         }
@@ -177,13 +182,9 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     @Override
     public boolean remove(DocumentRemove documentRemove, DocumentOperationParameters parameters) {
         RemoveDocumentMessage msg = new RemoveDocumentMessage(documentRemove.getId());
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
         msg.setCondition(documentRemove.getCondition());
-        return remove(msg);
-    }
-
-    private boolean remove(RemoveDocumentMessage msg) {
-        Reply reply = syncSend(msg);
+        Reply reply = syncSend(msg, parameters);
         if (reply.hasErrors()) {
             throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply));
         }
@@ -206,8 +207,8 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     @Override
     public boolean update(DocumentUpdate update, DocumentOperationParameters parameters) {
         UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
-        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
-        Reply reply = syncSend(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
+        Reply reply = syncSend(msg, parameters);
         if (reply.hasErrors()) {
             throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());
         }
@@ -256,10 +257,4 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
         }
     }
 
-    private void syncSendPutDocumentMessage(PutDocumentMessage putDocumentMessage) {
-        Reply reply = syncSend(putDocumentMessage);
-        if (reply.hasErrors()) {
-            throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());
-        }
-    }
 }
