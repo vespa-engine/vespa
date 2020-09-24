@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +52,7 @@ public class QuotaValidator extends Validator {
     }
 
     private void throwBudgetExceeded(double spend, double budget) {
-        var message = String.format("Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%.2f)!", spend, budget);
+        var message = String.format(Locale.US, "Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%.2f)!", spend, budget);
         throw new IllegalArgumentException(message);
     }
 }
