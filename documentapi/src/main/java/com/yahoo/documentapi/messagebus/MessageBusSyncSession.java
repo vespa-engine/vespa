@@ -9,6 +9,7 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.DocumentAccessException;
+import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.SyncParameters;
@@ -25,8 +26,12 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
+import com.yahoo.messagebus.routing.Route;
 
 import java.time.Duration;
+
+import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
+import static com.yahoo.documentapi.messagebus.MessageBusAsyncSession.setParameters;
 
 /**
  * An implementation of the SyncSession interface running over message bus.
@@ -114,35 +119,35 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
 
     @Override
     public void put(DocumentPut documentPut) {
-        put(documentPut, DocumentProtocol.Priority.NORMAL_3);
+        put(documentPut, parameters());
     }
 
     @Override
     public void put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
+        put(documentPut, parameters().withPriority(priority));
+    }
+
+    @Override
+    public void put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
-        msg.setPriority(priority);
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_3);
         syncSendPutDocumentMessage(msg);
     }
 
     @Override
-    public Document get(DocumentId id) {
-        return get(id, null);
-    }
-
-    @Override
-    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri) {
-        return get(id, fieldSet, pri, null);
-    }
-
-    @Override
     public Document get(DocumentId id, Duration timeout) {
-        return get(id, AllFields.NAME, DocumentProtocol.Priority.NORMAL_1, timeout);
+        return get(id, parameters(), timeout);
     }
 
     @Override
     public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri, Duration timeout) {
-        GetDocumentMessage msg = new GetDocumentMessage(id, fieldSet);
-        msg.setPriority(pri);
+        return get(id, parameters().withFieldSet(fieldSet).withPriority(pri), timeout);
+    }
+
+    @Override
+    public Document get(DocumentId id, DocumentOperationParameters parameters, Duration timeout) {
+        GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_1);
 
         Reply reply = syncSend(msg, timeout != null ? timeout : defaultTimeout);
         if (reply.hasErrors()) {
@@ -161,15 +166,18 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
 
     @Override
     public boolean remove(DocumentRemove documentRemove) {
-        RemoveDocumentMessage msg = new RemoveDocumentMessage(documentRemove.getId());
-        msg.setCondition(documentRemove.getCondition());
-        return remove(msg);
+        return remove(documentRemove, parameters());
     }
 
     @Override
     public boolean remove(DocumentRemove documentRemove, DocumentProtocol.Priority pri) {
+        return remove(documentRemove, parameters().withPriority(pri));
+    }
+
+    @Override
+    public boolean remove(DocumentRemove documentRemove, DocumentOperationParameters parameters) {
         RemoveDocumentMessage msg = new RemoveDocumentMessage(documentRemove.getId());
-        msg.setPriority(pri);
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
         msg.setCondition(documentRemove.getCondition());
         return remove(msg);
     }
@@ -187,13 +195,18 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
 
     @Override
     public boolean update(DocumentUpdate update) {
-        return update(update, DocumentProtocol.Priority.NORMAL_2);
+        return update(update, parameters());
     }
 
     @Override
     public boolean update(DocumentUpdate update, DocumentProtocol.Priority pri) {
+        return update(update, parameters().withPriority(pri));
+    }
+
+    @Override
+    public boolean update(DocumentUpdate update, DocumentOperationParameters parameters) {
         UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
-        msg.setPriority(pri);
+        setParameters(msg, parameters, DocumentProtocol.Priority.NORMAL_2);
         Reply reply = syncSend(msg);
         if (reply.hasErrors()) {
             throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());

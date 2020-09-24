@@ -195,7 +195,6 @@ public class RoutingSpec {
         return ret.toString();
     }
 
-    // Overrides Object.
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
@@ -203,7 +202,6 @@ public class RoutingSpec {
         return ret.toString();
     }
 
-    // Overrides Object.
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof RoutingSpec)) {
@@ -218,7 +216,7 @@ public class RoutingSpec {
 
     @Override
     public int hashCode() {
-        int result = tables != null ? tables.hashCode() : 0;
+        int result = tables.hashCode();
         result = 31 * result + (verify ? 1 : 0);
         return result;
     }
