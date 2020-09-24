@@ -26,7 +26,16 @@ public class DocumentResponse extends Response {
      * @param document the Document to encapsulate in the Response
      */
     public DocumentResponse(long requestId, Document document) {
-        this(requestId, document, null, document != null ? Outcome.SUCCESS : Outcome.NOT_FOUND);
+        this(requestId, document, null);
+    }
+
+    /**
+     * Creates a successful response containing a document
+     *
+     * @param document the Document to encapsulate in the Response
+     */
+    public DocumentResponse(long requestId, Document document, Trace trace) {
+        this(requestId, document, null, document != null ? Outcome.SUCCESS : Outcome.NOT_FOUND, trace);
     }
 
     /**
