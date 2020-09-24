@@ -60,7 +60,7 @@ public class SessionCreateHandler extends SessionHandler {
             ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.defaultName(), InstanceName.defaultName());
             sessionId = applicationRepository.createSession(applicationId, timeoutBudget, request.getData(), request.getHeader(ApplicationApiHandler.contentTypeHeader));
         }
-        return createResponse(request, tenantName, deployLog, sessionId);
+        return new SessionCreateResponse(deployLog, tenantName, request.getHost(), request.getPort(), sessionId);
     }
 
     static ApplicationId getFromApplicationId(HttpRequest request) {
@@ -98,10 +98,5 @@ public class SessionCreateHandler extends SessionHandler {
             throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader + " header, only '" +
                                                   ApplicationApiHandler.APPLICATION_X_GZIP + "' and '" + ApplicationApiHandler.APPLICATION_ZIP + "' are supported");
         }
-    }
-
-    private HttpResponse createResponse(HttpRequest request, TenantName tenantName, Slime deployLog, long sessionId) {
-        return new SessionCreateResponse(tenantName, deployLog, deployLog.get())
-                .createResponse(request.getHost(), request.getPort(), sessionId);
     }
 }

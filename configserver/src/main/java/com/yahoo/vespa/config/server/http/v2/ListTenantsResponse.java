@@ -3,26 +3,19 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
-import com.yahoo.vespa.config.server.http.SessionResponse;
 
 /**
  * Tenant list response
  * 
  * @author vegardh
  */
-public class ListTenantsResponse extends SessionResponse {
+public class ListTenantsResponse extends SlimeJsonResponse {
 
     ListTenantsResponse(ImmutableSet<TenantName> tenants) {
-        super();
-        Cursor tenantArray = this.root.setArray("tenants");
+        Cursor tenantArray = slime.setObject().setArray("tenants");
         tenants.forEach(tenantName -> tenantArray.addString(tenantName.value()));
-    }
-
-    @Override
-    public String getContentType() {
-        return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
 
 }
