@@ -1,8 +1,0 @@
-{
-  "id" : "my-other-test-flag",
-  "rules" : [
-    {
-      "value" : "default"
-    }
-  ]
-}
