@@ -488,6 +488,24 @@ ProtocolSerialization4_2::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf
     return msg;
 }
 
+void ProtocolSerialization4_2::onEncode(GBBuf&, const api::StatBucketCommand&) const {
+    throw vespalib::IllegalStateException("StatBucketCommand not expected for legacy protocol version", VESPA_STRLOC);
+}
+
+api::StorageCommand::UP
+ProtocolSerialization4_2::onDecodeStatBucketCommand(BBuf&) const {
+    throw vespalib::IllegalStateException("StatBucketCommand not expected for legacy protocol version", VESPA_STRLOC);
+}
+
+void ProtocolSerialization4_2::onEncode(GBBuf&, const api::StatBucketReply&) const {
+    throw vespalib::IllegalStateException("StatBucketReply not expected for legacy protocol version", VESPA_STRLOC);
+}
+
+api::StorageReply::UP
+ProtocolSerialization4_2::onDecodeStatBucketReply(const SCmd&, BBuf&) const {
+    throw vespalib::IllegalStateException("StatBucketReply not expected for legacy protocol version", VESPA_STRLOC);
+}
+
 // Utility functions for serialization
 
 void

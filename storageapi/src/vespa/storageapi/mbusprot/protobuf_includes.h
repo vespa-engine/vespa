@@ -9,6 +9,7 @@
 #endif
 
 #include "feed.pb.h"
+#include "inspect.pb.h"
 #include "visiting.pb.h"
 #include "maintenance.pb.h"
 

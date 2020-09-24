@@ -129,6 +129,12 @@ public:
     SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const override;
     SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const override;
 
+    // StatBucket
+    void onEncode(GBBuf&, const api::StatBucketCommand&) const override;
+    void onEncode(GBBuf&, const api::StatBucketReply&) const override;
+    SCmd::UP onDecodeStatBucketCommand(BBuf&) const override;
+    SRep::UP onDecodeStatBucketReply(const SCmd&, BBuf&) const override;
+
 private:
     template <typename ProtobufType, typename Func>
     std::unique_ptr<api::StorageCommand> decode_request(document::ByteBuffer& in_buf, Func&& f) const;
