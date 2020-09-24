@@ -49,15 +49,23 @@ public class LocksResponse extends HttpResponse {
 
         List<ThreadLockInfo> threadLockInfos = ThreadLockInfo.getThreadLockInfos();
         Cursor threadsCursor = root.setArray("threads");
-        threadLockInfos.forEach(threadLockInfo -> {
-            Cursor threadLockInfoCursor = threadsCursor.addObject();
-            threadLockInfoCursor.setString("thread-name", threadLockInfo.getThreadName());
-            threadLockInfoCursor.setString("lock-path", threadLockInfo.getLockPath());
-
+        int numberOfStackTraces = 0;
+        for (var threadLockInfo : threadLockInfos) {
             List<LockInfo> lockInfos = threadLockInfo.getLockInfos();
-            Cursor lockInfosCursor = threadLockInfoCursor.setArray("locks");
-            lockInfos.forEach(lockInfo -> setLockInfo(lockInfosCursor.addObject(), lockInfo, false));
-        });
+            if (!lockInfos.isEmpty()) {
+                Cursor threadLockInfoCursor = threadsCursor.addObject();
+                threadLockInfoCursor.setString("thread-name", threadLockInfo.getThreadName());
+                threadLockInfoCursor.setString("lock-path", threadLockInfo.getLockPath());
+
+                Cursor lockInfosCursor = threadLockInfoCursor.setArray("active-locks");
+                for (var lockInfo : lockInfos) {
+                    if (numberOfStackTraces++ < 10) {  // Expensive to generate stack traces?
+                        lockInfo.fillStackTrace();
+                    }
+                    setLockInfo(lockInfosCursor.addObject(), lockInfo, false);
+                }
+            }
+        }
 
         List<LockInfo> slowLockInfos = ThreadLockInfo.getSlowLockInfos();
         Cursor slowLocksCursor = root.setArray("slow-locks");

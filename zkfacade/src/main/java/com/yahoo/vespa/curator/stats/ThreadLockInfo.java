@@ -77,7 +77,7 @@ public class ThreadLockInfo {
     public void invokingAcquire(Duration timeout) {
         lockCountersForPath.invokeAcquireCount.incrementAndGet();
         lockCountersForPath.inCriticalRegionCount.incrementAndGet();
-        lockInfos.add(LockInfo.invokingAcquire(getThreadName(), lockPath, lock.getHoldCount(), timeout));
+        lockInfos.add(LockInfo.invokingAcquire(thread, lockPath, lock.getHoldCount(), timeout));
     }
 
     /** Mutable method (see class doc) */
