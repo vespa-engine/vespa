@@ -42,6 +42,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -70,73 +71,16 @@ public class DeployTester {
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
 
-    public DeployTester() {
-        this(Collections.singletonList(createModelFactory(Clock.systemUTC())));
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories) {
-        this(modelFactories,
-             new ConfigserverConfig(new ConfigserverConfig.Builder()
-                     .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
-                     .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
-                     .fileReferencesDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())),
-             Clock.systemUTC());
-    }
-
-    public DeployTester(ConfigserverConfig configserverConfig, Clock clock) {
-        this(Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
-        this(modelFactories, configserverConfig, Clock.systemUTC());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
-        this(modelFactories, configserverConfig, clock, Zone.defaultZone());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, HostProvisioner hostProvisioner) {
-        this(modelFactories, configserverConfig, Clock.systemUTC(), hostProvisioner);
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, HostProvisioner provisioner) {
-        this(modelFactories, configserverConfig, clock, Zone.defaultZone(), provisioner);
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone) {
-        this(modelFactories, configserverConfig, clock, zone, createProvisioner());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone, HostProvisioner provisioner) {
-        this(modelFactories, configserverConfig, clock, zone, provisioner, new MockCurator());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone,
-                        HostProvisioner provisioner, Curator curator) {
+    private DeployTester(Clock clock, TenantRepository tenantRepository, ApplicationRepository applicationRepository) {
         this.clock = clock;
-        TestComponentRegistry componentRegistry = createComponentRegistry(curator, Metrics.createTestMetrics(),
-                                                                          modelFactories, configserverConfig, clock, zone,
-                                                                          provisioner);
-        try {
-            this.tenantRepository = new TenantRepository(componentRegistry);
-            tenantRepository.addTenant(tenantName);
-        }
-        catch (Exception e) {
-            throw new IllegalArgumentException(e);
-        }
-        applicationRepository = new ApplicationRepository.Builder()
-                .withTenantRepository(tenantRepository)
-                .withProvisioner(new ProvisionerAdapter(provisioner))
-                .withConfigserverConfig(configserverConfig)
-                .withOrchestrator(new OrchestratorMock())
-                .withClock(clock)
-                .build();
+        this.tenantRepository = tenantRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     public Tenant tenant() {
         return tenantRepository.getTenant(tenantName);
     }
-    
+
     /** Create a model factory for the version of this source*/
     public static CountingModelFactory createModelFactory(Clock clock) {
         return new CountingModelFactory(clock);
@@ -297,11 +241,11 @@ public class DeployTester {
     private static class FailingModelFactory implements ModelFactory {
 
         private final Version version;
-        
+
         public FailingModelFactory(Version version) {
             this.version = version;
         }
-        
+
         @Override
         public Version version() { return version; }
 
@@ -368,6 +312,101 @@ public class DeployTester {
             return result;
         }
 
+    }
+
+    public static class Builder {
+        private Clock clock;
+        private Provisioner provisioner;
+        private ConfigserverConfig configserverConfig;
+        private Zone zone;
+        private Curator curator;
+        private Metrics metrics;
+        private List<ModelFactory> modelFactories;
+        private Orchestrator orchestrator;
+
+        public DeployTester build() {
+            Clock clock = Optional.ofNullable(this.clock).orElseGet(Clock::systemUTC);
+            Zone zone = Optional.ofNullable(this.zone).orElseGet(Zone::defaultZone);
+            ConfigserverConfig configserverConfig = Optional.ofNullable(this.configserverConfig)
+                    .orElseGet(() -> new ConfigserverConfig(new ConfigserverConfig.Builder()
+                            .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
+                            .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
+                            .fileReferencesDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())));
+            Provisioner provisioner = Optional.ofNullable(this.provisioner)
+                    .orElseGet(() -> new ProvisionerAdapter(createProvisioner()));
+            List<ModelFactory> modelFactories = Optional.ofNullable(this.modelFactories)
+                    .orElseGet(() -> List.of(createModelFactory(clock)));
+
+            TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder()
+                    .clock(clock)
+                    .configServerConfig(configserverConfig)
+                    .curator(Optional.ofNullable(curator).orElseGet(MockCurator::new))
+                    .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
+                    .metrics(Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics))
+                    .zone(zone);
+            if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
+
+            TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build());
+            tenantRepository.addTenant(tenantName);
+
+            ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
+                    .withTenantRepository(tenantRepository)
+                    .withConfigserverConfig(configserverConfig)
+                    .withOrchestrator(Optional.ofNullable(orchestrator).orElseGet(OrchestratorMock::new))
+                    .withClock(clock)
+                    .withProvisioner(provisioner)
+                    .build();
+
+            return new DeployTester(clock, tenantRepository, applicationRepository);
+        }
+
+        public Builder clock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        public Builder provisioner(Provisioner provisioner) {
+            this.provisioner = provisioner;
+            return this;
+        }
+
+        public Builder hostProvisioner(HostProvisioner hostProvisioner) {
+            return provisioner(new ProvisionerAdapter(hostProvisioner));
+        }
+
+        public Builder configserverConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
+
+        public Builder zone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
+        public Builder curator(Curator curator) {
+            this.curator = curator;
+            return this;
+        }
+
+        public Builder metrics(Metrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
+        public Builder modelFactory(ModelFactory modelFactory) {
+            return modelFactories(List.of(modelFactory));
+        }
+
+        public Builder modelFactories(List<ModelFactory> modelFactories) {
+            this.modelFactories = modelFactories;
+            return this;
+        }
+
+        public Builder orchestrator(Orchestrator orchestrator) {
+            this.orchestrator = orchestrator;
+            return this;
+        }
     }
 
 }
