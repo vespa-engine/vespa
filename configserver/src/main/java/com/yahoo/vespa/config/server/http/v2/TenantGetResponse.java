@@ -2,24 +2,17 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
-import com.yahoo.vespa.config.server.http.SessionResponse;
+import com.yahoo.restapi.MessageResponse;
 
 /**
  * Response for tenant create
  *
  * @author hmusum
  */
-public class TenantGetResponse extends SessionResponse {
+public class TenantGetResponse extends MessageResponse {
 
     public TenantGetResponse(TenantName tenant) {
-        super();
-        this.root.setString("message", "Tenant '" + tenant + "' exists.");
-    }
-
-    @Override
-    public String getContentType() {
-        return HttpConfigResponse.JSON_CONTENT_TYPE;
+        super("Tenant '" + tenant + "' exists.");
     }
 
 }

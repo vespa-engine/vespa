@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
-import com.yahoo.vespa.config.server.http.SessionResponse;
+import com.yahoo.restapi.MessageResponse;
 
 /**
  * Response for tenant delete
@@ -10,16 +9,10 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
  * @author vegardh
  *
  */
-public class TenantDeleteResponse extends SessionResponse {
+public class TenantDeleteResponse extends MessageResponse {
 
     public TenantDeleteResponse(TenantName tenant) {
-        super();
-        this.root.setString("message", "Tenant "+tenant+" deleted.");
-    }
-    
-    @Override
-    public String getContentType() {
-        return HttpConfigResponse.JSON_CONTENT_TYPE;
+        super("Tenant " + tenant + " deleted.");
     }
     
 }
