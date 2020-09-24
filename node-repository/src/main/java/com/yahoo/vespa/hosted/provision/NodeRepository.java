@@ -155,7 +155,8 @@ public class NodeRepository extends AbstractComponent {
                           int spareCount) {
         // Flag is read once here as it shouldn't not change at runtime
         this.useConfigServerLock = Flags.USE_CONFIG_SERVER_LOCK.bindTo(flagSource).value();
-        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, useConfigServerLock);
+        long nodeObjectCacheSize = Flags.NODE_OBJECT_CACHE_SIZE.bindTo(flagSource).value();
+        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, useConfigServerLock, nodeObjectCacheSize);
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;

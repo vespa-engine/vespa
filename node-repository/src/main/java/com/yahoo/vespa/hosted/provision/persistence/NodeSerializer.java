@@ -117,12 +117,13 @@ public class NodeSerializer {
     //
     // Deserializing a Node from slime is expensive, and happens frequently. Node instances that have already been
     // deserialized are returned from this cache instead of being deserialized again.
-    private final Cache<Long, Node> cache = CacheBuilder.newBuilder().maximumSize(1000).build();
+    private final Cache<Long, Node> cache;
 
     // ---------------- Serialization ----------------------------------------------------
 
-    public NodeSerializer(NodeFlavors flavors) {
+    public NodeSerializer(NodeFlavors flavors, long cacheSize) {
         this.flavors = flavors;
+        this.cache = CacheBuilder.newBuilder().maximumSize(cacheSize).build();
     }
 
     public byte[] toJson(Node node) {
