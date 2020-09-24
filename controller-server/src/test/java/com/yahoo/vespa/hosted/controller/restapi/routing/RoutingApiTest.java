@@ -76,6 +76,12 @@ public class RoutingApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/", "",
                                               Request.Method.GET),
                               new File("discovery/environment.json"));
+
+        // GET instance with api prefix (test that the /api prefix works)
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/api/routing/v1/status/tenant/t1/application/a1/instance/default/",
+                "",
+                Request.Method.GET),
+                new File("discovery/instance_api.json"));
     }
 
     @Test

@@ -106,6 +106,7 @@ public class ControllerContainerTest {
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.routing.RoutingApiHandler'>\n" +
                "    <binding>http://*/routing/v1/*</binding>\n" +
+               "    <binding>http://*/api/routing/v1/*</binding>\n" +
                "  </handler>\n" +
                variablePartXml() +
                "</container>";
