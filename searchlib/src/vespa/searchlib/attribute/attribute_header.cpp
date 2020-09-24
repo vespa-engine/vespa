@@ -114,6 +114,8 @@ to_distance_metric(const vespalib::string& metric)
         return DistanceMetric::Angular;
     } else if (metric == geodegrees) {
         return DistanceMetric::GeoDegrees;
+    } else if (metric == innerproduct) {
+        return DistanceMetric::InnerProduct;
     } else if (metric == hamming) {
         return DistanceMetric::Hamming;
     } else {
