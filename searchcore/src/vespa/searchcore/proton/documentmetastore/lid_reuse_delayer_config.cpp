@@ -7,7 +7,6 @@ namespace proton::documentmetastore {
 
 LidReuseDelayerConfig::LidReuseDelayerConfig(const DocumentDBConfig & configSnapshot)
     : _visibilityDelay(configSnapshot.getMaintenanceConfigSP()->getVisibilityDelay()),
-      _allowEarlyAck(configSnapshot.getMaintenanceConfigSP()->allowEarlyAck()),
       _hasIndexedOrAttributeFields(configSnapshot.getSchemaSP()->getNumIndexFields() > 0 ||
                                    configSnapshot.getSchemaSP()->getNumAttributeFields() > 0)
 {
@@ -19,7 +18,6 @@ LidReuseDelayerConfig::LidReuseDelayerConfig()
 
 LidReuseDelayerConfig::LidReuseDelayerConfig(vespalib::duration visibilityDelay, bool hasIndexedOrAttributeFields_in)
     : _visibilityDelay(visibilityDelay),
-      _allowEarlyAck(visibilityDelay > 1ms),
       _hasIndexedOrAttributeFields(hasIndexedOrAttributeFields_in)
 {
 }

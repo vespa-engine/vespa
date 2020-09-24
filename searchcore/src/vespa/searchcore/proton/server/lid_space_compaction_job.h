@@ -63,13 +63,13 @@ public:
     ~LidSpaceCompactionJob();
 
     // Implements IDiskMemUsageListener
-    void notifyDiskMemUsage(DiskMemUsageState state) override;
+    virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
 
     // Implements IClusterStateChangedNofifier
-    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
 
     // Implements IMaintenanceJob
-    bool run() override;
+    virtual bool run() override;
 };
 
 } // namespace proton

@@ -82,7 +82,7 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
     uint32_t wantedLidLimit = stats.getHighestUsedLid() + 1;
     CompactLidSpaceOperation op(_handler.getSubDbId(), wantedLidLimit);
     vespalib::Gate gate;
-    _opStorer.appendAndCommitOperation(op, std::make_shared<search::GateCallback>(gate));
+    _opStorer.appendOperation(op, std::make_shared<search::GateCallback>(gate));
     gate.await();
     _handler.handleCompactLidSpace(op);
     EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);
