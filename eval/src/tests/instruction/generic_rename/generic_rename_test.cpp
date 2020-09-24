@@ -10,6 +10,7 @@
 
 using namespace vespalib;
 using namespace vespalib::eval;
+using namespace vespalib::eval::instruction;
 using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
@@ -50,7 +51,7 @@ TEST(GenericRenameTest, dense_rename_plan_can_be_created_and_executed) {
     std::vector<vespalib::string> from({"a", "c", "e"});
     std::vector<vespalib::string>   to({"f", "a", "b"});
     ValueType renamed = lhs.rename(from, to);
-    auto plan = instruction::DenseRenamePlan(lhs, renamed, from, to);
+    auto plan = DenseRenamePlan(lhs, renamed, from, to);
     std::vector<size_t> expect_loop = {15,2,7};
     std::vector<size_t> expect_stride = {7,105,1};
     EXPECT_EQ(plan.subspace_size, 210);
@@ -80,7 +81,7 @@ TEST(GenericRenameTest, sparse_rename_plan_can_be_created) {
     std::vector<vespalib::string> from({"a", "c", "e"});
     std::vector<vespalib::string>   to({"f", "a", "b"});
     ValueType renamed = lhs.rename(from, to);
-    auto plan = instruction::SparseRenamePlan(lhs, renamed, from, to);
+    auto plan = SparseRenamePlan(lhs, renamed, from, to);
     EXPECT_EQ(plan.mapped_dims, 4);
     std::vector<size_t> expect = {2,0,1,3};
     EXPECT_EQ(plan.output_dimensions, expect);
@@ -99,7 +100,7 @@ TensorSpec perform_generic_rename(const TensorSpec &a, const ValueType &res_type
 {
     Stash stash;
     auto lhs = value_from_spec(a, factory);
-    auto my_op = instruction::GenericRename::make_instruction(lhs->type(), res_type, ft.from, ft.to, factory, stash);
+    auto my_op = GenericRename::make_instruction(lhs->type(), res_type, ft.from, ft.to, factory, stash);
     InterpretedFunction::EvalSingle single(my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }
