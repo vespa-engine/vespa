@@ -11,7 +11,7 @@ namespace vespalib::eval::packed_mixed_tensor {
  * appropriate for cell type T.
  **/
 template <typename T>
-class PackedMixedBuilder : public ValueBuilder<T>
+class PackedMixedTensorBuilder : public ValueBuilder<T>
 {
 private:
     const ValueType & _type;
@@ -19,7 +19,7 @@ private:
     std::vector<T> _cells;
     PackedMappingsBuilder _mappings_builder;
 public:
-    PackedMixedBuilder(const ValueType &type,
+    PackedMixedTensorBuilder(const ValueType &type,
                              size_t num_mapped_in,
                              size_t subspace_size_in,
                              size_t expected_subspaces)
@@ -31,7 +31,7 @@ public:
         _cells.reserve(_subspace_size * expected_subspaces);
     }
 
-    ~PackedMixedBuilder() override = default;
+    ~PackedMixedTensorBuilder() override = default;
         
     ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) override;
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override;
