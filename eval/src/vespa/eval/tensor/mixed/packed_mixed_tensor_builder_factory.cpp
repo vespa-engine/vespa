@@ -20,6 +20,9 @@ struct CreatePackedMixedTensorBuilder {
 
 } // namespace <unnamed>
 
+PackedMixedTensorBuilderFactory::PackedMixedTensorBuilderFactory() = default;
+PackedMixedTensorBuilderFactory PackedMixedTensorBuilderFactory::_factory;
+
 std::unique_ptr<ValueBuilderBase>
 PackedMixedTensorBuilderFactory::create_value_builder_base(const ValueType &type,
                                               size_t num_mapped_in,

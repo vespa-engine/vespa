@@ -27,7 +27,7 @@ std::vector<Layout> layouts = {
 TEST(PackedMixedTest, packed_mixed_tensors_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = value_from_spec(expect, PackedMixedTensorBuilderFactory());
+        std::unique_ptr<Value> value = value_from_spec(expect, PackedMixedTensorBuilderFactory::get());
         TensorSpec actual = spec_from_value(*value);
         EXPECT_EQ(actual, expect);
     }
@@ -35,7 +35,7 @@ TEST(PackedMixedTest, packed_mixed_tensors_can_be_converted_from_and_to_tensor_s
 
 TEST(PackedMixedTest, packed_mixed_tensors_can_be_built_and_inspected) {
     ValueType type = ValueType::from_spec("tensor<float>(x{},y[2],z{})");
-    PackedMixedTensorBuilderFactory factory;
+    const auto & factory = PackedMixedTensorBuilderFactory::get();
     std::unique_ptr<ValueBuilder<float>> builder = factory.create_value_builder<float>(type);
     float seq = 0.0;
     for (vespalib::string x: {"a", "b", "c"}) {
