@@ -24,7 +24,6 @@ import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
-import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
@@ -322,7 +321,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         activate(tenant, sessionId, prepareParams.getTimeoutBudget(), prepareParams.force());
 
         if (prepareParams.internalRestart() && !result.configChangeActions().getRestartActions().isEmpty()) {
-            result.deployLogger().log(Level.INFO, result.configChangeActions().getRestartActions().format());
             Set<String> hostnames = result.configChangeActions().getRestartActions().getEntries().stream()
                     .flatMap(entry -> entry.getServices().stream())
                     .map(ServiceInfo::getHostName)
