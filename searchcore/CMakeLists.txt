@@ -46,9 +46,9 @@ vespa_define_module(
     src/apps/tests
     src/apps/verify_ranksetup
     src/apps/vespa-dump-feed
+    src/apps/vespa-feed-bm
     src/apps/vespa-gen-testdocs
     src/apps/vespa-proton-cmd
-    src/apps/vespa-spi-feed-bm
     src/apps/vespa-transactionlog-inspect
 
     TESTS
