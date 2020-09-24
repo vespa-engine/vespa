@@ -4,11 +4,12 @@ package com.yahoo.vespa.curator.stats;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -26,8 +27,10 @@ public class ThreadLockInfo {
 
     private static final ConcurrentHashMap<Thread, ThreadLockInfo> locks = new ConcurrentHashMap<>();
 
-    private static final int MAX_COMPLETED_LOCK_INFOS_SIZE = 10;
-    private static final ConcurrentLinkedDeque<LockInfo> completedLockInfos = new ConcurrentLinkedDeque<>();
+    private static final int MAX_COMPLETED_LOCK_INFOS_SIZE = 5;
+    /** Would have used a thread-safe priority queue. */
+    private static final Object completedLockInfosMonitor = new Object();
+    private static final PriorityQueue<LockInfo> completedLockInfos = new PriorityQueue<>(Comparator.comparing(LockInfo::getTotalTime));
 
     private static final ConcurrentHashMap<String, LockCounters> countersByLockPath = new ConcurrentHashMap<>();
 
@@ -42,6 +45,12 @@ public class ThreadLockInfo {
     public static Map<String, LockCounters> getLockCountersByPath() { return Map.copyOf(countersByLockPath); }
 
     public static List<ThreadLockInfo> getThreadLockInfos() { return List.copyOf(locks.values()); }
+
+    public static List<LockInfo> getSlowLockInfos() {
+        synchronized (completedLockInfosMonitor) {
+            return List.copyOf(completedLockInfos);
+        }
+    }
 
     /** Returns the per-thread singleton ThreadLockInfo. */
     public static ThreadLockInfo getCurrentThreadLockInfo(String lockPath, ReentrantLock lock) {
@@ -68,7 +77,7 @@ public class ThreadLockInfo {
     public void invokingAcquire(Duration timeout) {
         lockCountersForPath.invokeAcquireCount.incrementAndGet();
         lockCountersForPath.inCriticalRegionCount.incrementAndGet();
-        lockInfos.add(LockInfo.invokingAcquire(lock.getHoldCount(), timeout));
+        lockInfos.add(LockInfo.invokingAcquire(getThreadName(), lockPath, lock.getHoldCount(), timeout));
     }
 
     /** Mutable method (see class doc) */
@@ -113,10 +122,15 @@ public class ThreadLockInfo {
         LockInfo lockInfo = lockInfos.poll();
         completeLockInfo.accept(lockInfo);
 
-        if (completedLockInfos.size() >= MAX_COMPLETED_LOCK_INFOS_SIZE) {
-            // This is thread-safe, as no-one but currentThread mutates completedLockInfos
-            completedLockInfos.removeLast();
+        synchronized (completedLockInfosMonitor) {
+            if (completedLockInfos.size() < MAX_COMPLETED_LOCK_INFOS_SIZE) {
+                lockInfo.fillStackTrace();
+                completedLockInfos.add(lockInfo);
+            } else if (lockInfo.getTotalTime().compareTo(completedLockInfos.peek().getTotalTime()) > 0) {
+                completedLockInfos.poll();
+                lockInfo.fillStackTrace();
+                completedLockInfos.add(lockInfo);
+            }
         }
-        completedLockInfos.addFirst(lockInfo);
     }
 }
