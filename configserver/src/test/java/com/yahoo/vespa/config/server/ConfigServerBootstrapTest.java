@@ -24,6 +24,7 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -54,6 +55,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class ConfigServerBootstrapTest {
 
+    private final MockCurator curator = new MockCurator();
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -65,8 +68,7 @@ public class ConfigServerBootstrapTest {
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
@@ -99,8 +101,7 @@ public class ConfigServerBootstrapTest {
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
@@ -125,8 +126,7 @@ public class ConfigServerBootstrapTest {
                 .configserverConfig(configserverConfig).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         // Manipulate application package so that it will fail deployment when config server starts
@@ -171,8 +171,7 @@ public class ConfigServerBootstrapTest {
         tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
         ApplicationId applicationId = tester.applicationId();
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         // Ugly hack, but I see no other way of doing it:
@@ -243,6 +242,10 @@ public class ConfigServerBootstrapTest {
                              new VipStatusConfig.Builder().build(),
                              new ClustersStatus(),
                              stateMonitor);
+    }
+
+    private VersionState createVersionState() throws IOException {
+        return new VersionState(temporaryFolder.newFile(), curator, new InMemoryFlagSource());
     }
 
     public static class MockRpcServer extends com.yahoo.vespa.config.server.rpc.MockRpcServer {
