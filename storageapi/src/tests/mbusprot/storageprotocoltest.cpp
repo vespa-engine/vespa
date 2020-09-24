@@ -5,6 +5,7 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/mbusprot/storageprotocol.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
@@ -565,6 +566,24 @@ TEST_P(StorageProtocolTest, remove_location) {
     } else {
         EXPECT_EQ(0, reply2->documents_removed());
     }
+}
+
+TEST_P(StorageProtocolTest, stat_bucket) {
+    if (GetParam().getMajor() < 7) {
+        return; // Only available for protobuf-backed protocol version.
+    }
+    auto cmd = std::make_shared<StatBucketCommand>(_bucket, "id.group == 'mygroup'");
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ("id.group == 'mygroup'", cmd2->getDocumentSelection());
+    EXPECT_EQ(_bucket, cmd2->getBucket());
+
+    auto reply = std::make_shared<StatBucketReply>(*cmd2, "neat bucket info goes here");
+    reply->remapBucketId(_dummy_remap_bucket);
+    auto reply2 = copyReply(reply);
+    EXPECT_EQ(reply2->getResults(), "neat bucket info goes here");
+    EXPECT_TRUE(reply2->hasBeenRemapped());
+    EXPECT_EQ(_dummy_remap_bucket, reply2->getBucketId());
+    EXPECT_EQ(_bucket_id, reply2->getOriginalBucketId());
 }
 
 TEST_P(StorageProtocolTest, create_visitor) {

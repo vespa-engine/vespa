@@ -10,6 +10,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/storageapi/message/stat.h>
 
 namespace storage::mbusprot {
 
@@ -1310,6 +1311,34 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeDestroyVisitorCommand(BB
 api::StorageReply::UP ProtocolSerialization7::onDecodeDestroyVisitorReply(const SCmd& cmd, BBuf& buf) const {
     return decode_response<protobuf::DestroyVisitorResponse>(buf, [&]([[maybe_unused]] auto& res) {
         return std::make_unique<api::DestroyVisitorReply>(static_cast<const api::DestroyVisitorCommand&>(cmd));
+    });
+}
+
+// -----------------------------------------------------------------
+// StatBucket
+// -----------------------------------------------------------------
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::StatBucketCommand& msg) const {
+    encode_bucket_request<protobuf::StatBucketRequest>(buf, msg, [&](auto& req) {
+        req.set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+    });
+}
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::StatBucketReply& msg) const {
+    encode_bucket_response<protobuf::StatBucketResponse>(buf, msg, [&](auto& res) {
+        res.set_results(msg.getResults().data(), msg.getResults().size());
+    });
+}
+
+api::StorageCommand::UP ProtocolSerialization7::onDecodeStatBucketCommand(BBuf& buf) const {
+    return decode_bucket_request<protobuf::StatBucketRequest>(buf, [&](auto& req, auto& bucket) {
+        return std::make_unique<api::StatBucketCommand>(bucket, req.document_selection());
+    });
+}
+
+api::StorageReply::UP ProtocolSerialization7::onDecodeStatBucketReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_bucket_response<protobuf::StatBucketResponse>(buf, [&](auto& res) {
+        return std::make_unique<api::StatBucketReply>(static_cast<const api::StatBucketCommand&>(cmd), res.results());
     });
 }
 
