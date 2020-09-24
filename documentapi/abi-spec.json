@@ -73,6 +73,7 @@
     ],
     "methods": [
       "public static com.yahoo.documentapi.DocumentAccess createDefault()",
+      "public static com.yahoo.documentapi.DocumentAccess createForNonContainer()",
       "protected void <init>(com.yahoo.documentapi.DocumentAccessParams)",
       "public abstract com.yahoo.documentapi.SyncSession createSyncSession(com.yahoo.documentapi.SyncParameters)",
       "public abstract com.yahoo.documentapi.AsyncSession createAsyncSession(com.yahoo.documentapi.AsyncParameters)",
