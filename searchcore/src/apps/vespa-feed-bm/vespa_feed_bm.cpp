@@ -76,7 +76,7 @@
 #include <iostream>
 
 #include <vespa/log/log.h>
-LOG_SETUP("vespa-spi-feed-bm");
+LOG_SETUP("vespa-feed-bm");
 
 using namespace config;
 using namespace proton;
@@ -1074,11 +1074,11 @@ void
 App::usage()
 {
     std::cerr <<
-        "vespa-spi-feed-bm version 0.0\n"
+        "vespa-feed-bm version 0.0\n"
         "\n"
         "USAGE:\n";
     std::cerr <<
-        "vespa-spi-feed-bm\n"
+        "vespa-feed-bm\n"
         "[--threads threads]\n"
         "[--documents documents]\n"
         "[--put-passes put-passes]\n"
@@ -1164,7 +1164,7 @@ App::Main()
 int
 main(int argc, char* argv[])
 {
-    DummyFileHeaderContext::setCreator("vespa-spi-feed-bm");
+    DummyFileHeaderContext::setCreator("vespa-feed-bm");
     App app;
     auto exit_value = app.Entry(argc, argv);
     vespalib::rmdir(base_dir, true);
