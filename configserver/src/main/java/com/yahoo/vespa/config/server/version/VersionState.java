@@ -46,7 +46,6 @@ public class VersionState {
     }
 
     public boolean isUpgraded() {
-        System.out.println("current version: " + currentVersion() + ", stored version: " + storedVersion());
         return currentVersion().compareTo(storedVersion()) > 0;
     }
 
@@ -67,16 +66,14 @@ public class VersionState {
         if (distributeApplicationPackage.value()) {
             Optional<byte[]> version = curator.getData(versionPath);
             if(version.isPresent()) {
-                System.out.println("Found version in zk ");
                 try {
                     return Version.fromString(Utf8.toString(version.get()));
                 } catch (Exception e) {
-                    return new Version(0, 0, 0); // Use an old value to signal we don't know
+                    // continue, use value in file
                 }
             }
         }
         try (FileReader reader = new FileReader(versionFile)) {
-            System.out.println("Found version in file ");
             return Version.fromString(IOUtils.readAll(reader));
         } catch (Exception e) {
             return new Version(0, 0, 0); // Use an old value to signal we don't know
