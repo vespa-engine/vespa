@@ -589,7 +589,11 @@ public class CuratorDatabaseClient {
                 .collect(Collectors.toList());
     }
 
-    public NodeSerializer.CacheStats nodeSerializerCacheStats() {
+    public CacheStats cacheStats() {
+        return db.cacheStats();
+    }
+
+    public CacheStats nodeSerializerCacheStats() {
         return nodeSerializer.cacheStats();
     }
 

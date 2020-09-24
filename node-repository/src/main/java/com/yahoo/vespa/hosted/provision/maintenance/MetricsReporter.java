@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.persistence.NodeSerializer;
+import com.yahoo.vespa.hosted.provision.persistence.CacheStats;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -69,15 +69,20 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateMaintenanceMetrics();
         updateDockerMetrics(nodes);
         updateTenantUsageMetrics(nodes);
-        updateNodeSerializerCacheMetrics();
+        updateCacheMetrics();
         return true;
     }
 
-    private void updateNodeSerializerCacheMetrics() {
-        NodeSerializer.CacheStats cacheStats = nodeRepository().database().nodeSerializerCacheStats();
-        metric.set("cache.nodeObject.hitRate", cacheStats.hitRate(), null);
-        metric.set("cache.nodeObject.evictionCount", cacheStats.evictionCount(), null);
-        metric.set("cache.nodeObject.size", cacheStats.size(), null);
+    private void updateCacheMetrics() {
+        CacheStats nodeCacheStats = nodeRepository().database().nodeSerializerCacheStats();
+        metric.set("cache.nodeObject.hitRate", nodeCacheStats.hitRate(), null);
+        metric.set("cache.nodeObject.evictionCount", nodeCacheStats.evictionCount(), null);
+        metric.set("cache.nodeObject.size", nodeCacheStats.size(), null);
+
+        CacheStats curatorCacheStats = nodeRepository().database().cacheStats();
+        metric.set("cache.curator.hitRate", curatorCacheStats.hitRate(), null);
+        metric.set("cache.curator.evictionCount", curatorCacheStats.evictionCount(), null);
+        metric.set("cache.curator.size", curatorCacheStats.size(), null);
     }
 
     private void updateMaintenanceMetrics() {
