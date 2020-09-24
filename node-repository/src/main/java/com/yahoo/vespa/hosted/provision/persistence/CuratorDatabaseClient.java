@@ -588,6 +588,10 @@ public class CuratorDatabaseClient {
                 .collect(Collectors.toList());
     }
 
+    public NodeSerializer.CacheStats nodeSerializerCacheStats() {
+        return nodeSerializer.cacheStats();
+    }
+
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
         return db.getData(path).filter(data -> data.length > 0).map(mapper);
     }
