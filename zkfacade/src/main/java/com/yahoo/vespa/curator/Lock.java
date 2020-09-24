@@ -32,12 +32,20 @@ public class Lock implements Mutex {
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
+        ThreadLockInfo threadLockInfo = getThreadLockInfo();
+        threadLockInfo.invokingAcquire(timeout);
         try {
-            if ( ! mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS))
+            if ( ! mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                threadLockInfo.acquireTimedOut();
+
                 throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
-                                                    " to acquire lock '" + lockPath + "'");
+                        " to acquire lock '" + lockPath + "'");
+            }
+            threadLockInfo.lockAcquired();
+
             if ( ! lock.tryLock()) { // Should be available to only this thread, while holding the above mutex.
                 release();
+                threadLockInfo.failedToAcquireReentrantLock();
                 throw new IllegalStateException("InterProcessMutex acquired, but guarded lock held by someone else, for lock '" + lockPath + "'");
             }
         }
@@ -60,6 +68,7 @@ public class Lock implements Mutex {
     }
 
     private void release() {
+        getThreadLockInfo().lockReleased();
         try {
             mutex.release();
         }
@@ -68,6 +77,9 @@ public class Lock implements Mutex {
         }
     }
 
+    private ThreadLockInfo getThreadLockInfo() {
+        return ThreadLockInfo.getCurrentThreadLockInfo(lockPath, lock);
+    }
 }
 
 

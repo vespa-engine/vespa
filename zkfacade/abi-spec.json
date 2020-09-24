@@ -109,5 +109,65 @@
       "public void close()"
     ],
     "fields": []
+  },
+  "com.yahoo.vespa.curator.LockInfo$LockState": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.vespa.curator.LockInfo$LockState[] values()",
+      "public static com.yahoo.vespa.curator.LockInfo$LockState valueOf(java.lang.String)",
+      "public boolean isTerminal()"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.vespa.curator.LockInfo$LockState ACQUIRING",
+      "public static final enum com.yahoo.vespa.curator.LockInfo$LockState TIMED_OUT",
+      "public static final enum com.yahoo.vespa.curator.LockInfo$LockState ACQUIRED",
+      "public static final enum com.yahoo.vespa.curator.LockInfo$LockState FAILED_TO_REENTER",
+      "public static final enum com.yahoo.vespa.curator.LockInfo$LockState RELEASED"
+    ]
+  },
+  "com.yahoo.vespa.curator.LockInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.vespa.curator.LockInfo invokingAcquire(int, java.time.Duration)",
+      "public int getThreadHoldCountOnAcquire()",
+      "public java.time.Instant getTimeAcquiredWasInvoked()",
+      "public java.time.Duration getAcquireTimeout()",
+      "public com.yahoo.vespa.curator.LockInfo$LockState getLockState()",
+      "public java.util.Optional getTimeLockWasAcquired()",
+      "public java.util.Optional getTimeTerminalStateWasReached()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.vespa.curator.ThreadLockInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static int invokeAcquireCount()",
+      "public static int inCriticalRegionCount()",
+      "public static int acquireTimedOutCount()",
+      "public static int lockAcquiredCount()",
+      "public static int locksReleasedCount()",
+      "public static int noLocksErrorCount()",
+      "public static int failedToAcquireReentrantLockCount()",
+      "public static int timeoutOnReentrancyErrorCount()",
+      "public static java.util.List getThreadLockInfos()",
+      "public java.lang.String getThreadName()",
+      "public java.lang.String getLockPath()",
+      "public java.util.List getLockInfos()"
+    ],
+    "fields": []
   }
 }
