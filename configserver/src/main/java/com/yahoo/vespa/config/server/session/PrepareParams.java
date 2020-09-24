@@ -45,6 +45,7 @@ public final class PrepareParams {
     static final String APPLICATION_CONTAINER_ROLE = "applicationContainerRole";
     static final String QUOTA_PARAM_NAME = "quota";
     static final String FORCE_PARAM_NAME = "force";
+    static final String INTERNAL_RESTART_PARAM_NAME = "internalRestart";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -53,6 +54,7 @@ public final class PrepareParams {
     private final boolean verbose;
     private final boolean isBootstrap;
     private final boolean force;
+    private final boolean internalRestart;
     private final Optional<Version> vespaVersion;
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<String> tlsSecretsKeyName;
@@ -67,7 +69,8 @@ public final class PrepareParams {
                           List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, boolean force) {
+                          Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, boolean force,
+                          boolean internalRestart) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -83,6 +86,7 @@ public final class PrepareParams {
         this.applicationRoles = applicationRoles;
         this.quota = quota;
         this.force = force;
+        this.internalRestart = internalRestart;
     }
 
     public static class Builder {
@@ -92,6 +96,7 @@ public final class PrepareParams {
         private boolean verbose = false;
         private boolean isBootstrap = false;
         private boolean force = false;
+        private boolean internalRestart = false;
         private ApplicationId applicationId = null;
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60));
         private Optional<Version> vespaVersion = Optional.empty();
@@ -208,11 +213,16 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder internalRestart(boolean internalRestart) {
+            this.internalRestart = internalRestart;
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName,
                                      endpointCertificateMetadata, dockerImageRepository, athenzDomain,
-                                     applicationRoles, quota, force);
+                                     applicationRoles, quota, force, internalRestart);
         }
     }
 
@@ -231,6 +241,7 @@ public final class PrepareParams {
                             .applicationRoles(ApplicationRoles.fromString(request.getProperty(APPLICATION_HOST_ROLE), request.getProperty(APPLICATION_CONTAINER_ROLE)))
                             .quota(request.getProperty(QUOTA_PARAM_NAME))
                             .force(request.getBooleanProperty(FORCE_PARAM_NAME))
+                            .internalRestart(request.getBooleanProperty(INTERNAL_RESTART_PARAM_NAME))
                             .build();
     }
 
@@ -281,6 +292,8 @@ public final class PrepareParams {
     public boolean isBootstrap() { return isBootstrap; }
 
     public boolean force() { return force; }
+
+    public boolean internalRestart() { return internalRestart; }
 
     public TimeoutBudget getTimeoutBudget() {
         return timeoutBudget;
