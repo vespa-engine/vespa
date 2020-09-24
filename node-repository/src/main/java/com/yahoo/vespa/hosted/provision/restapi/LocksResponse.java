@@ -5,14 +5,22 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.curator.LockInfo;
-import com.yahoo.vespa.curator.ThreadLockInfo;
+import com.yahoo.vespa.curator.stats.LockCounters;
+import com.yahoo.vespa.curator.stats.LockInfo;
+import com.yahoo.vespa.curator.stats.ThreadLockInfo;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
+/**
+ * Returns information related to ZooKeeper locks.
+ *
+ * @author hakon
+ */
 public class LocksResponse extends HttpResponse {
 
     private final Slime slime;
@@ -23,38 +31,43 @@ public class LocksResponse extends HttpResponse {
         this.slime = new Slime();
         Cursor root = slime.setObject();
 
-        root.setLong("in-critical-region", ThreadLockInfo.inCriticalRegionCount());
-        root.setLong("invoke-acquire", ThreadLockInfo.invokeAcquireCount());
-        root.setLong("acquire-timed-out", ThreadLockInfo.acquireTimedOutCount());
-        root.setLong("lock-acquired", ThreadLockInfo.lockAcquiredCount());
-        root.setLong("locks-released", ThreadLockInfo.locksReleasedCount());
-        root.setLong("acquire-reentrant-lock-errors", ThreadLockInfo.failedToAcquireReentrantLockCount());
-        root.setLong("no-locks-errors", ThreadLockInfo.noLocksErrorCount());
-        root.setLong("timeout-on-reentrancy-errors", ThreadLockInfo.timeoutOnReentrancyErrorCount());
+        Map<String, LockCounters> lockCountersByPath = new TreeMap<>(ThreadLockInfo.getLockCountersByPath());
+
+        Cursor lockPathsCursor = root.setArray("lock-paths");
+        lockCountersByPath.forEach((lockPath, lockCounters) -> {
+            Cursor lockPathCursor = lockPathsCursor.addObject();
+            lockPathCursor.setString("path", lockPath);
+            lockPathCursor.setLong("in-critical-region", lockCounters.inCriticalRegionCount());
+            lockPathCursor.setLong("invoke-acquire", lockCounters.invokeAcquireCount());
+            lockPathCursor.setLong("acquire-timed-out", lockCounters.acquireTimedOutCount());
+            lockPathCursor.setLong("lock-acquired", lockCounters.lockAcquiredCount());
+            lockPathCursor.setLong("locks-released", lockCounters.locksReleasedCount());
+            lockPathCursor.setLong("acquire-reentrant-lock-errors", lockCounters.failedToAcquireReentrantLockCount());
+            lockPathCursor.setLong("no-locks-errors", lockCounters.noLocksErrorCount());
+            lockPathCursor.setLong("timeout-on-reentrancy-errors", lockCounters.timeoutOnReentrancyErrorCount());
+        });
 
         List<ThreadLockInfo> threadLockInfos = ThreadLockInfo.getThreadLockInfos();
-        if (!threadLockInfos.isEmpty()) {
-            Cursor threadsCursor = root.setArray("threads");
-            threadLockInfos.forEach(threadLockInfo -> {
-                Cursor threadLockInfoCursor = threadsCursor.addObject();
-                threadLockInfoCursor.setString("thread-name", threadLockInfo.getThreadName());
-                threadLockInfoCursor.setString("lock-path", threadLockInfo.getLockPath());
+        Cursor threadsCursor = root.setArray("threads");
+        threadLockInfos.forEach(threadLockInfo -> {
+            Cursor threadLockInfoCursor = threadsCursor.addObject();
+            threadLockInfoCursor.setString("thread-name", threadLockInfo.getThreadName());
+            threadLockInfoCursor.setString("lock-path", threadLockInfo.getLockPath());
 
-                List<LockInfo> lockInfos = threadLockInfo.getLockInfos();
-                if (!lockInfos.isEmpty()) {
-                    Cursor lockInfosCursor = threadLockInfoCursor.setArray("locks");
-                    lockInfos.forEach(lockInfo -> {
-                        Cursor lockInfoCursor = lockInfosCursor.addObject();
-                        lockInfoCursor.setString("invoke-acquire-time", toString(lockInfo.getTimeAcquiredWasInvoked()));
-                        lockInfoCursor.setLong("reentrancy-hold-count-on-acquire", lockInfo.getThreadHoldCountOnAcquire());
-                        lockInfoCursor.setString("acquire-timeout", lockInfo.getAcquireTimeout().toString());
-                        lockInfo.getTimeLockWasAcquired().ifPresent(instant -> lockInfoCursor.setString("lock-acquired-time", toString(instant)));
-                        lockInfoCursor.setString("lock-state", lockInfo.getLockState().name());
-                        lockInfo.getTimeTerminalStateWasReached().ifPresent(instant -> lockInfoCursor.setString("terminal-state-time", toString(instant)));
-                    });
-                }
-            });
-        }
+            List<LockInfo> lockInfos = threadLockInfo.getLockInfos();
+            if (!lockInfos.isEmpty()) {
+                Cursor lockInfosCursor = threadLockInfoCursor.setArray("locks");
+                lockInfos.forEach(lockInfo -> {
+                    Cursor lockInfoCursor = lockInfosCursor.addObject();
+                    lockInfoCursor.setString("invoke-acquire-time", toString(lockInfo.getTimeAcquiredWasInvoked()));
+                    lockInfoCursor.setLong("reentrancy-hold-count-on-acquire", lockInfo.getThreadHoldCountOnAcquire());
+                    lockInfoCursor.setString("acquire-timeout", lockInfo.getAcquireTimeout().toString());
+                    lockInfo.getTimeLockWasAcquired().ifPresent(instant -> lockInfoCursor.setString("lock-acquired-time", toString(instant)));
+                    lockInfoCursor.setString("lock-state", lockInfo.getLockState().name());
+                    lockInfo.getTimeTerminalStateWasReached().ifPresent(instant -> lockInfoCursor.setString("terminal-state-time", toString(instant)));
+                });
+            }
+        });
     }
 
     @Override

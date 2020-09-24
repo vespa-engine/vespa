@@ -4,6 +4,7 @@ package com.yahoo.vespa.curator;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.curator.stats.ThreadLockInfo;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
@@ -39,7 +40,7 @@ public class Lock implements Mutex {
                 threadLockInfo.acquireTimedOut();
 
                 throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
-                        " to acquire lock '" + lockPath + "'");
+                                                    " to acquire lock '" + lockPath + "'");
             }
             threadLockInfo.lockAcquired();
 

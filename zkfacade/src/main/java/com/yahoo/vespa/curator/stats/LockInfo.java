@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.curator;
+package com.yahoo.vespa.curator.stats;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -9,6 +9,8 @@ import java.util.Optional;
  * Information about a lock.
  *
  * <p>Should be mutated by a single thread.  Other threads may see an inconsistent state of this instance.</p>
+ *
+ * @author hakon
  */
 public class LockInfo {
 
