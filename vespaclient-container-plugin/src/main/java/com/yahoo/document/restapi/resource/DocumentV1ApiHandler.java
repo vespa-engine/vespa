@@ -252,6 +252,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         DocumentId id = path.id();
         executor.get(id,
+                     getProperty(request, CLUSTER),
+                     getProperty(request, FIELD_SET),
                      new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
                                           document -> {
                                               Cursor root = responseRoot(request, id);
@@ -273,6 +275,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 DocumentPut put = parser.parsePut(in, id.toString());
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
                 executor.put(put,
+                             getProperty(request, ROUTE),
                              new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
                                                   __ -> respond(responseRoot(request, id), handler)));
             }
@@ -291,6 +294,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
                 getProperty(request, CREATE).map(booleanParser::parse).ifPresent(update::setCreateIfNonExistent);
                 executor.update(update,
+                                getProperty(request, ROUTE),
                                 new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
                                                      __ -> respond(responseRoot(request, id), handler)));
             }
@@ -304,6 +308,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         DocumentId id = path.id();
         ResponseHandler handler = new MeasuringResponseHandler(rawHandler, DocumentOperationType.REMOVE, clock.instant());
         executor.remove(id,
+                        getProperty(request, ROUTE),
                         new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
                                              __ -> respond(responseRoot(request, id), handler)));
         return ignoredContent;

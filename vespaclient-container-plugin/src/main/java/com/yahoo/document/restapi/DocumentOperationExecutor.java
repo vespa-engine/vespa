@@ -114,19 +114,19 @@ public class DocumentOperationExecutor {
         access.shutdown();
     }
 
-    public void get(DocumentId id, OperationContext context) {
+    public void get(DocumentId id, Optional<String> cluster, Optional<String> fieldSet, OperationContext context) {
         accept(() -> asyncSession.get(id), context);
     }
 
-    public void put(DocumentPut put, OperationContext context) {
+    public void put(DocumentPut put, Optional<String> route, OperationContext context) {
         accept(() -> asyncSession.put(put), context);
     }
 
-    public void update(DocumentUpdate update, OperationContext context) {
+    public void update(DocumentUpdate update, Optional<String> route, OperationContext context) {
         accept(() -> asyncSession.update(update), context);
     }
 
-    public void remove(DocumentId id, OperationContext context) {
+    public void remove(DocumentId id, Optional<String> route, OperationContext context) {
         accept(() -> asyncSession.remove(id), context);
     }
 
@@ -403,40 +403,6 @@ public class DocumentOperationExecutor {
             return parameters;
         }
 
-        private static StorageCluster resolveCluster(Optional<String> wanted, Map<String, StorageCluster> clusters) {
-            if (clusters.isEmpty())
-                throw new IllegalArgumentException("Your Vespa deployment has no content clusters, so visiting is not enabled.");
-
-            return wanted.map(cluster -> {
-                if ( ! clusters.containsKey(cluster))
-                    throw new IllegalArgumentException("Your Vespa deployment has no content cluster '" + cluster + "', only " +
-                                                       String.join(", ", clusters.keySet()));
-
-                return clusters.get(cluster);
-            }).orElseGet(() -> {
-                if (clusters.size() > 1)
-                    throw new IllegalArgumentException("Please specify one of the content clusters in your Vespa deployment: " +
-                                                       String.join(", ", clusters.keySet()));
-
-                return clusters.values().iterator().next();
-            });
-        }
-
-        private static String resolveBucket(StorageCluster cluster, Optional<String> documentType,
-                                    List<String> bucketSpaces, Optional<String> bucketSpace) {
-            return documentType.map(type -> cluster.bucketOf(type)
-                                                   .orElseThrow(() -> new IllegalArgumentException("Document type '" + type + "' in cluster '" + cluster.name() +
-                                                                                                   "' is not mapped to a known bucket space")))
-                               .or(() -> bucketSpace.map(space -> {
-                                   if ( ! bucketSpaces.contains(space))
-                                       throw new IllegalArgumentException("Bucket space '" + space + "' is not a known bucket space; expected one of " +
-                                                                          String.join(", ", bucketSpaces));
-                                   return space;
-                               }))
-                               .orElse(FixedBucketSpaces.defaultSpace());
-        }
-
-
         public static Builder builder() { return new Builder(); }
 
 
@@ -514,6 +480,41 @@ public class DocumentOperationExecutor {
         }
 
     }
+
+
+    private static StorageCluster resolveCluster(Optional<String> wanted, Map<String, StorageCluster> clusters) {
+        if (clusters.isEmpty())
+            throw new IllegalArgumentException("Your Vespa deployment has no content clusters, so visiting is not enabled.");
+
+        return wanted.map(cluster -> {
+            if ( ! clusters.containsKey(cluster))
+                throw new IllegalArgumentException("Your Vespa deployment has no content cluster '" + cluster + "', only " +
+                                                   String.join(", ", clusters.keySet()));
+
+            return clusters.get(cluster);
+        }).orElseGet(() -> {
+            if (clusters.size() > 1)
+                throw new IllegalArgumentException("Please specify one of the content clusters in your Vespa deployment: " +
+                                                   String.join(", ", clusters.keySet()));
+
+            return clusters.values().iterator().next();
+        });
+    }
+
+    private static String resolveBucket(StorageCluster cluster, Optional<String> documentType,
+                                        List<String> bucketSpaces, Optional<String> bucketSpace) {
+        return documentType.map(type -> cluster.bucketOf(type)
+                                               .orElseThrow(() -> new IllegalArgumentException("Document type '" + type + "' in cluster '" + cluster.name() +
+                                                                                               "' is not mapped to a known bucket space")))
+                           .or(() -> bucketSpace.map(space -> {
+                               if ( ! bucketSpaces.contains(space))
+                                   throw new IllegalArgumentException("Bucket space '" + space + "' is not a known bucket space; expected one of " +
+                                                                      String.join(", ", bucketSpaces));
+                               return space;
+                           }))
+                           .orElse(FixedBucketSpaces.defaultSpace());
+    }
+
 
 
     public static class Group {
