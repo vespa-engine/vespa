@@ -45,6 +45,11 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * The flag files must reside in a 'flags/' root directory containing a directory for each flag name:
  * {@code ./flags/<flag-id>/*.json}
  *
+ * Optionally, there can be an arbitrary number of directories "between" 'flags/' root directory and
+ * the flag name directory:
+ * {@code ./flags/onelevel/<flag-id>/*.json}
+ * {@code ./flags/onelevel/anotherlevel/<flag-id>/*.json}
+ *
  * @author bjorncs
  */
 public class SystemFlagsDataArchive {
@@ -155,7 +160,7 @@ public class SystemFlagsDataArchive {
         if (!filename.endsWith(".json")) {
             throw new IllegalArgumentException(String.format("Only JSON files are allowed in 'flags/' directory (found '%s')", filePath.toString()));
         }
-        FlagId directoryDeducedFlagId = new FlagId(filePath.getName(1).toString());
+        FlagId directoryDeducedFlagId = new FlagId(filePath.getName(filePath.getNameCount()-2).toString());
         FlagData flagData;
         if (rawData.isBlank()) {
             flagData = new FlagData(directoryDeducedFlagId);
@@ -178,6 +183,13 @@ public class SystemFlagsDataArchive {
                         "\nSee https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
             }
         }
+
+        if (builder.hasFile(filename, flagData)) {
+            throw new IllegalArgumentException(
+                String.format("Flag data file in '%s' contains redundant flag data for id '%s' already set in another directory!",
+                              filePath, flagData.id()));
+        }
+
         builder.addFile(filename, flagData);
     }
 
@@ -234,6 +246,10 @@ public class SystemFlagsDataArchive {
         public Builder addFile(String filename, FlagData data) {
             files.computeIfAbsent(data.id(), k -> new TreeMap<>()).put(filename, data);
             return this;
+        }
+
+        public boolean hasFile(String filename, FlagData data) {
+            return files.containsKey(data.id()) && files.get(data.id()).containsKey(filename);
         }
 
         public SystemFlagsDataArchive build() {
