@@ -208,6 +208,19 @@ TEST(ValueCodecTest, dense_tensors_can_be_encoded_and_decoded) {
     f1.verify_encode_decode();
 }
 
+TEST(ValueCodecTest, dense_tensors_without_values_are_filled) {
+    TensorSpec empty_dense_spec("tensor(x[3],y[2])");
+    auto value = value_from_spec(empty_dense_spec, SimpleValueBuilderFactory::get());
+    EXPECT_EQ(value->cells().size, 6);
+    auto cells = value->cells().typify<double>();
+    EXPECT_EQ(cells[0], 0.0);
+    EXPECT_EQ(cells[1], 0.0);
+    EXPECT_EQ(cells[2], 0.0);
+    EXPECT_EQ(cells[3], 0.0);
+    EXPECT_EQ(cells[4], 0.0);
+    EXPECT_EQ(cells[5], 0.0);
+}
+
 //-----------------------------------------------------------------------------
 
 struct MixedTensorExample : TensorExample {
