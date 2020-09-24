@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -22,25 +23,24 @@ public class DeployHandlerLogger implements DeployLogger {
 
     private static final Logger log = Logger.getLogger(DeployHandlerLogger.class.getName());
 
-    private final Cursor logroot;
+    private final String prefix;
     private final boolean verbose;
-    private final ApplicationId app;
+    private final Slime slime;
+    private final Cursor logroot;
 
-    public DeployHandlerLogger(Cursor root, boolean verbose, ApplicationId app) {
-        logroot = root;
+    private DeployHandlerLogger(String prefix, boolean verbose) {
+        this.prefix = prefix;
         this.verbose = verbose;
-        this.app = app;
+        this.slime = new Slime();
+        this.logroot = slime.setObject().setArray("log");
     }
 
     @Override
     public void log(Level level, String message) {
-        if ((level == Level.FINE ||
-             level == LogLevel.DEBUG ||
-             level == LogLevel.SPAM) &&
-            !verbose) {
+        if ((level == Level.FINE || level == LogLevel.DEBUG || level == LogLevel.SPAM) && !verbose)
             return;
-        }
-        String fullMsg = TenantRepository.logPre(app) + message;
+
+        String fullMsg = prefix + message;
         Cursor entry = logroot.addObject();
         entry.setLong("time", System.currentTimeMillis());
         entry.setString("level", level.getName());
@@ -49,4 +49,15 @@ public class DeployHandlerLogger implements DeployLogger {
         log.log(Level.FINE, fullMsg);
     }
 
+    public Slime slime() {
+        return slime;
+    }
+
+    public static DeployHandlerLogger forApplication(ApplicationId app, boolean verbose) {
+        return new DeployHandlerLogger(TenantRepository.logPre(app), verbose);
+    }
+
+    public static DeployHandlerLogger forTenant(TenantName tenantName, boolean verbose) {
+        return new DeployHandlerLogger(TenantRepository.logPre(tenantName), verbose);
+    }
 }

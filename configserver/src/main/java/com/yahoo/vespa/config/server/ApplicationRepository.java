@@ -285,15 +285,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
-        Slime deployLog = createDeployLog();
-        DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
+        DeployHandlerLogger logger = DeployHandlerLogger.forApplication(applicationId, prepareParams.isVerbose());
         try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
             SessionRepository sessionRepository = tenant.getSessionRepository();
             ConfigChangeActions actions = sessionRepository.prepareLocalSession(session, logger, prepareParams,
                                                                                 currentActiveApplicationSet, tenant.getPath(), now);
             logConfigChangeActions(actions, logger);
             log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
-            return new PrepareResult(sessionId, actions, deployLog);
+            return new PrepareResult(sessionId, actions, logger);
         }
     }
 
@@ -330,7 +329,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
             hostProvisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
             ConfigChangeActions newActions = new ConfigChangeActions(new RestartActions(), result.configChangeActions().getRefeedActions());
-            return new PrepareResult(result.sessionId(), newActions, result.deployLog());
+            return new PrepareResult(result.sessionId(), newActions, result.deployLogger());
         }
 
         return result;
@@ -1070,12 +1069,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(portInfo -> portInfo.getTags().stream().anyMatch(tag -> tag.equalsIgnoreCase("http")))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
-    }
-
-    public Slime createDeployLog() {
-        Slime deployLog = new Slime();
-        deployLog.setObject();
-        return deployLog;
     }
 
     public Zone zone() {
