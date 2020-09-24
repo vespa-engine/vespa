@@ -5,6 +5,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 
 /**
  * <p>This is the starting point of the <b>document api</b>. This api provides
@@ -55,13 +56,29 @@ public abstract class DocumentAccess {
      * while attempting to create such an object, this method will throw an
      * exception.
      *
-     * @deprecated Inject a DocumentManagerConfig and create a MessageBusDocumentAccess from this instead.
+     * @deprecated DocumentAccess may be injected in containers — otherwise use {@link #createForNonContainer()}.
      *
      * @return a running document access object with all default configuration
      */
     @Deprecated(since = "7")
     public static DocumentAccess createDefault() {
-        return new com.yahoo.documentapi.messagebus.MessageBusDocumentAccess();
+        return new MessageBusDocumentAccess();
+    }
+
+
+    /**
+     * This is a convenience method to return a document access object when running
+     * outside of a Vespa application container, with all default parameter values.
+     * The client that calls this method is also responsible for shutting the object
+     * down when done. If an error occurred while attempting to create such an object,
+     * this method will throw an exception.
+     * This document access requires new config subscriptions to be set up, which should
+     * be avoided in application containers, but is suitable for, e.g., CLIs.
+     *
+     * @return a running document access object with all default configuration
+     */
+    public static DocumentAccess createForNonContainer() {
+        return new MessageBusDocumentAccess();
     }
 
     /**
