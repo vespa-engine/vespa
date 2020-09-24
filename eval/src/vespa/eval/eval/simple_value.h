@@ -203,15 +203,4 @@ struct SparseJoinPlan {
 using join_fun_t = double (*)(double, double);
 std::unique_ptr<Value> new_join(const Value &a, const Value &b, join_fun_t function, const ValueBuilderFactory &factory);
 
-/**
- * Make a value from a tensor spec using a value builder factory
- * interface, making it work with any value implementation.
- **/
-std::unique_ptr<Value> value_from_spec(const TensorSpec &spec, const ValueBuilderFactory &factory);
-
-/**
- * Convert a generic value to a tensor spec.
- **/
-TensorSpec spec_from_value(const Value &value);
-
 }

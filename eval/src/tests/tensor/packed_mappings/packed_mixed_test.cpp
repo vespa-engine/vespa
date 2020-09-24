@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/tensor/mixed/packed_mixed_factory.h>
 #include <vespa/vespalib/gtest/gtest.h>

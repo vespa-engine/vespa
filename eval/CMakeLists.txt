@@ -29,6 +29,7 @@ vespa_define_module(
     src/tests/eval/tensor_lambda
     src/tests/eval/tensor_spec
     src/tests/eval/value_cache
+    src/tests/eval/value_codec
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
     src/tests/tensor/dense_add_dimension_optimizer
