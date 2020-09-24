@@ -58,9 +58,9 @@ public class Versions {
 
     /** Returns whether source versions are present and match those of the given job other versions. */
     public boolean sourcesMatchIfPresent(Versions versions) {
-        return (sourcePlatform.filter(version -> ! version.equals(targetPlatform)).isEmpty() ||
+        return (sourcePlatform.map(targetPlatform::equals).orElse(true) ||
                 sourcePlatform.equals(versions.sourcePlatform())) &&
-               (sourceApplication.filter(version -> ! version.equals(targetApplication)).isEmpty() ||
+               (sourceApplication.map(targetApplication::equals).orElse(true) ||
                 sourceApplication.equals(versions.sourceApplication()));
     }
 
