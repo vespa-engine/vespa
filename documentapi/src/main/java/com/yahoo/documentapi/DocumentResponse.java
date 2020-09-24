@@ -2,6 +2,7 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.Document;
+import com.yahoo.messagebus.Trace;
 
 /**
  * The asynchronous response to a document put or get operation.
@@ -61,7 +62,19 @@ public class DocumentResponse extends Response {
      * @param outcome     the outcome of this operation
      */
     public DocumentResponse(long requestId, Document document, String textMessage, Outcome outcome) {
-        super(requestId, textMessage, outcome);
+        this(requestId, document, textMessage, outcome, null);
+    }
+
+
+    /**
+     * Creates a response containing a textual message and/or a document
+     *
+     * @param document    the Document to encapsulate in the Response
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of this operation
+     */
+    public DocumentResponse(long requestId, Document document, String textMessage, Outcome outcome, Trace trace) {
+        super(requestId, textMessage, outcome, trace);
         this.document = document;
     }
 

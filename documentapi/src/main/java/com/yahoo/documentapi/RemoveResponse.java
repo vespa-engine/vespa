@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
+import com.yahoo.messagebus.Trace;
+
 /**
  * This response is provided for successful document remove operations. Use the
  * wasFound() method to check whether or not the document was actually found.
@@ -12,7 +14,11 @@ public class RemoveResponse extends Response {
     private final boolean wasFound;
 
     public RemoveResponse(long requestId, boolean wasFound) {
-        super(requestId, null, wasFound ? Outcome.SUCCESS : Outcome.NOT_FOUND);
+        this(requestId, wasFound, null);
+    }
+
+    public RemoveResponse(long requestId, boolean wasFound, Trace trace) {
+        super(requestId, null, wasFound ? Outcome.SUCCESS : Outcome.NOT_FOUND, trace);
         this.wasFound = wasFound;
     }
 

@@ -2,6 +2,7 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.DocumentId;
+import com.yahoo.messagebus.Trace;
 
 /**
  * The asynchronous response to a document remove operation.
@@ -61,7 +62,19 @@ public class DocumentIdResponse extends Response {
      * @param outcome     the outcome of the operation
      */
     public DocumentIdResponse(long requestId, DocumentId documentId, String textMessage, Outcome outcome) {
-        super(requestId, textMessage, outcome);
+        this(requestId, documentId, textMessage, outcome, null);
+    }
+
+
+    /**
+     * Creates a response containing a textual message and/or a document id
+     *
+     * @param documentId  the DocumentId to encapsulate in the Response
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of the operation
+     */
+    public DocumentIdResponse(long requestId, DocumentId documentId, String textMessage, Outcome outcome, Trace trace) {
+        super(requestId, textMessage, outcome, null);
         this.documentId = documentId;
     }
 
