@@ -50,20 +50,20 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Supplier<PrepareParams> params;
     private final Optional<Provisioner> provisioner;
     private final Tenant tenant;
-    private final DeployLogger logger;
+    private final DeployLogger deployLogger;
     private final Clock clock;
 
     private boolean prepared;
     private ConfigChangeActions configChangeActions;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
-                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger, Clock clock, boolean prepared) {
+                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger deployLogger, Clock clock, boolean prepared) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.params = params;
         this.provisioner = provisioner;
         this.tenant = tenant;
-        this.logger = logger;
+        this.deployLogger = deployLogger;
         this.clock = clock;
         this.prepared = prepared;
     }
@@ -99,7 +99,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
             Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
             this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(
-                    session, logger, params, activeApplicationSet, tenant.getPath(), clock.instant());
+                    session, deployLogger, params, activeApplicationSet, tenant.getPath(), clock.instant());
             this.prepared = true;
         }
     }
@@ -143,7 +143,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                         .collect(Collectors.toUnmodifiableSet());
 
                 provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
-                log.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+                deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
                         hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
 
                 this.configChangeActions = new ConfigChangeActions(new RestartActions(), configChangeActions.getRefeedActions());
