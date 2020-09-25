@@ -20,6 +20,8 @@ import com.yahoo.messagebus.network.local.LocalNetwork;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class implements the {@link DocumentAccess} interface using message bus for communication.
@@ -28,6 +30,8 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author bratseth
  */
 public class MessageBusDocumentAccess extends DocumentAccess {
+
+    private static final Logger log = Logger.getLogger(MessageBusDocumentAccess.class.getName());
 
     private final NetworkMessageBus bus;
 
@@ -60,9 +64,12 @@ public class MessageBusDocumentAccess extends DocumentAccess {
                 bus = new NetworkMessageBus(network, new MessageBus(network, mbusParams));
             }
             else {
-                bus = params.getRPCNetworkParams().getSlobroksConfig() != null && mbusParams.getMessageBusConfig() != null
-                      ? new RPCMessageBus(mbusParams, params.getRPCNetworkParams()) // prefer without self-subscription if config is set
-                      : new RPCMessageBus(mbusParams, params.getRPCNetworkParams(), params.getRoutingConfigId());
+                if (params.getRPCNetworkParams().getSlobroksConfig() != null && mbusParams.getMessageBusConfig() != null)
+                    bus = new RPCMessageBus(mbusParams, params.getRPCNetworkParams());
+                else {
+                    log.log(Level.INFO, "Setting up self-subscription to config because explicit config was missing; try to avoid this in containers");
+                    bus = new RPCMessageBus(mbusParams, params.getRPCNetworkParams(), params.getRoutingConfigId());
+                }
             }
         }
         catch (Exception e) {
