@@ -121,7 +121,7 @@ public class RequestHandlerTestDriver implements AutoCloseable {
         }
 
         /**
-         * Read the next piece of data from this channel even it blocking is needed.
+         * Read the next piece of data from this channel, blocking if needed.
          * If all data is already read, this returns null.
          */
         public String read() {
@@ -147,7 +147,7 @@ public class RequestHandlerTestDriver implements AutoCloseable {
             return responseString.toString();
         }
 
-        /** Consumes all <i>currently</i> available data, or return "" if no data is available right now. Never blocks. */
+        /** Consumes all <i>currently</i> available data, or returns "" if no data is available right now. Never blocks. */
         public String readIfAvailable() {
             StringBuilder b = new StringBuilder();
             while (content.available()>0) {

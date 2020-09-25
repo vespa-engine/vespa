@@ -119,9 +119,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
             metric.add(RENDERING_ERRORS, 1, null);
             long time = System.currentTimeMillis() - startTime;
             log.log(time < 900 ? Level.INFO : Level.WARNING,
-                    "IO error while responding to " + " ["
-                            + request.getUri() + "] " + "(total time "
-                            + time + " ms) ", e);
+                    "IO error while responding to  [" + request.getUri() + "] (total time " + time + " ms) ", e);
             try { output.flush(); } catch (Exception ignored) { }
         } finally {
             if (channel != null && ! (httpResponse instanceof AsyncHttpResponse)) {
