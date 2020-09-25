@@ -16,7 +16,7 @@ protected:
 public:
     StorageChainBuilder();
     ~StorageChainBuilder() override;
-    void add(std::unique_ptr<StorageLink> child) override;
+    void add(std::unique_ptr<StorageLink> link) override;
     std::unique_ptr<StorageLink> build() && override;
 };
 
