@@ -93,6 +93,9 @@ public class LocksResponse extends HttpResponse {
         lockInfo.getTimeLockWasAcquired().ifPresent(instant -> lockInfoCursor.setString("lock-acquired-time", toString(instant)));
         lockInfoCursor.setString("lock-state", lockInfo.getLockState().name());
         lockInfo.getTimeTerminalStateWasReached().ifPresent(instant -> lockInfoCursor.setString("terminal-state-time", toString(instant)));
+        lockInfoCursor.setString("acquire-duration", lockInfo.getDurationOfAcquire().toString());
+        lockInfoCursor.setString("locked-duration", lockInfo.getDurationWithLock().toString());
+        lockInfoCursor.setString("total-duration", lockInfo.getDuration().toString());
         lockInfo.getStackTrace().ifPresent(stackTrace -> lockInfoCursor.setString("stack-trace", stackTrace));
     }
 

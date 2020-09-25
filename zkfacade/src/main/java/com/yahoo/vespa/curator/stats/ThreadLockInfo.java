@@ -30,7 +30,8 @@ public class ThreadLockInfo {
     private static final int MAX_COMPLETED_LOCK_INFOS_SIZE = 5;
     /** Would have used a thread-safe priority queue. */
     private static final Object completedLockInfosMonitor = new Object();
-    private static final PriorityQueue<LockInfo> completedLockInfos = new PriorityQueue<>(Comparator.comparing(LockInfo::getTotalTime));
+    private static final PriorityQueue<LockInfo> completedLockInfos =
+            new PriorityQueue<>(Comparator.comparing(LockInfo::getDurationInTerminalStateAndForPriorityQueue));
 
     private static final ConcurrentHashMap<String, LockCounters> countersByLockPath = new ConcurrentHashMap<>();
 
@@ -126,7 +127,8 @@ public class ThreadLockInfo {
             if (completedLockInfos.size() < MAX_COMPLETED_LOCK_INFOS_SIZE) {
                 lockInfo.fillStackTrace();
                 completedLockInfos.add(lockInfo);
-            } else if (lockInfo.getTotalTime().compareTo(completedLockInfos.peek().getTotalTime()) > 0) {
+            } else if (lockInfo.getDurationInTerminalStateAndForPriorityQueue()
+                    .compareTo(completedLockInfos.peek().getDurationInTerminalStateAndForPriorityQueue()) > 0) {
                 completedLockInfos.poll();
                 lockInfo.fillStackTrace();
                 completedLockInfos.add(lockInfo);

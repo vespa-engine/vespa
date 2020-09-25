@@ -59,8 +59,20 @@ public class LockInfo {
     public Optional<Instant> getTimeTerminalStateWasReached() { return terminalStateInstant; }
     public Optional<String> getStackTrace() { return stackTrace; }
 
+    public Duration getDurationOfAcquire() {
+        return Duration.between(acquireInstant, lockAcquiredInstant.orElseGet(Instant::now));
+    }
+
+    public Duration getDurationWithLock() {
+        return lockAcquiredInstant
+                .map(start -> Duration.between(start, terminalStateInstant.orElseGet(Instant::now)))
+                .orElse(Duration.ZERO);
+    }
+
+    public Duration getDuration() { return Duration.between(acquireInstant, terminalStateInstant.orElseGet(Instant::now)); }
+
     /** Get time from just before trying to acquire lock to the time the terminal state was reached, or ZERO. */
-    public Duration getTotalTime() {
+    public Duration getDurationInTerminalStateAndForPriorityQueue() {
         return terminalStateInstant.map(instant -> Duration.between(acquireInstant, instant)).orElse(Duration.ZERO);
     }
 
@@ -74,6 +86,7 @@ public class LockInfo {
         var stackTrace = new StringBuilder();
 
         StackTraceElement[] elements = thread.getStackTrace();
+        // first stack frame is "java.lang.Thread(Thread.java:1606)" or "jdk.internal.misc.Unsafe(Unsafe.java:-2)"!?
         for (int i = 0; i < elements.length; ++i) {
             var element = elements[i];
             stackTrace.append(element.getClassName())
