@@ -64,7 +64,10 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -127,6 +130,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
+    private final BooleanFlag deployWithInternalRestart;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -176,6 +180,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = Objects.requireNonNull(clock);
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
+        this.deployWithInternalRestart = Flags.DEPLOY_WITH_INTERNAL_RESTART.bindTo(flagSource);
     }
 
     public static class Builder {
@@ -279,27 +284,29 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         bootstrapping.set(false);
     }
 
-    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, Instant now) {
+    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
+    }
+
+    private Deployment prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
-        Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
-        DeployHandlerLogger logger = DeployHandlerLogger.forApplication(applicationId, prepareParams.isVerbose());
-        try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
-            SessionRepository sessionRepository = tenant.getSessionRepository();
-            ConfigChangeActions actions = sessionRepository.prepareLocalSession(session, logger, prepareParams,
-                                                                                currentActiveApplicationSet, tenant.getPath(), now);
-            logConfigChangeActions(actions, logger);
-            log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
-            return new PrepareResult(sessionId, actions, logger);
-        }
+        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
+        deployment.prepare();
+
+        logConfigChangeActions(deployment.configChangeActions(), logger);
+        log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+        return deployment;
     }
 
-    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams, Instant now) {
+    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         PrepareResult prepareResult;
         try {
-            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, now);
+            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams);
         } finally {
             cleanupTempDirectory(tempDir);
         }
@@ -307,34 +314,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
-        return deploy(applicationPackage, prepareParams, Instant.now());
-    }
-
-    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, Instant now) {
-        if (prepareParams.internalRestart() && hostProvisioner.isEmpty())
-            throw new IllegalArgumentException("Internal restart not supported without HostProvisioner");
-
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = getTenant(applicationId);
-        PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
-        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), prepareParams.force());
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        deployment.activate();
 
-        if (prepareParams.internalRestart() && !result.configChangeActions().getRestartActions().isEmpty()) {
-            Set<String> hostnames = result.configChangeActions().getRestartActions().getEntries().stream()
-                    .flatMap(entry -> entry.getServices().stream())
-                    .map(ServiceInfo::getHostName)
-                    .collect(Collectors.toUnmodifiableSet());
-
-            hostProvisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
-            result.deployLogger().log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
-                    hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
-
-            ConfigChangeActions newActions = new ConfigChangeActions(new RestartActions(), result.configChangeActions().getRefeedActions());
-            return new PrepareResult(result.sessionId(), newActions, result.deployLogger());
-        }
-
-        return result;
+        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
     /**
@@ -395,9 +382,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         SessionRepository sessionRepository = tenant.getSessionRepository();
         LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         sessionRepository.addLocalSession(newSession);
+        boolean internalRestart = deployWithInternalRestart.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, bootstrap));
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
+                                                 false /* don't validate as this is already deployed */, bootstrap, internalRestart));
     }
 
     @Override
@@ -420,7 +408,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Deployment deployment(LocalSession session, Tenant tenant, Duration timeout, boolean force) {
-        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false, force);
+        return Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeout, clock, false, force);
     }
 
     public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean force) {

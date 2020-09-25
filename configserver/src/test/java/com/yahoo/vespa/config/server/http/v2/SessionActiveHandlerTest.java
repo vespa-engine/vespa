@@ -141,8 +141,7 @@ public class SessionActiveHandlerTest {
                                                                  testApp);
             applicationRepository.prepare(tenant,
                                           sessionId,
-                                          new PrepareParams.Builder().applicationId(applicationId()).build(),
-                                          componentRegistry.getClock().instant());
+                                          new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             LocalSession session = applicationRepository.getActiveLocalSession(tenant, applicationId());
             metaData = session.getMetaData();

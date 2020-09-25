@@ -8,6 +8,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.logging.Level;
@@ -59,5 +60,9 @@ public class DeployHandlerLogger implements DeployLogger {
 
     public static DeployHandlerLogger forTenant(TenantName tenantName, boolean verbose) {
         return new DeployHandlerLogger(TenantRepository.logPre(tenantName), verbose);
+    }
+
+    public static DeployHandlerLogger forPrepareParams(PrepareParams prepareParams) {
+        return forApplication(prepareParams.getApplicationId(), prepareParams.isVerbose());
     }
 }
