@@ -29,14 +29,13 @@ import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.handler.UnsafeContentInputStream;
+import com.yahoo.container.core.HandlerMetricContextUtil;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -49,13 +48,11 @@ import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,9 +142,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     @Override
     public ContentChannel handleRequest(Request rawRequest, ResponseHandler rawResponseHandler) {
-        metric.add("handled.requests", 1, contextFor(rawRequest));
+        metric.add("handled.requests", 1, HandlerMetricContextUtil.contextFor(rawRequest, metric, getClass()));
         ResponseHandler responseHandler = response -> {
-            metric.set("handled.latency", rawRequest.timeElapsed(TimeUnit.MILLISECONDS), contextFor(rawRequest));
+            metric.set("handled.latency", rawRequest.timeElapsed(TimeUnit.MILLISECONDS), HandlerMetricContextUtil.contextFor(rawRequest, metric, getClass()));
             return rawResponseHandler.handleResponse(response);
         };
 
@@ -602,29 +599,5 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
     }
-
-    private Metric.Context contextFor(Request request, Map<String, String> extraDimensions) {
-        BindingMatch<?> match = request.getBindingMatch();
-        if (match == null) return null;
-        UriPattern matched = match.matched();
-        if (matched == null) return null;
-        String name = matched.toString();
-        String endpoint = request.headers().containsKey("Host") ? request.headers().get("Host").get(0) : null;
-
-        Map<String, String> dimensions = new HashMap<>();
-        dimensions.put("handler", name);
-        if (endpoint != null) {
-            dimensions.put("endpoint", endpoint);
-        }
-        URI uri = request.getUri();
-        dimensions.put("scheme", uri.getScheme());
-        dimensions.put("port", Integer.toString(uri.getPort()));
-        String handlerClassName = getClass().getName();
-        dimensions.put("handler-name", handlerClassName);
-        dimensions.putAll(extraDimensions);
-        return metric.createContext(dimensions);
-    }
-
-    private Metric.Context contextFor(Request request) { return contextFor(request, Map.of()); }
 
 }
