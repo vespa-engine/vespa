@@ -911,7 +911,9 @@ DocumentDB::syncFeedView()
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _writeService.sync();
-    _visibility.commit();
+    if (_state.getAllowReconfig()) {
+        _visibility.commit();
+    }
     _writeService.sync();
 
     _feedView.set(newFeedView);
