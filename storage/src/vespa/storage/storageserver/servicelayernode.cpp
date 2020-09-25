@@ -9,6 +9,7 @@
 #include "statemanager.h"
 #include "priorityconverter.h"
 #include "service_layer_error_listener.h"
+#include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/visiting/messagebusvisitormessagesession.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
@@ -220,43 +221,44 @@ ServiceLayerNode::toDocumentPriority(uint8_t storagePriority) const
     return _communicationManager->getPriorityConverter().toDocumentPriority(storagePriority);
 }
 
-StorageLink::UP
-ServiceLayerNode::createChain()
+void
+ServiceLayerNode::createChain(IStorageChainBuilder &builder)
 {
     ServiceLayerComponentRegister& compReg(_context.getComponentRegister());
-    StorageLink::UP chain;
 
-    chain.reset(_communicationManager = new CommunicationManager(compReg, _configUri));
-    chain->push_back(std::make_unique<Bouncer>(compReg, _configUri));
+    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri);
+    _communicationManager = communication_manager.get();
+    builder.add(std::move(communication_manager));
+    builder.add(std::make_unique<Bouncer>(compReg, _configUri));
     if (_noUsablePartitionMode) {
         /*
          * No usable partitions. Use minimal chain. Still needs to be
          * able to report state back to cluster controller.
          */
-        chain->push_back(releaseStateManager());
-        return chain;
+        builder.add(releaseStateManager());
+        return;
     }
-    chain->push_back(std::make_unique<OpsLogger>(compReg, _configUri));
-    auto* merge_throttler = new MergeThrottler(_configUri, compReg);
-    chain->push_back(StorageLink::UP(merge_throttler));
-    chain->push_back(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
-    chain->push_back(std::make_unique<StorageBucketDBInitializer>(
+    builder.add(std::make_unique<OpsLogger>(compReg, _configUri));
+    auto merge_throttler_up = std::make_unique<MergeThrottler>(_configUri, compReg);
+    auto merge_throttler = merge_throttler_up.get();
+    builder.add(std::move(merge_throttler_up));
+    builder.add(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
+    builder.add(std::make_unique<StorageBucketDBInitializer>(
             _configUri, _partitions, getDoneInitializeHandler(), compReg));
-    chain->push_back(std::make_unique<BucketManager>(_configUri, _context.getComponentRegister()));
-    chain->push_back(StorageLink::UP(new VisitorManager(
-            _configUri, _context.getComponentRegister(), *this, _externalVisitors)));
-    chain->push_back(std::make_unique<ModifiedBucketChecker>(
+    builder.add(std::make_unique<BucketManager>(_configUri, _context.getComponentRegister()));
+    builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(), static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
+    builder.add(std::make_unique<ModifiedBucketChecker>(
             _context.getComponentRegister(), _persistenceProvider, _configUri));
-    chain->push_back(StorageLink::UP(_fileStorManager = new FileStorManager(
-            _configUri, _partitions, _persistenceProvider, _context.getComponentRegister())));
-    chain->push_back(releaseStateManager());
+    auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _partitions, _persistenceProvider, _context.getComponentRegister());
+    _fileStorManager = filstor_manager.get();
+    builder.add(std::move(filstor_manager));
+    builder.add(releaseStateManager());
 
     // Lifetimes of all referenced components shall outlive the last call going
     // through the SPI, as queues are flushed and worker threads joined when
     // the storage link chain is closed prior to destruction.
     auto error_listener = std::make_shared<ServiceLayerErrorListener>(*_component, *merge_throttler);
     _fileStorManager->error_wrapper().register_error_listener(std::move(error_listener));
-    return chain;
 }
 
 ResumeGuard
