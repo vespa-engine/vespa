@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import java.util.Objects;
@@ -5,6 +6,9 @@ import java.util.Optional;
 
 /**
  * Quota information transmitted to the configserver on deploy.
+ *
+ * @author andreer
+ * @author ogronnesby
  */
 public class Quota {
     private static final Quota UNLIMITED = new Quota(Optional.empty(), Optional.empty());
