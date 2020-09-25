@@ -167,6 +167,8 @@ public class NodeMetricsDb {
 
         public List<Measurement> asList() { return Collections.unmodifiableList(measurements); }
 
+        public String hostname() { return hostname; }
+
         public NodeMeasurements copyAfter(Instant oldestTime) {
             long oldestTimestamp = oldestTime.toEpochMilli();
             return new NodeMeasurements(hostname, metric, type,

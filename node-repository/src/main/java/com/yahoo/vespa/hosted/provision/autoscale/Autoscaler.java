@@ -10,7 +10,10 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -107,16 +110,30 @@ public class Autoscaler {
 
         Optional<Long> generation = Optional.empty();
         List<NodeMetricsDb.AutoscalingEvent> deployments = metricsDb.getEvents(application);
+        Map<String, Instant> startTimePerHost = new HashMap<>();
         if (! deployments.isEmpty()) {
             var deployment = deployments.get(deployments.size() - 1);
             if (deployment.time().isAfter(startTime))
                 startTime = deployment.time(); // just to filter more faster
+            List<NodeMetricsDb.NodeMeasurements> generationMeasurements = metricsDb.getMeasurements(startTime,
+                                                                                                    Metric.generation,
+                                                                                                    clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
+            for (Node node : clusterNodes) {
+                startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
+                var nodeGenerationMeasurements =
+                        generationMeasurements.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
+                if (nodeGenerationMeasurements.isPresent()) {
+                    var firstMeasurementOfCorrectGeneration = nodeGenerationMeasurements.get().asList().stream().filter(m -> m.value() < deployment.generation()).findFirst();
+                    if (firstMeasurementOfCorrectGeneration.isPresent())
+                        startTimePerHost.put(node.hostname(), firstMeasurementOfCorrectGeneration.get().at());
+                }
+            }
         }
 
         List<NodeMetricsDb.NodeMeasurements> measurements = metricsDb.getMeasurements(startTime,
                                                                                       Metric.from(resource),
                                                                                       clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
-
+        measurements = filterStale(measurements, startTimePerHost);
         // Require a total number of measurements scaling with the number of nodes,
         // but don't require that we have at least that many from every node
         int measurementCount = measurements.stream().mapToInt(m -> m.size()).sum();
@@ -125,6 +142,12 @@ public class Autoscaler {
 
         double measurementSum = measurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> m.value()).sum();
         return Optional.of(measurementSum / measurementCount);
+    }
+
+    private List<NodeMetricsDb.NodeMeasurements> filterStale(List<NodeMetricsDb.NodeMeasurements> measurements,
+                                                             Map<String, Instant> startTimePerHost) {
+        if (startTimePerHost.isEmpty()) return measurements; // Map is either empty or complete
+        return measurements.stream().map(m -> m.copyAfter(startTimePerHost.get(m.hostname()))).collect(Collectors.toList());
     }
 
     /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
