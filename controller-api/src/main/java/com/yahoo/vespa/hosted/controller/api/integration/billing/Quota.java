@@ -7,6 +7,8 @@ import java.util.Optional;
  * Quota information transmitted to the configserver on deploy.
  */
 public class Quota {
+    private static final Quota UNLIMITED = new Quota(Optional.empty(), Optional.empty());
+    private static final Quota ZERO = new Quota(0, 0);
 
     private final Optional<Integer> maxClusterSize;
     private final Optional<Integer> budget; // in USD/hr, as calculated by NodeResources
@@ -38,6 +40,14 @@ public class Quota {
 
     public Quota withBudget(int budget) {
         return new Quota(maxClusterSize, Optional.of(budget));
+    }
+
+    public static Quota zero() {
+        return ZERO;
+    }
+
+    public static Quota unlimted() {
+        return UNLIMITED;
     }
 
     @Override
