@@ -9,8 +9,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -33,9 +32,9 @@ import static com.yahoo.config.provision.NodeType.proxyhost;
 public class IP {
 
     /** Comparator for sorting IP addresses by their natural order */
-    public static final Comparator<String> NATURAL_ORDER = (ip1, ip2) -> {
-        byte[] address1 = InetAddresses.forString(ip1).getAddress();
-        byte[] address2 = InetAddresses.forString(ip2).getAddress();
+    public static final Comparator<InetAddress> NATURAL_ORDER = (ip1, ip2) -> {
+        byte[] address1 = ip1.getAddress();
+        byte[] address2 = ip2.getAddress();
 
         // IPv4 always sorts before IPv6
         if (address1.length < address2.length) return -1;
@@ -88,7 +87,7 @@ public class IP {
 
         /** Returns a copy of this with pool set to given value */
         public Config with(Set<String> primary) {
-            return new Config(require(primary), pool.asSet());
+            return new Config(primary, pool.asSet());
         }
 
         @Override
@@ -108,16 +107,6 @@ public class IP {
         @Override
         public String toString() {
             return String.format("ip config primary=%s pool=%s", primary, pool.asSet());
-        }
-
-        /** Validates and returns the given addresses */
-        public static Set<String> require(Set<String> addresses) {
-            try {
-                addresses.forEach(InetAddresses::forString);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Found one or more invalid addresses in " + addresses, e);
-            }
-            return addresses;
         }
 
         /**
@@ -414,14 +403,28 @@ public class IP {
 
     }
 
+    /** Validate IP address*/
+    public static InetAddress parse(String ipAddress) {
+        try {
+            return InetAddresses.forString(ipAddress);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid IP address '" + ipAddress + "'", e);
+        }
+    }
+
+    /** Convert IP address to string. This uses :: for zero compression in IPv6 addresses.  */
+    public static String asString(InetAddress inetAddress) {
+        return InetAddresses.toAddrString(inetAddress);
+    }
+
     /** Returns whether given string is an IPv4 address */
     public static boolean isV4(String ipAddress) {
-        return InetAddresses.forString(ipAddress) instanceof Inet4Address;
+        return ipAddress.contains(".");
     }
 
     /** Returns whether given string is an IPv6 address */
     public static boolean isV6(String ipAddress) {
-        return InetAddresses.forString(ipAddress) instanceof Inet6Address;
+        return ipAddress.contains(":");
     }
 
 }

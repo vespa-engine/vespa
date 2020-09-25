@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.UnaryOperator;
 
 /**
  * Serializes a node to/from JSON.
@@ -145,8 +144,8 @@ public class NodeSerializer {
 
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
-        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey), IP.Config::require);
-        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey), UnaryOperator.identity() /* Pool already holds a validated address list */);
+        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
+        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey));
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         toSlime(node.flavor(), object);
@@ -207,9 +206,10 @@ public class NodeSerializer {
         object.setString(agentKey, toString(event.agent()));
     }
 
-    private void toSlime(Set<String> ipAddresses, Cursor array, UnaryOperator<Set<String>> validator) {
-        // Sorting IP addresses is expensive, so we do it at serialization time instead of Node construction time
-        validator.apply(ipAddresses).stream().sorted(IP.NATURAL_ORDER).forEach(array::addString);
+    private void toSlime(Set<String> ipAddresses, Cursor array) {
+        // Validating IP address string literals is expensive, so we do it at serialization time instead of Node
+        // construction time
+        ipAddresses.stream().map(IP::parse).sorted(IP.NATURAL_ORDER).map(IP::asString).forEach(array::addString);
     }
 
     // ---------------- Deserialization --------------------------------------------------
