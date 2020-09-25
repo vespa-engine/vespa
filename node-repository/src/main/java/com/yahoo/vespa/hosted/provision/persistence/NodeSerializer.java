@@ -123,7 +123,7 @@ public class NodeSerializer {
 
     public NodeSerializer(NodeFlavors flavors, long cacheSize) {
         this.flavors = flavors;
-        this.cache = CacheBuilder.newBuilder().maximumSize(cacheSize).build();
+        this.cache = CacheBuilder.newBuilder().maximumSize(cacheSize).recordStats().build();
     }
 
     public byte[] toJson(Node node) {
