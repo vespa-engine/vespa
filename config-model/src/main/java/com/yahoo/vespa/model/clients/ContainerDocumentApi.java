@@ -41,13 +41,17 @@ public class ContainerDocumentApi {
 
 
     private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
-        var handler = newVespaClientHandler(
-                "com.yahoo.document.restapi.resource.RestApi", "/document/v1/*", options);
+        String handlerClassName = options.useNewRestapiHandler
+                ? "com.yahoo.document.restapi.resource.DocumentV1ApiHandler"
+                : "com.yahoo.document.restapi.resource.RestApi";
+        var handler = newVespaClientHandler(handlerClassName, "/document/v1/*", options);
         cluster.addComponent(handler);
-        var executor = new Threadpool(
-                "restapi-handler", cluster, options.restApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
-        handler.inject(executor);
-        handler.addComponent(executor);
+        if (!options.useNewRestapiHandler) {
+            var executor = new Threadpool(
+                    "restapi-handler", cluster, options.restApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
+            handler.inject(executor);
+            handler.addComponent(executor);
+        }
     }
 
     private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(
@@ -76,15 +80,18 @@ public class ContainerDocumentApi {
         private final ContainerThreadpool.UserOptions restApiThreadpoolOptions;
         private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
         private final double feedThreadPoolSizeFactor;
+        private final boolean useNewRestapiHandler;
 
         public Options(Collection<String> bindings,
                        ContainerThreadpool.UserOptions restApiThreadpoolOptions,
                        ContainerThreadpool.UserOptions feedApiThreadpoolOptions,
-                       double feedThreadPoolSizeFactor) {
+                       double feedThreadPoolSizeFactor,
+                       boolean useNewRestapiHandler) {
             this.bindings = Collections.unmodifiableCollection(bindings);
             this.restApiThreadpoolOptions = restApiThreadpoolOptions;
             this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
             this.feedThreadPoolSizeFactor = feedThreadPoolSizeFactor;
+            this.useNewRestapiHandler = useNewRestapiHandler;
         }
     }
 

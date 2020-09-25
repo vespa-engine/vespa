@@ -69,10 +69,10 @@ public interface ModelContext {
 
         default int defaultNumResponseThreads() { return 2; }
 
-        // TODO Revisit in May or June 2020
+        // TODO(bjorncs) Temporary feature flag
         double threadPoolSizeFactor();
 
-        // TODO Revisit in May or June 2020
+        // TODO(bjorncs) Temporary feature flag
         double queueSizeFactor();
 
         /// Default setting for the gc-options attribute if not specified explicit by application
@@ -95,7 +95,9 @@ public interface ModelContext {
         // TODO Remove on 7.XXX when this is default on.
         boolean useDirectStorageApiRpc();
 
-        default String proxyProtocol() { return "https+proxy-protocol"; } // TODO bjorncs: Remove after end of May
+        // TODO(bjorncs) Temporary feature flag
+        default String proxyProtocol() { return "https+proxy-protocol"; }
+
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
         // TODO(mpolden): Remove after May 2020
@@ -112,6 +114,9 @@ public interface ModelContext {
         default Quota quota() {
             return Quota.empty();
         }
+
+        // TODO(bjorncs): Temporary feature flag
+        default boolean useNewRestapiHandler() { return false; }
 
     }
 

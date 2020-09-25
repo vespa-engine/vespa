@@ -416,6 +416,12 @@ public class Flags {
             "The number of deserialized Node objects to store in-memory.",
             "Takes effect on config server restart");
 
+    public static final UnboundBooleanFlag USE_NEW_RESTAPI_HANDLER = defineFeatureFlag(
+            "use-restapi-handler",
+            false,
+            "Whether application containers should use the new restapi handler implementation",
+            "Takes effect on next internal redeployment");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

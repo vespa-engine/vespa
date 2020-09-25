@@ -168,6 +168,7 @@ public class ModelContextImpl implements ModelContext {
         private final Quota quota;
         private final boolean tlsUseFSync;
         private final String tlsCompressionType;
+        private final boolean useNewRestapiHandler;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -234,6 +235,9 @@ public class ModelContextImpl implements ModelContext {
             feedCoreThreadPoolSizeFactor = Flags.FEED_CORE_THREAD_POOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.quota = maybeQuota.orElseGet(Quota::empty);
+            this.useNewRestapiHandler = Flags.USE_NEW_RESTAPI_HANDLER.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
+                    .value();
         }
 
         @Override
@@ -326,6 +330,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean tlsUseFSync() { return tlsUseFSync; }
         @Override public String tlsCompressionType() { return tlsCompressionType; }
         @Override public Quota quota() { return quota; }
+
+        @Override public boolean useNewRestapiHandler() { return useNewRestapiHandler; }
     }
 
 }
