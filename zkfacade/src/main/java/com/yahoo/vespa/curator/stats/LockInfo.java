@@ -15,8 +15,7 @@ import java.util.Optional;
  */
 public class LockInfo {
 
-    private final Thread thread;
-    private final String lockPath;
+    private final ThreadLockInfo threadLockInfo;
     private final Instant acquireInstant;
     private final Duration timeout;
 
@@ -24,8 +23,8 @@ public class LockInfo {
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
     private volatile Optional<String> stackTrace = Optional.empty();
 
-    public static LockInfo invokingAcquire(Thread thread, String lockPath, Duration timeout) {
-        return new LockInfo(thread, lockPath, timeout);
+    public static LockInfo invokingAcquire(ThreadLockInfo threadLockInfo, Duration timeout) {
+        return new LockInfo(threadLockInfo, timeout);
     }
 
     public enum LockState {
@@ -40,15 +39,14 @@ public class LockInfo {
 
     private volatile LockState lockState = LockState.ACQUIRING;
 
-    private LockInfo(Thread thread, String lockPath, Duration timeout) {
-        this.thread = thread;
-        this.lockPath = lockPath;
+    private LockInfo(ThreadLockInfo threadLockInfo, Duration timeout) {
+        this.threadLockInfo = threadLockInfo;
         this.acquireInstant = Instant.now();
         this.timeout = timeout;
     }
 
-    public String getThreadName() { return thread.getName(); }
-    public String getLockPath() { return lockPath; }
+    public String getThreadName() { return threadLockInfo.getThreadName(); }
+    public String getLockPath() { return threadLockInfo.getLockPath(); }
     public Instant getTimeAcquiredWasInvoked() { return acquireInstant; }
     public Duration getAcquireTimeout() { return timeout; }
     public LockState getLockState() { return lockState; }
@@ -78,23 +76,7 @@ public class LockInfo {
         // This method is public. If invoked concurrently, the this.stackTrace may be updated twice,
         // which is fine.
 
-        var stackTrace = new StringBuilder();
-
-        StackTraceElement[] elements = thread.getStackTrace();
-        // first stack frame is "java.lang.Thread(Thread.java:1606)" or "jdk.internal.misc.Unsafe(Unsafe.java:-2)"!?
-        for (int i = 0; i < elements.length; ++i) {
-            var element = elements[i];
-            stackTrace.append(element.getClassName())
-                      .append('.')
-                      .append(element.getMethodName())
-                      .append('(')
-                      .append(element.getFileName())
-                      .append(':')
-                      .append(element.getLineNumber())
-                      .append(")\n");
-        }
-
-        this.stackTrace = Optional.of(stackTrace.toString());
+        this.stackTrace = Optional.of(threadLockInfo.getStackTrace());
     }
 
     void acquireFailed() { setTerminalState(LockState.ACQUIRE_FAILED); }

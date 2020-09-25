@@ -75,13 +75,33 @@ public class ThreadLockInfo {
 
     public String getThreadName() { return thread.getName(); }
     public String getLockPath() { return lockPath; }
+
+    public String getStackTrace() {
+        var stackTrace = new StringBuilder();
+
+        StackTraceElement[] elements = thread.getStackTrace();
+        for (int i = 0; i < elements.length; ++i) {
+            var element = elements[i];
+            stackTrace.append(element.getClassName())
+                    .append('.')
+                    .append(element.getMethodName())
+                    .append('(')
+                    .append(element.getFileName())
+                    .append(':')
+                    .append(element.getLineNumber())
+                    .append(")\n");
+        }
+
+        return stackTrace.toString();
+    }
+
     public List<LockInfo> getLockInfos() { return List.copyOf(lockInfos); }
 
     /** Mutable method (see class doc) */
     public void invokingAcquire(Duration timeout) {
         lockCountersForPath.invokeAcquireCount.incrementAndGet();
         lockCountersForPath.inCriticalRegionCount.incrementAndGet();
-        lockInfos.add(LockInfo.invokingAcquire(thread, lockPath, timeout));
+        lockInfos.add(LockInfo.invokingAcquire(this, timeout));
     }
 
     /** Mutable method (see class doc) */

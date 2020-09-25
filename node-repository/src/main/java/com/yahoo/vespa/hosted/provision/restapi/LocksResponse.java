@@ -53,17 +53,16 @@ public class LocksResponse extends HttpResponse {
         });
 
         Cursor threadsCursor = root.setArray("threads");
-        int numberOfStackTraces = 0;
         for (var threadLockInfo : threadLockInfos) {
             List<LockInfo> lockInfos = threadLockInfo.getLockInfos();
             if (!lockInfos.isEmpty()) {
                 Cursor threadLockInfoCursor = threadsCursor.addObject();
                 threadLockInfoCursor.setString("thread-name", threadLockInfo.getThreadName());
                 threadLockInfoCursor.setString("lock-path", threadLockInfo.getLockPath());
+                threadLockInfoCursor.setString("stack-trace", threadLockInfo.getStackTrace());
 
                 Cursor lockInfosCursor = threadLockInfoCursor.setArray("active-locks");
                 for (var lockInfo : lockInfos) {
-                    lockInfo.fillStackTrace();
                     setLockInfo(lockInfosCursor.addObject(), lockInfo, false);
                 }
             }
