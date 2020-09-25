@@ -2,6 +2,7 @@
 
 #include "servicelayerprocess.h"
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/searchvisitor/searchvisitor.h>
@@ -24,6 +25,9 @@ bool configured_to_use_btree_db(const config::ConfigUri& config_uri) {
 
 ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri)
     : Process(configUri),
+      _externalVisitors(),
+      _node(),
+      _storage_chain_builder(),
       _context(std::make_unique<framework::defaultimplementation::RealClock>(),
                configured_to_use_btree_db(configUri))
 {
@@ -44,6 +48,9 @@ ServiceLayerProcess::createNode()
     _externalVisitors["searchvisitor"] = std::make_shared<streaming::SearchVisitorFactory>(_configUri);
     setupProvider();
     _node = std::make_unique<ServiceLayerNode>(_configUri, _context, *this, getProvider(), _externalVisitors);
+    if (_storage_chain_builder) {
+        _node->set_storage_chain_builder(std::move(_storage_chain_builder));
+    }
     _node->init();
 }
 
@@ -60,6 +67,12 @@ ServiceLayerProcess::getContext() {
 std::string
 ServiceLayerProcess::getComponentName() const {
     return "servicelayer";
+}
+
+void
+ServiceLayerProcess::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
+{
+    _storage_chain_builder = std::move(builder);
 }
 
 } // storage

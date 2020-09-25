@@ -27,10 +27,12 @@ namespace storage {
 namespace spi { struct PersistenceProvider; }
 
 class ServiceLayerNode;
+class IStorageChainBuilder;
 
 class ServiceLayerProcess : public Process {
     VisitorFactory::Map _externalVisitors;
     std::unique_ptr<ServiceLayerNode> _node;
+    std::unique_ptr<IStorageChainBuilder> _storage_chain_builder;
 
 protected:
     ServiceLayerNodeContext _context;
@@ -48,6 +50,7 @@ public:
     StorageNode& getNode() override;
     StorageNodeContext& getContext() override;
     std::string getComponentName() const override;
+    void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
 
 } // storage
