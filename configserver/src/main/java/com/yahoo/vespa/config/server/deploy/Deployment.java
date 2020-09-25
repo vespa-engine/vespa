@@ -75,15 +75,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
-                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
-        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false);
+                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap, boolean internalRestart) {
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false, internalRestart);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
-        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force);
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force, false);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true);
     }
 
@@ -194,7 +194,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
      */
     private static Supplier<PrepareParams> createPrepareParams(
             Clock clock, Duration timeout, LocalSession session,
-            boolean isBootstrap, boolean ignoreValidationErrors, boolean force) {
+            boolean isBootstrap, boolean ignoreValidationErrors, boolean force, boolean internalRestart) {
 
         // Supplier because shouldn't/cant create this before validateSessionStatus() for prepared deployments
         // memoized because we want to create this once for unprepared deployments
@@ -207,7 +207,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .timeoutBudget(timeoutBudget)
                     .ignoreValidationErrors(ignoreValidationErrors)
                     .isBootstrap(isBootstrap)
-                    .force(force);
+                    .force(force)
+                    .internalRestart(internalRestart);
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
 
