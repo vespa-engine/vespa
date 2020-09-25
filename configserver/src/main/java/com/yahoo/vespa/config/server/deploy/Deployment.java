@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
@@ -12,6 +13,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -23,8 +25,10 @@ import com.yahoo.vespa.curator.Lock;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 
@@ -88,6 +92,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     public void prepare() {
         if (prepared) return;
         PrepareParams params = this.params.get();
+        if (params.internalRestart() && provisioner.isEmpty())
+            throw new IllegalArgumentException("Internal restart not supported without Provisioner");
+
         ApplicationId applicationId = params.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
             Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
@@ -128,6 +135,20 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 ". Config generation " + session.getMetaData().getGeneration() +
                                 (previousActiveSession != null ? ". Based on session " + previousActiveSession.getSessionId() : "") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
+
+            if (params.internalRestart() && !configChangeActions.getRestartActions().isEmpty()) {
+                Set<String> hostnames = configChangeActions.getRestartActions().getEntries().stream()
+                        .flatMap(entry -> entry.getServices().stream())
+                        .map(ServiceInfo::getHostName)
+                        .collect(Collectors.toUnmodifiableSet());
+
+                provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
+                log.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+                        hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
+
+                this.configChangeActions = new ConfigChangeActions(new RestartActions(), configChangeActions.getRefeedActions());
+            }
+
             return session.getMetaData().getGeneration();
         }
     }
