@@ -145,7 +145,7 @@ public class LocalAsyncSession implements AsyncSession {
     }
 
     /**
-     * This is run in a separate thread before and after providing the response from each accepted request, for advanced testing.
+     * This is run in a separate thread before providing the response from each accepted request, for advanced testing.
      *
      * If this is not set, which is the default, the documents appear synchronously in the response queue or handler.
      */
@@ -179,7 +179,6 @@ public class LocalAsyncSession implements AsyncSession {
                 new Thread(() -> {
                     runnable.run();
                     addResponse(responses.apply(req));
-                    runnable.run();
                 }).start();
             return runnable;
         });
