@@ -27,18 +27,18 @@ import com.yahoo.vespa.config.content.LoadTypeConfig;
  *
  * @author jonmv
  */
-public class MessageBusDocumentAccessProvider extends AbstractComponent implements Provider<DocumentAccess> {
+public class DocumentAccessProvider extends AbstractComponent implements Provider<DocumentAccessProvider.LazyWrapper> {
 
-    private final DocumentAccess access;
+    private final DocumentAccessProvider.LazyWrapper access;
 
     @Inject
     // TODO jonmv: Have Slobrok and RPC config injected as well.
-    public MessageBusDocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig) {
-        this.access = new LazyForwardingMessageBusDocumentAccess(documentmanagerConfig, loadTypeConfig);
+    public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig) {
+        this.access = new LazyWrapper(documentmanagerConfig, loadTypeConfig);
     }
 
     @Override
-    public DocumentAccess get() {
+    public DocumentAccessProvider.LazyWrapper get() {
         return access;
     }
 
@@ -48,7 +48,7 @@ public class MessageBusDocumentAccessProvider extends AbstractComponent implemen
     }
 
 
-    private static class LazyForwardingMessageBusDocumentAccess extends DocumentAccess {
+    public static class LazyWrapper extends DocumentAccess {
 
         private final DocumentmanagerConfig documentmanagerConfig;
         private final LoadTypeConfig loadTypeConfig;
@@ -57,8 +57,8 @@ public class MessageBusDocumentAccessProvider extends AbstractComponent implemen
         private DocumentAccess delegate = null;
         private boolean shutDown = false;
 
-        public LazyForwardingMessageBusDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
-                                                      LoadTypeConfig loadTypeConfig) {
+        private LazyWrapper(DocumentmanagerConfig documentmanagerConfig,
+                           LoadTypeConfig loadTypeConfig) {
             super(new DocumentAccessParams().setDocumentmanagerConfig(documentmanagerConfig));
             this.documentmanagerConfig = documentmanagerConfig;
             this.loadTypeConfig = loadTypeConfig;
