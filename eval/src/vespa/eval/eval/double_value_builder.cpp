@@ -11,6 +11,7 @@ DoubleValueBuilder::DoubleValueBuilder(const eval::ValueType &type,
   : _value(0.0)
 {
         assert(type.is_double());
+        assert(type.cell_type() == ValueType::CellType::DOUBLE);
         assert(num_mapped_in == 0);
         assert(subspace_size_in == 1);
 }
