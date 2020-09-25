@@ -199,7 +199,8 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric);
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour,
+                              Duration.ofMinutes(5), clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric);
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {

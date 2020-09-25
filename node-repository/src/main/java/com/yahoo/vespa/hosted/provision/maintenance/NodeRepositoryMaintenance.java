@@ -73,7 +73,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
         DefaultTimes defaults = new DefaultTimes(zone, Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource).value());
 
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,
+                                    defaults.nodeFailerInterval, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, defaults.reservationExpiry, metric);
@@ -156,6 +157,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration provisionedExpiry;
         private final Duration spareCapacityMaintenanceInterval;
         private final Duration metricsInterval;
+        private final Duration nodeFailerInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
@@ -176,6 +178,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
+            nodeFailerInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(15) : Duration.ofMinutes(5);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             operatorChangeRedeployInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(3) : Duration.ofMinutes(1);
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
