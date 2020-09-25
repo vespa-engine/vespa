@@ -160,7 +160,7 @@ public class DeployTester {
          paramsBuilder.applicationId(applicationId)
                 .timeoutBudget(new TimeoutBudget(clock, Duration.ofSeconds(60)));
 
-        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build(), now);
+        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build());
     }
 
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {

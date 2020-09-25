@@ -279,7 +279,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         bootstrapping.set(false);
     }
 
-    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, Instant now) {
+    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
@@ -292,11 +292,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
-    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams, Instant now) {
+    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         PrepareResult prepareResult;
         try {
-            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, now);
+            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams);
         } finally {
             cleanupTempDirectory(tempDir);
         }
@@ -304,17 +304,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
-        return deploy(applicationPackage, prepareParams, Instant.now());
-    }
-
-    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, Instant now) {
         if (prepareParams.internalRestart() && hostProvisioner.isEmpty())
             throw new IllegalArgumentException("Internal restart not supported without HostProvisioner");
 
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = getTenant(applicationId);
-        PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
+        PrepareResult result = prepare(tenant, sessionId, prepareParams);
         activate(tenant, sessionId, prepareParams.getTimeoutBudget(), prepareParams.force());
 
         if (prepareParams.internalRestart() && !result.configChangeActions().getRestartActions().isEmpty()) {
