@@ -26,7 +26,7 @@ public:
                              size_t subspace_size_in,
                              size_t expected_subspaces)
       : _type(type),
-        _index(),
+        _index(num_mapped_in),
         _cells(),
         _stash()
     {

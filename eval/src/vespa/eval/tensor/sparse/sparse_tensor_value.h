@@ -17,7 +17,8 @@ struct SparseTensorValueIndex : public vespalib::eval::Value::Index
     using SubspaceMap = hash_map<SparseTensorAddressRef, uint32_t, hash<SparseTensorAddressRef>,
                                  std::equal_to<>, hashtable_base::and_modulator>;
     SubspaceMap map;
-    SparseTensorValueIndex();
+    size_t num_mapped_dims;
+    explicit SparseTensorValueIndex(size_t num_mapped_dims_in);
     ~SparseTensorValueIndex();
     size_t size() const override;
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
