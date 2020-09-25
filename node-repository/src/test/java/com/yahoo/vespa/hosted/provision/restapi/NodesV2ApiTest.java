@@ -305,7 +305,7 @@ public class NodesV2ApiTest {
                 ("[" + asNodeJson("host-with-ip.yahoo.com", "default", "foo") + "]").
                         getBytes(StandardCharsets.UTF_8),
                 Request.Method.POST);
-        tester.assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Found one or more invalid addresses in [foo]: 'foo' is not an IP string literal.\"}");
+        tester.assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid IP address 'foo': 'foo' is not an IP string literal.\"}");
 
         // Attempt to POST tenant node with already assigned IP
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
