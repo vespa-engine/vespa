@@ -757,9 +757,9 @@
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
              using something like
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
-                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 2, minor = 9, micro = 1/g'
+                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 4, minor = 3, micro = 0/g'
         -->
-        <curator.version>2.13.0</curator.version>
+        <curator.version>4.3.0</curator.version>
         <jna.version>4.5.2</jna.version>
         <commons.math3.version>3.6.1</commons.math3.version>
         <junit.version>5.6.2</junit.version>
