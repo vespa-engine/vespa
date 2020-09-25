@@ -50,7 +50,7 @@ public class Quota {
         return ZERO;
     }
 
-    public static Quota unlimted() {
+    public static Quota unlimited() {
         return UNLIMITED;
     }
 
