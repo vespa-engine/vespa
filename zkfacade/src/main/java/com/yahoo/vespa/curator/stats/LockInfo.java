@@ -4,7 +4,6 @@ package com.yahoo.vespa.curator.stats;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * Information about a lock.
@@ -75,14 +74,14 @@ public class LockInfo {
         var stackTrace = new StringBuilder();
 
         StackTraceElement[] elements = thread.getStackTrace();
-        for (int i = 0; i < elements.length && i < 20; ++i) {
-            Stream.of(elements).forEach(element ->
-                    stackTrace.append(element.getClassName())
-                            .append('(')
-                            .append(element.getFileName())
-                            .append(':')
-                            .append(element.getLineNumber())
-                            .append(")\n"));
+        for (int i = 0; i < elements.length; ++i) {
+            var element = elements[i];
+            stackTrace.append(element.getClassName())
+                      .append('(')
+                      .append(element.getFileName())
+                      .append(':')
+                      .append(element.getLineNumber())
+                      .append(")\n");
         }
 
         this.stackTrace = Optional.of(stackTrace.toString());
