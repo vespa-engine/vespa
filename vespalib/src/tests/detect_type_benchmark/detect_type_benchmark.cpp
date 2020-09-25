@@ -66,7 +66,6 @@ A a;
 B b;
 Nop nop;
 double baseline = 0.0;
-const auto &typeid_A = typeid(A);
 
 //-----------------------------------------------------------------------------
 
@@ -89,12 +88,12 @@ bool use_dynamic_cast(const BaseClass *ptr) {
 
 bool use_type_index(const BaseClass *) __attribute__((noinline));
 bool use_type_index(const BaseClass *ptr) {
-    return (std::type_index(typeid(*ptr)) == std::type_index(typeid_A));
+    return (std::type_index(typeid(*ptr)) == std::type_index(typeid(A)));
 }
 
 bool use_type_id(const BaseClass *) __attribute__((noinline));
 bool use_type_id(const BaseClass *ptr) {
-    return (typeid(*ptr) == typeid_A);
+    return (typeid(*ptr) == typeid(A));
 }
 
 bool use_dynamic_id(const BaseClass *) __attribute__((noinline));
