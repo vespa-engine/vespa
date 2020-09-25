@@ -29,7 +29,7 @@ import java.util.logging.Level;
  */
 public class DerivedConfiguration {
 
-    private Search search;
+    private final Search search;
     private Summaries summaries;
     private SummaryMap summaryMap;
     private Juniperrc juniperrc;
@@ -41,7 +41,7 @@ public class DerivedConfiguration {
     private VsmSummary streamingSummary;
     private IndexSchema indexSchema;
     private ImportedFields importedFields;
-    private QueryProfileRegistry queryProfiles;
+    private final QueryProfileRegistry queryProfiles;
 
     /**
      * Creates a complete derived configuration from a search definition.
