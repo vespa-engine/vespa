@@ -283,16 +283,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
-        Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
         DeployHandlerLogger logger = DeployHandlerLogger.forApplication(applicationId, prepareParams.isVerbose());
-        try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
-            SessionRepository sessionRepository = tenant.getSessionRepository();
-            ConfigChangeActions actions = sessionRepository.prepareLocalSession(session, logger, prepareParams,
-                                                                                currentActiveApplicationSet, tenant.getPath(), now);
-            logConfigChangeActions(actions, logger);
-            log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
-            return new PrepareResult(sessionId, actions, logger);
-        }
+        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
+        deployment.prepare();
+
+        logConfigChangeActions(deployment.configChangeActions(), logger);
+        log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams, Instant now) {

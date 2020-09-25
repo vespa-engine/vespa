@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -49,6 +50,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Clock clock;
 
     private boolean prepared;
+    private ConfigChangeActions configChangeActions;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
                        Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger, Clock clock, boolean prepared) {
@@ -86,11 +88,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     public void prepare() {
         if (prepared) return;
         PrepareParams params = this.params.get();
-        ApplicationId applicationId = session.getApplicationId();
+        ApplicationId applicationId = params.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
             Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
-            tenant.getSessionRepository().prepareLocalSession(session, logger, params, activeApplicationSet,
-                                                              tenant.getPath(), clock.instant());
+            this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(
+                    session, logger, params, activeApplicationSet, tenant.getPath(), clock.instant());
             this.prepared = true;
         }
     }
@@ -142,6 +144,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }
+
+    /**
+     * @return config change actions that need to be performed as result of prepare
+     * @throws IllegalArgumentException if called without being prepared by this
+     */
+    public ConfigChangeActions configChangeActions() {
+        if (configChangeActions != null) return configChangeActions;
+        throw new IllegalArgumentException("No config change actions: " + (prepared ? "was already prepared" : "not yet prepared"));
+    }
 
     private void validateSessionStatus(LocalSession localSession) {
         long sessionId = localSession.getSessionId();
