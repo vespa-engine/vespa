@@ -782,7 +782,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return the active session, or null if there is no active session for the given application id.
      */
     public RemoteSession getActiveSession(ApplicationId applicationId) {
-        return getActiveSession(getTenant(applicationId), applicationId);
+        Tenant tenant = getTenant(applicationId);
+        if (tenant == null) throw new IllegalArgumentException("Could not find any tenant for '" + applicationId + "'");
+        return getActiveSession(tenant, applicationId);
     }
 
     public long getSessionIdForApplication(ApplicationId applicationId) {
