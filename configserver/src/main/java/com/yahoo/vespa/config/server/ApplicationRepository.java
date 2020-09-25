@@ -396,7 +396,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         sessionRepository.addLocalSession(newSession);
 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
     }
 
@@ -420,7 +420,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Deployment deployment(LocalSession session, Tenant tenant, Duration timeout, boolean force) {
-        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false, force);
+        return Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeout, clock, false, force);
     }
 
     public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean force) {

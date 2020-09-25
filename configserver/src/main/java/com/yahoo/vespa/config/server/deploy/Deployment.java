@@ -1,14 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.yahoo.component.Version;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -18,13 +16,13 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
@@ -44,81 +42,54 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** The session containing the application instance to activate */
     private final LocalSession session;
     private final ApplicationRepository applicationRepository;
-    private final Optional<Provisioner> hostProvisioner;
+    private final Supplier<PrepareParams> params;
+    private final Optional<Provisioner> provisioner;
     private final Tenant tenant;
-    private final Duration timeout;
+    private final DeployLogger logger;
     private final Clock clock;
-    private final DeployLogger logger = new SilentDeployLogger();
 
-    /** The repository part of docker image this application should run on. Version is separate from image repo */
-    final Optional<DockerImage> dockerImageRepository;
+    private boolean prepared;
 
-    /** The Vespa version this application should run on */
-    private final Version version;
-
-    /** True if this deployment is done to bootstrap the config server */
-    private final boolean isBootstrap;
-
-    /** The (optional) Athenz domain this application should use */
-    private final Optional<AthenzDomain> athenzDomain;
-
-    private boolean prepared = false;
-    
-    /** Whether this model should be validated (only takes effect if prepared=false) */
-    private final boolean validate;
-
-    /** Whether activation of this model should be forced */
-    private final boolean force;
-
-    private Deployment(LocalSession session, ApplicationRepository applicationRepository,
-                       Optional<Provisioner> hostProvisioner, Tenant tenant, Duration timeout,
-                       Clock clock, boolean prepared, boolean validate, boolean isBootstrap, boolean force) {
+    private Deployment(LocalSession session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
+                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger, Clock clock, boolean prepared) {
         this.session = session;
         this.applicationRepository = applicationRepository;
-        this.hostProvisioner = hostProvisioner;
+        this.params = params;
+        this.provisioner = provisioner;
         this.tenant = tenant;
-        this.timeout = timeout;
+        this.logger = logger;
         this.clock = clock;
         this.prepared = prepared;
-        this.validate = validate;
-        this.dockerImageRepository = session.getDockerImageRepository();
-        this.version = session.getVespaVersion();
-        this.isBootstrap = isBootstrap;
-        this.athenzDomain = session.getAthenzDomain();
-        this.force = force;
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
-                                        Optional<Provisioner> hostProvisioner, Tenant tenant,
+                                        Optional<Provisioner> provisioner, Tenant tenant, PrepareParams params, DeployLogger logger, Clock clock) {
+        return new Deployment(session, applicationRepository, () -> params, provisioner, tenant, logger, clock, false);
+    }
+
+    public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
+                                        Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                         Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
-        return new Deployment(session, applicationRepository, hostProvisioner, tenant, timeout, clock, false,
-                              validate, isBootstrap, false);
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false);
+        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
-                                      Optional<Provisioner> hostProvisioner, Tenant tenant,
+                                      Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
-        return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, isBootstrap, force);
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force);
+        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true);
     }
 
     /** Prepares this. This does nothing if this is already prepared */
     @Override
     public void prepare() {
         if (prepared) return;
+        PrepareParams params = this.params.get();
         ApplicationId applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
-            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-
-            PrepareParams.Builder params = new PrepareParams.Builder().applicationId(applicationId)
-                    .timeoutBudget(timeoutBudget)
-                    .ignoreValidationErrors(!validate)
-                    .vespaVersion(version.toString())
-                    .isBootstrap(isBootstrap);
-            dockerImageRepository.ifPresent(params::dockerImageRepository);
-            athenzDomain.ifPresent(params::athenzDomain);
             Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
-            tenant.getSessionRepository().prepareLocalSession(session, logger, params.build(), activeApplicationSet,
+            tenant.getSessionRepository().prepareLocalSession(session, logger, params, activeApplicationSet,
                                                               tenant.getPath(), clock.instant());
             this.prepared = true;
         }
@@ -130,16 +101,17 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         prepare();
 
         validateSessionStatus(session);
+        PrepareParams params = this.params.get();
         ApplicationId applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
-            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+            TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             if ( ! timeoutBudget.hasTimeLeft()) throw new RuntimeException("Timeout exceeded when trying to activate '" + applicationId + "'");
 
             RemoteSession previousActiveSession;
             CompletionWaiter waiter;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
                 previousActiveSession = applicationRepository.getActiveSession(applicationId);
-                waiter = applicationRepository.activate(session, previousActiveSession, applicationId, force);
+                waiter = applicationRepository.activate(session, previousActiveSession, applicationId, params.force());
             }
             catch (RuntimeException e) {
                 throw e;
@@ -150,7 +122,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             waiter.awaitCompletion(timeoutBudget.timeLeft());
             log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
-                                hostProvisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
+                                provisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
                                 ". Config generation " + session.getMetaData().getGeneration() +
                                 (previousActiveSession != null ? ". Based on session " + previousActiveSession.getSessionId() : "") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
@@ -165,7 +137,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
      */
     @Override
     public void restart(HostFilter filter) {
-        hostProvisioner.get().restart(session.getApplicationId(), filter);
+        provisioner.get().restart(session.getApplicationId(), filter);
     }
 
     /** Exposes the session of this for testing only */
@@ -178,6 +150,37 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         } else if (Session.Status.ACTIVATE.equals(localSession.getStatus())) {
             throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is already active");
         }
+    }
+
+    /**
+     * @param clock system clock
+     * @param timeout total timeout duration of prepare + activate
+     * @param session the local session for this deployment
+     * @param isBootstrap true if this deployment is done to bootstrap the config server
+     * @param ignoreValidationErrors whether this model should be validated
+     * @param force whether activation of this model should be forced
+     */
+    private static Supplier<PrepareParams> createPrepareParams(
+            Clock clock, Duration timeout, LocalSession session,
+            boolean isBootstrap, boolean ignoreValidationErrors, boolean force) {
+
+        // Supplier because shouldn't/cant create this before validateSessionStatus() for prepared deployments
+        // memoized because we want to create this once for unprepared deployments
+        return Suppliers.memoize(() -> {
+            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+
+            PrepareParams.Builder params = new PrepareParams.Builder()
+                    .applicationId(session.getApplicationId())
+                    .vespaVersion(session.getVespaVersion().toString())
+                    .timeoutBudget(timeoutBudget)
+                    .ignoreValidationErrors(ignoreValidationErrors)
+                    .isBootstrap(isBootstrap)
+                    .force(force);
+            session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
+            session.getAthenzDomain().ifPresent(params::athenzDomain);
+
+            return params.build();
+        });
     }
 
 }
