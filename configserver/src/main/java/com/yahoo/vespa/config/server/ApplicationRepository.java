@@ -536,8 +536,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(new ApplicationRolesStore(curator, tenant.getPath()).delete(applicationId));
             // Delete endpoint certificates
             transaction.add(new EndpointCertificateMetadataStore(curator, tenant.getPath()).delete(applicationId));
-            // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
-            // this is done asynchronously in application maintenance by the node repository)
+            // This call will remove application in zookeeper. Watches in TenantApplications will remove the application
+            // and allocated hosts in model and handlers in RPC server
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
 
             hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));

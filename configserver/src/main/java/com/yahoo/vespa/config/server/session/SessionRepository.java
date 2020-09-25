@@ -371,14 +371,20 @@ public class SessionRepository {
     }
 
     public void delete(RemoteSession remoteSession) {
-        LocalSession localSession = getLocalSession(remoteSession.getSessionId());
-        remoteSession.deactivate();
-        if (localSession == null) {
-            // This change will be picked up by directoryCache in this class, which will do the rest of the cleanup
-            try (Lock lock = lock(remoteSession.getSessionId())) {
-                remoteSession.delete();
-            }
-        } else {
+        // This change will be picked up by directoryCache in this class, which will do the rest of
+        // the cleanup on all config servers
+        long sessionId = remoteSession.getSessionId();
+        try (Lock lock = lock(sessionId)) {
+            // TODO: Change log level to FINE when debugging is finished
+            log.log(Level.INFO, "Deactivating and deleting remote session " + sessionId);
+            remoteSession.deactivate();
+            remoteSession.delete();
+            remoteSessionCache.remove(sessionId);
+        }
+        LocalSession localSession = getLocalSession(sessionId);
+        if (localSession != null) {
+            // TODO: Change log level to FINE when debugging is finished
+            log.log(Level.INFO, "Deleting local session " + sessionId);
             deleteLocalSession(localSession);
         }
     }
