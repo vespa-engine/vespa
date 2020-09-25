@@ -49,7 +49,7 @@ public:
 
 private:
     void initializeNodeSpecific() override;
-    std::unique_ptr<StorageLink> createChain() override;
+    void createChain(IStorageChainBuilder &builder) override;
     api::Timestamp getUniqueTimestamp() override;
 
     /**

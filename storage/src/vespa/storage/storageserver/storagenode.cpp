@@ -12,6 +12,7 @@
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
+#include <vespa/storage/common/storage_chain_builder.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
@@ -111,7 +112,8 @@ StorageNode::StorageNode(
       _newBucketSpacesConfig(),
       _component(),
       _configUri(configUri),
-      _communicationManager(nullptr)
+      _communicationManager(nullptr),
+      _chain_builder(std::make_unique<StorageChainBuilder>())
 {
 }
 
@@ -203,7 +205,9 @@ StorageNode::initialize()
     _deadLockDetector->setWaitSlack(framework::MilliSecTime(
             static_cast<uint32_t>(_serverConfig->deadLockDetectorTimeoutSlack * 1000)));
 
-    _chain.reset(createChain().release());
+    createChain(*_chain_builder);
+    _chain = std::move(*_chain_builder).build();
+    _chain_builder.reset();
 
     assert(_communicationManager != nullptr);
     _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
@@ -620,6 +624,12 @@ StorageNode::notifyPartitionDown(int partId, vespalib::stringref reason)
 std::unique_ptr<StateManager>
 StorageNode::releaseStateManager() {
     return std::move(_stateManager);
+}
+
+void
+StorageNode::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
+{
+    _chain_builder = std::move(builder);
 }
 
 } // storage
