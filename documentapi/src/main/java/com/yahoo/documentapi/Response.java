@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
+import com.yahoo.messagebus.Trace;
+
 import java.util.Objects;
 
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
@@ -19,6 +21,7 @@ public class Response {
     private final long requestId;
     private final String textMessage;
     private final Outcome outcome;
+    private final Trace trace;
 
     /** Creates a successful response containing no information */
     public Response(long requestId) {
@@ -52,9 +55,20 @@ public class Response {
      * @param outcome     the outcome of the operation
      */
     public Response(long requestId, String textMessage, Outcome outcome) {
+        this(requestId, textMessage, outcome, null);
+    }
+
+    /**
+     * Creates a response containing a textual message
+     *
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of the operation
+     */
+    public Response(long requestId, String textMessage, Outcome outcome, Trace trace) {
         this.requestId = requestId;
         this.textMessage = textMessage;
         this.outcome = outcome;
+        this.trace = trace;
     }
 
     /**
@@ -75,6 +89,9 @@ public class Response {
     public Outcome outcome() { return outcome; }
 
     public long getRequestId() { return requestId; }
+
+    /** Returns the trace of this operation, or null if there is none. */
+    public Trace getTrace() { return trace; }
 
     @Override
     public boolean equals(Object o) {

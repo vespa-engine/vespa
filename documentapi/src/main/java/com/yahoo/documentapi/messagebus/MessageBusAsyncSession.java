@@ -9,6 +9,7 @@ import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentIdResponse;
+import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.DocumentResponse;
 import com.yahoo.documentapi.DocumentUpdateResponse;
 import com.yahoo.documentapi.RemoveResponse;
@@ -41,9 +42,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
+import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
+import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
 
 /**
  * An access session which wraps a messagebus source session sending document messages.
@@ -96,19 +99,24 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result put(Document document) {
-        return put(new DocumentPut(document), DocumentProtocol.Priority.NORMAL_3);
+        return put(new DocumentPut(document), parameters());
     }
 
     @Override
     public Result put(DocumentPut documentPut, DocumentProtocol.Priority pri) {
+        return put(documentPut, parameters().withPriority(pri));
+    }
+
+    @Override
+    public Result put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
-        msg.setPriority(pri);
-        return send(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_3));
+        return send(msg, parameters);
     }
 
     @Override
     public Result get(DocumentId id) {
-        return get(id, DocumentProtocol.Priority.NORMAL_1);
+        return get(id, parameters());
     }
 
     @Override
@@ -119,41 +127,75 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result get(DocumentId id, DocumentProtocol.Priority pri) {
-        GetDocumentMessage msg = new GetDocumentMessage(id, AllFields.NAME);
-        msg.setPriority(pri);
-        return send(msg);
+        return get(id, parameters().withPriority(pri));
+    }
+
+    @Override
+    public Result get(DocumentId id, DocumentOperationParameters parameters) {
+        GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_1));
+        return send(msg, parameters);
     }
 
     @Override
     public Result remove(DocumentId id) {
-        return remove(id, DocumentProtocol.Priority.NORMAL_2);
+        return remove(id, parameters());
     }
 
     @Override
     public Result remove(DocumentId id, DocumentProtocol.Priority pri) {
+        return remove(id, parameters().withPriority(pri));
+    }
+
+    @Override
+    public Result remove(DocumentId id, DocumentOperationParameters parameters) {
         RemoveDocumentMessage msg = new RemoveDocumentMessage(id);
-        msg.setPriority(pri);
-        return send(msg);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
+        return send(msg, parameters);
     }
 
     @Override
     public Result update(DocumentUpdate update) {
-        return update(update, DocumentProtocol.Priority.NORMAL_2);
+        return update(update, parameters());
     }
 
     @Override
     public Result update(DocumentUpdate update, DocumentProtocol.Priority pri) {
-        UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
-        msg.setPriority(pri);
-        return send(msg);
+        return update(update, parameters().withPriority(pri));
     }
 
+    @Override
+    public Result update(DocumentUpdate update, DocumentOperationParameters parameters) {
+        UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
+        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
+        return send(msg, parameters);
+    }
+
+    // TODO jonmv: Was this done to remedy get route no longer being possible to set through doc/v1 after default-get was added?
+    // TODO jonmv: If so, this is no longer needed with doc/v1.1 and later.
     private boolean mayOverrideWithGetOnlyRoute(Message msg) {
         // Only allow implicitly overriding the default Get route if the message is attempted sent
         // with the default route originally. Otherwise it's reasonable to assume that the caller
         // has some explicit idea of why the regular route is set to the value it is.
         return ((msg.getType() == DocumentProtocol.MESSAGE_GETDOCUMENT)
                 && ("default".equals(route) || "route:default".equals(route)));
+    }
+
+    Result send(Message msg, DocumentOperationParameters parameters) {
+        try {
+            long reqId = requestId.incrementAndGet();
+            msg.setContext(reqId);
+            msg.getTrace().setLevel(parameters.traceLevel().orElse(traceLevel));
+            // Use route from parameters, or session route if non-default, or finally, defaults for get and non-get, if set. Phew!
+            String toRoute = parameters.route().orElse(mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
+            if (toRoute != null) {
+                return toResult(reqId, session.send(msg, toRoute, true));
+            } else {
+                return toResult(reqId, session.send(msg));
+            }
+        } catch (Exception e) {
+            return new Result(Result.ResultType.FATAL_ERROR, new Error(e.getMessage(), e));
+        }
     }
 
     /**
@@ -164,19 +206,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
      * @return the document api result object.
      */
     public Result send(Message msg) {
-        try {
-            long reqId = requestId.incrementAndGet();
-            msg.setContext(reqId);
-            msg.getTrace().setLevel(traceLevel);
-            String toRoute = (mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
-            if (toRoute != null) {
-                return toResult(reqId, session.send(msg, toRoute, true));
-            } else {
-                return toResult(reqId, session.send(msg));
-            }
-        } catch (Exception e) {
-            return new Result(Result.ResultType.FATAL_ERROR, new Error(e.getMessage(), e));
-        }
+        return send(msg, null);
     }
 
     @Override
@@ -256,7 +286,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     private static Response toResponse(Reply reply) {
-        long reqId = (Long)reply.getContext();
+        long reqId = (Long) reply.getContext();
         return reply.hasErrors() ? toError(reply, reqId) : toSuccess(reply, reqId);
     }
 
@@ -269,15 +299,15 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         String err = getErrorMessage(reply);
         switch (msg.getType()) {
         case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-            return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, outcome);
+            return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, outcome, reply.getTrace());
         case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-            return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), err, outcome);
+            return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate(), err, outcome, reply.getTrace());
         case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-            return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), err, outcome);
+            return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId(), err, outcome, reply.getTrace());
         case DocumentProtocol.MESSAGE_GETDOCUMENT:
-            return new DocumentIdResponse(reqId, ((GetDocumentMessage)msg).getDocumentId(), err, outcome);
+            return new DocumentIdResponse(reqId, ((GetDocumentMessage)msg).getDocumentId(), err, outcome, reply.getTrace());
         default:
-            return new Response(reqId, err, outcome);
+            return new Response(reqId, err, outcome, reply.getTrace());
         }
     }
 
@@ -289,26 +319,15 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 if (getDoc != null) {
                     getDoc.setLastModified(docReply.getLastModified());
                 }
-                return new DocumentResponse(reqId, getDoc);
+                return new DocumentResponse(reqId, getDoc, reply.getTrace());
             case DocumentProtocol.REPLY_REMOVEDOCUMENT:
-                return new RemoveResponse(reqId, ((RemoveDocumentReply)reply).wasFound());
+                return new RemoveResponse(reqId, ((RemoveDocumentReply)reply).wasFound(), reply.getTrace());
             case DocumentProtocol.REPLY_UPDATEDOCUMENT:
-                return new UpdateResponse(reqId, ((UpdateDocumentReply)reply).wasFound());
+                return new UpdateResponse(reqId, ((UpdateDocumentReply)reply).wasFound(), reply.getTrace());
             case DocumentProtocol.REPLY_PUTDOCUMENT:
-                break;
+                return new DocumentResponse(reqId, ((PutDocumentMessage)reply.getMessage()).getDocumentPut().getDocument(), reply.getTrace());
             default:
-                return new Response(reqId);
-        }
-        Message msg = reply.getMessage();
-        switch (msg.getType()) {
-            case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-                return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument());
-            case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-                return new DocumentIdResponse(reqId, ((RemoveDocumentMessage)msg).getDocumentId());
-            case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-                return new DocumentUpdateResponse(reqId, ((UpdateDocumentMessage)msg).getDocumentUpdate());
-            default:
-                return new Response(reqId);
+                return new Response(reqId, null, SUCCESS, reply.getTrace());
         }
     }
 

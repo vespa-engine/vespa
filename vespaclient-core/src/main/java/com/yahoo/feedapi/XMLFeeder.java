@@ -12,7 +12,7 @@ import java.io.InputStream;
  * access point.
  *
  * @author Thomas Gundersen
- * @author steinar
+ * @author Steinar Knutsen
  */
 public class XMLFeeder extends Feeder {
     public XMLFeeder(DocumentTypeManager docMan, SimpleFeedAccess sender, InputStream stream) {
