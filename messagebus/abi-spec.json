@@ -362,7 +362,9 @@
       "public int getMaxPendingCount()",
       "public com.yahoo.messagebus.MessageBusParams setMaxPendingCount(int)",
       "public int getMaxPendingSize()",
-      "public com.yahoo.messagebus.MessageBusParams setMaxPendingSize(int)"
+      "public com.yahoo.messagebus.MessageBusParams setMaxPendingSize(int)",
+      "public com.yahoo.messagebus.MessagebusConfig getMessageBusConfig()",
+      "public com.yahoo.messagebus.MessageBusParams setMessageBusConfig(com.yahoo.messagebus.MessagebusConfig)"
     ],
     "fields": []
   },
@@ -643,6 +645,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams)",
       "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
       "public void <init>(java.util.List, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
       "public void <init>(com.yahoo.messagebus.Protocol, java.lang.String)",
