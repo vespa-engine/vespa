@@ -1,6 +1,7 @@
 package com.yahoo.container.core.documentapi;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -20,6 +21,7 @@ import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
+import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 
 /**
@@ -33,8 +35,9 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
 
     @Inject
     // TODO jonmv: Have Slobrok and RPC config injected as well.
-    public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig) {
-        this.access = new LazyWrapper(documentmanagerConfig, loadTypeConfig);
+    public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig,
+                                  SlobroksConfig slobroksConfig, MessagebusConfig messagebusConfig) {
+        this.access = new LazyWrapper(documentmanagerConfig, loadTypeConfig, slobroksConfig, messagebusConfig);
     }
 
     @Override
@@ -50,18 +53,21 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
 
     public static class LazyWrapper extends DocumentAccess {
 
-        private final DocumentmanagerConfig documentmanagerConfig;
-        private final LoadTypeConfig loadTypeConfig;
+        private final MessageBusParams parameters;
         private final Object monitor = new Object();
 
         private DocumentAccess delegate = null;
         private boolean shutDown = false;
 
         private LazyWrapper(DocumentmanagerConfig documentmanagerConfig,
-                           LoadTypeConfig loadTypeConfig) {
+                            LoadTypeConfig loadTypeConfig,
+                            SlobroksConfig slobroksConfig,
+                            MessagebusConfig messagebusConfig) {
             super(new DocumentAccessParams().setDocumentmanagerConfig(documentmanagerConfig));
-            this.documentmanagerConfig = documentmanagerConfig;
-            this.loadTypeConfig = loadTypeConfig;
+            this.parameters = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
+            this.parameters.setDocumentmanagerConfig(documentmanagerConfig);
+            this.parameters.getRPCNetworkParams().setSlobroksConfig(slobroksConfig);
+            this.parameters.getMessageBusParams().setMessageBusConfig(messagebusConfig);
         }
 
         private DocumentAccess delegate() {
@@ -70,7 +76,7 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
                     if (shutDown)
                         throw new IllegalStateException("This document access has been shut down");
 
-                    delegate = new MessageBusDocumentAccess((MessageBusParams) new MessageBusParams(new LoadTypeSet(loadTypeConfig)).setDocumentmanagerConfig(documentmanagerConfig));
+                    delegate = new MessageBusDocumentAccess(parameters);
                 }
                 return delegate;
             }
