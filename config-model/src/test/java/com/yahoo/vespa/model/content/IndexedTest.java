@@ -143,7 +143,7 @@ public class IndexedTest extends ContentBaseTest {
         // HostResource h = model.getHostSystem().getHosts().get(0);
         // String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
         //                               "logd", "configproxy","config-sentinel",
-        //                               "qrserver", "fleetcontroller", "topleveldispatch",
+        //                               "qrserver", "fleetcontroller",
         //                               "storagenode", "searchnode", "distributor", "transactionlogserver"};
         // DomContentBuilderTest.assertServices(h, expectedServices);
         Routing routing = model.getRouting();

@@ -229,7 +229,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         /* Not yet
         assertNotNull(h.getService("qrserver"));
-        assertNotNull(h.getService("topleveldisptach"));
         assertNotNull(h.getService("docproc"));
         */
 
