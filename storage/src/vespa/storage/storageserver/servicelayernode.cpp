@@ -227,29 +227,29 @@ ServiceLayerNode::createChain()
     StorageLink::UP chain;
 
     chain.reset(_communicationManager = new CommunicationManager(compReg, _configUri));
-    chain->push_back(StorageLink::UP(new Bouncer(compReg, _configUri)));
+    chain->push_back(std::make_unique<Bouncer>(compReg, _configUri));
     if (_noUsablePartitionMode) {
         /*
          * No usable partitions. Use minimal chain. Still needs to be
          * able to report state back to cluster controller.
          */
-        chain->push_back(StorageLink::UP(releaseStateManager().release()));
+        chain->push_back(releaseStateManager());
         return chain;
     }
-    chain->push_back(StorageLink::UP(new OpsLogger(compReg, _configUri)));
+    chain->push_back(std::make_unique<OpsLogger>(compReg, _configUri));
     auto* merge_throttler = new MergeThrottler(_configUri, compReg);
     chain->push_back(StorageLink::UP(merge_throttler));
-    chain->push_back(StorageLink::UP(new ChangedBucketOwnershipHandler(_configUri, compReg)));
-    chain->push_back(StorageLink::UP(new StorageBucketDBInitializer(
-            _configUri, _partitions, getDoneInitializeHandler(), compReg)));
-    chain->push_back(StorageLink::UP(new BucketManager(_configUri, _context.getComponentRegister())));
+    chain->push_back(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
+    chain->push_back(std::make_unique<StorageBucketDBInitializer>(
+            _configUri, _partitions, getDoneInitializeHandler(), compReg));
+    chain->push_back(std::make_unique<BucketManager>(_configUri, _context.getComponentRegister()));
     chain->push_back(StorageLink::UP(new VisitorManager(
             _configUri, _context.getComponentRegister(), *this, _externalVisitors)));
-    chain->push_back(StorageLink::UP(new ModifiedBucketChecker(
-            _context.getComponentRegister(), _persistenceProvider, _configUri)));
+    chain->push_back(std::make_unique<ModifiedBucketChecker>(
+            _context.getComponentRegister(), _persistenceProvider, _configUri));
     chain->push_back(StorageLink::UP(_fileStorManager = new FileStorManager(
             _configUri, _partitions, _persistenceProvider, _context.getComponentRegister())));
-    chain->push_back(StorageLink::UP(releaseStateManager().release()));
+    chain->push_back(releaseStateManager());
 
     // Lifetimes of all referenced components shall outlive the last call going
     // through the SPI, as queues are flushed and worker threads joined when
