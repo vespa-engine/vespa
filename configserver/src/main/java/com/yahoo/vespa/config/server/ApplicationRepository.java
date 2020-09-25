@@ -280,16 +280,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
+    }
+
+    private Deployment prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
-        DeployHandlerLogger logger = DeployHandlerLogger.forApplication(applicationId, prepareParams.isVerbose());
         Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
         deployment.prepare();
 
         logConfigChangeActions(deployment.configChangeActions(), logger);
         log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
-        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
+        return deployment;
     }
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
@@ -307,10 +312,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = getTenant(applicationId);
-        PrepareResult result = prepare(tenant, sessionId, prepareParams);
-        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), prepareParams.force());
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        deployment.activate();
 
-        return result;
+        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
     /**
