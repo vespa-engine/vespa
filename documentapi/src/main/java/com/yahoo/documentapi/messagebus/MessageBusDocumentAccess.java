@@ -92,7 +92,7 @@ public class MessageBusDocumentAccess extends DocumentAccess {
     @Override
     public MessageBusVisitorSession createVisitorSession(VisitorParameters params) throws ParseException, IllegalArgumentException {
         MessageBusVisitorSession session = MessageBusVisitorSession.createForMessageBus(
-                bus.getMessageBus(), scheduledExecutorService, params);
+                messageBus(), scheduledExecutorService, params);
         session.start();
         return session;
     }
