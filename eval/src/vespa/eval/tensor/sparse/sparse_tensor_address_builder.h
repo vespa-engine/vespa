@@ -26,9 +26,10 @@ private:
 
 protected:
     void append(vespalib::stringref str) {
-        for (size_t i(0); i < str.size() + 1; i++) {
+        for (size_t i(0); i < str.size(); i++) {
             _address.push_back_fast(str[i]);
         }
+        _address.push_back_fast('\0');
     }
     void ensure_room(size_t additional) {
         if (_address.capacity() < (_address.size() + additional)) {
