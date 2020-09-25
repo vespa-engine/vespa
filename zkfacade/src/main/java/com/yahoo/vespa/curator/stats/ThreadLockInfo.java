@@ -61,6 +61,12 @@ public class ThreadLockInfo {
                 });
     }
 
+    static void clearStaticDataForTesting() {
+        locks.clear();
+        completedLockInfos.clear();
+        countersByLockPath.clear();
+    }
+
     ThreadLockInfo(Thread currentThread, String lockPath, LockCounters lockCountersForPath) {
         this.thread = currentThread;
         this.lockPath = lockPath;
@@ -89,7 +95,7 @@ public class ThreadLockInfo {
             lockCountersForPath.timeoutOnReentrancyErrorCount.incrementAndGet();
         }
 
-        removeLastLockInfo(lockCountersForPath.timeoutOnReentrancyErrorCount, LockInfo::timedOut);
+        removeLastLockInfo(lockCountersForPath.acquireTimedOutCount, LockInfo::timedOut);
     }
 
     /** Mutable method (see class doc) */

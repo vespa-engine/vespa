@@ -78,8 +78,6 @@ public class LockInfo {
         // This method is public. If invoked concurrently, the this.stackTrace may be updated twice,
         // which is fine.
 
-        if (this.stackTrace.isPresent()) return;
-
         var stackTrace = new StringBuilder();
 
         StackTraceElement[] elements = thread.getStackTrace();
@@ -87,6 +85,8 @@ public class LockInfo {
         for (int i = 0; i < elements.length; ++i) {
             var element = elements[i];
             stackTrace.append(element.getClassName())
+                      .append('.')
+                      .append(element.getMethodName())
                       .append('(')
                       .append(element.getFileName())
                       .append(':')

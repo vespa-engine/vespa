@@ -24,8 +24,13 @@ public class Lock implements Mutex {
     private final String lockPath;
 
     public Lock(String lockPath, Curator curator) {
+        this(lockPath, curator.createMutex(lockPath));
+    }
+
+    /** Public for testing only */
+    public Lock(String lockPath, InterProcessLock mutex) {
         this.lockPath = lockPath;
-        mutex = curator.createMutex(lockPath);
+        this.mutex = mutex;
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */

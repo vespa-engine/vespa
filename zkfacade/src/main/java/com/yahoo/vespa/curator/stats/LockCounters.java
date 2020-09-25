@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.stats;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,4 +28,38 @@ public class LockCounters {
     public int locksReleasedCount() { return locksReleasedCount.get(); }
     public int noLocksErrorCount() { return noLocksErrorCount.get(); }
     public int timeoutOnReentrancyErrorCount() { return timeoutOnReentrancyErrorCount.get(); }
+
+    @Override
+    public String toString() {
+        return "LockCounters{" +
+                "invokeAcquireCount=" + invokeAcquireCount +
+                ", inCriticalRegionCount=" + inCriticalRegionCount +
+                ", acquireFailedCount=" + acquireFailedCount +
+                ", acquireTimedOutCount=" + acquireTimedOutCount +
+                ", lockAcquiredCount=" + lockAcquiredCount +
+                ", locksReleasedCount=" + locksReleasedCount +
+                ", noLocksErrorCount=" + noLocksErrorCount +
+                ", timeoutOnReentrancyErrorCount=" + timeoutOnReentrancyErrorCount +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LockCounters that = (LockCounters) o;
+        return invokeAcquireCount.get() ==  that.invokeAcquireCount.get() &&
+                inCriticalRegionCount.get() == that.inCriticalRegionCount.get() &&
+                acquireFailedCount.get() == that.acquireFailedCount.get() &&
+                acquireTimedOutCount.get() == that.acquireTimedOutCount.get() &&
+                lockAcquiredCount.get() == that.lockAcquiredCount.get() &&
+                locksReleasedCount.get() == that.locksReleasedCount.get() &&
+                noLocksErrorCount.get() == that.noLocksErrorCount.get() &&
+                timeoutOnReentrancyErrorCount.get() == that.timeoutOnReentrancyErrorCount.get();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(invokeAcquireCount, inCriticalRegionCount, acquireFailedCount, acquireTimedOutCount, lockAcquiredCount, locksReleasedCount, noLocksErrorCount, timeoutOnReentrancyErrorCount);
+    }
 }
