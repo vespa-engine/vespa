@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.restapi.resource;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -127,8 +127,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
         this(clock,
-             new DocumentOperationExecutor(documentManagerConfig, clusterListConfig, bucketSpacesConfig, executorConfig,
-                                           documentAccess, clock),
+             new DocumentOperationExecutor(clusterListConfig, bucketSpacesConfig, executorConfig, documentAccess, clock),
              new DocumentOperationParser(documentManagerConfig),
              metric,
              metricReceiver);
@@ -446,8 +445,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             log.log(FINE, () -> "Problems writing data to jDisc content channel: " + Exceptions.toMessageString(e));
         }
         finally {
-            if (out != null)
+            if (out != null) try {
                 out.close(logException);
+            }
+            catch (Exception e) {
+                log.log(FINE, () -> "Problems closing jDisc content channel: " + Exceptions.toMessageString(e));
+            }
         }
         return ignoredContent;
     }
