@@ -96,18 +96,18 @@ vespalib::string to_slobrok_id(const api::StorageMessageAddress& address) {
     return CachingRpcTargetResolver::address_to_slobrok_id(address);
 }
 
-class StorageApiNode {
+class RpcNode {
+protected:
     vdstestlib::DirConfig                             _config;
     std::shared_ptr<const document::DocumentTypeRepo> _doc_type_repo;
     std::shared_ptr<const documentapi::LoadTypeSet>   _load_type_set;
     LockingMockOperationDispatcher                    _messages;
     std::unique_ptr<MessageCodecProvider>             _codec_provider;
     std::unique_ptr<SharedRpcResources>               _shared_rpc_resources;
-    std::unique_ptr<StorageApiRpcService>             _service;
     api::StorageMessageAddress                        _node_address;
     vespalib::string                                  _slobrok_id;
 public:
-    StorageApiNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
+    RpcNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
         : _config(getStandardConfig(true)),
           _doc_type_repo(document::TestDocRepo().getTypeRepoSp()),
           _load_type_set(std::make_shared<documentapi::LoadTypeSet>()),
@@ -122,13 +122,10 @@ public:
         _shared_rpc_resources = std::make_unique<SharedRpcResources>(_config.getConfigId(), 0, 1);
         // TODO make codec provider into interface so we can test decode-failures more easily?
         _codec_provider = std::make_unique<MessageCodecProvider>(_doc_type_repo, _load_type_set);
-        StorageApiRpcService::Params params;
-        _service = std::make_unique<StorageApiRpcService>(_messages, *_shared_rpc_resources, *_codec_provider, params);
-
-        _shared_rpc_resources->start_server_and_register_slobrok(_slobrok_id);
-        // Explicitly wait until we are visible in Slobrok. Just waiting for mirror readiness is not enough.
-        wait_until_visible_in_slobrok(_slobrok_id);
     }
+    ~RpcNode();
+
+    const api::StorageMessageAddress& node_address() const noexcept { return _node_address; }
 
     void wait_until_visible_in_slobrok(vespalib::stringref id) {
         const auto deadline = std::chrono::steady_clock::now() + slobrok_register_timeout;
@@ -139,8 +136,24 @@ public:
             std::this_thread::sleep_for(10ms);
         }
     }
+};
 
-    const api::StorageMessageAddress& node_address() const noexcept { return _node_address; }
+RpcNode::~RpcNode() = default;
+
+class StorageApiNode : public RpcNode {
+    std::unique_ptr<StorageApiRpcService> _service;
+public:
+    StorageApiNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
+        : RpcNode(node_index, is_distributor, slobrok)
+    {
+        StorageApiRpcService::Params params;
+        _service = std::make_unique<StorageApiRpcService>(_messages, *_shared_rpc_resources, *_codec_provider, params);
+
+        _shared_rpc_resources->start_server_and_register_slobrok(_slobrok_id);
+        // Explicitly wait until we are visible in Slobrok. Just waiting for mirror readiness is not enough.
+        wait_until_visible_in_slobrok(_slobrok_id);
+    }
+    ~StorageApiNode();
 
     std::shared_ptr<api::PutCommand> create_dummy_put_command() const {
         auto doc_type = _doc_type_repo->getDocumentType("testdoctype1");
@@ -176,6 +189,26 @@ public:
     [[nodiscard]] std::shared_ptr<api::StorageMessage> wait_and_receive_single_message() {
         _messages.wait_until_n_messages_received(1);
         return _messages.pop_first_message();
+    }
+
+    bool target_supports_direct_rpc(const api::StorageMessageAddress& addr) const noexcept {
+        return _service->target_supports_direct_rpc(addr);
+    }
+};
+
+StorageApiNode::~StorageApiNode() {
+    // Ensure we shut down the underlying RPC threads before destroying
+    // the RPC service that may receive callbacks from it.
+    _shared_rpc_resources->shutdown();
+}
+
+struct NodeWithoutStorageApiService : RpcNode {
+    NodeWithoutStorageApiService(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
+        : RpcNode(node_index, is_distributor, slobrok)
+    {
+        _shared_rpc_resources->start_server_and_register_slobrok(_slobrok_id);
+        // Explicitly wait until we are visible in Slobrok. Just waiting for mirror readiness is not enough.
+        wait_until_visible_in_slobrok(_slobrok_id);
     }
 };
 
@@ -302,6 +335,28 @@ TEST_F(StorageApiRpcServiceTest, response_trace_only_propagated_if_trace_level_s
     });
     auto trace_str = recv_reply->getTrace().toString();
     EXPECT_THAT(trace_str, Not(HasSubstr("Doing cool things")));
+}
+
+TEST_F(StorageApiRpcServiceTest, rpc_method_not_found_toggles_rpc_as_not_supported) {
+    NodeWithoutStorageApiService dummy_node(10, false, _slobrok);
+    _node_0->wait_until_visible_in_slobrok(to_slobrok_id(dummy_node.node_address()));
+
+    // Initially we assume targets are on a new enough version to understand storage API RPCs.
+    EXPECT_TRUE(_node_0->target_supports_direct_rpc(dummy_node.node_address()));
+    EXPECT_TRUE(_node_0->target_supports_direct_rpc(_node_1->node_address()));
+
+    // Send to an endpoint exposing RPC but not the Storage API server method.
+    // It will bounce back immediately with an FRT "no such method" error.
+    auto cmd = _node_0->create_dummy_put_command();
+    cmd->setAddress(dummy_node.node_address());
+    _node_0->send_request(cmd);
+    auto bounced_msg = _node_0->wait_and_receive_single_message();
+    ASSERT_TRUE(bounced_msg);
+
+    // For now (and for the sake of simplicity), fall back to assuming no targets
+    // support direct storage API RPC.
+    EXPECT_FALSE(_node_0->target_supports_direct_rpc(dummy_node.node_address()));
+    EXPECT_FALSE(_node_0->target_supports_direct_rpc(_node_1->node_address()));
 }
 
 }
