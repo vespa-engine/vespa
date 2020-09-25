@@ -9,7 +9,11 @@ import java.util.OptionalInt;
 
 import static java.util.Objects.requireNonNull;
 
-/** Optional parameters for a document operation. Immutable class. */
+/** 
+ * Optional parameters for a document operation. Immutable class.
+ *
+ * @author jonmv 
+ */
 public class DocumentOperationParameters {
 
     private static final DocumentOperationParameters empty = new DocumentOperationParameters(null, null, null, -1);
