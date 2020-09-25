@@ -201,7 +201,7 @@ public interface AsyncSession extends Session {
      * <p>Removes a document if it is present. This method returns immediately.</p>
      *
      * <p>If this result is a success, this
-     * call will cause one or more {@link DocumentIdResponse} objects to apprear within the timeout time of this session.
+     * call will cause one or more {@link DocumentIdResponse} objects to appear within the timeout time of this session.
      * The response returned later will either be a success, or contain the document id submitted here.
      * If it was not a success, this method has no further effects.</p>
      *
