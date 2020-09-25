@@ -63,9 +63,7 @@ public class LocksResponse extends HttpResponse {
 
                 Cursor lockInfosCursor = threadLockInfoCursor.setArray("active-locks");
                 for (var lockInfo : lockInfos) {
-                    if (numberOfStackTraces++ < 10) {  // Expensive to generate stack traces?
-                        lockInfo.fillStackTrace();
-                    }
+                    lockInfo.fillStackTrace();
                     setLockInfo(lockInfosCursor.addObject(), lockInfo, false);
                 }
             }
