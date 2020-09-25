@@ -39,30 +39,31 @@ import java.util.Map;
 public interface MetricConsumer {
 
     /**
-     * <p>Consume a call to <code>Metric.set(String, Number, Metric.Context)</code>.</p>
+     * Consume a call to <code>Metric.set(String, Number, Metric.Context)</code>.
      *
-     * @param key The name of the metric to modify.
-     * @param val The value to assign to the named metric.
-     * @param ctx The context to further describe this entry.
+     * @param key the name of the metric to modify
+     * @param val the value to assign to the named metric
+     * @param ctx the context to further describe this entry
      */
-    public void set(String key, Number val, Metric.Context ctx);
+    void set(String key, Number val, Metric.Context ctx);
 
     /**
-     * <p>Consume a call to <code>Metric.add(String, Number, Metric.Context)</code>.</p>
+     * Consume a call to <code>Metric.add(String, Number, Metric.Context)</code>.
      *
-     * @param key The name of the metric to modify.
-     * @param val The value to add to the named metric.
-     * @param ctx The context to further describe this entry.
+     * @param key the name of the metric to modify
+     * @param val the value to add to the named metric
+     * @param ctx the context to further describe this entry
      */
-    public void add(String key, Number val, Metric.Context ctx);
+    void add(String key, Number val, Metric.Context ctx);
 
     /**
-     * <p>Creates a <code>Metric.Context</code> object that encapsulates the given properties. The returned Context object
+     * Creates a <code>Metric.Context</code> object that encapsulates the given properties. The returned Context object
      * will be passed along every future call to <code>set(String, Number, Metric.Context)</code> and
-     * <code>add(String, Number, Metric.Context)</code> where the properties match those given here.</p>
+     * <code>add(String, Number, Metric.Context)</code> where the properties match those given here.
      *
-     * @param properties The properties to incorporate in the context.
-     * @return The created context.
+     * @param properties the properties to incorporate in the context
+     * @return the created context
      */
-    public Metric.Context createContext(Map<String, ?> properties);
+    Metric.Context createContext(Map<String, ?> properties);
+
 }

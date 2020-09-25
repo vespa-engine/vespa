@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -76,9 +75,9 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
                 Optional<Long> resultingGeneration = deployment.activate();
                 if (resultingGeneration.isEmpty()) return; // Failed to activate
-                metricsDb.add(new NodeMetricsDb.DeploymentEvent(applicationId,
-                                                                resultingGeneration.get(),
-                                                                nodeRepository().clock().instant()));
+                metricsDb.add(new NodeMetricsDb.AutoscalingEvent(applicationId,
+                                                                 resultingGeneration.get(),
+                                                                 nodeRepository().clock().instant()));
             }
         }
     }

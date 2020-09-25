@@ -14,7 +14,7 @@ import com.yahoo.metrics.simple.MetricReceiver;
 /**
  * A factory for all the JDisc API classes.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JdiscMetricsFactory implements MetricConsumerFactory, SnapshotProvider {
 

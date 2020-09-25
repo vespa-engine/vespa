@@ -14,6 +14,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.Metric;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.Resource;
@@ -96,7 +97,7 @@ public class AutoscalingMaintainerTest {
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           resource.metricName(),
+                                                           Metric.from(resource).fullName(),
                                                            nodeRepository.clock().instant().toEpochMilli(),
                                                           value * 100))); // the metrics are in %
         }

@@ -42,11 +42,11 @@ public class NodeMetricsDbTest {
         // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
         clock.advance(Duration.ofMinutes(1));
 
-        assertEquals(35, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.cpu, List.of(node0))));
-        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0))));
+        assertEquals(35, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
+        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
         db.gc(clock);
-        assertEquals( 5, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.cpu, List.of(node0))));
-        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0))));
+        assertEquals( 5, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
+        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
     }
 
     private int measurementCount(List<NodeMetricsDb.NodeMeasurements> measurements) {

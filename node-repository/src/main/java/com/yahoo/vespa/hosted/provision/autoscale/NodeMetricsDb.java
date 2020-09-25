@@ -33,7 +33,7 @@ public class NodeMetricsDb {
     private final Map<NodeMeasurementsKey, NodeMeasurements> db = new HashMap<>();
 
     /** Events */
-    private final List<DeploymentEvent> events = new ArrayList<>();
+    private final List<AutoscalingEvent> events = new ArrayList<>();
 
     /** Lock all access for now since we modify lists inside a map */
     private final Object lock = new Object();
@@ -46,27 +46,27 @@ public class NodeMetricsDb {
     public void add(Collection<NodeMetrics.MetricValue> metricValues) {
         synchronized (lock) {
             for (var value : metricValues) {
-                Resource resource =  Resource.fromMetric(value.name());
-                NodeMeasurementsKey key = new NodeMeasurementsKey(value.hostname(), resource);
+                Metric metric =  Metric.fromFullName(value.name());
+                NodeMeasurementsKey key = new NodeMeasurementsKey(value.hostname(), metric);
                 NodeMeasurements measurements = db.get(key);
                 if (measurements == null) { // new node
                     Optional<Node> node = nodeRepository.getNode(value.hostname());
                     if (node.isEmpty()) continue;
                     if (node.get().allocation().isEmpty()) continue;
                     measurements = new NodeMeasurements(value.hostname(),
-                                                        resource,
+                                                        metric,
                                                         node.get().allocation().get().membership().cluster().type(),
                                                         new ArrayList<>());
                     db.put(key, measurements);
                 }
                 measurements.add(new Measurement(value.timestampSecond() * 1000,
-                                                 (float)resource.valueFromMetric(value.value())));
+                                                 metric.valueFromMetric(value.value())));
             }
         }
     }
 
     /** Adds an event to this */
-    public void add(DeploymentEvent event) {
+    public void add(AutoscalingEvent event) {
         synchronized (lock) {
             events.add(event);
         }
@@ -92,11 +92,11 @@ public class NodeMetricsDb {
      * Returns a list of measurements with one entry for each of the given host names
      * which have any values after startTime, in the same order
      */
-    public List<NodeMeasurements> getMeasurements(Instant startTime, Resource resource, List<String> hostnames) {
+    public List<NodeMeasurements> getMeasurements(Instant startTime, Metric metric, List<String> hostnames) {
         synchronized (lock) {
             List<NodeMeasurements> measurementsList = new ArrayList<>(hostnames.size());
             for (String hostname : hostnames) {
-                NodeMeasurements measurements = db.get(new NodeMeasurementsKey(hostname, resource));
+                NodeMeasurements measurements = db.get(new NodeMeasurementsKey(hostname, metric));
                 if (measurements == null) continue;
                 measurements = measurements.copyAfter(startTime);
                 if (measurements.isEmpty()) continue;
@@ -106,7 +106,7 @@ public class NodeMetricsDb {
         }
     }
 
-    public List<DeploymentEvent> getEvents(ApplicationId application) {
+    public List<AutoscalingEvent> getEvents(ApplicationId application) {
         synchronized (lock) {
             return events.stream().filter(event -> event.application().equals(application)).collect(Collectors.toList());
         }
@@ -115,16 +115,16 @@ public class NodeMetricsDb {
     private static class NodeMeasurementsKey {
 
         private final String hostname;
-        private final Resource resource;
+        private final Metric metric;
 
-        public NodeMeasurementsKey(String hostname, Resource resource) {
+        public NodeMeasurementsKey(String hostname, Metric metric) {
             this.hostname = hostname;
-            this.resource = resource;
+            this.metric = metric;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(hostname, resource);
+            return Objects.hash(hostname, metric);
         }
 
         @Override
@@ -133,26 +133,26 @@ public class NodeMetricsDb {
             if ( ! (o instanceof NodeMeasurementsKey)) return false;
             NodeMeasurementsKey other = (NodeMeasurementsKey)o;
             if ( ! this.hostname.equals(other.hostname)) return false;
-            if ( ! this.resource.equals(other.resource)) return false;
+            if ( ! this.metric.equals(other.metric)) return false;
             return true;
         }
 
         @Override
-        public String toString() { return "key to measurements of " + resource + " for " + hostname; }
+        public String toString() { return "key to measurements of " + metric + " for " + hostname; }
 
     }
 
     public static class NodeMeasurements {
 
         private final String hostname;
-        private final Resource resource;
+        private final Metric metric;
         private final ClusterSpec.Type type;
         private final List<Measurement> measurements;
 
         // Note: This transfers ownership of the measurement list to this
-        private NodeMeasurements(String hostname, Resource resource, ClusterSpec.Type type, List<Measurement> measurements) {
+        private NodeMeasurements(String hostname, Metric metric, ClusterSpec.Type type, List<Measurement> measurements) {
             this.hostname = hostname;
-            this.resource = resource;
+            this.metric = metric;
             this.type = type;
             this.measurements = measurements;
         }
@@ -169,7 +169,7 @@ public class NodeMetricsDb {
 
         public NodeMeasurements copyAfter(Instant oldestTime) {
             long oldestTimestamp = oldestTime.toEpochMilli();
-            return new NodeMeasurements(hostname, resource, type,
+            return new NodeMeasurements(hostname, metric, type,
                                         measurements.stream()
                                                     .filter(measurement -> measurement.timestamp >= oldestTimestamp)
                                                     .collect(Collectors.toList()));
@@ -187,19 +187,20 @@ public class NodeMetricsDb {
     }
 
     public static class Measurement {
+
         // TODO: Order by timestamp
         /** The time of this measurement in epoch millis */
         private final long timestamp;
 
         /** The measured value */
-        private final float value;
+        private final double value;
 
         public Measurement(long timestamp, float value) {
             this.timestamp = timestamp;
             this.value = value;
         }
 
-        public float value() { return value; }
+        public double value() { return value; }
         public Instant at() { return Instant.ofEpochMilli(timestamp); }
 
         @Override
@@ -207,13 +208,13 @@ public class NodeMetricsDb {
 
     }
 
-    public static class DeploymentEvent {
+    public static class AutoscalingEvent {
 
         private final ApplicationId application;
         private final long generation;
         private final long timestamp;
 
-        public DeploymentEvent(ApplicationId application, long generation, Instant times) {
+        public AutoscalingEvent(ApplicationId application, long generation, Instant times) {
             this.application = application;
             this.generation = generation;
             this.timestamp = times.toEpochMilli();

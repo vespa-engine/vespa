@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -103,17 +102,19 @@ public class Autoscaler {
                                          List<Node> clusterNodes) {
         ApplicationId application = clusterNodes.get(0).allocation().get().owner();
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
+
         Instant startTime = nodeRepository.clock().instant().minus(scalingWindow(clusterType));
 
-        List<NodeMetricsDb.DeploymentEvent> deployments = metricsDb.getEvents(application);
+        Optional<Long> generation = Optional.empty();
+        List<NodeMetricsDb.AutoscalingEvent> deployments = metricsDb.getEvents(application);
         if (! deployments.isEmpty()) {
             var deployment = deployments.get(deployments.size() - 1);
             if (deployment.time().isAfter(startTime))
-                startTime = deployment.time();
+                startTime = deployment.time(); // just to filter more faster
         }
 
         List<NodeMetricsDb.NodeMeasurements> measurements = metricsDb.getMeasurements(startTime,
-                                                                                      resource,
+                                                                                      Metric.from(resource),
                                                                                       clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
 
         // Require a total number of measurements scaling with the number of nodes,
