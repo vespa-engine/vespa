@@ -29,7 +29,7 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
+#include <vespa/eval/tensor/default_value_builder_factory.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
@@ -94,13 +94,13 @@ struct EngineImpl : Impl {
 EngineImpl  simple_tensor_engine_impl(" [SimpleTensorEngine]", SimpleTensorEngine::ref());
 EngineImpl default_tensor_engine_impl("[DefaultTensorEngine]", DefaultTensorEngine::ref());
 ValueImpl           simple_value_impl("        [SimpleValue]", SimpleValueBuilderFactory::get());
-ValueImpl    packed_mixed_tensor_impl("  [PackedMixedTensor]", PackedMixedTensorBuilderFactory::get());
+ValueImpl   default_tensor_value_impl("     [Adaptive Value]", DefaultValueBuilderFactory::get());
 
 double budget = 5.0;
 std::vector<CREF<Impl>> impl_list = {simple_tensor_engine_impl,
                                      default_tensor_engine_impl,
                                      simple_value_impl,
-                                     packed_mixed_tensor_impl};
+                                     default_tensor_value_impl};
 
 //-----------------------------------------------------------------------------
 
