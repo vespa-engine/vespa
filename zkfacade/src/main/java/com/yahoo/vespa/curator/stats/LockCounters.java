@@ -11,20 +11,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LockCounters {
     final AtomicInteger invokeAcquireCount = new AtomicInteger(0);
     final AtomicInteger inCriticalRegionCount = new AtomicInteger(0);
+    final AtomicInteger acquireFailedCount = new AtomicInteger(0);
     final AtomicInteger acquireTimedOutCount = new AtomicInteger(0);
     final AtomicInteger lockAcquiredCount = new AtomicInteger(0);
     final AtomicInteger locksReleasedCount = new AtomicInteger(0);
 
-    final AtomicInteger failedToAcquireReentrantLockCount = new AtomicInteger(0);
     final AtomicInteger noLocksErrorCount = new AtomicInteger(0);
     final AtomicInteger timeoutOnReentrancyErrorCount = new AtomicInteger(0);
 
     public int invokeAcquireCount() { return invokeAcquireCount.get(); }
     public int inCriticalRegionCount() { return inCriticalRegionCount.get(); }
+    public int acquireFailedCount() { return acquireFailedCount.get(); }
     public int acquireTimedOutCount() { return acquireTimedOutCount.get(); }
     public int lockAcquiredCount() { return lockAcquiredCount.get(); }
     public int locksReleasedCount() { return locksReleasedCount.get(); }
-    public int failedToAcquireReentrantLockCount() { return failedToAcquireReentrantLockCount.get(); }
     public int noLocksErrorCount() { return noLocksErrorCount.get(); }
     public int timeoutOnReentrancyErrorCount() { return timeoutOnReentrancyErrorCount.get(); }
 }

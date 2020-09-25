@@ -17,7 +17,6 @@ public class LockInfo {
 
     private final Thread thread;
     private final String lockPath;
-    private final int threadHoldCountOnAcquire;
     private final Instant acquireInstant;
     private final Duration timeout;
 
@@ -25,12 +24,12 @@ public class LockInfo {
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
     private volatile Optional<String> stackTrace = Optional.empty();
 
-    public static LockInfo invokingAcquire(Thread thread, String lockPath, int holdCount, Duration timeout) {
-        return new LockInfo(thread, lockPath, holdCount, timeout);
+    public static LockInfo invokingAcquire(Thread thread, String lockPath, Duration timeout) {
+        return new LockInfo(thread, lockPath, timeout);
     }
 
     public enum LockState {
-        ACQUIRING(false), TIMED_OUT(true), ACQUIRED(false), FAILED_TO_REENTER(true), RELEASED(true);
+        ACQUIRING(false), ACQUIRE_FAILED(true), TIMED_OUT(true), ACQUIRED(false), RELEASED(true);
 
         private final boolean terminal;
 
@@ -41,17 +40,15 @@ public class LockInfo {
 
     private volatile LockState lockState = LockState.ACQUIRING;
 
-    private LockInfo(Thread thread, String lockPath, int threadHoldCountOnAcquire, Duration timeout) {
+    private LockInfo(Thread thread, String lockPath, Duration timeout) {
         this.thread = thread;
         this.lockPath = lockPath;
-        this.threadHoldCountOnAcquire = threadHoldCountOnAcquire;
         this.acquireInstant = Instant.now();
         this.timeout = timeout;
     }
 
     public String getThreadName() { return thread.getName(); }
     public String getLockPath() { return lockPath; }
-    public int getThreadHoldCountOnAcquire() { return threadHoldCountOnAcquire; }
     public Instant getTimeAcquiredWasInvoked() { return acquireInstant; }
     public Duration getAcquireTimeout() { return timeout; }
     public LockState getLockState() { return lockState; }
@@ -100,8 +97,8 @@ public class LockInfo {
         this.stackTrace = Optional.of(stackTrace.toString());
     }
 
+    void acquireFailed() { setTerminalState(LockState.ACQUIRE_FAILED); }
     void timedOut() { setTerminalState(LockState.TIMED_OUT); }
-    void failedToAcquireReentrantLock() { setTerminalState(LockState.FAILED_TO_REENTER); }
     void released() { setTerminalState(LockState.RELEASED); }
 
     void lockAcquired() {

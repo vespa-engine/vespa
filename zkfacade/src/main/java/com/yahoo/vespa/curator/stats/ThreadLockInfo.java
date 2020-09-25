@@ -12,7 +12,6 @@ import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -37,7 +36,6 @@ public class ThreadLockInfo {
 
     private final Thread thread;
     private final String lockPath;
-    private final ReentrantLock lock;
     private final LockCounters lockCountersForPath;
 
     /** The locks are reentrant so there may be more than 1 lock for this thread. */
@@ -54,19 +52,18 @@ public class ThreadLockInfo {
     }
 
     /** Returns the per-thread singleton ThreadLockInfo. */
-    public static ThreadLockInfo getCurrentThreadLockInfo(String lockPath, ReentrantLock lock) {
+    public static ThreadLockInfo getCurrentThreadLockInfo(String lockPath) {
         return locks.computeIfAbsent(
                 Thread.currentThread(),
                 currentThread -> {
                     LockCounters lockCounters = countersByLockPath.computeIfAbsent(lockPath, ignored -> new LockCounters());
-                    return new ThreadLockInfo(currentThread, lockPath, lock, lockCounters);
+                    return new ThreadLockInfo(currentThread, lockPath, lockCounters);
                 });
     }
 
-    ThreadLockInfo(Thread currentThread, String lockPath, ReentrantLock lock, LockCounters lockCountersForPath) {
+    ThreadLockInfo(Thread currentThread, String lockPath, LockCounters lockCountersForPath) {
         this.thread = currentThread;
         this.lockPath = lockPath;
-        this.lock = lock;
         this.lockCountersForPath = lockCountersForPath;
     }
 
@@ -78,7 +75,12 @@ public class ThreadLockInfo {
     public void invokingAcquire(Duration timeout) {
         lockCountersForPath.invokeAcquireCount.incrementAndGet();
         lockCountersForPath.inCriticalRegionCount.incrementAndGet();
-        lockInfos.add(LockInfo.invokingAcquire(thread, lockPath, lock.getHoldCount(), timeout));
+        lockInfos.add(LockInfo.invokingAcquire(thread, lockPath, timeout));
+    }
+
+    /** Mutable method (see class doc) */
+    public void acquireFailed() {
+        removeLastLockInfo(lockCountersForPath.acquireFailedCount, LockInfo::acquireFailed);
     }
 
     /** Mutable method (see class doc) */
@@ -95,11 +97,6 @@ public class ThreadLockInfo {
         lockCountersForPath.lockAcquiredCount.incrementAndGet();
 
         getLastLockInfo().ifPresent(LockInfo::lockAcquired);
-    }
-
-    /** Mutable method (see class doc) */
-    public void failedToAcquireReentrantLock() {
-        removeLastLockInfo(lockCountersForPath.failedToAcquireReentrantLockCount, LockInfo::failedToAcquireReentrantLock);
     }
 
     /** Mutable method (see class doc) */
