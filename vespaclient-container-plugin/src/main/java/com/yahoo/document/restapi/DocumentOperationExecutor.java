@@ -7,9 +7,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.FixedBucketSpaces;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
@@ -23,8 +21,6 @@ import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
-import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.text.Text;
@@ -185,6 +181,7 @@ public class DocumentOperationExecutor {
     /** Rejects operation if retry queue is full; otherwise starts a timer for the given task, and attempts to send it.  */
     private void accept(Supplier<Result> operation, OperationContext context) {
         timeouts.add(new Delayed(clock.instant().plus(defaultTimeout), operation, context));
+        timeouts.notify();
         send(operation, context);
     }
 
@@ -198,8 +195,10 @@ public class DocumentOperationExecutor {
             case TRANSIENT_ERROR:
                 if (throttled.size() > maxThrottled)
                     context.error(OVERLOAD, maxThrottled + " requests already in retry queue");
-                else
+                else {
                     throttled.add(new Delayed(clock.instant().plus(resendDelay), operation, context));
+                    throttled.notify();
+                }
                 break;
             default:
                 log.log(Level.WARNING, "Unknown result type '" + result.type() + "'");
@@ -244,7 +243,7 @@ public class DocumentOperationExecutor {
     private void maintain(ConcurrentLinkedQueue<Delayed> queue, Consumer<Delayed> action) {
         while ( ! Thread.currentThread().isInterrupted()) {
             try {
-                Instant sleepUntil = null;
+                long waitUntilMillis = Instant.MAX.toEpochMilli();
                 Iterator<Delayed> operations = queue.iterator();
                 while (operations.hasNext()) {
                     Delayed operation = operations.next();
@@ -259,11 +258,12 @@ public class DocumentOperationExecutor {
                         operations.remove();
                         continue;
                     }
-                    // Not yet ready for retry — note when to wake up again, unless already done.
-                    sleepUntil = sleepUntil != null ? sleepUntil : operation.readyAt();
+                    // Not yet ready for retry — track earliest time to wake up again.
+                    waitUntilMillis = Math.min(waitUntilMillis, operation.readyAt.toEpochMilli());
                 }
-                long sleepMillis = sleepUntil != null ? sleepUntil.toEpochMilli() - clock.millis() : 10;
-                Thread.sleep(sleepMillis);
+                synchronized (queue) {
+                    queue.wait(Math.max(0, waitUntilMillis - clock.millis()));
+                }
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -569,7 +569,7 @@ public class DocumentOperationExecutor {
     }
 
 
-    private static class StorageCluster {
+    static class StorageCluster {
 
         private final String name;
         private final String configId;
@@ -586,6 +586,13 @@ public class DocumentOperationExecutor {
         String route() { return "[Storage:cluster=" + name() + ";clusterconfigid=" + configId() + "]"; }
         Optional<String> bucketOf(String documentType) { return Optional.ofNullable(documentBuckets.get(documentType)); }
 
+    }
+
+    // For testing.
+    AsyncSession asyncSession() { return asyncSession; }
+    void notifyMaintainers() {
+        throttled.notify();
+        timeouts.notify();
     }
 
 }
