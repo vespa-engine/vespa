@@ -20,29 +20,32 @@ import com.yahoo.documentapi.SyncSession;
 import com.yahoo.documentapi.UpdateResponse;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
+import static com.yahoo.documentapi.Result.ResultType.SUCCESS;
 
 /**
  * @author bratseth
+ * @author jonmv
  */
 public class LocalAsyncSession implements AsyncSession {
 
-    private final List<Response> responses = new LinkedList<>();
+    private final BlockingQueue<Response> responses = new LinkedBlockingQueue<>();
     private final ResponseHandler handler;
     private final SyncSession syncSession;
-    private long requestId = 0;
-    private Random random = new Random();
 
-    private synchronized long getNextRequestId() {
-        requestId++;
-        return requestId;
-    }
+    private AtomicLong requestId = new AtomicLong(0);
+    private AtomicReference<Runnable> synchronizer = new AtomicReference<>();
+    private AtomicReference<Result.ResultType> result = new AtomicReference<>(SUCCESS);
 
     public LocalAsyncSession(AsyncParameters params, LocalDocumentAccess access) {
         this.handler = params.getResponseHandler();
-        random.setSeed(System.currentTimeMillis());
         syncSession = access.createSyncSession(new SyncParameters.Builder().build());
     }
 
@@ -58,14 +61,15 @@ public class LocalAsyncSession implements AsyncSession {
 
     @Override
     public Result put(DocumentPut documentPut, DocumentProtocol.Priority pri) {
-        long req = getNextRequestId();
-        try {
-            syncSession.put(documentPut, pri);
-            addResponse(new DocumentResponse(req, documentPut.getDocument()));
-        } catch (Exception e) {
-            addResponse(new DocumentResponse(req, documentPut.getDocument(), e.getMessage(), Response.Outcome.ERROR));
-        }
-        return new Result(req);
+        return send(req -> {
+            try {
+                syncSession.put(documentPut, pri);
+                return new DocumentResponse(req, documentPut.getDocument());
+            }
+            catch (Exception e) {
+                return new DocumentResponse(req, documentPut.getDocument(), e.getMessage(), Response.Outcome.ERROR);
+            }
+        });
     }
 
     @Override
@@ -81,13 +85,14 @@ public class LocalAsyncSession implements AsyncSession {
 
     @Override
     public Result get(DocumentId id, DocumentProtocol.Priority pri) {
-        long req = getNextRequestId();
-        try {
-            addResponse(new DocumentResponse(req, syncSession.get(id)));
-        } catch (Exception e) {
-            addResponse(new DocumentResponse(req, null, e.getMessage(), Response.Outcome.ERROR));
-        }
-        return new Result(req);
+        return send(req -> {
+            try {
+                return new DocumentResponse(req, syncSession.get(id));
+            }
+            catch (Exception e) {
+                return new DocumentResponse(req, null, e.getMessage(), Response.Outcome.ERROR);
+            }
+        });
     }
 
     @Override
@@ -97,13 +102,14 @@ public class LocalAsyncSession implements AsyncSession {
 
     @Override
     public Result remove(DocumentId id, DocumentProtocol.Priority pri) {
-        long req = getNextRequestId();
-        if (syncSession.remove(new DocumentRemove(id), pri)) {
-            addResponse(new RemoveResponse(req, true));
-        } else {
-            addResponse(new DocumentIdResponse(req, id, "Document not found.", Response.Outcome.NOT_FOUND));
-        }
-        return new Result(req);
+        return send(req -> {
+            if (syncSession.remove(new DocumentRemove(id), pri)) {
+                return new RemoveResponse(req, true);
+            }
+            else {
+                return new DocumentIdResponse(req, id, "Document not found.", Response.Outcome.NOT_FOUND);
+            }
+        });
     }
 
     @Override
@@ -113,32 +119,43 @@ public class LocalAsyncSession implements AsyncSession {
 
     @Override
     public Result update(DocumentUpdate update, DocumentProtocol.Priority pri) {
-        long req = getNextRequestId();
-        if (syncSession.update(update, pri)) {
-            addResponse(new UpdateResponse(req, true));
-        } else {
-            addResponse(new DocumentUpdateResponse(req, update, "Document not found.", Response.Outcome.NOT_FOUND));
-        }
-        return new Result(req);
+        return send(req -> {
+            if (syncSession.update(update, pri)) {
+                return new UpdateResponse(req, true);
+            }
+            else {
+                return new DocumentUpdateResponse(req, update, "Document not found.", Response.Outcome.NOT_FOUND);
+            }
+        });
     }
 
     @Override
     public Response getNext() {
-        if (responses.isEmpty()) {
-            return null;
-        }
-        int index = random.nextInt(responses.size());
-        return responses.remove(index);
+        return responses.poll();
     }
 
     @Override
-    public Response getNext(int timeout) {
-        return getNext();
+    public Response getNext(int timeoutMilliseconds) throws InterruptedException {
+        return responses.poll(timeoutMilliseconds, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void destroy() {
         // empty
+    }
+
+    /**
+     * This is run in a separate thread before and after providing the response from each accepted request, for advanced testing.
+     *
+     * If this is not set, which is the default, the documents appear synchronously in the response queue or handler.
+     */
+    public void setSynchronizer(Runnable synchronizer) {
+        this.synchronizer.set(synchronizer);
+    }
+
+    /** Sets the result type returned on subsequence operations against this. Only SUCCESS will cause Repsonses to appear. */
+    public void setResultType(Result.ResultType resultType) {
+        this.result.set(resultType);
     }
 
     private void addResponse(Response response) {
@@ -147,6 +164,26 @@ public class LocalAsyncSession implements AsyncSession {
         } else {
             responses.add(response);
         }
+    }
+
+    private Result send(Function<Long, Response> responses) {
+        Result.ResultType resultType = result.get();
+        if (resultType != SUCCESS)
+            return new Result(resultType, new Error());
+
+        long req = requestId.incrementAndGet();
+        synchronizer.getAndUpdate(runnable -> {
+            if (runnable == null)
+                addResponse(responses.apply(req));
+            else
+                new Thread(() -> {
+                    runnable.run();
+                    addResponse(responses.apply(req));
+                    runnable.run();
+                }).start();
+            return runnable;
+        });
+        return new Result(req);
     }
 
 }
