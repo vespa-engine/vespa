@@ -510,7 +510,7 @@ FeedHandler::startCommit(DoneCallback onDone) {
 void
 FeedHandler::storeOperationSync(const FeedOperation &op) {
     vespalib::Gate gate;
-    appendOperation(op, make_shared<search::GateCallback>(gate));
+    appendAndCommitOperation(op, make_shared<search::GateCallback>(gate));
     gate.await();
 }
 
