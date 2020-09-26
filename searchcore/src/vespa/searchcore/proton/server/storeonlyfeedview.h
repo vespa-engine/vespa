@@ -161,7 +161,7 @@ private:
     void putSummary(SerialNum serialNum,  Lid lid, DocumentSP doc, OnOperationDoneType onDone);
     void removeSummary(SerialNum serialNum,  Lid lid, OnWriteDoneType onDone);
     void heartBeatSummary(SerialNum serialNum);
-    bool needCommit() const;
+    bool needImmediateCommit() const;
 
 
     bool useDocumentStore(SerialNum replaySerialNum) const {
