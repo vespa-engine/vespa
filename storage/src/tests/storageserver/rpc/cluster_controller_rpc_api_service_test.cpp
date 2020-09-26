@@ -82,8 +82,7 @@ struct SetStateFixture : FixtureBase {
         auto* params = bound_request->GetParams();
         params->AddInt8(static_cast<uint8_t>(encoded_bundle._compression_type));
         params->AddInt32(uncompressed_length);
-        const auto buf_len = encoded_bundle._buffer->getDataLen();
-        params->AddData(encoded_bundle._buffer->stealBuffer(), buf_len);
+        params->AddData(std::move(*encoded_bundle._buffer));
 
         bound_request->SetDetachedPT(&request_is_detached);
         bound_request->SetReturnHandler(&return_handler);

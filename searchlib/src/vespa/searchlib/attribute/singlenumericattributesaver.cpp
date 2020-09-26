@@ -2,6 +2,7 @@
 
 #include "singlenumericattributesaver.h"
 #include "iattributesavetarget.h"
+#include <vespa/vespalib/data/databuffer.h>
 
 using vespalib::GenerationHandler;
 

@@ -606,7 +606,7 @@ public:
      **/
     void swap(DataBuffer &other);
 
-    Alloc stealBuffer();
+    Alloc stealBuffer() &&;
 };
 
 } // namespace vespalib

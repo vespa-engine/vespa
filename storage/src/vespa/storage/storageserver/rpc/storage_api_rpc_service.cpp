@@ -117,8 +117,7 @@ void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload,
 
     params.AddInt8(comp_type);
     params.AddInt32(static_cast<uint32_t>(to_compress.size()));
-    auto buffer_len = buf.getDataLen();
-    params.AddData(buf.stealBuffer(), buffer_len);
+    params.AddData(std::move(buf));
 }
 
 } // anon ns

@@ -109,7 +109,7 @@ CompressedBlobSet::getBlobSet() const
         decompress(_compression, getBufferSize(_positions),
                    ConstBufferRef(_buffer->c_str(), _buffer->size()), uncompressed, false);
     }
-    return BlobSet(_positions, uncompressed.stealBuffer());
+    return BlobSet(_positions, std::move(uncompressed).stealBuffer());
 }
 
 size_t CompressedBlobSet::size() const {

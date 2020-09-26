@@ -94,7 +94,7 @@ XXH64CompressedChunk::decompress(nbostream & is, uint32_t uncompressedLen) {
     ::decompress(_type, uncompressedLen, compressed, uncompressed, false);
     nbostream data(uncompressed.getData(), uncompressed.getDataLen());
     deserializeEntries(data);
-    _backing = uncompressed.stealBuffer();
+    _backing = std::move(uncompressed).stealBuffer();
     is.adjustReadPos(is.size());
 }
 

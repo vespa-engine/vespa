@@ -32,7 +32,8 @@ namespace feedbm {
 
 namespace {
 
-FRT_RPCRequest *make_set_cluster_state_request() {
+FRT_RPCRequest *
+make_set_cluster_state_request() {
     storage::lib::ClusterStateBundle bundle(storage::lib::ClusterState("version:2 distributor:1 storage:1"));
     storage::rpc::SlimeClusterStateBundleCodec codec;
     auto encoded_bundle = codec.encode(bundle);
@@ -40,13 +41,13 @@ FRT_RPCRequest *make_set_cluster_state_request() {
     auto* params = req->GetParams();
     params->AddInt8(static_cast<uint8_t>(encoded_bundle._compression_type));
     params->AddInt32(encoded_bundle._uncompressed_length);
-    const auto buf_len = encoded_bundle._buffer->getDataLen();
-    params->AddData(encoded_bundle._buffer->stealBuffer(), buf_len);
+    params->AddData(std::move(*encoded_bundle._buffer));
     req->SetMethodName("setdistributionstates");
     return req;
 }
 
-void set_cluster_up(SharedRpcResources &shared_rpc_resources, storage::api::StorageMessageAddress &storage_address) {
+void
+set_cluster_up(SharedRpcResources &shared_rpc_resources, storage::api::StorageMessageAddress &storage_address) {
     auto req = make_set_cluster_state_request();
     auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(shared_rpc_resources.slobrok_mirror(), shared_rpc_resources.target_factory());
     auto target = target_resolver->resolve_rpc_target(storage_address);

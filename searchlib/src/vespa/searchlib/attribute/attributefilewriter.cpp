@@ -6,6 +6,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>

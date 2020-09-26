@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value.h"
-#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <xxhash.h>
 
@@ -66,8 +65,9 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &com
     _compression = type;
     _uncompressedSize = len;
     _uncompressedCrc = XXH64(input.c_str(), input.size(), 0);
-    _buf = std::make_shared<Alloc>(compact(_compressedSize,
-            (buf.getData() == compressed.getData()) ? buf.stealBuffer() : compressed.stealBuffer()));
+    _buf = std::make_shared<Alloc>(compact(_compressedSize,(buf.getData() == compressed.getData())
+                                                           ? std::move(buf).stealBuffer()
+                                                           : std::move(compressed).stealBuffer()));
 
     assert(((type == CompressionConfig::NONE) &&
             (len == ssize_t(_compressedSize))) ||

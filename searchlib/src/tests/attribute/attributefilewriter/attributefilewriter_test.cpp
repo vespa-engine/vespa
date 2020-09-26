@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/attribute/attributefilewriter.h>
 #include <vespa/searchlib/attribute/attributefilebufferwriter.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
@@ -10,6 +9,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
