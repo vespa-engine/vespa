@@ -6,7 +6,7 @@
 
 namespace storage::rpc {
 
-class RpcTarget;
+struct RpcTarget;
 
 /**
  * Factory for creating instances of RpcTarget based on a connection spec.

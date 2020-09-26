@@ -39,7 +39,7 @@ PackedMixedTensorBuilder<T>::build(std::unique_ptr<ValueBuilder<T>>)
 
     // copy cells:
     memcpy(cells_mem, &_cells[0], cells_size);
-    ConstArrayRef<T> cells((T *)cells_mem, _cells.size());
+    ConstArrayRef<T> cells((T *)(void *) cells_mem, _cells.size());
 
     PackedMixedTensor * built =
         new (mem) PackedMixedTensor(_type, TypedCells(cells), mappings);

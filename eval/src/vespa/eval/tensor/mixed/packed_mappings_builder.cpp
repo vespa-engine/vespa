@@ -54,8 +54,8 @@ PackedMappingsBuilder::target_memory(char *mem_start, char *mem_end) const
     ssize_t avail_sz = mem_end - mem_start;
     assert(needs_sz <= avail_sz);
 
-    uint32_t * int_store_mem = (uint32_t *) mem_start;
-    uint32_t * offsets_mem = (uint32_t *) (mem_start + int_store_size);
+    uint32_t * int_store_mem = (uint32_t *) (void *) mem_start;
+    uint32_t * offsets_mem = (uint32_t *) (void *) (mem_start + int_store_size);
     char * labels_mem = mem_start + int_store_size + label_offsets_size;
 
     ArrayRef<uint32_t> int_store_data(int_store_mem, int_store_cnt);

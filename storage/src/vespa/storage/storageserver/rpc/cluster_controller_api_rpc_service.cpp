@@ -20,7 +20,6 @@ ClusterControllerApiRpcService::ClusterControllerApiRpcService(
         MessageDispatcher& message_dispatcher,
         SharedRpcResources& rpc_resources)
     : _message_dispatcher(message_dispatcher),
-      _rpc_resources(rpc_resources),
       _closed(false)
 {
     register_server_methods(rpc_resources);

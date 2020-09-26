@@ -24,7 +24,6 @@ class SharedRpcResources;
 
 class ClusterControllerApiRpcService : public FRT_Invokable {
     MessageDispatcher&  _message_dispatcher;
-    SharedRpcResources& _rpc_resources;
     std::atomic<bool>   _closed;
 public:
     static constexpr uint32_t StateBundleMaxUncompressedSize = 1024 * 1024 * 16;

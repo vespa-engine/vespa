@@ -77,7 +77,6 @@ private:
     SerialNum                              _serialNum;
     SerialNum                              _prunedSerialNum;
     size_t                                 _numPendingCommit;
-    size_t                                 _numCommitsCompleted;
     bool                                   _delayedPrune;
     mutable std::shared_mutex              _feedLock;
     FeedStateSP                            _feedState;
