@@ -135,6 +135,7 @@ public:
     }
     vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
     bool hasVisibilityDelay() const { return _visibilityDelay > vespalib::duration::zero(); }
+    bool allowEarlyAck() const { return hasVisibilityDelay(); }
     const DocumentDBLidSpaceCompactionConfig &getLidSpaceCompactionConfig() const {
         return _lidSpaceCompaction;
     }
