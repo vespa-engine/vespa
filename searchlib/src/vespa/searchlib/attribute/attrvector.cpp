@@ -4,6 +4,7 @@
 #include "attrvector.hpp"
 #include "iattributesavetarget.h"
 #include "load_utils.h"
+#include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attr_vector");

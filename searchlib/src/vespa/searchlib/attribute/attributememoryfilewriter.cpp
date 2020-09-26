@@ -2,6 +2,7 @@
 
 #include "attributememoryfilewriter.h"
 #include "attributememoryfilebufferwriter.h"
+#include <vespa/vespalib/data/databuffer.h>
 
 namespace search {
 
@@ -18,9 +19,7 @@ AttributeMemoryFileWriter::AttributeMemoryFileWriter()
 }
 
 
-AttributeMemoryFileWriter::~AttributeMemoryFileWriter()
-{
-}
+AttributeMemoryFileWriter::~AttributeMemoryFileWriter() = default;
 
 
 AttributeMemoryFileWriter::Buffer

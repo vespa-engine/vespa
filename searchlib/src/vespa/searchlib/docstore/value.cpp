@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value.h"
-#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <xxhash.h>
 
 using vespalib::compression::compress;
 using vespalib::compression::decompress;
+using vespalib::DataBuffer;
 
 namespace search::docstore {
 
@@ -66,8 +66,9 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &com
     _compression = type;
     _uncompressedSize = len;
     _uncompressedCrc = XXH64(input.c_str(), input.size(), 0);
-    _buf = std::make_shared<Alloc>(compact(_compressedSize,
-            (buf.getData() == compressed.getData()) ? buf.stealBuffer() : compressed.stealBuffer()));
+    _buf = std::make_shared<Alloc>(compact(_compressedSize,(buf.getData() == compressed.getData())
+                                                           ? DataBuffer::stealBuffer(std::move(buf))
+                                                           : DataBuffer::stealBuffer(std::move(compressed))));
 
     assert(((type == CompressionConfig::NONE) &&
             (len == ssize_t(_compressedSize))) ||

@@ -4,7 +4,6 @@
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/tracelevel.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -49,7 +48,8 @@ Memory SERVICE_F("service");
 
 }
 
-bool RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
+bool
+RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
 {
     return  (method == METHOD_NAME) &&
             (request == METHOD_PARAMS) &&
@@ -133,7 +133,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     args.AddInt32(toCompress.size());
     const auto bufferLength = buf.getDataLen();
     assert(bufferLength <= INT32_MAX);
-    args.AddData(buf.stealBuffer(), bufferLength);
+    args.AddData(DataBuffer::stealBuffer(std::move(buf)), bufferLength);
 }
 
 namespace {
@@ -141,7 +141,7 @@ namespace {
 class ParamsV2 : public RPCSend::Params
 {
 public:
-    ParamsV2(const FRT_Values &arg)
+    explicit ParamsV2(const FRT_Values &arg)
         : _slime()
     {
         uint8_t encoding = arg[3]._intval8;
@@ -263,7 +263,7 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
     ret.AddInt32(toCompress.size());
     const auto bufferLength = buf.getDataLen();
     assert(bufferLength <= INT32_MAX);
-    ret.AddData(buf.stealBuffer(), bufferLength);
+    ret.AddData(DataBuffer::stealBuffer(std::move(buf)), bufferLength);
 
 }
 

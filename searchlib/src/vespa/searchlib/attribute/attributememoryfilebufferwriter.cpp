@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributememoryfilebufferwriter.h"
+#include <vespa/vespalib/data/databuffer.h>
 
 namespace search {
 
@@ -11,9 +12,7 @@ AttributeMemoryFileBufferWriter(IAttributeFileWriter &memoryFileWriter)
 }
 
 
-AttributeMemoryFileBufferWriter::~AttributeMemoryFileBufferWriter()
-{
-}
+AttributeMemoryFileBufferWriter::~AttributeMemoryFileBufferWriter() = default;
 
 
 void

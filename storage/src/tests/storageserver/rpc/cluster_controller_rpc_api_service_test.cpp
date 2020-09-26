@@ -15,6 +15,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 
+using vespalib::DataBuffer;
 namespace storage::rpc {
 
 using document::FixedBucketSpaces;
@@ -83,7 +84,7 @@ struct SetStateFixture : FixtureBase {
         params->AddInt8(static_cast<uint8_t>(encoded_bundle._compression_type));
         params->AddInt32(uncompressed_length);
         const auto buf_len = encoded_bundle._buffer->getDataLen();
-        params->AddData(encoded_bundle._buffer->stealBuffer(), buf_len);
+        params->AddData(DataBuffer::stealBuffer(std::move(*encoded_bundle._buffer)), buf_len);
 
         bound_request->SetDetachedPT(&request_is_detached);
         bound_request->SetReturnHandler(&return_handler);
