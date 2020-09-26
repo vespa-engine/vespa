@@ -15,6 +15,7 @@ class LidReuseDelayerConfig
 {
 private:
     vespalib::duration  _visibilityDelay;
+    bool                _allowEarlyAck;
     bool                _hasIndexedOrAttributeFields;
 public:
     LidReuseDelayerConfig();
@@ -22,6 +23,7 @@ public:
     explicit LidReuseDelayerConfig(const DocumentDBConfig &configSnapshot);
     vespalib::duration visibilityDelay() const { return _visibilityDelay; }
     bool hasIndexedOrAttributeFields() const { return _hasIndexedOrAttributeFields; }
+    bool allowEarlyAck() const { return _allowEarlyAck; }
 };
 
 }
