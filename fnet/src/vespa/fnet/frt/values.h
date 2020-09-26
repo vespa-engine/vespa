@@ -5,7 +5,10 @@
 #include "isharedblob.h"
 #include <cstring>
 
-namespace vespalib { class Stash; }
+namespace vespalib {
+    class Stash;
+    class DataBuffer;
+}
 namespace vespalib::alloc { class Alloc; }
 namespace fnet {
     char * copyString(char *dst, const char *src, size_t len);
@@ -218,6 +221,7 @@ public:
     FRT_StringValue *AddStringArray(uint32_t len);
     void AddSharedData(FRT_ISharedBlob *blob);
     void AddData(Alloc && buf, uint32_t len);
+    void AddData(vespalib::DataBuffer && buf);
     void AddData(const char *buf, uint32_t len);
     char *AddData(uint32_t len);
     FRT_DataValue *AddDataArray(uint32_t len);

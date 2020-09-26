@@ -133,7 +133,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     args.AddInt32(toCompress.size());
     const auto bufferLength = buf.getDataLen();
     assert(bufferLength <= INT32_MAX);
-    args.AddData(DataBuffer::stealBuffer(std::move(buf)), bufferLength);
+    args.AddData(std::move(buf).stealBuffer(), bufferLength);
 }
 
 namespace {
@@ -261,9 +261,8 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
 
     ret.AddInt8(type);
     ret.AddInt32(toCompress.size());
-    const auto bufferLength = buf.getDataLen();
-    assert(bufferLength <= INT32_MAX);
-    ret.AddData(DataBuffer::stealBuffer(std::move(buf)), bufferLength);
+    assert(buf.getDataLen() <= INT32_MAX);
+    ret.AddData(std::move(buf));
 
 }
 

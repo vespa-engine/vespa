@@ -12,7 +12,6 @@ using vespalib::compression::compress;
 using vespalib::compression::decompress;
 using vespalib::compression::computeMaxCompressedsize;
 using vespalib::compression::CompressionConfig;
-using vespalib::DataBuffer;
 
 ChunkException::ChunkException(const vespalib::string & msg, vespalib::stringref location) :
     Exception(make_string("Illegal chunk: %s", msg.c_str()), location)
@@ -141,7 +140,7 @@ ChunkFormat::deserializeBody(vespalib::nbostream & is)
     assert(uncompressed.getData() == uncompressed.getDead());
     if (uncompressed.getData() != data.c_str()) {
         const size_t sz(uncompressed.getDataLen());
-        vespalib::nbostream(DataBuffer::stealBuffer(std::move(uncompressed)), sz).swap(_dataBuf);
+        vespalib::nbostream(std::move(uncompressed).stealBuffer(), sz).swap(_dataBuf);
     } else {
         _dataBuf = vespalib::nbostream(uncompressed.getData(), uncompressed.getDataLen());
     }

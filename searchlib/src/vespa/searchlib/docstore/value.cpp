@@ -6,7 +6,6 @@
 
 using vespalib::compression::compress;
 using vespalib::compression::decompress;
-using vespalib::DataBuffer;
 
 namespace search::docstore {
 
@@ -67,8 +66,8 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &com
     _uncompressedSize = len;
     _uncompressedCrc = XXH64(input.c_str(), input.size(), 0);
     _buf = std::make_shared<Alloc>(compact(_compressedSize,(buf.getData() == compressed.getData())
-                                                           ? DataBuffer::stealBuffer(std::move(buf))
-                                                           : DataBuffer::stealBuffer(std::move(compressed))));
+                                                           ? std::move(buf).stealBuffer()
+                                                           : std::move(compressed).stealBuffer()));
 
     assert(((type == CompressionConfig::NONE) &&
             (len == ssize_t(_compressedSize))) ||

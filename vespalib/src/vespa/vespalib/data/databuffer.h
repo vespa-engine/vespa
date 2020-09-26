@@ -40,7 +40,6 @@ private:
     char          *_freept;
     Alloc          _buffer;
 
-    Alloc stealBuffer();
 public:
     typedef std::unique_ptr<DataBuffer> UP;
     DataBuffer(const DataBuffer &) = delete;
@@ -607,9 +606,7 @@ public:
      **/
     void swap(DataBuffer &other);
 
-    static Alloc stealBuffer(DataBuffer && buf) {
-        return buf.stealBuffer();
-    }
+    Alloc stealBuffer() &&;
 };
 
 } // namespace vespalib

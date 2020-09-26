@@ -41,8 +41,7 @@ make_set_cluster_state_request() {
     auto* params = req->GetParams();
     params->AddInt8(static_cast<uint8_t>(encoded_bundle._compression_type));
     params->AddInt32(encoded_bundle._uncompressed_length);
-    const auto buf_len = encoded_bundle._buffer->getDataLen();
-    params->AddData(vespalib::DataBuffer::stealBuffer(std::move(*encoded_bundle._buffer)), buf_len);
+    params->AddData(std::move(*encoded_bundle._buffer));
     req->SetMethodName("setdistributionstates");
     return req;
 }
