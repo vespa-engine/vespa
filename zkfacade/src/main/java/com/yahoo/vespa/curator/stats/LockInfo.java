@@ -16,15 +16,16 @@ import java.util.Optional;
 public class LockInfo {
 
     private final ThreadLockInfo threadLockInfo;
-    private final Instant acquireInstant;
+    private final String lockPath;
+    private final Instant callAcquireInstant;
     private final Duration timeout;
 
     private volatile Optional<Instant> lockAcquiredInstant = Optional.empty();
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
     private volatile Optional<String> stackTrace = Optional.empty();
 
-    public static LockInfo invokingAcquire(ThreadLockInfo threadLockInfo, Duration timeout) {
-        return new LockInfo(threadLockInfo, timeout);
+    public static LockInfo invokingAcquire(ThreadLockInfo threadLockInfo, String lockPath, Duration timeout) {
+        return new LockInfo(threadLockInfo, lockPath, timeout, Instant.now());
     }
 
     public enum LockState {
@@ -39,15 +40,16 @@ public class LockInfo {
 
     private volatile LockState lockState = LockState.ACQUIRING;
 
-    private LockInfo(ThreadLockInfo threadLockInfo, Duration timeout) {
+    private LockInfo(ThreadLockInfo threadLockInfo, String lockPath, Duration timeout, Instant callAcquireInstant) {
         this.threadLockInfo = threadLockInfo;
-        this.acquireInstant = Instant.now();
+        this.lockPath = lockPath;
+        this.callAcquireInstant = callAcquireInstant;
         this.timeout = timeout;
     }
 
     public String getThreadName() { return threadLockInfo.getThreadName(); }
-    public String getLockPath() { return threadLockInfo.getLockPath(); }
-    public Instant getTimeAcquiredWasInvoked() { return acquireInstant; }
+    public String getLockPath() { return lockPath; }
+    public Instant getTimeAcquiredWasInvoked() { return callAcquireInstant; }
     public Duration getAcquireTimeout() { return timeout; }
     public LockState getLockState() { return lockState; }
     public Optional<Instant> getTimeLockWasAcquired() { return lockAcquiredInstant; }
@@ -55,7 +57,7 @@ public class LockInfo {
     public Optional<String> getStackTrace() { return stackTrace; }
 
     public Duration getDurationOfAcquire() {
-        return Duration.between(acquireInstant, lockAcquiredInstant.orElseGet(Instant::now));
+        return Duration.between(callAcquireInstant, lockAcquiredInstant.orElseGet(Instant::now));
     }
 
     public Duration getDurationWithLock() {
@@ -64,11 +66,11 @@ public class LockInfo {
                 .orElse(Duration.ZERO);
     }
 
-    public Duration getDuration() { return Duration.between(acquireInstant, terminalStateInstant.orElseGet(Instant::now)); }
+    public Duration getDuration() { return Duration.between(callAcquireInstant, terminalStateInstant.orElseGet(Instant::now)); }
 
     /** Get time from just before trying to acquire lock to the time the terminal state was reached, or ZERO. */
-    public Duration getDurationInTerminalStateAndForPriorityQueue() {
-        return terminalStateInstant.map(instant -> Duration.between(acquireInstant, instant)).orElse(Duration.ZERO);
+    public Duration getStableTotalDuration() {
+        return terminalStateInstant.map(instant -> Duration.between(callAcquireInstant, instant)).orElse(Duration.ZERO);
     }
 
     /** Fill in the stack trace starting at the caller's stack frame. */
@@ -88,8 +90,10 @@ public class LockInfo {
         lockAcquiredInstant = Optional.of(Instant.now());
     }
 
-    void setTerminalState(LockState terminalState) {
+    void setTerminalState(LockState terminalState) { setTerminalState(terminalState, Instant.now()); }
+
+    void setTerminalState(LockState terminalState, Instant instant) {
         lockState = terminalState;
-        terminalStateInstant = Optional.of(Instant.now());
+        terminalStateInstant = Optional.of(instant);
     }
 }

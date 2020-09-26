@@ -47,7 +47,7 @@ public class LockTest {
         expectedCounters.acquireFailedCount.set(1);
         assertEquals(Map.of(lockPath, expectedCounters), ThreadLockInfo.getLockCountersByPath());
 
-        List<LockInfo> slowLockInfos = ThreadLockInfo.getSlowLockInfos();
+        List<LockInfo> slowLockInfos = ThreadLockInfo.getLockInfoSamples();
         assertEquals(1, slowLockInfos.size());
         LockInfo slowLockInfo = slowLockInfos.get(0);
         assertEquals(acquireTimeout, slowLockInfo.getAcquireTimeout());

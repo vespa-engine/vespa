@@ -4,14 +4,11 @@ package com.yahoo.vespa.curator.stats;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -26,17 +23,11 @@ public class ThreadLockInfo {
 
     private static final ConcurrentHashMap<Thread, ThreadLockInfo> locks = new ConcurrentHashMap<>();
 
-    private static final int MAX_COMPLETED_LOCK_INFOS_SIZE = 5;
-    /** Would have used a thread-safe priority queue. */
-    private static final Object completedLockInfosMonitor = new Object();
-    private static final PriorityQueue<LockInfo> completedLockInfos =
-            new PriorityQueue<>(Comparator.comparing(LockInfo::getDurationInTerminalStateAndForPriorityQueue));
+    private static final LockInfoSamples completedLockInfoSamples = new LockInfoSamples();
 
     private static final ConcurrentHashMap<String, LockCounters> countersByLockPath = new ConcurrentHashMap<>();
 
     private final Thread thread;
-    private final String lockPath;
-    private final LockCounters lockCountersForPath;
 
     /** The locks are reentrant so there may be more than 1 lock for this thread. */
     private final ConcurrentLinkedQueue<LockInfo> lockInfos = new ConcurrentLinkedQueue<>();
@@ -45,36 +36,26 @@ public class ThreadLockInfo {
 
     public static List<ThreadLockInfo> getThreadLockInfos() { return List.copyOf(locks.values()); }
 
-    public static List<LockInfo> getSlowLockInfos() {
-        synchronized (completedLockInfosMonitor) {
-            return List.copyOf(completedLockInfos);
-        }
+    public static List<LockInfo> getLockInfoSamples() {
+        return completedLockInfoSamples.asList();
     }
 
     /** Returns the per-thread singleton ThreadLockInfo. */
-    public static ThreadLockInfo getCurrentThreadLockInfo(String lockPath) {
-        return locks.computeIfAbsent(
-                Thread.currentThread(),
-                currentThread -> {
-                    LockCounters lockCounters = countersByLockPath.computeIfAbsent(lockPath, ignored -> new LockCounters());
-                    return new ThreadLockInfo(currentThread, lockPath, lockCounters);
-                });
+    public static ThreadLockInfo getCurrentThreadLockInfo() {
+        return locks.computeIfAbsent(Thread.currentThread(), ThreadLockInfo::new);
     }
 
     static void clearStaticDataForTesting() {
         locks.clear();
-        completedLockInfos.clear();
+        completedLockInfoSamples.clear();
         countersByLockPath.clear();
     }
 
-    ThreadLockInfo(Thread currentThread, String lockPath, LockCounters lockCountersForPath) {
+    ThreadLockInfo(Thread currentThread) {
         this.thread = currentThread;
-        this.lockPath = lockPath;
-        this.lockCountersForPath = lockCountersForPath;
     }
 
     public String getThreadName() { return thread.getName(); }
-    public String getLockPath() { return lockPath; }
 
     public String getStackTrace() {
         var stackTrace = new StringBuilder();
@@ -98,64 +79,62 @@ public class ThreadLockInfo {
     public List<LockInfo> getLockInfos() { return List.copyOf(lockInfos); }
 
     /** Mutable method (see class doc) */
-    public void invokingAcquire(Duration timeout) {
-        lockCountersForPath.invokeAcquireCount.incrementAndGet();
-        lockCountersForPath.inCriticalRegionCount.incrementAndGet();
-        lockInfos.add(LockInfo.invokingAcquire(this, timeout));
+    public void invokingAcquire(String lockPath, Duration timeout) {
+        LockCounters lockCounters = getLockCounters(lockPath);
+        lockCounters.invokeAcquireCount.incrementAndGet();
+        lockCounters.inCriticalRegionCount.incrementAndGet();
+        lockInfos.add(LockInfo.invokingAcquire(this, lockPath, timeout));
     }
 
     /** Mutable method (see class doc) */
-    public void acquireFailed() {
-        removeLastLockInfo(lockCountersForPath.acquireFailedCount, LockInfo::acquireFailed);
+    public void acquireFailed(String lockPath) {
+        LockCounters lockCounters = getLockCounters(lockPath);
+        lockCounters.acquireFailedCount.incrementAndGet();
+        removeLastLockInfo(lockCounters, LockInfo::acquireFailed);
     }
 
     /** Mutable method (see class doc) */
-    public void acquireTimedOut() {
+    public void acquireTimedOut(String lockPath) {
+        LockCounters lockCounters = getLockCounters(lockPath);
         if (lockInfos.size() > 1) {
-            lockCountersForPath.timeoutOnReentrancyErrorCount.incrementAndGet();
+            lockCounters.timeoutOnReentrancyErrorCount.incrementAndGet();
         }
 
-        removeLastLockInfo(lockCountersForPath.acquireTimedOutCount, LockInfo::timedOut);
+        lockCounters.acquireTimedOutCount.incrementAndGet();
+        removeLastLockInfo(lockCounters, LockInfo::timedOut);
     }
 
     /** Mutable method (see class doc) */
-    public void lockAcquired() {
-        lockCountersForPath.lockAcquiredCount.incrementAndGet();
-
+    public void lockAcquired(String lockPath) {
+        getLockCounters(lockPath).lockAcquiredCount.incrementAndGet();
         getLastLockInfo().ifPresent(LockInfo::lockAcquired);
     }
 
     /** Mutable method (see class doc) */
-    public void lockReleased() {
-        removeLastLockInfo(lockCountersForPath.locksReleasedCount, LockInfo::released);
+    public void lockReleased(String lockPath) {
+        LockCounters lockCounters = getLockCounters(lockPath);
+        lockCounters.locksReleasedCount.incrementAndGet();
+        removeLastLockInfo(lockCounters, LockInfo::released);
+    }
+
+    private LockCounters getLockCounters(String lockPath) {
+        return countersByLockPath.computeIfAbsent(lockPath, __ -> new LockCounters());
     }
 
     private Optional<LockInfo> getLastLockInfo() {
         return lockInfos.isEmpty() ? Optional.empty() : Optional.of(lockInfos.peek());
     }
 
-    private void removeLastLockInfo(AtomicInteger metricToIncrement, Consumer<LockInfo> completeLockInfo) {
-        metricToIncrement.incrementAndGet();
-        lockCountersForPath.inCriticalRegionCount.decrementAndGet();
+    private void removeLastLockInfo(LockCounters lockCounters, Consumer<LockInfo> completeLockInfo) {
+        lockCounters.inCriticalRegionCount.decrementAndGet();
 
         if (lockInfos.isEmpty()) {
-            lockCountersForPath.noLocksErrorCount.incrementAndGet();
+            lockCounters.noLocksErrorCount.incrementAndGet();
             return;
         }
 
         LockInfo lockInfo = lockInfos.poll();
         completeLockInfo.accept(lockInfo);
-
-        synchronized (completedLockInfosMonitor) {
-            if (completedLockInfos.size() < MAX_COMPLETED_LOCK_INFOS_SIZE) {
-                lockInfo.fillStackTrace();
-                completedLockInfos.add(lockInfo);
-            } else if (lockInfo.getDurationInTerminalStateAndForPriorityQueue()
-                    .compareTo(completedLockInfos.peek().getDurationInTerminalStateAndForPriorityQueue()) > 0) {
-                completedLockInfos.poll();
-                lockInfo.fillStackTrace();
-                completedLockInfos.add(lockInfo);
-            }
-        }
+        completedLockInfoSamples.maybeSample(lockInfo);
     }
 }

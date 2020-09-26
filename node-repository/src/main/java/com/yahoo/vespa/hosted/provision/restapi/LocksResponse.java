@@ -27,13 +27,13 @@ public class LocksResponse extends HttpResponse {
     public LocksResponse() {
         this(new TreeMap<>(ThreadLockInfo.getLockCountersByPath()),
              ThreadLockInfo.getThreadLockInfos(),
-             ThreadLockInfo.getSlowLockInfos());
+             ThreadLockInfo.getLockInfoSamples());
     }
 
     /** For testing */
     LocksResponse(TreeMap<String, LockCounters> lockCountersByPath,
                   List<ThreadLockInfo> threadLockInfos,
-                  List<LockInfo> slowLockInfos) {
+                  List<LockInfo> historicSamples) {
         super(200);
 
         Cursor root = slime.setObject();
@@ -58,18 +58,18 @@ public class LocksResponse extends HttpResponse {
             if (!lockInfos.isEmpty()) {
                 Cursor threadLockInfoCursor = threadsCursor.addObject();
                 threadLockInfoCursor.setString("thread-name", threadLockInfo.getThreadName());
-                threadLockInfoCursor.setString("lock-path", threadLockInfo.getLockPath());
-                threadLockInfoCursor.setString("stack-trace", threadLockInfo.getStackTrace());
 
                 Cursor lockInfosCursor = threadLockInfoCursor.setArray("active-locks");
                 for (var lockInfo : lockInfos) {
                     setLockInfo(lockInfosCursor.addObject(), lockInfo, false);
                 }
+
+                threadLockInfoCursor.setString("stack-trace", threadLockInfo.getStackTrace());
             }
         }
 
-        Cursor slowLocksCursor = root.setArray("slow-locks");
-        slowLockInfos.forEach(lockInfo -> setLockInfo(slowLocksCursor.addObject(), lockInfo, true));
+        Cursor historicSamplesCursor = root.setArray("historic-samples");
+        historicSamples.forEach(lockInfo -> setLockInfo(historicSamplesCursor.addObject(), lockInfo, true));
     }
 
     @Override
@@ -85,8 +85,8 @@ public class LocksResponse extends HttpResponse {
     private void setLockInfo(Cursor lockInfoCursor, LockInfo lockInfo, boolean includeThreadInfo) {
         if (includeThreadInfo) {
             lockInfoCursor.setString("thread-name", lockInfo.getThreadName());
-            lockInfoCursor.setString("lock-path", lockInfo.getLockPath());
         }
+        lockInfoCursor.setString("lock-path", lockInfo.getLockPath());
         lockInfoCursor.setString("invoke-acquire-time", toString(lockInfo.getTimeAcquiredWasInvoked()));
         lockInfoCursor.setString("acquire-timeout", lockInfo.getAcquireTimeout().toString());
         lockInfo.getTimeLockWasAcquired().ifPresent(instant -> lockInfoCursor.setString("lock-acquired-time", toString(instant)));
@@ -95,7 +95,9 @@ public class LocksResponse extends HttpResponse {
         lockInfoCursor.setString("acquire-duration", lockInfo.getDurationOfAcquire().toString());
         lockInfoCursor.setString("locked-duration", lockInfo.getDurationWithLock().toString());
         lockInfoCursor.setString("total-duration", lockInfo.getDuration().toString());
-        lockInfo.getStackTrace().ifPresent(stackTrace -> lockInfoCursor.setString("stack-trace", stackTrace));
+        if (includeThreadInfo) {
+            lockInfo.getStackTrace().ifPresent(stackTrace -> lockInfoCursor.setString("stack-trace", stackTrace));
+        }
     }
 
     private static String toString(Instant time) {

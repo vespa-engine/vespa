@@ -35,23 +35,23 @@ public class Lock implements Mutex {
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
-        ThreadLockInfo threadLockInfo = getThreadLockInfo();
-        threadLockInfo.invokingAcquire(timeout);
+        ThreadLockInfo threadLockInfo = ThreadLockInfo.getCurrentThreadLockInfo();
+        threadLockInfo.invokingAcquire(lockPath, timeout);
 
         final boolean acquired;
         try {
             acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            threadLockInfo.acquireFailed();
+            threadLockInfo.acquireFailed(lockPath);
             throw new RuntimeException("Exception acquiring lock '" + lockPath + "'", e);
         }
 
         if (!acquired) {
-            threadLockInfo.acquireTimedOut();
+            threadLockInfo.acquireTimedOut(lockPath);
             throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
                     " to acquire lock '" + lockPath + "'");
         }
-        threadLockInfo.lockAcquired();
+        threadLockInfo.lockAcquired(lockPath);
     }
 
     @Override
@@ -60,17 +60,13 @@ public class Lock implements Mutex {
     }
 
     private void release() {
-        getThreadLockInfo().lockReleased();
+        ThreadLockInfo.getCurrentThreadLockInfo().lockReleased(lockPath);
         try {
             mutex.release();
         }
         catch (Exception e) {
             throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
         }
-    }
-
-    private ThreadLockInfo getThreadLockInfo() {
-        return ThreadLockInfo.getCurrentThreadLockInfo(lockPath);
     }
 }
 
