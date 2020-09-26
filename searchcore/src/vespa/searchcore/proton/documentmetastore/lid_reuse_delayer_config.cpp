@@ -19,7 +19,7 @@ LidReuseDelayerConfig::LidReuseDelayerConfig()
 
 LidReuseDelayerConfig::LidReuseDelayerConfig(vespalib::duration visibilityDelay, bool hasIndexedOrAttributeFields_in)
     : _visibilityDelay(visibilityDelay),
-      _allowEarlyAck(visibilityDelay > vespalib::duration::zero()),
+      _allowEarlyAck(visibilityDelay > 1ms),
       _hasIndexedOrAttributeFields(hasIndexedOrAttributeFields_in)
 {
 }
