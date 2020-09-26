@@ -15,7 +15,7 @@ basedir string default="tmp" restart
 
 ## Use fsync after each commit.
 ## If not the below interval is used.
-usefsync bool default=false
+usefsync bool default=false restart
 
 ##Number of threads available for visiting/subscription.
 maxthreads int default=4 restart
