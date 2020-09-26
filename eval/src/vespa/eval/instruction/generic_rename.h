@@ -7,7 +7,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace vespalib::eval { class ValueBuilderFactory; }
+namespace vespalib::eval { struct ValueBuilderFactory; }
 
 namespace vespalib::eval::instruction {
  

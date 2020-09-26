@@ -6,7 +6,7 @@
 #include <vespa/eval/eval/interpreted_function.h>
 
 namespace vespalib { class Stash; }
-namespace vespalib::eval { class ValueBuilderFactory; }
+namespace vespalib::eval { struct ValueBuilderFactory; }
 
 namespace vespalib::eval::instruction {
 

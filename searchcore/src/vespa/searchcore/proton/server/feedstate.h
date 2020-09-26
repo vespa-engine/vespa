@@ -11,7 +11,7 @@ namespace vespalib {
 namespace proton {
 
 class FeedOperation;
-class PacketWrapper;
+struct PacketWrapper;
 
 /**
  * Class representing the current state of a feed handler.
