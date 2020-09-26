@@ -607,7 +607,7 @@ public:
      **/
     void swap(DataBuffer &other);
 
-    static Alloc stealBuffer(DataBuffer buf) {
+    static Alloc stealBuffer(DataBuffer && buf) {
         return buf.stealBuffer();
     }
 };
