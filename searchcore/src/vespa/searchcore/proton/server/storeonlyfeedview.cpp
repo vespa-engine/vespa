@@ -275,7 +275,7 @@ StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneTyp
 void
 StoreOnlyFeedView::considerEarlyAck(FeedToken & token)
 {
-    if ( _lidReuseDelayer.allowEarlyAck() && token) {
+    if (allowEarlyAck() && token) {
         token.reset();
     }
 }
@@ -347,6 +347,11 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 bool
 StoreOnlyFeedView::needImmediateCommit() const {
     return _lidReuseDelayer.needImmediateCommit();
+}
+
+bool
+StoreOnlyFeedView::allowEarlyAck() const {
+    return _lidReuseDelayer.allowEarlyAck();
 }
 
 void

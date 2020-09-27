@@ -522,7 +522,7 @@ FeedHandler::initiateCommit() {
                 onCommitDone(numPendingAtStart);
             }));
     auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
-    if (_activeFeedView) {
+    if (_activeFeedView && ! _activeFeedView->allowEarlyAck()) {
         using KeepAlivePair = KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
         _activeFeedView->forceCommit(_serialNum, std::make_shared<KeepAlivePair>(std::move(pair)));
