@@ -2,6 +2,7 @@
 vespa_add_library(eval_tensor OBJECT
     SOURCES
     default_tensor_engine.cpp
+    default_value_builder_factory.cpp
     tensor.cpp
     tensor_address.cpp
     tensor_apply.cpp

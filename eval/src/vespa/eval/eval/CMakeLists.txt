@@ -6,6 +6,7 @@ vespa_add_library(eval_eval OBJECT
     call_nodes.cpp
     compile_tensor_function.cpp
     delete_node.cpp
+    double_value_builder.cpp
     fast_forest.cpp
     function.cpp
     gbdt.cpp

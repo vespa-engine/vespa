@@ -87,7 +87,7 @@ struct TensorExample {
     virtual void encode_default(nbostream &dst) const = 0;
     virtual void encode_with_double(nbostream &dst) const = 0;
     virtual void encode_with_float(nbostream &dst) const = 0;
-    void verify_encode_decode() const {
+    void verify_encode_decode(bool is_dense) const {
         nbostream expect_default;
         nbostream expect_double;
         nbostream expect_float;
@@ -98,10 +98,15 @@ struct TensorExample {
         nbostream data_float;
         encode_value(*make_tensor(false), data_double);
         encode_value(*make_tensor(true), data_float);
-        EXPECT_EQ(Memory(data_double.peek(), data_double.size()),
-                  Memory(expect_default.peek(), expect_default.size()));
-        EXPECT_EQ(Memory(data_float.peek(), data_float.size()),
-                  Memory(expect_float.peek(), expect_float.size()));
+        if (is_dense) {
+            EXPECT_EQ(Memory(data_double.peek(), data_double.size()),
+                      Memory(expect_default.peek(), expect_default.size()));
+            EXPECT_EQ(Memory(data_float.peek(), data_float.size()),
+                      Memory(expect_float.peek(), expect_float.size()));
+        } else {
+            EXPECT_EQ(spec_from_value(*decode_value(data_double, factory)), make_spec(false));
+            EXPECT_EQ(spec_from_value(*decode_value(data_float, factory)), make_spec(true));
+        }
         EXPECT_EQ(spec_from_value(*decode_value(expect_default, factory)), make_spec(false));
         EXPECT_EQ(spec_from_value(*decode_value(expect_double, factory)), make_spec(false));
         EXPECT_EQ(spec_from_value(*decode_value(expect_float, factory)), make_spec(true));
@@ -155,7 +160,7 @@ struct SparseTensorExample : TensorExample {
 
 TEST(ValueCodecTest, sparse_tensors_can_be_encoded_and_decoded) {
     SparseTensorExample f1;
-    f1.verify_encode_decode();
+    f1.verify_encode_decode(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -205,7 +210,7 @@ struct DenseTensorExample : TensorExample {
 
 TEST(ValueCodecTest, dense_tensors_can_be_encoded_and_decoded) {
     DenseTensorExample f1;
-    f1.verify_encode_decode();
+    f1.verify_encode_decode(true);
 }
 
 //-----------------------------------------------------------------------------
@@ -263,7 +268,7 @@ struct MixedTensorExample : TensorExample {
 
 TEST(ValueCodecTest, mixed_tensors_can_be_encoded_and_decoded) {
     MixedTensorExample f1;
-    f1.verify_encode_decode();
+    f1.verify_encode_decode(false);
 }
 
 //-----------------------------------------------------------------------------
