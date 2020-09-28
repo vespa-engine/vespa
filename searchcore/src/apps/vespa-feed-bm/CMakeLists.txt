@@ -4,6 +4,7 @@ vespa_add_executable(searchcore_vespa_feed_bm_app
     vespa_feed_bm.cpp
     spi_bm_feed_handler.cpp
     storage_api_rpc_bm_feed_handler.cpp
+    storage_api_chain_bm_feed_handler.cpp
     OUTPUT_NAME vespa-feed-bm
     DEPENDS
     searchcore_server

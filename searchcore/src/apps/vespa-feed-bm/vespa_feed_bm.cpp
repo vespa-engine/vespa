@@ -3,6 +3,7 @@
 #include "pending_tracker.h"
 #include "spi_bm_feed_handler.h"
 #include "storage_api_rpc_bm_feed_handler.h"
+#include "storage_api_chain_bm_feed_handler.h"
 #include <vespa/vespalib/testkit/testapp.h>
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-imported-fields.h>
@@ -56,6 +57,7 @@
 #include <vespa/config-slobroks.h>
 #include <vespa/metrics/config-metricsmanager.h>
 #include <vespa/storageserver/app/servicelayerprocess.h>
+#include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -122,6 +124,7 @@ using vespalib::makeLambdaTask;
 using feedbm::IBmFeedHandler;
 using feedbm::SpiBmFeedHandler;
 using feedbm::StorageApiRpcBmFeedHandler;
+using feedbm::StorageApiChainBmFeedHandler;
 
 using DocumentDBMap = std::map<DocTypeName, std::shared_ptr<DocumentDB>>;
 
@@ -209,6 +212,7 @@ class BMParams {
     uint32_t _remove_passes;
     uint32_t _rpc_network_threads;
     bool     _enable_service_layer;
+    bool     _use_storage_chain;
     uint32_t get_start(uint32_t thread_id) const {
         return (_documents / _threads) * thread_id + std::min(thread_id, _documents % _threads);
     }
@@ -220,7 +224,8 @@ public:
           _update_passes(1),
           _remove_passes(2),
           _rpc_network_threads(1),
-          _enable_service_layer(false)
+          _enable_service_layer(false),
+          _use_storage_chain(false)
     {
     }
     BMRange get_range(uint32_t thread_id) const {
@@ -233,6 +238,7 @@ public:
     uint32_t get_remove_passes() const { return _remove_passes; }
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
     bool get_enable_service_layer() const { return _enable_service_layer; }
+    bool get_use_storage_chain() const { return _use_storage_chain; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_threads(uint32_t threads_in) { _threads = threads_in; }
     void set_put_passes(uint32_t put_passes_in) { _put_passes = put_passes_in; }
@@ -240,6 +246,7 @@ public:
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }
     void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
+    void set_use_storage_chain(bool use_storage_chain_in) { _use_storage_chain = use_storage_chain_in; }
     bool check() const;
 };
 
@@ -269,13 +276,13 @@ BMParams::check() const
     return true;
 }
 
-
 class MyServiceLayerProcess : public storage::ServiceLayerProcess {
     PersistenceProvider&    _provider;
 
 public:
     MyServiceLayerProcess(const config::ConfigUri & configUri,
-                          PersistenceProvider &provider);
+                          PersistenceProvider &provider,
+                          std::unique_ptr<storage::IStorageChainBuilder> chain_builder);
     ~MyServiceLayerProcess() override { shutdown(); }
 
     void shutdown() override;
@@ -284,10 +291,14 @@ public:
 };
 
 MyServiceLayerProcess::MyServiceLayerProcess(const config::ConfigUri & configUri,
-                                             PersistenceProvider &provider)
+                                             PersistenceProvider &provider,
+                                             std::unique_ptr<storage::IStorageChainBuilder> chain_builder)
     : ServiceLayerProcess(configUri),
       _provider(provider)
 {
+    if (chain_builder) {
+        set_storage_chain_builder(std::move(chain_builder));
+    }
 }
 
 void
@@ -476,7 +487,7 @@ struct PersistenceProviderFixture {
     std::unique_ptr<Document> make_document(uint32_t i) const;
     std::unique_ptr<DocumentUpdate> make_document_update(uint32_t i) const;
     void create_buckets();
-    void start_service_layer();
+    void start_service_layer(bool use_storage_chain);
     void shutdown_service_layer();
 };
 
@@ -615,14 +626,21 @@ PersistenceProviderFixture::create_buckets()
 }
 
 void
-PersistenceProviderFixture::start_service_layer()
+PersistenceProviderFixture::start_service_layer(bool use_storage_chain)
 {
     LOG(info, "start slobrok");
     _slobrok = std::make_unique<mbus::Slobrok>(_slobrok_port);
     LOG(info, "start service layer");
     config::ConfigUri config_uri("bm-servicelayer", _config_context);
+    std::unique_ptr<storage::IStorageChainBuilder> chain_builder;
+    std::shared_ptr<StorageApiChainBmFeedHandler::Context> context;
+    if (use_storage_chain) {
+        context = StorageApiChainBmFeedHandler::get_context();
+        chain_builder = StorageApiChainBmFeedHandler::get_storage_chain_builder(context);
+    }
     _service_layer = std::make_unique<MyServiceLayerProcess>(config_uri,
-                                                             *_persistence_engine);
+                                                             *_persistence_engine,
+                                                             std::move(chain_builder));
     _service_layer->setupConfig(100ms);
     _service_layer->createNode();
     _service_layer->getNode().waitUntilInitialized();
@@ -630,7 +648,11 @@ PersistenceProviderFixture::start_service_layer()
     config::ConfigUri client_config_uri("bm-rpc-client", _config_context);
     _rpc_client_shared_rpc_resources = std::make_unique<SharedRpcResources>(client_config_uri, _rpc_client_port, 100);
     _rpc_client_shared_rpc_resources->start_server_and_register_slobrok("bm-rpc-client");
-    _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo);
+    if (use_storage_chain) {
+        _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(std::move(context));
+    } else {
+        _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo);
+    }
 }
 
 void
@@ -829,7 +851,7 @@ void benchmark_async_spi(const BMParams &bm_params)
     LOG(info, "create %u buckets", f.num_buckets());
     f.create_buckets();
     if (bm_params.get_enable_service_layer()) {
-        f.start_service_layer();
+        f.start_service_layer(bm_params.get_use_storage_chain());
     }
     vespalib::ThreadStackExecutor executor(bm_params.get_threads(), 128 * 1024);
     auto put_feed = make_feed(executor, bm_params, [&f](BMRange range) { return make_put_feed(f, range); }, "put");
@@ -881,7 +903,8 @@ App::usage()
         "[--update-passes update-passes]\n"
         "[--remove-passes remove-passes]\n"
         "[--rpc-network-threads threads]\n"
-        "[--enable-service-layer]" << std::endl;
+        "[--enable-service-layer]\n"
+        "[--use-storage-chain]" << std::endl;
 }
 
 bool
@@ -897,7 +920,8 @@ App::get_options()
         { "update-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
-        { "enable-service-layer", 0, nullptr, 0 }
+        { "enable-service-layer", 0, nullptr, 0 },
+        { "use-storage-chain", 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_THREADS,
@@ -906,7 +930,8 @@ App::get_options()
         LONGOPT_UPDATE_PASSES,
         LONGOPT_REMOVE_PASSES,
         LONGOPT_RPC_NETWORK_THREADS,
-        LONGOPT_ENABLE_SERVICE_LAYER
+        LONGOPT_ENABLE_SERVICE_LAYER,
+        LONGOPT_USE_STORAGE_CHAIN
     };
     int opt_index = 1;
     resetOptIndex(opt_index);
@@ -934,6 +959,9 @@ App::get_options()
                 break;
             case LONGOPT_ENABLE_SERVICE_LAYER:
                 _bm_params.set_enable_service_layer(true);
+                break;
+            case LONGOPT_USE_STORAGE_CHAIN:
+                _bm_params.set_use_storage_chain(true);
                 break;
             default:
                 return false;
