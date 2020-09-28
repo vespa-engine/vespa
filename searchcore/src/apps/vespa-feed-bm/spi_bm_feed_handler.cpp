@@ -24,16 +24,18 @@ storage::spi::Context context(default_load_type, storage::spi::Priority(0), stor
 
 class MyOperationComplete : public storage::spi::OperationComplete
 {
+    std::atomic<uint32_t> &_errors;
     PendingTracker& _tracker;
 public:
-    MyOperationComplete(PendingTracker& tracker);
+    MyOperationComplete(std::atomic<uint32_t> &errors, PendingTracker& tracker);
     ~MyOperationComplete();
     void onComplete(std::unique_ptr<storage::spi::Result> result) override;
     void addResultHandler(const storage::spi::ResultHandler* resultHandler) override;
 };
 
-MyOperationComplete::MyOperationComplete(PendingTracker& tracker)
-    : _tracker(tracker)
+MyOperationComplete::MyOperationComplete(std::atomic<uint32_t> &errors, PendingTracker& tracker)
+    : _errors(errors),
+      _tracker(tracker)
 {
     _tracker.retain();
 }
@@ -46,7 +48,9 @@ MyOperationComplete::~MyOperationComplete()
 void
 MyOperationComplete::onComplete(std::unique_ptr<storage::spi::Result> result)
 {
-    (void) result;
+    if (result->hasError()) {
+        ++_errors;
+    }
 }
 
 void
@@ -59,7 +63,8 @@ MyOperationComplete::addResultHandler(const storage::spi::ResultHandler * result
 
 SpiBmFeedHandler::SpiBmFeedHandler(PersistenceProvider& provider)
     : IBmFeedHandler(),
-      _provider(provider)
+      _provider(provider),
+      _errors(0u)
 {
 }
 
@@ -68,19 +73,19 @@ SpiBmFeedHandler::~SpiBmFeedHandler() = default;
 void
 SpiBmFeedHandler::put(const document::Bucket& bucket, std::unique_ptr<Document> document, uint64_t timestamp, PendingTracker& tracker)
 {
-    _provider.putAsync(Bucket(bucket, PartitionId(0)), Timestamp(timestamp), std::move(document), context, std::make_unique<MyOperationComplete>(tracker));
+    _provider.putAsync(Bucket(bucket, PartitionId(0)), Timestamp(timestamp), std::move(document), context, std::make_unique<MyOperationComplete>(_errors, tracker));
 }
 
 void
 SpiBmFeedHandler::update(const document::Bucket& bucket, std::unique_ptr<DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker)
 {
-    _provider.updateAsync(Bucket(bucket, PartitionId(0)), Timestamp(timestamp), std::move(document_update), context, std::make_unique<MyOperationComplete>(tracker));
+    _provider.updateAsync(Bucket(bucket, PartitionId(0)), Timestamp(timestamp), std::move(document_update), context, std::make_unique<MyOperationComplete>(_errors, tracker));
 }
 
 void
 SpiBmFeedHandler::remove(const document::Bucket& bucket, const DocumentId& document_id,  uint64_t timestamp, PendingTracker& tracker)
 {
-    _provider.removeAsync(Bucket(bucket, PartitionId(0)), Timestamp(timestamp), document_id, context, std::make_unique<MyOperationComplete>(tracker));
+    _provider.removeAsync(Bucket(bucket, PartitionId(0)), Timestamp(timestamp), document_id, context, std::make_unique<MyOperationComplete>(_errors, tracker));
 
 }
 
@@ -90,4 +95,9 @@ SpiBmFeedHandler::create_bucket(const document::Bucket& bucket)
     _provider.createBucket(Bucket(bucket, PartitionId(0)), context);
 }
 
+uint32_t
+SpiBmFeedHandler::get_error_count() const
+{
+    return _errors;
+}
 }

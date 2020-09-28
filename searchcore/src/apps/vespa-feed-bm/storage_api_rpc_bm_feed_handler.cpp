@@ -2,6 +2,7 @@
 
 #include "storage_api_rpc_bm_feed_handler.h"
 #include "pending_tracker.h"
+#include "storage_reply_error_checker.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
@@ -58,22 +59,26 @@ set_cluster_up(SharedRpcResources &shared_rpc_resources, storage::api::StorageMe
 
 }
 
-class StorageApiRpcBmFeedHandler::MyMessageDispatcher : public storage::MessageDispatcher
+class StorageApiRpcBmFeedHandler::MyMessageDispatcher : public storage::MessageDispatcher,
+                                 public StorageReplyErrorChecker
 {
     std::mutex _mutex;
     vespalib::hash_map<uint64_t, PendingTracker *> _pending;
 public:
     MyMessageDispatcher()
         : storage::MessageDispatcher(),
+          StorageReplyErrorChecker(),
           _mutex(),
           _pending()
     {
     }
     ~MyMessageDispatcher() override;
     void dispatch_sync(std::shared_ptr<storage::api::StorageMessage> msg) override {
+        check_error(*msg);
         release(msg->getMsgId());
     }
     void dispatch_async(std::shared_ptr<storage::api::StorageMessage> msg) override {
+        check_error(*msg);
         release(msg->getMsgId());
     }
     void retain(uint64_t msg_id, PendingTracker &tracker) {
@@ -141,6 +146,12 @@ StorageApiRpcBmFeedHandler::remove(const document::Bucket& bucket, const Documen
 {
     auto cmd = std::make_unique<storage::api::RemoveCommand>(bucket, document_id, timestamp);
     send_rpc(std::move(cmd), tracker);
+}
+
+uint32_t
+StorageApiRpcBmFeedHandler::get_error_count() const
+{
+    return _message_dispatcher->get_error_count();
 }
 
 }

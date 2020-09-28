@@ -29,6 +29,7 @@ public:
 
     static std::shared_ptr<Context> get_context();
     static std::unique_ptr<storage::IStorageChainBuilder> get_storage_chain_builder(std::shared_ptr<Context> context);
+    uint32_t get_error_count() const override;
 };
 
 }
