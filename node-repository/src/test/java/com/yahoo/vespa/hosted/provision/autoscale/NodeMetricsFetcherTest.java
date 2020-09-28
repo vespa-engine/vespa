@@ -30,8 +30,8 @@ public class NodeMetricsFetcherTest {
         tester.makeReadyNodes(4, resources); // Creates (in order) host-1.yahoo.com, host-2.yahoo.com, host-3.yahoo.com, host-4.yahoo.com
         tester.activateTenantHosts();
 
-        ApplicationId application1 = tester.makeApplicationId();
-        ApplicationId application2 = tester.makeApplicationId();
+        ApplicationId application1 = ProvisioningTester.makeApplicationId();
+        ApplicationId application2 = ProvisioningTester.makeApplicationId();
         tester.deploy(application1, Capacity.from(new ClusterResources(2, 1, resources))); // host-1.yahoo.com, host-2.yahoo.com
         tester.deploy(application2, Capacity.from(new ClusterResources(2, 1, resources))); // host-4.yahoo.com, host-3.yahoo.com
 

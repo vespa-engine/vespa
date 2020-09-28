@@ -9,6 +9,7 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -71,33 +72,32 @@ class MaintenanceDeployment implements Closeable {
     }
 
     public boolean prepare() {
-        return doStep(() -> deployment.get().prepare());
+        return doStep(() -> { deployment.get().prepare(); return 0L; }).isPresent();
     }
 
     /**
      * Attempts to activate this deployment
      *
-     * @return whether it was successfully activated
+     * @return the application config generation resulting from this deployment, or empty if it was not successful
      */
-    public boolean activate() {
+    public Optional<Long> activate() {
         return doStep(() -> deployment.get().activate());
     }
 
-    private boolean doStep(Runnable action) {
+    private Optional<Long> doStep(Supplier<Long> step) {
         if (closed) throw new IllegalStateException(this + "' is closed");
-        if ( ! isValid()) return false;
+        if ( ! isValid()) return Optional.empty();
         try {
-            action.run();
-            return true;
+            return Optional.of(step.get());
         } catch (TransientException e) {
             metric.add("maintenanceDeployment.transientFailure", 1, metric.createContext(Map.of()));
             log.log(Level.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
                                    Exceptions.toMessageString(e));
-            return false;
+            return Optional.empty();
         } catch (RuntimeException e) {
             metric.add("maintenanceDeployment.failure", 1, metric.createContext(Map.of()));
             log.log(Level.WARNING, "Exception on maintenance deploy of " + application, e);
-            return false;
+            return Optional.empty();
         }
     }
 
@@ -175,7 +175,7 @@ class MaintenanceDeployment implements Closeable {
                         if (expectedNewNode.isEmpty()) return false;
                         if (!expectedNewNode.get().hasParent(toHost.hostname())) return false;
                     }
-                    if ( ! deployment.activate()) return false;
+                    if ( deployment.activate().isEmpty()) return false;
 
                     log.info(agent + " redeployed " + application + " to " +
                              ( verifyTarget ? this : "move " + (node.hostname() + " from " + fromHost)));

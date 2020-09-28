@@ -132,7 +132,7 @@ class AutoscalingTester {
                     float effectiveValue = (r == resource ? value : (float) r.idealAverageLoad() * otherResourcesLoad)
                                            * oneExtraNodeFactor;
                     db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                               r.metricName(),
+                                                               Metric.from(r).fullName(),
                                                                clock().instant().toEpochMilli(),
                                                                effectiveValue * 100))); // the metrics are in %
                 }
@@ -146,7 +146,7 @@ class AutoscalingTester {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
                 db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           resource.metricName(),
+                                                           Metric.from(resource).fullName(),
                                                            clock().instant().toEpochMilli(),
                                                            value * 100))); // the metrics are in %
             }

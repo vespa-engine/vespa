@@ -68,7 +68,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
 
                 nodeRepository().setRemovable(application, nodesToRemove);
 
-                boolean success = deployment.activate();
+                boolean success = deployment.activate().isPresent();
                 if ( ! success) return success;
                 String nodeList = nodesToRemove.stream().map(Node::hostname).collect(Collectors.joining(", "));
                 log.info("Redeployed " + application + " to deactivate retired nodes: " +  nodeList);

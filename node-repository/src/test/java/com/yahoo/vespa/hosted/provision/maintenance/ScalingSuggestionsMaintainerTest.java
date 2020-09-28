@@ -14,6 +14,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.Metric;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.Resource;
@@ -38,11 +39,11 @@ public class ScalingSuggestionsMaintainerTest {
     public void testScalingSuggestionsMaintainer() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3"))).flavorsConfig(flavorsConfig()).build();
 
-        ApplicationId app1 = tester.makeApplicationId("app1");
-        ClusterSpec cluster1 = tester.containerClusterSpec();
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ProvisioningTester.containerClusterSpec();
 
-        ApplicationId app2 = tester.makeApplicationId("app2");
-        ClusterSpec cluster2 = tester.contentClusterSpec();
+        ApplicationId app2 = ProvisioningTester.makeApplicationId("app2");
+        ClusterSpec cluster2 = ProvisioningTester.contentClusterSpec();
 
         NodeMetricsDb nodeMetricsDb = new NodeMetricsDb(tester.nodeRepository());
 
@@ -81,7 +82,7 @@ public class ScalingSuggestionsMaintainerTest {
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           resource.metricName(),
+                                                           Metric.from(resource).fullName(),
                                                            nodeRepository.clock().instant().toEpochMilli(),
                                                           value * 100))); // the metrics are in %
         }

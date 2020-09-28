@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -29,6 +28,7 @@ import java.util.stream.Collectors;
  */
 public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
+    private final NodeMetricsDb metricsDb;
     private final Autoscaler autoscaler;
     private final Deployer deployer;
     private final Metric metric;
@@ -40,6 +40,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                                  Duration interval) {
         super(nodeRepository, interval, metric);
         this.autoscaler = new Autoscaler(metricsDb, nodeRepository);
+        this.metricsDb = metricsDb;
         this.metric = metric;
         this.deployer = deployer;
     }
@@ -72,7 +73,12 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             applications().put(application.with(cluster.get().withTarget(target)), deployment.applicationLock().get());
             if (target.isPresent()) {
                 logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
-                deployment.activate();
+                Optional<Long> resultingGeneration = deployment.activate();
+                if (resultingGeneration.isEmpty()) return; // Failed to activate
+
+                metricsDb.add(new NodeMetricsDb.AutoscalingEvent(applicationId,
+                                                                 resultingGeneration.get(),
+                                                                 nodeRepository().clock().instant()));
             }
         }
     }

@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -8,7 +9,11 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -63,11 +68,13 @@ public class Autoscaler {
     private Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes, Limits limits, boolean exclusive) {
         if (unstable(clusterNodes)) return Optional.empty();
 
-        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
-        Optional<Double> cpuLoad    = averageLoad(Resource.cpu, clusterNodes, clusterType);
-        Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, clusterType);
-        Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, clusterType);
+
+        MetricSnapshot metricSnapshot = new MetricSnapshot(clusterNodes, metricsDb, nodeRepository);
+
+        Optional<Double> cpuLoad    = metricSnapshot.averageLoad(Resource.cpu);
+        Optional<Double> memoryLoad = metricSnapshot.averageLoad(Resource.memory);
+        Optional<Double> diskLoad   = metricSnapshot.averageLoad(Resource.disk);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
@@ -91,23 +98,6 @@ public class Autoscaler {
 
     private boolean similar(double r1, double r2, double threshold) {
         return Math.abs(r1 - r2) / (( r1 + r2) / 2) < threshold;
-    }
-
-    /**
-     * Returns the average load of this resource in the measurement window,
-     * or empty if we are not in a position to make decisions from these measurements at this time.
-     */
-    private Optional<Double> averageLoad(Resource resource, List<Node> clusterNodes, ClusterSpec.Type clusterType) {
-        NodeMetricsDb.Window window = metricsDb.getWindow(nodeRepository.clock().instant().minus(scalingWindow(clusterType)),
-                                                          resource,
-                                                          clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
-
-        // Require a total number of measurements scaling with the number of nodes,
-        // but don't require that we have at least that many from every node
-        if (window.measurementCount()/clusterNodes.size() < minimumMeasurementsPerNode(clusterType)) return Optional.empty();
-        if (window.hostnames() != clusterNodes.size()) return Optional.empty();
-
-        return Optional.of(window.average());
     }
 
     /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */

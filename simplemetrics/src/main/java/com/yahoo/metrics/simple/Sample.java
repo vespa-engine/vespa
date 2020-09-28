@@ -42,8 +42,7 @@ public class Sample {
      * Get histogram definition for an arbitrary metric. Caveat emptor: This
      * involves reading a volatile.
      *
-     * @param metricName
-     *            name of the metric to get histogram definition for
+     * @param metricName name of the metric to get histogram definition for
      * @return how to define a new histogram or null
      */
     MetricSettings getHistogramDefinition(String metricName) {

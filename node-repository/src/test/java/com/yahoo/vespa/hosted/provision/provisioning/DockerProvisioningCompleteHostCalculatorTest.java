@@ -32,7 +32,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
                                                                     .build();
         tester.makeReadyHosts(9, hostFlavor.resources()).activateTenantHosts();
 
-        ApplicationId app1 = tester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         var initialResources = new NodeResources(2, 16, 50, 1);

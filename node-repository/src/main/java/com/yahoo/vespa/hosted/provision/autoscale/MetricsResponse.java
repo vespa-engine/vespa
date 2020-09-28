@@ -46,16 +46,16 @@ public class MetricsResponse {
     private void consumeNodeMetrics(String hostname, Inspector node) {
         long timestampSecond = node.field("timestamp").asLong();
         Map<String, Double> values = consumeMetrics(node.field("metrics"));
-        for (Resource resource : Resource.values())
-            addMetricIfPresent(hostname, resource, timestampSecond, values);
+        for (Metric metric : Metric.values())
+            addMetricIfPresent(hostname, metric, timestampSecond, values);
     }
 
-    private void addMetricIfPresent(String hostname, Resource resource, long timestampSecond, Map<String, Double> values) {
-        if (values.containsKey(resource.metricName()))
+    private void addMetricIfPresent(String hostname, Metric metric, long timestampSecond, Map<String, Double> values) {
+        if (values.containsKey(metric.fullName()))
             metricValues.add(new NodeMetrics.MetricValue(hostname,
-                                                         resource.metricName(),
+                                                         metric.fullName(),
                                                          timestampSecond,
-                                                         values.get(resource.metricName())));
+                                                         values.get(metric.fullName())));
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {

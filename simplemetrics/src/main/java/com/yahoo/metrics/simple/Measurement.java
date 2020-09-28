@@ -2,12 +2,12 @@
 package com.yahoo.metrics.simple;
 
 /**
- * Wrapper class for the actually measured value. Candidate for removal, but I
- * wanted a type instead of some opaque instance of Number.
+ * Wrapper class for the actually measured value.
  *
  * @author Steinar Knutsen
  */
 public class Measurement {
+
     private final Number magnitude;
 
     public Measurement(Number magnitude) {

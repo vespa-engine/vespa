@@ -408,7 +408,15 @@ public class SearchBuilder {
                                                     RankProfileRegistry rankProfileRegistry,
                                                     QueryProfileRegistry queryProfileRegistry,
                                                     DeployLogger logger) throws IOException, ParseException {
-        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.fromSearchDefinitionDirectory(dir),
+        return createFromDirectory(dir, rankProfileRegistry, queryProfileRegistry, logger, MockApplicationPackage.fromSearchDefinitionDirectory(dir));
+    }
+
+    public static SearchBuilder createFromDirectory(String dir,
+                                                    RankProfileRegistry rankProfileRegistry,
+                                                    QueryProfileRegistry queryProfileRegistry,
+                                                    DeployLogger logger,
+                                                    ApplicationPackage applicationPackage) throws IOException, ParseException {
+        SearchBuilder builder = new SearchBuilder(applicationPackage,
                                                   rankProfileRegistry,
                                                   queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {

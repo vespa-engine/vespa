@@ -26,7 +26,7 @@ public class NodeMetricsDbTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         tester.makeReadyHosts(10, new NodeResources(10, 100, 1000, 10))
               .activateTenantHosts();
-        ApplicationId app1 = tester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         var hosts =
                 tester.activate(app1,
                                 ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("7.0").build(),
@@ -45,11 +45,15 @@ public class NodeMetricsDbTest {
         // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
         clock.advance(Duration.ofMinutes(1));
 
-        assertEquals(35, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.cpu,    List.of(node0)).measurementCount());
-        assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0)).measurementCount());
+        assertEquals(35, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
+        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
         db.gc(clock);
-        assertEquals( 5, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.cpu,    List.of(node0)).measurementCount());
-        assertEquals( 0, db.getWindow(clock.instant().minus(Duration.ofHours(6)), Resource.memory, List.of(node0)).measurementCount());
+        assertEquals( 5, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
+        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
+    }
+
+    private int measurementCount(List<NodeMetricsDb.NodeMeasurements> measurements) {
+        return measurements.stream().mapToInt(m -> m.size()).sum();
     }
 
 }

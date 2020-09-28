@@ -15,7 +15,6 @@ import com.yahoo.metrics.MetricsPresentationConfig;
  *
  * @author bratseth
  */
-@SuppressWarnings("unused") // Injected
 public class MetricConsumerProviderProvider implements Provider<MetricConsumerProvider> {
 
     private final MetricConsumerProvider provided;
