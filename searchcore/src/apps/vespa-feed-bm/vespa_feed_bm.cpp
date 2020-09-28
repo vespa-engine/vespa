@@ -282,7 +282,7 @@ class MyServiceLayerProcess : public storage::ServiceLayerProcess {
 public:
     MyServiceLayerProcess(const config::ConfigUri & configUri,
                           PersistenceProvider &provider,
-                          bool use_storage_chain);
+                          std::unique_ptr<storage::IStorageChainBuilder> chain_builder);
     ~MyServiceLayerProcess() override { shutdown(); }
 
     void shutdown() override;
@@ -292,12 +292,12 @@ public:
 
 MyServiceLayerProcess::MyServiceLayerProcess(const config::ConfigUri & configUri,
                                              PersistenceProvider &provider,
-                                             bool use_storage_chain)
+                                             std::unique_ptr<storage::IStorageChainBuilder> chain_builder)
     : ServiceLayerProcess(configUri),
       _provider(provider)
 {
-    if (use_storage_chain) {
-        set_storage_chain_builder(StorageApiChainBmFeedHandler::get_storage_chain_builder());
+    if (chain_builder) {
+        set_storage_chain_builder(std::move(chain_builder));
     }
 }
 
@@ -632,9 +632,15 @@ PersistenceProviderFixture::start_service_layer(bool use_storage_chain)
     _slobrok = std::make_unique<mbus::Slobrok>(_slobrok_port);
     LOG(info, "start service layer");
     config::ConfigUri config_uri("bm-servicelayer", _config_context);
+    std::unique_ptr<storage::IStorageChainBuilder> chain_builder;
+    std::shared_ptr<StorageApiChainBmFeedHandler::Context> context;
+    if (use_storage_chain) {
+        context = StorageApiChainBmFeedHandler::get_context();
+        chain_builder = StorageApiChainBmFeedHandler::get_storage_chain_builder(context);
+    }
     _service_layer = std::make_unique<MyServiceLayerProcess>(config_uri,
                                                              *_persistence_engine,
-                                                             use_storage_chain);
+                                                             std::move(chain_builder));
     _service_layer->setupConfig(100ms);
     _service_layer->createNode();
     _service_layer->getNode().waitUntilInitialized();
@@ -643,7 +649,7 @@ PersistenceProviderFixture::start_service_layer(bool use_storage_chain)
     _rpc_client_shared_rpc_resources = std::make_unique<SharedRpcResources>(client_config_uri, _rpc_client_port, 100);
     _rpc_client_shared_rpc_resources->start_server_and_register_slobrok("bm-rpc-client");
     if (use_storage_chain) {
-        _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>();
+        _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(std::move(context));
     } else {
         _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo);
     }

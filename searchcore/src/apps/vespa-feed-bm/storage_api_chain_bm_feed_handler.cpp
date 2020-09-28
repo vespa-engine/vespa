@@ -89,19 +89,28 @@ BmStorageLink::onUp(const std::shared_ptr<storage::api::StorageMessage>& msg)
     return release(msg->getMsgId());
 }
 
+struct StorageApiChainBmFeedHandler::Context {
+    BmStorageLink* bm_link;
+    Context()
+        : bm_link(nullptr)
+    {
+    }
+    ~Context() = default;
+};
+
 class MyStorageChainBuilder : public storage::StorageChainBuilder
 {
     using Parent = storage::StorageChainBuilder;
+    std::shared_ptr<StorageApiChainBmFeedHandler::Context> _context;
 public:
-    MyStorageChainBuilder();
+    MyStorageChainBuilder(std::shared_ptr<StorageApiChainBmFeedHandler::Context> context);
     ~MyStorageChainBuilder() override;
     void add(std::unique_ptr<StorageLink> link) override;
 };
 
-BmStorageLink *bm_link = nullptr;
-
-MyStorageChainBuilder::MyStorageChainBuilder()
-    : storage::StorageChainBuilder()
+MyStorageChainBuilder::MyStorageChainBuilder(std::shared_ptr<StorageApiChainBmFeedHandler::Context> context)
+    : storage::StorageChainBuilder(),
+      _context(std::move(context))
 {
 }
 
@@ -114,13 +123,14 @@ MyStorageChainBuilder::add(std::unique_ptr<StorageLink> link)
     Parent::add(std::move(link));
     if (name == "Communication manager") {
         auto my_link = std::make_unique<BmStorageLink>();
-        bm_link = my_link.get();
+        _context->bm_link = my_link.get();
         Parent::add(std::move(my_link));
     }
 }
 
-StorageApiChainBmFeedHandler::StorageApiChainBmFeedHandler()
-    : IBmFeedHandler()
+StorageApiChainBmFeedHandler::StorageApiChainBmFeedHandler(std::shared_ptr<Context> context)
+    : IBmFeedHandler(),
+      _context(std::move(context))
 {
     auto cmd = make_set_cluster_state_cmd();
     PendingTracker tracker(1);
@@ -134,6 +144,7 @@ void
 StorageApiChainBmFeedHandler::send_msg(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& pending_tracker)
 {
     cmd->setSourceIndex(0);
+    auto bm_link = _context->bm_link;
     bm_link->retain(cmd->getMsgId(), pending_tracker);
     bm_link->sendDown(std::move(cmd));
 }
@@ -159,10 +170,16 @@ StorageApiChainBmFeedHandler::remove(const document::Bucket& bucket, const Docum
     send_msg(std::move(cmd), tracker);
 }
 
-std::unique_ptr<storage::IStorageChainBuilder>
-StorageApiChainBmFeedHandler::get_storage_chain_builder()
+std::shared_ptr<StorageApiChainBmFeedHandler::Context>
+StorageApiChainBmFeedHandler::get_context()
 {
-    return std::make_unique<MyStorageChainBuilder>();
+    return std::make_shared<Context>();
+}
+
+std::unique_ptr<storage::IStorageChainBuilder>
+StorageApiChainBmFeedHandler::get_storage_chain_builder(std::shared_ptr<Context> context)
+{
+    return std::make_unique<MyStorageChainBuilder>(std::move(context));
 }
 
 }
