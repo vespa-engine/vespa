@@ -100,13 +100,10 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         for (DocumentId id : ids)
             session.put(new Document(access.getDocumentTypeManager().getDocumentType("music"), id));
 
-        // Let all async operations wait for a signal from the test thread before sending their responses.
-        // Phaser not strictly needed here, but it's reusable, dynamic, and doesn't throw InterruptedException. Love it!
+        // Let all async operations wait for a signal from the test thread before sending their responses, and let test
+        // thread wait for all responses to be delivered afterwards.
         Phaser phaser = new Phaser(1);
-        session.setSynchronizer(() -> {
-            phaser.register();
-            phaser.awaitAdvance(phaser.arriveAndDeregister());
-        });
+        session.setPhaser(phaser);
 
         long startTime = System.currentTimeMillis();
         int timeoutMillis = 1000;
@@ -143,9 +140,11 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         });
 
         // All operations, and receiver, now waiting for this thread to arrive.
-        assertEquals(1, phaser.getRegisteredParties());
+        assertEquals(4, phaser.getRegisteredParties());
         assertEquals(0, phaser.getPhase());
-        phaser.awaitAdvance(phaser.arriveAndDeregister()); // Deregister so threads can finish without waiting after response.
+        phaser.arrive();
+        assertEquals(1, phaser.getPhase());
+        phaser.awaitAdvance(phaser.arriveAndDeregister());
 
         futureWithAssertions.get(1000, TimeUnit.MILLISECONDS);
     }

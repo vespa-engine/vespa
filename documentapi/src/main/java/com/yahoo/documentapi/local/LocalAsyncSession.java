@@ -25,6 +25,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,7 +45,7 @@ public class LocalAsyncSession implements AsyncSession {
     private final Executor executor = Executors.newCachedThreadPool();
 
     private AtomicLong requestId = new AtomicLong(0);
-    private AtomicReference<Runnable> synchronizer = new AtomicReference<>();
+    private AtomicReference<Phaser> phaser = new AtomicReference<>();
     private AtomicReference<Result.ResultType> result = new AtomicReference<>(SUCCESS);
 
     public LocalAsyncSession(AsyncParameters params, LocalDocumentAccess access) {
@@ -148,12 +149,14 @@ public class LocalAsyncSession implements AsyncSession {
     }
 
     /**
-     * This is run in a separate thread before providing the response from each accepted request, for advanced testing.
+     * When this is set, every operation is sent in a separate thread, which first registers with the given phaser,
+     * and then arrives and awaits advance so the user can trigger responses. After the response is delivered,
+     * the thread arrives and deregisters with the phaser, so the user can wait until all responses have been delivered.
      *
      * If this is not set, which is the default, the documents appear synchronously in the response queue or handler.
      */
-    public void setSynchronizer(Runnable synchronizer) {
-        this.synchronizer.set(synchronizer);
+    public void setPhaser(Phaser phaser) {
+        this.phaser.set(phaser);
     }
 
     /** Sets the result type returned on subsequence operations against this. Only SUCCESS will cause Repsonses to appear. */
@@ -175,13 +178,15 @@ public class LocalAsyncSession implements AsyncSession {
             return new Result(resultType, new Error());
 
         long req = requestId.incrementAndGet();
-        Runnable runnable = synchronizer.get();
-        if (runnable == null)
+        Phaser synchronizer = phaser.get();
+        if (synchronizer == null)
             addResponse(responses.apply(req));
         else
             executor.execute(() -> {
-                runnable.run();
+                synchronizer.register();
+                synchronizer.arriveAndAwaitAdvance();
                 addResponse(responses.apply(req));
+                synchronizer.arriveAndDeregister();
             });
         return new Result(req);
     }
