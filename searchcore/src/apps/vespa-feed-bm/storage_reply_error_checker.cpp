@@ -4,7 +4,7 @@
 #include <vespa/storageapi/messageapi/storagereply.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".storage_cmd_error_check");
+LOG_SETUP(".storage_reply_error_checker");
 
 namespace feedbm {
 
