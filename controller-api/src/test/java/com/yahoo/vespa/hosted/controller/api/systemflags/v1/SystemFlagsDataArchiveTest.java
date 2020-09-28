@@ -92,7 +92,7 @@ public class SystemFlagsDataArchiveTest {
     @Test
     public void duplicated_flagdata_is_detected() {
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Flag data file in 'flags/group-1/my-test-flag/default.json' contains redundant flag data for id 'my-test-flag' already set in another directory!");
+        expectedException.expectMessage("contains redundant flag data for id 'my-test-flag' already set in another directory!");
         var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-multi-level-with-duplicated-flagdata/"));
     }
 
