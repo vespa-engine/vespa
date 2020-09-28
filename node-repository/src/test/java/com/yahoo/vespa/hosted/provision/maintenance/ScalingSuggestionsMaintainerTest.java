@@ -39,11 +39,11 @@ public class ScalingSuggestionsMaintainerTest {
     public void testScalingSuggestionsMaintainer() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3"))).flavorsConfig(flavorsConfig()).build();
 
-        ApplicationId app1 = tester.makeApplicationId("app1");
-        ClusterSpec cluster1 = tester.containerClusterSpec();
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
+        ClusterSpec cluster1 = ProvisioningTester.containerClusterSpec();
 
-        ApplicationId app2 = tester.makeApplicationId("app2");
-        ClusterSpec cluster2 = tester.contentClusterSpec();
+        ApplicationId app2 = ProvisioningTester.makeApplicationId("app2");
+        ClusterSpec cluster2 = ProvisioningTester.contentClusterSpec();
 
         NodeMetricsDb nodeMetricsDb = new NodeMetricsDb(tester.nodeRepository());
 

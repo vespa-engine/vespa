@@ -305,14 +305,14 @@ public class ProvisioningTester {
         return removed;
     }
 
-    public ApplicationId makeApplicationId() {
+    public static ApplicationId makeApplicationId() {
         return ApplicationId.from(
                 TenantName.from(UUID.randomUUID().toString()),
                 ApplicationName.from(UUID.randomUUID().toString()),
                 InstanceName.from(UUID.randomUUID().toString()));
     }
 
-    public ApplicationId makeApplicationId(String applicationName) {
+    public static ApplicationId makeApplicationId(String applicationName) {
         return ApplicationId.from("tenant", applicationName, "default");
     }
 
@@ -502,11 +502,11 @@ public class ProvisioningTester {
         activate(applicationId, Set.copyOf(list));
     }
 
-    public ClusterSpec containerClusterSpec() {
+    public static ClusterSpec containerClusterSpec() {
         return ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
     }
 
-    public ClusterSpec contentClusterSpec() {
+    public static ClusterSpec contentClusterSpec() {
         return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
     }
 

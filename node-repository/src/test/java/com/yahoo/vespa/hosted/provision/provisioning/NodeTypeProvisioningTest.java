@@ -33,7 +33,7 @@ public class NodeTypeProvisioningTest {
 
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
-    private final ApplicationId application = tester.makeApplicationId(); // application using proxy nodes
+    private final ApplicationId application = ProvisioningTester.makeApplicationId(); // application using proxy nodes
     private final Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);
     private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
 

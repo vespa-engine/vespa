@@ -63,7 +63,7 @@ public class DynamicDockerProvisionTest {
     public void dynamically_provision_with_empty_node_repo() {
         assertEquals(0, tester.nodeRepository().list().size());
 
-        ApplicationId application1 = tester.makeApplicationId();
+        ApplicationId application1 = ProvisioningTester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
@@ -83,7 +83,7 @@ public class DynamicDockerProvisionTest {
         tester.makeReadyNodes(3, "small", NodeType.host, 10);
         tester.deployZoneApp();
 
-        ApplicationId application = tester.makeApplicationId();
+        ApplicationId application = ProvisioningTester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
@@ -93,7 +93,7 @@ public class DynamicDockerProvisionTest {
 
     @Test
     public void allocates_to_hosts_already_hosting_nodes_by_this_tenant() {
-        ApplicationId application = tester.makeApplicationId();
+        ApplicationId application = ProvisioningTester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
         List<Integer> expectedProvisionIndexes = List.of(100, 101);
@@ -126,7 +126,7 @@ public class DynamicDockerProvisionTest {
     public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).build();
         NodeResources resources = new NodeResources(10, 10, 10, 10);
-        ApplicationId app = tester.makeApplicationId();
+        ApplicationId app = ProvisioningTester.makeApplicationId();
 
         Function<Node, Node> retireNode = node ->
                 tester.nodeRepository().write(node.withWantToRetire(true, Agent.system, Instant.now()), () -> {});
@@ -172,7 +172,7 @@ public class DynamicDockerProvisionTest {
 
         tester.deployZoneApp();
 
-        ApplicationId app1 = tester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Deploy using real memory amount (17)
@@ -218,7 +218,7 @@ public class DynamicDockerProvisionTest {
 
         tester.deployZoneApp();
 
-        ApplicationId app1 = tester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Limits where each number is within flavor limits but but which don't contain any flavor leads to an error
@@ -293,7 +293,7 @@ public class DynamicDockerProvisionTest {
 
         tester.deployZoneApp();
 
-        ApplicationId app1 = tester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, local),
@@ -328,7 +328,7 @@ public class DynamicDockerProvisionTest {
 
         tester.deployZoneApp();
 
-        ApplicationId app1 = tester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, StorageType.any),

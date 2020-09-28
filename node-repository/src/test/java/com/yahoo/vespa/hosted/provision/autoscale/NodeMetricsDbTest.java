@@ -22,7 +22,7 @@ public class NodeMetricsDbTest {
     public void testNodeMetricsDb() {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         tester.makeReadyHosts(10, new NodeResources(10, 100, 1000, 10)).deployZoneApp();
-        ApplicationId app1 = tester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         tester.deployZoneApp();
         var hosts =
                 tester.activate(app1,
