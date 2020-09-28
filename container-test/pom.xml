@@ -66,28 +66,5 @@
       <artifactId>xercesImpl</artifactId>
     </dependency>
 
-    <!-- These dependencies are necessary in test classpath when using jdisc_http_filters -->
-    <dependency>
-      <groupId>commons-beanutils</groupId>
-      <artifactId>commons-beanutils</artifactId>
-      <version>1.7.0</version>
-      <exclusions>
-        <exclusion>
-          <!-- To avoid pulling in an older version than what we provide (also affects provided scope). -->
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>commons-beanutils</groupId>
-      <artifactId>commons-beanutils-core</artifactId>
-      <version>1.8.0</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-digester</groupId>
-      <artifactId>commons-digester</artifactId>
-      <version>1.8</version>
-    </dependency>
   </dependencies>
 </project>
