@@ -27,6 +27,7 @@ struct SparseTensorValueIndex : public vespalib::eval::Value::Index
     ~SparseTensorValueIndex();
     size_t size() const override;
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
+    void add_subspace(SparseTensorAddressRef tmp_ref, size_t idx);
 };
 
 /**

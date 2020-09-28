@@ -219,6 +219,15 @@ SparseTensorValueIndex::create_view(const std::vector<size_t> &dims) const
     return std::make_unique<SparseTensorValueView>(_map, dims);
 }
 
+void
+SparseTensorValueIndex::add_subspace(SparseTensorAddressRef tmp_ref, size_t idx)
+{
+    SparseTensorAddressRef ref(tmp_ref, _stash);
+    assert(_map.find(ref) == _map.end());
+    assert(_map.size() == idx);
+    _map[ref] = idx;
+}
+
 //-----------------------------------------------------------------------------
 
 template<typename T>

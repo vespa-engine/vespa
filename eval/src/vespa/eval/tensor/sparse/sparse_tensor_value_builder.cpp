@@ -15,9 +15,7 @@ SparseTensorValueBuilder<T>::add_subspace(const std::vector<vespalib::stringref>
         _addr_builder.add(label);
     }
     auto tmp_ref = _addr_builder.getAddressRef();
-    SparseTensorAddressRef ref(tmp_ref, _index._stash);
-    assert(_index._map.find(ref) == _index._map.end());
-    _index._map[ref] = idx;
+    _index.add_subspace(tmp_ref, idx);
     return ArrayRef<T>(&_cells[idx], 1);
 }
 
