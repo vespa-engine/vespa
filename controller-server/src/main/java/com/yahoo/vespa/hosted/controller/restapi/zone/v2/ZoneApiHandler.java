@@ -116,11 +116,9 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
         boolean useConfigServerVip = Flags.USE_CONFIG_SERVER_VIP.bindTo(flagSource)
                 .with(FetchVector.Dimension.ZONE_ID, zoneId.value()).value();
 
-        // TODO: Still need to hardcode AWS since flag cannot be set until flag has been rolled out
-        if (zoneId.region().value().startsWith("aws-") || useConfigServerVip) {
-            return ProxyRequest.tryOne(zoneRegistry.getConfigServerVipUri(zoneId), path, request);
-        }
-        return ProxyRequest.tryAll(zoneRegistry.getConfigServerUris(zoneId), path, request);
+        return useConfigServerVip
+                ? ProxyRequest.tryOne(zoneRegistry.getConfigServerVipUri(zoneId), path, request)
+                : ProxyRequest.tryAll(zoneRegistry.getConfigServerUris(zoneId), path, request);
     }
 
 }
