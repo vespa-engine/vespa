@@ -575,7 +575,7 @@ CommunicationManager::sendCommand(
     case api::StorageMessageAddress::STORAGE:
     {
         LOG(debug, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
-        if (_use_direct_storageapi_rpc) {
+        if (_use_direct_storageapi_rpc && _storage_api_rpc_service->target_supports_direct_rpc(address)) {
             _storage_api_rpc_service->send_rpc_v1_request(msg);
         } else {
             auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);
