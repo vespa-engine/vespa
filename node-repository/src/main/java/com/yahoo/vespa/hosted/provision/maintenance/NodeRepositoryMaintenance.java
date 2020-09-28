@@ -191,7 +191,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             // Should be equal to timeout for deployments
             reservationExpiry = zone.system().isCd() ? Duration.ofMinutes(5) : Duration.ofMinutes(30);
             scalingSuggestionsInterval = Duration.ofMinutes(31);
-            spareCapacityMaintenanceInterval = Duration.ofMinutes(10);
+            spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
