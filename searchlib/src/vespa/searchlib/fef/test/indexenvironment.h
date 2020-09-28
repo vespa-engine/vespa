@@ -5,6 +5,7 @@
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/onnx_model.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
@@ -47,7 +48,7 @@ public:
     };
 
     using ConstantsMap = std::map<vespalib::string, Constant>;
-    using ModelMap = std::map<vespalib::string, vespalib::string>;
+    using ModelMap = std::map<vespalib::string, OnnxModel>;
 
     IndexEnvironment();
     ~IndexEnvironment();
@@ -84,8 +85,8 @@ public:
                           vespalib::eval::ValueType type,
                           std::unique_ptr<vespalib::eval::Value> value);
 
-    std::optional<vespalib::string> getOnnxModelFullPath(const vespalib::string &name) const override;
-    void addOnnxModel(const vespalib::string &name, const vespalib::string &path);
+    const OnnxModel *getOnnxModel(const vespalib::string &name) const override;
+    void addOnnxModel(const OnnxModel &model);
 
 private:
     IndexEnvironment(const IndexEnvironment &);             // hide

@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
@@ -29,7 +28,7 @@ public class NodeMetricsFetcherTest {
         NodeMetricsFetcher fetcher = new NodeMetricsFetcher(tester.nodeRepository(), orchestrator, httpClient);
 
         tester.makeReadyNodes(4, resources); // Creates (in order) host-1.yahoo.com, host-2.yahoo.com, host-3.yahoo.com, host-4.yahoo.com
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         ApplicationId application1 = ProvisioningTester.makeApplicationId();
         ApplicationId application2 = ProvisioningTester.makeApplicationId();

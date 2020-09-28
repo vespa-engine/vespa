@@ -5,29 +5,28 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-
-import java.util.ArrayList;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Builds up data structures necessary for node prioritization. It wraps each node
- * up in a PrioritizableNode object with attributes used in sorting.
+ * up in a {@link NodeCandidate} object with attributes used in sorting.
  *
- * The actual sorting/prioritization is implemented in the PrioritizableNode class as a compare method.
+ * The prioritization logic is implemented by {@link NodeCandidate}.
  *
  * @author smorgrav
  */
@@ -35,7 +34,7 @@ public class NodePrioritizer {
 
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
-    private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
+    private final Map<Node, NodeCandidate> nodes = new HashMap<>();
     private final LockedNodeList allNodes;
     private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
@@ -81,8 +80,8 @@ public class NodePrioritizer {
         this.isDocker = resources(requestedNodes) != null;
     }
 
-    /** Returns the list of nodes sorted by PrioritizableNode::compare */
-    List<PrioritizableNode> prioritize() {
+    /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
+    List<NodeCandidate> prioritize() {
         return nodes.values().stream().sorted().collect(Collectors.toList());
     }
 
@@ -92,7 +91,7 @@ public class NodePrioritizer {
      */
     void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            PrioritizableNode nodePri = toPrioritizable(node, true, false);
+            NodeCandidate nodePri = candidateFrom(node, true, false);
             if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                 nodes.put(node, nodePri);
             }
@@ -143,7 +142,7 @@ public class NodePrioritizer {
                                                  resources(requestedNodes).with(host.flavor().resources().diskSpeed())
                                                                           .with(host.flavor().resources().storageType()),
                                                  NodeType.tenant);
-            PrioritizableNode nodePri = toPrioritizable(newNode, false, true);
+            NodeCandidate nodePri = candidateFrom(newNode, false, true);
             if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
                 log.log(Level.FINE, "Adding new Docker node " + newNode);
                 nodes.put(newNode, nodePri);
@@ -159,7 +158,7 @@ public class NodePrioritizer {
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
-                .map(node -> toPrioritizable(node, false, false))
+                .map(node -> candidateFrom(node, false, false))
                 .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
     }
 
@@ -168,20 +167,17 @@ public class NodePrioritizer {
         allNodes.asList().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> node.state() == Node.State.ready)
-                .map(node -> toPrioritizable(node, false, false))
+                .map(node -> candidateFrom(node, false, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
-                .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
+                .forEach(candidate -> nodes.put(candidate.node, candidate));
     }
 
-    public List<PrioritizableNode> nodes() { return new ArrayList<>(nodes.values()); }
+    public List<NodeCandidate> nodes() { return new ArrayList<>(nodes.values()); }
 
-    /**
-     * Convert a list of nodes to a list of node priorities. This includes finding, calculating
-     * parameters to the priority sorting procedure.
-     */
-    private PrioritizableNode toPrioritizable(Node node, boolean isSurplusNode, boolean isNewNode) {
-        PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node).surplusNode(isSurplusNode)
-                                                                               .newNode(isNewNode);
+    /** Create a candidate from given node */
+    private NodeCandidate candidateFrom(Node node, boolean isSurplusNode, boolean isNewNode) {
+        NodeCandidate.Builder builder = new NodeCandidate.Builder(node).surplusNode(isSurplusNode)
+                                                                       .newNode(isNewNode);
 
         allNodes.parentOf(node).ifPresent(parent -> {
             NodeResources parentCapacity = capacity.freeCapacityOf(parent, false);

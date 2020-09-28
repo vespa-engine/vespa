@@ -19,6 +19,7 @@ public class MessageBusParams {
     private RetryPolicy retryPolicy;
     private int maxPendingCount;
     private int maxPendingSize;
+    private MessagebusConfig config;
 
     /**
      * Constructs a new instance of this parameter object with default values for all members.
@@ -27,6 +28,7 @@ public class MessageBusParams {
         retryPolicy = new RetryTransientErrorsPolicy();
         maxPendingCount = 1024;
         maxPendingSize = 128 * 1024 * 1024;
+        config = null;
     }
 
     /**
@@ -39,6 +41,7 @@ public class MessageBusParams {
         retryPolicy = params.retryPolicy;
         maxPendingCount = params.maxPendingCount;
         maxPendingSize = params.maxPendingSize;
+        config = params.config;
     }
 
     /**
@@ -143,4 +146,14 @@ public class MessageBusParams {
         this.maxPendingSize = maxSize;
         return this;
     }
+
+    public MessagebusConfig getMessageBusConfig() {
+        return config;
+    }
+
+    public MessageBusParams setMessageBusConfig(MessagebusConfig config) {
+        this.config = config;
+        return this;
+    }
+
 }

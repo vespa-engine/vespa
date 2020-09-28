@@ -107,7 +107,9 @@ public class DeploymentTrigger {
                     Map<JobId, List<Versions>> newJobsToRun = jobs.deploymentStatus(application.get()).jobsToRun();
                     for (Run run : jobs.active(application.get().id().instance(instanceName))) {
                         if (   ! run.id().type().environment().isManuallyDeployed()
-                            && ! newJobsToRun.getOrDefault(run.id().job(), List.of()).contains(run.versions()))
+                            &&   newJobsToRun.getOrDefault(run.id().job(), List.of()).stream()
+                                             .noneMatch(versions ->    versions.targetsMatch(run.versions())
+                                                                    && versions.sourcesMatchIfPresent(run.versions())))
                             jobs.abort(run.id());
                     }
                 }

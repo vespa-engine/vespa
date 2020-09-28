@@ -20,12 +20,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -65,8 +65,9 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeployWithVersion() throws IOException {
-        CountingModelFactory modelFactory = createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
-        DeployTester tester = new DeployTester(List.of(modelFactory), createConfigserverConfig());
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .configserverConfig(createConfigserverConfig()).build();
         tester.deployApp("src/test/apps/hosted/", "4.5.6");
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
@@ -77,7 +78,9 @@ public class HostedDeployTest {
 
     @Test
     public void testRedeploy() throws IOException {
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), createConfigserverConfig());
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(createHostedModelFactory())
+                .configserverConfig(createConfigserverConfig()).build();
         ApplicationId appId = tester.applicationId();
         tester.deployApp("src/test/apps/hosted/");
         assertFalse(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
@@ -90,8 +93,9 @@ public class HostedDeployTest {
 
     @Test
     public void testReDeployWithWantedDockerImageRepositoryAndAthenzDomain() throws IOException {
-        CountingModelFactory modelFactory = createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
-        DeployTester tester = new DeployTester(List.of(modelFactory), createConfigserverConfig());
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .configserverConfig(createConfigserverConfig()).build();
         String dockerImageRepository = "docker.foo.com:4443/bar/baz";
         tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
@@ -111,7 +115,7 @@ public class HostedDeployTest {
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.1.0")),
                                                     createHostedModelFactory(Version.fromString("6.2.0")),
                                                     createHostedModelFactory(Version.fromString("7.0.0")));
-        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
+        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
         tester.deployApp("src/test/apps/hosted/", "6.2.0");
         assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
     }
@@ -332,7 +336,7 @@ public class HostedDeployTest {
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(clock),
                                                     createFailingModelFactory(Version.fromString("1.0.0"))); // older than default
-        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
+        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
         tester.deployApp("src/test/apps/validationOverride/", clock.instant());
 
         // Redeployment from local active works
@@ -373,8 +377,8 @@ public class HostedDeployTest {
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
 
         List<ModelFactory> modelFactories = List.of(
-                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"), new MockRestartAction("change", services)),
-                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"), new MockRestartAction("other change", services)));
+                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"), new VespaRestartAction("change", services)),
+                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"), new VespaRestartAction("other change", services)));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0");
@@ -393,6 +397,7 @@ public class HostedDeployTest {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                                              .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                                               .hostedVespa(true)
                                               .multitenant(true)
                                               .region(zone.region().value())
@@ -415,8 +420,12 @@ public class HostedDeployTest {
 
     private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories,
                                       Zone prodZone, Clock clock) throws IOException {
-        return new DeployTester(modelFactories, createConfigserverConfig(prodZone),
-                                clock, prodZone, new InMemoryProvisioner(new Hosts(hosts), true));
+        return new DeployTester.Builder()
+                .modelFactories(modelFactories)
+                .configserverConfig(createConfigserverConfig(prodZone))
+                .clock(clock)
+                .zone(prodZone)
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true)).build();
     }
 
     private static class ConfigChangeActionsModelFactory extends TestModelFactory {

@@ -67,8 +67,8 @@ class SslHandshakeFailedListener implements SslHandshakeListener {
                 // Note: this pattern will match certificates with too late notBefore as well
                 "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"),
         INVALID_CLIENT_CERT(
-                Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT,
-                "PKIX path (building|validation) failed: .+");
+                Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, // Includes mismatch of client certificate and private key
+                "(PKIX path (building|validation) failed: .+)|(Invalid CertificateVerify signature)");
 
         private final String metricName;
         private final Predicate<String> messageMatcher;

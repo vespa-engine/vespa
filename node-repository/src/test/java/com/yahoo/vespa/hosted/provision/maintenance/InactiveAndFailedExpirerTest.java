@@ -133,7 +133,7 @@ public class InactiveAndFailedExpirerTest {
         // Flag one node for retirement and redeploy
         {
             Node toRetire = tester.getNodes(applicationId, Node.State.active).asList().get(0);
-            tester.patchNode(toRetire.withWantToRetire(true, Agent.operator, tester.clock().instant()));
+            tester.patchNode(toRetire, (node) -> node.withWantToRetire(true, Agent.operator, tester.clock().instant()));
             List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
             tester.activate(applicationId, new HashSet<>(hostSpecs));
         }
@@ -203,9 +203,7 @@ public class InactiveAndFailedExpirerTest {
         assertEquals(2, inactiveNodes.size());
 
         // Nodes marked for deprovisioning are moved to parked
-        tester.nodeRepository().write(inactiveNodes.stream()
-                                                   .map(node -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()))
-                                                   .collect(Collectors.toList()), () -> {});
+        tester.patchNodes(inactiveNodes, (node) -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()));
         tester.advanceTime(Duration.ofMinutes(11));
         new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(2, tester.nodeRepository().getNodes(Node.State.parked).size());

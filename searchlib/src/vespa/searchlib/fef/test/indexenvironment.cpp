@@ -54,20 +54,20 @@ IndexEnvironment::addConstantValue(const vespalib::string &name,
     (void) insertRes;
 }
 
-std::optional<vespalib::string>
-IndexEnvironment::getOnnxModelFullPath(const vespalib::string &name) const
+const OnnxModel *
+IndexEnvironment::getOnnxModel(const vespalib::string &name) const
 {
     auto pos = _models.find(name);
     if (pos != _models.end()) {
-        return pos->second;
+        return &pos->second;
     }
-    return std::nullopt;
+    return nullptr;
 }
 
 void
-IndexEnvironment::addOnnxModel(const vespalib::string &name, const vespalib::string &path)
+IndexEnvironment::addOnnxModel(const OnnxModel &model)
 {
-    _models[name] = path;
+    _models.insert_or_assign(model.name(), model);
 }
 
 

@@ -60,6 +60,7 @@ public:
     bool is_tensor() const { return (_type == Type::TENSOR); }
     bool is_sparse() const;
     bool is_dense() const;
+    size_t count_indexed_dimensions() const;
     size_t count_mapped_dimensions() const;
     size_t dense_subspace_size() const;
     const std::vector<Dimension> &dimensions() const { return _dimensions; }

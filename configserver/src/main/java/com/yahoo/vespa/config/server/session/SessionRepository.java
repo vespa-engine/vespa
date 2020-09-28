@@ -47,7 +47,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,10 +122,11 @@ public class SessionRepository {
     // ---------------- Local sessions ----------------------------------------------------------------
 
     public synchronized void addLocalSession(LocalSession session) {
-        localSessionCache.put(session.getSessionId(), session);
         long sessionId = session.getSessionId();
-        RemoteSession remoteSession = createRemoteSession(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession);
+        localSessionCache.put(sessionId, session);
+        if (remoteSessionCache.get(sessionId) == null) {
+            createRemoteSession(sessionId);
+        }
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -265,11 +265,6 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public void addRemoteSession(RemoteSession session) {
-        remoteSessionCache.put(session.getSessionId(), session);
-        metrics.incAddedSessions();
-    }
-
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getRemoteSessions()) {
@@ -343,17 +338,20 @@ public class SessionRepository {
      *
      * @param sessionId session id for the new session
      */
-    public void sessionAdded(long sessionId) {
+    public synchronized void sessionAdded(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         if (sessionZKClient.readStatus().equals(Session.Status.DELETE)) return;
 
-        log.log(Level.FINE, () -> "Adding remote session to SessionRepository: " + sessionId);
-        RemoteSession remoteSession = createRemoteSession(sessionId);
-        loadSessionIfActive(remoteSession);
-        addRemoteSession(remoteSession);
+        log.log(Level.FINE, () -> "Adding remote session " + sessionId);
+        RemoteSession session = createRemoteSession(sessionId);
+        if (session.getStatus() == Session.Status.NEW) {
+            log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
+            session.confirmUpload();
+        } else {
+            log.log(Level.WARNING, () -> session.logPre() + "Session " + sessionId + " added, but with unexpected status " + session.getStatus());
+        }
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        addSessionStateWatcher(sessionId, remoteSession);
     }
 
     void activate(RemoteSession session) {
@@ -373,14 +371,20 @@ public class SessionRepository {
     }
 
     public void delete(RemoteSession remoteSession) {
-        LocalSession localSession = getLocalSession(remoteSession.getSessionId());
-        remoteSession.deactivate();
-        if (localSession == null) {
-            // This change will be picked up by directoryCache in this class, which will do the rest of the cleanup
-            try (Lock lock = lock(remoteSession.getSessionId())) {
-                remoteSession.delete();
-            }
-        } else {
+        // This change will be picked up by directoryCache in this class, which will do the rest of
+        // the cleanup on all config servers
+        long sessionId = remoteSession.getSessionId();
+        try (Lock lock = lock(sessionId)) {
+            // TODO: Change log level to FINE when debugging is finished
+            log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
+            remoteSession.deactivate();
+            remoteSession.delete();
+            remoteSessionCache.remove(sessionId);
+        }
+        LocalSession localSession = getLocalSession(sessionId);
+        if (localSession != null) {
+            // TODO: Change log level to FINE when debugging is finished
+            log.log(Level.INFO, () -> localSession.logPre() + "Deleting local session " + sessionId);
             deleteLocalSession(localSession);
         }
     }
@@ -430,24 +434,14 @@ public class SessionRepository {
             log.log(Level.FINE, () -> "Got child event: " + event);
             switch (event.getType()) {
                 case CHILD_ADDED:
-                    sessionsChanged();
-                    synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
-                    break;
                 case CHILD_REMOVED:
                 case CONNECTION_RECONNECTED:
                     sessionsChanged();
                     break;
+                default:
+                    break;
             }
         });
-    }
-
-    private void synchronizeOnNew(List<Long> sessionList) {
-        for (long sessionId : sessionList) {
-            RemoteSession session = remoteSessionCache.get(sessionId);
-            if (session == null) continue; // session might have been deleted after getting session list
-            log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
-            session.confirmUpload();
-        }
     }
 
     /**
@@ -463,9 +457,13 @@ public class SessionRepository {
         return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
     }
 
-    public RemoteSession createRemoteSession(long sessionId) {
+    public synchronized RemoteSession createRemoteSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
+        remoteSessionCache.put(sessionId, session);
+        loadSessionIfActive(session);
+        addSessionStateWatcher(sessionId, session);
+        return session;
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {

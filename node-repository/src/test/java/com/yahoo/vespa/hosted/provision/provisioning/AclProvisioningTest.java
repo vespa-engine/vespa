@@ -165,7 +165,7 @@ public class AclProvisioningTest {
     public void trusted_nodes_for_application_with_load_balancer() {
         // Provision hosts and containers
         var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
         for (var host : hosts) {
             tester.makeReadyVirtualDockerNodes(2, new NodeResources(2, 8, 50, 1),
                                                host.hostname());

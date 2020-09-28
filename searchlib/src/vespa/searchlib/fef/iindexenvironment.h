@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <optional>
 
 namespace vespalib::eval { struct ConstantValue; }
 
@@ -12,6 +11,7 @@ namespace search::fef {
 class Properties;
 class FieldInfo;
 class ITableManager;
+class OnnxModel;
 
 /**
  * Abstract view of index related information available to the
@@ -122,9 +122,9 @@ public:
     virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const vespalib::string &name) const = 0;
 
     /**
-     * Get the full path of the file containing the given onnx model
+     * Get configuration for the given onnx model.
      **/
-    virtual std::optional<vespalib::string> getOnnxModelFullPath(const vespalib::string &name) const = 0;
+    virtual const OnnxModel *getOnnxModel(const vespalib::string &name) const = 0;
 
     virtual uint32_t getDistributionKey() const = 0;
 

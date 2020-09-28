@@ -174,6 +174,18 @@ ValueType::is_dense() const
 }
 
 size_t
+ValueType::count_indexed_dimensions() const
+{
+    size_t cnt = 0;
+    for (const auto &dim : dimensions()) {
+        if (dim.is_indexed()) {
+            ++cnt;
+        }
+    }
+    return cnt;
+}
+
+size_t
 ValueType::count_mapped_dimensions() const
 {
     size_t cnt = 0;

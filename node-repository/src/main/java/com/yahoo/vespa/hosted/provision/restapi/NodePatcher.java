@@ -149,6 +149,8 @@ public class NodePatcher {
                 return patchRequiredDiskSpeed(node, asString(value));
             case "reservedTo":
                 return value.type() == Type.NIX ? node.withoutReservedTo() : node.withReservedTo(TenantName.from(value.asString()));
+            case "switchHostname":
+                return value.type() == Type.NIX ? node.withoutSwitchHostname() : node.withSwitchHostname(value.asString());
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

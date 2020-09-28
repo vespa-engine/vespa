@@ -20,7 +20,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -123,7 +122,7 @@ public class DockerProvisioningTest {
 
         tester.makeReadyNodes(10, resources, Optional.of(tenant1), NodeType.host, 1);
         tester.makeReadyNodes(10, resources, Optional.empty(), NodeType.host, 1);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         Version wantedVespaVersion = Version.fromString("6.39");
         List<HostSpec> nodes = tester.prepare(application2_1,
@@ -310,7 +309,7 @@ public class DockerProvisioningTest {
                                                                     .resourcesCalculator(3, 0)
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(2, hostFlavor.resources()).deployZoneApp();
+        tester.makeReadyHosts(2, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -330,7 +329,7 @@ public class DockerProvisioningTest {
                                                                     .resourcesCalculator(3, 0)
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(9, hostFlavor.resources()).deployZoneApp();
+        tester.makeReadyHosts(9, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -365,7 +364,7 @@ public class DockerProvisioningTest {
                                                                         .resourcesCalculator(3, 0)
                                                                         .flavors(List.of(hostFlavor))
                                                                         .build();
-            tester.makeReadyHosts(2, hostFlavor.resources()).deployZoneApp();
+            tester.makeReadyHosts(2, hostFlavor.resources()).activateTenantHosts();
 
             ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
             ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -387,7 +386,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(new Flavor(r)))
                                                                     .build();
-        tester.makeReadyHosts(5, r).deployZoneApp();
+        tester.makeReadyHosts(5, r).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -420,7 +419,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(new Flavor(r)))
                                                                     .build();
-        tester.makeReadyHosts(4, r).deployZoneApp();
+        tester.makeReadyHosts(4, r).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(clusterType, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();

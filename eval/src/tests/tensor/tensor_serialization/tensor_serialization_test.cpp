@@ -10,6 +10,7 @@
 #include <vespa/vespalib/objects/hexdump.h>
 #include <ostream>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
+#include <vespa/eval/eval/value_codec.h>
 
 using namespace vespalib::tensor;
 using vespalib::eval::TensorSpec;
@@ -47,6 +48,24 @@ void verify_cells_only(const ExpBuffer &exp, const TensorSpec &spec) {
     ASSERT_EQUAL(i, cells.size());
 }
 
+TensorSpec verify_new_value_serialized(const ExpBuffer &exp, const TensorSpec &spec) {
+    const auto &factory = vespalib::eval::SimpleValueBuilderFactory::get();
+    auto new_value = vespalib::eval::value_from_spec(spec, factory);
+    auto new_value_spec = vespalib::eval::spec_from_value(*new_value);
+    nbostream actual;
+    vespalib::eval::encode_value(*new_value, actual);
+    ASSERT_EQUAL(exp, actual);
+    auto new_decoded = vespalib::eval::decode_value(actual, factory);
+    auto new_decoded_spec = vespalib::eval::spec_from_value(*new_decoded);
+    EXPECT_EQUAL(0u, actual.size());
+    EXPECT_EQUAL(new_value_spec, new_decoded_spec);
+    if (new_value->type().is_dense()) {
+        TEST_DO(verify_cells_only<float>(exp, new_value_spec));
+        TEST_DO(verify_cells_only<double>(exp, new_value_spec));
+    }
+    return new_decoded_spec;
+}
+
 void verify_serialized(const ExpBuffer &exp, const TensorSpec &spec) {
     auto &engine = DefaultTensorEngine::ref();
     auto value = engine.from_spec(spec);
@@ -62,6 +81,8 @@ void verify_serialized(const ExpBuffer &exp, const TensorSpec &spec) {
         TEST_DO(verify_cells_only<float>(exp, value_spec));
         TEST_DO(verify_cells_only<double>(exp, value_spec));
     }
+    auto new_value_spec = verify_new_value_serialized(exp, spec);
+    EXPECT_EQUAL(value_spec, new_value_spec);
 }
 
 //-----------------------------------------------------------------------------

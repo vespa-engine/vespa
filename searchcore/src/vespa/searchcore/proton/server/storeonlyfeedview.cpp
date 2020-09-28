@@ -210,11 +210,11 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
 }
 
 std::unique_ptr<PendingLidTrackerBase>
-createUncommitedLidTracker(bool needImmediateCommit) {
-    if (needImmediateCommit) {
-        return std::make_unique<PendingLidTracker>();
-    } else {
+createUncommitedLidTracker(bool allowEarlyAck) {
+    if (allowEarlyAck) {
         return std::make_unique<TwoPhasePendingLidTracker>();
+    } else {
+        return std::make_unique<PendingLidTracker>();
     }
 }
 
@@ -229,7 +229,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _docType(nullptr),
       _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get(), ctx._lidReuseDelayerConfig),
       _pendingLidsForDocStore(),
-      _pendingLidsForCommit(createUncommitedLidTracker(_lidReuseDelayer.getImmediateCommit())),
+      _pendingLidsForCommit(createUncommitedLidTracker(_lidReuseDelayer.allowEarlyAck())),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
       _params(params),
@@ -263,7 +263,7 @@ StoreOnlyFeedView::forceCommit(SerialNum serialNum, DoneCallback onDone)
 void
 StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
-    (void) serialNum;
+    LOG(debug, "internalForceCommit: serial=%" PRIu64 ".", serialNum);
     _writeService.summary().execute(makeLambdaTask([onDone=onCommitDone]() {(void) onDone;}));
     std::vector<uint32_t> lidsToReuse;
     lidsToReuse = _lidReuseDelayer.getReuseLids();
@@ -275,7 +275,7 @@ StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneTyp
 void
 StoreOnlyFeedView::considerEarlyAck(FeedToken & token)
 {
-    if ( ! needCommit() && token) {
+    if (allowEarlyAck() && token) {
         token.reset();
     }
 }
@@ -327,7 +327,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
 
     if (putOp.getValidDbdId(_params._subDbId)) {
-        bool immediateCommit = needCommit();
+        bool immediateCommit = needImmediateCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(std::move(token), std::move(uncommitted),
@@ -345,8 +345,13 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 }
 
 bool
-StoreOnlyFeedView::needCommit() const {
-    return _lidReuseDelayer.getImmediateCommit();
+StoreOnlyFeedView::needImmediateCommit() const {
+    return _lidReuseDelayer.needImmediateCommit();
+}
+
+bool
+StoreOnlyFeedView::allowEarlyAck() const {
+    return _lidReuseDelayer.allowEarlyAck();
 }
 
 void
@@ -483,7 +488,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
     auto uncommitted = _pendingLidsForCommit->produce(updOp.getLid());
     considerEarlyAck(token);
 
-    bool immediateCommit = needCommit();
+    bool immediateCommit = needImmediateCommit();
     auto onWriteDone = createUpdateDoneContext(std::move(token), std::move(uncommitted), updOp.getUpdate());
     UpdateScope updateScope(*_schema, upd);
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone, updateScope);
@@ -657,7 +662,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, IPendingLidTracker::Token unc
                                           std::move(pendingNotifyRemoveDone), (explicitReuseLid ? lid : 0u),
                                           std::move(moveDoneCtx));
     removeSummary(serialNum, lid, onWriteDone);
-    bool immediateCommit = needCommit();
+    bool immediateCommit = needImmediateCommit();
     removeAttributes(serialNum, lid, immediateCommit, onWriteDone);
     removeIndexedFields(serialNum, lid, immediateCommit, onWriteDone);
 }
@@ -770,7 +775,7 @@ StoreOnlyFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp)
 void
 StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
 {
-    bool immediateCommit = needCommit();
+    bool immediateCommit = needImmediateCommit();
     size_t rm_count = removeDocuments(delOp, true, immediateCommit);
     LOG(debug, "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
         _params._docTypeName.toString().c_str(), delOp.getBucketId().toString().c_str(), rm_count);
@@ -809,7 +814,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(moveOp, docId.getGlobalId(), docId);
     bool docAlreadyExists = moveOp.getValidPrevDbdId(_params._subDbId);
     if (moveOp.getValidDbdId(_params._subDbId)) {
-        bool immediateCommit = needCommit();
+        bool immediateCommit = needImmediateCommit();
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(FeedToken(), _pendingLidsForCommit->produce(moveOp.getLid()),

@@ -29,8 +29,11 @@ vespa_define_module(
     src/tests/eval/tensor_lambda
     src/tests/eval/tensor_spec
     src/tests/eval/value_cache
+    src/tests/eval/value_codec
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
+    src/tests/instruction/generic_join
+    src/tests/instruction/generic_rename
     src/tests/tensor/dense_add_dimension_optimizer
     src/tests/tensor/dense_dimension_combiner
     src/tests/tensor/dense_dot_product_function
@@ -53,7 +56,9 @@ vespa_define_module(
     src/tests/tensor/direct_dense_tensor_builder
     src/tests/tensor/direct_sparse_tensor_builder
     src/tests/tensor/index_lookup_table
+    src/tests/tensor/instruction_benchmark
     src/tests/tensor/onnx_wrapper
+    src/tests/tensor/packed_mappings
     src/tests/tensor/tensor_add_operation
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
@@ -70,8 +75,10 @@ vespa_define_module(
     src/vespa/eval/eval/test
     src/vespa/eval/eval/value_cache
     src/vespa/eval/gp
+    src/vespa/eval/instruction
     src/vespa/eval/tensor
     src/vespa/eval/tensor/dense
+    src/vespa/eval/tensor/mixed
     src/vespa/eval/tensor/serialization
     src/vespa/eval/tensor/sparse
 )

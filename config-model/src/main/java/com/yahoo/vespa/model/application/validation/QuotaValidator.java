@@ -6,7 +6,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 
-import java.util.Optional;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -23,16 +23,15 @@ public class QuotaValidator extends Validator {
     }
 
     private void validateBudget(int budget, VespaModel model) {
-        Optional<Double> spend = model.allClusters().stream()
+        var spend = model.allClusters().stream()
                 .map(clusterId -> model.provisioned().all().get(clusterId))
                 .map(Capacity::maxResources)
                 .map(clusterCapacity -> clusterCapacity.nodeResources().cost() * clusterCapacity.nodes())
-                .reduce(Double::sum);
+                .reduce(0.0, Double::sum);
 
-        if(spend.isPresent() && spend.get() > budget)
-            throw new IllegalArgumentException(
-                    String.format("Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%d)!",
-                            spend.get(), budget));
+        if (spend > budget) {
+            throwBudgetExceeded(spend, budget);
+        }
     }
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */
@@ -50,5 +49,10 @@ public class QuotaValidator extends Validator {
             var clusterNames = String.join(", ", invalidClusters);
             throw new IllegalArgumentException("Clusters " + clusterNames + " exceeded max cluster size of " + maxClusterSize);
         }
+    }
+
+    private void throwBudgetExceeded(double spend, double budget) {
+        var message = String.format(Locale.US, "Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%.2f)!", spend, budget);
+        throw new IllegalArgumentException(message);
     }
 }

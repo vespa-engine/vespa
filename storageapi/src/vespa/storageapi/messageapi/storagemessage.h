@@ -269,14 +269,15 @@ public:
 
 private:
     mbus::Route _route;
-    bool        _retryEnabled;
     Protocol    _protocol;
     // Used for internal VDS addresses only
+    size_t               _precomputed_storage_hash;
     vespalib::string     _cluster;
     const lib::NodeType* _type;
     uint16_t             _index;
 
 public:
+    StorageMessageAddress(); // Only to be used when transient default ctor semantics are needed by containers
     StorageMessageAddress(const mbus::Route& route);
     StorageMessageAddress(vespalib::stringref clusterName,
                           const lib::NodeType& type, uint16_t index,
@@ -284,14 +285,17 @@ public:
     ~StorageMessageAddress();
 
     void setProtocol(Protocol p) { _protocol = p; }
-    void enableRetry(bool enable = true) { _retryEnabled = enable; }
 
     const mbus::Route& getRoute() const { return _route; }
-    bool retryEnabled() const { return _retryEnabled; }
     Protocol getProtocol() const { return _protocol; }
     uint16_t getIndex() const;
     const lib::NodeType& getNodeType() const;
     const vespalib::string& getCluster() const;
+
+    // Returns precomputed hash over <cluster, type, index> tuple. Other fields not included.
+    [[nodiscard]] size_t internal_storage_hash() const noexcept {
+        return _precomputed_storage_hash;
+    }
 
     bool operator==(const StorageMessageAddress& other) const;
     vespalib::string toString() const;

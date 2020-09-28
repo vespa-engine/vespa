@@ -123,6 +123,15 @@ public class MetricsReporterTest {
         expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
 
+        expectedMetrics.put("cache.nodeObject.hitRate", 0.6D);
+        expectedMetrics.put("cache.nodeObject.evictionCount", 0L);
+        expectedMetrics.put("cache.nodeObject.size", 2L);
+
+        nodeRepository.list();
+        expectedMetrics.put("cache.curator.hitRate", 0.5D);
+        expectedMetrics.put("cache.curator.evictionCount", 0L);
+        expectedMetrics.put("cache.curator.size", 11L);
+
         ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
@@ -163,7 +172,7 @@ public class MetricsReporterTest {
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
-                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host);
+                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), Optional.empty(), NodeType.host, Optional.empty());
         nodeRepository.addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());

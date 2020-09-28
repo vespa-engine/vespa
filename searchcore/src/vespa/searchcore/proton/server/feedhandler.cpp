@@ -58,17 +58,20 @@ class TlsMgrWriter : public TlsWriter {
     std::shared_ptr<search::transactionlog::Writer> _writer;
 public:
     TlsMgrWriter(TransactionLogManager &tls_mgr,
-                 const search::transactionlog::WriterFactory & factory) :
-            _tls_mgr(tls_mgr),
-            _writer(factory.getWriter(tls_mgr.getDomainName()))
+                 const search::transactionlog::WriterFactory & factory)
+        : _tls_mgr(tls_mgr),
+          _writer(factory.getWriter(tls_mgr.getDomainName()))
     { }
     void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
+    [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override {
+        return _writer->startCommit(std::move(onDone));
+    }
     bool erase(SerialNum oldest_to_keep) override;
     SerialNum sync(SerialNum syncTo) override;
 };
 
-
-void TlsMgrWriter::appendOperation(const FeedOperation &op, DoneCallback onDone) {
+void
+TlsMgrWriter::appendOperation(const FeedOperation &op, DoneCallback onDone) {
     using Packet = search::transactionlog::Packet;
     vespalib::nbostream stream;
     op.serialize(stream);
@@ -77,9 +80,11 @@ void TlsMgrWriter::appendOperation(const FeedOperation &op, DoneCallback onDone)
     Packet::Entry entry(op.getSerialNum(), op.getType(), vespalib::ConstBufferRef(stream.data(), stream.size()));
     Packet packet(entry.serializedSize());
     packet.add(entry);
-    _writer->commit(packet, std::move(onDone));
+    _writer->append(packet, std::move(onDone));
 }
-bool TlsMgrWriter::erase(SerialNum oldest_to_keep) {
+
+bool
+TlsMgrWriter::erase(SerialNum oldest_to_keep) {
     return _tls_mgr.getSession()->erase(oldest_to_keep);
 }
 
@@ -88,22 +93,40 @@ TlsMgrWriter::sync(SerialNum syncTo)
 {
     for (int retryCount = 0; retryCount < 10; ++retryCount) {
         SerialNum syncedTo(0);
-        LOG(spam, "Trying tls sync(%" PRIu64 ")", syncTo);
+        LOG(debug, "Trying tls sync(%" PRIu64 ")", syncTo);
         bool res = _tls_mgr.getSession()->sync(syncTo, syncedTo);
         if (!res) {
-            LOG(spam, "Tls sync failed, retrying");
+            LOG(debug, "Tls sync failed, retrying");
             sleep(1);
             continue;
         }
         if (syncedTo >= syncTo) {
-            LOG(spam, "Tls sync complete, reached %" PRIu64", returning", syncedTo);
+            LOG(debug, "Tls sync complete, reached %" PRIu64", returning", syncedTo);
             return syncedTo;
         }
-        LOG(spam, "Tls sync incomplete, reached %" PRIu64 ", retrying", syncedTo);
+        LOG(debug, "Tls sync incomplete, reached %" PRIu64 ", retrying", syncedTo);
     }
     throw IllegalStateException(make_string("Failed to sync TLS to token %" PRIu64 ".", syncTo));
 }
 
+class OnCommitDone : public search::IDestructorCallback {
+public:
+    OnCommitDone(Executor & executor, std::unique_ptr<Executor::Task> task)
+        : _executor(executor),
+          _task(std::move(task))
+    {}
+    ~OnCommitDone() override { _executor.execute(std::move(_task)); }
+private:
+    Executor & _executor;
+    std::unique_ptr<Executor::Task> _task;
+};
+
+template <typename T>
+struct KeepAlive : public search::IDestructorCallback {
+    explicit KeepAlive(T toKeep) : _toKeep(std::move(toKeep)) { }
+    ~KeepAlive() override = default;
+    T _toKeep;
+};
 }  // namespace
 
 void
@@ -379,6 +402,9 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
+      _numOperationsPendingCommit(0),
+      _numOperationsCompleted(0),
+      _numCommitsCompleted(0),
       _delayedPrune(false),
       _feedLock(),
       _feedState(make_shared<InitState>(getDocTypeName())),
@@ -472,17 +498,57 @@ FeedHandler::getTransactionLogReplayDone() const {
 }
 
 void
+FeedHandler::onCommitDone(size_t numPendingAtStart) {
+    assert(numPendingAtStart <= _numOperationsPendingCommit);
+    _numOperationsPendingCommit -= numPendingAtStart;
+    _numOperationsCompleted += numPendingAtStart;
+    _numCommitsCompleted++;
+    if (_numOperationsPendingCommit > 0) {
+        enqueCommitTask();
+    }
+    LOG(spam, "%zu: onCommitDone(%zu) total=%zu left=%zu",
+        _numCommitsCompleted, numPendingAtStart, _numOperationsCompleted, _numOperationsPendingCommit);
+}
+
+void FeedHandler::enqueCommitTask() {
+    _writeService.master().execute(makeLambdaTask([this]() { initiateCommit(); }));
+}
+
+void
+FeedHandler::initiateCommit() {
+    auto onCommitDoneContext = std::make_shared<OnCommitDone>(
+            _writeService.master(),
+            makeLambdaTask([this, numPendingAtStart=_numOperationsPendingCommit]() {
+                onCommitDone(numPendingAtStart);
+            }));
+    auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
+    if (_activeFeedView && ! _activeFeedView->allowEarlyAck()) {
+        using KeepAlivePair = KeepAlive<std::pair<CommitResult, DoneCallback>>;
+        auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
+        _activeFeedView->forceCommit(_serialNum, std::make_shared<KeepAlivePair>(std::move(pair)));
+    }
+}
+
+void
 FeedHandler::appendOperation(const FeedOperation &op, TlsWriter::DoneCallback onDone) {
     if (!op.getSerialNum()) {
         const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
     }
     _tlsWriter->appendOperation(op, std::move(onDone));
+    if (++_numOperationsPendingCommit == 1) {
+        enqueCommitTask();
+    }
+}
+
+FeedHandler::CommitResult
+FeedHandler::startCommit(DoneCallback onDone) {
+    return _tlsWriter->startCommit(std::move(onDone));
 }
 
 void
 FeedHandler::storeOperationSync(const FeedOperation &op) {
     vespalib::Gate gate;
-    appendOperation(op, make_shared<search::GateCallback>(gate));
+    appendAndCommitOperation(op, make_shared<search::GateCallback>(gate));
     gate.await();
 }
 

@@ -133,7 +133,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
         int rpcWorkerThreads = (config.numRpcThreads() == 0) ? threadsToUse() : config.numRpcThreads();
         executorService = new ThreadPoolExecutor(rpcWorkerThreads, rpcWorkerThreads,
-                0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
+                0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getDaemonThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
         spec = new Spec(null, config.rpcport());
         hostRegistry = hostRegistries.getTenantHostRegistry();

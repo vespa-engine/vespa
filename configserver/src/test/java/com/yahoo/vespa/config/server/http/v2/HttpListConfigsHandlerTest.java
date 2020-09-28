@@ -61,12 +61,14 @@ public class HttpListConfigsHandlerTest {
 
     @Before
     public void setUp() throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configDefinitionRepo(new TestConfigDefinitionRepo())
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .build())
+                .configServerConfig(configserverConfig)
                 .build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenant);
@@ -74,6 +76,7 @@ public class HttpListConfigsHandlerTest {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new SessionHandlerTest.MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
+                .withConfigserverConfig(configserverConfig)
                 .build();
         applicationRepository.deploy(testApp, prepareParams());
         handler = new HttpListConfigsHandler(HttpListConfigsHandler.testOnlyContext(),

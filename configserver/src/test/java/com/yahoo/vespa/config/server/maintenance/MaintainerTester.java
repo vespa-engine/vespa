@@ -36,10 +36,8 @@ class MaintainerTester {
     private final Curator curator;
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
-    private final Clock clock;
 
     MaintainerTester(Clock clock, TemporaryFolder temporaryFolder) throws IOException {
-        this.clock = clock;
         this.curator = new MockCurator();
         InMemoryProvisioner hostProvisioner = new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4");
         ProvisionerAdapter provisioner = new ProvisionerAdapter(hostProvisioner);
@@ -47,6 +45,7 @@ class MaintainerTester {
                 .hostedVespa(true)
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
@@ -67,7 +66,7 @@ class MaintainerTester {
     }
 
     void deployApp(File applicationPath, PrepareParams.Builder prepareParams) {
-        applicationRepository.deploy(applicationPath, prepareParams.ignoreValidationErrors(true).build(), clock.instant());
+        applicationRepository.deploy(applicationPath, prepareParams.ignoreValidationErrors(true).build());
     }
 
     Curator curator() { return curator; }

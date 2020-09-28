@@ -102,6 +102,25 @@ public:
     const Value &eval(Context &ctx, const LazyParams &params) const;
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
+
+    /**
+     * This inner class is used for testing and benchmarking. It runs
+     * a single interpreted instruction in isolation. Note that
+     * instructions manipulating the program counter or resolving
+     * parameters may not be run in this way. Also note that the stack
+     * must contain exactly one value after the instruction is
+     * executed. If no tensor engine is specified, SimpleTensorEngine
+     * is used (typically for instructions ignoring the engine).
+     **/
+    class EvalSingle {
+    private:
+        State _state;
+        Instruction _op;
+    public:
+        EvalSingle(Instruction op);
+        EvalSingle(const TensorEngine &engine, Instruction op);
+        const Value &eval(const std::vector<Value::CREF> &stack);
+    };
 };
 
 }

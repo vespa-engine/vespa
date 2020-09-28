@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.provision.ApplicationId;
@@ -65,12 +66,18 @@ public class SessionActiveHandlerTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         VespaModelFactory modelFactory = new TestModelFactory(Version.fromString("7.222.2"));
         hostProvisioner = new SessionHandlerTest.MockProvisioner();
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(new MockCurator())
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
+                .configServerConfig(configserverConfig)
                 .build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName);
@@ -79,6 +86,7 @@ public class SessionActiveHandlerTest {
                 .withProvisioner(hostProvisioner)
                 .withOrchestrator(new OrchestratorMock())
                 .withClock(componentRegistry.getClock())
+                .withConfigserverConfig(configserverConfig)
                 .build();
         handler = createHandler();
     }
@@ -133,8 +141,7 @@ public class SessionActiveHandlerTest {
                                                                  testApp);
             applicationRepository.prepare(tenant,
                                           sessionId,
-                                          new PrepareParams.Builder().applicationId(applicationId()).build(),
-                                          componentRegistry.getClock().instant());
+                                          new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             LocalSession session = applicationRepository.getActiveLocalSession(tenant, applicationId());
             metaData = session.getMetaData();

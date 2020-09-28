@@ -321,6 +321,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                 LOG(info, "Got file path from file acquirer: '%s' (name='%s', ref='%s')",
                     filePath.c_str(), rc.name.c_str(), rc.fileref.c_str());
                 models.emplace_back(rc.name, filePath);
+                OnnxModels::configure(rc, models.back());
             }
         }
         newOnnxModels = std::make_shared<OnnxModels>(models);

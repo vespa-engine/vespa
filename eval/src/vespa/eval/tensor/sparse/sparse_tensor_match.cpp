@@ -12,10 +12,10 @@ namespace vespalib::tensor {
 void
 SparseTensorMatch::fastMatch(const TensorImplType &lhs, const TensorImplType &rhs)
 {
-    _builder.reserve(lhs.cells().size());
-    for (const auto &lhsCell : lhs.cells()) {
-        auto rhsItr = rhs.cells().find(lhsCell.first);
-        if (rhsItr != rhs.cells().end()) {
+    _builder.reserve(lhs.my_cells().size());
+    for (const auto &lhsCell : lhs.my_cells()) {
+        auto rhsItr = rhs.my_cells().find(lhsCell.first);
+        if (rhsItr != rhs.my_cells().end()) {
             _builder.insertCell(lhsCell.first, lhsCell.second * rhsItr->second);
         }
     }
@@ -28,7 +28,7 @@ SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs, const TensorImpl
     assert (lhs.fast_type().dimensions().size() == _builder.fast_type().dimensions().size());
 
     // Ensure that first tensor to fastMatch has fewest cells.
-    if (lhs.cells().size() <= rhs.cells().size()) {
+    if (lhs.my_cells().size() <= rhs.my_cells().size()) {
         fastMatch(lhs, rhs);
     } else {
         fastMatch(rhs, lhs);

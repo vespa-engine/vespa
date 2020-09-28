@@ -4,6 +4,7 @@ find_package(Protobuf REQUIRED)
 PROTOBUF_GENERATE_CPP(storageapi_PROTOBUF_SRCS storageapi_PROTOBUF_HDRS
     protobuf/common.proto
     protobuf/feed.proto
+    protobuf/inspect.proto
     protobuf/visiting.proto
     protobuf/maintenance.proto)
 

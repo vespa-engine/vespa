@@ -105,7 +105,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     AttributeUsageFilter &attributeUsageFilter) {
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
     controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
-    if (config.hasVisibilityDelay()) {
+    if (config.hasVisibilityDelay() && config.allowEarlyAck()) {
         controller.registerJobInMasterThread(std::make_unique<DocumentDBCommitJob>(commit, config.getVisibilityDelay()));
     }
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());

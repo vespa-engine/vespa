@@ -24,7 +24,6 @@ import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
-import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
@@ -65,7 +64,10 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -128,6 +130,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
+    private final BooleanFlag deployWithInternalRestart;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -177,6 +180,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = Objects.requireNonNull(clock);
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
+        this.deployWithInternalRestart = Flags.DEPLOY_WITH_INTERNAL_RESTART.bindTo(flagSource);
     }
 
     public static class Builder {
@@ -280,28 +284,29 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         bootstrapping.set(false);
     }
 
-    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, Instant now) {
+    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
+    }
+
+    private Deployment prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
-        Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
-        Slime deployLog = createDeployLog();
-        DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
-        try (ActionTimer timer = timerFor(applicationId, "deployment.prepareMillis")) {
-            SessionRepository sessionRepository = tenant.getSessionRepository();
-            ConfigChangeActions actions = sessionRepository.prepareLocalSession(session, logger, prepareParams,
-                                                                                currentActiveApplicationSet, tenant.getPath(), now);
-            logConfigChangeActions(actions, logger);
-            log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
-            return new PrepareResult(sessionId, actions, deployLog);
-        }
+        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
+        deployment.prepare();
+
+        logConfigChangeActions(deployment.configChangeActions(), logger);
+        log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+        return deployment;
     }
 
-    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams, Instant now) {
+    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         PrepareResult prepareResult;
         try {
-            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, now);
+            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams);
         } finally {
             cleanupTempDirectory(tempDir);
         }
@@ -309,16 +314,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
-        return deploy(applicationPackage, prepareParams, Instant.now());
-    }
-
-    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, Instant now) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = getTenant(applicationId);
-        PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
-        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), prepareParams.force());
-        return result;
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        deployment.activate();
+
+        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
     /**
@@ -379,9 +382,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         SessionRepository sessionRepository = tenant.getSessionRepository();
         LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         sessionRepository.addLocalSession(newSession);
+        boolean internalRestart = deployWithInternalRestart.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, bootstrap));
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
+                                                 false /* don't validate as this is already deployed */, bootstrap, internalRestart));
     }
 
     @Override
@@ -398,13 +402,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   TimeoutBudget timeoutBudget,
                                   boolean force) {
         LocalSession localSession = getLocalSession(tenant, sessionId);
-        Deployment deployment = deployment(localSession, tenant, timeoutBudget.timeLeft(), force);
+        Deployment deployment = Deployment.prepared(localSession, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
         return localSession.getApplicationId();
-    }
-
-    private Deployment deployment(LocalSession session, Tenant tenant, Duration timeout, boolean force) {
-        return Deployment.prepared(session, this, hostProvisioner, tenant, timeout, clock, false, force);
     }
 
     public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean force) {
@@ -520,8 +520,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(new ApplicationRolesStore(curator, tenant.getPath()).delete(applicationId));
             // Delete endpoint certificates
             transaction.add(new EndpointCertificateMetadataStore(curator, tenant.getPath()).delete(applicationId));
-            // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
-            // this is done asynchronously in application maintenance by the node repository)
+            // This call will remove application in zookeeper. Watches in TenantApplications will remove the application
+            // and allocated hosts in model and handlers in RPC server
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
 
             hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
@@ -766,7 +766,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return the active session, or null if there is no active session for the given application id.
      */
     public RemoteSession getActiveSession(ApplicationId applicationId) {
-        return getActiveSession(getTenant(applicationId), applicationId);
+        Tenant tenant = getTenant(applicationId);
+        if (tenant == null) throw new IllegalArgumentException("Could not find any tenant for '" + applicationId + "'");
+        return getActiveSession(tenant, applicationId);
     }
 
     public long getSessionIdForApplication(ApplicationId applicationId) {
@@ -1055,12 +1057,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(portInfo -> portInfo.getTags().stream().anyMatch(tag -> tag.equalsIgnoreCase("http")))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
-    }
-
-    public Slime createDeployLog() {
-        Slime deployLog = new Slime();
-        deployLog.setObject();
-        return deployLog;
     }
 
     public Zone zone() {

@@ -204,18 +204,18 @@ SparseTensor::merge(join_fun_t function, const Tensor &arg) const
     const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     assert(rhs && (fast_type().dimensions() == rhs->fast_type().dimensions()));
     DirectSparseTensorBuilder builder(eval::ValueType::merge(fast_type(), rhs->fast_type()));
-    builder.reserve(cells().size() + rhs->cells().size());
-    for (const auto &cell: cells()) {
-        auto pos = rhs->cells().find(cell.first);
-        if (pos == rhs->cells().end()) {
+    builder.reserve(my_cells().size() + rhs->my_cells().size());
+    for (const auto &cell: my_cells()) {
+        auto pos = rhs->my_cells().find(cell.first);
+        if (pos == rhs->my_cells().end()) {
             builder.insertCell(cell.first, cell.second);
         } else {
             builder.insertCell(cell.first, function(cell.second, pos->second));
         }
     }
-    for (const auto &cell: rhs->cells()) {
-        auto pos = cells().find(cell.first);
-        if (pos == cells().end()) {
+    for (const auto &cell: rhs->my_cells()) {
+        auto pos = my_cells().find(cell.first);
+        if (pos == my_cells().end()) {
             builder.insertCell(cell.first, cell.second);
         }
     }

@@ -169,6 +169,8 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         ResponseDispatch.newInstance(Response.Status.SERVICE_UNAVAILABLE).dispatch(responseHandler);
     }
 
+    protected Executor executor() { return executor; }
+
     private class RequestTask implements ResponseHandler, Runnable {
 
         final Request request;

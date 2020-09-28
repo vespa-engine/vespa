@@ -229,7 +229,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         /* Not yet
         assertNotNull(h.getService("qrserver"));
-        assertNotNull(h.getService("topleveldisptach"));
         assertNotNull(h.getService("docproc"));
         */
 
@@ -760,15 +759,12 @@ public class ContentBuilderTest extends DomBuilderTest {
         }
     }
 
-    private void verifyFeedSequencer(String input, String expected) {
-        verifyFeedSequencer(input, expected, 0);
-    }
-    private void verifyFeedSequencer(String input, String expected, double visibilityDelay) {
-        String hostedXml = "<services>" +
+    private String xmlWithVisibilityDelay(Double visibilityDelay) {
+        return "<services>" +
                 "<content version='1.0' id='search'>" +
                 "  <redundancy>1</redundancy>" +
                 "  <search>" +
-                "    <visibility-delay>" + visibilityDelay + "</visibility-delay>" +
+                ((visibilityDelay != null) ? "    <visibility-delay>" + visibilityDelay + "</visibility-delay>" : "") +
                 "  </search>" +
                 "  <documents>" +
                 "    <document type='music' mode='index'/>" +
@@ -776,6 +772,13 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "  <nodes count='1'/>" +
                 "</content>" +
                 "</services>";
+    }
+
+    private void verifyFeedSequencer(String input, String expected) {
+        verifyFeedSequencer(input, expected, 0);
+    }
+    private void verifyFeedSequencer(String input, String expected, double visibilityDelay) {
+        String hostedXml = xmlWithVisibilityDelay(visibilityDelay);
 
         DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setFeedSequencerType(input));
         VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
@@ -798,6 +801,25 @@ public class ContentBuilderTest extends DomBuilderTest {
         verifyFeedSequencer("THOUGHPUT", "LATENCY");
         verifyFeedSequencer("adaptive", "LATENCY");
 
+    }
+
+    private void verifyThatFeatureFlagControlsVisibilityDelayDefault(double defaultVisibiliDelay, Double xmlOverride, double expected) {
+        String hostedXml = xmlWithVisibilityDelay(xmlOverride);
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setVisibilityDelay(defaultVisibiliDelay));
+        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices(hostedXml)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
+        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        assertEquals(expected, config.documentdb(0).visibilitydelay(), 0.0);
+    }
+    @Test
+    public void verifyThatFeatureFlagControlsVisibilityDelayDefault() {
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.0, null, 0.0);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.3, null, 0.3);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.0, 0.5, 0.5);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.3, 0.6, 0.6);
     }
 
     @Test

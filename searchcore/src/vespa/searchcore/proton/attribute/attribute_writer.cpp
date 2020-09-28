@@ -212,7 +212,9 @@ void
 applyCommit(SerialNum serialNum, AttributeWriter::OnWriteDoneType , AttributeVector &attr)
 {
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
-        attr.commit(serialNum, serialNum);
+        if (serialNum > attr.getCreateSerialNum()) {
+            attr.commit(serialNum, serialNum);
+        }
     }
 }
 

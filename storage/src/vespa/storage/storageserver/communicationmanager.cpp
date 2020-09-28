@@ -575,13 +575,13 @@ CommunicationManager::sendCommand(
     case api::StorageMessageAddress::STORAGE:
     {
         LOG(debug, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
-        if (_use_direct_storageapi_rpc) {
+        if (_use_direct_storageapi_rpc && _storage_api_rpc_service->target_supports_direct_rpc(address)) {
             _storage_api_rpc_service->send_rpc_v1_request(msg);
         } else {
             auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);
 
             cmd->setContext(mbus::Context(msg->getMsgId()));
-            cmd->setRetryEnabled(address.retryEnabled());
+            cmd->setRetryEnabled(false);
             cmd->setTimeRemaining(msg->getTimeout());
             cmd->setTrace(msg->getTrace());
             sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
@@ -597,7 +597,7 @@ CommunicationManager::sendCommand(
         if (mbusMsg) {
             MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converted OK");
             mbusMsg->setTrace(msg->getTrace());
-            mbusMsg->setRetryEnabled(address.retryEnabled());
+            mbusMsg->setRetryEnabled(false);
 
             {
                 vespalib::LockGuard lock(_messageBusSentLock);

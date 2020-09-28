@@ -4,6 +4,10 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -26,11 +30,13 @@ import java.util.stream.Collectors;
 public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     private final Duration minTimeBetweenRedeployments;
+    private final FlagSource flagSource;
 
     PeriodicApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository,
-                                  Duration interval, Duration minTimeBetweenRedeployments) {
+                                  Duration interval, Duration minTimeBetweenRedeployments, FlagSource flagSource) {
         super(deployer, metric, nodeRepository, interval);
         this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
+        this.flagSource = flagSource;
     }
 
     @Override
@@ -64,10 +70,9 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     }
 
     private boolean shouldMaintain(ApplicationId id) {
-        if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking")) return false;
-        if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking-canary")) return false;
-        if (id.tenant().value().equals("stream") && id.application().value().equals("stream-ranking-rhel7")) return false;
-        return true;
+        BooleanFlag skipMaintenanceDeployment = Flags.SKIP_MAINTENANCE_DEPLOYMENT.bindTo(flagSource)
+                .with(FetchVector.Dimension.APPLICATION_ID, id.serializedForm());
+        return ! skipMaintenanceDeployment.value();
     }
 
     protected List<Node> nodesNeedingMaintenance() {

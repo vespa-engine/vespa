@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.cache.AbstractCache;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.path.Path;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -116,6 +118,10 @@ public class CuratorDatabase {
         return cache.get();
     }
 
+    CacheStats cacheStats() {
+        return cache.get().stats();
+    }
+
     /** Caches must only be instantiated using this method */
     private Cache newCache(long generation) {
         return useCache ? new Cache(generation, curator) : new NoCache(generation, curator);
@@ -139,6 +145,8 @@ public class CuratorDatabase {
         private final Map<Path, List<String>> children = new ConcurrentHashMap<>();
         private final Map<Path, Optional<byte[]>> data = new ConcurrentHashMap<>();
 
+        private final AbstractCache.SimpleStatsCounter stats = new AbstractCache.SimpleStatsCounter();
+
         /** Create an empty snapshot at a given generation (as an empty snapshot is a valid partial snapshot) */
         private Cache(long generation, Curator curator) {
             this.generation = generation;
@@ -146,13 +154,29 @@ public class CuratorDatabase {
         }
 
         @Override
-        public List<String> getChildren(Path path) { 
-            return children.computeIfAbsent(path, key -> ImmutableList.copyOf(curator.getChildren(path)));
+        public List<String> getChildren(Path path) {
+            return get(children, path, () -> ImmutableList.copyOf(curator.getChildren(path)));
         }
 
         @Override
         public Optional<byte[]> getData(Path path) {
-            return data.computeIfAbsent(path, key -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
+            return get(data, path, () -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
+        }
+
+        private <T> T get(Map<Path, T> values, Path path, Supplier<T> loader) {
+            return values.compute(path, (key, value) -> {
+                if (value == null) {
+                    stats.recordMisses(1);
+                    return loader.get();
+                }
+                stats.recordHits(1);
+                return value;
+            });
+        }
+
+        public CacheStats stats() {
+            var stats = this.stats.snapshot();
+            return new CacheStats(stats.hitRate(), stats.evictionCount(), children.size() + data.size());
         }
 
     }
@@ -183,4 +207,5 @@ public class CuratorDatabase {
         Optional<byte[]> getData(Path path);
 
     }
+
 }

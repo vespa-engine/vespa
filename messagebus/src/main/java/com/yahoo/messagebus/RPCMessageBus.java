@@ -21,6 +21,21 @@ public class RPCMessageBus extends NetworkMessageBus {
     /**
      * Constructs a new instance of this class.
      *
+     * @param mbusParams   A complete set of message bus parameters, including messagebus config.
+     * @param rpcParams    A complete set of network parameters, including rpc network config.
+     */
+    public RPCMessageBus(MessageBusParams mbusParams, RPCNetworkParams rpcParams) {
+        this(mbusParams, new RPCNetwork(rpcParams));
+    }
+
+    private RPCMessageBus(MessageBusParams mbusParams, RPCNetwork network) {
+        super(network, new MessageBus(network, mbusParams));
+        configAgent = new ConfigAgent(mbusParams.getMessageBusConfig(), getMessageBus());
+    }
+
+    /**
+     * Constructs a new instance of this class.
+     *
      * @param mbusParams   A complete set of message bus parameters.
      * @param rpcParams    A complete set of network parameters.
      * @param routingCfgId The config id for message bus routing specs.

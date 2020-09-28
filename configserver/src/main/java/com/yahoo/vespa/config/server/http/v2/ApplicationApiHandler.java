@@ -13,11 +13,9 @@ import com.yahoo.vespa.config.server.application.CompressedApplicationInputStrea
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Duration;
-import java.time.Instant;
 
 import static com.yahoo.vespa.config.server.application.CompressedApplicationInputStream.createFromCompressedStream;
 import static com.yahoo.vespa.config.server.http.Utils.checkThatTenantExists;
@@ -56,7 +54,7 @@ public class ApplicationApiHandler extends SessionHandler {
         TenantName tenantName = validateTenant(request);
         PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
         CompressedApplicationInputStream compressedStream = createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader));
-        PrepareResult result = applicationRepository.deploy(compressedStream, prepareParams, Instant.now());
+        PrepareResult result = applicationRepository.deploy(compressedStream, prepareParams);
         return new SessionPrepareAndActivateResponse(result, request, prepareParams.getApplicationId(), zone);
     }
 

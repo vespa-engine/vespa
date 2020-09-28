@@ -192,6 +192,11 @@ public:
     void assertExecuteHistory(std::vector<uint32_t> expExecuteHistory) {
         EXPECT_EQ(expExecuteHistory, _attributeFieldWriter->getExecuteHistory());
     }
+    SerialNum test_force_commit(AttributeVector &attr, SerialNum serialNum) {
+        commit(serialNum);
+        _attributeFieldWriter->sync();
+        return attr.getStatus().getLastSyncToken();
+    }
 };
 
 AttributeWriterTest::~AttributeWriterTest() = default;
@@ -973,6 +978,15 @@ TEST_F(AttributeWriterTest, forceCommit_clears_search_cache_in_imported_attribut
     commit(10);
     EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
     EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
+}
+
+TEST_F(AttributeWriterTest, ignores_force_commit_serial_not_greater_than_create_serial)
+{
+    auto a1 = addAttribute("a1");
+    a1->setCreateSerialNum(100);
+    EXPECT_EQ(0u, test_force_commit(*a1, 50u));
+    EXPECT_EQ(0u, test_force_commit(*a1, 100u));
+    EXPECT_EQ(150u, test_force_commit(*a1, 150u));
 }
 
 class StructWriterTestBase : public AttributeWriterTest {

@@ -1,12 +1,16 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/instruction/generic_join.h>
+#include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
+using namespace vespalib::eval::instruction;
 using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
@@ -62,24 +66,27 @@ TensorSpec simple_tensor_join(const TensorSpec &a, const TensorSpec &b, join_fun
 }
 
 TensorSpec simple_value_new_join(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
-    auto lhs = new_value_from_spec(a, SimpleValueBuilderFactory());
-    auto rhs = new_value_from_spec(b, SimpleValueBuilderFactory());
-    auto result = new_join(*lhs, *rhs, function, SimpleValueBuilderFactory());
-    return spec_from_new_value(*result);
+    Stash stash;
+    const auto &factory = SimpleValueBuilderFactory::get();
+    auto lhs = value_from_spec(a, factory);
+    auto rhs = value_from_spec(b, factory);
+    auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
+    InterpretedFunction::EvalSingle single(my_op);
+    return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
 
 TEST(SimpleValueTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         TensorSpec expect = spec(layout, N());
-        std::unique_ptr<NewValue> value = new_value_from_spec(expect, SimpleValueBuilderFactory());
-        TensorSpec actual = spec_from_new_value(*value);
+        std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
+        TensorSpec actual = spec_from_value(*value);
         EXPECT_EQ(actual, expect);
     }
 }
 
 TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
     ValueType type = ValueType::from_spec("tensor<float>(x{},y[2],z{})");
-    SimpleValueBuilderFactory factory;
+    const auto &factory = SimpleValueBuilderFactory::get();
     std::unique_ptr<ValueBuilder<float>> builder = factory.create_value_builder<float>(type);
     float seq = 0.0;
     for (vespalib::string x: {"a", "b", "c"}) {
@@ -92,7 +99,7 @@ TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
         }
         seq += 100.0;
     }
-    std::unique_ptr<NewValue> value = builder->build(std::move(builder));
+    std::unique_ptr<Value> value = builder->build(std::move(builder));
     EXPECT_EQ(value->index().size(), 6);
     auto view = value->index().create_view({0});
     vespalib::stringref query = "b";
@@ -106,48 +113,6 @@ TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
     EXPECT_EQ(label, "bb");
     EXPECT_EQ(subspace, 3);
     EXPECT_FALSE(view->next_result({&label}, subspace));
-}
-
-TEST(SimpleValueTest, dense_join_plan_can_be_created) {
-    auto lhs = ValueType::from_spec("tensor(a{},b[6],c[5],e[3],f[2],g{})");
-    auto rhs = ValueType::from_spec("tensor(a{},b[6],c[5],d[4],h{})");
-    auto plan = DenseJoinPlan(lhs, rhs);
-    std::vector<size_t> expect_loop = {30,4,6};
-    std::vector<size_t> expect_lhs_stride = {6,0,1};
-    std::vector<size_t> expect_rhs_stride = {4,1,0};
-    EXPECT_EQ(plan.lhs_size, 180);
-    EXPECT_EQ(plan.rhs_size, 120);
-    EXPECT_EQ(plan.out_size, 720);
-    EXPECT_EQ(plan.loop_cnt, expect_loop);
-    EXPECT_EQ(plan.lhs_stride, expect_lhs_stride);
-    EXPECT_EQ(plan.rhs_stride, expect_rhs_stride);
-}
-
-TEST(SimpleValueTest, sparse_join_plan_can_be_created) {
-    auto lhs = ValueType::from_spec("tensor(a{},b[6],c[5],e[3],f[2],g{})");
-    auto rhs = ValueType::from_spec("tensor(b[6],c[5],d[4],g{},h{})");
-    auto plan = SparseJoinPlan(lhs, rhs);
-    using SRC = SparseJoinPlan::Source;
-    std::vector<SRC> expect_sources = {SRC::LHS,SRC::BOTH,SRC::RHS};
-    std::vector<size_t> expect_lhs_overlap = {1};
-    std::vector<size_t> expect_rhs_overlap = {0};
-    EXPECT_EQ(plan.sources, expect_sources);
-    EXPECT_EQ(plan.lhs_overlap, expect_lhs_overlap);
-    EXPECT_EQ(plan.rhs_overlap, expect_rhs_overlap);
-}
-
-TEST(SimpleValueTest, dense_join_plan_can_be_executed) {
-    auto plan = DenseJoinPlan(ValueType::from_spec("tensor(a[2])"),
-                              ValueType::from_spec("tensor(b[3])"));
-    std::vector<int> a({1, 2});
-    std::vector<int> b({3, 4, 5});
-    std::vector<int> c(6, 0);
-    std::vector<int> expect = {3,4,5,6,8,10};
-    ASSERT_EQ(plan.out_size, 6);
-    int *dst = &c[0];
-    auto cell_join = [&](size_t a_idx, size_t b_idx) { *dst++ = (a[a_idx] * b[b_idx]); };
-    plan.execute(0, 0, cell_join);
-    EXPECT_EQ(c, expect);
 }
 
 TEST(SimpleValueTest, new_generic_join_works_for_simple_values) {

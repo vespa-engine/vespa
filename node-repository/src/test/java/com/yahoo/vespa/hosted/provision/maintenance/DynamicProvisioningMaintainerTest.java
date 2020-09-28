@@ -179,7 +179,7 @@ public class DynamicProvisioningMaintainerTest {
         tester.maintainer.maintain(); // Resume provisioning of new hosts
         List<Node> provisioned = tester.nodeRepository.list().state(Node.State.provisioned).asList();
         tester.nodeRepository.setReady(provisioned, Agent.system, this.getClass().getSimpleName());
-        tester.provisioningTester.deployZoneApp();
+        tester.provisioningTester.activateTenantHosts();
 
         // Allocating nodes to a host does not result in provisioning of additional capacity
         ApplicationId application = ProvisioningTester.makeApplicationId();
@@ -273,7 +273,8 @@ public class DynamicProvisioningMaintainerTest {
                             false));
             var ipConfig = new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of());
             return new Node("fake-id-" + hostname, ipConfig, hostname, parentHostname, flavor, Status.initial(),
-                            state, allocation, History.empty(), nodeType, new Reports(), Optional.empty(), Optional.empty());
+                            state, allocation, History.empty(), nodeType, new Reports(), Optional.empty(), Optional.empty(),
+                            Optional.empty());
         }
 
         private long provisionedHostsMatching(NodeResources resources) {

@@ -10,7 +10,6 @@
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
@@ -21,6 +20,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 

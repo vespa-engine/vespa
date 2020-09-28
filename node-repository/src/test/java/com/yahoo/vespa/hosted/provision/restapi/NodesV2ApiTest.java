@@ -305,7 +305,7 @@ public class NodesV2ApiTest {
                 ("[" + asNodeJson("host-with-ip.yahoo.com", "default", "foo") + "]").
                         getBytes(StandardCharsets.UTF_8),
                 Request.Method.POST);
-        tester.assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Found one or more invalid addresses in [foo]: 'foo' is not an IP string literal.\"}");
+        tester.assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid IP address 'foo': 'foo' is not an IP string literal.\"}");
 
         // Attempt to POST tenant node with already assigned IP
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -333,7 +333,7 @@ public class NodesV2ApiTest {
 
         // Node types running a single container can share their IP address with child node
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                         "[" + asNodeJson("cfghost42.yahoo.com", NodeType.confighost, "default", Optional.empty(), "127.0.42.1") + "]",
+                                         "[" + asNodeJson("cfghost42.yahoo.com", NodeType.confighost, "default", Optional.empty(), Optional.empty(), "127.0.42.1") + "]",
                                          Request.Method.POST), 200,
                        "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -349,7 +349,7 @@ public class NodesV2ApiTest {
 
         // ... nor with child node on different host
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                         "[" + asNodeJson("cfghost43.yahoo.com", NodeType.confighost, "default", Optional.empty(), "127.0.43.1") + "]",
+                                         "[" + asNodeJson("cfghost43.yahoo.com", NodeType.confighost, "default", Optional.empty(), Optional.empty(), "127.0.43.1") + "]",
                                           Request.Method.POST), 200,
                        "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/cfg42.yahoo.com",
@@ -939,6 +939,30 @@ public class NodesV2ApiTest {
                                       "\"resources\":{\"vcpu\":56.0,\"memoryGb\":34.0,\"diskGb\":12.0,\"bandwidthGbps\":78.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\"}");
     }
 
+    @Test
+    public void test_node_switch_hostname() throws Exception {
+        String hostname = "host42.yahoo.com";
+        // Add host with switch hostname
+        String json = asNodeJson(hostname, NodeType.host, "default", Optional.empty(), Optional.of("switch0"), "127.0.42.1", "::42:1");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   ("[" + json + "]").getBytes(StandardCharsets.UTF_8),
+                                   Request.Method.POST),
+                       "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname), "\"switchHostname\":\"switch0\"");
+
+        // Update switch hostname
+        json = "{\"switchHostname\":\"switch1\"}";
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname, json.getBytes(StandardCharsets.UTF_8), Request.Method.PATCH),
+                       "{\"message\":\"Updated host42.yahoo.com\"}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname), "\"switchHostname\":\"switch1\"");
+
+        // Clear switch hostname
+        json = "{\"switchHostname\":null}";
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname, json.getBytes(StandardCharsets.UTF_8), Request.Method.PATCH),
+                       "{\"message\":\"Updated host42.yahoo.com\"}");
+        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname), "switchHostname", false);
+    }
+
     private static String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
         return asDockerNodeJson(hostname, NodeType.tenant, parentHostname, ipAddress);
     }
@@ -958,14 +982,15 @@ public class NodesV2ApiTest {
     }
 
     private static String asHostJson(String hostname, String flavor, Optional<TenantName> reservedTo, String... ipAddress) {
-        return asNodeJson(hostname,  NodeType.host, flavor, reservedTo, ipAddress);
+        return asNodeJson(hostname,  NodeType.host, flavor, reservedTo, Optional.empty(), ipAddress);
     }
 
-    private static String asNodeJson(String hostname, NodeType nodeType, String flavor, Optional<TenantName> reservedTo, String... ipAddress) {
+    private static String asNodeJson(String hostname, NodeType nodeType, String flavor, Optional<TenantName> reservedTo, Optional<String> switchHostname, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
                createIpAddresses(ipAddress) +
                "\"flavor\":\"" + flavor + "\"" +
                (reservedTo.isPresent() ? ", \"reservedTo\":\"" + reservedTo.get().value() + "\"" : "") +
+               (switchHostname.isPresent() ? ", \"switchHostname\":\"" + switchHostname.get() + "\"" : "") +
                ", \"type\":\"" + nodeType + "\"}";
     }
 
@@ -989,8 +1014,8 @@ public class NodesV2ApiTest {
         tester.assertFile(request, file);
     }
 
-    private void assertResponse(Request request, String file) throws IOException {
-        tester.assertResponse(request, file);
+    private void assertResponse(Request request, String response) throws IOException {
+        tester.assertResponse(request, response);
     }
 
 }

@@ -231,7 +231,7 @@ public class InstanceValidatorTest {
                                     Optional.empty(),
                                     flavors.getFlavorOrThrow("default"),
                                     Optional.empty(),
-                                    NodeType.tenant);
+                                    NodeType.tenant, Optional.empty());
             nodeList.add(node);
         }
         return nodeList;

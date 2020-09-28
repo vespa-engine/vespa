@@ -44,6 +44,7 @@ struct DeadLockDetector;
 struct StorageMetricSet;
 struct StorageNodeContext;
 class ApplicationGenerationFetcher;
+class IStorageChainBuilder;
 class StorageComponent;
 
 namespace lib { class NodeType; }
@@ -164,6 +165,9 @@ protected:
     std::unique_ptr<StorageComponent> _component;
     config::ConfigUri _configUri;
     CommunicationManager* _communicationManager;
+private:
+    std::unique_ptr<IStorageChainBuilder>      _chain_builder;
+protected:
 
     /**
      * Node subclasses currently need to explicitly acquire ownership of state
@@ -177,10 +181,12 @@ protected:
     void initialize();
     virtual void subscribeToConfigs();
     virtual void initializeNodeSpecific() = 0;
-    virtual std::unique_ptr<StorageLink> createChain() = 0;
+    virtual void createChain(IStorageChainBuilder &builder) = 0;
     virtual void handleLiveConfigUpdate(const InitialGuard & initGuard);
     void shutdown();
     virtual void removeConfigSubscriptions();
+public:
+    void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
 
 } // storage

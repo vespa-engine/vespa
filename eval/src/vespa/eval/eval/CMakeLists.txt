@@ -28,6 +28,7 @@ vespa_add_library(eval_eval OBJECT
     tensor_nodes.cpp
     tensor_spec.cpp
     value.cpp
+    value_codec.cpp
     value_type.cpp
     value_type_spec.cpp
     visit_stuff.cpp

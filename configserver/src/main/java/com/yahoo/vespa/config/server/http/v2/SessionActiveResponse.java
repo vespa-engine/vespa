@@ -4,16 +4,19 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.http.SessionResponse;
 
-public class SessionActiveResponse extends SessionResponse {
+public class SessionActiveResponse extends SlimeJsonResponse {
 
     public SessionActiveResponse(Slime metaData, HttpRequest request, ApplicationId applicationId, long sessionId, Zone zone) {
-        super(metaData, metaData.get());
+        super(metaData);
         TenantName tenantName = applicationId.tenant();
         String message = "Session " + sessionId + " for tenant '" + tenantName.value() + "' activated.";
+        Cursor root = metaData.get();
+
         root.setString("tenant", tenantName.value());
         root.setString("message", message);
         root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +

@@ -2,6 +2,7 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.Document;
+import com.yahoo.messagebus.Trace;
 
 /**
  * The asynchronous response to a document put or get operation.
@@ -25,8 +26,16 @@ public class DocumentResponse extends Response {
      * @param document the Document to encapsulate in the Response
      */
     public DocumentResponse(long requestId, Document document) {
-        super(requestId);
-        this.document = document;
+        this(requestId, document, null);
+    }
+
+    /**
+     * Creates a successful response containing a document
+     *
+     * @param document the Document to encapsulate in the Response
+     */
+    public DocumentResponse(long requestId, Document document, Trace trace) {
+        this(requestId, document, null, document != null ? Outcome.SUCCESS : Outcome.NOT_FOUND, trace);
     }
 
     /**
@@ -37,18 +46,8 @@ public class DocumentResponse extends Response {
      */
     @Deprecated(since = "7") // TODO: Remove on Vespa 8
     public DocumentResponse(long requestId, String textMessage, boolean success) {
-        super(requestId, textMessage, success);
+        super(requestId, textMessage, success ? Outcome.NOT_FOUND : Outcome.ERROR);
         document = null;
-    }
-
-    /**
-     * Creates a response containing a textual message
-     *
-     * @param textMessage the message to encapsulate in the Response
-     * @param outcome     the outcome of this operation
-     */
-    public DocumentResponse(long requestId, String textMessage, Outcome outcome) {
-        this(requestId, null, textMessage, outcome);
     }
 
     /**
@@ -72,7 +71,19 @@ public class DocumentResponse extends Response {
      * @param outcome     the outcome of this operation
      */
     public DocumentResponse(long requestId, Document document, String textMessage, Outcome outcome) {
-        super(requestId, textMessage, outcome);
+        this(requestId, document, textMessage, outcome, null);
+    }
+
+
+    /**
+     * Creates a response containing a textual message and/or a document
+     *
+     * @param document    the Document to encapsulate in the Response
+     * @param textMessage the message to encapsulate in the Response
+     * @param outcome     the outcome of this operation
+     */
+    public DocumentResponse(long requestId, Document document, String textMessage, Outcome outcome, Trace trace) {
+        super(requestId, textMessage, outcome, trace);
         this.document = document;
     }
 
@@ -83,6 +94,12 @@ public class DocumentResponse extends Response {
      * @return the Document, or null
      */
     public Document getDocument() { return document; }
+
+    @Override
+    public boolean isSuccess() {
+        // TODO: is it right that Get operations are successful without a result, in this API?
+        return super.isSuccess() || outcome() == Outcome.NOT_FOUND;
+    }
 
     public int hashCode() {
         return super.hashCode() + (document == null ? 0 : document.hashCode());

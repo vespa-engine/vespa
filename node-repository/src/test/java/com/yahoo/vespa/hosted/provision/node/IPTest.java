@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -11,14 +10,15 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -59,10 +59,14 @@ public class IPTest {
                         "::1",
                         "::10",
                         "::20",
-                        "2001:db8:0:0:0:0:0:ffff",
-                        "2001:db8:85a3:0:0:8a2e:370:7334",
-                        "2001:db8:95a3:0:0:0:0:7334"),
-                new ArrayList<>(ImmutableSortedSet.copyOf(IP.NATURAL_ORDER, ipAddresses))
+                        "2001:db8::ffff",
+                        "2001:db8:85a3::8a2e:370:7334",
+                        "2001:db8:95a3::7334"),
+                ipAddresses.stream()
+                           .map(IP::parse)
+                           .sorted(IP.NATURAL_ORDER)
+                           .map(IP::asString)
+                           .collect(Collectors.toList())
         );
     }
 
@@ -99,7 +103,6 @@ public class IPTest {
     @Test
     public void test_find_allocation_ipv4_only() {
         var pool = testPool(false);
-        assertTrue(pool instanceof IP.Ipv4Pool);
         var allocation = pool.findAllocation(emptyList, resolver);
         assertFalse("Found allocation", allocation.isEmpty());
         assertEquals("127.0.0.1", allocation.get().primary());
@@ -173,13 +176,15 @@ public class IPTest {
                     .addReverseRecord("::2", "host1");
         }
 
-        return node.ipConfig().pool();
+        IP.Pool pool = node.ipConfig().pool();
+        assertNotEquals(dualStack, pool instanceof IP.Ipv4Pool);
+        return pool;
     }
 
     private static Node createNode(Set<String> ipAddresses) {
         return Node.create("id1", new IP.Config(Set.of("127.0.0.1"), ipAddresses),
                            "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"),
-                           Optional.empty(), NodeType.host);
+                           Optional.empty(), NodeType.host, Optional.empty());
     }
 
 }

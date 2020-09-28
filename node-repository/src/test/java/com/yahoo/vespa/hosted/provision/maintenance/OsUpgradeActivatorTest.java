@@ -97,13 +97,7 @@ public class OsUpgradeActivatorTest {
     }
 
     private void completeUpgradeOf(List<Node> nodes) {
-        for (var node : nodes) {
-            try (var lock = tester.nodeRepository().lock(node)) {
-                node =  tester.nodeRepository().getNode(node.hostname()).get();
-                node = node.with(node.status().withVespaVersion(node.allocation().get().membership().cluster().vespaVersion()));
-                tester.nodeRepository().write(node, lock);
-            }
-        }
+        tester.patchNodes(nodes, (node) -> node.with(node.status().withVespaVersion(node.allocation().get().membership().cluster().vespaVersion())));
     }
 
     private Stream<Node> streamUpdatedNodes(List<Node> nodes) {

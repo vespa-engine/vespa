@@ -53,11 +53,11 @@ import static org.junit.Assert.assertTrue;
 public class NodeSerializerTest {
 
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container");
-    private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors);
+    private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors, 1000);
     private final ManualClock clock = new ManualClock();
 
     @Test
-    public void testProvisionedNodeSerialization() {
+    public void provisioned_node_serialization() {
         Node node = createNode();
 
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
@@ -69,7 +69,7 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void testReservedNodeSerialization() {
+    public void reserved_node_serialization() {
         Node node = createNode();
         NodeResources requestedResources = new NodeResources(1.2, 3.4, 5.6, 7.8, NodeResources.DiskSpeed.any);
 
@@ -110,7 +110,7 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void testRebootAndRestartAndTypeNoCurrentValuesSerialization() {
+    public void reboot_and_restart_and_type_no_current_values_serialization() {
         String nodeData = 
                 "{\n" +
                 "   \"type\" : \"tenant\",\n" +
@@ -158,7 +158,7 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void testRetiredNodeSerialization() {
+    public void retired_node_serialization() {
         Node node = createNode();
 
         clock.advance(Duration.ofMinutes(3));
@@ -185,7 +185,7 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void testAssimilatedDeserialization() {
+    public void assimilated_node_deserialization() {
         Node node = nodeSerializer.fromJson(Node.State.active, ("{\n" +
                 "  \"type\": \"tenant\",\n" +
                 "  \"hostname\": \"assimilate2.vespahosted.yahoo.tld\",\n" +
@@ -211,7 +211,7 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void testSetFailCount() {
+    public void fail_count() {
         Node node = createNode();
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                              ApplicationName.from("myApplication"),
@@ -229,7 +229,7 @@ public class NodeSerializerTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Optional.empty(), NodeType.tenant);
+        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Optional.empty(), NodeType.tenant, Optional.empty());
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
@@ -392,7 +392,7 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void testNodeWithNetworkPorts() {
+    public void network_ports_serialization() {
         Node node = createNode();
         List<NetworkPorts.Allocation> list = new ArrayList<>();
         list.add(new NetworkPorts.Allocation(8080, "container", "default/0", "http"));
@@ -416,6 +416,15 @@ public class NodeSerializerTest {
         assertEquals(list, listCopy);
     }
 
+    @Test
+    public void switch_hostname_serialization() {
+        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        assertFalse(node.switchHostname().isPresent());
+        String switchHostname = "switch0.example.com";
+        node = node.withSwitchHostname(switchHostname);
+        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        assertEquals(switchHostname, node.switchHostname().get());
+    }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {
         String ipAddressJsonPart = "";
@@ -441,8 +450,8 @@ public class NodeSerializerTest {
                            Optional.empty(),
                            Optional.empty(),
                            nodeFlavors.getFlavorOrThrow("default"),
-                           Optional.empty(), NodeType.tenant
-        );
+                           Optional.empty(), NodeType.tenant,
+                           Optional.empty());
     }
 
 }

@@ -155,7 +155,7 @@ DataBuffer::swap(DataBuffer &other)
 }
 
 vespalib::alloc::Alloc
-DataBuffer::stealBuffer()
+DataBuffer::stealBuffer() &&
 {
     assert( ! referencesExternalData() );
     _externalBuf = nullptr;

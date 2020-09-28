@@ -1,5 +1,0 @@
-*.So
-.depend*
-Makefile
-bytecomp_test
-searchlib_bytecomp_test_app

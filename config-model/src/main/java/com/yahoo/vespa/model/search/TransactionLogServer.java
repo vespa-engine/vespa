@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -15,12 +16,24 @@ import org.w3c.dom.Element;
 public class TransactionLogServer extends AbstractService  {
 
     private static final long serialVersionUID = 1L;
+    private final boolean useFSync;
+    private final TranslogserverConfig.Compression.Type.Enum compressionType;
 
-    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName) {
+    private static TranslogserverConfig.Compression.Type.Enum convertCompressionType(String type) {
+        try {
+            return TranslogserverConfig.Compression.Type.Enum.valueOf(type);
+        } catch (Throwable t) {
+            return TranslogserverConfig.Compression.Type.NONE;
+        }
+    }
+
+    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName, ModelContext.Properties featureFlags) {
         super(searchNode, "transactionlogserver");
         portsMeta.on(0).tag("tls");
         setProp("clustername", clusterName);
         setProp("clustertype", "search");
+        useFSync = featureFlags.tlsUseFSync();
+        compressionType = convertCompressionType(featureFlags.tlsCompressionType());
     }
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<TransactionLogServer> {
@@ -31,7 +44,7 @@ public class TransactionLogServer extends AbstractService  {
 
         @Override
         protected TransactionLogServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
-            return new TransactionLogServer(ancestor, clusterName);
+            return new TransactionLogServer(ancestor, clusterName, deployState.getProperties());
         }
     }
 
@@ -65,6 +78,8 @@ public class TransactionLogServer extends AbstractService  {
 
     public void getConfig(TranslogserverConfig.Builder builder) {
         builder.listenport(getTlsPort()).basedir(getTlsDir());
+        builder.usefsync(useFSync);
+        builder.compression.type(compressionType);
     }
 
 }

@@ -25,7 +25,8 @@ public class DocumentApiOptionsBuilder {
                 getBindings(spec),
                 threadpoolOptions(spec, "rest-api"),
                 threadpoolOptions(spec, "http-client-api"),
-                deployState.getProperties().feedCoreThreadPoolSizeFactor());
+                deployState.getProperties().feedCoreThreadPoolSizeFactor(),
+                deployState.getProperties().useNewRestapiHandler());
     }
 
     private static ContainerThreadpool.UserOptions threadpoolOptions(Element spec, String elementName) {

@@ -10,6 +10,7 @@ import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
@@ -70,10 +71,12 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
                                      NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
-        DefaultTimes defaults = new DefaultTimes(zone);
+        DefaultTimes defaults = new DefaultTimes(zone, Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource).value());
 
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
-        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,
+                                    defaults.nodeFailerInterval, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
+        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository,
+                                                                          defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval, flagSource);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, defaults.reservationExpiry, metric);
         retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, clock, defaults.retiredInterval, defaults.retiredExpiry);
@@ -155,6 +158,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration provisionedExpiry;
         private final Duration spareCapacityMaintenanceInterval;
         private final Duration metricsInterval;
+        private final Duration nodeFailerInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
@@ -167,20 +171,21 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
-        DefaultTimes(Zone zone) {
-            autoscalingInterval = Duration.ofMinutes(5);
+        DefaultTimes(Zone zone, boolean deploymentExistsOnAllConfigServers) {
+            autoscalingInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(15) : Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             failedExpirerInterval = Duration.ofMinutes(10);
             failGrace = Duration.ofMinutes(30);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
+            nodeFailerInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(15) : Duration.ofMinutes(5);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
-            operatorChangeRedeployInterval = Duration.ofMinutes(1);
+            operatorChangeRedeployInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(3) : Duration.ofMinutes(1);
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             periodicRedeployInterval = Duration.ofMinutes(30);
             provisionedExpiry = Duration.ofHours(4);
-            rebalancerInterval = Duration.ofMinutes(40);
+            rebalancerInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(120) : Duration.ofMinutes(40);
             redeployMaintainerInterval = Duration.ofMinutes(1);
             // Need to be long enough for deployment to be finished for all config model versions
             // Should be equal to timeout for deployments
@@ -191,7 +196,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
-                retiredInterval = Duration.ofMinutes(10);
+                retiredInterval = deploymentExistsOnAllConfigServers ? Duration.ofMinutes(30) : Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
                 retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             } else {

@@ -11,6 +11,8 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 import java.time.Duration;
 
+import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
+
 /**
  * A session for synchronous access to a document repository. This class
  * provides simple document access where throughput is not a concern.
@@ -35,6 +37,18 @@ public interface SyncSession extends Session {
      * @param priority the priority with which to perform this operation
      */
     default void put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
+        put(documentPut, parameters().withPriority(priority));
+    }
+
+    /**
+     * Puts a document. When this method returns, the document is safely received.
+     *
+     * @param documentPut the DocumentPut operation
+     * @param parameters parameters for the operation
+     *
+     * @param documentPut the DocumentPut operation
+     */
+    default void put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         put(documentPut);
     }
 
@@ -85,6 +99,20 @@ public interface SyncSession extends Session {
     Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout);
 
     /**
+     * Gets a document with timeout.
+     *
+     * @param id       the id of the document to get
+     * @param parameters parameters for the operation
+     * @param timeout timeout. If timeout is null, an unspecified default will be used
+     * @return the known document having this id, or null if there is no document having this id
+     * @throws UnsupportedOperationException thrown if this access does not support retrieving
+     * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT})
+     */
+    default Document get(DocumentId id, DocumentOperationParameters parameters,  Duration timeout) {
+        return get(id, timeout);
+    }
+
+    /**
      * Removes a document if it is present and condition is fulfilled.
      *
      * @param documentRemove document to delete
@@ -101,6 +129,18 @@ public interface SyncSession extends Session {
      * @throws UnsupportedOperationException thrown if this access does not support removal
      */
     boolean remove(DocumentRemove documentRemove, DocumentProtocol.Priority priority);
+
+    /**
+     * Removes a document if it is present.
+     *
+     * @param documentRemove document remove operation
+     * @param parameters parameters for the operation
+     * @return true if the document with this id was removed, false otherwise.
+     * @throws UnsupportedOperationException thrown if this access does not support removal
+     */
+    default boolean remove(DocumentRemove documentRemove, DocumentOperationParameters parameters) {
+        return remove(documentRemove);
+    }
 
     /**
      * Updates a document.
@@ -126,5 +166,20 @@ public interface SyncSession extends Session {
      * is not met.
      */
     boolean update(DocumentUpdate update, DocumentProtocol.Priority priority);
+
+    /**
+     * Updates a document.
+     *
+     * @param update   the updates to perform.
+     * @param parameters parameters for the operation
+     * @return false if the updates could not be applied as the document does not exist and
+     * {@link DocumentUpdate#setCreateIfNonExistent(boolean) create-if-non-existent} is not set.
+     * @throws DocumentAccessException on update error, including but not limited to: 1. timeouts,
+     * 2. the document exists but the {@link DocumentUpdate#setCondition(TestAndSetCondition) condition}
+     * is not met.
+     */
+    default boolean update(DocumentUpdate update, DocumentOperationParameters parameters) {
+        return update(update);
+    }
 
 }

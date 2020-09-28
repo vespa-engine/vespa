@@ -11,7 +11,7 @@ import java.nio.charset.CharsetEncoder;
 /**
  * A buffered writer which accepts byte arrays in addition to character arrays.
  *
- * @author <a href="mailt:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ByteWriter extends AbstractByteWriter {
     private final OutputStream stream;

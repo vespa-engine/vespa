@@ -16,14 +16,17 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author bratseth
+ */
 public class NodeMetricsDbTest {
 
     @Test
     public void testNodeMetricsDb() {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
-        tester.makeReadyHosts(10, new NodeResources(10, 100, 1000, 10)).deployZoneApp();
+        tester.makeReadyHosts(10, new NodeResources(10, 100, 1000, 10))
+              .activateTenantHosts();
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
-        tester.deployZoneApp();
         var hosts =
                 tester.activate(app1,
                                 ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("7.0").build(),

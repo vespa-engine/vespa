@@ -5,21 +5,25 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActionsSlimeConverter;
-import com.yahoo.vespa.config.server.http.SessionResponse;
 
 /**
  * Creates a response for SessionPrepareHandler.
  *
  * @author hmusum
  */
-class SessionPrepareAndActivateResponse extends SessionResponse {
+class SessionPrepareAndActivateResponse extends SlimeJsonResponse {
 
     SessionPrepareAndActivateResponse(PrepareResult result, HttpRequest request, ApplicationId applicationId, Zone zone) {
-        super(result.deployLog(), result.deployLog().get());
+        super(result.deployLogger().slime());
+
         TenantName tenantName = applicationId.tenant();
         String message = "Session " + result.sessionId() + " for tenant '" + tenantName.value() + "' prepared and activated.";
-        this.root.setString("tenant", tenantName.value());
+        Cursor root = slime.get();
+
+        root.setString("tenant", tenantName.value());
         root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +
                 "/application/v2/tenant/" + tenantName +
                 "/application/" + applicationId.application().value() +

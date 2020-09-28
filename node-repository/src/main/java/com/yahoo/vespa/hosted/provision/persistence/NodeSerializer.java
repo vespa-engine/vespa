@@ -1,7 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.hash.Hashing;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -32,12 +36,13 @@ import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Serializes a node to/from JSON.
@@ -79,6 +84,7 @@ public class NodeSerializer {
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
     private static final String reservedToKey = "reservedTo";
+    private static final String switchHostnameKey = "switchHostname";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -106,10 +112,17 @@ public class NodeSerializer {
     // Network port fields
     private static final String networkPortsKey = "networkPorts";
 
+    // A cache of deserialized Node objects. The cache is keyed on the hash of serialized node data.
+    //
+    // Deserializing a Node from slime is expensive, and happens frequently. Node instances that have already been
+    // deserialized are returned from this cache instead of being deserialized again.
+    private final Cache<Long, Node> cache;
+
     // ---------------- Serialization ----------------------------------------------------
 
-    public NodeSerializer(NodeFlavors flavors) {
+    public NodeSerializer(NodeFlavors flavors, long cacheSize) {
         this.flavors = flavors;
+        this.cache = CacheBuilder.newBuilder().maximumSize(cacheSize).recordStats().build();
     }
 
     public byte[] toJson(Node node) {
@@ -123,10 +136,16 @@ public class NodeSerializer {
         }
     }
 
+    /** Returns cache statistics for this serializer */
+    public CacheStats cacheStats() {
+        var stats = cache.stats();
+        return new CacheStats(stats.hitRate(), stats.evictionCount(), cache.size());
+    }
+
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
-        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey), IP.Config::require);
-        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey), UnaryOperator.identity() /* Pool already holds a validated address list */);
+        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
+        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey));
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         toSlime(node.flavor(), object);
@@ -143,6 +162,7 @@ public class NodeSerializer {
         node.status().osVersion().current().ifPresent(version -> object.setString(osVersionKey, version.toString()));
         node.status().osVersion().wanted().ifPresent(version -> object.setString(wantedOsVersionKey, version.toFullString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
+        node.switchHostname().ifPresent(switchHostname -> object.setString(switchHostnameKey, switchHostname));
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
@@ -186,15 +206,24 @@ public class NodeSerializer {
         object.setString(agentKey, toString(event.agent()));
     }
 
-    private void toSlime(Set<String> ipAddresses, Cursor array, UnaryOperator<Set<String>> validator) {
-        // Sorting IP addresses is expensive, so we do it at serialization time instead of Node construction time
-        validator.apply(ipAddresses).stream().sorted(IP.NATURAL_ORDER).forEach(array::addString);
+    private void toSlime(Set<String> ipAddresses, Cursor array) {
+        // Validating IP address string literals is expensive, so we do it at serialization time instead of Node
+        // construction time
+        ipAddresses.stream().map(IP::parse).sorted(IP.NATURAL_ORDER).map(IP::asString).forEach(array::addString);
     }
 
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
-        return nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get());
+        var key = Hashing.sipHash24().newHasher()
+                         .putString(state.name(), StandardCharsets.UTF_8)
+                         .putBytes(data).hash()
+                         .asLong();
+        try {
+            return cache.get(key, () -> nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get()));
+        } catch (ExecutionException e) {
+            throw new UncheckedExecutionException(e);
+        }
     }
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
@@ -212,7 +241,8 @@ public class NodeSerializer {
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
                         modelNameFromSlime(object),
-                        reservedToFromSlime(object.field(reservedToKey)));
+                        reservedToFromSlime(object.field(reservedToKey)),
+                        switchHostnameFromSlime(object.field(switchHostnameKey)));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -225,6 +255,11 @@ public class NodeSerializer {
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
                                         versionFromSlime(object.field(wantedOsVersionKey))),
                           instantFromSlime(object.field(firmwareCheckKey)));
+    }
+
+    private Optional<String> switchHostnameFromSlime(Inspector field) {
+        if (!field.valid()) return Optional.empty();
+        return Optional.of(field.asString());
     }
 
     private Flavor flavorFromSlime(Inspector object) {

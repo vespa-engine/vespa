@@ -134,7 +134,7 @@ public class MultigroupProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(6, hostFlavor.resources()).deployZoneApp();
+        tester.makeReadyHosts(6, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -160,7 +160,7 @@ public class MultigroupProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(6, hostFlavor.resources()).deployZoneApp();
+        tester.makeReadyHosts(6, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -190,7 +190,7 @@ public class MultigroupProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(12, hostFlavor.resources()).deployZoneApp();
+        tester.makeReadyHosts(12, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();

@@ -48,7 +48,7 @@ public class ScalingSuggestionsMaintainerTest {
         NodeMetricsDb nodeMetricsDb = new NodeMetricsDb(tester.nodeRepository());
 
         tester.makeReadyNodes(20, "flt", NodeType.host, 8);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         tester.deploy(app1, cluster1, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),

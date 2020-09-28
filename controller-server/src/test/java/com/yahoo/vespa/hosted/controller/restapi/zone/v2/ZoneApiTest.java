@@ -81,7 +81,7 @@ public class ZoneApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/node/node1",
                                                             "{\"currentRestartGeneration\": 1}",
                                                             Method.PATCH), "ok");
-        assertLastRequest(ZoneId.from("dev", "aws-us-north-2"), 1, "PATCH");
+        assertLastRequest(ZoneId.from("dev", "aws-us-north-2"), 2, "PATCH");
         assertEquals("{\"currentRestartGeneration\": 1}", proxy.lastRequestBody().get());
 
         assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());

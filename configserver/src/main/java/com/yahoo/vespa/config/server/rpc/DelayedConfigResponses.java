@@ -52,7 +52,9 @@ public class DelayedConfigResponses {
     // Since JRT does not allow adding watcher for "fake" requests, we must be able to disable it for unit tests :(
     DelayedConfigResponses(RpcServer rpcServer, int numTimerThreads, boolean useJrtWatcher) {
         this.rpcServer = rpcServer;
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(numTimerThreads, ThreadFactoryFactory.getThreadFactory(DelayedConfigResponses.class.getName()));
+        ScheduledThreadPoolExecutor executor =
+                new ScheduledThreadPoolExecutor(numTimerThreads,
+                                                ThreadFactoryFactory.getDaemonThreadFactory("delayed config responses"));
         executor.setRemoveOnCancelPolicy(true);
         this.executorService = executor;
         this.useJrtWatcher = useJrtWatcher;

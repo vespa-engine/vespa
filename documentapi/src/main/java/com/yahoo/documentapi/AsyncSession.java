@@ -7,6 +7,8 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
+import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
+
 /**
  * <p>A session for asynchronous access to a document repository.
  * This class provides document repository writes and random access with high
@@ -42,10 +44,11 @@ public interface AsyncSession extends Session {
      * If it was not a success, this method has no further effects.</p>
      *
      * @param document the Document to put
+     * @param priority the priority with which to send the operation
      * @return the synchronous result of this operation
      */
     default Result put(Document document, DocumentProtocol.Priority priority) {
-        return put(new DocumentPut(document), priority);
+        return put(new DocumentPut(document), parameters().withPriority(priority));
     }
 
     /**
@@ -60,7 +63,7 @@ public interface AsyncSession extends Session {
      * @return the synchronous result of this operation
      */
     default Result put(DocumentPut documentPut) {
-        return put(documentPut, DocumentProtocol.Priority.NORMAL_3);
+        return put(documentPut, parameters());
     }
 
     /**
@@ -72,10 +75,26 @@ public interface AsyncSession extends Session {
      * If it was not a success, this method has no further effects.</p>
      *
      * @param documentPut the DocumentPut to perform
+     * @param priority the priority with which to send the operation
      * @return the synchronous result of this operation
      */
-    // TODO Vespa 8: Make this the one to implement.
     default Result put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
+        return put(documentPut, parameters().withPriority(priority));
+    }
+
+    /**
+     * <p>Puts a document, with optional conditions on the operation. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentResponse} objects to appear within the timeout time of this session.
+     * The response returned later will either be a success, or contain the document submitted here.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param documentPut the DocumentPut to perform
+     * @param parameters parameters for the operation
+     * @return the synchronous result of this operation
+     */
+    default Result put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         return put(documentPut.getDocument());
     }
 
@@ -126,6 +145,23 @@ public interface AsyncSession extends Session {
      * @throws UnsupportedOperationException if this access implementation does not support retrieving
      */
     default Result get(DocumentId id, DocumentProtocol.Priority priority) {
+        return get(id, parameters().withPriority(priority));
+    }
+
+    /**
+     * <p>Gets a document. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentResponse} objects to appear within the timeout time of this session.
+     * The response returned later will contain the requested document if it is a success.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param id the id of the document to get
+     * @param parameters parameters for the operation
+     * @return the synchronous result of this operation
+     * @throws UnsupportedOperationException if this access implementation does not support retrieving
+     */
+    default Result get(DocumentId id, DocumentOperationParameters parameters) {
         return get(id);
     }
 
@@ -158,6 +194,23 @@ public interface AsyncSession extends Session {
      * @throws UnsupportedOperationException if this access implementation does not support removal
      */
     default Result remove(DocumentId id, DocumentProtocol.Priority priority) {
+        return remove(id, parameters().withPriority(priority));
+    }
+
+    /**
+     * <p>Removes a document if it is present. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentIdResponse} objects to appear within the timeout time of this session.
+     * The response returned later will either be a success, or contain the document id submitted here.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param id the id of the document to remove
+     * @param parameters parameters for the operation
+     * @return the synchronous result of this operation
+     * @throws UnsupportedOperationException if this access implementation does not support removal
+     */
+    default Result remove(DocumentId id, DocumentOperationParameters parameters) {
         return remove(id);
     }
 
@@ -189,6 +242,23 @@ public interface AsyncSession extends Session {
      * @throws UnsupportedOperationException if this access implementation does not support update
      */
     default Result update(DocumentUpdate update, DocumentProtocol.Priority priority) {
+        return update(update, parameters().withPriority(priority));
+    }
+
+    /**
+     * <p>Updates a document. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentUpdateResponse} within the timeout time of this session.
+     * The returned response returned later will either be a success or contain the update submitted here.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param update the updates to perform
+     * @param parameters parameters for the operation
+     * @return the synchronous result of this operation
+     * @throws UnsupportedOperationException if this access implementation does not support update
+     */
+    default Result update(DocumentUpdate update, DocumentOperationParameters parameters) {
         return update(update);
     }
 
@@ -198,5 +268,6 @@ public interface AsyncSession extends Session {
      * @return Returns the window size.
      */
     double getCurrentWindowSize();
+
 
 }

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <sstream>
 #include <cassert>
 #include <atomic>
@@ -141,8 +142,8 @@ MessageType::print(std::ostream& out, bool verbose, const std::string& indent) c
 
 StorageMessageAddress::StorageMessageAddress(const mbus::Route& route)
     : _route(route),
-      _retryEnabled(false),
       _protocol(DOCUMENT),
+      _precomputed_storage_hash(0),
       _cluster(""),
       _type(nullptr),
       _index(0xFFFF)
@@ -160,17 +161,34 @@ createAddress(vespalib::stringref cluster, const lib::NodeType& type, uint16_t i
     return os.str();
 }
 
+// TODO we ideally want this removed. Currently just in place to support usage as map key when emplacement not available
+StorageMessageAddress::StorageMessageAddress()
+    : _route(),
+      _protocol(Protocol::STORAGE),
+      _precomputed_storage_hash(0),
+      _cluster(),
+      _type(nullptr),
+      _index(0)
+{}
+
+
 StorageMessageAddress::StorageMessageAddress(vespalib::stringref cluster, const lib::NodeType& type,
                                              uint16_t index, Protocol protocol)
     : _route(),
-      _retryEnabled(false),
       _protocol(protocol),
+      _precomputed_storage_hash(0),
       _cluster(cluster),
       _type(&type),
       _index(index)
 {
     std::vector<mbus::IHopDirective::SP> directives;
-    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(createAddress(cluster, type, index)));
+    auto address_as_str = createAddress(cluster, type, index);
+    // We reuse the string representation and pass it to vespalib's hashValue instead of
+    // explicitly combining a running hash over the individual fields. This is because
+    // hashValue internally uses xxhash, which offers great dispersion of bits even for
+    // minimal changes in the input (such as single bit differences in the index).
+    _precomputed_storage_hash = vespalib::hashValue(address_as_str.data(), address_as_str.size());
+    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(std::move(address_as_str)));
     _route.addHop(mbus::Hop(std::move(directives), false));
 }
 
@@ -207,12 +225,11 @@ bool
 StorageMessageAddress::operator==(const StorageMessageAddress& other) const
 {
     if (_protocol != other._protocol) return false;
-    if (_retryEnabled != other._retryEnabled) return false;
     if (_type != other._type) return false;
     if (_type) {
-        if (_cluster != other._cluster) return false;
         if (_index != other._index) return false;
         if (_type != other._type) return false;
+        if (_cluster != other._cluster) return false;
     }
     return true;
 }
@@ -233,9 +250,6 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
         out << "Storage protocol";
     } else {
         out << "Document protocol";
-    }
-    if (_retryEnabled) {
-        out << ", retry enabled";
     }
     if (!_type) {
         out << ", " << _route.toString() << ")";

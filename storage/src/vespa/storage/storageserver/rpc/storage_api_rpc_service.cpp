@@ -33,7 +33,8 @@ StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher
       _rpc_resources(rpc_resources),
       _message_codec_provider(message_codec_provider),
       _params(params),
-      _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory()))
+      _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory())),
+      _direct_rpc_supported(true)
 {
     register_server_methods(rpc_resources);
 }
@@ -117,7 +118,7 @@ void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload,
 
     params.AddInt8(comp_type);
     params.AddInt32(static_cast<uint32_t>(to_compress.size()));
-    params.AddData(buf.stealBuffer(), buf.getDataLen());
+    params.AddData(std::move(buf));
 }
 
 } // anon ns
@@ -225,12 +226,7 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     std::unique_ptr<FRT_RPCRequest, SubRefDeleter> req(raw_req);
     auto* req_ctx = static_cast<RpcRequestContext*>(req->GetContext()._value.VOIDP);
     if (!req->CheckReturnTypes("bixbix")) {
-        api::ReturnCode error = map_frt_error_to_storage_api_error(*req, *req_ctx);
-        LOG(debug, "Client: received rpc.v1 error response: %s", error.toString().c_str());
-        auto error_reply = req_ctx->_originator_cmd->makeReply();
-        error_reply->setResult(std::move(error));
-        // TODO needs tracing of received-event!
-        _message_dispatcher.dispatch_sync(std::move(error_reply));
+        handle_request_done_rpc_error(*req, *req_ctx);
         return;
     }
     LOG(debug, "Client: received rpc.v1 OK response");
@@ -257,6 +253,22 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     // TODO ensure that no implicit long-lived refs end up pointing into RPC memory...!
     req->DiscardBlobs();
     _message_dispatcher.dispatch_sync(std::move(reply));
+}
+
+void StorageApiRpcService::handle_request_done_rpc_error(FRT_RPCRequest& req,
+                                                         const RpcRequestContext& req_ctx) {
+    auto error_reply = req_ctx._originator_cmd->makeReply();
+    api::ReturnCode error;
+    if (req.GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
+        mark_peer_without_direct_rpc_support(*req_ctx._originator_cmd->getAddress());
+        error = api::ReturnCode(api::ReturnCode::NOT_CONNECTED, "Direct Storage RPC protocol not supported");
+    } else {
+        error = map_frt_error_to_storage_api_error(req, req_ctx);
+    }
+    LOG(debug, "Client: received rpc.v1 error response: %s", error.toString().c_str());
+    error_reply->setResult(std::move(error));
+    // TODO needs tracing of received-event!
+    _message_dispatcher.dispatch_sync(std::move(error_reply));
 }
 
 api::ReturnCode
@@ -296,6 +308,23 @@ StorageApiRpcService::make_no_address_for_service_error(const api::StorageMessag
             _rpc_resources.hostname().c_str());
     return api::ReturnCode(error_code, std::move(error_msg));
 }
+
+void StorageApiRpcService::mark_peer_without_direct_rpc_support(const api::StorageMessageAddress& addr) {
+    bool expected = true;
+    if (_direct_rpc_supported.compare_exchange_strong(expected, false, std::memory_order_relaxed)) {
+        LOG(info, "Node %s does not support direct Storage API RPC; falling back "
+                  "to legacy MessageBus protocol. Not logging this for any further nodes",
+            addr.toString().c_str());
+    }
+}
+
+bool StorageApiRpcService::target_supports_direct_rpc(
+        [[maybe_unused]] const api::StorageMessageAddress& addr) const noexcept {
+    // Stale reads isn't an issue here, since the worst case is just receiving
+    // a few more "no such method" errors.
+    return _direct_rpc_supported.load(std::memory_order_relaxed);
+}
+
 
 /*
  * Major TODOs:

@@ -140,7 +140,7 @@ ChunkFormat::deserializeBody(vespalib::nbostream & is)
     assert(uncompressed.getData() == uncompressed.getDead());
     if (uncompressed.getData() != data.c_str()) {
         const size_t sz(uncompressed.getDataLen());
-        vespalib::nbostream(uncompressed.stealBuffer(), sz).swap(_dataBuf);
+        vespalib::nbostream(std::move(uncompressed).stealBuffer(), sz).swap(_dataBuf);
     } else {
         _dataBuf = vespalib::nbostream(uncompressed.getData(), uncompressed.getDataLen());
     }

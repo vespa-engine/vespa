@@ -62,7 +62,7 @@ public class ProvisioningTest {
         ApplicationId application1 = ProvisioningTester.makeApplicationId();
         ApplicationId application2 = ProvisioningTester.makeApplicationId();
 
-        tester.makeReadyHosts(21, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(21, defaultResources).activateTenantHosts();
 
         // deploy
         SystemState state1 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
@@ -196,7 +196,7 @@ public class ProvisioningTest {
         ApplicationId application1 = ProvisioningTester.makeApplicationId();
 
         tester.makeReadyHosts(24, defaultResources);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         // deploy
         SystemState state1 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
@@ -267,7 +267,7 @@ public class ProvisioningTest {
         ApplicationId application1 = ProvisioningTester.makeApplicationId();
 
         tester.makeReadyHosts(12, small);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         // deploy
         SystemState state1 = prepare(application1, 2, 2, 4, 4, small, tester);
@@ -278,7 +278,7 @@ public class ProvisioningTest {
         tester.activate(application1, state2.allHosts);
 
         tester.makeReadyHosts(16, large);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         // redeploy with increased sizes and new flavor
         SystemState state3 = prepare(application1, 3, 4, 4, 5, large, tester);
@@ -303,7 +303,7 @@ public class ProvisioningTest {
 
         tester.makeReadyHosts(12, small);
         tester.makeReadyHosts(12, large);
-        tester.deployZoneApp();
+        tester.activateTenantHosts();
 
         // deploy
         SystemState state1 = prepare(application1, 2, 2, 4, 4, small, tester);
@@ -319,7 +319,7 @@ public class ProvisioningTest {
 
         ApplicationId application1 = ProvisioningTester.makeApplicationId();
 
-        tester.makeReadyHosts(5, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(5, defaultResources).activateTenantHosts();
 
         // deploy
         SystemState state1 = prepare(application1, 2, 0, 3, 0, defaultResources, tester);
@@ -354,7 +354,7 @@ public class ProvisioningTest {
     @Test
     public void requested_resources_info_is_retained() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyHosts(13, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(13, defaultResources).activateTenantHosts();
 
         tester.prepareAndActivateInfraApplication(ProvisioningTester.makeApplicationId(), NodeType.host);
         ApplicationId application = ProvisioningTester.makeApplicationId();
@@ -398,7 +398,7 @@ public class ProvisioningTest {
     public void deploy_specific_vespa_version() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        tester.makeReadyHosts(4, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
         tester.prepareAndActivateInfraApplication(ProvisioningTester.makeApplicationId(), NodeType.host);
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
@@ -411,7 +411,7 @@ public class ProvisioningTest {
     public void deploy_specific_vespa_version_and_docker_image() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        tester.makeReadyHosts(4, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
         tester.prepareAndActivateInfraApplication(ProvisioningTester.makeApplicationId(), NodeType.host);
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
@@ -426,7 +426,8 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.test, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(4, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
+
         SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
@@ -438,7 +439,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(4, hostFlavor.resources()).deployZoneApp();
+        tester.makeReadyHosts(4, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -456,7 +457,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(31, hostFlavor.resources()).deployZoneApp();
+        tester.makeReadyHosts(31, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
@@ -516,7 +517,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(10, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
         prepare(application, 1, 2, 3, 3, defaultResources, tester);
     }
 
@@ -525,7 +526,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(10, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
         try {
             prepare(application, 2, 2, 3, 3,
                     new NodeResources(2, 2, 10, 2), tester);
@@ -540,7 +541,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(10, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
         try {
             prepare(application, 2, 2, 3, 3,
                     new NodeResources(0.4, 4, 10, 2), tester);
@@ -573,7 +574,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.test, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(4, large).deployZoneApp();
+        tester.makeReadyHosts(4, large).activateTenantHosts();
         SystemState state = prepare(application, 2, 2, 3, 3, large, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
@@ -584,7 +585,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.staging, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(14, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(14, defaultResources).activateTenantHosts();
         SystemState state = prepare(application, 1, 1, 1, 64, defaultResources, tester); // becomes 1, 1, 1, 1, 6
         assertEquals(9, state.allHosts.size());
         tester.activate(application, state.allHosts);
@@ -594,7 +595,7 @@ public class ProvisioningTest {
     public void activate_after_reservation_timeout() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        tester.makeReadyHosts(10, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
         ApplicationId application = ProvisioningTester.makeApplicationId();
         SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
 
@@ -616,7 +617,7 @@ public class ProvisioningTest {
     public void out_of_capacity() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        tester.makeReadyHosts(9, defaultResources).deployZoneApp(); // need 2+2+3+3=10
+        tester.makeReadyHosts(9, defaultResources).activateTenantHosts(); // need 2+2+3+3=10
         ApplicationId application = ProvisioningTester.makeApplicationId();
         try {
             prepare(application, 2, 2, 3, 3, defaultResources, tester);
@@ -633,7 +634,7 @@ public class ProvisioningTest {
                                                                                    Environment.prod,
                                                                                    RegionName.from("us-east"))).build();
 
-        tester.makeReadyHosts(13, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(13, defaultResources).activateTenantHosts();
         ApplicationId application = ProvisioningTester.makeApplicationId();
         try {
             prepare(application, 2, 2, 6, 3, defaultResources, tester);
@@ -651,7 +652,7 @@ public class ProvisioningTest {
                                                                                    Environment.prod,
                                                                                    RegionName.from("us-east"))).build();
 
-        tester.makeReadyHosts(13, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(13, defaultResources).activateTenantHosts();
         ApplicationId application = ProvisioningTester.makeApplicationId();
         prepare(application, 2, 2, 6, 3, defaultResources, tester);
     }
@@ -659,7 +660,7 @@ public class ProvisioningTest {
     @Test
     public void out_of_capacity_but_cannot_fail() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyHosts(4, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
         ApplicationId application = ProvisioningTester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
         tester.prepare(application, cluster, Capacity.from(new ClusterResources(5, 1, NodeResources.unspecified()), false, false));
@@ -673,7 +674,7 @@ public class ProvisioningTest {
         ApplicationId application = ProvisioningTester.makeApplicationId();
         // Flag all nodes for retirement
         List<Node> readyNodes = tester.makeReadyNodes(5, defaultResources);
-        readyNodes.forEach(node -> tester.patchNode(node.withWantToRetire(true, Agent.system, tester.clock().instant())));
+        tester.patchNodes(readyNodes, (node) -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
 
         try {
             prepare(application, 2, 0, 2, 0, defaultResources, tester);
@@ -693,7 +694,7 @@ public class ProvisioningTest {
         ApplicationId application = ProvisioningTester.makeApplicationId();
 
         // Create 10 nodes
-        tester.makeReadyHosts(10, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
         // Allocate 5 nodes
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
         tester.activate(application, tester.prepare(application, cluster, capacity));
@@ -701,7 +702,7 @@ public class ProvisioningTest {
         assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
 
         // Mark the nodes as want to retire
-        tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node.withWantToRetire(true, Agent.system, tester.clock().instant())));
+        tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, tester.clock().instant())));
         // redeploy without allow failing
         tester.activate(application, tester.prepare(application, cluster, capacityFORCED));
 
@@ -724,7 +725,7 @@ public class ProvisioningTest {
 
         ApplicationId application1 = ProvisioningTester.makeApplicationId();
 
-        tester.makeReadyHosts(14, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(14, defaultResources).activateTenantHosts();
 
         // deploy
         SystemState state1 = prepare(application1, 3, 3, 4, 4, defaultResources, tester);
@@ -751,7 +752,7 @@ public class ProvisioningTest {
     public void node_on_spare_host_retired_first() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                 .spareCount(1).build();
-        tester.makeReadyHosts(7, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(7, defaultResources).activateTenantHosts();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
         ClusterSpec spec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion("7.1.2").build();
@@ -774,7 +775,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(10, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
 
         // Deploy application
         {
@@ -786,7 +787,7 @@ public class ProvisioningTest {
         // Retire some nodes and redeploy
         {
             List<Node> nodesToRetire = tester.getNodes(application, Node.State.active).asList().subList(0, 2);
-            nodesToRetire.forEach(node -> tester.patchNode(node.withWantToRetire(true, Agent.system, tester.clock().instant())));
+            tester.patchNodes(nodesToRetire, (node) -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
 
             SystemState state = prepare(application, 2, 0, 2, 0, defaultResources, tester);
             tester.activate(application, state.allHosts);
@@ -802,7 +803,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = ProvisioningTester.makeApplicationId();
-        tester.makeReadyHosts(2, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(2, defaultResources).activateTenantHosts();
 
         // Deploy fails with out of capacity
         try {
@@ -813,7 +814,7 @@ public class ProvisioningTest {
                      tester.getNodes(application, Node.State.reserved).size());
 
         // Enough nodes become available
-        tester.makeReadyHosts(2, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(2, defaultResources).activateTenantHosts();
 
         // Deploy is retried after a few minutes
         tester.clock().advance(Duration.ofMinutes(2));
@@ -883,7 +884,7 @@ public class ProvisioningTest {
         var tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         var application = ProvisioningTester.makeApplicationId();
 
-        tester.makeReadyHosts(4, defaultResources).deployZoneApp();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
 
         // Application allocates two content nodes initially, with cluster type content
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();

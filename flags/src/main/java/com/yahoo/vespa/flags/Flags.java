@@ -98,12 +98,6 @@ public class Flags {
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
 
-    public static final UnboundStringFlag TLS_INSECURE_AUTHORIZATION_MODE = defineStringFlag(
-            "tls-insecure-authorization-mode", "log_only",
-            "TLS insecure authorization mode. Allowed values: ['disable', 'log_only', 'enforce']",
-            "Takes effect on restart of Docker container",
-            NODE_TYPE, APPLICATION_ID, HOSTNAME);
-
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
             "reboot-interval-in-days", 30,
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
@@ -157,21 +151,25 @@ public class Flags {
             "Selects type of sequenced executor used for feeding, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag SKIP_COMMUNICATIONMANAGER_THREAD = defineFeatureFlag(
             "skip-communicatiomanager-thread", false,
             "Should we skip the communicationmanager thread",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag SKIP_MBUS_REQUEST_THREAD = defineFeatureFlag(
             "skip-mbus-request-thread", false,
             "Should we skip the mbus request thread",
@@ -193,6 +191,24 @@ public class Flags {
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundStringFlag TLS_COMPRESSION_TYPE = defineStringFlag(
+            "tls-compression-type", "NONE",
+            "Selects type of compression, valid values are NONE, NONE_MULTI, LZ4, ZSTD",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag TLS_USE_FSYNC = defineFeatureFlag(
+            "tls-use-fsync", false,
+            "Whether to use fsync when writing to the TLS.",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundDoubleFlag VISIBILITY_DELAY = defineDoubleFlag(
+            "visibility-delay", 0.0,
+            "Default visibility-delay",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -270,7 +286,6 @@ public class Flags {
             "Whether to provision and use endpoint certs for apps in shared routing zones",
             "Takes effect on next deployment of the application", APPLICATION_ID);
 
-
     public static final UnboundBooleanFlag USE_CLOUD_INIT_FORMAT = defineFeatureFlag(
             "use-cloud-init", false,
             "Use the cloud-init format when provisioning hosts",
@@ -278,7 +293,7 @@ public class Flags {
             ZONE_ID);
 
     public static final UnboundBooleanFlag CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE = defineFeatureFlag(
-            "configserver-distribute-application-package", false,
+            "configserver-distribute-application-package", true,
             "Whether the application package should be distributed to other config servers during a deployment",
             "Takes effect immediately");
 
@@ -367,6 +382,39 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID
     );
+
+    public static final UnboundBooleanFlag USE_CONFIG_SERVER_VIP = defineFeatureFlag(
+            "use-config-server-vip",
+            false,
+            "Whether the controller should use a config server VIP or not",
+            "Takes effect immediately",
+            ZONE_ID
+    );
+
+    public static final UnboundBooleanFlag SKIP_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
+            "node-repository-skip-maintenance-deployment",
+            false,
+            "Whether PeriodicApplicationMaintainer should skip deployment for an application",
+            "Takes effect at next run of maintainer",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag DEPLOY_WITH_INTERNAL_RESTART = defineFeatureFlag(
+            "deploy-with-internal-restart", false,
+            "Whether controller should deploy application with internal restart parameter set",
+            "Takes effect on next deploy from controller",
+            APPLICATION_ID, ZONE_ID);
+
+    public static final UnboundLongFlag NODE_OBJECT_CACHE_SIZE = defineLongFlag(
+            "node-object-cache-size",
+            2000,
+            "The number of deserialized Node objects to store in-memory.",
+            "Takes effect on config server restart");
+
+    public static final UnboundBooleanFlag USE_NEW_RESTAPI_HANDLER = defineFeatureFlag(
+            "use-new-restapi-handler",
+            false,
+            "Whether application containers should use the new restapi handler implementation",
+            "Takes effect on next internal redeployment");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

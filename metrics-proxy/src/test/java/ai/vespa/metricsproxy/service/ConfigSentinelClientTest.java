@@ -62,7 +62,7 @@ public class ConfigSentinelClientTest {
     }
 
     @Test
-    public void testElastic() throws Exception {
+    public void testElastic() {
         String response = "container state=RUNNING mode=AUTO pid=14338 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"get/container.0\"\n" +
                 "container-clustercontroller state=RUNNING mode=AUTO pid=25020 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/cluster-controllers/0\"\n" +
                 "distributor state=RUNNING mode=AUTO pid=25024 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/distributor/0\"\n" +
@@ -72,7 +72,6 @@ public class ConfigSentinelClientTest {
                 "metricsproxy state=RUNNING mode=AUTO pid=13107 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"hosts/vespa19.dev.gq1.yahoo.com/metricsproxy\"\n" +
                 "searchnode state=RUNNING mode=AUTO pid=25023 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/search/cluster.search/0\"\n" +
                 "slobrok state=RUNNING mode=AUTO pid=25019 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/slobrok.0\"\n" +
-                "topleveldispatch state=RUNNING mode=AUTO pid=25026 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/search/cluster.search/tlds/tld.0\"\n" +
                 "\n";
 
         ConfigSentinelDummy configsentinel = new ConfigSentinelDummy(response);

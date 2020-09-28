@@ -2,6 +2,7 @@
 
 #include "onnx_feature.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/onnx_model.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
@@ -85,37 +86,45 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
     auto optimize = (env.getFeatureMotivation() == env.FeatureMotivation::VERIFY_SETUP)
                     ? Onnx::Optimize::DISABLE
                     : Onnx::Optimize::ENABLE;
-    auto file_name = env.getOnnxModelFullPath(params[0].getValue());
-    if (!file_name.has_value()) {
+    auto model_cfg = env.getOnnxModel(params[0].getValue());
+    if (!model_cfg) {
         return fail("no model with name '%s' found", params[0].getValue().c_str());
     }
     try {
-        _model = std::make_unique<Onnx>(file_name.value(), optimize);
+        _model = std::make_unique<Onnx>(model_cfg->file_path(), optimize);
     } catch (std::exception &ex) {
         return fail("model setup failed: %s", ex.what());
     }
     Onnx::WirePlanner planner;
     for (size_t i = 0; i < _model->inputs().size(); ++i) {
         const auto &model_input = _model->inputs()[i];
-        vespalib::string input_name = normalize_name(model_input.name, "input");
-        if (auto maybe_input = defineInput(fmt("rankingExpression(\"%s\")", input_name.c_str()), AcceptInput::OBJECT)) {
+        auto input_feature = model_cfg->input_feature(model_input.name);
+        if (!input_feature.has_value()) {
+            input_feature = fmt("rankingExpression(\"%s\")", normalize_name(model_input.name, "input").c_str());
+        }
+        if (auto maybe_input = defineInput(input_feature.value(), AcceptInput::OBJECT)) {
             const FeatureType &feature_input = maybe_input.value();
             assert(feature_input.is_object());
             if (!planner.bind_input_type(feature_input.type(), model_input)) {
-                return fail("incompatible type for input '%s': %s -> %s", input_name.c_str(),
+                return fail("incompatible type for input (%s -> %s): %s -> %s",
+                            input_feature.value().c_str(), model_input.name.c_str(),
                             feature_input.type().to_spec().c_str(), model_input.type_as_string().c_str());
             }
         }
     }
     for (size_t i = 0; i < _model->outputs().size(); ++i) {
         const auto &model_output = _model->outputs()[i];
-        vespalib::string output_name = normalize_name(model_output.name, "output");
+        auto output_name = model_cfg->output_name(model_output.name);
+        if (!output_name.has_value()) {
+            output_name = normalize_name(model_output.name, "output");
+        }
         ValueType output_type = planner.make_output_type(model_output);
         if (output_type.is_error()) {
-            return fail("unable to make compatible type for output '%s': %s -> error",
-                        output_name.c_str(), model_output.type_as_string().c_str());
+            return fail("unable to make compatible type for output (%s -> %s): %s -> error",
+                        model_output.name.c_str(), output_name.value().c_str(),
+                        model_output.type_as_string().c_str());
         }
-        describeOutput(output_name, "output from onnx model", FeatureType::object(output_type));
+        describeOutput(output_name.value(), "output from onnx model", FeatureType::object(output_type));
     }
     _wire_info = planner.get_wire_info(*_model);
     return true;

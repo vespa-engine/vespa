@@ -121,11 +121,26 @@ Packet::add(const Packet::Entry & e)
     _range.to(e.serial());
 }
 
+Writer::CommitResult::CommitResult()
+    : _callBacks()
+{}
+Writer::CommitResult::CommitResult( CommitPayload commitPayLoad)
+    : _callBacks(std::move(commitPayLoad))
+{}
+
+Writer::CommitResult::~CommitResult() = default;
+
 CommitChunk::CommitChunk(size_t reserveBytes, size_t reserveCount)
     : _data(reserveBytes),
-      _callBacks()
+      _callBacks(std::make_shared<Writer::DoneCallbacksList>())
 {
-    _callBacks.reserve(reserveCount);
+    _callBacks->reserve(reserveCount);
+}
+
+CommitChunk::CommitChunk(size_t reserveBytes, Writer::CommitPayload postponed)
+    : _data(reserveBytes),
+      _callBacks(std::move(postponed))
+{
 }
 
 CommitChunk::~CommitChunk() = default;
@@ -133,7 +148,12 @@ CommitChunk::~CommitChunk() = default;
 void
 CommitChunk::add(const Packet &packet, Writer::DoneCallback onDone) {
     _data.merge(packet);
-    _callBacks.emplace_back(std::move(onDone));
+    _callBacks->emplace_back(std::move(onDone));
+}
+
+Writer::CommitResult
+CommitChunk::createCommitResult() const {
+    return Writer::CommitResult(_callBacks);
 }
 
 }

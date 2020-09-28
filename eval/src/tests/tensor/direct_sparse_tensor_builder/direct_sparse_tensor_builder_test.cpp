@@ -54,7 +54,7 @@ TEST("require that tensor can be constructed")
     Tensor::UP tensor = buildTensor();
     const SparseTensor &sparseTensor = dynamic_cast<const SparseTensor &>(*tensor);
     const ValueType &type = sparseTensor.type();
-    const SparseTensor::Cells &cells = sparseTensor.cells();
+    const SparseTensor::Cells &cells = sparseTensor.my_cells();
     EXPECT_EQUAL(2u, cells.size());
     assertCellValue(10, TensorAddress({{"a","1"},{"b","2"}}), type, cells);
     assertCellValue(20, TensorAddress({{"c","3"},{"d","4"}}), type, cells);

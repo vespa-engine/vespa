@@ -75,10 +75,10 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
-                      Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
+                      Duration downTimeLimit, Duration interval, Clock clock, Orchestrator orchestrator,
                       ThrottlePolicy throttlePolicy, Metric metric) {
-        // check ping status every five minutes, but at least twice as often as the down time limit
-        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)), metric);
+        // check ping status every interval, but at least twice as often as the down time limit
+        super(nodeRepository, min(downTimeLimit.dividedBy(2), interval), metric);
         this.deployer = deployer;
         this.hostLivenessTracker = hostLivenessTracker;
         this.serviceMonitor = serviceMonitor;

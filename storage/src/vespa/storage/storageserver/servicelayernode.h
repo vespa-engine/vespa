@@ -62,7 +62,7 @@ private:
     void handleLiveConfigUpdate(const InitialGuard & initGuard) override;
     VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
-    std::unique_ptr<StorageLink> createChain() override;
+    void createChain(IStorageChainBuilder &builder) override;
     void removeConfigSubscriptions() override;
 };
 

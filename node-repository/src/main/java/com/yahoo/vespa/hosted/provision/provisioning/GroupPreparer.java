@@ -99,13 +99,13 @@ public class GroupPreparer {
                     nodeRepository.addNodes(hosts, Agent.application);
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
-                    List<PrioritizableNode> nodes = provisionedHosts.stream()
-                            .map(provisionedHost -> new PrioritizableNode.Builder(provisionedHost.generateNode())
-                                    .parent(provisionedHost.generateHost())
-                                    .newNode(true)
-                                    .build())
-                            .collect(Collectors.toList());
-                    allocation.offer(nodes);
+                    List<NodeCandidate> candidates = provisionedHosts.stream()
+                                                                     .map(provisionedHost -> new NodeCandidate.Builder(provisionedHost.generateNode())
+                                                                             .parent(provisionedHost.generateHost())
+                                                                             .newNode(true)
+                                                                             .build())
+                                                                     .collect(Collectors.toList());
+                    allocation.offer(candidates);
                 }
 
                 if (! allocation.fulfilled() && requestedNodes.canFail())

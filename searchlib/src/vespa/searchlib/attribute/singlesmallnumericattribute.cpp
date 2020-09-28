@@ -7,6 +7,7 @@
 #include "iattributesavetarget.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 namespace search {
 
