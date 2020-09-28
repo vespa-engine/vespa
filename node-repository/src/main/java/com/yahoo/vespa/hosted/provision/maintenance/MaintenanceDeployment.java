@@ -9,13 +9,13 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.yolean.Exceptions;
-import org.glassfish.jersey.internal.util.Producer;
 
 import java.io.Closeable;
 import java.time.Duration;
@@ -84,11 +84,11 @@ class MaintenanceDeployment implements Closeable {
         return doStep(() -> deployment.get().activate());
     }
 
-    private Optional<Long> doStep(Producer<Long> step) {
+    private Optional<Long> doStep(Supplier<Long> step) {
         if (closed) throw new IllegalStateException(this + "' is closed");
         if ( ! isValid()) return Optional.empty();
         try {
-            return Optional.of(step.call());
+            return Optional.of(step.get());
         } catch (TransientException e) {
             metric.add("maintenanceDeployment.transientFailure", 1, metric.createContext(Map.of()));
             log.log(Level.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
