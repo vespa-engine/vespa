@@ -6,9 +6,8 @@ import com.yahoo.vespa.curator.Lock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 
 /**
@@ -30,7 +29,7 @@ public class ThreadLockInfo {
     private final Thread thread;
 
     /** The locks are reentrant so there may be more than 1 lock for this thread. */
-    private final ConcurrentLinkedQueue<LockInfo> lockInfos = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedDeque<LockInfo> lockInfos = new ConcurrentLinkedDeque<>();
 
     public static Map<String, LockCounters> getLockCountersByPath() { return Map.copyOf(countersByLockPath); }
 
@@ -83,7 +82,7 @@ public class ThreadLockInfo {
         LockCounters lockCounters = getLockCounters(lockPath);
         lockCounters.invokeAcquireCount.incrementAndGet();
         lockCounters.inCriticalRegionCount.incrementAndGet();
-        lockInfos.add(LockInfo.invokingAcquire(this, lockPath, timeout));
+        lockInfos.addLast(LockInfo.invokingAcquire(this, lockPath, timeout));
     }
 
     /** Mutable method (see class doc) */
@@ -107,7 +106,11 @@ public class ThreadLockInfo {
     /** Mutable method (see class doc) */
     public void lockAcquired(String lockPath) {
         getLockCounters(lockPath).lockAcquiredCount.incrementAndGet();
-        getLastLockInfo().ifPresent(LockInfo::lockAcquired);
+        LockInfo lastLockInfo = lockInfos.peekLast();
+        if (lastLockInfo == null) {
+            throw new IllegalStateException("lockAcquired invoked without lockInfos");
+        }
+        lastLockInfo.lockAcquired();
     }
 
     /** Mutable method (see class doc) */
@@ -121,10 +124,6 @@ public class ThreadLockInfo {
         return countersByLockPath.computeIfAbsent(lockPath, __ -> new LockCounters());
     }
 
-    private Optional<LockInfo> getLastLockInfo() {
-        return lockInfos.isEmpty() ? Optional.empty() : Optional.of(lockInfos.peek());
-    }
-
     private void removeLastLockInfo(LockCounters lockCounters, Consumer<LockInfo> completeLockInfo) {
         lockCounters.inCriticalRegionCount.decrementAndGet();
 
@@ -133,7 +132,7 @@ public class ThreadLockInfo {
             return;
         }
 
-        LockInfo lockInfo = lockInfos.poll();
+        LockInfo lockInfo = lockInfos.pollLast();
         completeLockInfo.accept(lockInfo);
         completedLockInfoSamples.maybeSample(lockInfo);
     }

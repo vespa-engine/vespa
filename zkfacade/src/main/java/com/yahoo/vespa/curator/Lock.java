@@ -56,10 +56,6 @@ public class Lock implements Mutex {
 
     @Override
     public void close() {
-        release();
-    }
-
-    private void release() {
         ThreadLockInfo.getCurrentThreadLockInfo().lockReleased(lockPath);
         try {
             mutex.release();

@@ -110,4 +110,27 @@ public class LockTest {
         expectedCounters.locksReleasedCount.set(2);
         assertEquals(Map.of(lockPath, expectedCounters), ThreadLockInfo.getLockCountersByPath());
     }
+
+    @Test
+    public void nestedLocks() throws Exception {
+        when(mutex.acquire(anyLong(), any())).thenReturn(true);
+
+        String lockPath2 = "/lock/path/2";
+        Lock lock2 = new Lock(lockPath2, mutex);
+
+        lock.acquire(acquireTimeout);
+        lock2.acquire(acquireTimeout);
+
+        List<ThreadLockInfo> threadLockInfos = ThreadLockInfo.getThreadLockInfos();
+        assertEquals(1, threadLockInfos.size());
+        List<LockInfo> lockInfos = threadLockInfos.get(0).getLockInfos();
+        assertEquals(2, lockInfos.size());
+        assertEquals(lockPath, lockInfos.get(0).getLockPath());
+        assertEquals(LockInfo.LockState.ACQUIRED, lockInfos.get(0).getLockState());
+        assertEquals(lockPath2, lockInfos.get(1).getLockPath());
+        assertEquals(LockInfo.LockState.ACQUIRED, lockInfos.get(1).getLockState());
+
+        lock.close();
+        lock.close();
+    }
 }
