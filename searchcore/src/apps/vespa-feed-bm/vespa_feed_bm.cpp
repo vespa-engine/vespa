@@ -926,7 +926,7 @@ run_update_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
     uint32_t new_errors = f._feed_handler->get_error_count() - old_errors;
-    LOG(info, "%8.2f updates/s %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
+    LOG(info, "%8.2f updates/s, %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
     time_bias += bm_params.get_documents();
 }
 
