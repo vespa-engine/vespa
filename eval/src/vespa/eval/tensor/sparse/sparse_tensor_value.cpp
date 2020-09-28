@@ -216,25 +216,29 @@ SparseTensorValueIndex::create_view(const std::vector<size_t> &dims) const
 //-----------------------------------------------------------------------------
 
 template<typename T>
-SparseTensorValue::SparseTensorValue(const eval::ValueType &type_in, const SparseTensorValueIndex &index_in, ConstArrayRef<T> cells_in)
+SparseTensorValue<T>::SparseTensorValue(const eval::ValueType &type_in, const SparseTensorValueIndex &index_in, ConstArrayRef<T> cells_in)
     : _type(type_in),
       _index(index_in.num_mapped_dims),
       _cells(),
       _stash(needed_memory_for(index_in.map, cells_in))
 {
     copyMap(_index.map, index_in.map, _stash);
-    _cells = TypedCells(_stash.copy_array<T>(cells_in));
+    _cells = _stash.copy_array<T>(cells_in);
 }
 
-SparseTensorValue::SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, TypedCells cells_in, Stash &&stash_in)
+template<typename T>
+SparseTensorValue<T>::SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, ConstArrayRef<T> &&cells_in, Stash &&stash_in)
     : _type(std::move(type_in)),
       _index(std::move(index_in)),
-      _cells(cells_in),
+      _cells(std::move(cells_in)),
       _stash(std::move(stash_in))
 {
 }
 
-SparseTensorValue::~SparseTensorValue() = default;
+template<typename T> SparseTensorValue<T>::~SparseTensorValue() = default;
+
+template class SparseTensorValue<float>;
+template class SparseTensorValue<double>;
 
 //-----------------------------------------------------------------------------
 

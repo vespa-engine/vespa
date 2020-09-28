@@ -28,7 +28,7 @@ TEST(MakeInputTest, print_some_test_input) {
     EXPECT_TRUE(dynamic_cast<DoubleValue *>(dbl.get()));
     EXPECT_TRUE(dynamic_cast<DenseTensorView *>(trivial.get()));
     EXPECT_TRUE(dynamic_cast<DenseTensorView *>(dense.get()));
-    EXPECT_TRUE(dynamic_cast<SparseTensorValue *>(sparse.get()));
+    EXPECT_TRUE(dynamic_cast<SparseTensorValue<double> *>(sparse.get()));
     EXPECT_TRUE(dynamic_cast<PackedMixedTensor *>(mixed.get()));
 
     EXPECT_EQ(dbl->as_double(), 3.0);
