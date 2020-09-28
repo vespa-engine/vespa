@@ -31,7 +31,7 @@ public class ContainerRestartValidator implements ChangeValidator {
     }
 
     private static ConfigChangeAction createConfigChangeAction(Container container) {
-        return new VespaRestartAction(createMessage(container), container.getServiceInfo());
+        return new VespaRestartAction(createMessage(container), container.getServiceInfo(), true);
     }
 
     private static String createMessage(Container container) {

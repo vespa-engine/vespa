@@ -6,7 +6,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.application.api.ValidationOverrides;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,31 +26,29 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
 
     private final String documentType;
     private final boolean allowed;
-    private final Instant now;
 
-    private VespaRefeedAction(String name, String message, List<ServiceInfo> services, String documentType, boolean allowed, Instant now) {
+    private VespaRefeedAction(String name, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
         super(message, services);
         this.name = name;
         this.documentType = documentType;
         this.allowed = allowed;
-        this.now = now;
     }
 
     /** Creates a refeed action with some missing information */
     // TODO: We should require document type or model its absence properly
     public static VespaRefeedAction of(String name, ValidationOverrides overrides, String message, Instant now) {
-        return new VespaRefeedAction(name, message, Collections.emptyList(), "", overrides.allows(name, now), now);
+        return new VespaRefeedAction(name, message, List.of(), "", overrides.allows(name, now));
     }
 
     /** Creates a refeed action */
     public static VespaRefeedAction of(String name, ValidationOverrides overrides, String message,
                                        List<ServiceInfo> services, String documentType, Instant now) {
-        return new VespaRefeedAction(name, message, services, documentType, overrides.allows(name, now), now);
+        return new VespaRefeedAction(name, message, services, documentType, overrides.allows(name, now));
     }
 
     @Override
     public VespaConfigChangeAction modifyAction(String newMessage, List<ServiceInfo> newServices, String documentType) {
-        return new VespaRefeedAction(name, newMessage, newServices, documentType, allowed, now);
+        return new VespaRefeedAction(name, newMessage, newServices, documentType, allowed);
     }
 
     @Override
@@ -62,6 +59,11 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
 
     @Override
     public boolean allowed() { return allowed; }
+
+    @Override
+    public boolean ignoreForInternalRedeploy() {
+        return false;
+    }
 
     @Override
     public String toString() {

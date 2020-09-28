@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents all actions to restart services in order to handle a config change.
@@ -18,6 +19,7 @@ public class RestartActions {
         private final String clusterName;
         private final String clusterType;
         private final String serviceType;
+        private final boolean ignoreForInternalRedeploy;
         private final Set<ServiceInfo> services = new LinkedHashSet<>();
         private final Set<String> messages = new TreeSet<>();
 
@@ -31,10 +33,11 @@ public class RestartActions {
             return this;
         }
 
-        private Entry(String clusterName, String clusterType, String serviceType) {
+        private Entry(String clusterName, String clusterType, String serviceType, boolean ignoreForInternalRedeploy) {
             this.clusterName = clusterName;
             this.clusterType = clusterType;
             this.serviceType = serviceType;
+            this.ignoreForInternalRedeploy = ignoreForInternalRedeploy;
         }
 
         public String getClusterName() {
@@ -49,6 +52,10 @@ public class RestartActions {
             return serviceType;
         }
 
+        public boolean ignoreForInternalRedeploy() {
+            return ignoreForInternalRedeploy;
+        }
+
         public Set<ServiceInfo> getServices() {
             return services;
         }
@@ -59,33 +66,42 @@ public class RestartActions {
 
     }
 
-    private Entry addEntry(ServiceInfo service) {
-        String clusterName = service.getProperty("clustername").orElse("");
-        String clusterType = service.getProperty("clustertype").orElse("");
-        String entryId = clusterType + "." + clusterName + "." + service.getServiceType();
-        Entry entry = actions.get(entryId);
-        if (entry == null) {
-            entry = new Entry(clusterName, clusterType, service.getServiceType());
-            actions.put(entryId, entry);
-        }
-        return entry;
-    }
-
     private final Map<String, Entry> actions = new TreeMap<>();
 
-    public RestartActions() {
+    public RestartActions() { }
+
+    private RestartActions(Map<String, Entry> actions) {
+        this.actions.putAll(actions);
     }
 
     public RestartActions(List<ConfigChangeAction> actions) {
         for (ConfigChangeAction action : actions) {
             if (action.getType().equals(ConfigChangeAction.Type.RESTART)) {
                 for (ServiceInfo service : action.getServices()) {
-                    addEntry(service).
+                    addEntry(service, action.ignoreForInternalRedeploy()).
                             addService(service).
                             addMessage(action.getMessage());
                 }
             }
         }
+    }
+
+    private Entry addEntry(ServiceInfo service, boolean ignoreForInternalRedeploy) {
+        String clusterName = service.getProperty("clustername").orElse("");
+        String clusterType = service.getProperty("clustertype").orElse("");
+        String entryId = clusterType + "." + clusterName + "." + service.getServiceType() + "." + ignoreForInternalRedeploy;
+        Entry entry = actions.get(entryId);
+        if (entry == null) {
+            entry = new Entry(clusterName, clusterType, service.getServiceType(), ignoreForInternalRedeploy);
+            actions.put(entryId, entry);
+        }
+        return entry;
+    }
+
+    public RestartActions useForInternalRestart(boolean useForInternalRestart) {
+        return new RestartActions(actions.entrySet().stream()
+                .filter(entry -> !useForInternalRestart || !entry.getValue().ignoreForInternalRedeploy())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
     public List<Entry> getEntries() {

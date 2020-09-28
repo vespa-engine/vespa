@@ -52,12 +52,14 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Tenant tenant;
     private final DeployLogger deployLogger;
     private final Clock clock;
+    private final boolean internalRedeploy;
 
     private boolean prepared;
     private ConfigChangeActions configChangeActions;
 
     private Deployment(LocalSession session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
-                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger deployLogger, Clock clock, boolean prepared) {
+                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger deployLogger, Clock clock,
+                       boolean internalRedeploy, boolean prepared) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.params = params;
@@ -65,26 +67,27 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.tenant = tenant;
         this.deployLogger = deployLogger;
         this.clock = clock;
+        this.internalRedeploy = internalRedeploy;
         this.prepared = prepared;
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, PrepareParams params, DeployLogger logger, Clock clock) {
-        return new Deployment(session, applicationRepository, () -> params, provisioner, tenant, logger, clock, false);
+        return new Deployment(session, applicationRepository, () -> params, provisioner, tenant, logger, clock, false, false);
     }
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                         Duration timeout, Clock clock, boolean validate, boolean isBootstrap, boolean internalRestart) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false, internalRestart);
-        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false);
+        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true, false);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force, false);
-        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true);
+        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false, true);
     }
 
     /** Prepares this. This does nothing if this is already prepared */
@@ -136,17 +139,21 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 (previousActiveSession != null ? ". Based on session " + previousActiveSession.getSessionId() : "") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
 
-            if (params.internalRestart() && !configChangeActions.getRestartActions().isEmpty()) {
-                Set<String> hostnames = configChangeActions.getRestartActions().getEntries().stream()
-                        .flatMap(entry -> entry.getServices().stream())
-                        .map(ServiceInfo::getHostName)
-                        .collect(Collectors.toUnmodifiableSet());
+            if (params.internalRestart()) {
+                RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
 
-                provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
-                deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
-                        hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
+                if (!restartActions.isEmpty()) {
+                    Set<String> hostnames = restartActions.getEntries().stream()
+                            .flatMap(entry -> entry.getServices().stream())
+                            .map(ServiceInfo::getHostName)
+                            .collect(Collectors.toUnmodifiableSet());
 
-                this.configChangeActions = new ConfigChangeActions(new RestartActions(), configChangeActions.getRefeedActions());
+                    provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
+                    deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+                            hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
+
+                    this.configChangeActions = new ConfigChangeActions(new RestartActions(), configChangeActions.getRefeedActions());
+                }
             }
 
             return session.getMetaData().getGeneration();

@@ -30,6 +30,11 @@ public class MockRefeedAction extends MockConfigChangeAction implements ConfigCh
     public boolean allowed() { return allowed; }
 
     @Override
+    public boolean ignoreForInternalRedeploy() {
+        return false;
+    }
+
+    @Override
     public String getDocumentType() { return documentType; }
 
 }

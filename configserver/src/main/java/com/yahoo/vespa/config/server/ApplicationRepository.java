@@ -402,13 +402,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   TimeoutBudget timeoutBudget,
                                   boolean force) {
         LocalSession localSession = getLocalSession(tenant, sessionId);
-        Deployment deployment = deployment(localSession, tenant, timeoutBudget.timeLeft(), force);
+        Deployment deployment = Deployment.prepared(localSession, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
         return localSession.getApplicationId();
-    }
-
-    private Deployment deployment(LocalSession session, Tenant tenant, Duration timeout, boolean force) {
-        return Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeout, clock, false, force);
     }
 
     public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean force) {
