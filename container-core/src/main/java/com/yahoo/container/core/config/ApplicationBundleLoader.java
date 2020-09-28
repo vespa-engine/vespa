@@ -103,9 +103,7 @@ public class ApplicationBundleLoader {
                 // it means that the X-JDisc-Preinstall-Bundle header was used.
                 // However, test osgi frameworks may return multiple bundles when installing a single bundle.
                 if (bundles.size() > 1  && osgi.hasFelixFramework()) {
-                    // TODO: remove if-statement below when the last model with preinstall has rolled out of hosted
-                    if (! bundles.get(0).getSymbolicName().equals("config-model-fat-amended"))
-                        throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install bundles from disk.");
+                    throw new RuntimeException("Bundle '" + bundles.get(0).getSymbolicName() + "' tried to pre-install bundles from disk.");
                 }
                 reference2Bundle.put(reference, bundles.get(0));
             }
