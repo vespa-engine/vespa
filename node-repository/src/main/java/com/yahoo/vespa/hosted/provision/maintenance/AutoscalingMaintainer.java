@@ -75,6 +75,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
                 Optional<Long> resultingGeneration = deployment.activate();
                 if (resultingGeneration.isEmpty()) return; // Failed to activate
+
                 metricsDb.add(new NodeMetricsDb.AutoscalingEvent(applicationId,
                                                                  resultingGeneration.get(),
                                                                  nodeRepository().clock().instant()));

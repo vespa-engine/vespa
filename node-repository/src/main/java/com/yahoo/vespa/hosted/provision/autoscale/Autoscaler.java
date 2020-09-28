@@ -69,9 +69,10 @@ public class Autoscaler {
         if (unstable(clusterNodes)) return Optional.empty();
 
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
-        Optional<Double> cpuLoad    = averageLoad(Resource.cpu, clusterNodes);
-        Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes);
-        Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes);
+        var startTimePerHost = metricStartTimes(clusterNodes);
+        Optional<Double> cpuLoad    = averageLoad(Resource.cpu, clusterNodes, startTimePerHost);
+        Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, startTimePerHost);
+        Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, startTimePerHost);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
@@ -98,42 +99,53 @@ public class Autoscaler {
     }
 
     /**
-     * Returns the average load of this resource in the measurement window,
-     * or empty if we are not in a position to make decisions from these measurements at this time.
+     * Returns the instant of the oldest metric to consider for each node, or an empty map if metrics from the
+     * entire (max) window should be considered.
      */
-    private Optional<Double> averageLoad(Resource resource,
-                                         List<Node> clusterNodes) {
+    private Map<String, Instant> metricStartTimes(List<Node> clusterNodes) {
         ApplicationId application = clusterNodes.get(0).allocation().get().owner();
-        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-
-        Instant startTime = nodeRepository.clock().instant().minus(scalingWindow(clusterType));
-
-        Optional<Long> generation = Optional.empty();
         List<NodeMetricsDb.AutoscalingEvent> deployments = metricsDb.getEvents(application);
         Map<String, Instant> startTimePerHost = new HashMap<>();
-        if (! deployments.isEmpty()) {
+        if (!deployments.isEmpty()) {
             var deployment = deployments.get(deployments.size() - 1);
-            if (deployment.time().isAfter(startTime))
-                startTime = deployment.time(); // just to filter more faster
-            List<NodeMetricsDb.NodeMeasurements> generationMeasurements = metricsDb.getMeasurements(startTime,
-                                                                                                    Metric.generation,
-                                                                                                    clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
+            List<NodeMetricsDb.NodeMeasurements> generationMeasurements =
+                    metricsDb.getMeasurements(deployment.time(),
+                                              Metric.generation,
+                                              clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
             for (Node node : clusterNodes) {
                 startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
                 var nodeGenerationMeasurements =
                         generationMeasurements.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
                 if (nodeGenerationMeasurements.isPresent()) {
-                    var firstMeasurementOfCorrectGeneration = nodeGenerationMeasurements.get().asList().stream().filter(m -> m.value() < deployment.generation()).findFirst();
-                    if (firstMeasurementOfCorrectGeneration.isPresent())
+                    var firstMeasurementOfCorrectGeneration =
+                            nodeGenerationMeasurements.get().asList().stream()
+                                                                     .filter(m -> m.value() >= deployment.generation())
+                                                                     .findFirst();
+                    if (firstMeasurementOfCorrectGeneration.isPresent()) {
                         startTimePerHost.put(node.hostname(), firstMeasurementOfCorrectGeneration.get().at());
+                    }
                 }
             }
         }
+        return startTimePerHost;
+    }
 
-        List<NodeMetricsDb.NodeMeasurements> measurements = metricsDb.getMeasurements(startTime,
-                                                                                      Metric.from(resource),
-                                                                                      clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
+    /**
+     * Returns the average load of this resource in the measurement window,
+     * or empty if we are not in a position to make decisions from these measurements at this time.
+     */
+    private Optional<Double> averageLoad(Resource resource,
+                                         List<Node> clusterNodes,
+                                         Map<String, Instant> startTimePerHost) {
+        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
+
+        List<NodeMetricsDb.NodeMeasurements> measurements =
+                metricsDb.getMeasurements(nodeRepository.clock().instant().minus(scalingWindow(clusterType)),
+                                          Metric.from(resource),
+                                          clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
+        int beforeFilterStale = measurements.stream().mapToInt(m -> m.size()).sum();
         measurements = filterStale(measurements, startTimePerHost);
+
         // Require a total number of measurements scaling with the number of nodes,
         // but don't require that we have at least that many from every node
         int measurementCount = measurements.stream().mapToInt(m -> m.size()).sum();
