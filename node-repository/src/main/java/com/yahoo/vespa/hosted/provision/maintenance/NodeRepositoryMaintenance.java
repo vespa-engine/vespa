@@ -75,7 +75,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,
                                     defaults.nodeFailerInterval, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
-        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval);
+        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository,
+                                                                          defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval, flagSource);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, defaults.reservationExpiry, metric);
         retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, clock, defaults.retiredInterval, defaults.retiredExpiry);

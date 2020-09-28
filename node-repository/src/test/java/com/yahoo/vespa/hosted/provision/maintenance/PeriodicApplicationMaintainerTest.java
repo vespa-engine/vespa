@@ -316,14 +316,13 @@ public class PeriodicApplicationMaintainerTest {
 
         private List<Node> overriddenNodesNeedingMaintenance;
 
-        TestablePeriodicApplicationMaintainer setOverriddenNodesNeedingMaintenance(List<Node> overriddenNodesNeedingMaintenance) {
+        void setOverriddenNodesNeedingMaintenance(List<Node> overriddenNodesNeedingMaintenance) {
             this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
-            return this;
         }
 
         TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
                                               Duration minTimeBetweenRedeployments) {
-            super(deployer, new TestMetric(), nodeRepository, interval, minTimeBetweenRedeployments);
+            super(deployer, new TestMetric(), nodeRepository, interval, minTimeBetweenRedeployments, new InMemoryFlagSource());
         }
 
         @Override
