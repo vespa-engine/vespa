@@ -18,7 +18,7 @@ Value::UP v_of(const TensorSpec &spec) {
     return value_from_spec(spec, DefaultValueBuilderFactory::get());
 }
 
-TEST(MakeInputTest, print_some_test_input) {
+TEST(DefaultValueBuilderFactoryTest, all_built_value_types_are_correct) {
     auto dbl = v_of(TensorSpec("double").add({}, 3.0));
     auto trivial = v_of(TensorSpec("tensor(x[1])").add({{"x",0}}, 7.0));
     auto dense = v_of(TensorSpec("tensor<float>(x[2],y[3])").add({{"x",1},{"y",2}}, 17.0));
