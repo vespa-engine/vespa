@@ -28,10 +28,10 @@ SparseTensorValueBuilder<T>::build(std::unique_ptr<eval::ValueBuilder<T>>)
     // copy cells to stash:
     ConstArrayRef<T> tmp_cells = _cells;
     ConstArrayRef<T> cells_copy = _stash.copy_array<T>(tmp_cells);
-    return std::make_unique<SparseTensorValue<T>>(std::move(_type),
-                                                  std::move(_index),
-                                                  std::move(cells_copy),
-                                                  std::move(_stash));
+    return std::make_unique<SparseTensorValue>(std::move(_type),
+                                               std::move(_index),
+                                               TypedCells(cells_copy),
+                                               std::move(_stash));
 }
 
 template class SparseTensorValueBuilder<float>;

@@ -29,22 +29,22 @@ struct SparseTensorValueIndex : public vespalib::eval::Value::Index
  * improve CPU cache and TLB hit ratio, relative to SimpleTensor
  * implementation.
  */
-template<typename T>
 class SparseTensorValue : public vespalib::eval::Value
 {
 private:
     eval::ValueType _type;
     SparseTensorValueIndex _index;
-    ConstArrayRef<T> _cells;
+    TypedCells _cells;
     Stash _stash;
 public:
+    template<typename T>
     SparseTensorValue(const eval::ValueType &type_in, const SparseTensorValueIndex &index_in, ConstArrayRef<T> cells_in);
 
-    SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, ConstArrayRef<T> &&cells_in, Stash &&stash_in);
+    SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, TypedCells cells_in, Stash &&stash_in);
 
     ~SparseTensorValue() override;
 
-    TypedCells cells() const override { return TypedCells(_cells); }
+    TypedCells cells() const override { return _cells; }
 
     const Index &index() const override { return _index; }
 
