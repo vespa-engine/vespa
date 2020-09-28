@@ -18,7 +18,6 @@ private:
     eval::ValueType _type;
     SparseTensorValueIndex _index;
     std::vector<T> _cells;
-    Stash _stash;
     SparseTensorAddressBuilder _addr_builder;
 public:
     SparseTensorValueBuilder(const eval::ValueType &type,
@@ -27,8 +26,7 @@ public:
                              size_t expected_subspaces)
       : _type(type),
         _index(num_mapped_in),
-        _cells(),
-        _stash()
+        _cells()
     {
         assert(num_mapped_in > 0);
         assert(subspace_size_in == 1);

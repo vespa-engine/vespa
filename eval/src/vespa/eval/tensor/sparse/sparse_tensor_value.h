@@ -16,9 +16,14 @@ struct SparseTensorValueIndex : public vespalib::eval::Value::Index
     using View = vespalib::eval::Value::Index::View;
     using SubspaceMap = hash_map<SparseTensorAddressRef, uint32_t, hash<SparseTensorAddressRef>,
                                  std::equal_to<>, hashtable_base::and_modulator>;
-    SubspaceMap map;
-    size_t num_mapped_dims;
+
+    Stash _stash;
+    SubspaceMap _map;
+    size_t _num_mapped_dims;
+
     explicit SparseTensorValueIndex(size_t num_mapped_dims_in);
+    SparseTensorValueIndex(const SparseTensorValueIndex & index_in);
+    SparseTensorValueIndex(SparseTensorValueIndex && index_in) = default;
     ~SparseTensorValueIndex();
     size_t size() const override;
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
@@ -35,12 +40,11 @@ class SparseTensorValue : public vespalib::eval::Value
 private:
     eval::ValueType _type;
     SparseTensorValueIndex _index;
-    ConstArrayRef<T> _cells;
-    Stash _stash;
+    std::vector<T> _cells;
 public:
-    SparseTensorValue(const eval::ValueType &type_in, const SparseTensorValueIndex &index_in, ConstArrayRef<T> cells_in);
+    SparseTensorValue(const eval::ValueType &type_in, const SparseTensorValueIndex &index_in, const std::vector<T> &cells_in);
 
-    SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, ConstArrayRef<T> &&cells_in, Stash &&stash_in);
+    SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, std::vector<T> &&cells_in);
 
     ~SparseTensorValue() override;
 

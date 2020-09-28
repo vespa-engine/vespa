@@ -15,9 +15,9 @@ SparseTensorValueBuilder<T>::add_subspace(const std::vector<vespalib::stringref>
         _addr_builder.add(label);
     }
     auto tmp_ref = _addr_builder.getAddressRef();
-    SparseTensorAddressRef ref(tmp_ref, _stash);
-    assert(_index.map.find(ref) == _index.map.end());
-    _index.map[ref] = idx;
+    SparseTensorAddressRef ref(tmp_ref, _index._stash);
+    assert(_index._map.find(ref) == _index._map.end());
+    _index._map[ref] = idx;
     return ArrayRef<T>(&_cells[idx], 1);
 }
 
@@ -25,13 +25,10 @@ template <typename T>
 std::unique_ptr<eval::Value>
 SparseTensorValueBuilder<T>::build(std::unique_ptr<eval::ValueBuilder<T>>)
 {
-    // copy cells to stash:
-    ConstArrayRef<T> tmp_cells = _cells;
-    ConstArrayRef<T> cells_copy = _stash.copy_array<T>(tmp_cells);
     return std::make_unique<SparseTensorValue<T>>(std::move(_type),
                                                   std::move(_index),
-                                                  std::move(cells_copy),
-                                                  std::move(_stash));
+                                                  std::move(_cells));
+
 }
 
 template class SparseTensorValueBuilder<float>;

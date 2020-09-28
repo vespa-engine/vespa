@@ -218,6 +218,8 @@ TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) {
 
 //-----------------------------------------------------------------------------
 
+#if 0
+
 TEST(MakeInputTest, print_some_test_input) {
     auto sparse = make_vector(D::map("x", 5, 3), 1.0);
     auto dense = make_vector(D::idx("x", 5), 10.0);
@@ -262,6 +264,8 @@ TEST(DenseJoin, no_overlap) {
     auto rhs = make_cube(D::idx("b", 4), D::idx("c", 4), D::idx("d", 4), 2.0);
     benchmark_join("dense no overlap multiply", lhs, rhs, operation::Mul::f);
 }
+
+#endif
 
 //-----------------------------------------------------------------------------
 

@@ -17,7 +17,7 @@ using View = vespalib::eval::Value::Index::View;
 
 namespace {
 
-void copyMap(SubspaceMap &map, const SubspaceMap &map_in, Stash &stash) {
+void copyMap(SubspaceMap &map, const SubspaceMap &map_in, Stash &to_stash) {
     // copy the exact hashtable structure:
     map = map_in;
     // copy the actual contents of the addresses,
@@ -25,7 +25,7 @@ void copyMap(SubspaceMap &map, const SubspaceMap &map_in, Stash &stash) {
     // keys so they point to our copy:
     for (auto & kv : map) {
         SparseTensorAddressRef oldRef = kv.first;
-        SparseTensorAddressRef newRef(oldRef, stash);
+        SparseTensorAddressRef newRef(oldRef, to_stash);
         kv.first = newRef;
     }
 }
@@ -193,45 +193,49 @@ SparseTensorValueAllMappings::next_result(const std::vector<vespalib::stringref*
 //-----------------------------------------------------------------------------
 
 SparseTensorValueIndex::SparseTensorValueIndex(size_t num_mapped_in)
-    : map(), num_mapped_dims(num_mapped_in) {}
+    : _stash(), _map(), _num_mapped_dims(num_mapped_in) {}
+
+SparseTensorValueIndex::SparseTensorValueIndex(const SparseTensorValueIndex & index_in)
+    : _stash(), _map(), _num_mapped_dims(index_in._num_mapped_dims)
+{
+    copyMap(_map, index_in._map, _stash);
+}
 
 SparseTensorValueIndex::~SparseTensorValueIndex() = default;
 
 size_t SparseTensorValueIndex::size() const {
-    return map.size();
+    return _map.size();
 }
 
 std::unique_ptr<View>
 SparseTensorValueIndex::create_view(const std::vector<size_t> &dims) const
 {
-    if (dims.size() == num_mapped_dims) {
-        return std::make_unique<SparseTensorValueLookup>(map);
+    if (dims.size() == _num_mapped_dims) {
+        return std::make_unique<SparseTensorValueLookup>(_map);
     }
     if (dims.size() == 0) {
-        return std::make_unique<SparseTensorValueAllMappings>(map);
+        return std::make_unique<SparseTensorValueAllMappings>(_map);
     }
-    return std::make_unique<SparseTensorValueView>(map, dims);
+    return std::make_unique<SparseTensorValueView>(_map, dims);
 }
 
 //-----------------------------------------------------------------------------
 
 template<typename T>
-SparseTensorValue<T>::SparseTensorValue(const eval::ValueType &type_in, const SparseTensorValueIndex &index_in, ConstArrayRef<T> cells_in)
+SparseTensorValue<T>::SparseTensorValue(const eval::ValueType &type_in,
+                                        const SparseTensorValueIndex &index_in,
+                                        const std::vector<T> &cells_in)
     : _type(type_in),
-      _index(index_in.num_mapped_dims),
-      _cells(),
-      _stash(needed_memory_for(index_in.map, cells_in))
+      _index(index_in),
+      _cells(cells_in)
 {
-    copyMap(_index.map, index_in.map, _stash);
-    _cells = _stash.copy_array<T>(cells_in);
 }
 
 template<typename T>
-SparseTensorValue<T>::SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, ConstArrayRef<T> &&cells_in, Stash &&stash_in)
+SparseTensorValue<T>::SparseTensorValue(eval::ValueType &&type_in, SparseTensorValueIndex &&index_in, std::vector<T> &&cells_in)
     : _type(std::move(type_in)),
       _index(std::move(index_in)),
-      _cells(std::move(cells_in)),
-      _stash(std::move(stash_in))
+      _cells(std::move(cells_in))
 {
 }
 
