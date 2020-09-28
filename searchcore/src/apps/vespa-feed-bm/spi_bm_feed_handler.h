@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_bm_feed_handler.h"
+#include <atomic>
 
 namespace storage::spi { struct PersistenceProvider; }
 
@@ -14,6 +15,7 @@ namespace feedbm {
 class SpiBmFeedHandler : public IBmFeedHandler
 {
     storage::spi::PersistenceProvider& _provider;
+    std::atomic<uint32_t> _errors;
 public:
     SpiBmFeedHandler(storage::spi::PersistenceProvider& provider);
     ~SpiBmFeedHandler();
@@ -21,6 +23,7 @@ public:
     void update(const document::Bucket& bucket, std::unique_ptr<document::DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker) override;
     void remove(const document::Bucket& bucket, const document::DocumentId& document_id,  uint64_t timestamp, PendingTracker& tracker) override;
     void create_bucket(const document::Bucket& bucket);
+    uint32_t get_error_count() const override;
 };
 
 }

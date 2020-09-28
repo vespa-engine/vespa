@@ -844,6 +844,7 @@ void
 run_put_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor &executor, int pass, int64_t& time_bias, const std::vector<vespalib::nbostream> &serialized_feed_v, const BMParams& bm_params)
 {
     LOG(info, "putAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
+    uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
     for (uint32_t i = 0; i < bm_params.get_threads(); ++i) {
         auto range = bm_params.get_range(i);
@@ -853,7 +854,8 @@ run_put_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor
     executor.sync();
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
-    LOG(info, "%8.2f puts/s for pass=%u", bm_params.get_documents() / elapsed.count(), pass);
+    uint32_t new_errors = f._feed_handler->get_error_count() - old_errors;
+    LOG(info, "%8.2f puts/s, %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
     time_bias += bm_params.get_documents();
 }
 
@@ -893,6 +895,7 @@ void
 run_update_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor &executor, int pass, int64_t& time_bias, const std::vector<vespalib::nbostream> &serialized_feed_v, const BMParams& bm_params)
 {
     LOG(info, "updateAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
+    uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
     for (uint32_t i = 0; i < bm_params.get_threads(); ++i) {
         auto range = bm_params.get_range(i);
@@ -902,7 +905,8 @@ run_update_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
     executor.sync();
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
-    LOG(info, "%8.2f updates/s for pass=%u", bm_params.get_documents() / elapsed.count(), pass);
+    uint32_t new_errors = f._feed_handler->get_error_count() - old_errors;
+    LOG(info, "%8.2f updates/s %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
     time_bias += bm_params.get_documents();
 }
 
@@ -942,6 +946,7 @@ void
 run_remove_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor &executor, int pass, int64_t& time_bias, const std::vector<vespalib::nbostream> &serialized_feed_v, const BMParams &bm_params)
 {
     LOG(info, "removeAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
+    uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
     for (uint32_t i = 0; i < bm_params.get_threads(); ++i) {
         auto range = bm_params.get_range(i);
@@ -951,7 +956,8 @@ run_remove_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
     executor.sync();
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
-    LOG(info, "%8.2f removes/s for pass=%u", bm_params.get_documents() / elapsed.count(), pass);
+    uint32_t new_errors = f._feed_handler->get_error_count() - old_errors;
+    LOG(info, "%8.2f removes/s, %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
     time_bias += bm_params.get_documents();
 }
 

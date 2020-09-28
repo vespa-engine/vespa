@@ -2,6 +2,7 @@
 
 #include "storage_api_chain_bm_feed_handler.h"
 #include "pending_tracker.h"
+#include "storage_reply_error_checker.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
@@ -33,7 +34,8 @@ std::shared_ptr<storage::api::StorageCommand> make_set_cluster_state_cmd() {
 
 }
 
-class BmStorageLink : public StorageLink
+class BmStorageLink : public StorageLink,
+                      public StorageReplyErrorChecker
 {
     std::mutex _mutex;
     vespalib::hash_map<uint64_t, PendingTracker *> _pending;
@@ -65,6 +67,7 @@ public:
 
 BmStorageLink::BmStorageLink()
     : storage::StorageLink("vespa-bm-feed"),
+      StorageReplyErrorChecker(),
       _mutex(),
       _pending()
 {
@@ -86,6 +89,7 @@ BmStorageLink::onDown(const std::shared_ptr<storage::api::StorageMessage>& msg)
 bool
 BmStorageLink::onUp(const std::shared_ptr<storage::api::StorageMessage>& msg)
 {
+    check_error(*msg);
     return release(msg->getMsgId());
 }
 
@@ -180,6 +184,12 @@ std::unique_ptr<storage::IStorageChainBuilder>
 StorageApiChainBmFeedHandler::get_storage_chain_builder(std::shared_ptr<Context> context)
 {
     return std::make_unique<MyStorageChainBuilder>(std::move(context));
+}
+
+uint32_t
+StorageApiChainBmFeedHandler::get_error_count() const
+{
+    return _context->bm_link->get_error_count();
 }
 
 }
