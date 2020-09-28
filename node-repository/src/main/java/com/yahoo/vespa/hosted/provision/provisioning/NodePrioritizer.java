@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -131,7 +132,9 @@ public class NodePrioritizer {
                 allocation = host.ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
                 if (allocation.isEmpty()) continue; // No free addresses in this pool
             } catch (Exception e) {
-                log.log(Level.WARNING, "Failed allocating IP address on " + host.hostname(), e);
+                log.log(Level.WARNING, "Failed allocating IP address on " + host.hostname() + " to " +
+                                       application + ", cluster " + clusterSpec.id() + ": " +
+                                       Exceptions.toMessageString(e));
                 continue;
             }
 
