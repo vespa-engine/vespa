@@ -18,21 +18,21 @@ namespace {
 
 struct CreateDefaultValueBuilderBase {
     template <typename T> static std::unique_ptr<ValueBuilderBase> invoke(const ValueType &type,
-                                                                          size_t num_mapped_dims_in,
-                                                                          size_t subspace_size_in,
+                                                                          size_t num_mapped_dims,
+                                                                          size_t subspace_size,
                                                                           size_t expected_subspaces)
     {
         assert(check_cell_type<T>(type.cell_type()));
         if (type.is_double()) {
             return std::make_unique<DoubleValueBuilder>();
         }
-        if (type.is_dense()) {
-            return std::make_unique<DenseTensorValueBuilder<T>>(type, subspace_size_in);
+        if (num_mapped_dims == 0) {
+            return std::make_unique<DenseTensorValueBuilder<T>>(type, subspace_size);
         }
-        if (type.is_sparse()) {
-            return std::make_unique<SparseTensorValueBuilder<T>>(type, num_mapped_dims_in, expected_subspaces);
+        if (subspace_size == 1) {
+            return std::make_unique<SparseTensorValueBuilder<T>>(type, num_mapped_dims, expected_subspaces);
         }
-        return std::make_unique<packed_mixed_tensor::PackedMixedTensorBuilder<T>>(type, num_mapped_dims_in, subspace_size_in, expected_subspaces);
+        return std::make_unique<packed_mixed_tensor::PackedMixedTensorBuilder<T>>(type, num_mapped_dims, subspace_size, expected_subspaces);
     }
 };
 
@@ -45,11 +45,11 @@ DefaultValueBuilderFactory DefaultValueBuilderFactory::_factory;
 
 std::unique_ptr<ValueBuilderBase>
 DefaultValueBuilderFactory::create_value_builder_base(const ValueType &type,
-                                                     size_t num_mapped_dims_in,
-                                                      size_t subspace_size_in,
+                                                      size_t num_mapped_dims,
+                                                      size_t subspace_size,
                                                       size_t expected_subspaces) const
 {
-    return typify_invoke<1,TypifyCellType,CreateDefaultValueBuilderBase>(type.cell_type(), type, num_mapped_dims_in, subspace_size_in, expected_subspaces);
+    return typify_invoke<1,TypifyCellType,CreateDefaultValueBuilderBase>(type.cell_type(), type, num_mapped_dims, subspace_size, expected_subspaces);
 }
 
 //-----------------------------------------------------------------------------
