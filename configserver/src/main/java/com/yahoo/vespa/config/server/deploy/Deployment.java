@@ -140,7 +140,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
 
             if (params.internalRestart()) {
-                RestartActions restartActions = configChangeActions.getRestartActions().withoutIgnoreForInternalRestart(internalRedeploy);
+                RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
 
                 if (!restartActions.isEmpty()) {
                     Set<String> hostnames = restartActions.getEntries().stream()

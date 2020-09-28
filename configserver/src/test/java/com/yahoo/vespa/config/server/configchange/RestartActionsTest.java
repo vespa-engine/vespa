@@ -85,7 +85,7 @@ public class RestartActionsTest {
     }
 
     @Test
-    public void without_restart_i() {
+    public void use_for_internal_restart_test() {
         ConfigChangeActions actions = new ConfigChangeActionsBuilder()
                 .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE, SERVICE_TYPE, SERVICE_NAME)
                 .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, true).build();
@@ -93,8 +93,8 @@ public class RestartActionsTest {
         assertEquals(Set.of(CLUSTER_TYPE, CLUSTER_TYPE_2),
                 actions.getRestartActions().getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
         assertEquals(Set.of(CLUSTER_TYPE, CLUSTER_TYPE_2),
-                actions.getRestartActions().withoutIgnoreForInternalRestart(false).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
+                actions.getRestartActions().useForInternalRestart(false).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
         assertEquals(Set.of(CLUSTER_TYPE),
-                actions.getRestartActions().withoutIgnoreForInternalRestart(true).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
+                actions.getRestartActions().useForInternalRestart(true).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
     }
 }

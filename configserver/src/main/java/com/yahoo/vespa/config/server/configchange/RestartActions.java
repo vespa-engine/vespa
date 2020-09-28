@@ -98,9 +98,9 @@ public class RestartActions {
         return entry;
     }
 
-    public RestartActions withoutIgnoreForInternalRestart(boolean withoutIgnoreForInternalRestart) {
+    public RestartActions useForInternalRestart(boolean useForInternalRestart) {
         return new RestartActions(actions.entrySet().stream()
-                .filter(entry -> !withoutIgnoreForInternalRestart || !entry.getValue().ignoreForInternalRedeploy())
+                .filter(entry -> !useForInternalRestart || !entry.getValue().ignoreForInternalRedeploy())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
