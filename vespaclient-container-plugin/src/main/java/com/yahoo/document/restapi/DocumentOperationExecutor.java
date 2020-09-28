@@ -37,7 +37,14 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -52,6 +59,8 @@ import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.OVE
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.PRECONDITION_FAILED;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.TIMEOUT;
 import static java.util.Objects.requireNonNull;
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
@@ -65,20 +74,16 @@ public class DocumentOperationExecutor {
 
     private static final Logger log = Logger.getLogger(DocumentOperationExecutor.class.getName());
 
-    private final Duration resendDelay;
-    private final Duration defaultTimeout;
     private final Duration visitTimeout;
     private final long maxThrottled;
     private final DocumentAccess access;
     private final AsyncSession asyncSession;
     private final Map<String, StorageCluster> clusters;
     private final Clock clock;
-    private final ConcurrentLinkedQueue<Delayed> throttled = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<Delayed> timeouts = new ConcurrentLinkedQueue<>();
+    private final DelayQueue throttled;
+    private final DelayQueue timeouts;
     private final Map<Long, OperationContext> outstanding = new ConcurrentHashMap<>();
     private final Map<VisitorControlHandler, VisitorSession> visits = new ConcurrentHashMap<>();
-    private final Thread retryWorker;
-    private final Thread timeoutWorker;
 
     public DocumentOperationExecutor(ClusterListConfig clustersConfig, AllClustersBucketSpacesConfig bucketsConfig,
                                      DocumentOperationExecutorConfig executorConfig, DocumentAccess access, Clock clock) {
@@ -93,32 +98,30 @@ public class DocumentOperationExecutor {
 
     DocumentOperationExecutor(Duration resendDelay, Duration defaultTimeout, Duration visitTimeout, long maxThrottled,
                               DocumentAccess access, Map<String, StorageCluster> clusters, Clock clock) {
-        this.resendDelay = requireNonNull(resendDelay);
-        this.defaultTimeout = requireNonNull(defaultTimeout);
         this.visitTimeout = requireNonNull(visitTimeout);
         this.maxThrottled = maxThrottled;
         this.access = requireNonNull(access);
         this.asyncSession = access.createAsyncSession(new AsyncParameters().setResponseHandler(this::handleResponse));
         this.clock = requireNonNull(clock);
         this.clusters = Map.copyOf(clusters);
-        this.retryWorker = new Thread(this::retry, "document-operation-executor-retry-thread");
-        this.retryWorker.start();
-        this.timeoutWorker = new Thread(this::timeOut, "document-operation-executor-timeout-thread");
-        this.timeoutWorker.start();
+        this.throttled = new DelayQueue(200, this::send, resendDelay, clock);
+        this.timeouts = new DelayQueue(Long.MAX_VALUE, (__, context) -> context.error(TIMEOUT, "Timed out after " + defaultTimeout), defaultTimeout, clock);
     }
 
+    /** Assumes this stops receiving operations roughly when this is called, then waits up to 50 seconds to drain operations. */
     public void shutdown() {
-        retryWorker.interrupt();
-        timeoutWorker.interrupt();
+        long shutdownMillis = clock.instant().plusSeconds(50).toEpochMilli();
+        Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(30),
+                                                        context -> context.error(OVERLOAD, "Retry on overload failed due to shutdown"));
+        Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(40),
+                                                      context -> context.error(TIMEOUT, "Timed out due to shutdown"));
         visits.values().forEach(VisitorSession::destroy);
         try {
-            long timeoutMillis = clock.millis() + 10_000;
-            retryWorker.join(timeoutMillis - clock.millis());
-            timeoutWorker.join(timeoutMillis - clock.millis());
+            throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
         }
-        catch (InterruptedException e) {
-            log.log(Level.WARNING, "Interrupted waiting for caretaker threads to complete");
-            Thread.currentThread().interrupt();
+        catch (Exception e) {
+            log.log(WARNING, "Exception shutting down " + getClass().getName(), e);
         }
     }
 
@@ -178,127 +181,16 @@ public class DocumentOperationExecutor {
         return resolveCluster(Optional.of(cluster), clusters).route();
     }
 
-    /** Rejects operation if retry queue is full; otherwise starts a timer for the given task, and attempts to send it.  */
-    private void accept(Supplier<Result> operation, OperationContext context) {
-        timeouts.add(new Delayed(clock.instant().plus(defaultTimeout), operation, context));
-        timeouts.notify();
-        send(operation, context);
+
+    public enum ErrorType {
+        OVERLOAD,
+        NOT_FOUND,
+        PRECONDITION_FAILED,
+        BAD_REQUEST,
+        TIMEOUT,
+        ERROR;
     }
 
-    /** Sends the given operation through the async session of this, enqueueing a retry if throttled, unless overloaded. */
-    private void send(Supplier<Result> operation, OperationContext context) {
-        Result result = operation.get();
-        switch (result.type()) {
-            case SUCCESS:
-                outstanding.put(result.getRequestId(), context);
-                break;
-            case TRANSIENT_ERROR:
-                if (throttled.size() > maxThrottled)
-                    context.error(OVERLOAD, maxThrottled + " requests already in retry queue");
-                else {
-                    throttled.add(new Delayed(clock.instant().plus(resendDelay), operation, context));
-                    throttled.notify();
-                }
-                break;
-            default:
-                log.log(Level.WARNING, "Unknown result type '" + result.type() + "'");
-            case FATAL_ERROR: // intentional fallthrough
-                context.error(ERROR, result.getError().getMessage());
-        }
-    }
-
-    private void handleResponse(Response response){
-        OperationContext context = outstanding.remove(response.getRequestId());
-        if (context != null)
-            if (response.isSuccess())
-                context.success(response instanceof DocumentResponse ? Optional.ofNullable(((DocumentResponse) response).getDocument())
-                                                                     : Optional.empty());
-            else
-                context.error(toErrorType(response.outcome()), response.getTextMessage());
-        else
-            log.log(Level.FINE, () -> "Received response for request which has timed out, with id " + response.getRequestId());
-    }
-
-    private static ErrorType toErrorType(Response.Outcome outcome) {
-        switch (outcome) {
-            case NOT_FOUND:
-                return NOT_FOUND;
-            case CONDITION_FAILED:
-                return PRECONDITION_FAILED;
-            default:
-                log.log(Level.WARNING, "Unexpected response outcome: " + outcome);
-            case ERROR: // intentional fallthrough
-                return ERROR;
-        }
-    }
-
-    private void retry() {
-        maintain(throttled, delayed -> send(delayed.operation(), delayed.context()));
-    }
-
-    private void timeOut() {
-        maintain(timeouts, delayed -> delayed.context().error(TIMEOUT, "Timed out after " + defaultTimeout));
-    }
-
-    private void maintain(ConcurrentLinkedQueue<Delayed> queue, Consumer<Delayed> action) {
-        while ( ! Thread.currentThread().isInterrupted()) {
-            try {
-                long waitUntilMillis = Instant.MAX.toEpochMilli();
-                Iterator<Delayed> operations = queue.iterator();
-                while (operations.hasNext()) {
-                    Delayed operation = operations.next();
-                    // Already handled: remove and continue.
-                    if (operation.context().handled()) {
-                        operations.remove();
-                        continue;
-                    }
-                    // Ready for retry — remove from queue and send.
-                    if (operation.readyAt().isBefore(clock.instant())) {
-                        action.accept(operation);
-                        operations.remove();
-                        continue;
-                    }
-                    // Not yet ready for retry — track earliest time to wake up again.
-                    waitUntilMillis = Math.min(waitUntilMillis, operation.readyAt.toEpochMilli());
-                }
-                synchronized (queue) {
-                    queue.wait(Math.max(0, waitUntilMillis - clock.millis()));
-                }
-            }
-            catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-
-    /** The executor will call <em>exactly one</em> callback <em>exactly once</em> for contexts submitted to it. */
-    private static class Context<T> {
-
-        private final AtomicBoolean handled = new AtomicBoolean();
-        private final BiConsumer<ErrorType, String> onError;
-        private final Consumer<T> onSuccess;
-
-        Context(BiConsumer<ErrorType, String> onError, Consumer<T> onSuccess) {
-            this.onError = onError;
-            this.onSuccess = onSuccess;
-        }
-
-        void error(ErrorType type, String message) {
-            if ( ! handled.getAndSet(true))
-                onError.accept(type, message);
-        }
-
-        void success(T result) {
-            if ( ! handled.getAndSet(true))
-                onSuccess.accept(result);
-        }
-
-        boolean handled() {
-            return handled.get();
-        }
-
-    }
 
     /** Context for reacting to the progress of a visitor session. Completion signalled by an optional progress token. */
     public static class VisitOperationsContext extends Context<Optional<String>> {
@@ -317,41 +209,13 @@ public class DocumentOperationExecutor {
 
     }
 
+
     /** Context for a document operation. */
     public static class OperationContext extends Context<Optional<Document>> {
 
         public OperationContext(BiConsumer<ErrorType, String> onError, Consumer<Optional<Document>> onSuccess) {
             super(onError, onSuccess);
         }
-
-    }
-
-
-    public enum ErrorType {
-        OVERLOAD,
-        NOT_FOUND,
-        PRECONDITION_FAILED,
-        BAD_REQUEST,
-        TIMEOUT,
-        ERROR;
-    }
-
-
-    private static class Delayed {
-
-        private final Supplier<Result> operation;
-        private final OperationContext context;
-        private final Instant readyAt;
-
-        Delayed(Instant readyAt, Supplier<Result> operation, OperationContext context) {
-            this.readyAt = requireNonNull(readyAt);
-            this.context = requireNonNull(context);
-            this.operation = requireNonNull(operation);
-        }
-
-        Supplier<Result> operation() { return operation; }
-        OperationContext context() { return context; }
-        Instant readyAt() { return readyAt; }
 
     }
 
@@ -498,6 +362,257 @@ public class DocumentOperationExecutor {
     }
 
 
+    public static class Group {
+
+        private final String value;
+        private final String docIdPart;
+        private final String selection;
+
+        private Group(String value, String docIdPart, String selection) {
+            Text.validateTextString(value)
+                .ifPresent(codePoint -> { throw new IllegalArgumentException(String.format("Illegal code point U%04X in group", codePoint)); });
+            this.value = value;
+            this.docIdPart = docIdPart;
+            this.selection = selection;
+        }
+
+        public static Group of(long value) { return new Group(Long.toString(value), "n=" + value, "id.user=" + value); }
+        public static Group of(String value) { return new Group(value, "g=" + value, "id.group='" + value.replaceAll("'", "\\'") + "'"); }
+
+        public String value() { return value; }
+        public String docIdPart() { return docIdPart; }
+        public String selection() { return selection; }
+
+    }
+
+
+    /** Rejects operation if retry queue is full; otherwise starts a timer for the given task, and attempts to send it.  */
+    private void accept(Supplier<Result> operation, OperationContext context) {
+        timeouts.add(operation, context);
+        send(operation, context);
+    }
+
+    /** Sends the given operation through the async session of this, enqueueing a retry if throttled, unless overloaded. */
+    private void send(Supplier<Result> operation, OperationContext context) {
+        Result result = operation.get();
+        switch (result.type()) {
+            case SUCCESS:
+                outstanding.put(result.getRequestId(), context);
+                break;
+            case TRANSIENT_ERROR:
+                if ( ! throttled.add(operation, context))
+                    context.error(OVERLOAD, maxThrottled + " requests already in retry queue");
+                break;
+            default:
+                log.log(WARNING, "Unknown result type '" + result.type() + "'");
+            case FATAL_ERROR: // intentional fallthrough
+                context.error(ERROR, result.getError().getMessage());
+        }
+    }
+
+    private void handleResponse(Response response){
+        OperationContext context = outstanding.remove(response.getRequestId());
+        if (context != null)
+            if (response.isSuccess())
+                context.success(response instanceof DocumentResponse ? Optional.ofNullable(((DocumentResponse) response).getDocument())
+                                                                     : Optional.empty());
+            else
+                context.error(toErrorType(response.outcome()), response.getTextMessage());
+        else
+            log.log(Level.FINE, () -> "Received response for request which has timed out, with id " + response.getRequestId());
+    }
+
+    private static ErrorType toErrorType(Response.Outcome outcome) {
+        switch (outcome) {
+            case NOT_FOUND:
+                return NOT_FOUND;
+            case CONDITION_FAILED:
+                return PRECONDITION_FAILED;
+            default:
+                log.log(WARNING, "Unexpected response outcome: " + outcome);
+            case ERROR: // intentional fallthrough
+                return ERROR;
+        }
+    }
+
+
+    /** The executor will call <em>exactly one</em> callback <em>exactly once</em> for contexts submitted to it. */
+    private static class Context<T> {
+
+        private final AtomicBoolean handled = new AtomicBoolean();
+        private final BiConsumer<ErrorType, String> onError;
+        private final Consumer<T> onSuccess;
+
+        Context(BiConsumer<ErrorType, String> onError, Consumer<T> onSuccess) {
+            this.onError = onError;
+            this.onSuccess = onSuccess;
+        }
+
+        void error(ErrorType type, String message) {
+            if ( ! handled.getAndSet(true))
+                onError.accept(type, message);
+        }
+
+        void success(T result) {
+            if ( ! handled.getAndSet(true))
+                onSuccess.accept(result);
+        }
+
+        boolean handled() {
+            return handled.get();
+        }
+
+    }
+
+
+    /**
+     * Keeps delayed operations (retries or timeouts) until ready, at which point a bulk maintenance operation processes them.
+     *
+     * This is similar to {@link java.util.concurrent.DelayQueue}, but sacrifices the flexibility
+     * of using dynamic timeouts, and latency, for higher throughput and efficient (lazy) deletions.
+     */
+    static class DelayQueue {
+
+        private final long maxSize;
+        private final Clock clock;
+        private final ConcurrentLinkedQueue<Delayed> queue = new ConcurrentLinkedQueue<>();
+        private final AtomicLong size = new AtomicLong(0);
+        private final Thread maintainer;
+        private final Duration delay;
+        private final long defaultWaitMillis;
+
+        public DelayQueue(long maxSize, BiConsumer<Supplier<Result>, OperationContext> action, Duration delay, Clock clock) {
+            if (maxSize < 0)
+                throw new IllegalArgumentException("Max size cannot be negative, but was " + maxSize);
+            if (delay.isNegative())
+                throw new IllegalArgumentException("Delay cannot be negative, but was " + delay);
+
+            this.maxSize = maxSize;
+            this.delay = delay;
+            this.defaultWaitMillis = Math.min(delay.toMillis(), 100); // Run regularly to evict handled contexts.
+            this.clock = requireNonNull(clock);
+            this.maintainer = new Thread(() -> maintain(action));
+            this.maintainer.start();
+        }
+
+        boolean add(Supplier<Result> operation, OperationContext context) {
+            if (size.incrementAndGet() > maxSize) {
+                size.decrementAndGet();
+                return false;
+            }
+            return queue.add(new Delayed(clock.instant().plus(delay), operation, context));
+        }
+
+        long size() { return size.get(); }
+
+        Future<?> shutdown(Duration grace, Consumer<OperationContext> onShutdown) {
+            ExecutorService shutdownService = Executors.newSingleThreadExecutor();
+            Future<?> future = shutdownService.submit(() -> {
+                try {
+                    Thread.sleep(grace.toMillis());
+                }
+                finally {
+                    maintainer.interrupt();
+                    for (Delayed delayed; (delayed = queue.poll()) != null; ) {
+                        size.decrementAndGet();
+                        onShutdown.accept(delayed.context());
+                    }
+                }
+                return null;
+            });
+            shutdownService.shutdown();
+            return future;
+        }
+
+        /**
+         * Repeatedly loops through the queue, evicting already handled entries and processing those
+         * which have become ready since last time, then waits until new items are guaranteed to be ready,
+         * or until it's time for a new run just to ensure GC of handled entries.
+         * The entries are assumed to always be added to the back of the queue, with the same delay.
+         * If the queue is to support random delays, the maintainer must be woken up on every insert with a ready time
+         * lower than the current, and the earliest sleepUntilMillis be computed, rather than simply the first.
+         */
+        private void maintain(BiConsumer<Supplier<Result>, OperationContext> action) {
+            while ( ! Thread.currentThread().isInterrupted()) {
+                try {
+                    Instant waitUntil = null;
+                    Iterator<Delayed> operations = queue.iterator();
+                    while (operations.hasNext()) {
+                        Delayed delayed = operations.next();
+                        // Already handled: remove and continue.
+                        if (delayed.context().handled()) {
+                            operations.remove();
+                            size.decrementAndGet();
+                            continue;
+                        }
+                        // Ready for action: remove from queue and run.
+                        if (delayed.readyAt().isBefore(clock.instant())) {
+                            action.accept(delayed.operation(), delayed.context());
+                            operations.remove();
+                            size.decrementAndGet();
+                            continue;
+                        }
+                        // Not yet ready for action: keep time to wake up again.
+                        waitUntil = waitUntil != null ? waitUntil : delayed.readyAt();
+                    }
+
+                    long waitUntilMillis = waitUntil != null ? waitUntil.toEpochMilli() : clock.millis() + defaultWaitMillis;
+                    while (clock.millis() < waitUntilMillis)
+                        synchronized (this) {
+                            notify();
+                            wait(Math.max(0, waitUntilMillis - clock.millis()));
+                        }
+                }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                catch (Exception e) {
+                    log.log(SEVERE, "Exception caught by delay queue maintainer", e);
+                }
+            }
+        }
+    }
+
+
+    private static class Delayed {
+
+        private final Supplier<Result> operation;
+        private final OperationContext context;
+        private final Instant readyAt;
+
+        Delayed(Instant readyAt, Supplier<Result> operation, OperationContext context) {
+            this.readyAt = requireNonNull(readyAt);
+            this.context = requireNonNull(context);
+            this.operation = requireNonNull(operation);
+        }
+
+        Supplier<Result> operation() { return operation; }
+        OperationContext context() { return context; }
+        Instant readyAt() { return readyAt; }
+
+    }
+
+
+    static class StorageCluster {
+
+        private final String name;
+        private final String configId;
+        private final Map<String, String> documentBuckets;
+
+        StorageCluster(String name, String configId, Map<String, String> documentBuckets) {
+            this.name = requireNonNull(name);
+            this.configId = requireNonNull(configId);
+            this.documentBuckets = Map.copyOf(documentBuckets);
+        }
+
+        String name() { return name; }
+        String configId() { return configId; }
+        String route() { return "[Storage:cluster=" + name() + ";clusterconfigid=" + configId() + "]"; }
+        Optional<String> bucketOf(String documentType) { return Optional.ofNullable(documentBuckets.get(documentType)); }
+
+    }
+
+
     private static StorageCluster resolveCluster(Optional<String> wanted, Map<String, StorageCluster> clusters) {
         if (clusters.isEmpty())
             throw new IllegalArgumentException("Your Vespa deployment has no content clusters, so the document API is not enabled.");
@@ -533,30 +648,6 @@ public class DocumentOperationExecutor {
 
 
 
-    public static class Group {
-
-        private final String value;
-        private final String docIdPart;
-        private final String selection;
-
-        private Group(String value, String docIdPart, String selection) {
-            Text.validateTextString(value)
-                .ifPresent(codePoint -> { throw new IllegalArgumentException(String.format("Illegal code point U%04X in group", codePoint)); });
-            this.value = value;
-            this.docIdPart = docIdPart;
-            this.selection = selection;
-        }
-
-        public static Group of(long value) { return new Group(Long.toString(value), "n=" + value, "id.user=" + value); }
-        public static Group of(String value) { return new Group(value, "g=" + value, "id.group='" + value.replaceAll("'", "\\'") + "'"); }
-
-        public String value() { return value; }
-        public String docIdPart() { return docIdPart; }
-        public String selection() { return selection; }
-
-    }
-
-
     private static Map<String, StorageCluster> parseClusters(ClusterListConfig clusters, AllClustersBucketSpacesConfig buckets) {
         return clusters.storage().stream()
                        .collect(toUnmodifiableMap(storage -> storage.name(),
@@ -569,30 +660,11 @@ public class DocumentOperationExecutor {
     }
 
 
-    static class StorageCluster {
-
-        private final String name;
-        private final String configId;
-        private final Map<String, String> documentBuckets;
-
-        StorageCluster(String name, String configId, Map<String, String> documentBuckets) {
-            this.name = requireNonNull(name);
-            this.configId = requireNonNull(configId);
-            this.documentBuckets = Map.copyOf(documentBuckets);
-        }
-
-        String name() { return name; }
-        String configId() { return configId; }
-        String route() { return "[Storage:cluster=" + name() + ";clusterconfigid=" + configId() + "]"; }
-        Optional<String> bucketOf(String documentType) { return Optional.ofNullable(documentBuckets.get(documentType)); }
-
-    }
-
-    // For testing.
+    // Visible for testing.
     AsyncSession asyncSession() { return asyncSession; }
     void notifyMaintainers() {
-        throttled.notify();
-        timeouts.notify();
+        synchronized (throttled) { throttled.notify(); }
+        synchronized (timeouts) { timeouts.notify(); }
     }
 
 }

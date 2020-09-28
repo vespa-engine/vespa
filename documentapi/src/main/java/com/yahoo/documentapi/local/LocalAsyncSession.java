@@ -22,6 +22,8 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,6 +41,7 @@ public class LocalAsyncSession implements AsyncSession {
     private final BlockingQueue<Response> responses = new LinkedBlockingQueue<>();
     private final ResponseHandler handler;
     private final SyncSession syncSession;
+    private final Executor executor = Executors.newCachedThreadPool();
 
     private AtomicLong requestId = new AtomicLong(0);
     private AtomicReference<Runnable> synchronizer = new AtomicReference<>();
@@ -172,16 +175,14 @@ public class LocalAsyncSession implements AsyncSession {
             return new Result(resultType, new Error());
 
         long req = requestId.incrementAndGet();
-        synchronizer.getAndUpdate(runnable -> {
-            if (runnable == null)
+        Runnable runnable = synchronizer.get();
+        if (runnable == null)
+            addResponse(responses.apply(req));
+        else
+            executor.execute(() -> {
+                runnable.run();
                 addResponse(responses.apply(req));
-            else
-                new Thread(() -> {
-                    runnable.run();
-                    addResponse(responses.apply(req));
-                }).start();
-            return runnable;
-        });
+            });
         return new Result(req);
     }
 
