@@ -13,9 +13,9 @@ import java.util.Optional;
  *
  * @author hakon
  */
-public class LockInfo {
+public class LockAttempt {
 
-    private final ThreadLockInfo threadLockInfo;
+    private final ThreadLockStats threadLockStats;
     private final String lockPath;
     private final Instant callAcquireInstant;
     private final Duration timeout;
@@ -24,8 +24,8 @@ public class LockInfo {
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
     private volatile Optional<String> stackTrace = Optional.empty();
 
-    public static LockInfo invokingAcquire(ThreadLockInfo threadLockInfo, String lockPath, Duration timeout) {
-        return new LockInfo(threadLockInfo, lockPath, timeout, Instant.now());
+    public static LockAttempt invokingAcquire(ThreadLockStats threadLockStats, String lockPath, Duration timeout) {
+        return new LockAttempt(threadLockStats, lockPath, timeout, Instant.now());
     }
 
     public enum LockState {
@@ -40,14 +40,14 @@ public class LockInfo {
 
     private volatile LockState lockState = LockState.ACQUIRING;
 
-    private LockInfo(ThreadLockInfo threadLockInfo, String lockPath, Duration timeout, Instant callAcquireInstant) {
-        this.threadLockInfo = threadLockInfo;
+    private LockAttempt(ThreadLockStats threadLockStats, String lockPath, Duration timeout, Instant callAcquireInstant) {
+        this.threadLockStats = threadLockStats;
         this.lockPath = lockPath;
         this.callAcquireInstant = callAcquireInstant;
         this.timeout = timeout;
     }
 
-    public String getThreadName() { return threadLockInfo.getThreadName(); }
+    public String getThreadName() { return threadLockStats.getThreadName(); }
     public String getLockPath() { return lockPath; }
     public Instant getTimeAcquiredWasInvoked() { return callAcquireInstant; }
     public Duration getAcquireTimeout() { return timeout; }
@@ -78,7 +78,7 @@ public class LockInfo {
         // This method is public. If invoked concurrently, the this.stackTrace may be updated twice,
         // which is fine.
 
-        this.stackTrace = Optional.of(threadLockInfo.getStackTrace());
+        this.stackTrace = Optional.of(threadLockStats.getStackTrace());
     }
 
     void acquireFailed() { setTerminalState(LockState.ACQUIRE_FAILED); }

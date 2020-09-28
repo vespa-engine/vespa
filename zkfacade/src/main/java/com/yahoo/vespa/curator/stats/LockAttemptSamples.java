@@ -8,42 +8,42 @@ import java.util.Map;
 import java.util.PriorityQueue;
 
 /**
- * Collection containing "interesting" {@code LockInfo}s.
+ * Collection containing "interesting" {@code LockAttempt}s.
  *
  * @author hakon
  */
 // @ThreadSafe
-public class LockInfoSamples {
+public class LockAttemptSamples {
     private final int maxSamples;
 
     /** Ensure atomic operations on this collection. */
     private final Object monitor = new Object();
 
     /** Keep at most one sample for each lock path. */
-    private final Map<String, LockInfo> byLockPath;
+    private final Map<String, LockAttempt> byLockPath;
 
     /**
      * Priority queue containing all samples.  The head of this queue (peek()/poll())
-     * returns the LockInfo with the smallest duration.
+     * returns the LockAttempt with the smallest duration.
      */
-    private final PriorityQueue<LockInfo> priorityQueue =
-            new PriorityQueue<>(Comparator.comparing(LockInfo::getStableTotalDuration));
+    private final PriorityQueue<LockAttempt> priorityQueue =
+            new PriorityQueue<>(Comparator.comparing(LockAttempt::getStableTotalDuration));
 
-    LockInfoSamples() { this(10); }
+    LockAttemptSamples() { this(10); }
 
-    LockInfoSamples(int maxSamples) {
+    LockAttemptSamples(int maxSamples) {
         this.maxSamples = maxSamples;
         this.byLockPath = new HashMap<>(maxSamples);
     }
 
     int size() { return byLockPath.size(); }
 
-    boolean maybeSample(LockInfo lockInfo) {
+    boolean maybeSample(LockAttempt lockAttempt) {
         final boolean added;
         synchronized (monitor) {
-            if (shouldAdd(lockInfo)) {
-                byLockPath.put(lockInfo.getLockPath(), lockInfo);
-                priorityQueue.add(lockInfo);
+            if (shouldAdd(lockAttempt)) {
+                byLockPath.put(lockAttempt.getLockPath(), lockAttempt);
+                priorityQueue.add(lockAttempt);
                 added = true;
             } else {
                 added = false;
@@ -53,18 +53,18 @@ public class LockInfoSamples {
         if (added) {
             // Unnecessary to invoke under synchronized, although it means that some samples
             // may be without stack trace (just retry if that happens).
-            lockInfo.fillStackTrace();
+            lockAttempt.fillStackTrace();
         }
 
         return added;
     }
 
-    private boolean shouldAdd(LockInfo lockInfo) {
-        LockInfo existingLockInfo = byLockPath.get(lockInfo.getLockPath());
-        if (existingLockInfo != null) {
-            if (hasLongerDurationThan(lockInfo, existingLockInfo)) {
-                byLockPath.remove(existingLockInfo.getLockPath());
-                priorityQueue.remove(existingLockInfo);
+    private boolean shouldAdd(LockAttempt lockAttempt) {
+        LockAttempt existingLockAttempt = byLockPath.get(lockAttempt.getLockPath());
+        if (existingLockAttempt != null) {
+            if (hasLongerDurationThan(lockAttempt, existingLockAttempt)) {
+                byLockPath.remove(existingLockAttempt.getLockPath());
+                priorityQueue.remove(existingLockAttempt);
                 return true;
             }
 
@@ -76,17 +76,17 @@ public class LockInfoSamples {
         }
 
         // peek() and poll() retrieves the smallest element.
-        existingLockInfo = priorityQueue.peek();  // cannot be null
-        if (hasLongerDurationThan(lockInfo, existingLockInfo)) {
+        existingLockAttempt = priorityQueue.peek();  // cannot be null
+        if (hasLongerDurationThan(lockAttempt, existingLockAttempt)) {
             priorityQueue.poll();
-            byLockPath.remove(existingLockInfo.getLockPath());
+            byLockPath.remove(existingLockAttempt.getLockPath());
             return true;
         }
 
         return false;
     }
 
-    List<LockInfo> asList() {
+    List<LockAttempt> asList() {
         synchronized (monitor) {
             return List.copyOf(byLockPath.values());
         }
@@ -99,8 +99,8 @@ public class LockInfoSamples {
         }
     }
 
-    private static boolean hasLongerDurationThan(LockInfo lockInfo, LockInfo otherLockInfo) {
+    private static boolean hasLongerDurationThan(LockAttempt lockAttempt, LockAttempt otherLockAttempt) {
         // Use stable total duration to avoid messing up priority queue.
-        return lockInfo.getStableTotalDuration().compareTo(otherLockInfo.getStableTotalDuration()) > 0;
+        return lockAttempt.getStableTotalDuration().compareTo(otherLockAttempt.getStableTotalDuration()) > 0;
     }
 }

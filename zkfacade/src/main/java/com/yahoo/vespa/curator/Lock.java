@@ -4,7 +4,7 @@ package com.yahoo.vespa.curator;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.stats.ThreadLockInfo;
+import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
@@ -35,28 +35,28 @@ public class Lock implements Mutex {
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
-        ThreadLockInfo threadLockInfo = ThreadLockInfo.getCurrentThreadLockInfo();
-        threadLockInfo.invokingAcquire(lockPath, timeout);
+        ThreadLockStats threadLockStats = ThreadLockStats.getCurrentThreadLockInfo();
+        threadLockStats.invokingAcquire(lockPath, timeout);
 
         final boolean acquired;
         try {
             acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            threadLockInfo.acquireFailed(lockPath);
+            threadLockStats.acquireFailed(lockPath);
             throw new RuntimeException("Exception acquiring lock '" + lockPath + "'", e);
         }
 
         if (!acquired) {
-            threadLockInfo.acquireTimedOut(lockPath);
+            threadLockStats.acquireTimedOut(lockPath);
             throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
                     " to acquire lock '" + lockPath + "'");
         }
-        threadLockInfo.lockAcquired(lockPath);
+        threadLockStats.lockAcquired(lockPath);
     }
 
     @Override
     public void close() {
-        ThreadLockInfo.getCurrentThreadLockInfo().lockReleased(lockPath);
+        ThreadLockStats.getCurrentThreadLockInfo().lockReleased(lockPath);
         try {
             mutex.release();
         }

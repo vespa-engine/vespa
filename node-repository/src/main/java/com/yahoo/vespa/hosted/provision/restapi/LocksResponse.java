@@ -5,9 +5,9 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.curator.stats.LockAttempt;
 import com.yahoo.vespa.curator.stats.LockCounters;
-import com.yahoo.vespa.curator.stats.LockInfo;
-import com.yahoo.vespa.curator.stats.ThreadLockInfo;
+import com.yahoo.vespa.curator.stats.ThreadLockStats;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,15 +25,15 @@ public class LocksResponse extends HttpResponse {
     private final Slime slime = new Slime();
 
     public LocksResponse() {
-        this(new TreeMap<>(ThreadLockInfo.getLockCountersByPath()),
-             ThreadLockInfo.getThreadLockInfos(),
-             ThreadLockInfo.getLockInfoSamples());
+        this(new TreeMap<>(ThreadLockStats.getLockCountersByPath()),
+             ThreadLockStats.getThreadLockInfos(),
+             ThreadLockStats.getLockInfoSamples());
     }
 
     /** For testing */
     LocksResponse(TreeMap<String, LockCounters> lockCountersByPath,
-                  List<ThreadLockInfo> threadLockInfos,
-                  List<LockInfo> historicSamples) {
+                  List<ThreadLockStats> threadLockStats,
+                  List<LockAttempt> historicSamples) {
         super(200);
 
         Cursor root = slime.setObject();
@@ -53,14 +53,14 @@ public class LocksResponse extends HttpResponse {
         });
 
         Cursor threadsCursor = root.setArray("threads");
-        for (var threadLockInfo : threadLockInfos) {
-            List<LockInfo> lockInfos = threadLockInfo.getLockInfos();
-            if (!lockInfos.isEmpty()) {
+        for (var threadLockInfo : threadLockStats) {
+            List<LockAttempt> lockAttempts = threadLockInfo.getLockAttempts();
+            if (!lockAttempts.isEmpty()) {
                 Cursor threadLockInfoCursor = threadsCursor.addObject();
                 threadLockInfoCursor.setString("thread-name", threadLockInfo.getThreadName());
 
                 Cursor lockInfosCursor = threadLockInfoCursor.setArray("active-locks");
-                for (var lockInfo : lockInfos) {
+                for (var lockInfo : lockAttempts) {
                     setLockInfo(lockInfosCursor.addObject(), lockInfo, false);
                 }
 
@@ -82,21 +82,21 @@ public class LocksResponse extends HttpResponse {
         return "application/json";
     }
 
-    private void setLockInfo(Cursor lockInfoCursor, LockInfo lockInfo, boolean includeThreadInfo) {
+    private void setLockInfo(Cursor lockInfoCursor, LockAttempt lockAttempt, boolean includeThreadInfo) {
         if (includeThreadInfo) {
-            lockInfoCursor.setString("thread-name", lockInfo.getThreadName());
+            lockInfoCursor.setString("thread-name", lockAttempt.getThreadName());
         }
-        lockInfoCursor.setString("lock-path", lockInfo.getLockPath());
-        lockInfoCursor.setString("invoke-acquire-time", toString(lockInfo.getTimeAcquiredWasInvoked()));
-        lockInfoCursor.setString("acquire-timeout", lockInfo.getAcquireTimeout().toString());
-        lockInfo.getTimeLockWasAcquired().ifPresent(instant -> lockInfoCursor.setString("lock-acquired-time", toString(instant)));
-        lockInfoCursor.setString("lock-state", lockInfo.getLockState().name());
-        lockInfo.getTimeTerminalStateWasReached().ifPresent(instant -> lockInfoCursor.setString("terminal-state-time", toString(instant)));
-        lockInfoCursor.setString("acquire-duration", lockInfo.getDurationOfAcquire().toString());
-        lockInfoCursor.setString("locked-duration", lockInfo.getDurationWithLock().toString());
-        lockInfoCursor.setString("total-duration", lockInfo.getDuration().toString());
+        lockInfoCursor.setString("lock-path", lockAttempt.getLockPath());
+        lockInfoCursor.setString("invoke-acquire-time", toString(lockAttempt.getTimeAcquiredWasInvoked()));
+        lockInfoCursor.setString("acquire-timeout", lockAttempt.getAcquireTimeout().toString());
+        lockAttempt.getTimeLockWasAcquired().ifPresent(instant -> lockInfoCursor.setString("lock-acquired-time", toString(instant)));
+        lockInfoCursor.setString("lock-state", lockAttempt.getLockState().name());
+        lockAttempt.getTimeTerminalStateWasReached().ifPresent(instant -> lockInfoCursor.setString("terminal-state-time", toString(instant)));
+        lockInfoCursor.setString("acquire-duration", lockAttempt.getDurationOfAcquire().toString());
+        lockInfoCursor.setString("locked-duration", lockAttempt.getDurationWithLock().toString());
+        lockInfoCursor.setString("total-duration", lockAttempt.getDuration().toString());
         if (includeThreadInfo) {
-            lockInfo.getStackTrace().ifPresent(stackTrace -> lockInfoCursor.setString("stack-trace", stackTrace));
+            lockAttempt.getStackTrace().ifPresent(stackTrace -> lockInfoCursor.setString("stack-trace", stackTrace));
         }
     }
 

@@ -1,4 +1,5 @@
-package com.yahoo.vespa.curator.stats;// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.curator.stats;
 
 import org.junit.Test;
 
@@ -11,13 +12,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class LockInfoSamplesTest {
-    private final LockInfoSamples samples = new LockInfoSamples(2);
-    private ThreadLockInfo threadLockInfo;
+/**
+ * @author hakon
+ */
+public class LockAttemptSamplesTest {
+    private final LockAttemptSamples samples = new LockAttemptSamples(2);
+    private ThreadLockStats threadLockStats;
 
     @Test
     public void test() {
-        threadLockInfo = new ThreadLockInfo(Thread.currentThread());
+        threadLockStats = new ThreadLockStats(Thread.currentThread());
 
         assertTrue(maybeSample("1", 10));
 
@@ -36,7 +40,7 @@ public class LockInfoSamplesTest {
         // new path, expels "2"
         assertTrue(maybeSample("4", 6));
 
-        Map<String, LockInfo> lockInfos = samples.asList().stream().collect(Collectors.toMap(
+        Map<String, LockAttempt> lockInfos = samples.asList().stream().collect(Collectors.toMap(
                 lockInfo -> lockInfo.getLockPath(),
                 lockInfo -> lockInfo));
         assertEquals(2, lockInfos.size());
@@ -49,10 +53,10 @@ public class LockInfoSamplesTest {
     }
 
     private boolean maybeSample(String lockPath, int secondsDuration) {
-        LockInfo lockInfo = LockInfo.invokingAcquire(threadLockInfo, lockPath, Duration.ofSeconds(1));
-        Instant instant = lockInfo.getTimeAcquiredWasInvoked().plus(Duration.ofSeconds(secondsDuration));
-        lockInfo.setTerminalState(LockInfo.LockState.RELEASED, instant);
-        return samples.maybeSample(lockInfo);
+        LockAttempt lockAttempt = LockAttempt.invokingAcquire(threadLockStats, lockPath, Duration.ofSeconds(1));
+        Instant instant = lockAttempt.getTimeAcquiredWasInvoked().plus(Duration.ofSeconds(secondsDuration));
+        lockAttempt.setTerminalState(LockAttempt.LockState.RELEASED, instant);
+        return samples.maybeSample(lockAttempt);
     }
 
 }
