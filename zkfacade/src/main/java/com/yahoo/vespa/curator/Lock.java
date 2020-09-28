@@ -4,11 +4,11 @@ package com.yahoo.vespa.curator;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A cluster-wide re-entrant mutex which is released on (the last symmetric) close.
@@ -20,54 +20,51 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class Lock implements Mutex {
 
-    private final ReentrantLock lock;
     private final InterProcessLock mutex;
     private final String lockPath;
 
     public Lock(String lockPath, Curator curator) {
+        this(lockPath, curator.createMutex(lockPath));
+    }
+
+    /** Public for testing only */
+    public Lock(String lockPath, InterProcessLock mutex) {
         this.lockPath = lockPath;
-        this.lock = new ReentrantLock(true);
-        mutex = curator.createMutex(lockPath);
+        this.mutex = mutex;
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
+        ThreadLockStats threadLockStats = ThreadLockStats.getCurrentThreadLockStats();
+        threadLockStats.invokingAcquire(lockPath, timeout);
+
+        final boolean acquired;
         try {
-            if ( ! mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS))
-                throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
-                                                    " to acquire lock '" + lockPath + "'");
-            if ( ! lock.tryLock()) { // Should be available to only this thread, while holding the above mutex.
-                release();
-                throw new IllegalStateException("InterProcessMutex acquired, but guarded lock held by someone else, for lock '" + lockPath + "'");
-            }
-        }
-        catch (UncheckedTimeoutException | IllegalStateException e) {
-            throw e;
-        }
-        catch (Exception e) {
+            acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            threadLockStats.acquireFailed(lockPath);
             throw new RuntimeException("Exception acquiring lock '" + lockPath + "'", e);
         }
+
+        if (!acquired) {
+            threadLockStats.acquireTimedOut(lockPath);
+            throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
+                    " to acquire lock '" + lockPath + "'");
+        }
+        threadLockStats.lockAcquired(lockPath);
     }
 
     @Override
     public void close() {
         try {
-            lock.unlock();
-        }
-        finally {
-            release();
-        }
-    }
-
-    private void release() {
-        try {
             mutex.release();
+            ThreadLockStats.getCurrentThreadLockStats().lockReleased(lockPath);
         }
         catch (Exception e) {
+            ThreadLockStats.getCurrentThreadLockStats().lockReleaseFailed(lockPath);
             throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
         }
     }
-
 }
 
 

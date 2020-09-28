@@ -105,6 +105,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String, com.yahoo.vespa.curator.Curator)",
+      "public void <init>(java.lang.String, org.apache.curator.framework.recipes.locks.InterProcessLock)",
       "public void acquire(java.time.Duration)",
       "public void close()"
     ],
