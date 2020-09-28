@@ -20,12 +20,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -377,8 +377,8 @@ public class HostedDeployTest {
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
 
         List<ModelFactory> modelFactories = List.of(
-                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"), new MockRestartAction("change", services)),
-                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"), new MockRestartAction("other change", services)));
+                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"), new VespaRestartAction("change", services)),
+                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"), new VespaRestartAction("other change", services)));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0");
