@@ -22,14 +22,12 @@ private:
 public:
     SparseTensorValueBuilder(const eval::ValueType &type,
                              size_t num_mapped_in,
-                             size_t subspace_size_in,
                              size_t expected_subspaces)
       : _type(type),
         _index(num_mapped_in),
         _cells()
     {
         assert(num_mapped_in > 0);
-        assert(subspace_size_in == 1);
         _cells.reserve(expected_subspaces);
     }
 

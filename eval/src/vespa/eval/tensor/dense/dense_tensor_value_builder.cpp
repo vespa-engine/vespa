@@ -5,17 +5,11 @@
 namespace vespalib::tensor {
 
 template<typename T>
-DenseTensorValueBuilder<T>::DenseTensorValueBuilder(
-        const eval::ValueType &type,
-        size_t num_mapped_in,
-        size_t subspace_size_in,
-        size_t)
+DenseTensorValueBuilder<T>::DenseTensorValueBuilder(const eval::ValueType &type,
+                                                    size_t subspace_size_in)
   : _type(type), 
     _cells(subspace_size_in)
 {
-    assert(type.is_dense());
-    assert(num_mapped_in == 0);
-    assert(subspace_size_in == type.dense_subspace_size());
 }
 
 template<typename T>

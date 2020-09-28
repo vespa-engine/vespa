@@ -4,18 +4,6 @@
 
 namespace vespalib::eval {
 
-DoubleValueBuilder::DoubleValueBuilder(const eval::ValueType &type,
-                                       size_t num_mapped_in,
-                                       size_t subspace_size_in,
-                                       size_t)
-  : _value(0.0)
-{
-        assert(type.is_double());
-        assert(type.cell_type() == ValueType::CellType::DOUBLE);
-        assert(num_mapped_in == 0);
-        assert(subspace_size_in == 1);
-}
-
 DoubleValueBuilder::~DoubleValueBuilder() = default;
 
 }

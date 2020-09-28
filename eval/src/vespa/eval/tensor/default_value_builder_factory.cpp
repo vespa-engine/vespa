@@ -24,13 +24,13 @@ struct CreateDefaultValueBuilderBase {
     {
         assert(check_cell_type<T>(type.cell_type()));
         if (type.is_double()) {
-            return std::make_unique<DoubleValueBuilder>(type, num_mapped_dims_in, subspace_size_in, 1);
+            return std::make_unique<DoubleValueBuilder>();
         }
         if (type.is_dense()) {
-            return std::make_unique<DenseTensorValueBuilder<T>>(type, num_mapped_dims_in, subspace_size_in, 1);
+            return std::make_unique<DenseTensorValueBuilder<T>>(type, subspace_size_in);
         }
         if (type.is_sparse()) {
-            return std::make_unique<SparseTensorValueBuilder<T>>(type, num_mapped_dims_in, subspace_size_in, expected_subspaces);
+            return std::make_unique<SparseTensorValueBuilder<T>>(type, num_mapped_dims_in, expected_subspaces);
         }
         return std::make_unique<packed_mixed_tensor::PackedMixedTensorBuilder<T>>(type, num_mapped_dims_in, subspace_size_in, expected_subspaces);
     }

@@ -16,8 +16,7 @@ private:
     eval::ValueType _type;
     std::vector<T> _cells;
 public:
-    DenseTensorValueBuilder(const eval::ValueType &type, size_t num_mapped_in,
-                            size_t subspace_size_in, size_t expected_subspaces);
+    DenseTensorValueBuilder(const eval::ValueType &type, size_t subspace_size_in);
     ~DenseTensorValueBuilder() override;
     ArrayRef<T>
     add_subspace(const std::vector<vespalib::stringref> &) override {

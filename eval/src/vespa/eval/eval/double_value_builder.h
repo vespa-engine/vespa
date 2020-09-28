@@ -14,8 +14,7 @@ class DoubleValueBuilder : public ValueBuilder<double>
 private:
     double _value;
 public:
-    DoubleValueBuilder(const ValueType &type, size_t num_mapped_in,
-                       size_t subspace_size_in, size_t expected_subspaces);
+    DoubleValueBuilder() : _value(0.0) {}
     ~DoubleValueBuilder() override;
     ArrayRef<double>
     add_subspace(const std::vector<vespalib::stringref> &) override {
