@@ -69,10 +69,12 @@ public class Autoscaler {
         if (unstable(clusterNodes)) return Optional.empty();
 
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
-        var startTimePerHost = metricStartTimes(clusterNodes);
-        Optional<Double> cpuLoad    = averageLoad(Resource.cpu, clusterNodes, startTimePerHost);
-        Optional<Double> memoryLoad = averageLoad(Resource.memory, clusterNodes, startTimePerHost);
-        Optional<Double> diskLoad   = averageLoad(Resource.disk, clusterNodes, startTimePerHost);
+
+        MetricSnapshot metricSnapshot = new MetricSnapshot(clusterNodes, metricsDb, nodeRepository);
+
+        Optional<Double> cpuLoad    = metricSnapshot.averageLoad(Resource.cpu);
+        Optional<Double> memoryLoad = metricSnapshot.averageLoad(Resource.memory);
+        Optional<Double> diskLoad   = metricSnapshot.averageLoad(Resource.disk);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
@@ -96,70 +98,6 @@ public class Autoscaler {
 
     private boolean similar(double r1, double r2, double threshold) {
         return Math.abs(r1 - r2) / (( r1 + r2) / 2) < threshold;
-    }
-
-    /**
-     * Returns the instant of the oldest metric to consider for each node, or an empty map if metrics from the
-     * entire (max) window should be considered.
-     */
-    private Map<String, Instant> metricStartTimes(List<Node> clusterNodes) {
-        ApplicationId application = clusterNodes.get(0).allocation().get().owner();
-        List<NodeMetricsDb.AutoscalingEvent> deployments = metricsDb.getEvents(application);
-        Map<String, Instant> startTimePerHost = new HashMap<>();
-        if (!deployments.isEmpty()) {
-            var deployment = deployments.get(deployments.size() - 1);
-            List<NodeMetricsDb.NodeMeasurements> generationMeasurements =
-                    metricsDb.getMeasurements(deployment.time(),
-                                              Metric.generation,
-                                              clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
-            for (Node node : clusterNodes) {
-                startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
-                var nodeGenerationMeasurements =
-                        generationMeasurements.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
-                if (nodeGenerationMeasurements.isPresent()) {
-                    var firstMeasurementOfCorrectGeneration =
-                            nodeGenerationMeasurements.get().asList().stream()
-                                                                     .filter(m -> m.value() >= deployment.generation())
-                                                                     .findFirst();
-                    if (firstMeasurementOfCorrectGeneration.isPresent()) {
-                        startTimePerHost.put(node.hostname(), firstMeasurementOfCorrectGeneration.get().at());
-                    }
-                }
-            }
-        }
-        return startTimePerHost;
-    }
-
-    /**
-     * Returns the average load of this resource in the measurement window,
-     * or empty if we are not in a position to make decisions from these measurements at this time.
-     */
-    private Optional<Double> averageLoad(Resource resource,
-                                         List<Node> clusterNodes,
-                                         Map<String, Instant> startTimePerHost) {
-        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-
-        List<NodeMetricsDb.NodeMeasurements> measurements =
-                metricsDb.getMeasurements(nodeRepository.clock().instant().minus(scalingWindow(clusterType)),
-                                          Metric.from(resource),
-                                          clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
-        int beforeFilterStale = measurements.stream().mapToInt(m -> m.size()).sum();
-        measurements = filterStale(measurements, startTimePerHost);
-
-        // Require a total number of measurements scaling with the number of nodes,
-        // but don't require that we have at least that many from every node
-        int measurementCount = measurements.stream().mapToInt(m -> m.size()).sum();
-        if (measurementCount / clusterNodes.size() < minimumMeasurementsPerNode(clusterType)) return Optional.empty();
-        if (measurements.size() != clusterNodes.size()) return Optional.empty();
-
-        double measurementSum = measurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> m.value()).sum();
-        return Optional.of(measurementSum / measurementCount);
-    }
-
-    private List<NodeMetricsDb.NodeMeasurements> filterStale(List<NodeMetricsDb.NodeMeasurements> measurements,
-                                                             Map<String, Instant> startTimePerHost) {
-        if (startTimePerHost.isEmpty()) return measurements; // Map is either empty or complete
-        return measurements.stream().map(m -> m.copyAfter(startTimePerHost.get(m.hostname()))).collect(Collectors.toList());
     }
 
     /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
