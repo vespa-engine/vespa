@@ -26,8 +26,8 @@ public class LocksResponse extends HttpResponse {
 
     public LocksResponse() {
         this(new TreeMap<>(ThreadLockStats.getLockCountersByPath()),
-             ThreadLockStats.getThreadLockInfos(),
-             ThreadLockStats.getLockInfoSamples());
+             ThreadLockStats.getThreadLockStats(),
+             ThreadLockStats.getLockAttemptSamples());
     }
 
     /** For testing */

@@ -51,7 +51,7 @@ public class LockTest {
         expectedCounters.acquireFailedCount.set(1);
         assertEquals(Map.of(lockPath, expectedCounters), ThreadLockStats.getLockCountersByPath());
 
-        List<LockAttempt> slowLockAttempts = ThreadLockStats.getLockInfoSamples();
+        List<LockAttempt> slowLockAttempts = ThreadLockStats.getLockAttemptSamples();
         assertEquals(1, slowLockAttempts.size());
         LockAttempt slowLockAttempt = slowLockAttempts.get(0);
         assertEquals(acquireTimeout, slowLockAttempt.getAcquireTimeout());
@@ -61,7 +61,7 @@ public class LockTest {
         assertEquals(LockAttempt.LockState.ACQUIRE_FAILED, slowLockAttempt.getLockState());
         assertTrue(slowLockAttempt.getTimeTerminalStateWasReached().isPresent());
 
-        List<ThreadLockStats> threadLockStatsList = ThreadLockStats.getThreadLockInfos();
+        List<ThreadLockStats> threadLockStatsList = ThreadLockStats.getThreadLockStats();
         assertEquals(1, threadLockStatsList.size());
         ThreadLockStats threadLockStats = threadLockStatsList.get(0);
         assertEquals(0, threadLockStats.getLockAttempts().size());
@@ -125,7 +125,7 @@ public class LockTest {
         lock.acquire(acquireTimeout);
         lock2.acquire(acquireTimeout);
 
-        List<ThreadLockStats> threadLockStats = ThreadLockStats.getThreadLockInfos();
+        List<ThreadLockStats> threadLockStats = ThreadLockStats.getThreadLockStats();
         assertEquals(1, threadLockStats.size());
         List<LockAttempt> lockAttempts = threadLockStats.get(0).getLockAttempts();
         assertEquals(2, lockAttempts.size());

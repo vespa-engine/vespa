@@ -40,16 +40,16 @@ public class LockAttemptSamplesTest {
         // new path, expels "2"
         assertTrue(maybeSample("4", 6));
 
-        Map<String, LockAttempt> lockInfos = samples.asList().stream().collect(Collectors.toMap(
-                lockInfo -> lockInfo.getLockPath(),
-                lockInfo -> lockInfo));
-        assertEquals(2, lockInfos.size());
+        Map<String, LockAttempt> lockAttempts = samples.asList().stream().collect(Collectors.toMap(
+                lockAttempt -> lockAttempt.getLockPath(),
+                lockAttempt -> lockAttempt));
+        assertEquals(2, lockAttempts.size());
 
-        assertTrue(lockInfos.containsKey("1"));
-        assertEquals(Duration.ofSeconds(11), lockInfos.get("1").getStableTotalDuration());
+        assertTrue(lockAttempts.containsKey("1"));
+        assertEquals(Duration.ofSeconds(11), lockAttempts.get("1").getStableTotalDuration());
 
-        assertTrue(lockInfos.containsKey("4"));
-        assertEquals(Duration.ofSeconds(6), lockInfos.get("4").getStableTotalDuration());
+        assertTrue(lockAttempts.containsKey("4"));
+        assertEquals(Duration.ofSeconds(6), lockAttempts.get("4").getStableTotalDuration());
     }
 
     private boolean maybeSample(String lockPath, int secondsDuration) {

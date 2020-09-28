@@ -33,14 +33,14 @@ public class ThreadLockStats {
 
     public static Map<String, LockCounters> getLockCountersByPath() { return Map.copyOf(countersByLockPath); }
 
-    public static List<ThreadLockStats> getThreadLockInfos() { return List.copyOf(locks.values()); }
+    public static List<ThreadLockStats> getThreadLockStats() { return List.copyOf(locks.values()); }
 
-    public static List<LockAttempt> getLockInfoSamples() {
+    public static List<LockAttempt> getLockAttemptSamples() {
         return COMPLETED_LOCK_ATTEMPT_SAMPLES.asList();
     }
 
     /** Returns the per-thread singleton ThreadLockStats. */
-    public static ThreadLockStats getCurrentThreadLockInfo() {
+    public static ThreadLockStats getCurrentThreadLockStats() {
         return locks.computeIfAbsent(Thread.currentThread(), ThreadLockStats::new);
     }
 
@@ -89,7 +89,7 @@ public class ThreadLockStats {
     public void acquireFailed(String lockPath) {
         LockCounters lockCounters = getLockCounters(lockPath);
         lockCounters.acquireFailedCount.incrementAndGet();
-        removeLastLockInfo(lockCounters, LockAttempt::acquireFailed);
+        removeLastLockAttempt(lockCounters, LockAttempt::acquireFailed);
     }
 
     /** Mutable method (see class doc) */
@@ -100,7 +100,7 @@ public class ThreadLockStats {
         }
 
         lockCounters.acquireTimedOutCount.incrementAndGet();
-        removeLastLockInfo(lockCounters, LockAttempt::timedOut);
+        removeLastLockAttempt(lockCounters, LockAttempt::timedOut);
     }
 
     /** Mutable method (see class doc) */
@@ -117,14 +117,14 @@ public class ThreadLockStats {
     public void lockReleased(String lockPath) {
         LockCounters lockCounters = getLockCounters(lockPath);
         lockCounters.locksReleasedCount.incrementAndGet();
-        removeLastLockInfo(lockCounters, LockAttempt::released);
+        removeLastLockAttempt(lockCounters, LockAttempt::released);
     }
 
     private LockCounters getLockCounters(String lockPath) {
         return countersByLockPath.computeIfAbsent(lockPath, __ -> new LockCounters());
     }
 
-    private void removeLastLockInfo(LockCounters lockCounters, Consumer<LockAttempt> completeLockInfo) {
+    private void removeLastLockAttempt(LockCounters lockCounters, Consumer<LockAttempt> completeLockAttempt) {
         lockCounters.inCriticalRegionCount.decrementAndGet();
 
         if (lockAttempts.isEmpty()) {
@@ -133,7 +133,7 @@ public class ThreadLockStats {
         }
 
         LockAttempt lockAttempt = lockAttempts.pollLast();
-        completeLockInfo.accept(lockAttempt);
+        completeLockAttempt.accept(lockAttempt);
         COMPLETED_LOCK_ATTEMPT_SAMPLES.maybeSample(lockAttempt);
     }
 }

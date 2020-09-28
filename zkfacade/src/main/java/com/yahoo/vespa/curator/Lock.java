@@ -35,7 +35,7 @@ public class Lock implements Mutex {
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
-        ThreadLockStats threadLockStats = ThreadLockStats.getCurrentThreadLockInfo();
+        ThreadLockStats threadLockStats = ThreadLockStats.getCurrentThreadLockStats();
         threadLockStats.invokingAcquire(lockPath, timeout);
 
         final boolean acquired;
@@ -56,7 +56,7 @@ public class Lock implements Mutex {
 
     @Override
     public void close() {
-        ThreadLockStats.getCurrentThreadLockInfo().lockReleased(lockPath);
+        ThreadLockStats.getCurrentThreadLockStats().lockReleased(lockPath);
         try {
             mutex.release();
         }
