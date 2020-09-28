@@ -142,9 +142,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     @Override
     public ContentChannel handleRequest(Request rawRequest, ResponseHandler rawResponseHandler) {
-        metric.add("handled.requests", 1, HandlerMetricContextUtil.contextFor(rawRequest, metric, getClass()));
+        HandlerMetricContextUtil.onHandle(rawRequest, metric, getClass());
         ResponseHandler responseHandler = response -> {
-            metric.set("handled.latency", rawRequest.timeElapsed(TimeUnit.MILLISECONDS), HandlerMetricContextUtil.contextFor(rawRequest, metric, getClass()));
+            HandlerMetricContextUtil.onHandled(rawRequest, metric, getClass());
             return rawResponseHandler.handleResponse(response);
         };
 

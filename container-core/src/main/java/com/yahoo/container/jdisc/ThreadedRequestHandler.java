@@ -79,8 +79,6 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         return HandlerMetricContextUtil.contextFor(request, extraDimensions, metric, getClass());
     }
 
-    private Metric.Context contextFor(Request request) { return contextFor(request, Map.of()); }
-
     /**
      * Handles a request by assigning a worker thread to it.
      *
@@ -88,7 +86,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     @Override
     public final ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
-        metric.add("handled.requests", 1, contextFor(request));
+        HandlerMetricContextUtil.onHandle(request, metric, getClass());
         if (request.getTimeout(TimeUnit.SECONDS) == null) {
             Duration timeout = getTimeout();
             if (timeout != null) {
@@ -189,8 +187,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         public ContentChannel handleResponse(Response response) {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
             ContentChannel cc = responseHandler.handleResponse(response);
-            long millis = request.timeElapsed(TimeUnit.MILLISECONDS);
-            metric.set("handled.latency", millis, contextFor(request));
+            HandlerMetricContextUtil.onHandled(request, metric, getClass());
             return cc;
         }
 

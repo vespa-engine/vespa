@@ -980,7 +980,7 @@
       "public com.yahoo.documentapi.Response getNext()",
       "public com.yahoo.documentapi.Response getNext(int)",
       "public void destroy()",
-      "public void setSynchronizer(java.lang.Runnable)",
+      "public void setPhaser(java.util.concurrent.Phaser)",
       "public void setResultType(com.yahoo.documentapi.Result$ResultType)"
     ],
     "fields": []

@@ -4,17 +4,27 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
+import com.yahoo.jdisc.handler.ResponseHandler;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Common conversion from a handled http request to a metric context.
+ * Common HTTP request handler metrics code.
  *
  * @author jonmv
  */
 public class HandlerMetricContextUtil {
+
+    public static void onHandle(Request request, Metric metric, Class<?> handlerClass) {
+        metric.add("handled.requests", 1, contextFor(request, metric, handlerClass));
+    }
+
+    public static void onHandled(Request request, Metric metric, Class<?> handlerClass) {
+        metric.set("handled.latency", request.timeElapsed(TimeUnit.MILLISECONDS), contextFor(request, metric, handlerClass));
+    }
 
     public static Metric.Context contextFor(Request request, Metric metric, Class<?> handlerClass) {
         return contextFor(request, Map.of(), metric, handlerClass);
