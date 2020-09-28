@@ -264,6 +264,7 @@ public:
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
     ILidCommitState & getUncommittedLidsTracker() override;
+    bool allowEarlyAck() const final override;
 };
 
 }

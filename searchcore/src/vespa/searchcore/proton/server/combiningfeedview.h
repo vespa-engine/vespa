@@ -83,6 +83,7 @@ public:
 
     // Called by document db executor
     void setCalculator(const IBucketStateCalculator::SP &newCalc);
+    bool allowEarlyAck() const override;
 };
 
 } // namespace proton

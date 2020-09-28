@@ -218,6 +218,16 @@ CombiningFeedView::heartBeat(search::SerialNum serialNum)
     }
 }
 
+bool
+CombiningFeedView::allowEarlyAck() const {
+    for (const auto &view : _views) {
+        if ( ! view->allowEarlyAck() ) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void
 CombiningFeedView::sync()
 {
