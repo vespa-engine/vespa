@@ -98,12 +98,6 @@ public class Flags {
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
 
-    public static final UnboundStringFlag TLS_INSECURE_AUTHORIZATION_MODE = defineStringFlag(
-            "tls-insecure-authorization-mode", "log_only",
-            "TLS insecure authorization mode. Allowed values: ['disable', 'log_only', 'enforce']",
-            "Takes effect on restart of Docker container",
-            NODE_TYPE, APPLICATION_ID, HOSTNAME);
-
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
             "reboot-interval-in-days", 30,
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
