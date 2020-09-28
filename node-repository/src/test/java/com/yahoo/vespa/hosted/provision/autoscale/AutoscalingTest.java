@@ -51,7 +51,7 @@ public class AutoscalingTest {
 
         tester.addMeasurements(Resource.cpu, 0.25f, 1f, 60, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                  15, 1, 1.3,  28.6, 28.6,
+                                                                  14, 1, 1.3,  30.8, 30.8,
                                                                   tester.autoscale(application1, cluster1.id(), min, max));
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -91,7 +91,7 @@ public class AutoscalingTest {
         ClusterResources max = new ClusterResources(20, 1,
                                                     new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                  15, 1, 1.3,  28.6, 28.6,
+                                                                  14, 1, 1.3,  30.8, 30.8,
                                                                   tester.autoscale(application1, cluster1.id(), min, max));
         assertEquals("Disk speed from min/max is used",
                      NodeResources.DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
