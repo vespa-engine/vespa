@@ -95,9 +95,6 @@ public class ThreadLockStats {
     /** Mutable method (see class doc) */
     public void acquireTimedOut(String lockPath) {
         LockCounters lockCounters = getLockCounters(lockPath);
-        if (lockAttempts.size() > 1) {
-            lockCounters.timeoutOnReentrancyErrorCount.incrementAndGet();
-        }
 
         lockCounters.acquireTimedOutCount.incrementAndGet();
         removeLastLockAttempt(lockCounters, LockAttempt::timedOut);
@@ -118,6 +115,13 @@ public class ThreadLockStats {
         LockCounters lockCounters = getLockCounters(lockPath);
         lockCounters.locksReleasedCount.incrementAndGet();
         removeLastLockAttempt(lockCounters, LockAttempt::released);
+    }
+
+    /** Mutable method (see class doc) */
+    public void lockReleaseFailed(String lockPath) {
+        LockCounters lockCounters = getLockCounters(lockPath);
+        lockCounters.lockReleaseErrorCount.incrementAndGet();
+        removeLastLockAttempt(lockCounters, LockAttempt::releasedWithError);
     }
 
     private LockCounters getLockCounters(String lockPath) {

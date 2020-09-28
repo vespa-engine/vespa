@@ -18,7 +18,7 @@ public class LockCounters {
     final AtomicInteger locksReleasedCount = new AtomicInteger(0);
 
     final AtomicInteger noLocksErrorCount = new AtomicInteger(0);
-    final AtomicInteger timeoutOnReentrancyErrorCount = new AtomicInteger(0);
+    final AtomicInteger lockReleaseErrorCount = new AtomicInteger(0);
 
     public int invokeAcquireCount() { return invokeAcquireCount.get(); }
     public int inCriticalRegionCount() { return inCriticalRegionCount.get(); }
@@ -27,7 +27,7 @@ public class LockCounters {
     public int lockAcquiredCount() { return lockAcquiredCount.get(); }
     public int locksReleasedCount() { return locksReleasedCount.get(); }
     public int noLocksErrorCount() { return noLocksErrorCount.get(); }
-    public int timeoutOnReentrancyErrorCount() { return timeoutOnReentrancyErrorCount.get(); }
+    public int lockReleaseErrorCount() { return lockReleaseErrorCount.get(); }
 
     @Override
     public String toString() {
@@ -39,7 +39,7 @@ public class LockCounters {
                 ", lockAcquiredCount=" + lockAcquiredCount +
                 ", locksReleasedCount=" + locksReleasedCount +
                 ", noLocksErrorCount=" + noLocksErrorCount +
-                ", timeoutOnReentrancyErrorCount=" + timeoutOnReentrancyErrorCount +
+                ", locksReleaseErrorCount=" + lockReleaseErrorCount +
                 '}';
     }
 
@@ -55,11 +55,12 @@ public class LockCounters {
                 lockAcquiredCount.get() == that.lockAcquiredCount.get() &&
                 locksReleasedCount.get() == that.locksReleasedCount.get() &&
                 noLocksErrorCount.get() == that.noLocksErrorCount.get() &&
-                timeoutOnReentrancyErrorCount.get() == that.timeoutOnReentrancyErrorCount.get();
+                lockReleaseErrorCount.get() == that.lockReleaseErrorCount.get();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(invokeAcquireCount, inCriticalRegionCount, acquireFailedCount, acquireTimedOutCount, lockAcquiredCount, locksReleasedCount, noLocksErrorCount, timeoutOnReentrancyErrorCount);
+        return Objects.hash(invokeAcquireCount, inCriticalRegionCount, acquireFailedCount, acquireTimedOutCount,
+                lockAcquiredCount, locksReleasedCount, noLocksErrorCount, lockReleaseErrorCount);
     }
 }

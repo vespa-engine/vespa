@@ -29,7 +29,8 @@ public class LockAttempt {
     }
 
     public enum LockState {
-        ACQUIRING(false), ACQUIRE_FAILED(true), TIMED_OUT(true), ACQUIRED(false), RELEASED(true);
+        ACQUIRING(false), ACQUIRE_FAILED(true), TIMED_OUT(true), ACQUIRED(false), RELEASED(true),
+        RELEASED_WITH_ERROR(true);
 
         private final boolean terminal;
 
@@ -84,6 +85,7 @@ public class LockAttempt {
     void acquireFailed() { setTerminalState(LockState.ACQUIRE_FAILED); }
     void timedOut() { setTerminalState(LockState.TIMED_OUT); }
     void released() { setTerminalState(LockState.RELEASED); }
+    void releasedWithError() { setTerminalState(LockState.RELEASED_WITH_ERROR); }
 
     void lockAcquired() {
         lockState = LockState.ACQUIRED;
