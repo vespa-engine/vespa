@@ -263,7 +263,7 @@ StoreOnlyFeedView::forceCommit(SerialNum serialNum, DoneCallback onDone)
 void
 StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
-    LOG(spam, "internalForceCommit: serial=%" PRIu64 ".", serialNum);
+    LOG(debug, "internalForceCommit: serial=%" PRIu64 ".", serialNum);
     _writeService.summary().execute(makeLambdaTask([onDone=onCommitDone]() {(void) onDone;}));
     std::vector<uint32_t> lidsToReuse;
     lidsToReuse = _lidReuseDelayer.getReuseLids();
