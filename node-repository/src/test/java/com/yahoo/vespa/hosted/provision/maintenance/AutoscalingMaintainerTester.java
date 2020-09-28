@@ -54,7 +54,7 @@ public class AutoscalingMaintainerTester {
                                                new TestMetric(),
                                                Duration.ofMinutes(1));
         provisioningTester.makeReadyNodes(20, "flt", NodeType.host, 8);
-        provisioningTester.deployZoneApp();
+        provisioningTester.activateTenantHosts();
     }
 
     public NodeRepository nodeRepository() { return provisioningTester.nodeRepository(); }
