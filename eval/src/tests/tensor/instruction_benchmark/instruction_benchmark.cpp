@@ -185,44 +185,45 @@ struct D {
             return ValueType::Dimension(name, size);
         }
     }
-    std::pair<vespalib::string,TensorSpec::Label> operator()(size_t idx) const {
+    TensorSpec::Label operator()(size_t idx) const {
         if (mapped) {
-            return std::make_pair(name, TensorSpec::Label(fmt("label_%zu", idx)));
+            return TensorSpec::Label(fmt("label_%zu", idx));
         } else {
-            return std::make_pair(name, TensorSpec::Label(idx));
+            return TensorSpec::Label(idx);
         }
     }
 };
 
-TensorSpec make_vector(const D &d1, double seq) {
-    auto type = ValueType::tensor_type({d1}, ValueType::CellType::FLOAT);
-    TensorSpec spec(type.to_spec());
-    for (size_t i = 0, idx1 = 0; i < d1.size; ++i, idx1 += d1.stride, seq += 1.0) {
-        spec.add({d1(idx1)}, seq);
+void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr) {
+    spec.add(addr, seq);
+    seq += 1.0;
+}
+
+template <typename ...Ds> void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr, const D &d, const Ds &...ds) {
+    for (size_t i = 0, idx = 0; i < d.size; ++i, idx += d.stride) {
+        addr.insert_or_assign(d.name, d(idx));
+        add_cells(spec, seq, addr, ds...);
     }
+}
+
+template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
+    TensorSpec spec(ValueType::tensor_type({ds...}, ValueType::CellType::FLOAT).to_spec());
+    add_cells(spec, seq, TensorSpec::Address(), ds...);
     return spec;
 }
 
-TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) {
-    auto type = ValueType::tensor_type({d1, d2, d3}, ValueType::CellType::FLOAT);
-    TensorSpec spec(type.to_spec());
-    for (size_t i = 0, idx1 = 0; i < d1.size; ++i, idx1 += d1.stride) {
-        for (size_t j = 0, idx2 = 0; j < d2.size; ++j, idx2 += d2.stride) {
-            for (size_t k = 0, idx3 = 0; k < d3.size; ++k, idx3 += d3.stride, seq += 1.0) {
-                spec.add({d1(idx1), d2(idx2), d3(idx3)}, seq);
-            }
-        }
-    }
-    return spec;
-}
+TensorSpec make_vector(const D &d1, double seq) { return make_spec(seq, d1); }
+TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) { return make_spec(seq, d1, d2, d3); }
 
 //-----------------------------------------------------------------------------
 
 TEST(MakeInputTest, print_some_test_input) {
+    auto number = make_spec(5.0);
     auto sparse = make_vector(D::map("x", 5, 3), 1.0);
     auto dense = make_vector(D::idx("x", 5), 10.0);
     auto mixed = make_cube(D::map("x", 3, 7), D::idx("y", 2), D::idx("z", 2), 100.0);
     fprintf(stderr, "--------------------------------------------------------\n");
+    fprintf(stderr, "simple number: %s\n", number.to_string().c_str());
     fprintf(stderr, "sparse vector: %s\n", sparse.to_string().c_str());
     fprintf(stderr, "dense vector: %s\n", dense.to_string().c_str());
     fprintf(stderr, "mixed cube: %s\n", mixed.to_string().c_str());
@@ -232,8 +233,8 @@ TEST(MakeInputTest, print_some_test_input) {
 //-----------------------------------------------------------------------------
 
 TEST(NumberJoin, plain_op2) {
-    auto lhs = TensorSpec("double").add({}, 2.0);
-    auto rhs = TensorSpec("double").add({}, 3.0);
+    auto lhs = make_spec(2.0);
+    auto rhs = make_spec(3.0);
     benchmark_join("simple numbers multiply", lhs, rhs, operation::Mul::f);
 }
 

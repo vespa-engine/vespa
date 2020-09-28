@@ -87,12 +87,28 @@ TEST(GenericRenameTest, sparse_rename_plan_can_be_created) {
     EXPECT_EQ(plan.output_dimensions, expect);
 }
 
-TensorSpec simple_tensor_rename(const TensorSpec &a, const FromTo &ft) {
-    Stash stash;
-    const auto &engine = SimpleTensorEngine::ref();
-    auto lhs = engine.from_spec(a);
-    const auto &result = engine.rename(*lhs, ft.from, ft.to, stash);
-    return engine.to_spec(result);
+vespalib::string rename_dimension(const vespalib::string &name, const FromTo &ft) {
+    assert(ft.from.size() == ft.to.size());
+    for (size_t i = 0; i < ft.from.size(); ++i) {
+        if (name == ft.from[i]) {
+            return ft.to[i];
+        }
+    }
+    return name;
+}
+
+TensorSpec reference_rename(const TensorSpec &a, const FromTo &ft) {
+    ValueType res_type = ValueType::from_spec(a.type()).rename(ft.from, ft.to);
+    EXPECT_FALSE(res_type.is_error());
+    TensorSpec result(res_type.to_spec());
+    for (const auto &cell: a.cells()) {
+        TensorSpec::Address addr;
+        for (const auto &dim: cell.first) {
+            addr.insert_or_assign(rename_dimension(dim.first, ft), dim.second);
+        }
+        result.add(addr, cell.second);
+    }
+    return result;
 }
 
 TensorSpec perform_generic_rename(const TensorSpec &a, const ValueType &res_type,
@@ -115,7 +131,7 @@ void test_generic_rename(const ValueBuilderFactory &factory) {
             if (renamed_type.is_error()) continue;
             // printf("type %s -> %s\n", lhs_type.to_spec().c_str(), renamed_type.to_spec().c_str());
             SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
-            auto expect = simple_tensor_rename(lhs, from_to);
+            auto expect = reference_rename(lhs, from_to);
             auto actual = perform_generic_rename(lhs, renamed_type, from_to, factory);
             EXPECT_EQ(actual, expect);
         }
