@@ -38,4 +38,7 @@ public interface ConfigChangeAction {
     /** Returns whether this change should be allowed */
     boolean allowed();
 
+    /** Returns whether this change should be ignored for internal redeploy */
+    boolean ignoreForInternalRedeploy();
+
 }
