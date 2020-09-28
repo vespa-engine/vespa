@@ -406,7 +406,7 @@ public class Flags {
 
     public static final UnboundLongFlag NODE_OBJECT_CACHE_SIZE = defineLongFlag(
             "node-object-cache-size",
-            1000,
+            2000,
             "The number of deserialized Node objects to store in-memory.",
             "Takes effect on config server restart");
 
