@@ -12,6 +12,7 @@ namespace vespalib::tensor {
  * Utility class to build tensors of type SparseTensor, to be used by
  * tensor operations.
  */
+template<typename T>
 class DirectSparseTensorBuilder
 {
 public:
@@ -21,7 +22,7 @@ public:
 private:
     eval::ValueType _type;
     SparseTensorIndex _index;
-    std::vector<double> _values;
+    std::vector<T> _values;
 
 public:
     DirectSparseTensorBuilder();
@@ -31,31 +32,30 @@ public:
     Tensor::UP build();
 
     template <class Function>
-    void insertCell(SparseTensorAddressRef address, double value, Function &&func)
+    void insertCell(SparseTensorAddressRef address, T value, Function &&func)
     {
         size_t idx;
         if (_index.lookup_address(address, idx)) {
             _values[idx] = func(_values[idx], value);
         } else {
             idx = _index.lookup_or_add(address);
-            assert (idx == _values.size());
+            assert(idx == _values.size());
             _values.push_back(value);
         }
     }
 
-    void insertCell(SparseTensorAddressRef address, double value) {
+    void insertCell(SparseTensorAddressRef address, T value) {
         // This address should not already exist and a new cell should be inserted.
-        size_t idx = _index.lookup_or_add(address);
-        assert (idx == _values.size());
+        _index.add_address(address);
         _values.push_back(value);
     }
 
     template <class Function>
-    void insertCell(SparseTensorAddressBuilder &address, double value, Function &&func) {
+    void insertCell(SparseTensorAddressBuilder &address, T value, Function &&func) {
         insertCell(address.getAddressRef(), value, func);
     }
 
-    void insertCell(SparseTensorAddressBuilder &address, double value) {
+    void insertCell(SparseTensorAddressBuilder &address, T value) {
         // This address should not already exist and a new cell should be inserted.
         insertCell(address.getAddressRef(), value);
     }

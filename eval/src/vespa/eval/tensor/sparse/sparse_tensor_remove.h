@@ -3,6 +3,7 @@
 #pragma once
 
 #include "sparse_tensor.h"
+#include "sparse_tensor_t.h"
 #include "sparse_tensor_address_builder.h"
 #include <vespa/eval/tensor/tensor_visitor.h>
 
@@ -14,13 +15,14 @@ namespace vespalib::tensor {
  * Creates a new tensor by removing the cells matching the cell addresses visited.
  * The value associated with the address is ignored.
  */
+template<typename T> 
 class SparseTensorRemove : public TensorVisitor {
 private:
-    const SparseTensor & _input;
+    const SparseTensorT<T> & _input;
     SparseTensorIndex::IndexMap _map;
     SparseTensorAddressBuilder _addressBuilder;
 public:
-    explicit SparseTensorRemove(const SparseTensor &input);
+    explicit SparseTensorRemove(const SparseTensorT<T> &input);
     ~SparseTensorRemove();
     void visit(const TensorAddress &address, double value) override;
     std::unique_ptr<Tensor> build();

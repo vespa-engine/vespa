@@ -3,6 +3,7 @@ vespa_add_library(eval_tensor_sparse OBJECT
     SOURCES
     direct_sparse_tensor_builder.cpp
     sparse_tensor.cpp
+    sparse_tensor_t.cpp
     sparse_tensor_add.cpp
     sparse_tensor_address_builder.cpp
     sparse_tensor_address_combiner.cpp

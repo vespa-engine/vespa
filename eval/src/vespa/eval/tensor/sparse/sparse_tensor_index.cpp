@@ -205,6 +205,11 @@ SparseTensorIndex::SparseTensorIndex(const SparseTensorIndex & index_in)
     copyMap(_map, index_in._map, _stash);
 }
 
+void
+SparseTensorIndex::reserve(size_t estimate) {
+    _map.resize(2*estimate);
+}
+
 SparseTensorIndex::~SparseTensorIndex() = default;
 
 size_t SparseTensorIndex::size() const {
@@ -223,9 +228,26 @@ SparseTensorIndex::create_view(const std::vector<size_t> &dims) const
     return std::make_unique<SparseTensorValueView>(_map, dims);
 }
 
+void
+SparseTensorIndex::add_address(SparseTensorAddressRef tmp_ref)
+{
+    SparseTensorAddressRef ref(tmp_ref, _stash);
+    size_t idx = _map.size();
+    auto insert_result = _map.insert({ref, idx});
+    assert(insert_result.second);
+}
+    
 size_t
 SparseTensorIndex::lookup_or_add(SparseTensorAddressRef tmp_ref)
 {
+#if 0
+    auto insert_result = _map.insert({tmp_ref, _map.size()});
+    if (insert_result.second) {
+        SparseTensorAddressRef ref(tmp_ref, _stash);
+        insert_result.first->first = ref;
+    }
+    return insert_result.first->second;
+#else
     auto iter = _map.find(tmp_ref);
     if (iter != _map.end()) {
         return iter->second;
@@ -234,6 +256,7 @@ SparseTensorIndex::lookup_or_add(SparseTensorAddressRef tmp_ref)
     uint32_t idx = _map.size();
     _map.insert({ref,idx});
     return idx;
+#endif
 }
 
 bool

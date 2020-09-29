@@ -1,10 +1,12 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sparse_tensor_add.h"
+#include "sparse_tensor_t.h"
 
 namespace vespalib::tensor {
 
-SparseTensorAdd::SparseTensorAdd(eval::ValueType type, SparseTensorIndex index, std::vector<double> values)
+template<typename T>
+SparseTensorAdd<T>::SparseTensorAdd(eval::ValueType type, SparseTensorIndex index, std::vector<T> values)
     : _type(std::move(type)),
       _index(std::move(index)),
       _values(std::move(values)),
@@ -12,10 +14,12 @@ SparseTensorAdd::SparseTensorAdd(eval::ValueType type, SparseTensorIndex index, 
 {
 }
 
-SparseTensorAdd::~SparseTensorAdd() = default;
+template<typename T>
+SparseTensorAdd<T>::~SparseTensorAdd() = default;
 
+template<typename T>
 void
-SparseTensorAdd::visit(const TensorAddress &address, double value)
+SparseTensorAdd<T>::visit(const TensorAddress &address, double value)
 {
     _addressBuilder.populate(_type, address);
     auto addressRef = _addressBuilder.getAddressRef();
@@ -28,10 +32,15 @@ SparseTensorAdd::visit(const TensorAddress &address, double value)
     }
 }
 
+template<typename T>
 std::unique_ptr<Tensor>
-SparseTensorAdd::build()
+SparseTensorAdd<T>::build()
 {
-    return std::make_unique<SparseTensor>(std::move(_type), _index, std::move(_values));
+    using tt = SparseTensorT<T>;
+    return std::make_unique<tt>(std::move(_type), _index, std::move(_values));
 }
+
+template class SparseTensorAdd<float>;
+template class SparseTensorAdd<double>;
 
 }

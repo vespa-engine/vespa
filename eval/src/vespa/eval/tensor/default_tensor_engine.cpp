@@ -193,6 +193,26 @@ struct CallDenseTensorBuilder {
     }
 };
 
+struct CallSparseTensorBuilder {
+    template <typename CT>
+    static Value::UP
+    invoke(const ValueType &type, const TensorSpec &spec)
+    {
+        DirectSparseTensorBuilder<CT> builder(type);
+        builder.reserve(spec.cells().size());
+        SparseTensorAddressBuilder address_builder;
+        for (const auto &cell: spec.cells()) {
+            const auto &address = cell.first;
+            if (build_cell_address(type, address, address_builder)) {
+                builder.insertCell(address_builder, cell.second);
+            } else {
+                bad_spec(spec);
+            }
+        }
+        return builder.build();
+    }
+};
+
 using MyTypify = eval::TypifyCellType;
 
 Value::UP
@@ -207,17 +227,7 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
     } else if (type.is_dense()) {
         return typify_invoke<1,MyTypify,CallDenseTensorBuilder>(type.cell_type(), type, spec);
     } else if (type.is_sparse()) {
-        DirectSparseTensorBuilder builder(type);
-        SparseTensorAddressBuilder address_builder;
-        for (const auto &cell: spec.cells()) {
-            const auto &address = cell.first;
-            if (build_cell_address(type, address, address_builder)) {
-                builder.insertCell(address_builder, cell.second);
-            } else {
-                bad_spec(spec);
-            }
-        }
-        return builder.build();
+        return typify_invoke<1,MyTypify,CallSparseTensorBuilder>(type.cell_type(), type, spec);
     }
     return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
 }

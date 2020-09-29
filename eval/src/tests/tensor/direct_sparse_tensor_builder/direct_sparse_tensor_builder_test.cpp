@@ -35,13 +35,17 @@ assertCellValue(double expValue, const TensorAddress &address,
     size_t idx;
     bool found = tensor.index().lookup_address(addressRef, idx);
     EXPECT_TRUE(found);
-    EXPECT_EQUAL(expValue, tensor.my_values()[idx]);
+    auto cells = tensor.cells();
+    if (EXPECT_TRUE(cells.type == CellType::DOUBLE)) {
+        auto arr = cells.typify<double>();
+        EXPECT_EQUAL(expValue, arr[idx]);
+    }
 }
 
 Tensor::UP
 buildTensor()
 {
-    DirectSparseTensorBuilder builder(ValueType::from_spec("tensor(a{},b{},c{},d{})"));
+    DirectSparseTensorBuilder<double> builder(ValueType::from_spec("tensor(a{},b{},c{},d{})"));
     SparseTensorAddressBuilder address;
     address.set({"1", "2", "", ""});
     builder.insertCell(address, 10);

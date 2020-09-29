@@ -14,7 +14,7 @@ namespace vespalib::tensor::sparse {
  * labels for common dimensions, using func to calculate new cell value
  * based on the cell values in the input tensors.
  */
-template <typename Function>
+template <typename LCT, typename RCT, typename Function>
 std::unique_ptr<Tensor>
 join(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func);
 

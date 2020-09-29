@@ -99,7 +99,7 @@ size_t encodeCells(nbostream &stream, const Tensor &tensor, CellType cell_type) 
 }
 
 template<typename T>
-void decodeCells(nbostream &stream, size_t dimensionsSize, size_t cellsSize, DirectSparseTensorBuilder &builder) {
+void decodeCells(nbostream &stream, size_t dimensionsSize, size_t cellsSize, DirectSparseTensorBuilder<T> &builder) {
     T cellValue = 0.0;
     vespalib::string str;
     SparseTensorAddressBuilder address;
@@ -115,17 +115,6 @@ void decodeCells(nbostream &stream, size_t dimensionsSize, size_t cellsSize, Dir
         }
         stream >> cellValue;
         builder.insertCell(address, cellValue, [](double, double v){ return v; });
-    }
-}
-
-void decodeCells(CellType cell_type, nbostream &stream, size_t dimensionsSize, size_t cellsSize, DirectSparseTensorBuilder &builder) {
-    switch (cell_type) {
-    case CellType::DOUBLE:
-        decodeCells<double>(stream, dimensionsSize, cellsSize, builder);
-        break;
-    case CellType::FLOAT:
-        decodeCells<float>(stream, dimensionsSize, cellsSize, builder);
-        break;
     }
 }
 
@@ -152,11 +141,19 @@ SparseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
         stream.readSmallString(str);
         dimensions.emplace_back(str);
     }
-    ValueType type = ValueType::tensor_type(std::move(dimensions), cell_type);
-    DirectSparseTensorBuilder builder(type);
     size_t cellsSize = stream.getInt1_4Bytes();
-    decodeCells(cell_type, stream, dimensionsSize, cellsSize, builder);
-    return builder.build();
+    ValueType type = ValueType::tensor_type(std::move(dimensions), cell_type);
+    switch (cell_type) {
+    case CellType::DOUBLE: {
+        DirectSparseTensorBuilder<double> builder(type);
+        decodeCells<double>(stream, dimensionsSize, cellsSize, builder);
+        return builder.build(); }
+    case CellType::FLOAT: {
+        DirectSparseTensorBuilder<float> builder(type);
+        decodeCells<float>(stream, dimensionsSize, cellsSize, builder);
+        return builder.build(); }
+    }
+    abort();
 }
 
-}
+} // namespace

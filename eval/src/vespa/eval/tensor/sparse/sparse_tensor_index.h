@@ -26,7 +26,8 @@ public:
     size_t size() const override;
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
     // build API
-    void reserve(size_t estimate) { _map.resize(2*estimate); }
+    void reserve(size_t estimate);
+    void add_address(SparseTensorAddressRef tmp_ref);
     size_t lookup_or_add(SparseTensorAddressRef tmp_ref);
     // lookup API
     bool lookup_address(SparseTensorAddressRef ref, size_t &idx) const;
