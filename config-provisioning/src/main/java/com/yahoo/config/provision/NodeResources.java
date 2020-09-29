@@ -12,12 +12,11 @@ import java.util.Optional;
 public class NodeResources {
 
     // Standard unit cost in dollars per hour
-    private static final double cpuUnitCost =    0.12;
-    private static final double memoryUnitCost = 0.012;
-    private static final double diskUnitCost =   0.0004;
+    private static final double cpuUnitCost =    0.09;
+    private static final double memoryUnitCost = 0.009;
+    private static final double diskUnitCost =   0.00013;
 
-    // TODO: Remove when models older than 7.226 are gone
-    public static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
+    private static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
 
     public enum DiskSpeed {
 
