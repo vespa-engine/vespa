@@ -244,12 +244,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                           },
                                           // TODO jonmv: make streaming — first doc indicates 200 OK anyway — unless session dies, which is a semi-200 anyway
                                           document -> {
-                                              synchronized (monitor) { // Putting things into the slime is not thread safe, so need synchronization.
-                                                  SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
-                                                                        documents.addObject());
+                                              try {
+                                                  synchronized (monitor) { // Putting things into the slime is not thread safe, so need synchronization.
+                                                      SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
+                                                                            documents.addObject());
+                                                  }
+                                              }
+                                              // TODO jonmv: This shouldn't happen much, but ... expose errors too?
+                                              catch (RuntimeException e) {
+                                                  log.log(WARNING, "Exception serializing document in document/v1 visit response", e);
                                               }
                                           });
     }
+
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         DocumentId id = path.id();
         DocumentOperationParameters parameters = parameters();
@@ -259,13 +266,18 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                      parameters,
                      new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
                                           document -> {
-                                              Cursor root = responseRoot(request, id);
-                                              document.map(JsonWriter::toByteArray)
-                                                      .map(SlimeUtils::jsonToSlime)
-                                                      .ifPresent(doc -> SlimeUtils.copyObject(doc.get().field("fields"), root.setObject("fields")));
-                                              respond(document.isPresent() ? 200 : 404,
-                                                      root,
-                                                      handler);
+                                              try {
+                                                  Cursor root = responseRoot(request, id);
+                                                  document.map(JsonWriter::toByteArray)
+                                                          .map(SlimeUtils::jsonToSlime)
+                                                          .ifPresent(doc -> SlimeUtils.copyObject(doc.get().field("fields"), root.setObject("fields")));
+                                                  respond(document.isPresent() ? 200 : 404,
+                                                          root,
+                                                          handler);
+                                              }
+                                              catch (Exception e) {
+                                                  serverError(request, new RuntimeException(e), handler);
+                                              }
                                           }));
         return ignoredContent;
     }

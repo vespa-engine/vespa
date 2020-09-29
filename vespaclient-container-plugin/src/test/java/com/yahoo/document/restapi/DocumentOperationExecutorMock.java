@@ -50,6 +50,9 @@ public class DocumentOperationExecutorMock implements DocumentOperationExecutor 
 
     @Override
     public String routeToCluster(String cluster) {
+        if ("throw-me".equals(cluster))
+            throw new IllegalArgumentException(cluster);
+
         return "route-to-" + cluster;
     }
 
