@@ -12,6 +12,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.Nodelike;
 import org.junit.Test;
 
 import java.util.List;
@@ -81,8 +82,8 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
-            if (node.parentHostname().isEmpty()) return node.flavor().resources(); // hosts use configured flavors
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
+            if (node.parentHostname().isEmpty()) return node.resources(); // hosts use configured flavors
             return realResourcesOf(node.resources());
         }
 

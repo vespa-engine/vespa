@@ -30,7 +30,7 @@ import java.util.Set;
  * @author bratseth
  * @author mpolden
  */
-public final class Node {
+public final class Node implements Nodelike {
 
     private final String hostname;
     private final IP.Config ipConfig;
@@ -116,13 +116,14 @@ public final class Node {
      */
     public String id() { return id; }
 
-    /** Returns the parent hostname for this node if this node is a docker container or a VM (i.e. it has a parent host). Otherwise, empty **/
+    @Override
     public Optional<String> parentHostname() { return parentHostname; }
 
     public boolean hasParent(String hostname) {
         return parentHostname.isPresent() && parentHostname.get().equals(hostname);
     }
 
+    @Override
     public NodeResources resources() { return flavor.resources(); }
 
     /** Returns the flavor of this node */
@@ -134,7 +135,7 @@ public final class Node {
     /** Returns the current state of this node (in the node state machine) */
     public State state() { return state; }
 
-    /** Returns the type of this node */
+    @Override
     public NodeType type() { return type; }
 
     /** Returns the current allocation of this, if any */

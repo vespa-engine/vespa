@@ -17,6 +17,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -205,7 +206,7 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             if (zone.getCloud().dynamicProvisioning())
                 return node.resources().withMemoryGb(node.resources().memoryGb() - 3);
             else

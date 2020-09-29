@@ -31,6 +31,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -689,7 +690,7 @@ public class ProvisioningTester {
         }
 
         @Override
-        public NodeResources realResourcesOf(Node node, NodeRepository nodeRepository) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             NodeResources resources = node.resources();
             if (node.type() == NodeType.host) return resources;
             return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)

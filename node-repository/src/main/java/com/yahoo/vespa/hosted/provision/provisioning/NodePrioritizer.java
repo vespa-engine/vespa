@@ -145,10 +145,10 @@ public class NodePrioritizer {
                                                  resources(requestedNodes).with(host.flavor().resources().diskSpeed())
                                                                           .with(host.flavor().resources().storageType()),
                                                  NodeType.tenant);
-            NodeCandidate nodePri = candidateFrom(newNode, false, true);
-            if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
+            NodeCandidate candidate = candidateFrom(newNode, false, true);
+            if ( ! candidate.violatesSpares || isAllocatingForReplacement) {
                 log.log(Level.FINE, "Adding new Docker node " + newNode);
-                nodes.put(newNode, nodePri);
+                nodes.put(newNode, candidate);
             }
         }
     }
