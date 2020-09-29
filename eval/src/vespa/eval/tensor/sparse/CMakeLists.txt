@@ -8,6 +8,7 @@ vespa_add_library(eval_tensor_sparse OBJECT
     sparse_tensor_address_combiner.cpp
     sparse_tensor_address_reducer.cpp
     sparse_tensor_address_ref.cpp
+    sparse_tensor_index.cpp
     sparse_tensor_match.cpp
     sparse_tensor_modify.cpp
     sparse_tensor_remove.cpp
