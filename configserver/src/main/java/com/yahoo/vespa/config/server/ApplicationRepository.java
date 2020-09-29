@@ -475,8 +475,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
         try (Lock lock = tenantApplications.lock(applicationId)) {
-            if ( ! tenantApplications.exists(applicationId)) return false;
-
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
@@ -630,17 +628,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private boolean sessionHasBeenDeleted(ApplicationId applicationId, long sessionId, Duration waitTime) {
-        SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        Instant end = Instant.now().plus(waitTime);
-        do {
-            if (sessionRepository.getRemoteSession(sessionId) == null) return true;
-            try { Thread.sleep(10); } catch (InterruptedException e) { /* ignored */}
-        } while (Instant.now().isBefore(end));
-
-        return false;
     }
 
     public Optional<String> getApplicationPackageReference(ApplicationId applicationId) {
