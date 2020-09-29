@@ -14,7 +14,10 @@ import java.util.Optional;
  * @author ogronnesby
  */
 public class Quota {
+
     private final Optional<Integer> maxClusterSize;
+
+    /** The max budget in dollars per hour */
     private final Optional<Integer> budget;
 
     public Quota(Optional<Integer> maybeClusterSize, Optional<Integer> budget) {
