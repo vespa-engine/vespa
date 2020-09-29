@@ -20,7 +20,7 @@ import java.util.Optional;
  *
  * @author smorgrav
  */
-class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
+abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
     /** List of host states ordered by preference (ascending) */
     private static final List<Node.State> HOST_STATE_PRIORITY =
@@ -29,10 +29,8 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     private static final NodeResources zeroResources =
             new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
-    final Node node;
-
     /** The free capacity on the parent of this node, before adding this node to it */
-    private final NodeResources freeParentCapacity;
+    protected final NodeResources freeParentCapacity;
 
     /** The parent host (docker or hypervisor) */
     final Optional<Node> parent;
@@ -49,11 +47,10 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** This node can be resized to the new NodeResources */
     final boolean isResizable;
 
-    NodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
+    private NodeCandidate(NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
         if (isResizeable && isNewNode)
             throw new IllegalArgumentException("A new node cannot be resizable");
 
-        this.node = node;
         this.freeParentCapacity = freeParentCapacity;
         this.parent = parent;
         this.violatesSpares = violatesSpares;
@@ -62,36 +59,21 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         this.isResizable = isResizeable;
     }
 
-    @Override
-    public NodeResources resources() { return node.resources(); }
+    public abstract Optional<Allocation> allocation();
 
-    @Override
-    public Optional<String> parentHostname() { return node.parentHostname(); }
+    public abstract Node.State state();
 
-    @Override
-    public NodeType type() { return node.type(); }
+    public abstract Status status();
 
-    public Optional<Allocation> allocation() { return node.allocation(); }
+    public abstract Flavor flavor();
 
-    public Node.State state() { return node.state(); }
-
-    public Status status() { return node.status(); }
-
-    public Flavor flavor() { return node.flavor(); }
-
-    public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
-        return new NodeCandidate(node.allocate(owner, membership, requestedResources, at),
-                                 freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
-    }
+    public abstract NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at);
 
     /** Called when the node described by this candidate must be created */
-    public NodeCandidate withNode() {
-        if (node != null) return this;
-        throw new RuntimeException("Not implemented");
-    }
+    public abstract NodeCandidate withNode();
 
     /** Returns the node instance of this candidate, or throws IllegalStateException if there is none */
-    public Node toNode() { return node; }
+    public abstract Node toNode();
 
     /**
      * Compare this candidate to another
@@ -105,8 +87,8 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         if (!other.violatesSpares && this.violatesSpares) return 1;
 
         // Choose active nodes
-        if (this.node.state() == Node.State.active && other.node.state() != Node.State.active) return -1;
-        if (other.node.state() == Node.State.active && this.node.state() != Node.State.active) return 1;
+        if (this.state() == Node.State.active && other.state() != Node.State.active) return -1;
+        if (other.state() == Node.State.active && this.state() != Node.State.active) return 1;
 
         // Choose active node that is not retired first (surplus is active but retired)
         if (!this.isSurplusNode && other.isSurplusNode) return -1;
@@ -117,15 +99,15 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         if (other.isInNodeRepoAndReserved() && ! this.isInNodeRepoAndReserved()) return 1;
 
         // Choose inactive nodes
-        if (this.node.state() == Node.State.inactive && other.node.state() != Node.State.inactive) return -1;
-        if (other.node.state() == Node.State.inactive && this.node.state() != Node.State.inactive) return 1;
+        if (this.state() == Node.State.inactive && other.state() != Node.State.inactive) return -1;
+        if (other.state() == Node.State.inactive && this.state() != Node.State.inactive) return 1;
 
         // Choose ready nodes
-        if (this.node.state() == Node.State.ready && other.node.state() != Node.State.ready) return -1;
-        if (other.node.state() == Node.State.ready && this.node.state() != Node.State.ready) return 1;
+        if (this.state() == Node.State.ready && other.state() != Node.State.ready) return -1;
+        if (other.state() == Node.State.ready && this.state() != Node.State.ready) return 1;
 
-        if (this.node.state() != other.node.state())
-            throw new IllegalStateException("Nodes " + this.node + " and " + other.node + " have different states");
+        if (this.state() != other.state())
+            throw new IllegalStateException("Nodes " + this + " and " + other + " have different states");
 
         if (this.parent.isPresent() && other.parent.isPresent()) {
             // Prefer reserved hosts (that they are reserved to the right tenant is ensured elsewhere)
@@ -153,8 +135,8 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         if (hostPriority != 0) return hostPriority;
 
         // Choose cheapest node
-        if (this.node.flavor().cost() < other.node.flavor().cost()) return -1;
-        if (other.node.flavor().cost() < this.node.flavor().cost()) return 1;
+        if (this.flavor().cost() < other.flavor().cost()) return -1;
+        if (other.flavor().cost() < this.flavor().cost()) return 1;
 
         // Choose nodes where host is in more desirable state
         int thisHostStatePri = this.parent.map(host -> HOST_STATE_PRIORITY.indexOf(host.state())).orElse(-2);
@@ -162,27 +144,26 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
 
         // Prefer lower indexes to minimize redistribution
-        if (this.node.allocation().isPresent() && other.node.allocation().isPresent())
-            return Integer.compare(this.node.allocation().get().membership().index(),
-                                   other.node.allocation().get().membership().index());
+        if (this.allocation().isPresent() && other.allocation().isPresent())
+            return Integer.compare(this.allocation().get().membership().index(),
+                                   other.allocation().get().membership().index());
 
-        // All else equal choose hostname alphabetically
-        return this.node.hostname().compareTo(other.node.hostname());
+        return 0;
     }
 
     /** Returns the allocation skew of the parent of this before adding this node to it */
     double skewWithoutThis() { return skewWith(zeroResources); }
 
     /** Returns the allocation skew of the parent of this after adding this node to it */
-    double skewWithThis() { return skewWith(node.resources()); }
+    double skewWithThis() { return skewWith(resources()); }
 
     /** Returns a copy of this with node set to given value */
     NodeCandidate withNode(Node node) {
-        return new NodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
+        return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
     }
 
     private boolean lessThanHalfTheHost(NodeCandidate node) {
-        var n = node.node.resources();
+        var n = node.resources();
         var h = node.parent.get().resources();
         if (h.vcpu()     < n.vcpu()     * 2) return false;
         if (h.memoryGb() < n.memoryGb() * 2) return false;
@@ -199,24 +180,11 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
     private boolean isInNodeRepoAndReserved() {
         if (isNewNode) return false;
-        return node.state().equals(Node.State.reserved);
+        return state().equals(Node.State.reserved);
     }
 
-    @Override
-    public String toString() {
-        return node.id();
-    }
-
-    @Override
-    public int hashCode() {
-        return node.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) return true;
-        if ( ! (other instanceof NodeCandidate)) return false;
-        return this.node.equals(((NodeCandidate)other).node);
+    public static NodeCandidate create(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
+        return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizeable);
     }
 
     static class Builder {
@@ -264,10 +232,127 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
             isResizable = resizable;
             return this;
         }
-        
+
         NodeCandidate build() {
-            return new NodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
+            return NodeCandidate.create(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
         }
+    }
+
+    /** A candidate backed by a node */
+    static class ConcreteNodeCandidate extends NodeCandidate {
+
+        private final Node node;
+
+        private ConcreteNodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
+            super(freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizeable);
+            this.node = node;
+        }
+
+        @Override
+        public NodeResources resources() { return node.resources(); }
+
+        @Override
+        public Optional<String> parentHostname() { return node.parentHostname(); }
+
+        @Override
+        public NodeType type() { return node.type(); }
+
+        public Optional<Allocation> allocation() { return node.allocation(); }
+
+        public Node.State state() { return node.state(); }
+
+        public Status status() { return node.status(); }
+
+        public Flavor flavor() { return node.flavor(); }
+
+        public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
+            return new ConcreteNodeCandidate(node.allocate(owner, membership, requestedResources, at),
+                                             freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
+        }
+
+        /** Called when the node described by this candidate must be created */
+        public NodeCandidate withNode() {
+            if (node != null) return this;
+            throw new RuntimeException("Not implemented");
+        }
+
+        /** Returns the node instance of this candidate, or throws IllegalStateException if there is none */
+        public Node toNode() { return node; }
+
+        @Override
+        public int compareTo(NodeCandidate other) {
+            int comparison = super.compareTo(other);
+            if (comparison != 0) return comparison;
+
+            // Unimportant tie-breaking:
+            if ( ! (other instanceof ConcreteNodeCandidate)) return -1;
+            return this.node.hostname().compareTo(((ConcreteNodeCandidate)other).node.hostname());
+        }
+
+        @Override
+        public String toString() {
+            return node.id();
+        }
+
+    }
+
+    /** A candidate for which no actual node has been created yet */
+    static class VirtualNodeCandidate extends NodeCandidate {
+
+        // TODO: Remove
+        private final Node node;
+
+        private VirtualNodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
+            super(freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizeable);
+            this.node = node;
+        }
+
+        @Override
+        public NodeResources resources() { return node.resources(); }
+
+        @Override
+        public Optional<String> parentHostname() { return node.parentHostname(); }
+
+        @Override
+        public NodeType type() { return node.type(); }
+
+        public Optional<Allocation> allocation() { return node.allocation(); }
+
+        public Node.State state() { return node.state(); }
+
+        public Status status() { return node.status(); }
+
+        public Flavor flavor() { return node.flavor(); }
+
+        public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
+            return new VirtualNodeCandidate(node.allocate(owner, membership, requestedResources, at),
+                                            freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
+        }
+
+        /** Called when the node described by this candidate must be created */
+        public NodeCandidate withNode() {
+            if (node != null) return this;
+            throw new RuntimeException("Not implemented");
+        }
+
+        /** Returns the node instance of this candidate, or throws IllegalStateException if there is none */
+        public Node toNode() { return node; }
+
+        @Override
+        public int compareTo(NodeCandidate other) {
+            int comparison = super.compareTo(other);
+            if (comparison != 0) return comparison;
+
+            // Unimportant tie-breaking:
+            if ( ! (other instanceof ConcreteNodeCandidate)) return -1;
+            return this.node.hostname().compareTo(((ConcreteNodeCandidate)other).node.hostname());
+        }
+
+        @Override
+        public String toString() {
+            return node.id();
+        }
+
     }
 
 }
