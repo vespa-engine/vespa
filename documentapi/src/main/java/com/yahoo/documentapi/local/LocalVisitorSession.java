@@ -76,8 +76,13 @@ public class LocalVisitorSession implements VisitorSession {
                     if (state.get() != State.RUNNING)
                         return;
 
-                    if (selector.accepts(new DocumentPut(document)) != Result.TRUE)
+                    try {
+                        if (selector.accepts(new DocumentPut(document)) != Result.TRUE)
+                            return;
+                    }
+                    catch (RuntimeException e) {
                         return;
+                    }
 
                     Document copy = new Document(document.getDataType(), document.getId());
                     new FieldSetRepo().copyFields(document, copy, fieldSet);
