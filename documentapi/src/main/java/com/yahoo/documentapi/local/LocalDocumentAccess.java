@@ -34,17 +34,17 @@ public class LocalDocumentAccess extends DocumentAccess {
     }
 
     @Override
-    public LocalSyncSession createSyncSession(SyncParameters parameters) {
+    public SyncSession createSyncSession(SyncParameters parameters) {
         return new LocalSyncSession(this);
     }
 
     @Override
-    public LocalAsyncSession createAsyncSession(AsyncParameters parameters) {
+    public AsyncSession createAsyncSession(AsyncParameters parameters) {
         return new LocalAsyncSession(parameters, this);
     }
 
     @Override
-    public LocalVisitorSession createVisitorSession(VisitorParameters parameters) throws ParseException {
+    public VisitorSession createVisitorSession(VisitorParameters parameters) throws ParseException {
         return new LocalVisitorSession(this, parameters);
     }
 
