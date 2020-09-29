@@ -129,7 +129,7 @@ public class TokenBuffer {
             add(t, tokens.getCurrentName(), tokens.getText());
         } catch (IOException e) {
             // TODO something sane
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -138,7 +138,7 @@ public class TokenBuffer {
             return tokens.nextValue();
         } catch (IOException e) {
             // TODO something sane
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 
