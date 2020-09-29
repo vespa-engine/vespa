@@ -57,6 +57,7 @@ public:
     Domain & setConfig(const DomainConfig & cfg);
 private:
     void commitIfFull(const vespalib::MonitorGuard & guard);
+    void commitAndTransferResponses(const vespalib::MonitorGuard & guard);
 
     std::unique_ptr<CommitChunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
     void commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);

@@ -209,6 +209,10 @@ Domain::getSynced() const
 void
 Domain::triggerSyncNow()
 {
+    {
+        vespalib::MonitorGuard guard(_currentChunkMonitor);
+        commitAndTransferResponses(guard);
+    }
     MonitorGuard guard(_syncMonitor);
     if (!_pendingSync) {
         _pendingSync = true;
@@ -352,10 +356,15 @@ Domain::startCommit(DoneCallback onDone) {
 void
 Domain::commitIfFull(const vespalib::MonitorGuard &guard) {
     if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
-        auto completed = std::move(_currentChunk);
-        _currentChunk = std::make_unique<CommitChunk>(_config.getChunkSizeLimit(), completed->stealCallbacks());
-        commitChunk(std::move(completed), guard);
+        commitAndTransferResponses(guard);
     }
+}
+
+void
+Domain::commitAndTransferResponses(const vespalib::MonitorGuard &guard) {
+    auto completed = std::move(_currentChunk);
+    _currentChunk = std::make_unique<CommitChunk>(_config.getChunkSizeLimit(), completed->stealCallbacks());
+    commitChunk(std::move(completed), guard);
 }
 
 std::unique_ptr<CommitChunk>
