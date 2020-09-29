@@ -22,6 +22,7 @@ import com.yahoo.document.restapi.DocumentOperationExecutor.OperationContext;
 import com.yahoo.document.restapi.DocumentOperationExecutor.VisitOperationsContext;
 import com.yahoo.document.restapi.DocumentOperationExecutor.VisitorOptions;
 import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
+import com.yahoo.document.restapi.DocumentOperationExecutorImpl;
 import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
@@ -124,7 +125,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
         this(clock,
-             new DocumentOperationExecutor(clusterListConfig, bucketSpacesConfig, executorConfig, documentAccess, clock),
+             new DocumentOperationExecutorImpl(clusterListConfig, bucketSpacesConfig, executorConfig, documentAccess, clock),
              new DocumentOperationParser(documentManagerConfig),
              metric,
              metricReceiver);
@@ -552,7 +553,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
 
-    private static class DocumentOperationParser {
+    static class DocumentOperationParser {
 
         private static final JsonFactory jsonFactory = new JsonFactory();
 

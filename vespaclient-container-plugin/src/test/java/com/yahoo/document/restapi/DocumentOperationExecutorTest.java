@@ -1,17 +1,18 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.restapi;
 
+import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
-import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.document.restapi.DocumentOperationExecutor.DelayQueue;
+import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType;
 import com.yahoo.document.restapi.DocumentOperationExecutor.Group;
 import com.yahoo.document.restapi.DocumentOperationExecutor.OperationContext;
-import com.yahoo.document.restapi.DocumentOperationExecutor.StorageCluster;
 import com.yahoo.document.restapi.DocumentOperationExecutor.VisitOperationsContext;
 import com.yahoo.document.restapi.DocumentOperationExecutor.VisitorOptions;
+import com.yahoo.document.restapi.DocumentOperationExecutorImpl.StorageCluster;
+import com.yahoo.document.restapi.DocumentOperationExecutorImpl.DelayQueue;
 import com.yahoo.documentapi.DocumentAccessParams;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.VisitorControlHandler;
@@ -19,6 +20,7 @@ import com.yahoo.documentapi.local.LocalAsyncSession;
 import com.yahoo.documentapi.local.LocalDocumentAccess;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +56,22 @@ import static org.junit.Assert.fail;
  */
 public class DocumentOperationExecutorTest {
 
+    final AllClustersBucketSpacesConfig bucketConfig = new AllClustersBucketSpacesConfig.Builder()
+            .cluster("content",
+                     new AllClustersBucketSpacesConfig.Cluster.Builder()
+                             .documentType("music",
+                                           new AllClustersBucketSpacesConfig.Cluster.DocumentType.Builder()
+                                                   .bucketSpace(FixedBucketSpaces.defaultSpace())))
+            .build();
+    final ClusterListConfig clusterConfig = new ClusterListConfig.Builder()
+            .storage(new ClusterListConfig.Storage.Builder().configid("config-id")
+                                                            .name("content"))
+            .build();
+    final DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()
+            .resendDelayMillis(10)
+            .defaultTimeoutSeconds(1)
+            .maxThrottled(2)
+            .build();
     final Map<String, StorageCluster> clusters = Map.of("content", new StorageCluster("content",
                                                                                       "config-id",
                                                                                       Map.of("music", "route")));
@@ -63,7 +81,7 @@ public class DocumentOperationExecutorTest {
     final List<String> tokens = new ArrayList<>();
     ManualClock clock;
     LocalDocumentAccess access;
-    DocumentOperationExecutor executor;
+    DocumentOperationExecutorImpl executor;
     DocumentType musicType;
     Document doc1;
     Document doc2;
@@ -88,13 +106,7 @@ public class DocumentOperationExecutorTest {
     public void setUp() {
         clock = new ManualClock();
         access = new LocalDocumentAccess(new DocumentAccessParams().setDocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/cfg/music.sd").build()));
-        executor = new DocumentOperationExecutor(Duration.ofMillis(10),  // Resend delay
-                                                 Duration.ofMillis(60),  // Operation timeout
-                                                 Duration.ofMillis(100), // Visitor timeout
-                                                 2,                      // Max documents in retry queue
-                                                 access,
-                                                 clusters,
-                                                 clock);
+        executor = new DocumentOperationExecutorImpl(clusterConfig, bucketConfig, executorConfig, access, clock);
         received.clear();
         errors.clear();
         tokens.clear();
@@ -121,17 +133,17 @@ public class DocumentOperationExecutorTest {
         catch (IllegalArgumentException e) {
             assertEquals("Your Vespa deployment has no content cluster 'blargh', only 'content'", e.getMessage());
         }
-        assertEquals("content", DocumentOperationExecutor.resolveCluster(Optional.empty(), clusters).name());
+        assertEquals("content", DocumentOperationExecutorImpl.resolveCluster(Optional.empty(), clusters).name());
         try {
-            DocumentOperationExecutor.resolveCluster(Optional.empty(), Map.of());
+            DocumentOperationExecutorImpl.resolveCluster(Optional.empty(), Map.of());
             fail("No clusters should fail");
         }
         catch (IllegalArgumentException e) {
             assertEquals("Your Vespa deployment has no content clusters, so the document API is not enabled", e.getMessage());
         }
         try {
-            DocumentOperationExecutor.resolveCluster(Optional.empty(), Map.of("one", new StorageCluster("one", "one-config", Map.of()),
-                                                                              "two", new StorageCluster("two", "two-config", Map.of())));
+            DocumentOperationExecutorImpl.resolveCluster(Optional.empty(), Map.of("one", new StorageCluster("one", "one-config", Map.of()),
+                                                                                  "two", new StorageCluster("two", "two-config", Map.of())));
             fail("More than one cluster and no document type should fail");
         }
         catch (IllegalArgumentException e) {
@@ -183,7 +195,7 @@ public class DocumentOperationExecutorTest {
         access.setPhaser(phaser);
         executor.notifyMaintainers(); // Make sure maintainers have gone to sleep before tests starts.
 
-        // Put 1 times out after 70 ms, Put 2 succeeds after 70 ms
+        // Put 1 times out after 1010 ms, Put 2 succeeds after 1010 ms
         executor.put(new DocumentPut(doc1), parameters(), operationContext());
         clock.advance(Duration.ofMillis(20));
         executor.put(new DocumentPut(doc2), parameters(), operationContext());
@@ -191,7 +203,7 @@ public class DocumentOperationExecutorTest {
         assertEquals(List.of(), received);
         assertEquals(List.of(), errors);
 
-        clock.advance(Duration.ofMillis(60));
+        clock.advance(Duration.ofMillis(990));
         executor.notifyMaintainers();
         phaser.arrive();                // Let responses flow!
         phaser.arriveAndAwaitAdvance(); // Wait for responses to be delivered. <3 Phaser <3
@@ -200,7 +212,7 @@ public class DocumentOperationExecutorTest {
 
         session().setResultType(Result.ResultType.TRANSIENT_ERROR);
         executor.put(new DocumentPut(doc3), parameters(), operationContext());
-        clock.advance(Duration.ofMillis(50));
+        clock.advance(Duration.ofMillis(990));
         executor.notifyMaintainers(); // Retry throttled operation.
         clock.advance(Duration.ofMillis(20));
         executor.notifyMaintainers(); // Time out throttled operation.
@@ -293,14 +305,16 @@ public class DocumentOperationExecutorTest {
                                      .build(),
                        visitContext());
         phaser.arriveAndAwaitAdvance(); // First document pending
+        CountDownLatch latch = new CountDownLatch(1);
         Thread shutdownThread = new Thread(() -> {
             executor.shutdown();
-            phaser.register();
-            phaser.awaitAdvance(phaser.arriveAndDeregister());
+            latch.countDown();
         });
         shutdownThread.start();
-        shutdownThread.interrupt(); // Makes sure we don't wait for grace period in shutting down maintainers.
-        phaser.awaitAdvance(phaser.arriveAndDeregister());
+        clock.advance(Duration.ofMillis(100));
+        executor.notifyMaintainers(); // Purge timeout operations so maintainers can shut down quickly.
+        latch.await();                // Make sure visit session is shut down before next document is considered.
+        phaser.awaitAdvance(phaser.arriveAndDeregister()); // See above.
         for (VisitorControlHandler session : executor.visitorSessions()) {
             session.waitUntilDone();
         }
