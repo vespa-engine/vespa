@@ -124,6 +124,7 @@ public class NodePrioritizer {
 
     private void addNewDockerNodesOn(LockedNodeList candidateHosts) {
         for (Node host : candidateHosts) {
+            if ( spareHosts.contains(host) && !isAllocatingForReplacement) continue;
             if ( ! capacity.hasCapacity(host, resources(requestedNodes))) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
 
@@ -145,16 +146,13 @@ public class NodePrioritizer {
                                                  resources(requestedNodes).with(host.flavor().resources().diskSpeed())
                                                                           .with(host.flavor().resources().storageType()),
                                                  NodeType.tenant);
-            NodeCandidate candidate =  NodeCandidate.createChild(newNode,
-                                                                 capacity.freeCapacityOf(host, false),
-                                                                 host,
-                                                                 spareHosts.contains(host),
-                                                                 false,
-                                                                 true, false);
-            if ( ! candidate.violatesSpares || isAllocatingForReplacement) {
-                log.log(Level.FINE, "Adding new Docker node " + newNode);
-                nodes.add(candidate);
-            }
+            nodes.add(NodeCandidate.createChild(newNode,
+                                                capacity.freeCapacityOf(host, false),
+                                                host,
+                                                spareHosts.contains(host),
+                                                false,
+                                                true,
+                                                false));
         }
     }
 
