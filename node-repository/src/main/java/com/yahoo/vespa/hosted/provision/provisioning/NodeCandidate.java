@@ -183,10 +183,6 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         return state().equals(Node.State.reserved);
     }
 
-    public static NodeCandidate createExclusiveChild(Node node, Node parent) {
-        return new ConcreteNodeCandidate(node, node.resources(), Optional.of(parent), false, false, true, false);
-    }
-
     public static NodeCandidate createChild(Node node,
                                             NodeResources freeParentCapacity,
                                             Node parent,
@@ -195,6 +191,10 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                             boolean isNew,
                                             boolean isResizeable) {
         return new ConcreteNodeCandidate(node, freeParentCapacity, Optional.of(parent), violatesSpares, isSurplus, isNew, isResizeable);
+    }
+
+    public static NodeCandidate createExclusiveChild(Node node, Node parent) {
+        return new ConcreteNodeCandidate(node, node.resources(), Optional.of(parent), false, false, true, false);
     }
 
     public static NodeCandidate createStandalone(Node node, boolean isSurplus, boolean isNew) {

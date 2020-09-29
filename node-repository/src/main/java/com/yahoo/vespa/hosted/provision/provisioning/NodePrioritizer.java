@@ -92,7 +92,7 @@ public class NodePrioritizer {
      */
     void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            NodeCandidate candidate = candidateFrom(node, true, false);
+            NodeCandidate candidate = candidateFrom(node, true);
             if (!candidate.violatesSpares || isAllocatingForReplacement) {
                 nodes.add(candidate);
             }
@@ -145,7 +145,12 @@ public class NodePrioritizer {
                                                  resources(requestedNodes).with(host.flavor().resources().diskSpeed())
                                                                           .with(host.flavor().resources().storageType()),
                                                  NodeType.tenant);
-            NodeCandidate candidate = candidateFrom(newNode, false, true);
+            NodeCandidate candidate =  NodeCandidate.createChild(newNode,
+                                                                 capacity.freeCapacityOf(host, false),
+                                                                 host,
+                                                                 spareHosts.contains(host),
+                                                                 false,
+                                                                 true, false);
             if ( ! candidate.violatesSpares || isAllocatingForReplacement) {
                 log.log(Level.FINE, "Adding new Docker node " + newNode);
                 nodes.add(candidate);
@@ -161,7 +166,7 @@ public class NodePrioritizer {
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
-                .map(node -> candidateFrom(node, false, false))
+                .map(node -> candidateFrom(node, false))
                 .forEach(candidate -> nodes.add(candidate));
     }
 
@@ -170,13 +175,13 @@ public class NodePrioritizer {
         allNodes.asList().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> node.state() == Node.State.ready)
-                .map(node -> candidateFrom(node, false, false))
+                .map(node -> candidateFrom(node, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
                 .forEach(candidate -> nodes.add(candidate));
     }
 
-    /** Create a candidate from given node */
-    private NodeCandidate candidateFrom(Node node, boolean isSurplus, boolean isNew) {
+    /** Create a candidate from given pre-existing node */
+    private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
         Optional<Node> parent = allNodes.parentOf(node);
         if (parent.isPresent()) {
             return NodeCandidate.createChild(node,
@@ -184,15 +189,15 @@ public class NodePrioritizer {
                                              parent.get(),
                                              spareHosts.contains(parent.get()),
                                              isSurplus,
-                                             isNew,
-                                             !isNew && !allocateFully
+                                             false,
+                                             !allocateFully
                                              && requestedNodes.canResize(node.resources(),
                                                                          capacity.freeCapacityOf(parent.get(), false),
                                                                          isTopologyChange,
                                                                          currentClusterSize));
         }
         else {
-            return NodeCandidate.createStandalone(node, isSurplus, isNew);
+            return NodeCandidate.createStandalone(node, isSurplus, false);
         }
     }
 
