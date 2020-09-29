@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "sparse_tensor_apply.h"
+#include "sparse_tensor_join.h"
 #include "sparse_tensor_address_combiner.h"
 #include "direct_sparse_tensor_builder.h"
 
@@ -10,7 +10,7 @@ namespace vespalib::tensor::sparse {
 
 template <typename Function>
 std::unique_ptr<Tensor>
-apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
+join(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
 {
     DirectSparseTensorBuilder builder(lhs.combineDimensionsWith(rhs));
     TensorAddressCombiner addressCombiner(lhs.fast_type(), rhs.fast_type());

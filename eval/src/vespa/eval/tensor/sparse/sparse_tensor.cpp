@@ -3,7 +3,7 @@
 #include "sparse_tensor.h"
 #include "sparse_tensor_add.h"
 #include "sparse_tensor_address_builder.h"
-#include "sparse_tensor_apply.hpp"
+#include "sparse_tensor_join.hpp"
 #include "sparse_tensor_match.h"
 #include "sparse_tensor_modify.h"
 #include "sparse_tensor_reduce.hpp"
@@ -162,11 +162,11 @@ SparseTensor::join(join_fun_t function, const Tensor &arg) const
         if (fast_type() == rhs->fast_type()) {
             return SparseTensorMatch(*this, *rhs).result();
         } else {
-            return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
-                                 { return lhsValue * rhsValue; });
+            return sparse::join(*this, *rhs, [](double lhsValue, double rhsValue)
+                                { return lhsValue * rhsValue; });
         }
     }
-    return sparse::apply(*this, *rhs, function);
+    return sparse::join(*this, *rhs, function);
 }
 
 Tensor::UP

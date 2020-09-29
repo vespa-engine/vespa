@@ -16,7 +16,7 @@ namespace vespalib::tensor::sparse {
  */
 template <typename Function>
 std::unique_ptr<Tensor>
-apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func);
+join(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func);
 
 }
 
