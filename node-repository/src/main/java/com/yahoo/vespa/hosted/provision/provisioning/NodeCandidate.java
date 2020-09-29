@@ -18,6 +18,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -225,7 +226,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                               boolean violatesSpares,
                               boolean isSurplus, boolean isNew, boolean isResizeable) {
             super(freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizeable);
-            this.node = node;
+            this.node = Objects.requireNonNull(node, "Node cannot be null");
         }
 
         @Override
@@ -251,12 +252,8 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         }
 
         /** Called when the node described by this candidate must be created */
-        public NodeCandidate withNode() {
-            if (node != null) return this;
-            throw new RuntimeException("Not implemented");
-        }
+        public NodeCandidate withNode() { return this; }
 
-        /** Returns the node instance of this candidate, or throws IllegalStateException if there is none */
         public Node toNode() { return node; }
 
         @Override
@@ -340,7 +337,6 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         }
 
-        /** Returns the node instance of this candidate, or throws IllegalStateException if none can be created */
         public Node toNode() { return withNode().toNode(); }
 
         @Override

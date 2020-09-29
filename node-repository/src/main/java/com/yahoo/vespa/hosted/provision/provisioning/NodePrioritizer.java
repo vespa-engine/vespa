@@ -9,18 +9,12 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -32,8 +26,6 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class NodePrioritizer {
-
-    private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final List<NodeCandidate> nodes = new ArrayList<>();
     private final LockedNodeList allNodes;
