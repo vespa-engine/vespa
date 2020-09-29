@@ -22,6 +22,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
     private static final Logger log = Logger.getLogger(RpcPing.class.getName());
     private static final String RPC_METHOD = "vespa.searchprotocol.ping";
     private static final CompressionType PING_COMPRESSION = CompressionType.NONE;
+    private static final boolean triggeredClassLoading = ErrorMessage.createBackendCommunicationError("TriggerClassLoading") instanceof ErrorMessage;
 
     private final Node node;
     private final RpcResourcePool resourcePool;
@@ -86,7 +87,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
 
     @Override
     public void receive(ResponseOrError<ProtobufResponse> response) {
-        if (clusterMonitor.isClosed()) return;
+        if (clusterMonitor.isClosed() && ! triggeredClassLoading) return;
         if (node.isLastReceivedPong(pingSequenceId)) {
             pongHandler.handle(toPong(response));
         } else {
