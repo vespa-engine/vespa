@@ -12,6 +12,8 @@
 
 namespace storage {
 
+class IStorageChainBuilder;
+
 class DistributorProcess final : public Process {
     DistributorNodeContext _context;
     DistributorNode::NeedActiveState _activeFlag;
@@ -20,6 +22,7 @@ class DistributorProcess final : public Process {
             _distributorConfigHandler;
     config::ConfigHandle<vespa::config::content::core::StorVisitordispatcherConfig>::UP
             _visitDispatcherConfigHandler;
+    std::unique_ptr<IStorageChainBuilder> _storage_chain_builder;
 
 public:
     explicit DistributorProcess(const config::ConfigUri & configUri);
@@ -35,6 +38,7 @@ public:
     std::string getComponentName() const override { return "distributor"; }
 
     virtual DistributorNodeContext& getDistributorContext() { return _context; }
+    void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
 
 } // storage

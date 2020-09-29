@@ -2,6 +2,7 @@
 
 #include "distributorprocess.h"
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/config/helper/configgetter.hpp>
 
 #include <vespa/log/log.h>
@@ -11,7 +12,8 @@ namespace storage {
 
 DistributorProcess::DistributorProcess(const config::ConfigUri & configUri)
     : Process(configUri),
-      _activeFlag(DistributorNode::NO_NEED_FOR_ACTIVE_STATES)
+      _activeFlag(DistributorNode::NO_NEED_FOR_ACTIVE_STATES),
+      _storage_chain_builder()
 {
 }
 
@@ -73,9 +75,15 @@ DistributorProcess::configUpdated()
 void
 DistributorProcess::createNode()
 {
-    _node.reset(new DistributorNode(_configUri, _context, *this, _activeFlag, StorageLink::UP()));
+    _node = std::make_unique<DistributorNode>(_configUri, _context, *this, _activeFlag, StorageLink::UP(), std::move(_storage_chain_builder));
     _node->handleConfigChange(*_distributorConfigHandler->getConfig());
     _node->handleConfigChange(*_visitDispatcherConfigHandler->getConfig());
+}
+
+void
+DistributorProcess::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
+{
+    _storage_chain_builder = std::move(builder);
 }
 
 } // storage

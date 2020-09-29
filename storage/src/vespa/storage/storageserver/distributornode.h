@@ -15,6 +15,8 @@
 
 namespace storage {
 
+class IStorageChainBuilder;
+
 class DistributorNode
       : public StorageNode,
         private UniqueTimeCalculator
@@ -38,7 +40,8 @@ public:
                     DistributorNodeContext&,
                     ApplicationGenerationFetcher& generationFetcher,
                     NeedActiveState,
-                    std::unique_ptr<StorageLink> communicationManager);
+                    std::unique_ptr<StorageLink> communicationManager,
+                    std::unique_ptr<IStorageChainBuilder> storage_chain_builder);
     ~DistributorNode() override;
 
     const lib::NodeType& getNodeType() const override { return lib::NodeType::DISTRIBUTOR; }
