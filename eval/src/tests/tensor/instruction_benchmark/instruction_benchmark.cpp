@@ -30,11 +30,13 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/default_value_builder_factory.h>
+#include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <optional>
+#include <algorithm>
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -50,7 +52,11 @@ template <typename T> using CREF = std::reference_wrapper<const T>;
 //-----------------------------------------------------------------------------
 
 struct Impl {
-    virtual const vespalib::string &name() const = 0;
+    size_t order;
+    vespalib::string name;
+    vespalib::string short_name;
+    Impl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in)
+        : order(order_in), name(name_in), short_name(short_name_in) {}
     virtual Value::UP create_value(const TensorSpec &spec) const = 0;
     virtual TensorSpec create_spec(const Value &value) const = 0;
     virtual Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const = 0;
@@ -59,11 +65,9 @@ struct Impl {
 };
 
 struct ValueImpl : Impl {
-    vespalib::string my_name;
     const ValueBuilderFactory &my_factory;
-    ValueImpl(const vespalib::string &name_in, const ValueBuilderFactory &factory)
-        : my_name(name_in), my_factory(factory) {}
-    const vespalib::string &name() const override { return my_name; }
+    ValueImpl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, const ValueBuilderFactory &factory)
+        : Impl(order_in, name_in, short_name_in), my_factory(factory) {}
     Value::UP create_value(const TensorSpec &spec) const override { return value_from_spec(spec, my_factory); }
     TensorSpec create_spec(const Value &value) const override { return spec_from_value(value); }
     Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
@@ -72,11 +76,9 @@ struct ValueImpl : Impl {
 };
 
 struct EngineImpl : Impl {
-    vespalib::string my_name;
     const TensorEngine &my_engine;
-    EngineImpl(const vespalib::string &name_in, const TensorEngine &engine_in)
-        : my_name(name_in), my_engine(engine_in) {}
-    const vespalib::string &name() const override { return my_name; }
+    EngineImpl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, const TensorEngine &engine_in)
+        : Impl(order_in, name_in, short_name_in), my_engine(engine_in) {}
     Value::UP create_value(const TensorSpec &spec) const override { return my_engine.from_spec(spec); }
     TensorSpec create_spec(const Value &value) const override { return my_engine.to_spec(value); }
     Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
@@ -91,16 +93,77 @@ struct EngineImpl : Impl {
 
 //-----------------------------------------------------------------------------
 
-EngineImpl  simple_tensor_engine_impl(" [SimpleTensorEngine]", SimpleTensorEngine::ref());
-EngineImpl default_tensor_engine_impl("[DefaultTensorEngine]", DefaultTensorEngine::ref());
-ValueImpl           simple_value_impl("        [SimpleValue]", SimpleValueBuilderFactory::get());
-ValueImpl   default_tensor_value_impl("     [Adaptive Value]", DefaultValueBuilderFactory::get());
+EngineImpl  simple_tensor_engine_impl(4, " SimpleTensorEngine", " SimpleT", SimpleTensorEngine::ref());
+EngineImpl default_tensor_engine_impl(1, "DefaultTensorEngine", "OLD PROD", DefaultTensorEngine::ref());
+ValueImpl           simple_value_impl(3, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get());
+ValueImpl    packed_mixed_tensor_impl(2, "  PackedMixedTensor", "  Packed", PackedMixedTensorBuilderFactory::get());
+ValueImpl   default_tensor_value_impl(0, "       DefaultValue", "NEW PROD", DefaultValueBuilderFactory::get());
+vespalib::string                                   short_header("--------");
 
 double budget = 5.0;
 std::vector<CREF<Impl>> impl_list = {simple_tensor_engine_impl,
                                      default_tensor_engine_impl,
                                      simple_value_impl,
+                                     packed_mixed_tensor_impl,
                                      default_tensor_value_impl};
+
+//-----------------------------------------------------------------------------
+
+struct BenchmarkHeader {
+    std::vector<vespalib::string> short_names;
+    BenchmarkHeader() : short_names() {
+        short_names.resize(impl_list.size());
+        for (const Impl &impl: impl_list) {
+            short_names[impl.order] = impl.short_name;
+        }
+    }
+    void print_trailer() const {
+        for (size_t i = 0; i < short_names.size(); ++i) {
+            fprintf(stderr, "+%s", short_header.c_str());
+        }
+        fprintf(stderr, "+------------------------------------------------\n");
+    }
+    void print() const {
+        for (const auto &name: short_names) {
+            fprintf(stderr, "|%s", name.c_str());
+        }
+        fprintf(stderr, "| Benchmark description\n");
+        print_trailer();
+    }
+};
+
+struct BenchmarkResult {
+    vespalib::string desc;
+    std::optional<double> ref_time;
+    std::vector<double> relative_perf;
+    BenchmarkResult(const vespalib::string &desc_in, size_t num_values)
+        : desc(desc_in), ref_time(std::nullopt), relative_perf(num_values, 0.0) {}
+    ~BenchmarkResult();
+    void sample(size_t order, double time) {
+        relative_perf[order] = time;
+        if (order == 1) {
+            if (ref_time.has_value()) {
+                ref_time = std::min(ref_time.value(), time);
+            } else {
+                ref_time = time;
+            }
+        }
+    }
+    void normalize() {
+        for (double &perf: relative_perf) {
+            perf = ref_time.value() / perf;
+        }
+    }
+    void print() const {
+        for (double perf: relative_perf) {
+            fprintf(stderr, "|%8.2f", perf);
+        }
+        fprintf(stderr, "| %s\n", desc.c_str());
+    }
+};
+BenchmarkResult::~BenchmarkResult() = default;
+
+std::vector<BenchmarkResult> benchmark_results;
 
 //-----------------------------------------------------------------------------
 
@@ -142,9 +205,14 @@ void benchmark(const vespalib::string &desc, const std::vector<EvalOp::UP> &list
             expect = eval->result();
         }
     }
+    BenchmarkResult result(desc, list.size());
     for (const auto &eval: list) {
-        fprintf(stderr, "    %s: %10.3f us\n", eval->impl.name().c_str(), eval->estimate_cost_us());
+        double time = eval->estimate_cost_us();
+        result.sample(eval->impl.order, time);
+        fprintf(stderr, "    %s(%s): %10.3f us\n", eval->impl.name.c_str(), eval->impl.short_name.c_str(), time);
     }
+    result.normalize();
+    benchmark_results.push_back(result);
     fprintf(stderr, "--------------------------------------------------------\n");
 }
 
@@ -317,5 +385,16 @@ TEST(MixedJoin, no_overlap) {
 }
 
 //-----------------------------------------------------------------------------
+
+TEST(PrintResults, print_results) {
+    BenchmarkHeader header;
+    std::sort(benchmark_results.begin(), benchmark_results.end(),
+              [](const auto &a, const auto &b){ return (a.relative_perf[0] < b.relative_perf[0]); });
+    header.print();
+    for (const auto &result: benchmark_results) {
+        result.print();
+    }
+    header.print_trailer();
+}
 
 GTEST_MAIN_RUN_ALL_TESTS()
