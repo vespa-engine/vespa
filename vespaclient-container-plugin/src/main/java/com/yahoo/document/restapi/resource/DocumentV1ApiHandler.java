@@ -58,7 +58,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -216,7 +215,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getRoot(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         Cursor root = responseRoot(request);
-        Cursor documents = root.setArray("documents");
         executor.visit(parseOptions(request, path).build(), visitorContext(request, root, root.setArray("documents"), handler));
         return ignoredContent;
     }
@@ -234,23 +232,23 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static VisitOperationsContext visitorContext(HttpRequest request, Cursor root, Cursor documents, ResponseHandler handler) {
         Object monitor = new Object();
         return new VisitOperationsContext((type, message) -> {
-                                      synchronized (monitor) {
-                                          handleError(request, type, message, root, handler);
-                                      }
-                                  },
-                                  token -> {
-                                      token.ifPresent(value -> root.setString("continuation", value));
-                                      synchronized (monitor) {
-                                          respond(root, handler);
-                                      }
-                                  },
+                                              synchronized (monitor) {
+                                                  handleError(request, type, message, root, handler);
+                                              }
+                                          },
+                                          token -> {
+                                              token.ifPresent(value -> root.setString("continuation", value));
+                                              synchronized (monitor) {
+                                                  respond(root, handler);
+                                              }
+                                          },
                                           // TODO jonmv: make streaming — first doc indicates 200 OK anyway — unless session dies, which is a semi-200 anyway
                                           document -> {
-                                      synchronized (monitor) { // Putting things into the slime is not thread safe, so need synchronization.
-                                          SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
-                                                                documents.addObject());
-                                      }
-                                  });
+                                              synchronized (monitor) { // Putting things into the slime is not thread safe, so need synchronization.
+                                                  SlimeUtils.copyObject(SlimeUtils.jsonToSlime(JsonWriter.toByteArray(document)).get(),
+                                                                        documents.addObject());
+                                              }
+                                          });
     }
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         DocumentId id = path.id();
@@ -264,7 +262,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                               Cursor root = responseRoot(request, id);
                                               document.map(JsonWriter::toByteArray)
                                                       .map(SlimeUtils::jsonToSlime)
-                                                      .ifPresent(doc -> SlimeUtils.copyObject(doc.get().field("fields"), root.setObject("fields)")));
+                                                      .ifPresent(doc -> SlimeUtils.copyObject(doc.get().field("fields"), root.setObject("fields")));
                                               respond(document.isPresent() ? 200 : 404,
                                                       root,
                                                       handler);
@@ -285,7 +283,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                   __ -> respond(responseRoot(request, id), handler)));
             }
             catch (IllegalArgumentException e) {
-                badRequest(request, Exceptions.toMessageString(e), responseRoot(request, id), handler);
+                badRequest(request, e, handler);
+            }
+            catch (RuntimeException e) {
+                serverError(request, e, handler);
             }
         });
     }
@@ -304,7 +305,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                      __ -> respond(responseRoot(request, id), handler)));
             }
             catch (IllegalArgumentException e) {
-                badRequest(request, Exceptions.toMessageString(e), responseRoot(request, id), handler);
+                badRequest(request, e, handler);
+            }
+            catch (RuntimeException e) {
+                serverError(request, e, handler);
             }
         });
     }
@@ -436,7 +440,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         response.headers().put("Content-Type", "application/json; charset=UTF-8");
         ContentChannel out = null;
         try {
-            out = handler.handleResponse(new Response(status));
+            out = handler.handleResponse(response);
             out.write(ByteBuffer.wrap(Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(root))), logException);
         }
         catch (Exception e) {
