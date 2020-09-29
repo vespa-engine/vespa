@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
  */
 public class GroupPreparer {
 
+    private static final Mutex PROBE_LOCK = () -> {};
+
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
     private final ListFlag<HostCapacity> preprovisionCapacityFlag;
@@ -59,28 +61,26 @@ public class GroupPreparer {
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups) {
         boolean dynamicProvisioningEnabled = nodeRepository.canProvisionHosts() && nodeRepository.zone().getCloud().dynamicProvisioning();
         boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
+
+        // Try preparing in memory without lock. Most of the time there should be no changes and we can return nodes
+        // previously allocated.
+        {
+            MutableInteger probePrepareHighestIndex = new MutableInteger(highestIndex.get());
+            NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
+                    probePrepareHighestIndex, wantedGroups, allocateFully, PROBE_LOCK);
+            if (probeAllocation.fulfilledAndNoChanges()) {
+                List<Node> acceptedNodes = probeAllocation.finalNodes();
+                surplusActiveNodes.removeAll(acceptedNodes);
+                highestIndex.set(probePrepareHighestIndex.get());
+                return acceptedNodes;
+            }
+        }
+
+        // There were some changes, so re-do the allocation with locks
         try (Mutex lock = nodeRepository.lock(application)) {
-
-            // Lock ready pool to ensure that the same nodes are not simultaneously allocated by others
             try (Mutex allocationLock = nodeRepository.lockUnallocated()) {
-
-                // Create a prioritized set of nodes
-                LockedNodeList allNodes = nodeRepository.list(allocationLock);
-                NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
-                                                               highestIndex,  nodeRepository);
-
-                NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
-                                                                  application,
-                                                                  cluster,
-                                                                  requestedNodes,
-                                                                  wantedGroups,
-                                                                  allocateFully,
-                                                                  nodeRepository);
-                prioritizer.addApplicationNodes();
-                prioritizer.addSurplusNodes(surplusActiveNodes);
-                prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes();
-                allocation.offer(prioritizer.prioritize());
+                NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
+                        highestIndex, wantedGroups, allocateFully, allocationLock);
 
                 if (dynamicProvisioningEnabled) {
                     Version osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
@@ -120,6 +120,24 @@ public class GroupPreparer {
                 return acceptedNodes;
             }
         }
+    }
+
+    private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+                                           List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups,
+                                           boolean allocateFully, Mutex allocationLock) {
+        LockedNodeList allNodes = nodeRepository.list(allocationLock);
+        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
+                highestIndex, nodeRepository);
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
+                application, cluster, requestedNodes, wantedGroups, allocateFully, nodeRepository);
+
+        prioritizer.addApplicationNodes();
+        prioritizer.addSurplusNodes(surplusActiveNodes);
+        prioritizer.addReadyNodes();
+        prioritizer.addNewDockerNodes();
+        allocation.offer(prioritizer.prioritize());
+
+        return allocation;
     }
 
 }
