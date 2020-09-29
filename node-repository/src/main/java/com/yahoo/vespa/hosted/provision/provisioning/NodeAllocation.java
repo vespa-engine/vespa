@@ -243,7 +243,8 @@ class NodeAllocation {
     }
 
     private Node acceptNode(NodeCandidate candidate, boolean wantToRetire, boolean resizeable) {
-        Node node = candidate.node;
+        candidate = candidate.withNode();
+        Node node = candidate.toNode();
 
         if (node.allocation().isPresent()) // Record the currently requested resources
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.resources())));
@@ -273,12 +274,8 @@ class NodeAllocation {
         candidate = candidate.withNode(node);
         indexes.add(node.allocation().get().membership().index());
         highestIndex.set(Math.max(highestIndex.get(), node.allocation().get().membership().index()));
-        put(candidate);
+        nodes.put(node.hostname(), candidate);
         return node;
-    }
-
-    private void put(NodeCandidate candidate) {
-        nodes.put(candidate.node.hostname(), candidate);
     }
 
     private Node resize(Node node) {
@@ -332,8 +329,9 @@ class NodeAllocation {
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
             for (NodeCandidate candidate : byRetiringPriority(nodes.values())) {
                 if ( ! candidate.allocation().get().membership().retired() && candidate.state() == Node.State.active) {
-                    candidate = candidate.withNode(candidate.node.retire(Agent.application, nodeRepository.clock().instant()));
-                    put(candidate);
+                    candidate = candidate.withNode();
+                    candidate = candidate.withNode(candidate.toNode().retire(Agent.application, nodeRepository.clock().instant()));
+                    nodes.put(candidate.toNode().hostname(), candidate);
                     if (--deltaRetiredCount == 0) break;
                 }
             }
@@ -341,10 +339,11 @@ class NodeAllocation {
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
             for (NodeCandidate candidate : byUnretiringPriority(nodes.values())) {
                 if ( candidate.allocation().get().membership().retired() && hasCompatibleFlavor(candidate) ) {
+                    candidate = candidate.withNode();
                     if (candidate.isResizable)
-                        candidate = candidate.withNode(resize(candidate.node));
-                    candidate = candidate.withNode(candidate.node.unretire());
-                    put(candidate);
+                        candidate = candidate.withNode(resize(candidate.toNode()));
+                    candidate = candidate.withNode(candidate.toNode().unretire());
+                    nodes.put(candidate.toNode().hostname(), candidate);
                     if (++deltaRetiredCount == 0) break;
                 }
             }
@@ -352,13 +351,14 @@ class NodeAllocation {
         
         for (NodeCandidate candidate : nodes.values()) {
             // Set whether the node is exclusive
-            Allocation allocation = candidate.node.allocation().get();
-            candidate = candidate.withNode(candidate.node.with(allocation.with(allocation.membership()
+            candidate = candidate.withNode();
+            Allocation allocation = candidate.allocation().get();
+            candidate = candidate.withNode(candidate.toNode().with(allocation.with(allocation.membership()
                                 .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive())))));
-            put(candidate);
+            nodes.put(candidate.toNode().hostname(), candidate);
         }
 
-        return nodes.values().stream().map(n -> n.node).collect(Collectors.toList());
+        return nodes.values().stream().map(n -> n.toNode()).collect(Collectors.toList());
     }
 
     List<Node> reservableNodes() {
@@ -374,7 +374,7 @@ class NodeAllocation {
     private List<Node> nodesFilter(Predicate<NodeCandidate> predicate) {
         return nodes.values().stream()
                 .filter(predicate)
-                .map(n -> n.node)
+                .map(n -> n.toNode())
                 .collect(Collectors.toList());
     }
 

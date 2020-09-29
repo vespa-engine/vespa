@@ -84,6 +84,15 @@ class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                  freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
     }
 
+    /** Called when the node described by this candidate must be created */
+    public NodeCandidate withNode() {
+        if (node != null) return this;
+        throw new RuntimeException("Not implemented");
+    }
+
+    /** Returns the node instance of this candidate, or throws IllegalStateException if there is none */
+    public Node toNode() { return node; }
+
     /**
      * Compare this candidate to another
      *
