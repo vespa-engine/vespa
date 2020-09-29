@@ -107,7 +107,7 @@ class NodeAllocation {
                 ClusterMembership membership = allocation.membership();
                 if ( ! allocation.owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().satisfies(cluster)) continue; // wrong cluster id/type
-                if ((! candidate.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
+                if ((! candidate.isSurplus || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
                 if ( candidate.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
@@ -364,11 +364,11 @@ class NodeAllocation {
     List<Node> reservableNodes() {
         // Include already reserved nodes to extend reservation period and to potentially update their cluster spec.
         EnumSet<Node.State> reservableStates = EnumSet.of(Node.State.inactive, Node.State.ready, Node.State.reserved);
-        return nodesFilter(n -> ! n.isNewNode && reservableStates.contains(n.state()));
+        return nodesFilter(n -> ! n.isNew && reservableStates.contains(n.state()));
     }
 
     List<Node> newNodes() {
-        return nodesFilter(n -> n.isNewNode);
+        return nodesFilter(n -> n.isNew);
     }
 
     private List<Node> nodesFilter(Predicate<NodeCandidate> predicate) {

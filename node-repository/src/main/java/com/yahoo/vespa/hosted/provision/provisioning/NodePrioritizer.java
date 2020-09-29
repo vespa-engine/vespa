@@ -176,23 +176,24 @@ public class NodePrioritizer {
     }
 
     /** Create a candidate from given node */
-    private NodeCandidate candidateFrom(Node node, boolean isSurplusNode, boolean isNewNode) {
-        NodeCandidate.Builder builder = new NodeCandidate.Builder(node).surplusNode(isSurplusNode)
-                                                                       .newNode(isNewNode);
-
-        allNodes.parentOf(node).ifPresent(parent -> {
-            NodeResources parentCapacity = capacity.freeCapacityOf(parent, false);
-            builder.parent(parent).freeParentCapacity(parentCapacity);
-
-            if (!isNewNode)
-                builder.resizable(! allocateFully
-                                  && requestedNodes.canResize(node.resources(), parentCapacity, isTopologyChange, currentClusterSize));
-
-            if (spareHosts.contains(parent))
-                builder.violatesSpares(true);
-        });
-
-        return builder.build();
+    private NodeCandidate candidateFrom(Node node, boolean isSurplus, boolean isNew) {
+        Optional<Node> parent = allNodes.parentOf(node);
+        if (parent.isPresent()) {
+            return NodeCandidate.createChild(node,
+                                             capacity.freeCapacityOf(parent.get(), false),
+                                             parent.get(),
+                                             spareHosts.contains(parent.get()),
+                                             isSurplus,
+                                             isNew,
+                                             !isNew && !allocateFully
+                                             && requestedNodes.canResize(node.resources(),
+                                                                         capacity.freeCapacityOf(parent.get(), false),
+                                                                         isTopologyChange,
+                                                                         currentClusterSize));
+        }
+        else {
+            return NodeCandidate.createStandalone(node, isSurplus, isNew);
+        }
     }
 
     private boolean isReplacement(int nofNodesInCluster, int nodeFailedNodes) {
