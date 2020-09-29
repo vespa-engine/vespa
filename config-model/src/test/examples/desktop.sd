@@ -82,25 +82,17 @@ search desktop {
     default: true
   }
 
-  # Optionally specify a desire to use a shared dictionary ("catalogs")
-  shared-dictionary: normal, title, manufacturer
-
-  # Optionally set rank values for all indices
-  # Default is the name of the default one
-  # Rank settings from individual fields can be selectively overridden
-  rankprofile default {
-    firstocc-boost text: 200
+  model default {
   }
 
   # Another rank profile
-  rankprofile predefinedorder {
+  model predefinedorder {
     dynamicranking: off
     attribute: someorder
   }
 
   # Some experimental ranking changes
-  rankprofile experimental inherits default {
-    firstocc-boost text: 300
+  model experimental inherits default {
   }
 
 }

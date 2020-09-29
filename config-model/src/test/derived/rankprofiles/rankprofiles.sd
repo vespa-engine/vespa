@@ -19,21 +19,21 @@ search rankprofiles {
 
   }
 
-  rank-profile default {
+  model default {
   }
 
-  rank-profile other1 inherits default {
+  model other1 inherits default {
     rank field1: filter
     rank none: filter
   }
 
-  rank-profile other2 inherits other1 {
+  model other2 inherits other1 {
   }
 
-  rank-profile other3 {
+  model other3 {
   }
 
-  rank-profile four {
+  model four {
     match-phase {
       attribute: field2
       order: ascending
@@ -41,7 +41,7 @@ search rankprofiles {
     }
   }
 
-  rank-profile five {
+  model five {
     match-phase {
       attribute: field2
       order: descending
@@ -49,14 +49,14 @@ search rankprofiles {
     }
   }
 
-  rank-profile six {
+  model six {
     match-phase {
       attribute: field3
       max-hits: 666
     }
   }
 
-  rank-profile seven {
+  model seven {
     match-phase {
       attribute: field3
       max-hits:800
@@ -65,7 +65,7 @@ search rankprofiles {
     }
   }
 
-  rank-profile eight inherits seven {
+  model eight inherits seven {
   
   }
 
