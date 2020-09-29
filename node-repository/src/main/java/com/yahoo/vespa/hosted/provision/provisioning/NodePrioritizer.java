@@ -35,7 +35,7 @@ public class NodePrioritizer {
 
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
-    private final Map<Node, NodeCandidate> nodes = new HashMap<>();
+    private final List<NodeCandidate> nodes = new ArrayList<>();
     private final LockedNodeList allNodes;
     private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
@@ -83,7 +83,7 @@ public class NodePrioritizer {
 
     /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
     List<NodeCandidate> prioritize() {
-        return nodes.values().stream().sorted().collect(Collectors.toList());
+        return nodes.stream().sorted().collect(Collectors.toList());
     }
 
     /**
@@ -92,9 +92,9 @@ public class NodePrioritizer {
      */
     void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            NodeCandidate nodePri = candidateFrom(node, true, false);
-            if (!nodePri.violatesSpares || isAllocatingForReplacement) {
-                nodes.put(node, nodePri);
+            NodeCandidate candidate = candidateFrom(node, true, false);
+            if (!candidate.violatesSpares || isAllocatingForReplacement) {
+                nodes.add(candidate);
             }
         }
     }
@@ -148,7 +148,7 @@ public class NodePrioritizer {
             NodeCandidate candidate = candidateFrom(newNode, false, true);
             if ( ! candidate.violatesSpares || isAllocatingForReplacement) {
                 log.log(Level.FINE, "Adding new Docker node " + newNode);
-                nodes.put(newNode, candidate);
+                nodes.add(candidate);
             }
         }
     }
@@ -162,7 +162,7 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
                 .map(node -> candidateFrom(node, false, false))
-                .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
+                .forEach(candidate -> nodes.add(candidate));
     }
 
     /** Add nodes already provisioned, but not allocated to any application */
@@ -172,10 +172,8 @@ public class NodePrioritizer {
                 .filter(node -> node.state() == Node.State.ready)
                 .map(node -> candidateFrom(node, false, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
-                .forEach(candidate -> nodes.put(candidate.node, candidate));
+                .forEach(candidate -> nodes.add(candidate));
     }
-
-    public List<NodeCandidate> nodes() { return new ArrayList<>(nodes.values()); }
 
     /** Create a candidate from given node */
     private NodeCandidate candidateFrom(Node node, boolean isSurplusNode, boolean isNewNode) {
