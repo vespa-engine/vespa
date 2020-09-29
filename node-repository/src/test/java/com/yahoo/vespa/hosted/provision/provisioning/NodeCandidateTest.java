@@ -27,17 +27,17 @@ public class NodeCandidateTest {
     @Test
     public void test_order() {
         List<NodeCandidate> expected = List.of(
-                NodeCandidate.create(node("01", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), false, true, false, false),
-                NodeCandidate.create(node("02", Node.State.active), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
-                NodeCandidate.create(node("04", Node.State.reserved), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
-                NodeCandidate.create(node("03", Node.State.inactive), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
-                NodeCandidate.create(node("05", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.active)), true, false, true, false),
-                NodeCandidate.create(node("06", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.ready)), true, false, true, false),
-                NodeCandidate.create(node("07", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.provisioned)), true, false, true, false),
-                NodeCandidate.create(node("08", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.failed)), true, false, true, false),
-                NodeCandidate.create(node("09", Node.State.ready), new NodeResources(1, 1, 1, 1), Optional.empty(), true, false, true, false),
-                NodeCandidate.create(node("10", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true, false),
-                NodeCandidate.create(node("11", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true, false)
+                new NodeCandidate.ConcreteNodeCandidate(node("01", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), false, true, false, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("02", Node.State.active), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("04", Node.State.reserved), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("03", Node.State.inactive), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, false, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("05", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.active)), true, false, true, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("06", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.ready)), true, false, true, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("07", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.provisioned)), true, false, true, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("08", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.of(node("host1", Node.State.failed)), true, false, true, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("09", Node.State.ready), new NodeResources(1, 1, 1, 1), Optional.empty(), true, false, true, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("10", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true, false),
+                new NodeCandidate.ConcreteNodeCandidate(node("11", Node.State.ready), new NodeResources(2, 2, 2, 2), Optional.empty(), true, false, true, false)
         );
         assertOrder(expected);
     }
@@ -142,8 +142,8 @@ public class NodeCandidateTest {
                                new Flavor(totalHostResources),
                                Status.initial(), Node.State.ready, Optional.empty(), History.empty(), NodeType.host,
                                new Reports(), Optional.empty(), Optional.empty(), Optional.empty());
-        return NodeCandidate.create(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent),
-                                    false, false, true, false);
+        return new NodeCandidate.ConcreteNodeCandidate(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent),
+                                                       false, false, true, false);
     }
 
 }
