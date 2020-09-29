@@ -193,7 +193,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             Optional<Node> node = activeNodes.matching(n -> n.hostname().equals(hostname.toString())).first();
             if (node.isEmpty()) return;
 
-            // Already recorded as down, nothing to do
+            // Already correct record, nothing to do
             boolean badNode = badNode(serviceInstances);
             if (badNode == node.get().history().event(History.Event.Type.down).isPresent()) return;
 
