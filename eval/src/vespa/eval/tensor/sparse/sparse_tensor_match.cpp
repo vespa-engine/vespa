@@ -9,30 +9,36 @@
 
 namespace vespalib::tensor {
 
+template<typename LCT, typename RCT>
 void
-SparseTensorMatch::fastMatch(const TensorImplType &lhs, const TensorImplType &rhs)
+SparseTensorMatch<LCT,RCT>::fastMatch(const SparseTensorT<LCT> &lhs, const SparseTensorT<RCT> &rhs)
 {
-    _builder.reserve(lhs.my_cells().size());
-    for (const auto &lhsCell : lhs.my_cells()) {
-        auto rhsItr = rhs.my_cells().find(lhsCell.first);
-        if (rhsItr != rhs.my_cells().end()) {
-            _builder.insertCell(lhsCell.first, lhsCell.second * rhsItr->second);
+    const auto & lhs_map = lhs.index().get_map();
+    const auto & rhs_map = rhs.index().get_map();
+    _builder.reserve(lhs_map.size());
+    const auto rhs_map_end = rhs_map.end();
+    for (const auto & kv : lhs_map) {
+        auto rhsItr = rhs_map.find(kv.first);
+        if (rhsItr != rhs_map_end) {
+            LCT a = lhs.get_value(kv.second);
+            RCT b = rhs.get_value(rhsItr->second);
+            _builder.insertCell(kv.first, a * b);
         }
     }
 }
 
-SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs, const TensorImplType &rhs)
-    : Parent(lhs.combineDimensionsWith(rhs))
+template<typename LCT, typename RCT>
+SparseTensorMatch<LCT,RCT>::SparseTensorMatch(const SparseTensorT<LCT> &lhs,
+                                              const SparseTensorT<RCT> &rhs,
+                                              eval::ValueType res_type)
+    : _builder(std::move(res_type))
 {
-    assert (lhs.fast_type().dimensions().size() == rhs.fast_type().dimensions().size());
-    assert (lhs.fast_type().dimensions().size() == _builder.fast_type().dimensions().size());
-
-    // Ensure that first tensor to fastMatch has fewest cells.
-    if (lhs.my_cells().size() <= rhs.my_cells().size()) {
-        fastMatch(lhs, rhs);
-    } else {
-        fastMatch(rhs, lhs);
-    }
+    fastMatch(lhs, rhs);
 }
+
+template class SparseTensorMatch<float,float>;
+template class SparseTensorMatch<float,double>;
+template class SparseTensorMatch<double,float>;
+template class SparseTensorMatch<double,double>;
 
 }

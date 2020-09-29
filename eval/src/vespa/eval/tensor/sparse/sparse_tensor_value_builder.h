@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "sparse_tensor_value.h"
+#include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
 
 namespace vespalib::tensor {
@@ -16,7 +16,7 @@ class SparseTensorValueBuilder : public eval::ValueBuilder<T>
 {
 private:
     eval::ValueType _type;
-    SparseTensorValueIndex _index;
+    SparseTensorIndex _index;
     std::vector<T> _cells;
     SparseTensorAddressBuilder _addr_builder;
 public:
@@ -28,6 +28,7 @@ public:
         _cells()
     {
         assert(num_mapped_in > 0);
+        _index.reserve(expected_subspaces);
         _cells.reserve(expected_subspaces);
     }
 

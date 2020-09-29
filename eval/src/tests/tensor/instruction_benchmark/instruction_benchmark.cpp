@@ -340,6 +340,12 @@ TEST(SparseJoin, small_vectors) {
     benchmark_join("small sparse vector multiply", lhs, rhs, operation::Mul::f);
 }
 
+TEST(SparseJoin, large_vectors) {
+    auto lhs = make_vector(D::map("x", 1800, 1), 1.0);
+    auto rhs = make_vector(D::map("x", 1000, 2), 2.0);
+    benchmark_join("large sparse vector multiply", lhs, rhs, operation::Mul::f);
+}
+
 TEST(SparseJoin, full_overlap) {
     auto lhs = make_cube(D::map("a", 16, 1), D::map("b", 16, 1), D::map("c", 16, 1), 1.0);
     auto rhs = make_cube(D::map("a", 16, 2), D::map("b", 16, 2), D::map("c", 16, 2), 2.0);
