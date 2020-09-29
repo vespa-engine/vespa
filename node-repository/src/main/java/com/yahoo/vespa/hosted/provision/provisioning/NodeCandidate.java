@@ -1,9 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Nodelike;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.Status;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,7 +20,7 @@ import java.util.Optional;
  *
  * @author smorgrav
  */
-class NodeCandidate implements Comparable<NodeCandidate> {
+class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
     /** List of host states ordered by preference (ascending) */
     private static final List<Node.State> HOST_STATE_PRIORITY =
@@ -52,6 +60,28 @@ class NodeCandidate implements Comparable<NodeCandidate> {
         this.isSurplusNode = isSurplusNode;
         this.isNewNode = isNewNode;
         this.isResizable = isResizeable;
+    }
+
+    @Override
+    public NodeResources resources() { return node.resources(); }
+
+    @Override
+    public Optional<String> parentHostname() { return node.parentHostname(); }
+
+    @Override
+    public NodeType type() { return node.type(); }
+
+    public Optional<Allocation> allocation() { return node.allocation(); }
+
+    public Node.State state() { return node.state(); }
+
+    public Status status() { return node.status(); }
+
+    public Flavor flavor() { return node.flavor(); }
+
+    public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
+        return new NodeCandidate(node.allocate(owner, membership, requestedResources, at),
+                                 freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizable);
     }
 
     /**

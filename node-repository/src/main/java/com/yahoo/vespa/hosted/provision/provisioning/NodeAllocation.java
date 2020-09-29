@@ -102,15 +102,13 @@ class NodeAllocation {
     List<Node> offer(List<NodeCandidate> nodesPrioritized) {
         List<Node> accepted = new ArrayList<>();
         for (NodeCandidate candidate : nodesPrioritized) {
-            Node offered = candidate.node;
-
-            if (offered.allocation().isPresent()) {
-                Allocation allocation = offered.allocation().get();
+            if (candidate.allocation().isPresent()) {
+                Allocation allocation = candidate.allocation().get();
                 ClusterMembership membership = allocation.membership();
                 if ( ! allocation.owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().satisfies(cluster)) continue; // wrong cluster id/type
                 if ((! candidate.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
-                if ( offered.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
+                if ( candidate.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
                 boolean resizeable = false;
@@ -120,33 +118,33 @@ class NodeAllocation {
                     acceptToRetire = acceptToRetire(candidate);
                 }
 
-                if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(offered)) || acceptToRetire)
+                if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire)
                     accepted.add(acceptNode(candidate, shouldRetire(candidate), resizeable));
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {
-                if ( ! nodeResourceLimits.isWithinRealLimits(offered, cluster)) {
+                if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
-                if ( violatesParentHostPolicy(offered)) {
+                if ( violatesParentHostPolicy(candidate)) {
                     ++rejectedDueToClashingParentHost;
                     continue;
                 }
-                if ( ! exclusiveTo(application.tenant(), application.application(), offered.parentHostname())) {
+                if ( ! exclusiveTo(application.tenant(), application.application(), candidate.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
-                if ( requestedNodes.isExclusive() && ! hostsOnly(application, offered.parentHostname())) {
+                if ( requestedNodes.isExclusive() && ! hostsOnly(application, candidate.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
-                if (offered.status().wantToRetire()) {
+                if (candidate.status().wantToRetire()) {
                     continue;
                 }
-                candidate = candidate.withNode(offered.allocate(application,
-                                                      ClusterMembership.from(cluster, highestIndex.add(1)),
-                                                      requestedNodes.resources().orElse(candidate.node.resources()),
-                                                      nodeRepository.clock().instant()));
+                candidate = candidate.allocate(application,
+                                               ClusterMembership.from(cluster, highestIndex.add(1)),
+                                               requestedNodes.resources().orElse(candidate.resources()),
+                                               nodeRepository.clock().instant());
                 accepted.add(acceptNode(candidate, false, false));
             }
         }
@@ -156,16 +154,16 @@ class NodeAllocation {
 
     private boolean shouldRetire(NodeCandidate candidate) {
         if ( ! requestedNodes.considerRetiring()) return false;
-        if ( ! nodeResourceLimits.isWithinRealLimits(candidate.node, cluster)) return true;
-        if (violatesParentHostPolicy(candidate.node)) return true;
+        if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) return true;
+        if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
-        if (candidate.node.status().wantToRetire()) return true;
-        if (requestedNodes.isExclusive() && ! hostsOnly(application, candidate.node.parentHostname())) return true;
+        if (candidate.status().wantToRetire()) return true;
+        if (requestedNodes.isExclusive() && ! hostsOnly(application, candidate.parentHostname())) return true;
         return false;
     }
 
-    private boolean violatesParentHostPolicy(Node offered) {
-        return checkForClashingParentHost() && offeredNodeHasParentHostnameAlreadyAccepted(offered);
+    private boolean violatesParentHostPolicy(NodeCandidate candidate) {
+        return checkForClashingParentHost() && offeredNodeHasParentHostnameAlreadyAccepted(candidate);
     }
 
     private boolean checkForClashingParentHost() {
@@ -174,10 +172,10 @@ class NodeAllocation {
                ! application.instance().isTester();
     }
 
-    private boolean offeredNodeHasParentHostnameAlreadyAccepted(Node offered) {
+    private boolean offeredNodeHasParentHostnameAlreadyAccepted(NodeCandidate candidate) {
         for (NodeCandidate acceptedNode : nodes.values()) {
-            if (acceptedNode.node.parentHostname().isPresent() && offered.parentHostname().isPresent() &&
-                    acceptedNode.node.parentHostname().get().equals(offered.parentHostname().get())) {
+            if (acceptedNode.parentHostname().isPresent() && candidate.parentHostname().isPresent() &&
+                    acceptedNode.parentHostname().get().equals(candidate.parentHostname().get())) {
                 return true;
             }
         }
@@ -232,16 +230,16 @@ class NodeAllocation {
      * do want to remove it immediately to get immediate feedback on how the size reduction works out.)
      */
     private boolean acceptToRetire(NodeCandidate candidate) {
-        if (candidate.node.state() != Node.State.active) return false;
-        if (! candidate.node.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
-        if (candidate.node.allocation().get().membership().retired()) return true; // don't second-guess if already retired
+        if (candidate.state() != Node.State.active) return false;
+        if (! candidate.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
+        if (candidate.allocation().get().membership().retired()) return true; // don't second-guess if already retired
 
         return cluster.type().isContent() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(candidate));
     }
 
     private boolean hasCompatibleFlavor(NodeCandidate candidate) {
-        return requestedNodes.isCompatible(candidate.node.flavor(), nodeRepository.flavors()) || candidate.isResizable;
+        return requestedNodes.isCompatible(candidate.flavor(), nodeRepository.flavors()) || candidate.isResizable;
     }
 
     private Node acceptNode(NodeCandidate candidate, boolean wantToRetire, boolean resizeable) {
@@ -328,12 +326,12 @@ class NodeAllocation {
      * @return the final list of nodes
      */
     List<Node> finalNodes() {
-        int currentRetiredCount = (int) nodes.values().stream().filter(node -> node.node.allocation().get().membership().retired()).count();
+        int currentRetiredCount = (int) nodes.values().stream().filter(node -> node.allocation().get().membership().retired()).count();
         int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), currentRetiredCount) - currentRetiredCount;
 
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
             for (NodeCandidate candidate : byRetiringPriority(nodes.values())) {
-                if ( ! candidate.node.allocation().get().membership().retired() && candidate.node.state() == Node.State.active) {
+                if ( ! candidate.allocation().get().membership().retired() && candidate.state() == Node.State.active) {
                     candidate = candidate.withNode(candidate.node.retire(Agent.application, nodeRepository.clock().instant()));
                     put(candidate);
                     if (--deltaRetiredCount == 0) break;
@@ -342,7 +340,7 @@ class NodeAllocation {
         }
         else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
             for (NodeCandidate candidate : byUnretiringPriority(nodes.values())) {
-                if ( candidate.node.allocation().get().membership().retired() && hasCompatibleFlavor(candidate) ) {
+                if ( candidate.allocation().get().membership().retired() && hasCompatibleFlavor(candidate) ) {
                     if (candidate.isResizable)
                         candidate = candidate.withNode(resize(candidate.node));
                     candidate = candidate.withNode(candidate.node.unretire());
@@ -366,7 +364,7 @@ class NodeAllocation {
     List<Node> reservableNodes() {
         // Include already reserved nodes to extend reservation period and to potentially update their cluster spec.
         EnumSet<Node.State> reservableStates = EnumSet.of(Node.State.inactive, Node.State.ready, Node.State.reserved);
-        return nodesFilter(n -> !n.isNewNode && reservableStates.contains(n.node.state()));
+        return nodesFilter(n -> ! n.isNewNode && reservableStates.contains(n.state()));
     }
 
     List<Node> newNodes() {
@@ -388,8 +386,8 @@ class NodeAllocation {
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
     private List<NodeCandidate> byUnretiringPriority(Collection<NodeCandidate> candidates) {
         return candidates.stream()
-                         .sorted(Comparator.comparing((NodeCandidate n) -> n.node.status().wantToRetire())
-                                           .thenComparing(n -> n.node.allocation().get().membership().index()))
+                         .sorted(Comparator.comparing((NodeCandidate n) -> n.status().wantToRetire())
+                                           .thenComparing(n -> n.allocation().get().membership().index()))
                          .collect(Collectors.toList());
     }
 

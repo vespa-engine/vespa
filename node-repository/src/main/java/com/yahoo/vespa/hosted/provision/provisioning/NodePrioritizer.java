@@ -122,8 +122,8 @@ public class NodePrioritizer {
         addNewDockerNodesOn(candidates);
     }
 
-    private void addNewDockerNodesOn(LockedNodeList candidates) {
-        for (Node host : candidates) {
+    private void addNewDockerNodesOn(LockedNodeList candidateHosts) {
+        for (Node host : candidateHosts) {
             if ( ! capacity.hasCapacity(host, resources(requestedNodes))) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
 
