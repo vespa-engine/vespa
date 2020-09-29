@@ -5,6 +5,7 @@ import com.yahoo.document.fieldset.FieldSet;
 import com.yahoo.document.fieldset.FieldSetRepo;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -67,5 +68,31 @@ public class DocumentOperationParameters {
     public Optional<String> fieldSet() { return Optional.ofNullable(fieldSet); }
     public Optional<String> route() { return Optional.ofNullable(route); }
     public OptionalInt traceLevel() { return traceLevel >= 0 ? OptionalInt.of(traceLevel) : OptionalInt.empty(); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DocumentOperationParameters that = (DocumentOperationParameters) o;
+        return traceLevel == that.traceLevel &&
+               priority == that.priority &&
+               Objects.equals(fieldSet, that.fieldSet) &&
+               Objects.equals(route, that.route);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(priority, fieldSet, route, traceLevel);
+    }
+
+    @Override
+    public String toString() {
+        return "DocumentOperationParameters{" +
+               "priority=" + priority +
+               ", fieldSet='" + fieldSet + '\'' +
+               ", route='" + route + '\'' +
+               ", traceLevel=" + traceLevel +
+               '}';
+    }
 
 }

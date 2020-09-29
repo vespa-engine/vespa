@@ -127,7 +127,7 @@ public class RequestHandlerTestDriver implements AutoCloseable {
         public String read() {
             ByteBuffer nextBuffer = content.read();
             if (nextBuffer == null) return null; // end of transmission
-            return Charset.forName("utf-8").decode(nextBuffer).toString();
+            return StandardCharsets.UTF_8.decode(nextBuffer).toString();
         }
 
         /** Returns the number of bytes available in the handler right now */

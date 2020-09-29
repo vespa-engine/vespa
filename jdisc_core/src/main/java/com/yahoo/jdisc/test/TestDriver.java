@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link BootstrapLoader} that provides convenient access to the {@link ContainerActivator} and {@link
  * CurrentContainer} interfaces. A typical test case using this class looks as follows:</p>
  * <pre>
- * {@literal @}Test
+ *{@literal @}Test
  * public void requireThatMyComponentIsWellBehaved() {
  *     TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
  *     ContainerBuilder builder = driver.newContainerBuilder();
