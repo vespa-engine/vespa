@@ -23,6 +23,7 @@ import com.yahoo.yolean.Exceptions;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -42,6 +43,7 @@ public class LocalVisitorSession implements VisitorSession {
     private final DocumentSelector selector;
     private final FieldSet fieldSet;
     private final AtomicReference<State> state;
+    private final AtomicReference<Phaser> phaser;
 
     public LocalVisitorSession(LocalDocumentAccess access, VisitorParameters parameters) throws ParseException {
         if (parameters.getResumeToken() != null)
@@ -64,6 +66,7 @@ public class LocalVisitorSession implements VisitorSession {
         this.outstanding = new ConcurrentSkipListMap<>(Comparator.comparing(DocumentId::toString));
         this.outstanding.putAll(access.documents);
         this.state = new AtomicReference<>(State.RUNNING);
+        this.phaser = access.phaser;
 
         start();
     }
@@ -87,8 +90,16 @@ public class LocalVisitorSession implements VisitorSession {
                     Document copy = new Document(document.getDataType(), document.getId());
                     new FieldSetRepo().copyFields(document, copy, fieldSet);
 
+
+                    Phaser synchronizer = phaser.get();
+                    if (synchronizer != null) {
+                        synchronizer.register();
+                        synchronizer.arriveAndAwaitAdvance();
+                    }
                     data.onMessage(new PutDocumentMessage(new DocumentPut(copy)),
                                    new AckToken(id));
+                    if (synchronizer != null)
+                        synchronizer.awaitAdvance(synchronizer.arriveAndDeregister());
                 });
                 // Transition to a terminal state when done
                 state.updateAndGet(current -> {

@@ -39,10 +39,12 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -110,16 +112,18 @@ public class DocumentOperationExecutor {
     /** Assumes this stops receiving operations roughly when this is called, then waits up to 50 seconds to drain operations. */
     public void shutdown() {
         long shutdownMillis = clock.instant().plusSeconds(50).toEpochMilli();
+        visits.values().forEach(VisitorSession::destroy);
         Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(30),
                                                         context -> context.error(OVERLOAD, "Retry on overload failed due to shutdown"));
         Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(40),
                                                       context -> context.error(TIMEOUT, "Timed out due to shutdown"));
-        visits.values().forEach(VisitorSession::destroy);
         try {
             throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
             timeoutShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
         }
-        catch (Exception e) {
+        catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throttleShutdown.cancel(true);
+            throttleShutdown.cancel(true);
             log.log(WARNING, "Exception shutting down " + getClass().getName(), e);
         }
     }
@@ -646,9 +650,9 @@ public class DocumentOperationExecutor {
     }
 
 
-    private static StorageCluster resolveCluster(Optional<String> wanted, Map<String, StorageCluster> clusters) {
+    static StorageCluster resolveCluster(Optional<String> wanted, Map<String, StorageCluster> clusters) {
         if (clusters.isEmpty())
-            throw new IllegalArgumentException("Your Vespa deployment has no content clusters, so the document API is not enabled.");
+            throw new IllegalArgumentException("Your Vespa deployment has no content clusters, so the document API is not enabled");
 
         return wanted.map(cluster -> {
             if ( ! clusters.containsKey(cluster))

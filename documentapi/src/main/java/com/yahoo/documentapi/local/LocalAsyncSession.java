@@ -43,14 +43,15 @@ public class LocalAsyncSession implements AsyncSession {
     private final ResponseHandler handler;
     private final SyncSession syncSession;
     private final Executor executor = Executors.newCachedThreadPool();
+    private final AtomicReference<Phaser> phaser;
 
     private AtomicLong requestId = new AtomicLong(0);
-    private AtomicReference<Phaser> phaser = new AtomicReference<>();
     private AtomicReference<Result.ResultType> result = new AtomicReference<>(SUCCESS);
 
     public LocalAsyncSession(AsyncParameters params, LocalDocumentAccess access) {
         this.handler = params.getResponseHandler();
-        syncSession = access.createSyncSession(new SyncParameters.Builder().build());
+        this.syncSession = access.createSyncSession(new SyncParameters.Builder().build());
+        this.phaser = access.phaser;
     }
 
     @Override
@@ -148,18 +149,7 @@ public class LocalAsyncSession implements AsyncSession {
         // empty
     }
 
-    /**
-     * When this is set, every operation is sent in a separate thread, which first registers with the given phaser,
-     * and then arrives and awaits advance so the user can trigger responses. After the response is delivered,
-     * the thread arrives and deregisters with the phaser, so the user can wait until all responses have been delivered.
-     *
-     * If this is not set, which is the default, the documents appear synchronously in the response queue or handler.
-     */
-    public void setPhaser(Phaser phaser) {
-        this.phaser.set(phaser);
-    }
-
-    /** Sets the result type returned on subsequence operations against this. Only SUCCESS will cause Repsonses to appear. */
+    /** Sets the result type returned on subsequence operations against this. Only SUCCESS will cause Responses to appear. */
     public void setResultType(Result.ResultType resultType) {
         this.result.set(resultType);
     }
@@ -186,7 +176,7 @@ public class LocalAsyncSession implements AsyncSession {
                 synchronizer.register();
                 synchronizer.arriveAndAwaitAdvance();
                 addResponse(responses.apply(req));
-                synchronizer.arriveAndDeregister();
+                synchronizer.awaitAdvance(synchronizer.arriveAndDeregister());
             });
         return new Result(req);
     }

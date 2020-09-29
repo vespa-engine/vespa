@@ -103,7 +103,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         // Let all async operations wait for a signal from the test thread before sending their responses, and let test
         // thread wait for all responses to be delivered afterwards.
         Phaser phaser = new Phaser(1);
-        session.setPhaser(phaser);
+        access.setPhaser(phaser);
 
         long startTime = System.currentTimeMillis();
         int timeoutMillis = 1000;
