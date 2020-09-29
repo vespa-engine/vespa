@@ -26,15 +26,6 @@ void copyMap(IndexMap &map, const IndexMap &map_in, Stash &to_stash) {
     }
 }
 
-template<typename T>
-size_t needed_memory_for(const IndexMap &map, ConstArrayRef<T> cells) {
-    size_t needs = cells.size() * sizeof(T);
-    for (const auto & kv : map) {
-        needs += kv.first.size();
-    }
-    return needs;
-}
-
 //-----------------------------------------------------------------------------
 
 class SparseTensorValueView : public View
@@ -188,11 +179,28 @@ SparseTensorValueAllMappings::next_result(const std::vector<vespalib::stringref*
 
 //-----------------------------------------------------------------------------
 
+size_t
+SparseTensorIndex::needed_memory_for(const SparseTensorIndex &other) {
+    auto mem = other._stash.get_memory_usage();
+    size_t mem_use = mem.usedBytes();
+    if (mem_use == 0) {
+	return STASH_CHUNK_SIZE;
+    }
+    if (mem_use < (STASH_CHUNK_SIZE / 4)) {
+        size_t avg_per_addr = mem_use / other.size();
+        mem_use = std::max(mem_use, (7 * avg_per_addr));
+        size_t aligned_size = (mem_use + 63) & ~(sizeof(char *) - 1);
+        return aligned_size;
+    }
+    return STASH_CHUNK_SIZE;
+}
+
 SparseTensorIndex::SparseTensorIndex(size_t num_mapped_in)
-    : _stash(), _map(), _num_mapped_dims(num_mapped_in) {}
+    : _stash(STASH_CHUNK_SIZE), _map(), _num_mapped_dims(num_mapped_in)
+{}
 
 SparseTensorIndex::SparseTensorIndex(const SparseTensorIndex & index_in)
-    : _stash(), _map(), _num_mapped_dims(index_in._num_mapped_dims)
+    : _stash(needed_memory_for(index_in)), _map(), _num_mapped_dims(index_in._num_mapped_dims)
 {
     copyMap(_map, index_in._map, _stash);
 }
@@ -213,15 +221,6 @@ SparseTensorIndex::create_view(const std::vector<size_t> &dims) const
         return std::make_unique<SparseTensorValueAllMappings>(_map);
     }
     return std::make_unique<SparseTensorValueView>(_map, dims);
-}
-
-void
-SparseTensorIndex::add_subspace(SparseTensorAddressRef tmp_ref, size_t idx)
-{
-    SparseTensorAddressRef ref(tmp_ref, _stash);
-    assert(_map.find(ref) == _map.end());
-    assert(_map.size() == idx);
-    _map[ref] = idx;
 }
 
 size_t

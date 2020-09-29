@@ -31,7 +31,7 @@ SparseTensorAdd::visit(const TensorAddress &address, double value)
 std::unique_ptr<Tensor>
 SparseTensorAdd::build()
 {
-    return std::make_unique<SparseTensor>(std::move(_type), std::move(_index), std::move(_values));
+    return std::make_unique<SparseTensor>(std::move(_type), _index, std::move(_values));
 }
 
 }

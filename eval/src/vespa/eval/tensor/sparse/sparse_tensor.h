@@ -20,9 +20,6 @@ namespace vespalib::tensor {
  */
 class SparseTensor : public Tensor
 {
-public:
-    static constexpr size_t STASH_CHUNK_SIZE = 16384u;
-
 private:
     eval::ValueType _type;
     SparseTensorIndex _index;

@@ -12,6 +12,8 @@ namespace vespalib::tensor {
 class SparseTensorIndex : public vespalib::eval::Value::Index
 {
 public:
+    static constexpr size_t STASH_CHUNK_SIZE = 16384u;
+    //
     using View = vespalib::eval::Value::Index::View;
     using IndexMap = hash_map<SparseTensorAddressRef, uint32_t, hash<SparseTensorAddressRef>,
                               std::equal_to<>, hashtable_base::and_modulator>;
@@ -26,7 +28,6 @@ public:
     // build API
     void reserve(size_t estimate) { _map.resize(2*estimate); }
     size_t lookup_or_add(SparseTensorAddressRef tmp_ref);
-    void add_subspace(SparseTensorAddressRef tmp_ref, size_t idx);
     // lookup API
     bool lookup_address(SparseTensorAddressRef ref, size_t &idx) const;
     // traversal API
@@ -37,6 +38,7 @@ private:
     Stash _stash;
     IndexMap _map;
     size_t _num_mapped_dims;
+    static size_t needed_memory_for(const SparseTensorIndex &other);
 };
 
 } // namespace
