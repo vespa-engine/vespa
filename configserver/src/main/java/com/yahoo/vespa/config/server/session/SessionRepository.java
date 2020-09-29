@@ -215,18 +215,7 @@ public class SessionRepository {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
         localSessionCache.remove(sessionId);
-        deletePersistentData(sessionId);
-    }
-
-    private void deletePersistentData(long sessionId) {
         NestedTransaction transaction = new NestedTransaction();
-        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-
-        // We will try to delete data from zookeeper from several servers, but since we take a lock
-        // and the transaction will either delete everything or nothing (which will happen if it has been done
-        // on another server) this works fine
-        transaction.add(sessionZooKeeperClient.deleteTransaction(), FileTransaction.class);
-
         transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
         transaction.commit();
     }
