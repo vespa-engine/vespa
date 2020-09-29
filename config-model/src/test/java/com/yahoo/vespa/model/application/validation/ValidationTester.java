@@ -96,8 +96,6 @@ public class ValidationTester {
         return new Pair<>(newModel, newModelCreator.configChangeActions);
     }
 
-    public static String censorNumbers(String s) {
-        return s.replaceAll("\\d", "-");
-    }
+
 
 }
