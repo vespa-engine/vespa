@@ -127,32 +127,12 @@ public class NodePrioritizer {
             if ( spareHosts.contains(host) && !isAllocatingForReplacement) continue;
             if ( ! capacity.hasCapacity(host, resources(requestedNodes))) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
-
-            Optional<IP.Allocation> allocation;
-            try {
-                allocation = host.ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
-                if (allocation.isEmpty()) continue; // No free addresses in this pool
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Failed allocating IP address on " + host.hostname() + " to " +
-                                       application + ", cluster " + clusterSpec.id() + ": " +
-                                       Exceptions.toMessageString(e));
-                continue;
-            }
-
-            log.log(Level.FINE, "Creating new docker node on " + host);
-            Node newNode = Node.createDockerNode(allocation.get().addresses(),
-                                                 allocation.get().hostname(),
-                                                 host.hostname(),
-                                                 resources(requestedNodes).with(host.flavor().resources().diskSpeed())
-                                                                          .with(host.flavor().resources().storageType()),
-                                                 NodeType.tenant);
-            nodes.add(NodeCandidate.createChild(newNode,
-                                                capacity.freeCapacityOf(host, false),
-                                                host,
-                                                spareHosts.contains(host),
-                                                false,
-                                                true,
-                                                false));
+            nodes.add(NodeCandidate.createNewChild(resources(requestedNodes),
+                                                   capacity.freeCapacityOf(host, false),
+                                                   host,
+                                                   spareHosts.contains(host),
+                                                   allNodes,
+                                                   nodeRepository));
         }
     }
 

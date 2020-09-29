@@ -138,7 +138,7 @@ class NodeAllocation {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
-                if (candidate.status().wantToRetire()) {
+                if (candidate.wantToRetire()) {
                     continue;
                 }
                 candidate = candidate.allocate(application,
@@ -157,7 +157,7 @@ class NodeAllocation {
         if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) return true;
         if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
-        if (candidate.status().wantToRetire()) return true;
+        if (candidate.wantToRetire()) return true;
         if (requestedNodes.isExclusive() && ! hostsOnly(application, candidate.parentHostname())) return true;
         return false;
     }
@@ -386,7 +386,7 @@ class NodeAllocation {
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
     private List<NodeCandidate> byUnretiringPriority(Collection<NodeCandidate> candidates) {
         return candidates.stream()
-                         .sorted(Comparator.comparing((NodeCandidate n) -> n.status().wantToRetire())
+                         .sorted(Comparator.comparing((NodeCandidate n) -> n.wantToRetire())
                                            .thenComparing(n -> n.allocation().get().membership().index()))
                          .collect(Collectors.toList());
     }

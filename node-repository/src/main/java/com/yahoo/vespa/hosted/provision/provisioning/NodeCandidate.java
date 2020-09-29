@@ -6,14 +6,20 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * A node candidate containing the details required to prioritize it for allocation. This is immutable.
@@ -63,7 +69,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
     public abstract Node.State state();
 
-    public abstract Status status();
+    public abstract boolean wantToRetire();
 
     public abstract Flavor flavor();
 
@@ -193,7 +199,16 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         return new ConcreteNodeCandidate(node, freeParentCapacity, Optional.of(parent), violatesSpares, isSurplus, isNew, isResizeable);
     }
 
-    public static NodeCandidate createExclusiveChild(Node node, Node parent) {
+    public static NodeCandidate createNewChild(NodeResources resources,
+                                               NodeResources freeParentCapacity,
+                                               Node parent,
+                                               boolean violatesSpares,
+                                               LockedNodeList allNodes,
+                                               NodeRepository nodeRepository) {
+        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, allNodes, nodeRepository);
+    }
+
+    public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
         return new ConcreteNodeCandidate(node, node.resources(), Optional.of(parent), false, false, true, false);
     }
 
@@ -206,8 +221,10 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         private final Node node;
 
-        ConcreteNodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
-            super(freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizeable);
+        ConcreteNodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent,
+                              boolean violatesSpares,
+                              boolean isSurplus, boolean isNew, boolean isResizeable) {
+            super(freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizeable);
             this.node = node;
         }
 
@@ -224,7 +241,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         public Node.State state() { return node.state(); }
 
-        public Status status() { return node.status(); }
+        public boolean wantToRetire() { return node.status().wantToRetire(); }
 
         public Flavor flavor() { return node.flavor(); }
 
@@ -262,44 +279,69 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** A candidate for which no actual node has been created yet */
     static class VirtualNodeCandidate extends NodeCandidate {
 
-        // TODO: Remove
-        private final Node node;
+        /** The resources this node must have if created */
+        private final NodeResources resources;
 
-        private VirtualNodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean isResizeable) {
-            super(freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, isResizeable);
-            this.node = node;
+        /** Needed to construct the node */
+        private final LockedNodeList allNodes;
+        private final NodeRepository nodeRepository;
+
+        private VirtualNodeCandidate(NodeResources resources,
+                                     NodeResources freeParentCapacity,
+                                     Node parent,
+                                     boolean violatesSpares,
+                                     LockedNodeList allNodes,
+                                     NodeRepository nodeRepository) {
+            super(freeParentCapacity, Optional.of(parent), violatesSpares, false, true, false);
+            this.resources = resources;
+            this.allNodes = allNodes;
+            this.nodeRepository = nodeRepository;
         }
 
         @Override
-        public NodeResources resources() { return node.resources(); }
+        public NodeResources resources() { return resources; }
 
         @Override
-        public Optional<String> parentHostname() { return node.parentHostname(); }
+        public Optional<String> parentHostname() { return Optional.of(parent.get().hostname()); }
 
         @Override
-        public NodeType type() { return node.type(); }
+        public NodeType type() { return NodeType.tenant; }
 
-        public Optional<Allocation> allocation() { return node.allocation(); }
+        public Optional<Allocation> allocation() { return Optional.empty(); }
 
-        public Node.State state() { return node.state(); }
+        public Node.State state() { return Node.State.reserved; }
 
-        public Status status() { return node.status(); }
+        public boolean wantToRetire() { return false; }
 
-        public Flavor flavor() { return node.flavor(); }
+        public Flavor flavor() { return new Flavor(resources); }
 
         public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
-            return new VirtualNodeCandidate(node.allocate(owner, membership, requestedResources, at),
-                                            freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizable);
+            return withNode().allocate(owner, membership, requestedResources, at);
         }
 
         /** Called when the node described by this candidate must be created */
         public NodeCandidate withNode() {
-            if (node != null) return this;
-            throw new RuntimeException("Not implemented");
+            Optional<IP.Allocation> allocation;
+            try {
+                allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
+                if (allocation.isEmpty())
+                    throw new IllegalStateException("No free ip addresses on " + parent.get() + ": Cannot allocate node");
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed allocating IP address on " + parent.get() +": ", e);
+            }
+
+            Node node = Node.createDockerNode(allocation.get().addresses(),
+                                              allocation.get().hostname(),
+                                              parentHostname().get(),
+                                              resources.with(parent.get().resources().diskSpeed())
+                                                       .with(parent.get().resources().storageType()),
+                                              NodeType.tenant);
+            return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizable);
+
         }
 
-        /** Returns the node instance of this candidate, or throws IllegalStateException if there is none */
-        public Node toNode() { return node; }
+        /** Returns the node instance of this candidate, or throws IllegalStateException if none can be created */
+        public Node toNode() { return withNode().toNode(); }
 
         @Override
         public int compareTo(NodeCandidate other) {
@@ -307,13 +349,13 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
             if (comparison != 0) return comparison;
 
             // Unimportant tie-breaking:
-            if ( ! (other instanceof ConcreteNodeCandidate)) return -1;
-            return this.node.hostname().compareTo(((ConcreteNodeCandidate)other).node.hostname());
+            if ( ! (other instanceof VirtualNodeCandidate)) return 1;
+            return this.parentHostname().get().compareTo(other.parentHostname().get());
         }
 
         @Override
         public String toString() {
-            return node.id();
+            return "candidate node with " + resources + " on " + parent.get();
         }
 
     }

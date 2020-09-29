@@ -100,8 +100,8 @@ public class GroupPreparer {
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                     List<NodeCandidate> candidates = provisionedHosts.stream()
-                                                                     .map(host -> NodeCandidate.createExclusiveChild(host.generateNode(),
-                                                                                                                     host.generateHost()))
+                                                                     .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
+                                                                                                                        host.generateHost()))
                                                                      .collect(Collectors.toList());
                     allocation.offer(candidates);
                 }
