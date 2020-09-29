@@ -20,7 +20,8 @@ DistributorNode::DistributorNode(
         DistributorNodeContext& context,
         ApplicationGenerationFetcher& generationFetcher,
         NeedActiveState activeState,
-        StorageLink::UP communicationManager)
+        StorageLink::UP communicationManager,
+        std::unique_ptr<IStorageChainBuilder> storage_chain_builder)
     : StorageNode(configUri, context, generationFetcher,
             std::unique_ptr<HostInfo>(new HostInfo()),
                   communicationManager.get() == 0 ? NORMAL
@@ -32,6 +33,9 @@ DistributorNode::DistributorNode(
       _manageActiveBucketCopies(activeState == NEED_ACTIVE_BUCKET_STATES_SET),
       _retrievedCommunicationManager(std::move(communicationManager))
 {
+    if (storage_chain_builder) {
+        set_storage_chain_builder(std::move(storage_chain_builder));
+    }
     try{
         initialize();
     } catch (const vespalib::NetworkSetupFailureException & e) {
