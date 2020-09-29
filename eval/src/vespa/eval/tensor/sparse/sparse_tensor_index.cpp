@@ -249,6 +249,17 @@ SparseTensorIndex::lookup_address(SparseTensorAddressRef ref, size_t &idx) const
     return false;
 }
 
+MemoryUsage
+SparseTensorIndex::get_memory_usage() const
+{
+    MemoryUsage mem = _stash.get_memory_usage();
+    size_t plus = _map.getMemoryConsumption();
+    mem.incUsedBytes(plus);
+    mem.incAllocatedBytes(plus);
+    return mem;
+}
+
+
 //-----------------------------------------------------------------------------
 
 } // namespace

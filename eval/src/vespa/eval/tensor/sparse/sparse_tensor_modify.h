@@ -16,15 +16,14 @@ namespace vespalib::tensor {
 class SparseTensorModify : public TensorVisitor
 {
     using join_fun_t = Tensor::join_fun_t;
-    using Cells = SparseTensor::Cells;
     join_fun_t             _op;
     eval::ValueType        _type;
-    Stash                  _stash;
-    Cells                  _cells;
+    SparseTensorIndex      _index;
+    std::vector<double>    _values;
     SparseTensorAddressBuilder _addressBuilder;
 
 public:
-    SparseTensorModify(join_fun_t op, const eval::ValueType &type, Stash &&stash, Cells &&cells);
+    SparseTensorModify(join_fun_t op, eval::ValueType type, SparseTensorIndex index, std::vector<double> values);
     ~SparseTensorModify();
     void visit(const TensorAddress &address, double value) override;
     std::unique_ptr<Tensor> build();

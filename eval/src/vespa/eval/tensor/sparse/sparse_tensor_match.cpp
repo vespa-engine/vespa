@@ -10,25 +10,27 @@
 namespace vespalib::tensor {
 
 void
-SparseTensorMatch::fastMatch(const TensorImplType &lhs, const TensorImplType &rhs)
+SparseTensorMatch::fastMatch(const SparseTensor &lhs, const SparseTensor &rhs)
 {
-    _builder.reserve(lhs.my_cells().size());
-    for (const auto &lhsCell : lhs.my_cells()) {
-        auto rhsItr = rhs.my_cells().find(lhsCell.first);
-        if (rhsItr != rhs.my_cells().end()) {
-            _builder.insertCell(lhsCell.first, lhsCell.second * rhsItr->second);
+    const auto & lhs_map = lhs.index().get_map();
+    const auto & rhs_map = rhs.index().get_map();
+    _builder.reserve(lhs_map.size());
+    for (const auto & kv : lhs_map) {
+        auto rhsItr = rhs_map.find(kv.first);
+        if (rhsItr != rhs_map.end()) {
+            auto a = lhs.my_values()[kv.second];
+            auto b = rhs.my_values()[rhsItr->second];
+            _builder.insertCell(kv.first, a * b);
         }
     }
 }
 
-SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs, const TensorImplType &rhs)
-    : Parent(lhs.combineDimensionsWith(rhs))
+SparseTensorMatch::SparseTensorMatch(const SparseTensor &lhs, const SparseTensor &rhs)
+    : _builder(lhs.fast_type())
 {
     assert (lhs.fast_type().dimensions().size() == rhs.fast_type().dimensions().size());
-    assert (lhs.fast_type().dimensions().size() == _builder.fast_type().dimensions().size());
-
     // Ensure that first tensor to fastMatch has fewest cells.
-    if (lhs.my_cells().size() <= rhs.my_cells().size()) {
+    if (lhs.my_values().size() <= rhs.my_values().size()) {
         fastMatch(lhs, rhs);
     } else {
         fastMatch(rhs, lhs);

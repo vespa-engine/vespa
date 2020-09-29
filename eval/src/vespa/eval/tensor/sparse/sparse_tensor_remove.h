@@ -16,14 +16,11 @@ namespace vespalib::tensor {
  */
 class SparseTensorRemove : public TensorVisitor {
 private:
-    using Cells = SparseTensor::Cells;
-    eval::ValueType _type;
-    Cells _cells;
-    Stash _stash;
+    const SparseTensor & _input;
+    SparseTensorIndex::IndexMap _map;
     SparseTensorAddressBuilder _addressBuilder;
-
 public:
-    SparseTensorRemove(const eval::ValueType &type, Cells &&cells, Stash &&stash);
+    explicit SparseTensorRemove(const SparseTensor &input);
     ~SparseTensorRemove();
     void visit(const TensorAddress &address, double value) override;
     std::unique_ptr<Tensor> build();

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "sparse_tensor_address_ref.h"
+#include "sparse_tensor_index.h"
 #include <vespa/eval/tensor/cell_function.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/tensor_address.h>
@@ -21,23 +21,19 @@ namespace vespalib::tensor {
 class SparseTensor : public Tensor
 {
 public:
-    using Cells = hash_map<SparseTensorAddressRef, double, hash<SparseTensorAddressRef>,
-                           std::equal_to<>, hashtable_base::and_modulator>;
-
     static constexpr size_t STASH_CHUNK_SIZE = 16384u;
 
 private:
     eval::ValueType _type;
-    Cells _cells;
-    Stash _stash;
+    SparseTensorIndex _index;
+    std::vector<double> _values;
 
 public:
-    explicit SparseTensor(const eval::ValueType &type_in, const Cells &cells_in);
-    SparseTensor(eval::ValueType &&type_in, Cells &&cells_in, Stash &&stash_in);
-    TypedCells cells() const override { abort(); }
-    const Index &index() const override { abort(); }
+    SparseTensor(eval::ValueType type_in, SparseTensorIndex index_in, std::vector<double> cells_in);
     ~SparseTensor() override;
-    const Cells &my_cells() const { return _cells; }
+    TypedCells cells() const override;
+    const std::vector<double> &my_values() const { return _values; }
+    const SparseTensorIndex &index() const override { return _index; }
     const eval::ValueType &fast_type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;
     eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;

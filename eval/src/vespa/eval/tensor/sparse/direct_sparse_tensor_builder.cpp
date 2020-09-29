@@ -4,47 +4,30 @@
 
 namespace vespalib::tensor {
 
-void
-DirectSparseTensorBuilder::copyCells(const Cells &cells_in)
-{
-    for (const auto &cell : cells_in) {
-        SparseTensorAddressRef oldRef = cell.first;
-        SparseTensorAddressRef newRef(oldRef, _stash);
-        _cells[newRef] = cell.second;
-    }
-}
-
 DirectSparseTensorBuilder::DirectSparseTensorBuilder()
-    : _stash(SparseTensor::STASH_CHUNK_SIZE),
-      _type(eval::ValueType::double_type()),
-      _cells()
+    : _type(eval::ValueType::double_type()),
+      _index(0),
+      _values()
 {
 }
 
 DirectSparseTensorBuilder::DirectSparseTensorBuilder(const eval::ValueType &type_in)
-    : _stash(SparseTensor::STASH_CHUNK_SIZE),
-      _type(type_in),
-      _cells()
+    : _type(type_in),
+      _index(_type.count_mapped_dimensions()),
+      _values()
 {
-}
-
-DirectSparseTensorBuilder::DirectSparseTensorBuilder(const eval::ValueType &type_in, const Cells &cells_in)
-    : _stash(SparseTensor::STASH_CHUNK_SIZE),
-      _type(type_in),
-      _cells()
-{
-    copyCells(cells_in);
 }
 
 DirectSparseTensorBuilder::~DirectSparseTensorBuilder() = default;
 
 Tensor::UP
 DirectSparseTensorBuilder::build() {
-    return std::make_unique<SparseTensor>(std::move(_type), std::move(_cells), std::move(_stash));
+    return std::make_unique<SparseTensor>(std::move(_type), std::move(_index), std::move(_values));
 }
 
 void DirectSparseTensorBuilder::reserve(uint32_t estimatedCells) {
-    _cells.resize(estimatedCells*2);
+    _index.reserve(estimatedCells);
+    _values.reserve(estimatedCells);
 }
 
 }

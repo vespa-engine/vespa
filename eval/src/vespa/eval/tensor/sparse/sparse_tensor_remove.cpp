@@ -5,10 +5,9 @@
 
 namespace vespalib::tensor {
 
-SparseTensorRemove::SparseTensorRemove(const eval::ValueType &type, Cells &&cells, Stash &&stash)
-    : _type(type),
-      _cells(std::move(cells)),
-      _stash(std::move(stash)),
+SparseTensorRemove::SparseTensorRemove(const SparseTensor &input)
+    : _input(input),
+      _map(input.index().get_map()),
       _addressBuilder()
 {
 }
@@ -16,18 +15,27 @@ SparseTensorRemove::SparseTensorRemove(const eval::ValueType &type, Cells &&cell
 SparseTensorRemove::~SparseTensorRemove() = default;
 
 void
-SparseTensorRemove::visit(const TensorAddress &address, double value)
+SparseTensorRemove::visit(const TensorAddress &address, double)
 {
-    (void) value;
-    _addressBuilder.populate(_type, address);
+    _addressBuilder.populate(_input.fast_type(), address);
     auto addressRef = _addressBuilder.getAddressRef();
-    _cells.erase(addressRef);
+    _map.erase(addressRef);
 }
 
 std::unique_ptr<Tensor>
 SparseTensorRemove::build()
 {
-    return std::make_unique<SparseTensor>(std::move(_type), std::move(_cells), std::move(_stash));
+    SparseTensorIndex new_index(_input.fast_type().count_mapped_dimensions());
+    std::vector<double> new_values;
+    new_index.reserve(_map.size());
+    new_values.reserve(_map.size());
+    for (const auto & kv : _map) {
+        size_t idx = new_index.lookup_or_add(kv.first);
+        assert(idx == new_values.size());
+        double v = _input.my_values()[kv.second];
+        new_values.push_back(v);
+    }
+    return std::make_unique<SparseTensor>(_input.fast_type(), std::move(new_index), std::move(new_values));
 }
 
 }

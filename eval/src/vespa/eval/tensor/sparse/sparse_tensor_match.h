@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/eval/tensor/tensor_operation.h>
+#include "sparse_tensor.h"
+#include "direct_sparse_tensor_builder.h"
 
 namespace vespalib::tensor {
 
@@ -14,16 +15,17 @@ namespace vespalib::tensor {
  * Only used when two tensors have exactly the same dimensions,
  * this is the Hadamard product.
  */
-class SparseTensorMatch : public TensorOperation<SparseTensor>
+class SparseTensorMatch
 {
 public:
-    using Parent = TensorOperation<SparseTensor>;
-    using typename Parent::TensorImplType;
-    using Parent::_builder;
+    DirectSparseTensorBuilder _builder;
 private:
-    void fastMatch(const TensorImplType &lhs, const TensorImplType &rhs);
+    void fastMatch(const SparseTensor &lhs, const SparseTensor &rhs);
 public:
-    SparseTensorMatch(const TensorImplType &lhs, const TensorImplType &rhs);
+    SparseTensorMatch(const SparseTensor &lhs, const SparseTensor &rhs);
+    Tensor::UP result() {
+        return _builder.build();
+    }
 };
 
 }

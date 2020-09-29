@@ -5,11 +5,11 @@
 
 namespace vespalib::tensor {
 
-SparseTensorModify::SparseTensorModify(join_fun_t op, const eval::ValueType &type, Stash &&stash, Cells &&cells)
+SparseTensorModify::SparseTensorModify(join_fun_t op, eval::ValueType type, SparseTensorIndex index, std::vector<double> values)
     : _op(op),
-      _type(type),
-      _stash(std::move(stash)),
-      _cells(std::move(cells)),
+      _type(std::move(type)),
+      _index(std::move(index)),
+      _values(std::move(values)),
       _addressBuilder()
 {
 }
@@ -21,16 +21,16 @@ SparseTensorModify::visit(const TensorAddress &address, double value)
 {
     _addressBuilder.populate(_type, address);
     auto addressRef = _addressBuilder.getAddressRef();
-    auto cellItr = _cells.find(addressRef);
-    if (cellItr != _cells.end()) {
-        cellItr->second = _op(cellItr->second, value);
+    size_t idx;
+    if (_index.lookup_address(addressRef, idx)) {
+        _values[idx] = _op(_values[idx], value);
     }
 }
 
 std::unique_ptr<Tensor>
 SparseTensorModify::build()
 {
-    return std::make_unique<SparseTensor>(std::move(_type), std::move(_cells), std::move(_stash));
+    return std::make_unique<SparseTensor>(std::move(_type), std::move(_index), std::move(_values));
 }
 
 }
