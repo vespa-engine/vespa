@@ -74,7 +74,6 @@ public class SchemaParsingTestCase extends SchemaTestCase {
             SearchBuilder.buildFromFile("src/test/examples/invalid-name.sd");
             fail("Name with dash passed");
         } catch (ParseException e) {
-            e.printStackTrace();
             if ( ! e.getMessage().contains("invalid-name")) {
                 throw e;
             }
