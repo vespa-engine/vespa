@@ -38,8 +38,8 @@ public class NodeResourceLimits {
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(Node candidateTenantNode, ClusterSpec cluster) {
-        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateTenantNode, nodeRepository),
+    public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
+        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
                                   cluster.type());
     }
 

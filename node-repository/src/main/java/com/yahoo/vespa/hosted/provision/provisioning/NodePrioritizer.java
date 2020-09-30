@@ -9,18 +9,12 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -33,9 +27,7 @@ import java.util.stream.Collectors;
  */
 public class NodePrioritizer {
 
-    private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
-
-    private final Map<Node, NodeCandidate> nodes = new HashMap<>();
+    private final List<NodeCandidate> nodes = new ArrayList<>();
     private final LockedNodeList allNodes;
     private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
@@ -83,7 +75,7 @@ public class NodePrioritizer {
 
     /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
     List<NodeCandidate> prioritize() {
-        return nodes.values().stream().sorted().collect(Collectors.toList());
+        return nodes.stream().sorted().collect(Collectors.toList());
     }
 
     /**
@@ -92,9 +84,9 @@ public class NodePrioritizer {
      */
     void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            NodeCandidate nodePri = candidateFrom(node, true, false);
-            if (!nodePri.violatesSpares || isAllocatingForReplacement) {
-                nodes.put(node, nodePri);
+            NodeCandidate candidate = candidateFrom(node, true);
+            if (!candidate.violatesSpares || isAllocatingForReplacement) {
+                nodes.add(candidate);
             }
         }
     }
@@ -122,34 +114,17 @@ public class NodePrioritizer {
         addNewDockerNodesOn(candidates);
     }
 
-    private void addNewDockerNodesOn(LockedNodeList candidates) {
-        for (Node host : candidates) {
+    private void addNewDockerNodesOn(LockedNodeList candidateHosts) {
+        for (Node host : candidateHosts) {
+            if ( spareHosts.contains(host) && !isAllocatingForReplacement) continue;
             if ( ! capacity.hasCapacity(host, resources(requestedNodes))) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
-
-            Optional<IP.Allocation> allocation;
-            try {
-                allocation = host.ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
-                if (allocation.isEmpty()) continue; // No free addresses in this pool
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Failed allocating IP address on " + host.hostname() + " to " +
-                                       application + ", cluster " + clusterSpec.id() + ": " +
-                                       Exceptions.toMessageString(e));
-                continue;
-            }
-
-            log.log(Level.FINE, "Creating new docker node on " + host);
-            Node newNode = Node.createDockerNode(allocation.get().addresses(),
-                                                 allocation.get().hostname(),
-                                                 host.hostname(),
-                                                 resources(requestedNodes).with(host.flavor().resources().diskSpeed())
-                                                                          .with(host.flavor().resources().storageType()),
-                                                 NodeType.tenant);
-            NodeCandidate nodePri = candidateFrom(newNode, false, true);
-            if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
-                log.log(Level.FINE, "Adding new Docker node " + newNode);
-                nodes.put(newNode, nodePri);
-            }
+            nodes.add(NodeCandidate.createNewChild(resources(requestedNodes),
+                                                   capacity.freeCapacityOf(host, false),
+                                                   host,
+                                                   spareHosts.contains(host),
+                                                   allNodes,
+                                                   nodeRepository));
         }
     }
 
@@ -161,8 +136,8 @@ public class NodePrioritizer {
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
-                .map(node -> candidateFrom(node, false, false))
-                .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
+                .map(node -> candidateFrom(node, false))
+                .forEach(candidate -> nodes.add(candidate));
     }
 
     /** Add nodes already provisioned, but not allocated to any application */
@@ -170,31 +145,30 @@ public class NodePrioritizer {
         allNodes.asList().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> node.state() == Node.State.ready)
-                .map(node -> candidateFrom(node, false, false))
+                .map(node -> candidateFrom(node, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
-                .forEach(candidate -> nodes.put(candidate.node, candidate));
+                .forEach(candidate -> nodes.add(candidate));
     }
 
-    public List<NodeCandidate> nodes() { return new ArrayList<>(nodes.values()); }
-
-    /** Create a candidate from given node */
-    private NodeCandidate candidateFrom(Node node, boolean isSurplusNode, boolean isNewNode) {
-        NodeCandidate.Builder builder = new NodeCandidate.Builder(node).surplusNode(isSurplusNode)
-                                                                       .newNode(isNewNode);
-
-        allNodes.parentOf(node).ifPresent(parent -> {
-            NodeResources parentCapacity = capacity.freeCapacityOf(parent, false);
-            builder.parent(parent).freeParentCapacity(parentCapacity);
-
-            if (!isNewNode)
-                builder.resizable(! allocateFully
-                                  && requestedNodes.canResize(node.resources(), parentCapacity, isTopologyChange, currentClusterSize));
-
-            if (spareHosts.contains(parent))
-                builder.violatesSpares(true);
-        });
-
-        return builder.build();
+    /** Create a candidate from given pre-existing node */
+    private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
+        Optional<Node> parent = allNodes.parentOf(node);
+        if (parent.isPresent()) {
+            return NodeCandidate.createChild(node,
+                                             capacity.freeCapacityOf(parent.get(), false),
+                                             parent.get(),
+                                             spareHosts.contains(parent.get()),
+                                             isSurplus,
+                                             false,
+                                             !allocateFully
+                                             && requestedNodes.canResize(node.resources(),
+                                                                         capacity.freeCapacityOf(parent.get(), false),
+                                                                         isTopologyChange,
+                                                                         currentClusterSize));
+        }
+        else {
+            return NodeCandidate.createStandalone(node, isSurplus, false);
+        }
     }
 
     private boolean isReplacement(int nofNodesInCluster, int nodeFailedNodes) {
