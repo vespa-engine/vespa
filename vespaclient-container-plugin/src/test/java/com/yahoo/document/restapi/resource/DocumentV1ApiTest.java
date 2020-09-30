@@ -8,12 +8,15 @@ import com.yahoo.document.DocumentGet;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.restapi.DocumentOperationExecutor.Group;
 import com.yahoo.document.restapi.DocumentOperationExecutor.VisitorOptions;
 import com.yahoo.document.restapi.DocumentOperationExecutorMock;
 import com.yahoo.document.restapi.resource.DocumentV1ApiHandler.DocumentOperationParser;
+import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.documentapi.DocumentAccessParams;
 import com.yahoo.documentapi.local.LocalDocumentAccess;
 import com.yahoo.jdisc.Metric;
@@ -229,6 +232,26 @@ public class DocumentV1ApiTest {
         put.setCondition(new TestAndSetCondition("test it"));
         assertEquals(put, executor.lastOperation());
         assertEquals(parameters(), executor.lastParameters());
+
+        // PUT with a document update payload is a document update operation.
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true", PUT,
+                                      "{" +
+                                      "  \"fields\": {" +
+                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
+                                      "  }" +
+                                      "}");
+        executor.lastOperationContext().success(Optional.empty());
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/group/a/three\"," +
+                       "  \"id\": \"id:space:music:g=a:three\"" +
+                       "}",
+                       response.readAll());
+        DocumentUpdate update = new DocumentUpdate(doc3.getDataType(), doc3.getId());
+        update.addFieldUpdate(FieldUpdate.createAssign(doc3.getField("artist"), new StringFieldValue("Lisa Ekdahl")));
+        update.setCreateIfNonExistent(true);
+        assertEquals(update, executor.lastOperation());
+        assertEquals(parameters(), executor.lastParameters());
+        assertEquals(200, response.getStatus());
 
         // POST with illegal payload is a 400
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it", POST,
