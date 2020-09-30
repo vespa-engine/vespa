@@ -638,7 +638,7 @@ CommunicationManager::sendDirectRPCReply(
 {
     std::string_view requestName(request.getMethodName()); // TODO non-name based dispatch
     // TODO rework this entire dispatch mechanism :D
-    if (requestName == "storageapi.v1.send") {
+    if (requestName == rpc::StorageApiRpcService::rpc_v1_method_name()) {
         _storage_api_rpc_service->encode_rpc_v1_response(*request.raw_request(), *reply);
     } else if (requestName == "getnodestate3") {
         auto& gns(dynamic_cast<api::GetNodeStateReply&>(*reply));

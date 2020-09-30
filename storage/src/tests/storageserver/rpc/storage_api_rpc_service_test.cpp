@@ -4,6 +4,8 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
@@ -126,6 +128,8 @@ public:
     ~RpcNode();
 
     const api::StorageMessageAddress& node_address() const noexcept { return _node_address; }
+    const SharedRpcResources& shared_rpc_resources() const noexcept { return *_shared_rpc_resources; }
+    SharedRpcResources& shared_rpc_resources() noexcept { return *_shared_rpc_resources; }
 
     void wait_until_visible_in_slobrok(vespalib::stringref id) {
         const auto deadline = std::chrono::steady_clock::now() + slobrok_register_timeout;
@@ -193,6 +197,19 @@ public:
 
     bool target_supports_direct_rpc(const api::StorageMessageAddress& addr) const noexcept {
         return _service->target_supports_direct_rpc(addr);
+    }
+
+    void send_raw_request_and_expect_error(StorageApiNode& node,
+                                           FRT_RPCRequest* req,
+                                           const vespalib::string& expected_msg) {
+        auto spec = vespalib::make_string("tcp/localhost:%d", node.shared_rpc_resources().listen_port());
+        auto* target = _shared_rpc_resources->supervisor().GetTarget(spec.c_str());
+        target->InvokeSync(req, 60.0);
+        EXPECT_TRUE(req->IsError());
+        EXPECT_EQ(req->GetErrorCode(), FRTE_RPC_METHOD_FAILED);
+        EXPECT_EQ(req->GetErrorMessage(), expected_msg);
+        target->SubRef();
+        req->SubRef();
     }
 };
 
@@ -358,5 +375,37 @@ TEST_F(StorageApiRpcServiceTest, rpc_method_not_found_toggles_rpc_as_not_support
     EXPECT_FALSE(_node_0->target_supports_direct_rpc(dummy_node.node_address()));
     EXPECT_FALSE(_node_0->target_supports_direct_rpc(_node_1->node_address()));
 }
+
+TEST_F(StorageApiRpcServiceTest, malformed_request_header_returns_rpc_error) {
+    auto& supervisor = _node_0->shared_rpc_resources().supervisor();
+    auto* req = supervisor.AllocRPCRequest();
+    req->SetMethodName(StorageApiRpcService::rpc_v1_method_name());
+    auto* params = req->GetParams();
+    params->AddInt8(0);  // No compression
+    params->AddInt32(24);
+    strncpy(params->AddData(24), "some non protobuf stuff", 24);
+    params->AddInt8(0);  // Still no compression
+    params->AddInt32(0); // Not actually valid, but we'll try to decode the header first.
+    params->AddData(0);
+
+    _node_0->send_raw_request_and_expect_error(*_node_1, req, "Unable to decode RPC request header protobuf");
+}
+
+TEST_F(StorageApiRpcServiceTest, malformed_request_payload_returns_rpc_error) {
+    auto& supervisor = _node_0->shared_rpc_resources().supervisor();
+    auto* req = supervisor.AllocRPCRequest();
+    req->SetMethodName(StorageApiRpcService::rpc_v1_method_name());
+    auto* params = req->GetParams();
+    params->AddInt8(0);  // No compression
+    params->AddInt32(0);
+    params->AddData(0);  // This is a valid empty protobuf header with no fields set
+    params->AddInt8(0);  // Even still no compression
+    params->AddInt32(0); // This, however, isn't valid, since at least sizeof(uint32_t) must be present
+    params->AddData(0);
+
+    _node_0->send_raw_request_and_expect_error(*_node_1, req, "Unable to decode RPC request payload");
+}
+
+// TODO also test bad response header/payload
 
 }

@@ -422,6 +422,10 @@ public:
         return std::move(_transportContext);
     }
 
+    bool has_transport_context() const noexcept {
+        return (_transportContext.get() != nullptr);
+    }
+
     /**
      * This method is overloaded in subclasses and will call the correct
      * method in the MessageHandler interface.

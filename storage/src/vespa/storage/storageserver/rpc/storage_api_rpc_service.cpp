@@ -47,7 +47,7 @@ StorageApiRpcService::Params::~Params() = default;
 
 void StorageApiRpcService::register_server_methods(SharedRpcResources& rpc_resources) {
     FRT_ReflectionBuilder rb(&rpc_resources.supervisor());
-    rb.DefineMethod("storageapi.v1.send", "bixbix", "bixbix", FRT_METHOD(StorageApiRpcService::RPC_rpc_v1_send), this);
+    rb.DefineMethod(rpc_v1_method_name(), "bixbix", "bixbix", FRT_METHOD(StorageApiRpcService::RPC_rpc_v1_send), this);
     rb.MethodDesc("V1 of StorageAPI direct RPC protocol");
     rb.ParamDesc("header_encoding", "0=raw, 6=lz4");
     rb.ParamDesc("header_decoded_size", "Uncompressed header blob size");
@@ -132,7 +132,7 @@ void StorageApiRpcService::encode_and_compress_rpc_payload(const MessageType& ms
 }
 
 template <typename PayloadCodecCallback>
-void StorageApiRpcService::uncompress_rpc_payload(
+bool StorageApiRpcService::uncompress_rpc_payload(
         const FRT_Values& params,
         PayloadCodecCallback payload_callback)
 {
@@ -146,25 +146,32 @@ void StorageApiRpcService::uncompress_rpc_payload(
     assert(uncompressed_length <= UINT32_MAX);
     auto wrapped_codec = _message_codec_provider.wrapped_codec();
 
-    payload_callback(wrapped_codec->codec(), mbus::BlobRef(uncompressed.getData(), uncompressed_length));
+    try {
+        payload_callback(wrapped_codec->codec(), mbus::BlobRef(uncompressed.getData(), uncompressed_length));
+    } catch (std::exception& e) {
+        LOG(debug, "Caught exception during decode callback: '%s'", e.what());
+        return false;
+    }
+    return true;
 }
 
 void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
-    LOG(debug, "Server: received rpc.v1 request");
+    LOG(spam, "Server: received rpc.v1 request");
     // TODO do we need to manually check the parameter/return spec here?
     const auto& params = *req->GetParams();
     protobuf::RequestHeader hdr;
     if (!decode_header_from_rpc_params(params, hdr)) {
-        req->SetError(FRTE_RPC_BAD_REQUEST, "Unable to decode RPC request header protobuf");
+        req->SetError(FRTE_RPC_METHOD_FAILED, "Unable to decode RPC request header protobuf");
         return;
     }
     std::unique_ptr<mbusprot::StorageCommand> cmd;
     uint32_t uncompressed_size = 0;
-    uncompress_rpc_payload(params, [&cmd, &uncompressed_size](auto& codec, auto payload) {
+    bool ok = uncompress_rpc_payload(params, [&cmd, &uncompressed_size](auto& codec, auto payload) {
         cmd = codec.decodeCommand(payload);
         uncompressed_size = static_cast<uint32_t>(payload.size());
     });
-    if (cmd && cmd->has_command()) {
+    if (ok) {
+        assert(cmd && cmd->has_command());
         auto scmd = cmd->steal_command();
         scmd->setApproxByteSize(uncompressed_size);
         scmd->getTrace().setLevel(hdr.trace_level());
@@ -172,12 +179,12 @@ void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
         req->DiscardBlobs();
         detach_and_forward_to_enqueuer(std::move(scmd), req);
     } else {
-        req->SetError(FRTE_RPC_BAD_REQUEST, "Unable to decode RPC request payload");
+        req->SetError(FRTE_RPC_METHOD_FAILED, "Unable to decode RPC request payload");
     }
 }
 
 void StorageApiRpcService::encode_rpc_v1_response(FRT_RPCRequest& request, const api::StorageReply& reply) {
-    LOG(debug, "Server: encoding rpc.v1 response header and payload");
+    LOG(spam, "Server: encoding rpc.v1 response header and payload");
     auto* ret = request.GetReturn();
 
     // TODO skip encoding header altogether if no relevant fields set?
@@ -191,7 +198,8 @@ void StorageApiRpcService::encode_rpc_v1_response(FRT_RPCRequest& request, const
 }
 
 void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageCommand> cmd) {
-    LOG(debug, "Client: sending rpc.v1 request for message of type %s", cmd->getType().getName().c_str());
+    LOG(spam, "Client: sending rpc.v1 request for message of type %s to %s",
+        cmd->getType().getName().c_str(), cmd->getAddress()->toString().c_str());
 
     assert(cmd->getAddress() != nullptr);
     auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress());
@@ -204,7 +212,7 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
         return;
     }
     std::unique_ptr<FRT_RPCRequest, SubRefDeleter> req(_rpc_resources.supervisor().AllocRPCRequest());
-    req->SetMethodName("storageapi.v1.send");
+    req->SetMethodName(rpc_v1_method_name());
 
     protobuf::RequestHeader req_hdr;
     req_hdr.set_time_remaining_ms(std::chrono::duration_cast<std::chrono::milliseconds>(cmd->getTimeout()).count());
@@ -229,18 +237,23 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
         handle_request_done_rpc_error(*req, *req_ctx);
         return;
     }
-    LOG(debug, "Client: received rpc.v1 OK response");
+    LOG(spam, "Client: received rpc.v1 OK response");
 
     const auto& ret = *req->GetReturn();
     protobuf::ResponseHeader hdr;
     if (!decode_header_from_rpc_params(ret, hdr)) {
-        assert(false); // TODO generate error reply
+        handle_request_done_decode_error(*req_ctx, "Failed to decode RPC response header protobuf");
         return;
     }
     std::unique_ptr<mbusprot::StorageReply> wrapped_reply;
-    uncompress_rpc_payload(ret, [&wrapped_reply, req_ctx](auto& codec, auto payload) {
+    bool ok = uncompress_rpc_payload(ret, [&wrapped_reply, req_ctx](auto& codec, auto payload) {
         wrapped_reply = codec.decodeReply(payload, *req_ctx->_originator_cmd);
     });
+    if (!ok) {
+        assert(!wrapped_reply);
+        handle_request_done_decode_error(*req_ctx, "Failed to decode RPC response payload");
+        return;
+    }
     // TODO the reply wrapper does lazy deserialization. Can we/should we ever defer?
     auto reply = wrapped_reply->getInternalMessage(); // TODO message stealing
     assert(reply);
@@ -257,15 +270,29 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
 
 void StorageApiRpcService::handle_request_done_rpc_error(FRT_RPCRequest& req,
                                                          const RpcRequestContext& req_ctx) {
-    auto error_reply = req_ctx._originator_cmd->makeReply();
+    auto& cmd = *req_ctx._originator_cmd;
     api::ReturnCode error;
     if (req.GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
-        mark_peer_without_direct_rpc_support(*req_ctx._originator_cmd->getAddress());
+        mark_peer_without_direct_rpc_support(*cmd.getAddress());
         error = api::ReturnCode(api::ReturnCode::NOT_CONNECTED, "Direct Storage RPC protocol not supported");
     } else {
         error = map_frt_error_to_storage_api_error(req, req_ctx);
     }
-    LOG(debug, "Client: received rpc.v1 error response: %s", error.toString().c_str());
+    create_and_dispatch_error_reply(cmd, std::move(error));
+}
+
+void StorageApiRpcService::handle_request_done_decode_error(const RpcRequestContext& req_ctx,
+                                                            vespalib::stringref description) {
+    auto& cmd = *req_ctx._originator_cmd;
+    assert(cmd.has_transport_context()); // Otherwise, reply already (destructively) generated by codec
+    create_and_dispatch_error_reply(cmd, api::ReturnCode(
+            static_cast<api::ReturnCode::Result>(mbus::ErrorCode::DECODE_ERROR), description));
+}
+
+void StorageApiRpcService::create_and_dispatch_error_reply(api::StorageCommand& cmd, api::ReturnCode error) {
+    auto error_reply = cmd.makeReply();
+    LOG(debug, "Client: rpc.v1 failed decode from %s: '%s'",
+        cmd.getAddress()->toString().c_str(), error.toString().c_str());
     error_reply->setResult(std::move(error));
     // TODO needs tracing of received-event!
     _message_dispatcher.dispatch_sync(std::move(error_reply));
