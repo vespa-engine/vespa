@@ -478,7 +478,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
-            // Deleting an application is done by deleting the remote session, other config
+            // Deleting an application is done by deleting the remote session, all config
             // servers will pick this up and clean up through the watcher in this class
             try {
                 RemoteSession remoteSession = getRemoteSession(tenant, activeSession.get());
