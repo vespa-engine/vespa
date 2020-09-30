@@ -68,6 +68,7 @@ public class QueryProperties extends Properties {
                 if (key.last().equals(Ranking.SORTING)) return ranking.getSorting();
                 if (key.last().equals(Ranking.FRESHNESS)) return ranking.getFreshness();
                 if (key.last().equals(Ranking.QUERYCACHE)) return ranking.getQueryCache();
+                if (key.last().equals(Ranking.RERANKCOUNT)) return ranking.getRerankCount();
                 if (key.last().equals(Ranking.LIST_FEATURES)) return ranking.getListFeatures();
             }
             else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
@@ -187,6 +188,8 @@ public class QueryProperties extends Properties {
                         ranking.setFreshness(asString(value, ""));
                     else if (key.last().equals(Ranking.QUERYCACHE))
                         ranking.setQueryCache(asBoolean(value, false));
+                    else if (key.last().equals(Ranking.RERANKCOUNT))
+                        ranking.setRerankCount(asInteger(value, null));
                     else if (key.last().equals(Ranking.LIST_FEATURES))
                         ranking.setListFeatures(asBoolean(value,false));
                     else
