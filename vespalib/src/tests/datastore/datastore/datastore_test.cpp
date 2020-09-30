@@ -422,7 +422,8 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     s.holdBuffer(r.bufferId());
     s.transferHoldLists(100);
     m._usedElems += 2;
-    m._holdElems += 2; // used - dead
+    m._holdElems = m._usedElems;
+    m._deadElems = 0;
     m._activeBuffers--;
     m._holdBuffers++;
     assertMemStats(m, s.getMemStats());
@@ -474,8 +475,8 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     vespalib::MemoryUsage m = s.getMemoryUsage();
     EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
     EXPECT_EQ(5 * sizeof(int), m.usedBytes());
-    EXPECT_EQ(2 * sizeof(int), m.deadBytes());
-    EXPECT_EQ(3 * sizeof(int), m.allocatedBytesOnHold());
+    EXPECT_EQ(0 * sizeof(int), m.deadBytes());
+    EXPECT_EQ(5 * sizeof(int), m.allocatedBytesOnHold());
     s.trimHoldLists(101);
 }
 
