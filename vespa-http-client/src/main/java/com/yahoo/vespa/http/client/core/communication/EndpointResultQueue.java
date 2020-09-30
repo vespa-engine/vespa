@@ -3,8 +3,8 @@ package com.yahoo.vespa.http.client.core.communication;
 
 import com.yahoo.vespa.http.client.FeedEndpointException;
 import com.yahoo.vespa.http.client.config.Endpoint;
-import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
 import com.yahoo.vespa.http.client.core.EndpointResult;
+import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
 import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
 import java.util.HashMap;
@@ -25,8 +25,7 @@ class EndpointResultQueue {
     private static final Logger log = Logger.getLogger(EndpointResultQueue.class.getName());
     private final OperationProcessor operationProcessor;
 
-    /** The currently in flight operations */
-    private final Map<String, TimerFuture> futureByOperation = new HashMap<>();
+    private final Map<String, InflightOperation> inflightOperations = new HashMap<>();
 
     private final Endpoint endpoint;
     private final int clusterId;
@@ -45,10 +44,10 @@ class EndpointResultQueue {
         this.totalTimeoutMs = totalTimeoutMs;
     }
 
-    public synchronized void operationSent(String operationId) {
+    public synchronized void operationSent(String operationId, GatewayConnection connection) {
         DocumentTimerTask task = new DocumentTimerTask(operationId);
         ScheduledFuture<?> future = timer.schedule(task, totalTimeoutMs, TimeUnit.MILLISECONDS);
-        futureByOperation.put(operationId, new TimerFuture(future));
+        inflightOperations.put(operationId, new InflightOperation(future, connection));
     }
 
     public synchronized void failOperation(EndpointResult result, int clusterId) {
@@ -65,8 +64,8 @@ class EndpointResultQueue {
 
     private synchronized void resultReceived(EndpointResult result, int clusterId, boolean duplicateGivesWarning) {
         operationProcessor.resultReceived(result, clusterId);
-        TimerFuture timerFuture = futureByOperation.remove(result.getOperationId());
-        if (timerFuture == null) {
+        InflightOperation operation = inflightOperations.remove(result.getOperationId());
+        if (operation == null) {
             if (duplicateGivesWarning) {
                 log.warning("Result for ID '" + result.getOperationId() + "' received from '" + endpoint +
                             "', but we have no record of a sent operation. Either something is wrong on the server side " +
@@ -75,13 +74,13 @@ class EndpointResultQueue {
             }
             return;
         }
-        timerFuture.getFuture().cancel(false);
+        operation.future.cancel(false);
     }
 
     /** Called only from ScheduledThreadPoolExecutor thread in DocumentTimerTask.run(), see below */
     private synchronized void timeout(String operationId) {
-        TimerFuture timerFuture = futureByOperation.remove(operationId);
-        if (timerFuture == null) {
+        InflightOperation operation = inflightOperations.remove(operationId);
+        if (operation == null) {
             log.finer("Timeout of operation '" + operationId + "', but operation " +
                       "not found in map. Result was probably received just-in-time from server, while timeout " +
                       "task could not be cancelled.");
@@ -93,20 +92,21 @@ class EndpointResultQueue {
     }
 
     public synchronized int getPendingSize() {
-        return futureByOperation.values().size();
+        return inflightOperations.values().size();
     }
 
     public synchronized void failPending(Exception exception) {
-        for (Map.Entry<String, TimerFuture> timerFutureEntry : futureByOperation.entrySet()) {
-            timerFutureEntry.getValue().getFuture().cancel(false);
-            failedOperationId(timerFutureEntry.getKey(), exception);
-        }
-        futureByOperation.clear();
+        inflightOperations.forEach((operationId, operation) -> {
+            operation.future.cancel(false);
+            EndpointResult result = EndPointResultFactory.createError(endpoint, operationId, exception);
+            operationProcessor.resultReceived(result, clusterId);
+        });
+        inflightOperations.clear();
     }
 
-    private synchronized void failedOperationId(String operationId, Exception exception) {
-        EndpointResult endpointResult = EndPointResultFactory.createError(endpoint, operationId, exception);
-        operationProcessor.resultReceived(endpointResult, clusterId);
+    public synchronized boolean hasInflightOperations(GatewayConnection connection) {
+        return inflightOperations.entrySet().stream()
+                .anyMatch(entry -> entry.getValue().connection.equals(connection));
     }
 
     private class DocumentTimerTask implements Runnable {
@@ -124,18 +124,13 @@ class EndpointResultQueue {
 
     }
 
-    private static class TimerFuture {
+    private static class InflightOperation {
+        final ScheduledFuture<?> future;
+        final GatewayConnection connection;
 
-        private final ScheduledFuture<?> future;
-
-        public TimerFuture(ScheduledFuture<?> future) {
+        InflightOperation(ScheduledFuture<?> future, GatewayConnection connection) {
             this.future = future;
+            this.connection = connection;
         }
-
-        private ScheduledFuture<?> getFuture() {
-            return future;
-        }
-
     }
-
 }
