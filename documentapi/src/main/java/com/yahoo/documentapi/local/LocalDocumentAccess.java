@@ -83,7 +83,8 @@ public class LocalDocumentAccess extends DocumentAccess {
      * and awaits advance before sending each response, so the user can trigger these documents and responses.
      * After the document or response is delivered, the thread arrives and awaits advance, so the user
      * can wait until the document or response has been delivered. This also ensures memory visibility.
-     * The visit sender thread deregisters when the whole visit is complete. Example usage:
+     * The visit sender thread deregisters when the whole visit is done; the async session threads after each operation.
+     * Example usage:
      *
      * <pre> {@code
      * void testOperations(LocalDocumentAccess access) {
@@ -94,7 +95,7 @@ public class LocalDocumentAccess extends DocumentAccess {
      *   session.put(documentPut);
      *   session.get(documentId);
      *                                     // Operations wait for this thread to arrive at "phaser"
-     *   phaser.arrive();                  // Let operations send their responses
+     *   phaser.arriveAndAwaitAdvance();   // Let operations send their responses
      *                                     // "responses" may or may not hold the responses now
      *   phaser.arriveAndAwaitAdvance();   // Wait for operations to complete sending responses, memory visibility, etc.
      *                                     // "responses" now has responses from all previous operations

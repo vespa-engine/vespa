@@ -208,7 +208,7 @@ public class DocumentOperationExecutorTest {
 
         clock.advance(Duration.ofMillis(990));
         executor.notifyMaintainers();   // Let doc1 time out.
-        phaser.arrive();                // Let doc2 arrive.
+        phaser.arriveAndAwaitAdvance(); // Let doc2 arrive.
         phaser.arriveAndAwaitAdvance(); // Wait for responses to be delivered.
         assertEquals(List.of(TIMEOUT), errors);
         assertEquals(List.of(doc2), received);
@@ -225,7 +225,7 @@ public class DocumentOperationExecutorTest {
         session().setResultType(Result.ResultType.SUCCESS);
         clock.advance(Duration.ofMillis(20));
         executor.notifyMaintainers(); // Retry not attempted since operation already timed out.
-        phaser.arrive();
+        phaser.arriveAndAwaitAdvance();
         phaser.arriveAndAwaitAdvance();
         assertEquals(List.of(TIMEOUT, TIMEOUT), errors);
         assertEquals(List.of(doc2), received);
