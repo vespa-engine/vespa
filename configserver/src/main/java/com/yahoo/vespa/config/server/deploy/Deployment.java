@@ -100,9 +100,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         ApplicationId applicationId = params.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
-            Optional<ApplicationSet> activeApplicationSet = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId);
+            Optional<ApplicationSet> activeApplicationSet = applicationRepository.getActiveApplicationSet(applicationId);
             this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(
                     session, deployLogger, params, activeApplicationSet, tenant.getPath(), clock.instant());
+
             this.prepared = true;
         }
     }

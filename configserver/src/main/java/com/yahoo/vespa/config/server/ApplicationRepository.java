@@ -680,11 +680,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public List<Version> getAllVersions(ApplicationId applicationId) {
-        Optional<ApplicationSet> applicationSet = getCurrentActiveApplicationSet(getTenant(applicationId), applicationId);
-        if (applicationSet.isEmpty())
-            return List.of();
-        else
-            return applicationSet.get().getAllVersions(applicationId);
+        Optional<ApplicationSet> applicationSet = getActiveApplicationSet(applicationId);
+        return applicationSet.isEmpty()
+                ? List.of()
+                : applicationSet.get().getAllVersions(applicationId);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
@@ -956,7 +955,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
-    public Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
+    public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
+        Tenant tenant = getTenant(appId);
         Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         try {

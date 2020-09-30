@@ -13,7 +13,6 @@ import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
 
 import java.time.Clock;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,13 +57,13 @@ public class RemoteSession extends Session {
         ApplicationPackage applicationPackage = sessionZooKeeperClient.loadApplicationPackage();
 
         // Read hosts allocated on the config server instance which created this
-        Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
+        SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
         return ApplicationSet.fromList(applicationLoader.buildModels(getApplicationId(),
                                                                      sessionZooKeeperClient.readDockerImageRepository(),
                                                                      sessionZooKeeperClient.readVespaVersion(),
                                                                      applicationPackage,
-                                                                     new SettableOptional<>(allocatedHosts),
+                                                                     allocatedHosts,
                                                                      clock.instant()));
     }
 
