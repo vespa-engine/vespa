@@ -101,36 +101,36 @@ public class IOThreadTest {
         tester.send("doc1");
         tester.tick(1);
 
-        tester.clock().advance(Duration.ofSeconds(16)); // Default connection ttl is 15
+        tester.clock().advance(Duration.ofSeconds(31)); // Default connection ttl is 30
         tester.tick(3);
 
         assertEquals(1, ioThread.oldConnections().size());
         assertEquals(firstConnection, ioThread.oldConnections().get(0));
         assertNotSame(firstConnection, ioThread.currentConnection());
-        assertEquals(16, firstConnection.lastPollTime().toEpochMilli() / 1000);
+        assertEquals(31, firstConnection.lastPollTime().toEpochMilli() / 1000);
 
         // Check old connection poll pattern (exponential backoff)
-        assertLastPollTimeWhenAdvancing(16, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(18, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(18, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(18, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(18, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(22, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
-        assertLastPollTimeWhenAdvancing(30, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(31, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(33, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(33, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(33, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(33, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(37, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
+        assertLastPollTimeWhenAdvancing(45, 1, firstConnection, tester);
 
         tester.clock().advance(Duration.ofSeconds(200));
         tester.tick(1);
