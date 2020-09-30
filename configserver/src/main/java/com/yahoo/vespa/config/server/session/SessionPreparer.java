@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -238,8 +239,8 @@ public class SessionPreparer {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             if (! timeoutBudget.hasTimeLeft(step)) {
                 String used = timeoutBudget.timesUsed();
-                throw new RuntimeException("prepare timed out " + used + " after " + step +
-                                           " step (timeout " + timeoutBudget.timeout() + "): " + applicationId);
+                throw new UncheckedTimeoutException("prepare timed out " + used + " after " + step +
+                        " step (timeout " + timeoutBudget.timeout() + "): " + applicationId);
             }
         }
 
