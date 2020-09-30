@@ -34,6 +34,7 @@ vespa_define_module(
     src/tests/fieldvalue
     src/tests/predicate
     src/tests/repo
+    src/tests/select
     src/tests/serialization
     src/tests/struct_anno
     src/tests/tensor_fieldvalue
