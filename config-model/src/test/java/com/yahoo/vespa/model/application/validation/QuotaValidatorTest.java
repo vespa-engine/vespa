@@ -6,6 +6,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.Environment;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -16,7 +17,7 @@ import static org.junit.Assert.fail;
  */
 public class QuotaValidatorTest {
 
-    private final Quota quota = new Quota(Optional.of(10), Optional.of(1));
+    private final Quota quota = Quota.unlimited().withClusterSize(Optional.of(10)).withBudget(Optional.of(BigDecimal.valueOf(1)));
 
     @Test
     public void test_deploy_under_quota() {

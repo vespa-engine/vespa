@@ -4,7 +4,9 @@ package com.yahoo.config.model.api;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -14,39 +16,54 @@ import java.util.Optional;
  * @author ogronnesby
  */
 public class Quota {
-    private final Optional<Integer> maxClusterSize;
-    private final Optional<Integer> budget;
+    private static final Quota UNLIMITED = new Quota(Optional.empty(), Optional.empty());
 
-    public Quota(Optional<Integer> maybeClusterSize, Optional<Integer> budget) {
-        this.maxClusterSize = maybeClusterSize;
-        this.budget = budget;
+    private final Optional<Integer> maxClusterSize;
+    private final Optional<BigDecimal> budget;
+
+    // TODO: Remove constructor once Vespa < 7.300 is gone from production
+    public Quota(Optional<Integer> maxClusterSize, Optional<Integer> budget) {
+        this(maxClusterSize, budget.map(BigDecimal::new), true);
+    }
+
+    private Quota(Optional<Integer> maxClusterSize, Optional<BigDecimal> budget, boolean isDecimal) {
+        this.maxClusterSize = Objects.requireNonNull(maxClusterSize);
+        this.budget = Objects.requireNonNull(budget);
     }
 
     public static Quota fromSlime(Inspector inspector) {
         var clusterSize = SlimeUtils.optionalLong(inspector.field("clusterSize"));
-        var budget = SlimeUtils.optionalLong(inspector.field("budget"));
-        return new Quota(clusterSize.map(Long::intValue), budget.map(Long::intValue));
+        var budget = budgetFromSlime(inspector.field("budget"));
+        return new Quota(clusterSize.map(Long::intValue), budget, true);
+    }
+
+    public Quota withBudget(Optional<BigDecimal> budget) {
+        return new Quota(this.maxClusterSize, budget, true);
+    }
+
+    public Quota withClusterSize(Optional<Integer> clusterSize) {
+        return new Quota(clusterSize, this.budget, true);
     }
 
     public Slime toSlime() {
         var slime = new Slime();
         var root = slime.setObject();
         maxClusterSize.ifPresent(clusterSize -> root.setLong("clusterSize", clusterSize));
-        budget.ifPresent(b -> root.setLong("budget", b));
+        budget.ifPresent(b -> root.setString("budget", b.toPlainString()));
         return slime;
     }
 
-    public static Quota empty() {
-        return new Quota(Optional.empty(), Optional.empty());
-    }
+    public static Quota unlimited() { return UNLIMITED; }
 
     public Optional<Integer> maxClusterSize() {
         return maxClusterSize;
     }
 
-    public Optional<Integer> budget() {
-        return budget;
-    }
+    public Optional<BigDecimal> budgetAsDecimal() { return budget; }
+
+    // TODO: Remove once Vespa < 7.300 is gone from production
+    public static Quota empty() { return unlimited(); }
+    public Optional<Integer> budget() { return budget.map(BigDecimal::intValue); }
 
     @Override
     public boolean equals(Object o) {
@@ -68,5 +85,22 @@ public class Quota {
                 "maxClusterSize=" + maxClusterSize +
                 ", budget=" + budget +
                 '}';
+    }
+
+    /**
+     * Since Slime does not support any decimal numeric value that isn't a floating point of some sort, we need
+     * to be liberal in what we accept.  Since we are dealing with currency, ideally we would have a decimal
+     * data type all the way through.
+     *
+     * There are three ways of communicating the budget to the Quota class:
+     *   1. A LONG means we are looking at the budget in whole dollars.  This is the legacy way.
+     *   2. A STRING formatted as a number is a full precision decimal number.  This is the proper way.
+     *   3. A DOUBLE gets translated into a decimal type, but loses precision.  This is the CYA way.
+     */
+    private static Optional<BigDecimal> budgetFromSlime(Inspector inspector) {
+        if (inspector.type() == Type.STRING) return Optional.of(inspector.asString()).map(BigDecimal::new);
+        if (inspector.type() == Type.LONG) return Optional.of(inspector.asLong()).map(BigDecimal::new);
+        if (inspector.type() == Type.DOUBLE) return Optional.of(inspector.asDouble()).map(BigDecimal::new);
+        return Optional.empty();
     }
 }

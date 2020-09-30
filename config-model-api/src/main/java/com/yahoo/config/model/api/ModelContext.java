@@ -112,7 +112,7 @@ public interface ModelContext {
         default double feedCoreThreadPoolSizeFactor() { return 4.0; }
 
         default Quota quota() {
-            return Quota.empty();
+            return Quota.unlimited();
         }
 
         // TODO(bjorncs): Temporary feature flag

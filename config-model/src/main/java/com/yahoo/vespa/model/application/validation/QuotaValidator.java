@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 
+import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
@@ -19,17 +20,17 @@ public class QuotaValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         var quota = deployState.getProperties().quota();
         quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, model));
-        quota.budget().ifPresent(budget -> validateBudget(budget, model));
+        quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, model));
     }
 
-    private void validateBudget(int budget, VespaModel model) {
+    private void validateBudget(BigDecimal budget, VespaModel model) {
         var spend = model.allClusters().stream()
                 .map(clusterId -> model.provisioned().all().get(clusterId))
                 .map(Capacity::maxResources)
                 .map(clusterCapacity -> clusterCapacity.nodeResources().cost() * clusterCapacity.nodes())
                 .reduce(0.0, Double::sum);
 
-        if (spend > budget) {
+        if (budget.doubleValue() < spend) {
             throwBudgetExceeded(spend, budget);
         }
     }
@@ -51,7 +52,7 @@ public class QuotaValidator extends Validator {
         }
     }
 
-    private void throwBudgetExceeded(double spend, double budget) {
+    private void throwBudgetExceeded(double spend, BigDecimal budget) {
         var message = String.format(Locale.US, "Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%.2f)!", spend, budget);
         throw new IllegalArgumentException(message);
     }
