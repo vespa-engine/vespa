@@ -72,13 +72,11 @@ public class ApplicationHandler extends HttpHandler {
     @Override
     public HttpResponse handleDELETE(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        // TODO: Add support for timeout in request
-        boolean deleted = applicationRepository.delete(applicationId, Duration.ofSeconds(60));
+        boolean deleted = applicationRepository.delete(applicationId);
         if ( ! deleted)
             return HttpErrorResponse.notFoundError("Unable to delete " + applicationId.toFullString() + ": Not found");
         return new DeleteApplicationResponse(Response.Status.OK, applicationId);
     }
-
 
     @Override
     public HttpResponse handleGET(HttpRequest request) {

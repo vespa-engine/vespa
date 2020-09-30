@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -83,7 +82,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
@@ -352,27 +350,6 @@ public class ApplicationRepositoryTest {
 
             assertTrue(applicationRepository.delete(applicationId()));
         }
-
-        {
-            PrepareResult prepareResult = deployApp(testApp);
-
-            assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            assertNotNull(sessionRepository.getLocalSession(prepareResult.sessionId()));
-
-            try {
-                applicationRepository.delete(applicationId(), Duration.ZERO);
-                fail("Should have gotten an exception");
-            } catch (InternalServerException e) {
-                assertEquals("test1.testapp was not deleted (waited PT0S), session " + prepareResult.sessionId(), e.getMessage());
-            }
-
-            // No active session or remote session (deleted in step above), but an exception was thrown above
-            // A new delete should cleanup and be successful
-            assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertNull(sessionRepository.getLocalSession(prepareResult.sessionId()));
-
-            assertTrue(applicationRepository.delete(applicationId()));
-        }
     }
 
     @Test
@@ -416,10 +393,11 @@ public class ApplicationRepositoryTest {
         LocalSession localSession = localSessions.get(0);
         assertEquals(3, localSession.getSessionId());
 
-        // There should be no expired remote sessions in the common case
-        assertEquals(0, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
-
-        assertEquals(1, sessionRepository.getLocalSessions().size());
+        // All sessions except 3 should be removed after the call to deleteExpiredRemoteSessions
+        assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
+        ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessions());
+        RemoteSession remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
+        assertEquals(3, remoteSession.getSessionId());
 
         // Deploy, but do not activate
         Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
