@@ -956,17 +956,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
-        Tenant tenant = getTenant(appId);
-        Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        try {
-            long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
-            RemoteSession currentActiveSession = getRemoteSession(tenant, currentActiveSessionId);
-            currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
-        } catch (IllegalArgumentException e) {
-            // Do nothing if we have no currently active session
-        }
-        return currentActiveApplicationSet;
+        return getTenant(appId).getSessionRepository().getActiveApplicationSet(appId);
     }
 
     private File decompressApplication(InputStream in, String contentType, File tempDir) {

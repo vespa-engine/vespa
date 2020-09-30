@@ -17,7 +17,6 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Before;
 import org.junit.Rule;
@@ -72,8 +71,7 @@ public class HostHandlerTest {
     public void require_correct_tenant_and_application_for_hostname() throws Exception {
         ApplicationId applicationId = applicationId();
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
-        Tenant tenant = applicationRepository.getTenant(applicationId);
-        String hostname = applicationRepository.getCurrentActiveApplicationSet(tenant, applicationId).get().getAllHosts().iterator().next();
+        String hostname = applicationRepository.getActiveApplicationSet(applicationId).get().getAllHosts().iterator().next();
         assertApplicationForHost(hostname, applicationId);
     }
 

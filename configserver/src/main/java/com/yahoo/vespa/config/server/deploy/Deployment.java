@@ -11,7 +11,6 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -100,9 +99,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         ApplicationId applicationId = params.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
-            Optional<ApplicationSet> activeApplicationSet = applicationRepository.getActiveApplicationSet(applicationId);
             this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(
-                    session, deployLogger, params, activeApplicationSet, tenant.getPath(), clock.instant());
+                    session, deployLogger, params, tenant.getPath(), clock.instant());
 
             this.prepared = true;
         }
