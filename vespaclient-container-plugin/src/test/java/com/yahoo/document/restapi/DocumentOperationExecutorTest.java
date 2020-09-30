@@ -203,15 +203,15 @@ public class DocumentOperationExecutorTest {
         clock.advance(Duration.ofMillis(20));
         executor.put(new DocumentPut(doc2), parameters(), operationContext());
         executor.notifyMaintainers();
-        assertEquals(List.of(), received);
         assertEquals(List.of(), errors);
+        assertEquals(List.of(), received);
 
         clock.advance(Duration.ofMillis(990));
         executor.notifyMaintainers();   // Let doc1 time out.
         phaser.arrive();                // Let doc2 arrive.
-        phaser.arriveAndAwaitAdvance(); // Wait for responses to be delivered. <3 Phaser <3
-        assertEquals(List.of(doc2), received);
+        phaser.arriveAndAwaitAdvance(); // Wait for responses to be delivered.
         assertEquals(List.of(TIMEOUT), errors);
+        assertEquals(List.of(doc2), received);
 
         session().setResultType(Result.ResultType.TRANSIENT_ERROR);
         executor.put(new DocumentPut(doc3), parameters(), operationContext());
@@ -219,16 +219,16 @@ public class DocumentOperationExecutorTest {
         executor.notifyMaintainers(); // Retry throttled operation.
         clock.advance(Duration.ofMillis(20));
         executor.notifyMaintainers(); // Time out throttled operation.
-        assertEquals(List.of(doc2), received);
         assertEquals(List.of(TIMEOUT, TIMEOUT), errors);
+        assertEquals(List.of(doc2), received);
 
         session().setResultType(Result.ResultType.SUCCESS);
         clock.advance(Duration.ofMillis(20));
         executor.notifyMaintainers(); // Retry not attempted since operation already timed out.
         phaser.arrive();
         phaser.arriveAndAwaitAdvance();
-        assertEquals(List.of(doc2), received);
         assertEquals(List.of(TIMEOUT, TIMEOUT), errors);
+        assertEquals(List.of(doc2), received);
     }
 
     @Test
