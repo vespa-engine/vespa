@@ -240,23 +240,14 @@ SparseTensorIndex::add_address(SparseTensorAddressRef tmp_ref)
 size_t
 SparseTensorIndex::lookup_or_add(SparseTensorAddressRef tmp_ref)
 {
-#if 0
-    auto insert_result = _map.insert({tmp_ref, _map.size()});
-    if (insert_result.second) {
+    auto [map_iter, was_inserted] = _map.insert({tmp_ref, _map.size()});
+    if (was_inserted) {
+        // we must copy the memory tmp_ref refers to into our own stash:
         SparseTensorAddressRef ref(tmp_ref, _stash);
-        insert_result.first->first = ref;
+        // and update the key in the map, just like copyMap() does.
+        map_iter->first = ref;
     }
-    return insert_result.first->second;
-#else
-    auto iter = _map.find(tmp_ref);
-    if (iter != _map.end()) {
-        return iter->second;
-    }
-    SparseTensorAddressRef ref(tmp_ref, _stash);
-    uint32_t idx = _map.size();
-    _map.insert({ref,idx});
-    return idx;
-#endif
+    return map_iter->second;
 }
 
 bool
