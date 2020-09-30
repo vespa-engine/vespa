@@ -100,6 +100,23 @@ public:
 };
 
 /**
+ * A generic value without any mapped dimensions referencing its
+ * components without owning anything.
+ **/
+class DenseValueView final : public Value
+{
+private:
+    const ValueType &_type;
+    TypedCells _cells;
+public:
+    DenseValueView(const ValueType &type_in, TypedCells cells_in)
+        : _type(type_in), _cells(cells_in) {}
+    const ValueType &type() const final override { return _type; }
+    TypedCells cells() const final override { return _cells; }
+    const Index &index() const final override { return TrivialIndex::get(); }
+};
+
+/**
  * Tagging interface used as return type from factories before
  * downcasting to actual builder with specialized cell type.
  **/
@@ -162,3 +179,4 @@ protected:
 }
 
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);
+VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DenseValueView);
