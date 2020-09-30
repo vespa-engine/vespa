@@ -2,6 +2,9 @@
 vespa_add_executable(searchcore_vespa_feed_bm_app
     SOURCES
     vespa_feed_bm.cpp
+    bm_cluster_controller.cpp
+    bm_storage_chain_builder.cpp
+    bm_storage_link.cpp
     spi_bm_feed_handler.cpp
     storage_api_rpc_bm_feed_handler.cpp
     storage_api_chain_bm_feed_handler.cpp
