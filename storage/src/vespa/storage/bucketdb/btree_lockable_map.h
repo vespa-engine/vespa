@@ -37,7 +37,7 @@ public:
     using BucketId     = document::BucketId;
 
     BTreeLockableMap();
-    ~BTreeLockableMap();
+    ~BTreeLockableMap() override;
 
     bool operator==(const BTreeLockableMap& other) const;
     bool operator!=(const BTreeLockableMap& other) const {

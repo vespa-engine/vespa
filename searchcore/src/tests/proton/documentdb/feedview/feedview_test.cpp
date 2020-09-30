@@ -92,20 +92,17 @@ struct MyTracer
         _os << ")";
     }
 
-    void tracePut(const vespalib::string &adapterType,
-                  SerialNum serialNum, uint32_t lid, bool immediateCommit) {
+    void tracePut(const vespalib::string &adapterType, SerialNum serialNum, uint32_t lid) {
         Guard guard(_mutex);
         addComma();
         _os << "put(adapter=" << adapterType <<
-            ",serialNum=" << serialNum << ",lid=" << lid << ",commit=" << immediateCommit << ")";
+            ",serialNum=" << serialNum << ",lid=" << lid << ")";
     }
 
-    void traceRemove(const vespalib::string &adapterType,
-                     SerialNum serialNum, uint32_t lid, bool immediateCommit) {
+    void traceRemove(const vespalib::string &adapterType, SerialNum serialNum, uint32_t lid) {
         Guard guard(_mutex);
         addComma();
-        _os << "remove(adapter=" << adapterType <<
-            ",serialNum=" << serialNum << ",lid=" << lid << ",commit=" << immediateCommit << ")";
+        _os << "remove(adapter=" << adapterType << ",serialNum=" << serialNum << ",lid=" << lid << ")";
     }
 
     void traceCommit(const vespalib::string &adapterType, SerialNum serialNum) {
@@ -151,12 +148,12 @@ struct MyIndexWriter : public test::MockIndexWriter
     {}
     void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid) override {
         (void) doc;
-        _tracer.tracePut(indexAdapterTypeName, serialNum, lid, false);
+        _tracer.tracePut(indexAdapterTypeName, serialNum, lid);
     }
     void remove(SerialNum serialNum, const search::DocumentIdT lid) override {
         LOG(info, "MyIndexAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _removes.push_back(lid);
-        _tracer.traceRemove(indexAdapterTypeName, serialNum, lid, false);
+        _tracer.traceRemove(indexAdapterTypeName, serialNum, lid);
     }
     void commit(SerialNum serialNum, OnWriteDoneType) override {
         ++_commitCount;
@@ -335,35 +332,26 @@ struct MyAttributeWriter : public IAttributeWriter
         AttrMap::const_iterator itr = _attrMap.find(attrName);
         return ((itr == _attrMap.end()) ? nullptr : itr->second.get());
     }
-    void put(SerialNum serialNum, const document::Document &doc, DocumentIdT lid,
-             bool immediateCommit, OnWriteDoneType) override {
+    void put(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, OnWriteDoneType) override {
         _putSerial = serialNum;
         _putDocId = doc.getId();
         _putLid = lid;
-        _tracer.tracePut(attributeAdapterTypeName, serialNum, lid, immediateCommit);
-        if (immediateCommit) {
-            ++_commitCount;
-        }
+        _tracer.tracePut(attributeAdapterTypeName, serialNum, lid);
     }
-    void remove(SerialNum serialNum, DocumentIdT lid,
-                bool immediateCommit, OnWriteDoneType) override {
+    void remove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType) override {
         _removeSerial = serialNum;
         _removeLid = lid;
-        _tracer.traceRemove(attributeAdapterTypeName, serialNum, lid, immediateCommit);
-        if (immediateCommit) {
-            ++_commitCount;
-        }
+        _tracer.traceRemove(attributeAdapterTypeName, serialNum, lid);
     }
-    void remove(const LidVector & lidsToRemove, SerialNum serialNum,
-                bool immediateCommit, OnWriteDoneType) override {
+    void remove(const LidVector & lidsToRemove, SerialNum serialNum, OnWriteDoneType) override {
         for (uint32_t lid : lidsToRemove) {
             LOG(info, "MyAttributeAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
            _removes.push_back(lid);
-           _tracer.traceRemove(attributeAdapterTypeName, serialNum, lid, immediateCommit);
+           _tracer.traceRemove(attributeAdapterTypeName, serialNum, lid);
         }
     }
     void update(SerialNum serialNum, const document::DocumentUpdate &upd,
-                DocumentIdT lid, bool, OnWriteDoneType, IFieldUpdateCallback & onUpdate) override {
+                DocumentIdT lid, OnWriteDoneType, IFieldUpdateCallback & onUpdate) override {
         _updateSerial = serialNum;
         _updateDocId = upd.getId();
         _updateLid = lid;
@@ -372,12 +360,10 @@ struct MyAttributeWriter : public IAttributeWriter
             onUpdate.onUpdateField(fieldUpdate.getField().getName(), attr);
         }
     }
-    void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid,
-                bool immediateCommit, OnWriteDoneType) override {
+    void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, OnWriteDoneType) override {
         (void) serialNum;
         (void) doc;
         (void) lid;
-        (void) immediateCommit;
     }
     void heartBeat(SerialNum) override { ++_heartBeatCount; }
     void compactLidSpace(uint32_t wantedLidLimit, SerialNum ) override {
@@ -818,6 +804,7 @@ TEST_F("require that put() calls attribute adapter", SearchableFeedViewFixture)
     DocumentContext dc = f.doc1();
     EXPECT_EQUAL(0u, f._docIdLimit.get());
     f.putAndWait(dc);
+    f.forceCommitAndWait();
 
     EXPECT_EQUAL(1u, f.maw._putSerial);
     EXPECT_EQUAL(DocumentId("id:ns:searchdocument::1"), f.maw._putDocId);
@@ -1184,26 +1171,6 @@ TEST_F("require that compactLidSpace() propagates to index writer",
     EXPECT_EQUAL(2u, f.miw._wantedLidLimit);
 }
 
-TEST_F("require that commit is called if visibility delay is 0",
-       SearchableFeedViewFixture)
-{
-    DocumentContext dc = f.doc1();
-    f.putAndWait(dc);
-    EXPECT_EQUAL(1u, f.miw._commitCount);
-    EXPECT_EQUAL(1u, f.maw._commitCount);
-    f.removeAndWait(dc);
-    EXPECT_EQUAL(2u, f.miw._commitCount);
-    EXPECT_EQUAL(2u, f.maw._commitCount);
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=1),"
-                  "put(adapter=index,serialNum=1,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=1),"
-                  "ack(Result(0, )),"
-                  "remove(adapter=attribute,serialNum=2,lid=1,commit=1),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
-                  "commit(adapter=index,serialNum=2),"
-                  "ack(Result(0, ))");
-}
-
 const vespalib::duration LONG_DELAY = 60s;
 const vespalib::duration SHORT_DELAY = 500ms;
 
@@ -1219,11 +1186,11 @@ TEST_F("require that commit is not called when inside a commit interval",
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
-                  "put(adapter=index,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1),"
+                  "put(adapter=index,serialNum=1,lid=1),"
                   "ack(Result(0, )),"
-                  "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
+                  "remove(adapter=attribute,serialNum=2,lid=1),"
+                  "remove(adapter=index,serialNum=2,lid=1),"
                   "ack(Result(0, ))");
     f.forceCommitAndWait();
 }
@@ -1242,11 +1209,11 @@ TEST_F("require that commit is not implicitly called",
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
-                  "put(adapter=index,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1),"
+                  "put(adapter=index,serialNum=1,lid=1),"
                   "ack(Result(0, )),"
-                  "remove(adapter=attribute,serialNum=2,lid=1,commit=0),"
-                  "remove(adapter=index,serialNum=2,lid=1,commit=0),"
+                  "remove(adapter=attribute,serialNum=2,lid=1),"
+                  "remove(adapter=index,serialNum=2,lid=1),"
                   "ack(Result(0, ))");
     f.forceCommitAndWait();
 }
@@ -1263,8 +1230,8 @@ TEST_F("require that forceCommit updates docid limit",
     EXPECT_EQUAL(1u, f.miw._commitCount);
     EXPECT_EQUAL(1u, f.maw._commitCount);
     EXPECT_EQUAL(2u, f._docIdLimit.get());
-    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1,commit=0),"
-                  "put(adapter=index,serialNum=1,lid=1,commit=0),"
+    f.assertTrace("put(adapter=attribute,serialNum=1,lid=1),"
+                  "put(adapter=index,serialNum=1,lid=1),"
                   "ack(Result(0, )),"
                   "commit(adapter=attribute,serialNum=1),"
                   "commit(adapter=index,serialNum=1)");

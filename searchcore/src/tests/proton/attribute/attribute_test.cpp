@@ -169,29 +169,34 @@ public:
         _mgr->addAttribute(attr->getName(), std::move(attr));
         allocAttributeWriter();
     }
-    void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-             bool immediateCommit = true) {
-        _aw->put(serialNum, doc, lid, immediateCommit, emptyCallback);
+    void put(SerialNum serialNum, const Document &doc, DocumentIdT lid) {
+        _aw->put(serialNum, doc, lid, emptyCallback);
+        commit(serialNum);
     }
     void update(SerialNum serialNum, const DocumentUpdate &upd,
-                DocumentIdT lid, bool immediateCommit, IFieldUpdateCallback & onUpdate) {
-        _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback, onUpdate);
+                DocumentIdT lid, IFieldUpdateCallback & onUpdate) {
+        _aw->update(serialNum, upd, lid, emptyCallback, onUpdate);
+        commit(serialNum);
     }
-    void update(SerialNum serialNum, const Document &doc,
-                DocumentIdT lid, bool immediateCommit) {
-        _aw->update(serialNum, doc, lid, immediateCommit, emptyCallback);
+    void update(SerialNum serialNum, const Document &doc, DocumentIdT lid) {
+        _aw->update(serialNum, doc, lid, emptyCallback);
+        commit(serialNum);
     }
-    void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit = true) {
-        _aw->remove(serialNum, lid, immediateCommit, emptyCallback);
+    void remove(SerialNum serialNum, DocumentIdT lid) {
+        _aw->remove(serialNum, lid, emptyCallback);
+        commit(serialNum);
     }
-    void remove(const LidVector &lidVector, SerialNum serialNum, bool immediateCommit = true) {
-        _aw->remove(lidVector, serialNum, immediateCommit, emptyCallback);
+    void remove(const LidVector &lidVector, SerialNum serialNum) {
+        _aw->remove(lidVector, serialNum, emptyCallback);
+        commit(serialNum);
     }
     void commit(SerialNum serialNum) {
         _aw->forceCommit(serialNum, emptyCallback);
     }
     void assertExecuteHistory(std::vector<uint32_t> expExecuteHistory) {
-        EXPECT_EQ(expExecuteHistory, _attributeFieldWriter->getExecuteHistory());
+        auto includeCommit = expExecuteHistory;
+        includeCommit.insert(includeCommit.end(), expExecuteHistory.begin(), expExecuteHistory.end());
+        EXPECT_EQ(includeCommit, _attributeFieldWriter->getExecuteHistory());
     }
     SerialNum test_force_commit(AttributeVector &attr, SerialNum serialNum) {
         commit(serialNum);
@@ -400,29 +405,29 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     EXPECT_EQ(2u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
     AttributeWriter awDelayed(_mgr);
-    awDelayed.put(4, *doc, 2, false, emptyCallback);
+    awDelayed.put(4, *doc, 2, emptyCallback);
     EXPECT_EQ(3u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
-    awDelayed.put(5, *doc, 4, false, emptyCallback);
+    awDelayed.put(5, *doc, 4, emptyCallback);
     EXPECT_EQ(5u, a1->getNumDocs());
     EXPECT_EQ(3u, a1->getStatus().getLastSyncToken());
     awDelayed.forceCommit(6, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
 
     AttributeWriter awDelayedShort(_mgr);
-    awDelayedShort.put(7, *doc, 2, false, emptyCallback);
+    awDelayedShort.put(7, *doc, 2, emptyCallback);
     EXPECT_EQ(6u, a1->getStatus().getLastSyncToken());
-    awDelayedShort.put(8, *doc, 2, false, emptyCallback);
+    awDelayedShort.put(8, *doc, 2, emptyCallback);
     awDelayedShort.forceCommit(8, emptyCallback);
     EXPECT_EQ(8u, a1->getStatus().getLastSyncToken());
 
     verifyAttributeContent(*a1, 2, "10");
     awDelayed.put(9, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("11").endField().endDocument(),
-            2, false, emptyCallback);
+            2, emptyCallback);
     awDelayed.put(10, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("20").endField().endDocument(),
-            2, false, emptyCallback);
+            2, emptyCallback);
     awDelayed.put(11, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("30").endField().endDocument(),
-            2, false, emptyCallback);
+            2, emptyCallback);
     EXPECT_EQ(8u, a1->getStatus().getLastSyncToken());
     verifyAttributeContent(*a1, 2, "10");
     awDelayed.forceCommit(12, emptyCallback);
@@ -472,8 +477,7 @@ TEST_F(AttributeWriterTest, handles_update)
                   .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10)));
 
     DummyFieldUpdateCallback onUpdate;
-    bool immediateCommit = true;
-    update(2, upd, 1, immediateCommit, onUpdate);
+    update(2, upd, 1, onUpdate);
 
     attribute::IntegerContent ibuf;
     ibuf.fill(*a1, 1);
@@ -483,9 +487,9 @@ TEST_F(AttributeWriterTest, handles_update)
     EXPECT_EQ(1u, ibuf.size());
     EXPECT_EQ(30u, ibuf[0]);
 
-    update(2, upd, 1, immediateCommit, onUpdate); // same sync token as previous
+    update(2, upd, 1, onUpdate); // same sync token as previous
     try {
-        update(1, upd, 1, immediateCommit, onUpdate); // lower sync token than previous
+        update(1, upd, 1, onUpdate); // lower sync token than previous
         EXPECT_TRUE(true);  // update is ignored
     } catch (vespalib::IllegalStateException & e) {
         LOG(info, "Got expected exception: '%s'", e.getMessage().c_str());
@@ -517,9 +521,8 @@ TEST_F(AttributeWriterTest, handles_predicate_update)
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
     EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
     EXPECT_FALSE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
-    bool immediateCommit = true;
     DummyFieldUpdateCallback onUpdate;
-    update(2, upd, 1, immediateCommit, onUpdate);
+    update(2, upd, 1, onUpdate);
     EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
     EXPECT_TRUE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
 }
@@ -712,9 +715,8 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
     new_value = EngineOrFactory::get().copy(*new_tensor);
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(AssignValueUpdate(new_value)));
-    bool immediateCommit = true;
     DummyFieldUpdateCallback onUpdate;
-    update(2, upd, 1, immediateCommit, onUpdate);
+    update(2, upd, 1, onUpdate);
     EXPECT_EQ(2u, a1->getNumDocs());
     EXPECT_TRUE(tensorAttribute != nullptr);
     tensor2 = tensorAttribute->getTensor(1);
@@ -1078,7 +1080,7 @@ TEST_F(StructArrayWriterTest, update_with_doc_argument_updates_struct_field_attr
     put(10, *doc, 1);
     checkAttrs(1, 10, {11, 12});
     doc = makeDoc(20, {21});
-    update(11, *doc, 1, true);
+    update(11, *doc, 1);
     checkAttrs(1, 10, {21});
 }
 
@@ -1135,7 +1137,7 @@ TEST_F(StructMapWriterTest, update_with_doc_argument_updates_struct_field_attrib
     put(10, *doc, 1);
     checkAttrs(1, 10, {{1, 11}, {2, 12}});
     doc = makeDoc(20, {{42, 21}});
-    update(11, *doc, 1, true);
+    update(11, *doc, 1);
     checkAttrs(1, 10, {{42, 21}});
 }
 

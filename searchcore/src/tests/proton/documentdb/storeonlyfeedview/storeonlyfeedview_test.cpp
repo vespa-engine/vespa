@@ -105,12 +105,12 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
         outstandingMoveOps(outstandingMoveOps_)
     {
     }
-    void removeAttributes(SerialNum s, const LidVector &l, bool immediateCommit, OnWriteDoneType onWriteDone) override {
-        StoreOnlyFeedView::removeAttributes(s, l, immediateCommit, onWriteDone);
+    void removeAttributes(SerialNum s, const LidVector &l, OnWriteDoneType onWriteDone) override {
+        StoreOnlyFeedView::removeAttributes(s, l, onWriteDone);
         ++removeMultiAttributesCount;
     }
-    void removeIndexedFields(SerialNum s, const LidVector &l, bool immediateCommit, OnWriteDoneType onWriteDone) override {
-        StoreOnlyFeedView::removeIndexedFields(s, l, immediateCommit, onWriteDone);
+    void removeIndexedFields(SerialNum s, const LidVector &l, OnWriteDoneType onWriteDone) override {
+        StoreOnlyFeedView::removeIndexedFields(s, l, onWriteDone);
         ++removeMultiIndexFieldsCount;
     }
     void heartBeatIndexedFields(SerialNum s) override {
@@ -145,23 +145,23 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
             removeIndexFieldsCount(0),
             onWriteDoneContexts()
     {}
-    void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, bool, OnPutDoneType onWriteDone) override {
+    void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, OnPutDoneType onWriteDone) override {
         ++putAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
      void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
-                           bool, OnOperationDoneType onWriteDone) override {
+                           OnOperationDoneType onWriteDone) override {
         ++putIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    void removeAttributes(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType onWriteDone) override {
+    void removeAttributes(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
         ++removeAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    void removeIndexedFields(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType onWriteDone) override {
+    void removeIndexedFields(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
         ++removeIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);

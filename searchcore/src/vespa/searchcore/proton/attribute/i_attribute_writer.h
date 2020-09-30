@@ -33,27 +33,23 @@ public:
     typedef document::Document Document;
     using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
 
-    virtual ~IAttributeWriter() {}
+    virtual ~IAttributeWriter() = default;
 
     virtual std::vector<search::AttributeVector *> getWritableAttributes() const = 0;
     virtual search::AttributeVector *getWritableAttribute(const vespalib::string &attrName) const = 0;
-    virtual void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                     bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
-    virtual void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit,
-                        OnWriteDoneType onWriteDone) = 0;
-    virtual void remove(const LidVector &lidVector, SerialNum serialNum,
-                        bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
+    virtual void put(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
+    virtual void remove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
+    virtual void remove(const LidVector &lidVector, SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
     /**
      * Update the underlying attributes based on the content of the given DocumentUpdate.
      * The OnWriteDoneType instance should ensure the lifetime of the given DocumentUpdate instance.
      */
     virtual void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
-                        bool immediateCommit, OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) = 0;
+                        OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) = 0;
     /*
      * Update the underlying struct field attributes based on updated document.
      */
-    virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                        bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
+    virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
     virtual void heartBeat(SerialNum serialNum) = 0;
     /**
      * Compact the lid space of the underlying attribute vectors.

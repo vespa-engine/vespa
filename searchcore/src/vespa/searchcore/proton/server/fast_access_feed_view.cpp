@@ -20,46 +20,39 @@ namespace proton {
  * Otherwise we can drop it and ack the operation right away.
  */
 void
-FastAccessFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc,
-                                  bool immediateCommit, OnPutDoneType onWriteDone)
+FastAccessFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, OnPutDoneType onWriteDone)
 {
-    _attributeWriter->put(serialNum, doc, lid, immediateCommit, onWriteDone);
-    if (immediateCommit && onWriteDone) {
-        onWriteDone->registerPutLid(&_docIdLimit);
-    }
+    _attributeWriter->put(serialNum, doc, lid, onWriteDone);
 }
 
 void
 FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
-                                     bool immediateCommit, OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate)
+                                     OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate)
 {
-    _attributeWriter->update(serialNum, upd, lid, immediateCommit, onWriteDone, onUpdate);
+    _attributeWriter->update(serialNum, upd, lid, onWriteDone, onUpdate);
 }
 
 void
-FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc,
-                                     bool immediateCommit, OnOperationDoneType onWriteDone)
+FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc, OnOperationDoneType onWriteDone)
 {
     if (_attributeWriter->hasStructFieldAttribute()) {
         const std::unique_ptr<const Document> & doc = futureDoc.get();
         if (doc) {
-            _attributeWriter->update(serialNum, *doc, lid, immediateCommit, onWriteDone);
+            _attributeWriter->update(serialNum, *doc, lid, onWriteDone);
         }
     }
 }
 
 void
-FastAccessFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
-                                     bool immediateCommit, OnRemoveDoneType onWriteDone)
+FastAccessFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone)
 {
-    _attributeWriter->remove(serialNum, lid, immediateCommit, onWriteDone);
+    _attributeWriter->remove(serialNum, lid, onWriteDone);
 }
 
 void
-FastAccessFeedView::removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove,
-                                     bool immediateCommit, OnWriteDoneType onWriteDone)
+FastAccessFeedView::removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone)
 {
-    _attributeWriter->remove(lidsToRemove, serialNum, immediateCommit, onWriteDone);
+    _attributeWriter->remove(lidsToRemove, serialNum, onWriteDone);
 }
 
 void

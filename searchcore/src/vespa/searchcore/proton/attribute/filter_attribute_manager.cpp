@@ -233,7 +233,7 @@ FilterAttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributes
 const ImportedAttributesRepo *
 FilterAttributeManager::getImportedAttributes() const
 {
-    throw vespalib::IllegalArgumentException("Not implemented");
+    return nullptr;
 }
 
 std::shared_ptr<search::attribute::ReadableAttributeVector>

@@ -181,8 +181,7 @@ private:
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
-    size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
-                           bool immediateCommit);
+    size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields);
 
     void internalRemove(FeedToken token, IPendingLidTracker::Token uncommitted, SerialNum serialNum,
                         PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
@@ -202,30 +201,20 @@ protected:
     virtual void heartBeatAttributes(SerialNum serialNum);
 
 private:
-    virtual void putAttributes(SerialNum serialNum, Lid lid, const Document &doc,
-                               bool immediateCommit, OnPutDoneType onWriteDone);
-
-    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP &newDoc,
-                                  bool immediateCommit, OnOperationDoneType onWriteDone);
+    virtual void putAttributes(SerialNum serialNum, Lid lid, const Document &doc, OnPutDoneType onWriteDone);
+    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP &newDoc, OnOperationDoneType onWriteDone);
 
     virtual void updateAttributes(SerialNum serialNum, Lid lid, const DocumentUpdate &upd,
-                                  bool immediateCommit, OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate);
+                                  OnOperationDoneType onWriteDone, IFieldUpdateCallback & onUpdate);
 
-    virtual void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
-                                  bool immediateCommit, OnOperationDoneType onWriteDone);
-
-    virtual void updateIndexedFields(SerialNum serialNum, Lid lid, FutureDoc doc,
-                                     bool immediateCommit, OnOperationDoneType onWriteDone);
-
-    virtual void removeAttributes(SerialNum serialNum, Lid lid, bool immediateCommit, OnRemoveDoneType onWriteDone);
-    virtual void removeIndexedFields(SerialNum serialNum, Lid lid, bool immediateCommit, OnRemoveDoneType onWriteDone);
+    virtual void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc, OnOperationDoneType onWriteDone);
+    virtual void updateIndexedFields(SerialNum serialNum, Lid lid, FutureDoc doc, OnOperationDoneType onWriteDone);
+    virtual void removeAttributes(SerialNum serialNum, Lid lid, OnRemoveDoneType onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, Lid lid, OnRemoveDoneType onWriteDone);
 
 protected:
-    virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove,
-                                  bool immediateCommit, OnWriteDoneType onWriteDone);
-
-    virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
-                                     bool immediateCommit, OnWriteDoneType onWriteDone);
+    virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
     virtual void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
 public:
     StoreOnlyFeedView(const Context &ctx, const PersistentParams &params);
