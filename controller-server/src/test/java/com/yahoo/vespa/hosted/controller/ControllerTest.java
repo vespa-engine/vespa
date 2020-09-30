@@ -668,10 +668,9 @@ public class ControllerTest {
         assertEquals(routingMethods, Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4));
 
         // Deployment has stored application meta.
-        assertArrayEquals(applicationPackage.metaDataZip(),
-                          tester.controllerTester().serviceRegistry().applicationStore()
-                                .getMeta(new DeploymentId(context.instanceId(), zone))
-                                .get(tester.clock().instant()));
+        assertNotNull(tester.controllerTester().serviceRegistry().applicationStore()
+                            .getMeta(new DeploymentId(context.instanceId(), zone))
+                            .get(tester.clock().instant()));
 
         // Meta data tombstone placed on delete
         tester.clock().advance(Duration.ofSeconds(1));

@@ -184,7 +184,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     Result send(Message msg, DocumentOperationParameters parameters) {
         try {
             long reqId = requestId.incrementAndGet();
-            msg.setContext(reqId);
+            msg.setContext(new OperationContext(reqId, parameters.responseHandler().orElse(null)));
             msg.getTrace().setLevel(parameters.traceLevel().orElse(traceLevel));
             // Use route from parameters, or session route if non-default, or finally, defaults for get and non-get, if set. Phew!
             String toRoute = parameters.route().orElse(mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
@@ -198,6 +198,15 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         }
     }
 
+    private static class OperationContext {
+        private final long reqId;
+        private final ResponseHandler responseHandler;
+        private OperationContext(long reqId, ResponseHandler responseHandler) {
+            this.reqId = reqId;
+            this.responseHandler = responseHandler;
+        }
+    }
+
     /**
      * A convenience method for assigning the internal trace level and route string to a message before sending it
      * through the internal mbus session object.
@@ -206,7 +215,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
      * @return the document api result object.
      */
     public Result send(Message msg) {
-        return send(msg, null);
+        return send(msg, parameters());
     }
 
     @Override
@@ -285,11 +294,6 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")"));
     }
 
-    private static Response toResponse(Reply reply) {
-        long reqId = (Long) reply.getContext();
-        return reply.hasErrors() ? toError(reply, reqId) : toSuccess(reply, reqId);
-    }
-
     private static Response toError(Reply reply, long reqId) {
         boolean definitelyNotFound =    reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
                                      || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound();
@@ -346,8 +350,13 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             if (reply.getTrace().getLevel() > 0) {
                 log.log(Level.INFO, reply.getTrace().toString());
             }
-            Response response = toResponse(reply);
-            if (handler != null) {
+            OperationContext context = (OperationContext) reply.getContext();
+            long reqId = context.reqId;
+            Response response = reply.hasErrors() ? toError(reply, reqId) : toSuccess(reply, reqId);
+            ResponseHandler operationSpecificResponseHandler = context.responseHandler;
+            if (operationSpecificResponseHandler != null)
+                operationSpecificResponseHandler.handleResponse(response);
+            else if (handler != null) {
                 handler.handleResponse(response);
             } else {
                 queue.add(response);
