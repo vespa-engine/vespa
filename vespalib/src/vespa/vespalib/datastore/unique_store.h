@@ -56,6 +56,8 @@ public:
     void remove(EntryRef ref);
     std::unique_ptr<Remapper> compact_worst(bool compact_memory, bool compact_address_space);
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage get_values_memory_usage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage get_dictionary_memory_usage() const { return _dict->get_memory_usage(); }
     vespalib::AddressSpace get_address_space_usage() const;
 
     // TODO: Consider exposing only the needed functions from allocator

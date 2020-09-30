@@ -44,7 +44,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
     : NotImplementedAttribute(baseFileName, cfg),
       _store(),
       _indices(getGenerationHolder()),
-      _cachedUniqueStoreMemoryUsage(),
+      _cached_unique_store_values_memory_usage(),
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
 {
@@ -188,8 +188,9 @@ ReferenceAttribute::onCommit()
 void
 ReferenceAttribute::onUpdateStat()
 {
-    vespalib::MemoryUsage total = _store.getMemoryUsage();
-    _cachedUniqueStoreMemoryUsage = total;
+    vespalib::MemoryUsage total = _store.get_values_memory_usage();
+    _cached_unique_store_values_memory_usage = total;
+    total.merge(_store.get_dictionary_memory_usage());
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(_indices.getMemoryUsage());
     total.merge(_referenceMappings.getMemoryUsage());
@@ -285,8 +286,8 @@ ReferenceAttribute::getReference(DocId doc) const
 bool
 ReferenceAttribute::considerCompact(const CompactionStrategy &compactionStrategy)
 {
-    size_t usedBytes = _cachedUniqueStoreMemoryUsage.usedBytes();
-    size_t deadBytes = _cachedUniqueStoreMemoryUsage.deadBytes();
+    size_t usedBytes = _cached_unique_store_values_memory_usage.usedBytes();
+    size_t deadBytes = _cached_unique_store_values_memory_usage.deadBytes();
     bool compactMemory = ((deadBytes >= DEAD_BYTES_SLACK) &&
                           (usedBytes * compactionStrategy.getMaxDeadBytesRatio() < deadBytes));
     if (compactMemory) {
