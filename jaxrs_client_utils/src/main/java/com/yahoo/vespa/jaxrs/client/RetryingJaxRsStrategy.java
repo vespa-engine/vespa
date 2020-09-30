@@ -29,7 +29,7 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private final int port;
     private final JaxRsClientFactory jaxRsClientFactory;
     private final Class<T> apiClass;
-    private String pathPrefix;
+    private final String pathPrefix;
     private final String scheme;
 
     private int maxIterations = 2;
@@ -88,10 +88,9 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
                 } catch (ProcessingException | ServiceUnavailableException e) {
                     // E.g. java.net.SocketTimeoutException thrown on read timeout is wrapped as a ProcessingException,
                     // while ServiceUnavailableException is a WebApplicationException
-                    sampleException = e;
-                    logger.log(Level.INFO, "Failed REST API call to "
-                            + hostName + ":" + port + pathPrefix + " (in retry loop): "
-                            + e.getMessage());
+                    String message = "Failed REST API call to " + uri + " (in retry loop):";
+                    sampleException = new RuntimeException(message, e);
+                    logger.log(Level.INFO, message + e.getMessage());
                 }
             }
         }
