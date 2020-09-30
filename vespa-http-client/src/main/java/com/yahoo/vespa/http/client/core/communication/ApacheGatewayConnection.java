@@ -427,7 +427,6 @@ class ApacheGatewayConnection implements GatewayConnection {
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.V_TAG_COMPONENT));
             clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.V_TAG_COMPONENT)));
-            clientBuilder.disableContentCompression();
             RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
             requestConfigBuilder.setSocketTimeout(0);
             if (connectionParams.getProxyHost() != null) {
