@@ -9,15 +9,11 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/storageserver/message_dispatcher.h>
-//#include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
 #include <vespa/storage/storageserver/rpc/message_codec_provider.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
-//#include <vespa/storage/storageserver/rpc/slime_cluster_state_bundle_codec.h>
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-//#include <vespa/fnet/frt/target.h>
-//#include <vespa/slobrok/sbmirror.h>
 #include <cassert>
 
 using document::Document;
