@@ -23,6 +23,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
@@ -246,24 +247,21 @@ class ApacheGatewayConnection implements GatewayConnection {
     }
 
     private InputStream executePost(HttpPost httpPost) throws ServerResponseException, IOException {
-        HttpResponse response;
-        try {
-            if (httpClient == null)
-                throw new IOException("Trying to executePost while not having a connection/http client");
-            response = httpClient.execute(httpPost);
-        } catch (Exception e) {
-            httpPost.abort();
-            throw e;
-        }
+        if (httpClient == null)
+            throw new IOException("Trying to executePost while not having a connection/http client");
+        HttpResponse response = httpClient.execute(httpPost);
         try {
             verifyServerResponseCode(response);
             verifyServerVersion(response.getFirstHeader(Headers.VERSION));
             verifySessionHeader(response.getFirstHeader(Headers.SESSION_ID));
         } catch (ServerResponseException e) {
-            httpPost.abort();
+            // Ensure response is consumed to allow connection reuse later on
+            EntityUtils.consumeQuietly(response.getEntity());
             throw e;
         }
-        return response.getEntity().getContent();
+        // Consume response now to allow connection to be reused immediately
+        byte[] responseData = EntityUtils.toByteArray(response.getEntity());
+        return responseData == null ? null : new ByteArrayInputStream(responseData);
     }
 
     private void verifyServerResponseCode(HttpResponse response) throws ServerResponseException {

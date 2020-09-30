@@ -18,7 +18,10 @@ import java.util.Optional;
 public class Quota {
     private static final Quota UNLIMITED = new Quota(Optional.empty(), Optional.empty());
 
+    /** The max size of a cluster inside application */
     private final Optional<Integer> maxClusterSize;
+
+    /** The max budget in dollars per hour */
     private final Optional<BigDecimal> budget;
 
     // TODO: Remove constructor once Vespa < 7.300 is gone from production

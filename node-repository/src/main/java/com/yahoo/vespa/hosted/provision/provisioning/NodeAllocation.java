@@ -305,6 +305,11 @@ class NodeAllocation {
         return requestedNodes.fulfilledBy(accepted);
     }
 
+    /** Returns true this allocation was already fulfilled and resulted in no new changes */
+    public boolean fulfilledAndNoChanges() {
+        return fulfilled() && reservableNodes().isEmpty() && newNodes().isEmpty();
+    }
+
     /**
      * Returns {@link FlavorCount} describing the docker node deficit for the given {@link NodeSpec}.
      *

@@ -233,6 +233,7 @@ TOKEN :
 | < SUFFIX: "suffix" >
 | < CONSTANT: "constant">
 | < ONNXMODEL: "onnx-model">
+| < MODEL: "model" >
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
@@ -1976,7 +1977,7 @@ void rankProfile(Search search) :
     RankProfile profile;
 }
 {
-    ( <RANKPROFILE> name = identifierWithDash()
+    ( ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
         {
             if (documentsOnly) {
                 profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry);
@@ -2676,6 +2677,7 @@ String identifier() : { }
       | <QUATERNARY>
       | <QUERYCOMMAND>
       | <RANK>
+      | <MODEL>
       | <RANKPROFILE>
       | <RANKPROPERTIES>
       | <RANKSCOREDROPLIMIT>

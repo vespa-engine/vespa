@@ -10,6 +10,7 @@
 
 namespace vespalib::eval::instruction {
 
+using TypedCells = Value::TypedCells;
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
 
@@ -95,13 +96,8 @@ struct SparseJoinState {
 };
 SparseJoinState::~SparseJoinState() = default;
 
-/*
 template <typename LCT, typename RCT, typename OCT, typename Fun>
-void generic_join()
-*/
-
-template <typename LCT, typename RCT, typename OCT, typename Fun>
-void my_generic_join_op(State &state, uint64_t param_in) {
+void my_mixed_join_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<JoinParam>(param_in);
     Fun fun(param.function);
     const Value &lhs = state.peek(1);
@@ -126,9 +122,39 @@ void my_generic_join_op(State &state, uint64_t param_in) {
     state.pop_pop_push(result_ref);
 };
 
+template <typename LCT, typename RCT, typename OCT, typename Fun>
+void my_dense_join_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<JoinParam>(param_in);
+    Fun fun(param.function);
+    auto lhs_cells = state.peek(1).cells().typify<LCT>();
+    auto rhs_cells = state.peek(0).cells().typify<RCT>();
+    ArrayRef<OCT> out_cells = state.stash.create_array<OCT>(param.dense_plan.out_size);
+    OCT *dst = out_cells.begin();
+    auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
+    param.dense_plan.execute(0, 0, join_cells);
+    state.pop_pop_push(state.stash.create<DenseValueView>(param.res_type, TypedCells(out_cells)));
+};
+
+template <typename Fun>
+void my_double_join_op(State &state, uint64_t param_in) {
+    Fun fun(unwrap_param<JoinParam>(param_in).function);
+    state.pop_pop_push(state.stash.create<DoubleValue>(fun(state.peek(1).cells().typify<double>()[0],
+                                                           state.peek(0).cells().typify<double>()[0])));
+};
+
 struct SelectGenericJoinOp {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke() {
-        return my_generic_join_op<LCT,RCT,OCT,Fun>;
+    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke(const JoinParam &param) {
+        if (param.res_type.is_double()) {
+            bool all_double = (std::is_same_v<LCT, double> &&
+                               std::is_same_v<RCT, double> &&
+                               std::is_same_v<OCT, double>);
+            assert(all_double);
+            return my_double_join_op<Fun>;
+        }
+        if (param.sparse_plan.sources.empty()) {
+            return my_dense_join_op<LCT,RCT,OCT,Fun>;
+        }
+        return my_mixed_join_op<LCT,RCT,OCT,Fun>;
     }
 };
 
@@ -225,7 +251,7 @@ GenericJoin::make_instruction(const ValueType &lhs_type, const ValueType &rhs_ty
                               const ValueBuilderFactory &factory, Stash &stash)
 {
     auto &param = stash.create<JoinParam>(lhs_type, rhs_type, function, factory);
-    auto fun = typify_invoke<4,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
+    auto fun = typify_invoke<4,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
     return Instruction(fun, wrap_param<JoinParam>(param));
 }
 
