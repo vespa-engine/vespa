@@ -108,9 +108,11 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " + modelOf(modelVersion));
         ValidationParameters validationParameters =
                 new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
-        ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, validationParameters);
+        ModelCreateResult result = modelFactory.createAndValidateModel(modelContext, validationParameters);
         validateModelHosts(hostValidator, applicationId, result.getModel());
         log.log(Level.FINE, "Done building model " + modelVersion + " for " + applicationId);
+        params.getTimeoutBudget().assertNotTimedOut(() -> "prepare timed out after building model " + modelVersion +
+                " (timeout " + params.getTimeoutBudget().timeout() + "): " + applicationId);
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }
 
