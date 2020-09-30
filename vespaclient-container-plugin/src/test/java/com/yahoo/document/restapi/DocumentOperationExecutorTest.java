@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Phaser;
@@ -142,8 +143,10 @@ public class DocumentOperationExecutorTest {
             assertEquals("Your Vespa deployment has no content clusters, so the document API is not enabled", e.getMessage());
         }
         try {
-            DocumentOperationExecutorImpl.resolveCluster(Optional.empty(), Map.of("one", new StorageCluster("one", "one-config", Map.of()),
-                                                                                  "two", new StorageCluster("two", "two-config", Map.of())));
+            Map<String, StorageCluster> twoClusters = new TreeMap<>();
+            twoClusters.put("one", new StorageCluster("one", "one-config", Map.of()));
+            twoClusters.put("two", new StorageCluster("two", "two-config", Map.of()));
+            DocumentOperationExecutorImpl.resolveCluster(Optional.empty(), twoClusters);
             fail("More than one cluster and no document type should fail");
         }
         catch (IllegalArgumentException e) {

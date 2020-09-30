@@ -19,6 +19,7 @@ import com.yahoo.documentapi.local.LocalDocumentAccess;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.searchdefinition.derived.Deriver;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
@@ -44,6 +45,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author jonmv
@@ -233,11 +235,9 @@ public class DocumentV1ApiTest {
                                       "{" +
                                       "  ┻━┻︵ \\(°□°)/ ︵ ┻━┻" +
                                       "}");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"Unexpected character ('┻' (code 9531 / 0x253b)): was expecting double-quote to start field name\\n at [Source: com.yahoo.jdisc.handler.UnsafeContentInputStream@50ecde95; line: 1, column: 7]\"" +
-                       "}",
-                       response.readAll());
+        Inspector responseRoot = SlimeUtils.jsonToSlime(response.readAll()).get();
+        assertEquals("/document/v1/space/music/number/1/two", responseRoot.field("pathId").asString());
+        assertTrue(responseRoot.field("message").asString().startsWith("Unexpected character ('┻' (code 9531 / 0x253b)): was expecting double-quote to start field name"));
         assertEquals(400, response.getStatus());
 
         // PUT on a unknown document type is a 400
