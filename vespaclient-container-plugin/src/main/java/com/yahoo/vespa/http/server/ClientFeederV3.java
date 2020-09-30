@@ -114,6 +114,7 @@ class ClientFeederV3 {
                     }
                 }
             } catch (InterruptedException e) {
+                log.log(Level.FINE, e, () -> "Feed handler was interrupted: " + e.getMessage());
                 // NOP, just terminate
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Unhandled exception while feeding: " + Exceptions.toMessageString(e), e);
@@ -157,14 +158,14 @@ class ClientFeederV3 {
         }
     }
 
-    private Result sendMessage(DocumentOperationMessageV3 msg) {
+    private Result sendMessage(DocumentOperationMessageV3 msg) throws InterruptedException {
         msg.getMessage().pushHandler(feedReplyHandler);
-        return sourceSession.getResource().sendMessage(msg.getMessage());
+        return sourceSession.getResource().sendMessageBlocking(msg.getMessage());
     }
 
     private void feed(FeederSettings settings,
                       InputStream requestInputStream,
-                      BlockingQueue<OperationStatus> repliesFromOldMessages) {
+                      BlockingQueue<OperationStatus> repliesFromOldMessages) throws InterruptedException {
         while (true) {
             Optional<DocumentOperationMessageV3> message = pullMessageFromRequest(settings,
                                                                                   requestInputStream,
