@@ -53,13 +53,13 @@ struct RenameParam {
     SparseRenamePlan sparse_plan;
     DenseRenamePlan dense_plan;
     const ValueBuilderFactory &factory;
-    RenameParam(const ValueType &lhs_type, const ValueType &output_type,
+    RenameParam(const ValueType &lhs_type,
                 const std::vector<vespalib::string> &rename_dimension_from,
                 const std::vector<vespalib::string> &rename_dimension_to,
                 const ValueBuilderFactory &factory_in)
-        : res_type(output_type),
-          sparse_plan(lhs_type, output_type, rename_dimension_from, rename_dimension_to),
-          dense_plan(lhs_type, output_type, rename_dimension_from, rename_dimension_to),
+        : res_type(lhs_type.rename(rename_dimension_from, rename_dimension_to)),
+          sparse_plan(lhs_type, res_type, rename_dimension_from, rename_dimension_to),
+          dense_plan(lhs_type, res_type, rename_dimension_from, rename_dimension_to),
           factory(factory_in)
     {
         assert(!res_type.is_error());
@@ -181,15 +181,15 @@ DenseRenamePlan::DenseRenamePlan(const ValueType &lhs_type,
 DenseRenamePlan::~DenseRenamePlan() = default;
 
 InterpretedFunction::Instruction
-GenericRename::make_instruction(const ValueType &lhs_type, const ValueType &output_type,
+GenericRename::make_instruction(const ValueType &lhs_type,
                                 const std::vector<vespalib::string> &rename_dimension_from,
                                 const std::vector<vespalib::string> &rename_dimension_to,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
-    auto &param = stash.create<RenameParam>(lhs_type, output_type,
+    auto &param = stash.create<RenameParam>(lhs_type,
                                             rename_dimension_from, rename_dimension_to,
                                             factory);
-    auto fun = typify_invoke<1,TypifyCellType,SelectGenericRenameOp>(output_type.cell_type());
+    auto fun = typify_invoke<1,TypifyCellType,SelectGenericRenameOp>(param.res_type.cell_type());
     return Instruction(fun, wrap_param<RenameParam>(param));
 }
 
