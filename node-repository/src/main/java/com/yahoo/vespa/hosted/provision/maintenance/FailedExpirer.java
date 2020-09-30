@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
@@ -72,10 +71,10 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> remainingNodes = new ArrayList<>(nodeRepository.list()
-                .state(Node.State.failed)
-                .nodeType(NodeType.tenant, NodeType.host)
-                .asList());
+        List<Node> remainingNodes = nodeRepository.getNodes(Node.State.failed).stream()
+                                                  .filter(node -> node.type() == NodeType.tenant ||
+                                                                  node.type() == NodeType.host)
+                                                  .collect(Collectors.toList());
 
         recycleIf(remainingNodes, node -> node.allocation().isEmpty());
         recycleIf(remainingNodes, node ->
@@ -98,11 +97,11 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node candidate : nodes) {
             if (NodeFailer.hasHardwareIssue(candidate, nodeRepository)) {
-                List<String> unparkedChildren = !candidate.type().isHost() ? Collections.emptyList() :
-                                                nodeRepository.list().childrenOf(candidate).asList().stream()
-                                      .filter(node -> node.state() != Node.State.parked)
-                                      .map(Node::hostname)
-                                      .collect(Collectors.toList());
+                List<String> unparkedChildren = !candidate.type().isHost() ? List.of() :
+                                                nodeRepository.list()
+                                                              .childrenOf(candidate)
+                                                              .matching(node -> node.state() != Node.State.parked)
+                                                              .mapToList(Node::hostname);
 
                 if (unparkedChildren.isEmpty()) {
                     nodeRepository.park(candidate.hostname(), false, Agent.FailedExpirer,

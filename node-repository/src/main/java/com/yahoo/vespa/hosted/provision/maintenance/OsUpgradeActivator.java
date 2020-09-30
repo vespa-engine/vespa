@@ -34,9 +34,8 @@ public class OsUpgradeActivator extends NodeRepositoryMaintainer {
 
     /** Returns whether to allow OS upgrade of nodes of given type */
     private boolean canUpgradeOsOf(NodeType type) {
-        return nodeRepository().list()
+        return nodeRepository().list(Node.State.ready, Node.State.active)
                                .nodeType(type)
-                               .state(Node.State.ready, Node.State.active) // Only consider nodes in long-term states
                                .changingVersion()
                                .asList()
                                .isEmpty();
