@@ -355,7 +355,8 @@ public class DocumentOperationExecutorTest {
                                               return true;
                                           },
                                           Duration.ofMillis(30),
-                                          clock);
+                                          clock,
+                                          "test");
         synchronized (queue) { queue.notify(); queue.wait(); } // Make sure maintainers have gone to wait before test starts.
 
         // Add three operations:
