@@ -67,8 +67,8 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
     private boolean keyVerifies(PublicKey key, DiscFilterRequest request) {
         /* This method only checks that the content hash has been signed by the provided public key, but
          * does not verify the content of the request.  jDisc request filters do not allow inspecting the
-         * request body, so this responsibility falls on the handler consuming the body instead.  For this
-         * specific case the request body is validated in {@link ApplicationApiHandler.parseDataParts}.
+         * request body, so this responsibility falls on the handler consuming the body instead.  For the
+         * deployment cases, the request body is validated in {@link ApplicationApiHandler.parseDataParts}.
          */
         return new RequestVerifier(key, controller.clock()).verify(Method.valueOf(request.getMethod()),
                                                                    request.getUri(),
