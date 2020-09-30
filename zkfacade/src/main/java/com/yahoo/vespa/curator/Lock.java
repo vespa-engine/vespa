@@ -4,6 +4,7 @@ package com.yahoo.vespa.curator;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
@@ -35,7 +36,7 @@ public class Lock implements Mutex {
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
-        ThreadLockStats threadLockStats = ThreadLockStats.getCurrentThreadLockStats();
+        ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         threadLockStats.invokingAcquire(lockPath, timeout);
 
         final boolean acquired;
@@ -58,10 +59,10 @@ public class Lock implements Mutex {
     public void close() {
         try {
             mutex.release();
-            ThreadLockStats.getCurrentThreadLockStats().lockReleased(lockPath);
+            LockStats.getForCurrentThread().lockReleased(lockPath);
         }
         catch (Exception e) {
-            ThreadLockStats.getCurrentThreadLockStats().lockReleaseFailed(lockPath);
+            LockStats.getForCurrentThread().lockReleaseFailed(lockPath);
             throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
         }
     }

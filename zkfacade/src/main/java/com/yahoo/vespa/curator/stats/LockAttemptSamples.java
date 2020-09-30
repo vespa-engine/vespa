@@ -29,8 +29,6 @@ public class LockAttemptSamples {
     private final PriorityQueue<LockAttempt> priorityQueue =
             new PriorityQueue<>(Comparator.comparing(LockAttempt::getStableTotalDuration));
 
-    LockAttemptSamples() { this(10); }
-
     LockAttemptSamples(int maxSamples) {
         this.maxSamples = maxSamples;
         this.byLockPath = new HashMap<>(maxSamples);
@@ -89,13 +87,6 @@ public class LockAttemptSamples {
     List<LockAttempt> asList() {
         synchronized (monitor) {
             return List.copyOf(byLockPath.values());
-        }
-    }
-
-    void clear() {
-        synchronized (monitor) {
-            byLockPath.clear();
-            priorityQueue.clear();
         }
     }
 

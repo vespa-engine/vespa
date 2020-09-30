@@ -2,18 +2,24 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.net.HostName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.LockAttempt;
 import com.yahoo.vespa.curator.stats.LockCounters;
+import com.yahoo.vespa.curator.stats.RecordedLockAttempts;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Returns information related to ZooKeeper locks.
@@ -25,18 +31,22 @@ public class LocksResponse extends HttpResponse {
     private final Slime slime = new Slime();
 
     public LocksResponse() {
-        this(new TreeMap<>(ThreadLockStats.getLockCountersByPath()),
-             ThreadLockStats.getThreadLockStats(),
-             ThreadLockStats.getLockAttemptSamples());
+        this(HostName.getLocalhost(),
+             new TreeMap<>(LockStats.getGlobal().getLockCountersByPath()),
+             LockStats.getGlobal().getThreadLockStats(),
+             LockStats.getGlobal().getLockAttemptSamples());
     }
 
     /** For testing */
-    LocksResponse(TreeMap<String, LockCounters> lockCountersByPath,
+    LocksResponse(String hostname,
+                  TreeMap<String, LockCounters> lockCountersByPath,
                   List<ThreadLockStats> threadLockStatsList,
                   List<LockAttempt> historicSamples) {
         super(200);
 
         Cursor root = slime.setObject();
+
+        root.setString("hostname", hostname);
 
         Cursor lockPathsCursor = root.setArray("lock-paths");
         lockCountersByPath.forEach((lockPath, lockCounters) -> {
@@ -54,22 +64,35 @@ public class LocksResponse extends HttpResponse {
 
         Cursor threadsCursor = root.setArray("threads");
         for (var threadLockStats : threadLockStatsList) {
-            List<LockAttempt> lockAttempts = threadLockStats.getLockAttempts();
-            if (!lockAttempts.isEmpty()) {
-                Cursor threadLockStatsCursor = threadsCursor.addObject();
-                threadLockStatsCursor.setString("thread-name", threadLockStats.getThreadName());
-
-                Cursor lockAttemptsCursor = threadLockStatsCursor.setArray("active-locks");
-                for (var lockAttempt : lockAttempts) {
-                    setLockAttempt(lockAttemptsCursor.addObject(), lockAttempt, false);
-                }
-
-                threadLockStatsCursor.setString("stack-trace", threadLockStats.getStackTrace());
+            Optional<LockAttempt> ongoingLockAttempt = threadLockStats.getTopMostOngoingLockAttempt();
+            Optional<RecordedLockAttempts> ongoingRecording = threadLockStats.getOngoingRecording();
+            if (ongoingLockAttempt.isEmpty() && ongoingRecording.isEmpty()) {
+                continue;
             }
+
+            Cursor threadCursor = threadsCursor.addObject();
+            threadCursor.setString("thread-name", threadLockStats.getThreadName());
+
+            ongoingLockAttempt.ifPresent(lockAttempt -> {
+                setLockAttempt(threadCursor.setObject("active-lock"), lockAttempt, false);
+                threadsCursor.setString("stack-trace", threadLockStats.getStackTrace());
+            });
+
+            ongoingRecording.ifPresent(recording -> setRecording(threadCursor.setObject("ongoing-recording"), recording));
         }
 
-        Cursor historicSamplesCursor = root.setArray("historic-samples");
-        historicSamples.forEach(lockAttempt -> setLockAttempt(historicSamplesCursor.addObject(), lockAttempt, true));
+        Cursor historicSamplesCursor = root.setArray("slow-locks");
+        historicSamples.stream()
+                .sorted(Comparator.comparing(LockAttempt::getDuration).reversed())
+                .forEach(lockAttempt -> setLockAttempt(historicSamplesCursor.addObject(), lockAttempt, true));
+
+        List<RecordedLockAttempts> historicRecordings = LockStats.getGlobal().getHistoricRecordings().stream()
+                .sorted(Comparator.comparing(RecordedLockAttempts::duration).reversed())
+                .collect(Collectors.toList());
+        if (!historicRecordings.isEmpty()) {
+            Cursor recordingsCursor = root.setArray("recordings");
+            historicRecordings.forEach(recording -> setRecording(recordingsCursor.addObject(), recording));
+        }
     }
 
     @Override
@@ -80,6 +103,14 @@ public class LocksResponse extends HttpResponse {
     @Override
     public String getContentType() {
         return "application/json";
+    }
+
+    private void setRecording(Cursor cursor, RecordedLockAttempts recording) {
+        cursor.setString("record-id", recording.recordId());
+        cursor.setString("start-time", toString(recording.startInstant()));
+        cursor.setString("duration", recording.duration().toString());
+        Cursor locksCursor = cursor.setArray("locks");
+        recording.lockAttempts().forEach(lockAttempt -> setLockAttempt(locksCursor.addObject(), lockAttempt, false));
     }
 
     private void setLockAttempt(Cursor lockAttemptCursor, LockAttempt lockAttempt, boolean includeThreadInfo) {
@@ -97,6 +128,13 @@ public class LocksResponse extends HttpResponse {
         lockAttemptCursor.setString("total-duration", lockAttempt.getDuration().toString());
         if (includeThreadInfo) {
             lockAttempt.getStackTrace().ifPresent(stackTrace -> lockAttemptCursor.setString("stack-trace", stackTrace));
+        }
+
+        List<LockAttempt> nestedLockAttempts = lockAttempt.getNestedLockAttempts();
+        if (!nestedLockAttempts.isEmpty()) {
+            Cursor nestedLockAttemptsCursor = lockAttemptCursor.setArray("nested-locks");
+            nestedLockAttempts.forEach(nestedLockAttempt ->
+                    setLockAttempt(nestedLockAttemptsCursor.addObject(), nestedLockAttempt, includeThreadInfo));
         }
     }
 
