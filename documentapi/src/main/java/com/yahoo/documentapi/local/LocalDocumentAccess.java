@@ -75,10 +75,12 @@ public class LocalDocumentAccess extends DocumentAccess {
      * {@link Phaser} used to synchronize the sending of documents from the visitor, and the responses for the
      * document operations — which are then also done by a dedicated thread pool, instead of the caller thread.
      *
-     * When this is set, the thread that sends a document (visit) or response (async-session) first registers with the
-     * given phaser, and then arrives and awaits advance so the user can trigger these documents and responses.
-     * After the document or response is delivered, the thread arrives, deregisters and awaits advance, so the user
-     * can wait until the document or response has been delivered. This also ensures memory visibility. Example usage:
+     * When this is set, a party is registered with the phaser for the sender thread (visit) or for each document
+     * operation (async-session). The thread that sends a document (visit) or response (async-session) then arrives
+     * and awaits advance before sending each response, so the user can trigger these documents and responses.
+     * After the document or response is delivered, the thread arrives and awaits advance, so the user
+     * can wait until the document or response has been delivered. This also ensures memory visibility.
+     * The visit sender thread deregisters when the whole visit is complete. Example usage:
      *
      * <pre> {@code
      * void testOperations(LocalDocumentAccess access) {

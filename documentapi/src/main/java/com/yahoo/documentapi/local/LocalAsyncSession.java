@@ -171,13 +171,18 @@ public class LocalAsyncSession implements AsyncSession {
         Phaser synchronizer = phaser.get();
         if (synchronizer == null)
             addResponse(responses.apply(req));
-        else
+        else {
+            synchronizer.register();
             executor.execute(() -> {
-                synchronizer.register();
-                synchronizer.arriveAndAwaitAdvance();
-                addResponse(responses.apply(req));
-                synchronizer.awaitAdvance(synchronizer.arriveAndDeregister());
+                try {
+                    synchronizer.arriveAndAwaitAdvance();
+                    addResponse(responses.apply(req));
+                }
+                finally {
+                    synchronizer.awaitAdvance(synchronizer.arriveAndDeregister());
+                }
             });
+        }
         return new Result(req);
     }
 

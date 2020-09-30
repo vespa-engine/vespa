@@ -72,6 +72,10 @@ public class LocalVisitorSession implements VisitorSession {
     }
 
     void start() {
+        Phaser synchronizer = phaser.get();
+        if (synchronizer != null)
+            synchronizer.register();
+
         new Thread(() -> {
             try {
                 // Iterate through all documents and pass on to data handler
@@ -91,15 +95,14 @@ public class LocalVisitorSession implements VisitorSession {
                     new FieldSetRepo().copyFields(document, copy, fieldSet);
 
 
-                    Phaser synchronizer = phaser.get();
-                    if (synchronizer != null) {
-                        synchronizer.register();
+                    if (synchronizer != null)
                         synchronizer.arriveAndAwaitAdvance();
-                    }
+
                     data.onMessage(new PutDocumentMessage(new DocumentPut(copy)),
                                    new AckToken(id));
+
                     if (synchronizer != null)
-                        synchronizer.awaitAdvance(synchronizer.arriveAndDeregister());
+                        synchronizer.arriveAndAwaitAdvance();
                 });
                 // Transition to a terminal state when done
                 state.updateAndGet(current -> {
@@ -123,6 +126,9 @@ public class LocalVisitorSession implements VisitorSession {
                 control.onDone(VisitorControlHandler.CompletionCode.FAILURE, Exceptions.toMessageString(e));
             }
             finally {
+                if (synchronizer != null)
+                    synchronizer.arriveAndDeregister();
+
                 data.onDone();
             }
         }).start();

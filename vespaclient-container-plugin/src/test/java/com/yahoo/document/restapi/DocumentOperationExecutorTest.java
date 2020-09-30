@@ -207,8 +207,8 @@ public class DocumentOperationExecutorTest {
         assertEquals(List.of(), errors);
 
         clock.advance(Duration.ofMillis(990));
-        executor.notifyMaintainers();
-        phaser.arrive();                // Let responses flow!
+        executor.notifyMaintainers();   // Let doc1 time out.
+        phaser.arrive();                // Let doc2 arrive.
         phaser.arriveAndAwaitAdvance(); // Wait for responses to be delivered. <3 Phaser <3
         assertEquals(List.of(doc2), received);
         assertEquals(List.of(TIMEOUT), errors);
