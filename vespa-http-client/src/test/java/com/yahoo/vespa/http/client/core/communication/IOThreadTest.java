@@ -137,6 +137,32 @@ public class IOThreadTest {
         assertEquals("Old connection is eventually removed", 0, ioThread.oldConnections().size());
     }
 
+    @Test
+    public void old_connections_are_closed_early_if_no_inflight_operations() {
+        OperationProcessorTester tester = new OperationProcessorTester();
+        tester.tick(3);
+
+        IOThread ioThread = tester.getSingleIOThread();
+        DryRunGatewayConnection firstConnection = (DryRunGatewayConnection)ioThread.currentConnection();
+        assertEquals(0, ioThread.oldConnections().size());
+
+        firstConnection.hold(true); // do not send result for doc1 in next http response
+        tester.send("doc1");
+        tester.tick(1);
+        tester.clock().advance(Duration.ofSeconds(31)); // Default connection TTL + 1
+        tester.tick(1);
+        assertEquals(1, ioThread.oldConnections().size());
+
+        firstConnection.hold(false); // send result for both doc1 and doc2 in next http response
+        tester.send("doc2");
+        tester.tick(1);
+        assertEquals(1, ioThread.oldConnections().size());
+        tester.clock().advance(Duration.ofSeconds(2));
+        tester.tick(3);
+        assertLastPollTimeWhenAdvancing(33, 1, firstConnection, tester);
+        assertEquals(0, ioThread.oldConnections().size());
+    }
+
     private void assertLastPollTimeWhenAdvancing(int lastPollTimeSeconds,
                                                  int advanceSeconds,
                                                  DryRunGatewayConnection connection,
