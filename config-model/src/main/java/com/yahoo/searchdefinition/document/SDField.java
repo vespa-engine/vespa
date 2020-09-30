@@ -58,7 +58,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private RankType rankType = RankType.DEFAULT;
 
     /** Rank settings in a "rank" block for the field. */
-    private Ranking ranking = new Ranking();
+    private final Ranking ranking = new Ranking();
 
     /**
      * The literal boost of this field. This boost is added to a rank score
@@ -81,7 +81,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private Matching matching = new Matching();
 
     /** Attribute settings, or null if there are none */
-    private Map<String, Attribute> attributes = new TreeMap<>();
+    private final Map<String, Attribute> attributes = new TreeMap<>();
 
     /**
      * The stemming setting of this field, or null to use the default.
@@ -93,27 +93,27 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private NormalizeLevel normalizing = new NormalizeLevel();
 
     /** Extra query commands of this field */
-    private List<String> queryCommands = new java.util.ArrayList<>(0);
+    private final List<String> queryCommands = new java.util.ArrayList<>(0);
 
     /** Summary fields defined in this field */
-    private Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>(0);
+    private final Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>(0);
 
     /** The explicitly index settings on this field */
-    private Map<String, Index> indices = new java.util.LinkedHashMap<>();
+    private final Map<String, Index> indices = new java.util.LinkedHashMap<>();
 
     private boolean idOverride = false;
 
     /** Struct fields defined in this field */
-    private Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
+    private final Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
 
     /** The document that this field was declared in, or null*/
     private SDDocumentType ownerDocType = null;
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
-    private Map<String, String> aliasToName = new HashMap<>();
+    private final Map<String, String> aliasToName = new HashMap<>();
 
     /** Pending operations that must be applied after parsing, due to use of not-yet-defined structs. */
-    private List<FieldOperation> pendingOperations = new LinkedList<>();
+    private final List<FieldOperation> pendingOperations = new LinkedList<>();
 
     private boolean isExtraField = false;
 
@@ -261,23 +261,18 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     public void populateWithStructFields(SDDocumentType sdoc, String name, DataType dataType, int recursion) {
         DataType dt = getFirstStructOrMapRecursive();
-        if (dt == null) {
-            return;
-        }
+        if (dt == null) return;
+
         if (dataType instanceof MapDataType) {
             MapDataType mdt = (MapDataType) dataType;
-
             SDField keyField = new SDField(sdoc, name.concat(".key"), mdt.getKeyType(),
                                            getOwnerDocType(), new Matching(), true, recursion + 1);
             structFields.put("key", keyField);
-
             SDField valueField = new SDField(sdoc, name.concat(".value"), mdt.getValueType(),
                                              getOwnerDocType(), new Matching(), true, recursion + 1);
             structFields.put("value", valueField);
         } else {
-            if (recursion >= 10) {
-                return;
-            }
+            if (recursion >= 10) return;
             if (dataType instanceof CollectionDataType) {
                 dataType = ((CollectionDataType)dataType).getNestedType();
             }
@@ -298,9 +293,8 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public void populateWithStructMatching(SDDocumentType sdoc, String name, DataType dataType,
                                            Matching superFieldMatching) {
         DataType dt = getFirstStructOrMapRecursive();
-        if (dt == null) {
-            return;
-        }
+        if (dt == null) return;
+
         if (dataType instanceof MapDataType) {
             MapDataType mdt = (MapDataType) dataType;
 
