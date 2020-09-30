@@ -127,15 +127,19 @@ public class FeedHandlerV3Test {
                     SessionCache sessionCache, SourceSessionParams sessionParams)  {
                 SharedSourceSession sharedSourceSession = mock(SharedSourceSession.class);
 
-                when(sharedSourceSession.sendMessage(any())).thenAnswer((Answer<?>) invocation -> {
-                    Object[] args = invocation.getArguments();
-                    PutDocumentMessage putDocumentMessage = (PutDocumentMessage) args[0];
-                    ReplyContext replyContext = (ReplyContext)putDocumentMessage.getContext();
-                    replyContext.feedReplies.add(new OperationStatus("message", replyContext.docId, ErrorCode.OK, false, "trace"));
-                    Result result = mock(Result.class);
-                    when(result.isAccepted()).thenReturn(true);
-                    return result;
-                });
+                try {
+                    when(sharedSourceSession.sendMessageBlocking(any())).thenAnswer((Answer<?>) invocation -> {
+                        Object[] args = invocation.getArguments();
+                        PutDocumentMessage putDocumentMessage = (PutDocumentMessage) args[0];
+                        ReplyContext replyContext = (ReplyContext) putDocumentMessage.getContext();
+                        replyContext.feedReplies.add(new OperationStatus("message", replyContext.docId, ErrorCode.OK, false, "trace"));
+                        Result result = mock(Result.class);
+                        when(result.isAccepted()).thenReturn(true);
+                        return result;
+                    });
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
 
                 Result result = mock(Result.class);
                 when(result.isAccepted()).thenReturn(true);
