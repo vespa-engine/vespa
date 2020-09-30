@@ -9,14 +9,13 @@
 
 namespace vespalib::tensor::sparse {
 
-template <typename LCT, typename RCT, typename Function>
+template <typename LCT, typename RCT, typename OCT, typename Function>
 std::unique_ptr<Tensor>
-join(const SparseTensor &lhs_in, const SparseTensor &rhs_in, Function &&func)
+join(const SparseTensor &lhs_in, const SparseTensor &rhs_in, eval::ValueType res_type, Function &&func)
 {
-    using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
     auto & lhs = static_cast<const SparseTensorT<LCT> &>(lhs_in);
     auto & rhs = static_cast<const SparseTensorT<RCT> &>(rhs_in);
-    DirectSparseTensorBuilder<OCT> builder(lhs.combineDimensionsWith(rhs));
+    DirectSparseTensorBuilder<OCT> builder(std::move(res_type));
     TensorAddressCombiner addressCombiner(lhs.fast_type(), rhs.fast_type());
     if (addressCombiner.numOverlappingDimensions() != 0) {
         size_t estimatedCells = std::min(lhs.my_size(), rhs.my_size());

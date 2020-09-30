@@ -27,14 +27,15 @@ namespace {
 
 template<typename LCT>
 struct GenericSparseJoin {
-    template<typename RCT>
+    template<typename RCT, typename OCT>
     static Tensor::UP invoke(const SparseTensor & lhs_in,
                              const SparseTensor & rhs_in,
+                             eval::ValueType res_type,
                              SparseTensor::join_fun_t func)
     {
         auto & lhs = static_cast<const SparseTensorT<LCT> &>(lhs_in);
         auto & rhs = static_cast<const SparseTensorT<RCT> &>(rhs_in);
-        return sparse::join<LCT, RCT>(lhs, rhs, func);
+        return sparse::join<LCT, RCT, OCT>(lhs, rhs, std::move(res_type), func);
     }
 };
 
@@ -42,15 +43,16 @@ template<typename LCT>
 struct FastSparseJoin {
     template<typename RCT>
     static Tensor::UP invoke(const SparseTensor & lhs_in,
-                             const SparseTensor & rhs_in)
+                             const SparseTensor & rhs_in,
+                             eval::ValueType res_type)
     {
         auto & lhs = static_cast<const SparseTensorT<LCT> &>(lhs_in);
         auto & rhs = static_cast<const SparseTensorT<RCT> &>(rhs_in);
         // Ensure that first tensor to fastMatch has fewest cells.
         if (rhs.my_size() < lhs.my_size()) {
-            return SparseTensorMatch(rhs, lhs).result();
+            return SparseTensorMatch(rhs, lhs, std::move(res_type)).result();
         } else {
-            return SparseTensorMatch(lhs, rhs).result();
+            return SparseTensorMatch(lhs, rhs, std::move(res_type)).result();
         }
     }
 };
@@ -180,16 +182,19 @@ SparseTensorT<T>::join(join_fun_t function, const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
+    const auto & lhs_type = fast_type();
+    const auto & rhs_type = rhs->fast_type();
+    auto res_type = eval::ValueType::join(lhs_type, rhs_type);
     if (function == eval::operation::Mul::f) {
-        if (fast_type().dimensions() == rhs->fast_type().dimensions()) {
+        if (lhs_type.dimensions() == rhs_type.dimensions()) {
             return typify_invoke<1,eval::TypifyCellType,FastSparseJoin<T>>(
-                    rhs->fast_type().cell_type(),
-                    *this, *rhs);
+                    rhs_type.cell_type(),
+                    *this, *rhs, res_type);
         }
     }
-    return typify_invoke<1,eval::TypifyCellType,GenericSparseJoin<T>>(
-            rhs->fast_type().cell_type(),
-            *this, *rhs, function);
+    return typify_invoke<2,eval::TypifyCellType,GenericSparseJoin<T>>(
+            rhs_type.cell_type(), res_type.cell_type(),
+            *this, *rhs, res_type, function);
 }
 
 template<typename T>

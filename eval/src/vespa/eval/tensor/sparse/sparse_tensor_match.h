@@ -25,7 +25,7 @@ public:
 private:
     void fastMatch(const SparseTensorT<LCT> &lhs, const SparseTensorT<RCT> &rhs);
 public:
-    SparseTensorMatch(const SparseTensorT<LCT> &lhs, const SparseTensorT<RCT> &rhs);
+    SparseTensorMatch(const SparseTensorT<LCT> &lhs, const SparseTensorT<RCT> &rhs, eval::ValueType res_type);
     Tensor::UP result() {
         return _builder.build();
     }

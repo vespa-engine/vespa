@@ -28,8 +28,10 @@ SparseTensorMatch<LCT,RCT>::fastMatch(const SparseTensorT<LCT> &lhs, const Spars
 }
 
 template<typename LCT, typename RCT>
-SparseTensorMatch<LCT,RCT>::SparseTensorMatch(const SparseTensorT<LCT> &lhs, const SparseTensorT<RCT> &rhs)
-    : _builder(std::is_same_v<LCT,OCT> ? lhs.fast_type() : rhs.fast_type())
+SparseTensorMatch<LCT,RCT>::SparseTensorMatch(const SparseTensorT<LCT> &lhs,
+                                              const SparseTensorT<RCT> &rhs,
+                                              eval::ValueType res_type)
+    : _builder(std::move(res_type))
 {
     fastMatch(lhs, rhs);
 }
