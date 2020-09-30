@@ -42,7 +42,7 @@ public:
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
-    vespalib::MemoryUsage _cachedUniqueStoreMemoryUsage;
+    vespalib::MemoryUsage _cached_unique_store_values_memory_usage;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 

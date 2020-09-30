@@ -176,8 +176,8 @@ template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 vespalib::MemoryUsage
 UniqueStore<EntryT, RefT, Compare, Allocator>::getMemoryUsage() const
 {
-    vespalib::MemoryUsage usage = _store.getMemoryUsage();
-    usage.merge(_dict->get_memory_usage());
+    vespalib::MemoryUsage usage = get_values_memory_usage();
+    usage.merge(get_dictionary_memory_usage());
     return usage;
 }
 
