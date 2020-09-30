@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.restapi;
 
+import com.yahoo.application.container.DocumentAccesses;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentPut;
@@ -13,12 +14,10 @@ import com.yahoo.document.restapi.DocumentOperationExecutor.VisitOperationsConte
 import com.yahoo.document.restapi.DocumentOperationExecutor.VisitorOptions;
 import com.yahoo.document.restapi.DocumentOperationExecutorImpl.StorageCluster;
 import com.yahoo.document.restapi.DocumentOperationExecutorImpl.DelayQueue;
-import com.yahoo.documentapi.DocumentAccessParams;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.local.LocalAsyncSession;
 import com.yahoo.documentapi.local.LocalDocumentAccess;
-import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import org.junit.After;
@@ -106,7 +105,7 @@ public class DocumentOperationExecutorTest {
     @Before
     public void setUp() {
         clock = new ManualClock();
-        access = new LocalDocumentAccess(new DocumentAccessParams().setDocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/cfg/music.sd").build()));
+        access = DocumentAccesses.createFromSchemas("src/test/cfg");
         executor = new DocumentOperationExecutorImpl(clusterConfig, bucketConfig, executorConfig, access, clock);
         received.clear();
         errors.clear();

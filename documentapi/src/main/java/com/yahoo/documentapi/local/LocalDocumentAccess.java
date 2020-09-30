@@ -22,9 +22,12 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * The main class of the local implementation of the document api
+ * The main class of the local implementation of the document api.
+ * To easily obtain an instance of this, with the documents using the schemas (.sd-files) in a given directoy,
+ * use the {@code com.yahoo.vespa.application} test module and {@code DocumentAccesses.ofSchemas(schemaDirectory)}
  *
  * @author bratseth
+ * @author jonmv
  */
 public class LocalDocumentAccess extends DocumentAccess {
 
