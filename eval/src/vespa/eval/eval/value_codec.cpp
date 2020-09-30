@@ -5,6 +5,9 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+using vespalib::make_string_short::fmt;
 
 namespace vespalib::eval {
 
@@ -154,7 +157,9 @@ struct ContentDecoder {
     static std::unique_ptr<Value> invoke(nbostream &input, const DecodeState &state, const ValueBuilderFactory &factory) {
         std::vector<vespalib::stringref> address(state.num_mapped_dims);
         if (state.num_blocks * state.subspace_size * sizeof(T) > input.size()) {
-            throw IllegalStateException("serialized input too big");
+            auto err = fmt("serialized input claims %zu blocks of size %zu*%zu, but only %zu bytes available",
+                           state.num_blocks, state.subspace_size, sizeof(T), input.size());
+            throw IllegalStateException(err);
         }
         auto builder = factory.create_value_builder<T>(state.type, state.num_mapped_dims, state.subspace_size, state.num_blocks);
         for (size_t i = 0; i < state.num_blocks; ++i) {
