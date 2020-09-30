@@ -40,12 +40,12 @@ public class Quota {
         return new Quota(clusterSize.map(Long::intValue), budget, true);
     }
 
-    public Quota withBudget(Optional<BigDecimal> budget) {
-        return new Quota(this.maxClusterSize, budget, true);
+    public Quota withBudget(BigDecimal budget) {
+        return new Quota(this.maxClusterSize, Optional.of(budget), true);
     }
 
-    public Quota withClusterSize(Optional<Integer> clusterSize) {
-        return new Quota(clusterSize, this.budget, true);
+    public Quota withClusterSize(int clusterSize) {
+        return new Quota(Optional.of(clusterSize), this.budget, true);
     }
 
     public Slime toSlime() {

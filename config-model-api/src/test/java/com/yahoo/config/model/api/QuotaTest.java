@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author ogronnesby
+ */
 public class QuotaTest {
 
     @Test
@@ -38,4 +41,11 @@ public class QuotaTest {
         assertEquals(new BigDecimal("123.4"), quota.budgetAsDecimal().get());
     }
 
+    @Test
+    public void test_serde() {
+        var quota = Quota.unlimited().withBudget(BigDecimal.valueOf(23.5)).withClusterSize(11);
+        var serialized = quota.toSlime();
+        var deserialized = Quota.fromSlime(serialized.get());
+        assertEquals(quota, deserialized);
+    }
 }
