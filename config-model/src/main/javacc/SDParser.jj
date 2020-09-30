@@ -2590,10 +2590,10 @@ String identifierWithDash() :
 }
 
 /**
- * This rule consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
+ * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
  * identifiers.
  *
- * @return The identifier string.
+ * @return the identifier string
  */
 String identifier() : { }
 {
@@ -2724,7 +2724,7 @@ String identifier() : { }
 }
 
 /**
- * This rule consumes a string token and returns the token image.
+ * Consumes a string token and returns the token image.
  *
  * @return The consumed token image.
  */
@@ -2734,7 +2734,7 @@ String string() : { }
 }
 
 /**
- * This rule consumes a quoted string token and returns the token image minus the quotes. This does not perform
+ * Consumes a quoted string token and returns the token image minus the quotes. This does not perform
  * unescaping of the content, it simply removes the first and last character of the image. However, the token itself can
  * contain anything but a double quote.
  *

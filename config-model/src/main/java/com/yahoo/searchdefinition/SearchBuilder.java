@@ -165,16 +165,15 @@ public class SearchBuilder {
     }
 
     private String importString(String str, String searchDefDir, DeployLogger deployLogger) throws ParseException {
-        Search search;
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            search = new SDParser(stream, deployLogger, app, rankProfileRegistry, documentsOnly).search(docTypeMgr, searchDefDir);
+            return importRawSearch(new SDParser(stream, deployLogger, app, rankProfileRegistry, documentsOnly)
+                                           .search(docTypeMgr, searchDefDir));
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
             throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
         }
-        return importRawSearch(search);
     }
 
     /**
