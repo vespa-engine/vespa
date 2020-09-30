@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -331,18 +332,31 @@ public class DocumentOperationExecutorTest {
         AtomicLong counter1 = new AtomicLong(0);
         AtomicLong counter2 = new AtomicLong(0);
         AtomicLong counter3 = new AtomicLong(0);
+        AtomicBoolean throttle = new AtomicBoolean(true);
         OperationContext context1 = new OperationContext((type, message) -> counter1.decrementAndGet(), doc -> counter1.incrementAndGet());
         OperationContext context2 = new OperationContext((type, message) -> counter2.decrementAndGet(), doc -> counter2.incrementAndGet());
         OperationContext context3 = new OperationContext((type, message) -> counter3.decrementAndGet(), doc -> counter3.incrementAndGet());
-        DelayQueue queue = new DelayQueue(3, (operation, context) -> context.success(Optional.empty()), Duration.ofMillis(3), clock);
+        DelayQueue queue = new DelayQueue(3,
+                                          (operation, context) -> {
+                                              if (throttle.get())
+                                                  return false;
+
+                                              context.success(Optional.empty());
+                                              return true;
+                                          },
+                                          Duration.ofMillis(30),
+                                          clock);
         synchronized (queue) { queue.notify(); queue.wait(); } // Make sure maintainers have gone to wait before test starts.
 
-        // Add three operations — the first shall be handled by the queue, the second by an external called, and the third during shutdown.
+        // Add three operations:
+        //  the first shall be handled by the queue on second attempt,
+        //  the second by an external call,and
+        //  the third during shutdown — added later.
         assertTrue(queue.add(nullOperation, context1));
-        clock.advance(Duration.ofMillis(2));
+        clock.advance(Duration.ofMillis(20));
         assertTrue(queue.add(nullOperation, context2));
         assertTrue(queue.add(nullOperation, context3));
-        assertFalse(queue.add(nullOperation, context3));
+        assertFalse("New entries should be rejected by a full queue", queue.add(nullOperation, context3));
         assertEquals(3, queue.size());
         assertEquals(0, counter1.get());
         assertEquals(0, counter2.get());
@@ -355,8 +369,16 @@ public class DocumentOperationExecutorTest {
         assertEquals(0, counter3.get());
         assertEquals(3, queue.size());
 
-        clock.advance(Duration.ofMillis(2));
-        synchronized (queue) { queue.notify(); queue.wait(); } // Maintainer now runs, handling first and evicting second entry.
+        clock.advance(Duration.ofMillis(15));
+        synchronized (queue) { queue.notify(); queue.wait(); } // Maintainer now runs, failing to handle first and evicting second entry.
+        assertEquals(0, counter1.get());
+        assertEquals(-1, counter2.get());
+        assertEquals(0, counter3.get());
+        assertEquals(2, queue.size());
+
+        throttle.set(false);
+        clock.advance(Duration.ofMillis(15));
+        synchronized (queue) { queue.notify(); queue.wait(); } // Maintainer runs again, successfully handling first entry.
         assertEquals(1, counter1.get());
         assertEquals(-1, counter2.get());
         assertEquals(0, counter3.get());
