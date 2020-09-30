@@ -53,14 +53,10 @@ template <typename Function>
 std::unique_ptr<Tensor>
 generic_join(const DenseTensorView &lhs, const Tensor &rhs, Function &&func)
 {
-    const DenseTensorView *view = dynamic_cast<const DenseTensorView *>(&rhs);
-    if (view) {
-        DenseDimensionCombiner combiner(lhs.fast_type(), view->fast_type());
-        TypedCells lhsCells = lhs.cellsRef();
-        TypedCells rhsCells = view->cellsRef();
-        return dispatch_2<CallGenericJoin>(lhsCells, rhsCells, combiner, std::move(func));
-    }
-    return Tensor::UP();
+    DenseDimensionCombiner combiner(lhs.fast_type(), rhs.type());
+    TypedCells lhsCells = lhs.cells();
+    TypedCells rhsCells = rhs.cells();
+    return dispatch_2<CallGenericJoin>(lhsCells, rhsCells, combiner, std::move(func));
 }
 
 }

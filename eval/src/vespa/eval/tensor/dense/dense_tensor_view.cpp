@@ -39,47 +39,33 @@ dimensionsAsString(const eval::ValueType &type)
     return oss.str();
 }
 
-size_t
-calcCellsSize(const eval::ValueType &type)
-{
-    size_t cellsSize = 1;
-    for (const auto &dim : type.dimensions()) {
-        cellsSize *= dim.size;
-    }
-    return cellsSize;
-}
-
-
 void
-checkCellsSize(const DenseTensorView &arg)
+checkCellsSize(const eval::ValueType &type, TypedCells cells)
 {
-    auto cellsSize = calcCellsSize(arg.fast_type());
-    if (arg.cellsRef().size != cellsSize) {
+    auto cellsSize = type.dense_subspace_size();
+    if (cells.size != cellsSize) {
         throw IllegalStateException(make_string("wrong cell size, "
                                                 "expected=%zu, "
                                                 "actual=%zu",
                                                 cellsSize,
-                                                arg.cellsRef().size));
+                                                cells.size));
     }
 }
 
 void
-checkDimensions(const DenseTensorView &lhs, const DenseTensorView &rhs,
+checkDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs,
                 vespalib::stringref operation)
 {
-    if (lhs.fast_type().dimensions() != rhs.fast_type().dimensions()) {
+    if (lhs.dimensions() != rhs.dimensions()) {
         throw IllegalStateException(make_string("mismatching dimensions for "
                                                 "dense tensor %s, "
                                                 "lhs dimensions = '%s', "
                                                 "rhs dimensions = '%s'",
                                                 operation.data(),
-                                                dimensionsAsString(lhs.fast_type()).c_str(),
-                                                dimensionsAsString(rhs.fast_type()).c_str()));
+                                                dimensionsAsString(lhs).c_str(),
+                                                dimensionsAsString(rhs).c_str()));
     }
-    checkCellsSize(lhs);
-    checkCellsSize(rhs);
 }
-
 
 /*
  * Join the cells of two tensors.
@@ -124,26 +110,18 @@ struct CallJoin
 
 template <typename Function>
 Tensor::UP
-joinDenseTensors(const DenseTensorView &lhs, const DenseTensorView &rhs,
-                 Function &&func)
-{
-    TypedCells lhsCells = lhs.cellsRef();
-    TypedCells rhsCells = rhs.cellsRef();
-    return dispatch_2<CallJoin>(lhsCells, rhsCells, lhs.fast_type().dimensions(), std::move(func));
-}
-
-template <typename Function>
-Tensor::UP
 joinDenseTensors(const DenseTensorView &lhs, const Tensor &rhs,
                  vespalib::stringref operation,
                  Function &&func)
 {
-    auto view = dynamic_cast<const DenseTensorView *>(&rhs);
-    if (view) {
-        checkDimensions(lhs, *view, operation);
-        return joinDenseTensors(lhs, *view, func);
-    }
-    return Tensor::UP();
+    const auto & lhs_type = lhs.fast_type();
+    const auto & rhs_type = rhs.type();
+    TypedCells lhs_cells = lhs.cells();
+    TypedCells rhs_cells = rhs.cells();
+    checkDimensions(lhs_type, rhs_type, operation);
+    checkCellsSize(lhs_type, lhs_cells);
+    checkCellsSize(rhs_type, rhs_cells);
+    return dispatch_2<CallJoin>(lhs_cells, rhs_cells, lhs_type.dimensions(), std::move(func));
 }
 
 bool sameCells(TypedCells lhs, TypedCells rhs)
@@ -215,9 +193,8 @@ DenseTensorView::apply(const CellFunction &func) const
 bool
 DenseTensorView::equals(const Tensor &arg) const
 {
-    auto view = dynamic_cast<const DenseTensorView *>(&arg);
-    if (view) {
-        return *this == *view;
+    if (fast_type() == arg.type()) {
+        return sameCells(cells(), arg.cells());
     }
     return false;
 }

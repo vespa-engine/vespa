@@ -15,14 +15,9 @@ using namespace eval::tensor_function;
 
 namespace {
 
-TypedCells getCellsRef(const eval::Value &value) {
-    const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    return denseTensor.cellsRef();
-}
-
 void my_replace_type_op(eval::InterpretedFunction::State &state, uint64_t param) {
     const ValueType *type = (const ValueType *)(param);
-    TypedCells cells = getCellsRef(state.peek(0));
+    TypedCells cells = state.peek(0).cells();
     state.pop_push(state.stash.create<DenseTensorView>(*type, cells));
 }
 
