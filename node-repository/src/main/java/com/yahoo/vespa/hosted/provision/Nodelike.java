@@ -15,7 +15,7 @@ public interface Nodelike {
 
     NodeResources resources();
 
-    /** Returns the hostname oif the parent if this is a child node */
+    /** Returns the hostname of the parent if this is a child node */
     Optional<String> parentHostname();
 
     NodeType type();
