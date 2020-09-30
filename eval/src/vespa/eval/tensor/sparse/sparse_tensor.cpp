@@ -37,14 +37,27 @@ struct CompareValues {
     {
         auto & lhs = static_cast<const SparseTensorT<T> &>(lhs_in);
         auto & rhs = static_cast<const SparseTensorT<T> &>(rhs_in);
-        return (lhs.my_values() == rhs.my_values());
+        auto lhs_cells = lhs.cells().template typify<T>();
+        auto rhs_cells = rhs.cells().template typify<T>();
+        size_t rhs_idx;
+        for (const auto & kv : lhs.index().get_map()) {
+            if (rhs.index().lookup_address(kv.first, rhs_idx)) {
+                size_t lhs_idx = kv.second;
+                if (lhs_cells[lhs_idx] != rhs_cells[rhs_idx]) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 };
 
 bool
 SparseTensor::operator==(const SparseTensor &rhs) const
 {
-    if (_type == rhs.fast_type() && _index.get_map() == rhs._index.get_map()) {
+    if (fast_type() == rhs.fast_type() && my_size() == rhs.my_size()) {
         return typify_invoke<1,eval::TypifyCellType,CompareValues>(_type.cell_type(), *this, rhs);
     }
     return false;
