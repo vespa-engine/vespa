@@ -47,7 +47,7 @@ public final class ConnectionParams {
         private int traceEveryXOperation = 0;
         private boolean printTraceToStdErr = true;
         private boolean useTlsConfigFromEnvironment = false;
-        private Duration connectionTimeToLive = Duration.ofSeconds(15);
+        private Duration connectionTimeToLive = Duration.ofSeconds(30);
         private Path privateKey;
         private Path certificate;
         private Path caCertificates;
