@@ -232,6 +232,16 @@ public class DocumentOperationExecutorTest {
     }
 
     @Test
+    public void testCallback() {
+        AtomicBoolean called = new AtomicBoolean();
+        executor.get(doc1.getId(), parameters().withResponseHandler(__ -> called.set(true)), operationContext());
+        assertTrue(called.get());
+        assertEquals(List.of(), messages);
+        assertEquals(List.of(), errors);
+        assertEquals(List.of(), received);
+    }
+
+    @Test
     public void testVisit() throws InterruptedException {
         executor.put(new DocumentPut(doc1), parameters(), operationContext());
         executor.put(new DocumentPut(doc2), parameters(), operationContext());

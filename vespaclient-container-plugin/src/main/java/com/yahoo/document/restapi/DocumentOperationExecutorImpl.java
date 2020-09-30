@@ -166,22 +166,22 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
 
     @Override
     public void get(DocumentId id, DocumentOperationParameters parameters, OperationContext context) {
-        accept(() -> asyncSession.get(id, parameters.withResponseHandler(handlerOf(context))), context);
+        accept(() -> asyncSession.get(id, parameters.withResponseHandler(handlerOf(parameters, context))), context);
     }
 
     @Override
     public void put(DocumentPut put, DocumentOperationParameters parameters, OperationContext context) {
-        accept(() -> asyncSession.put(put, parameters.withResponseHandler(handlerOf(context))), context);
+        accept(() -> asyncSession.put(put, parameters.withResponseHandler(handlerOf(parameters, context))), context);
     }
 
     @Override
     public void update(DocumentUpdate update, DocumentOperationParameters parameters, OperationContext context) {
-        accept(() -> asyncSession.update(update, parameters.withResponseHandler(handlerOf(context))), context);
+        accept(() -> asyncSession.update(update, parameters.withResponseHandler(handlerOf(parameters, context))), context);
     }
 
     @Override
     public void remove(DocumentId id, DocumentOperationParameters parameters, OperationContext context) {
-        accept(() -> asyncSession.remove(id, parameters.withResponseHandler(handlerOf(context))), context);
+        accept(() -> asyncSession.remove(id, parameters.withResponseHandler(handlerOf(parameters, context))), context);
     }
 
     @Override
@@ -230,8 +230,9 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         return resolveCluster(Optional.of(cluster), clusters).route();
     }
 
-    private ResponseHandler handlerOf(OperationContext context) {
+    private ResponseHandler handlerOf(DocumentOperationParameters parameters, OperationContext context) {
         return response -> {
+            parameters.responseHandler().ifPresent(originalHandler -> originalHandler.handleResponse(response));
             if (response.isSuccess())
                 context.success(response instanceof DocumentResponse ? Optional.ofNullable(((DocumentResponse) response).getDocument())
                                                                      : Optional.empty());
