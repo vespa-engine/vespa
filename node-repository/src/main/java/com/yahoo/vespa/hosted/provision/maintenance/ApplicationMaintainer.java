@@ -79,9 +79,9 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
      * @return whether it was successfully deployed
      */
     protected final boolean deployWithLock(ApplicationId application) {
-        if ( ! canDeployNow(application)) return false; // redeployment is no longer needed
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
             if ( ! deployment.isValid()) return false; // this will be done at another config server
+            if ( ! canDeployNow(application)) return false; // redeployment is no longer needed
             log.log(Level.INFO, application + " will be deployed, last deploy time " + getLastDeployTime(application));
             return deployment.activate().isPresent();
         } finally {
