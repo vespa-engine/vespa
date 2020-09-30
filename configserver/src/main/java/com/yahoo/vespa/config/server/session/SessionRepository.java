@@ -451,8 +451,9 @@ public class SessionRepository {
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId,
-                                      TimeoutBudget timeoutBudget, Optional<Long> activeSessionId) {
+    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+        applicationRepo.createApplication(applicationId);
+        Optional<Long> activeSessionId = applicationRepo.activeSessionOf(applicationId);
         return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
     }
 

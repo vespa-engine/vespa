@@ -284,13 +284,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         bootstrapping.set(false);
     }
 
-    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
+    public PrepareResult prepare(long sessionId, PrepareParams prepareParams) {
         DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
-        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        Deployment deployment = prepare(sessionId, prepareParams, logger);
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
-    private Deployment prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
+    private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
+        Tenant tenant = getTenant(prepareParams.getApplicationId());
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
@@ -316,9 +317,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        Tenant tenant = getTenant(applicationId);
         DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
-        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        Deployment deployment = prepare(sessionId, prepareParams, logger);
         deployment.activate();
 
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
@@ -820,14 +820,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
-        Tenant tenant = getTenant(applicationId);
-        tenant.getApplicationRepo().createApplication(applicationId);
-        Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
-        LocalSession session = tenant.getSessionRepository().createSession(applicationDirectory,
-                                                                           applicationId,
-                                                                           timeoutBudget,
-                                                                           activeSessionId);
-        tenant.getSessionRepository().addLocalSession(session);
+        SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
+        LocalSession session = sessionRepository.createSession(applicationDirectory, applicationId, timeoutBudget);
+        sessionRepository.addLocalSession(session);
         return session.getSessionId();
     }
 
