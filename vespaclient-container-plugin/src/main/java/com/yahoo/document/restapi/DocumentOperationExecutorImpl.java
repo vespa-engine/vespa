@@ -2,6 +2,7 @@
 package com.yahoo.document.restapi;
 
 import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
@@ -103,11 +104,11 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         this.asyncSession = access.createAsyncSession(new AsyncParameters());
         this.clock = requireNonNull(clock);
         this.clusters = Map.copyOf(clusters);
-        this.throttled = new DelayQueue(maxThrottled, this::send, resendDelay, clock);
+        this.throttled = new DelayQueue(maxThrottled, this::send, resendDelay, clock, "throttle");
         this.timeouts = new DelayQueue(Long.MAX_VALUE, (__, context) -> {
             context.error(TIMEOUT, "Timed out after " + defaultTimeout);
             return true;
-        }, defaultTimeout, clock);
+        }, defaultTimeout, clock, "timeout");
     }
 
     private static VisitorParameters asParameters(VisitorOptions options, Map<String, StorageCluster> clusters, Duration visitTimeout) {
@@ -295,7 +296,8 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         private final Duration delay;
         private final long defaultWaitMillis;
 
-        public DelayQueue(long maxSize, BiPredicate<Supplier<Result>, OperationContext> action, Duration delay, Clock clock) {
+        public DelayQueue(long maxSize, BiPredicate<Supplier<Result>, OperationContext> action,
+                          Duration delay, Clock clock, String threadName) {
             if (maxSize < 0)
                 throw new IllegalArgumentException("Max size cannot be negative, but was " + maxSize);
             if (delay.isNegative())
@@ -305,7 +307,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
             this.delay = delay;
             this.defaultWaitMillis = Math.min(delay.toMillis(), 100); // Run regularly to evict handled contexts.
             this.clock = requireNonNull(clock);
-            this.maintainer = new Thread(() -> maintain(action));
+            this.maintainer = new DaemonThreadFactory("document-operation-executor-" + threadName).newThread(() -> maintain(action));
             this.maintainer.start();
         }
 
