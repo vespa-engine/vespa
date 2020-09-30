@@ -331,6 +331,13 @@ public class DocumentV1ApiTest {
                        response.readAll());
         assertEquals(412, response.getStatus());
 
+        // Client close during processing gives empty body
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");
+        response.clientClose();
+        executor.lastOperationContext().error(TIMEOUT, "no dice");
+        assertEquals("", response.readAll());
+        assertEquals(504, response.getStatus());
+
         // OPTIONS gets options
         response = driver.sendRequest("https://localhost/document/v1/space/music/docid/one", OPTIONS);
         assertEquals("", response.readAll());

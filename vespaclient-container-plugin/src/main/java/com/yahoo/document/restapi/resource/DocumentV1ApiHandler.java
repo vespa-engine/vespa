@@ -87,7 +87,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final CompletionHandler logException = new CompletionHandler() {
         @Override public void completed() { }
         @Override public void failed(Throwable t) {
-            log.log(WARNING, "Exception writing response data", t);
+            log.log(FINE, () -> "Exception writing or closing response data: " + Exceptions.toMessageString(t));
         }
     };
 
