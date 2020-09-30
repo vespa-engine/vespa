@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -211,11 +212,24 @@ public class SessionRepository {
     // Will delete session data in ZooKeeper and file system
     public void deleteLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
-        log.log(Level.FINE, () -> "Deleting local session " + sessionId);
-        SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
-        if (watcher != null) watcher.close();
-        localSessionCache.remove(sessionId);
+        try (Lock lock = lock(sessionId)) {
+            log.log(Level.FINE, () -> "Deleting local session " + sessionId);
+            SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
+            if (watcher != null) watcher.close();
+            localSessionCache.remove(sessionId);
+            deletePersistentData(sessionId);
+        }
+    }
+
+    private void deletePersistentData(long sessionId) {
         NestedTransaction transaction = new NestedTransaction();
+        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+
+        // We will try to delete data from zookeeper from several servers, but since we take a lock
+        // and the transaction will either delete everything or nothing (which will happen if it has been done
+        // on another server) this works fine
+        transaction.add(sessionZooKeeperClient.deleteTransaction(), FileTransaction.class);
+
         transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
         transaction.commit();
     }
@@ -266,7 +280,6 @@ public class SessionRepository {
         return deleted;
     }
 
-    // TODO: Delete after 7.294 has been rolled out everywhere
     public int deleteExpiredLocks(Clock clock, Duration expiryTime) {
         int deleted = 0;
         for (var lock : curator.getChildren(locksPath)) {
@@ -358,12 +371,16 @@ public class SessionRepository {
     }
 
     public void delete(RemoteSession remoteSession) {
+        // This change will be picked up by directoryCache in this class, which will do the rest of
+        // the cleanup on all config servers
         long sessionId = remoteSession.getSessionId();
-        // TODO: Change log level to FINE when debugging is finished
-        log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
-        remoteSession.deactivate();
-        remoteSession.delete();
-        remoteSessionCache.remove(sessionId);
+        try (Lock lock = lock(sessionId)) {
+            // TODO: Change log level to FINE when debugging is finished
+            log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
+            remoteSession.deactivate();
+            remoteSession.delete();
+            remoteSessionCache.remove(sessionId);
+        }
         LocalSession localSession = getLocalSession(sessionId);
         if (localSession != null) {
             // TODO: Change log level to FINE when debugging is finished
@@ -383,10 +400,7 @@ public class SessionRepository {
     private void sessionRemoved(long sessionId) {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
-        RemoteSession session = remoteSessionCache.remove(sessionId);
-        if (session != null) {
-            session.deactivate();
-        }
+        remoteSessionCache.remove(sessionId);
         metrics.incRemovedSessions();
     }
 
@@ -676,7 +690,16 @@ public class SessionRepository {
         return getLocalSessions().toString();
     }
 
+    /** Returns the lock for session operations for the given session id. */
+    public Lock lock(long sessionId) {
+        return curator.lock(lockPath(sessionId), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
+    }
+
     public Clock clock() { return clock; }
+
+    private Path lockPath(long sessionId) {
+        return locksPath.append(String.valueOf(sessionId));
+    }
 
     public Transaction createActivateTransaction(Session session) {
         Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
