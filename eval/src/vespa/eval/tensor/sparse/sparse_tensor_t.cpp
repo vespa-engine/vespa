@@ -244,5 +244,3 @@ template class SparseTensorT<float>;
 template class SparseTensorT<double>;
 
 }
-
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::tensor::SparseTensorAddressRef, double);

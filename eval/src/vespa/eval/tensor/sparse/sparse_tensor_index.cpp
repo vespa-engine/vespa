@@ -285,3 +285,5 @@ SparseTensorIndex::get_memory_usage() const
 //-----------------------------------------------------------------------------
 
 } // namespace
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::tensor::SparseTensorAddressRef, uint32_t);
