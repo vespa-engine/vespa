@@ -145,7 +145,8 @@ class NodeAllocation {
                                                ClusterMembership.from(cluster, highestIndex.add(1)),
                                                requestedNodes.resources().orElse(candidate.resources()),
                                                nodeRepository.clock().instant());
-                accepted.add(acceptNode(candidate, false, false));
+                if (candidate.isValid())
+                    accepted.add(acceptNode(candidate, false, false));
             }
         }
 

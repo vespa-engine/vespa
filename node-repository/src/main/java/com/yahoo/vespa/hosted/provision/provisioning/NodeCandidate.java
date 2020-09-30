@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A node candidate containing the details required to prioritize it for allocation. This is immutable.
@@ -28,6 +29,8 @@ import java.util.logging.Level;
  * @author smorgrav
  */
 abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
+
+    private static final Logger log = Logger.getLogger(NodeCandidate.class.getName());
 
     /** List of host states ordered by preference (ascending) */
     private static final List<Node.State> HOST_STATE_PRIORITY =
@@ -79,8 +82,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** Called when the node described by this candidate must be created */
     public abstract NodeCandidate withNode();
 
-    /** Returns the node instance of this candidate, or throws IllegalStateException if there is none */
+    /** Returns the node instance of this candidate, or an invalid node if it cannot be created */
     public abstract Node toNode();
+
+    /** Returns whether this node can - as far as we know - be used to run the application workload */
+    public abstract boolean isValid();
 
     /**
      * Compare this candidate to another
@@ -238,23 +244,33 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         @Override
         public NodeType type() { return node.type(); }
 
+        @Override
         public Optional<Allocation> allocation() { return node.allocation(); }
 
+        @Override
         public Node.State state() { return node.state(); }
 
+        @Override
         public boolean wantToRetire() { return node.status().wantToRetire(); }
 
+        @Override
         public Flavor flavor() { return node.flavor(); }
 
+        @Override
         public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
             return new ConcreteNodeCandidate(node.allocate(owner, membership, requestedResources, at),
                                              freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizable);
         }
 
         /** Called when the node described by this candidate must be created */
+        @Override
         public NodeCandidate withNode() { return this; }
 
+        @Override
         public Node toNode() { return node; }
+
+        @Override
+        public boolean isValid() { return true; }
 
         @Override
         public int compareTo(NodeCandidate other) {
@@ -304,27 +320,32 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         @Override
         public NodeType type() { return NodeType.tenant; }
 
+        @Override
         public Optional<Allocation> allocation() { return Optional.empty(); }
 
+        @Override
         public Node.State state() { return Node.State.reserved; }
 
+        @Override
         public boolean wantToRetire() { return false; }
 
+        @Override
         public Flavor flavor() { return new Flavor(resources); }
 
+        @Override
         public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
             return withNode().allocate(owner, membership, requestedResources, at);
         }
 
-        /** Called when the node described by this candidate must be created */
+        @Override
         public NodeCandidate withNode() {
             Optional<IP.Allocation> allocation;
             try {
                 allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
-                if (allocation.isEmpty())
-                    throw new IllegalStateException("No free ip addresses on " + parent.get() + ": Cannot allocate node");
+                if (allocation.isEmpty()) return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get());
             } catch (Exception e) {
-                throw new IllegalStateException("Failed allocating IP address on " + parent.get() +": ", e);
+                log.warning("Failed allocating IP address on " + parent.get() +": " + Exceptions.toMessageString(e));
+                return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get());
             }
 
             Node node = Node.createDockerNode(allocation.get().addresses(),
@@ -337,7 +358,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         }
 
+        @Override
         public Node toNode() { return withNode().toNode(); }
+
+        @Override
+        public boolean isValid() { return true; }
 
         @Override
         public int compareTo(NodeCandidate other) {
@@ -352,6 +377,70 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         @Override
         public String toString() {
             return "candidate node with " + resources + " on " + parent.get();
+        }
+
+    }
+
+    /**
+     * A candidate which failed to transition from virtual to concrete.
+     * It will silently stay invalid no matter which method is called on it.
+     */
+    static class InvalidNodeCandidate extends NodeCandidate {
+
+        private final NodeResources resources;
+
+        private InvalidNodeCandidate(NodeResources resources, NodeResources freeParentCapacity, Node parent) {
+            super(freeParentCapacity, Optional.of(parent), false, false, true, false);
+            this.resources = resources;
+        }
+
+        @Override
+        public NodeResources resources() { return resources; }
+
+        @Override
+        public Optional<String> parentHostname() { return Optional.of(parent.get().hostname()); }
+
+        @Override
+        public NodeType type() { return NodeType.tenant; }
+
+        @Override
+        public Optional<Allocation> allocation() { return Optional.empty(); }
+
+        @Override
+        public Node.State state() { return Node.State.reserved; }
+
+        @Override
+        public boolean wantToRetire() { return false; }
+
+        @Override
+        public Flavor flavor() { return new Flavor(resources); }
+
+        @Override
+        public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
+            return this;
+        }
+
+        @Override
+        public NodeCandidate withNode() {
+            return this;
+        }
+
+        @Override
+        public Node toNode() {
+            throw new IllegalStateException("Candidate node on " + parent + " is invalid");
+        }
+
+        @Override
+        public boolean isValid() { return false; }
+
+        @Override
+        public int compareTo(NodeCandidate other) {
+            return 1;
+        }
+
+        @Override
+        public String toString() {
+            return "invalid candidate node with " + resources + " on " + parent.get();
         }
 
     }
