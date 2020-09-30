@@ -27,6 +27,7 @@ import static java.util.Collections.unmodifiableList;
 public class MetricsConsumer {
 
     // Pre-defined consumers
+    // See also ConsumersConfigGenerator and MetricsBuilder where these must be enumerated
     public static final MetricsConsumer vespa =
             consumer(VespaMetrics.vespaMetricsConsumerId.id, vespaMetricSet, systemMetricSet, networkMetricSet);
     public static final MetricsConsumer defaultConsumer =

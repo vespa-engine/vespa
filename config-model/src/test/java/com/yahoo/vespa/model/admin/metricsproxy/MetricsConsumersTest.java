@@ -46,19 +46,19 @@ public class MetricsConsumersTest {
     @Test
     public void default_public_consumer_is_set_up_for_self_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), self_hosted);
-        assertEquals(2, config.consumer().size());
-        assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(1).name());
-
+        assertEquals(3, config.consumer().size());
+        assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(2).name());
         int numMetricsForPublicDefaultConsumer = defaultMetricSet.getMetrics().size() + numSystemMetrics;
-        assertEquals(numMetricsForPublicDefaultConsumer, config.consumer(1).metric().size());
+        assertEquals(numMetricsForPublicDefaultConsumer, config.consumer(2).metric().size());
     }
 
     @Test
-    public void vespa_consumer_and_default_public_consumer_is_set_up_for_hosted() {
+    public void consumers_are_set_up_for_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), hosted);
-        assertEquals(2, config.consumer().size());
+        assertEquals(3, config.consumer().size());
         assertEquals(MetricsConsumer.vespa.id(), config.consumer(0).name());
-        assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(1).name());
+        assertEquals(MetricsConsumer.autoscaling.id(), config.consumer(1).name());
+        assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(2).name());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class MetricsConsumersTest {
         );
         VespaModel hostedModel = getModel(services, hosted);
         ConsumersConfig config = consumersConfigFromModel(hostedModel);
-        assertEquals(2, config.consumer().size());
+        assertEquals(3, config.consumer().size());
 
         // All default metrics are retained
         ConsumersConfig.Consumer vespaConsumer = config.consumer(0);

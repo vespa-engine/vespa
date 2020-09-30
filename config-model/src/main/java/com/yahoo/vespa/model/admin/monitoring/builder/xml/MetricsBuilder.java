@@ -89,6 +89,9 @@ public class MetricsBuilder {
         if (consumerId.equalsIgnoreCase(MetricsConsumer.defaultConsumer.id()))
             throw new IllegalArgumentException("'" + MetricsConsumer.defaultConsumer.id() + "' is not allowed as metrics consumer id (case is ignored.)");
 
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.autoscaling.id()))
+            throw new IllegalArgumentException("'" + MetricsConsumer.autoscaling.id() + " is not allowed as metrics consumer id (case is ignored.)");
+
         if (metrics.hasConsumerIgnoreCase(consumerId))
             throw new IllegalArgumentException("'" + consumerId + "' is used as id for two metrics consumers (case is ignored.)");
     }
