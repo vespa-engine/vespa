@@ -4,6 +4,9 @@
 #include "spi_bm_feed_handler.h"
 #include "storage_api_rpc_bm_feed_handler.h"
 #include "storage_api_chain_bm_feed_handler.h"
+#include "bm_storage_chain_builder.h"
+#include "bm_cluster_controller.h"
+#include "bm_storage_link_context.h"
 #include <vespa/vespalib/testkit/testapp.h>
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-imported-fields.h>
@@ -65,6 +68,7 @@
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
+#include <vespa/slobrok/sbmirror.h>
 #include <getopt.h>
 #include <iostream>
 
@@ -126,6 +130,9 @@ using search::transactionlog::TransLogServer;
 using storage::rpc::SharedRpcResources;
 using storage::spi::PersistenceProvider;
 using vespalib::makeLambdaTask;
+using feedbm::BmClusterController;
+using feedbm::BmStorageChainBuilder;
+using feedbm::BmStorageLinkContext;
 using feedbm::IBmFeedHandler;
 using feedbm::SpiBmFeedHandler;
 using feedbm::StorageApiRpcBmFeedHandler;
@@ -262,7 +269,7 @@ public:
     uint32_t get_remove_passes() const { return _remove_passes; }
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
     bool get_enable_distributor() const { return _enable_distributor; }
-    bool get_enable_service_layer() const { return _enable_service_layer; }
+    bool get_enable_service_layer() const { return _enable_service_layer || _enable_distributor; }
     bool get_use_storage_chain() const { return _use_storage_chain; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_threads(uint32_t threads_in) { _threads = threads_in; }
@@ -297,10 +304,6 @@ BMParams::check() const
     }
     if (_rpc_network_threads < 1) {
         std::cerr << "Too few rpc network threads: " << _rpc_network_threads << std::endl;
-        return false;
-    }
-    if (_enable_distributor && !_enable_service_layer) {
-        std::cerr << "Service layer must be enabled if distributor layer is enabled" << std::endl;
         return false;
     }
     return true;
@@ -558,9 +561,10 @@ struct PersistenceProviderFixture {
     std::shared_ptr<IConfigContext>            _config_context;
     std::unique_ptr<IBmFeedHandler>            _feed_handler;
     std::unique_ptr<mbus::Slobrok>             _slobrok;
-    std::shared_ptr<StorageApiChainBmFeedHandler::Context> _service_layer_chain_context;
+    std::shared_ptr<BmStorageLinkContext>      _service_layer_chain_context;
     std::unique_ptr<MyServiceLayerProcess>     _service_layer;
     std::unique_ptr<SharedRpcResources>        _rpc_client_shared_rpc_resources;
+    std::shared_ptr<BmStorageLinkContext>      _distributor_chain_context;
     std::unique_ptr<storage::DistributorProcess> _distributor;
 
     PersistenceProviderFixture(const BMParams& params);
@@ -573,6 +577,7 @@ struct PersistenceProviderFixture {
     std::unique_ptr<Document> make_document(uint32_t n, uint32_t i) const;
     std::unique_ptr<DocumentUpdate> make_document_update(uint32_t n, uint32_t i) const;
     void create_buckets();
+    void wait_slobrok(const vespalib::string &name);
     void start_service_layer(const BMParams& params);
     void start_distributor(const BMParams& params);
     void create_feed_handler(const BMParams& params);
@@ -623,6 +628,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _service_layer_chain_context(),
       _service_layer(),
       _rpc_client_shared_rpc_resources(),
+      _distributor_chain_context(),
       _distributor()
 {
     create_document_db();
@@ -725,16 +731,31 @@ PersistenceProviderFixture::create_buckets()
 }
 
 void
+PersistenceProviderFixture::wait_slobrok(const vespalib::string &name)
+{
+    auto &mirror = _rpc_client_shared_rpc_resources->slobrok_mirror();
+    LOG(info, "Waiting for %s in slobrok", name.c_str());
+    for (;;) {
+        auto specs = mirror.lookup(name);
+        if (!specs.empty()) {
+            LOG(info, "Found %s in slobrok", name.c_str());
+            return;
+        }
+        std::this_thread::sleep_for(100ms);
+    }
+}
+
+void
 PersistenceProviderFixture::start_service_layer(const BMParams& params)
 {
     LOG(info, "start slobrok");
     _slobrok = std::make_unique<mbus::Slobrok>(_slobrok_port);
     LOG(info, "start service layer");
     config::ConfigUri config_uri("bm-servicelayer", _config_context);
-    std::unique_ptr<storage::IStorageChainBuilder> chain_builder;
-    if (params.get_use_storage_chain()) {
-        _service_layer_chain_context = StorageApiChainBmFeedHandler::get_context();
-        chain_builder = StorageApiChainBmFeedHandler::get_storage_chain_builder(_service_layer_chain_context);
+    std::unique_ptr<BmStorageChainBuilder> chain_builder;
+    if (params.get_use_storage_chain() && !params.get_enable_distributor()) {
+        chain_builder = std::make_unique<BmStorageChainBuilder>();
+        _service_layer_chain_context = chain_builder->get_context();
     }
     _service_layer = std::make_unique<MyServiceLayerProcess>(config_uri,
                                                              *_persistence_engine,
@@ -746,27 +767,53 @@ PersistenceProviderFixture::start_service_layer(const BMParams& params)
     config::ConfigUri client_config_uri("bm-rpc-client", _config_context);
     _rpc_client_shared_rpc_resources = std::make_unique<SharedRpcResources>(client_config_uri, _rpc_client_port, 100);
     _rpc_client_shared_rpc_resources->start_server_and_register_slobrok("bm-rpc-client");
+    wait_slobrok("storage/cluster.storage/storage/0/default");
+    wait_slobrok("storage/cluster.storage/storage/0");
+    BmClusterController fake_controller(*_rpc_client_shared_rpc_resources);
+    fake_controller.set_cluster_up(false);
 }
 
 void
 PersistenceProviderFixture::start_distributor(const BMParams& params)
 {
-    if (params.get_enable_distributor()) {
-        config::ConfigUri config_uri("bm-distributor", _config_context);
-        _distributor = std::make_unique<storage::DistributorProcess>(config_uri);
-        _distributor->setupConfig(100ms);
-        _distributor->createNode();
+    config::ConfigUri config_uri("bm-distributor", _config_context);
+    std::unique_ptr<BmStorageChainBuilder> chain_builder;
+    if (params.get_use_storage_chain()) {
+        chain_builder = std::make_unique<BmStorageChainBuilder>();
+        _distributor_chain_context = chain_builder->get_context();
     }
+    _distributor = std::make_unique<storage::DistributorProcess>(config_uri);
+    if (chain_builder) {
+        _distributor->set_storage_chain_builder(std::move(chain_builder));
+    }
+    _distributor->setupConfig(100ms);
+    _distributor->createNode();
+    wait_slobrok("storage/cluster.storage/distributor/0/default");
+    wait_slobrok("storage/cluster.storage/distributor/0");
+    BmClusterController fake_controller(*_rpc_client_shared_rpc_resources);
+    fake_controller.set_cluster_up(true);
+    // Wait for bucket ownership transfer safe time
+    std::this_thread::sleep_for(2s);
 }
 
 void
 PersistenceProviderFixture::create_feed_handler(const BMParams& params)
 {
+    if (params.get_enable_distributor()) {
+        if (params.get_use_storage_chain()) {
+            assert(_distributor_chain_context);
+            _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_distributor_chain_context, true);
+        } else {
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, true);
+        }
+        return;
+    }
     if (params.get_enable_service_layer()) {
         if (params.get_use_storage_chain()) {
-            _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_service_layer_chain_context);
+            assert(_service_layer_chain_context);
+            _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_service_layer_chain_context, false);
         } else {
-            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo);
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, false);
         }
     }
 }
@@ -849,11 +896,12 @@ put_async_task(PersistenceProviderFixture &f, BMRange range, const vespalib::nbo
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
     BucketId bucket_id;
     auto bucket_space = f._bucket_space;
+    bool use_timestamp = !f._feed_handler->manages_timestamp();
     for (unsigned int i = range.get_start(); i < range.get_end(); ++i) {
         is >> bucket_id;
         document::Bucket bucket(bucket_space, bucket_id);
         auto document = std::make_unique<Document>(repo, is);
-        f._feed_handler->put(bucket, std::move(document), time_bias + i, pending_tracker);
+        f._feed_handler->put(bucket, std::move(document), (use_timestamp ? (time_bias + i) : 0), pending_tracker);
     }
     assert(is.empty());
     pending_tracker.drain();
@@ -901,11 +949,12 @@ update_async_task(PersistenceProviderFixture &f, BMRange range, const vespalib::
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
     BucketId bucket_id;
     auto bucket_space = f._bucket_space;
+    bool use_timestamp = !f._feed_handler->manages_timestamp();
     for (unsigned int i = range.get_start(); i < range.get_end(); ++i) {
         is >> bucket_id;
         document::Bucket bucket(bucket_space, bucket_id);
         auto document_update = DocumentUpdate::createHEAD(repo, is);
-        f._feed_handler->update(bucket, std::move(document_update), time_bias + i, pending_tracker);
+        f._feed_handler->update(bucket, std::move(document_update), (use_timestamp ? (time_bias + i) : 0), pending_tracker);
     }
     assert(is.empty());
     pending_tracker.drain();
@@ -953,11 +1002,12 @@ remove_async_task(PersistenceProviderFixture &f, BMRange range, const vespalib::
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
     BucketId bucket_id;
     auto bucket_space = f._bucket_space;
+    bool use_timestamp = !f._feed_handler->manages_timestamp();
     for (unsigned int i = range.get_start(); i < range.get_end(); ++i) {
         is >> bucket_id;
         document::Bucket bucket(bucket_space, bucket_id);
         DocumentId document_id(is);
-        f._feed_handler->remove(bucket, document_id, time_bias + i, pending_tracker);
+        f._feed_handler->remove(bucket, document_id, (use_timestamp ? (time_bias + i) : 0), pending_tracker);
     }
     assert(is.empty());
     pending_tracker.drain();
@@ -990,7 +1040,9 @@ void benchmark_async_spi(const BMParams &bm_params)
     LOG(info, "start initialize");
     provider.initialize();
     LOG(info, "create %u buckets", f.num_buckets());
-    f.create_buckets();
+    if (!f._feed_handler->manages_buckets()) {
+        f.create_buckets();
+    }
     if (bm_params.get_enable_service_layer()) {
         f.start_service_layer(bm_params);
     }
@@ -1003,6 +1055,7 @@ void benchmark_async_spi(const BMParams &bm_params)
     auto update_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_update_feed(f, range, bucket_selector); }, f.num_buckets(), "update");
     auto remove_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_remove_feed(f, range, bucket_selector); }, f.num_buckets(), "remove");
     int64_t time_bias = 1;
+    LOG(info, "Feed handler is %s", f._feed_handler->get_name().c_str());
     for (uint32_t pass = 0; pass < bm_params.get_put_passes(); ++pass) {
         run_put_async_tasks(f, executor, pass, time_bias, put_feed, bm_params);
     }

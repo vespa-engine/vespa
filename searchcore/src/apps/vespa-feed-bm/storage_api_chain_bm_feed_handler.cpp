@@ -3,15 +3,13 @@
 #include "storage_api_chain_bm_feed_handler.h"
 #include "pending_tracker.h"
 #include "storage_reply_error_checker.h"
+#include "bm_storage_link_context.h"
+#include "bm_storage_link.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/common/storagelink.h>
-#include <vespa/storage/common/storage_chain_builder.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <cassert>
@@ -19,7 +17,6 @@
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
-using storage::StorageLink;
 
 namespace feedbm {
 
@@ -34,106 +31,10 @@ std::shared_ptr<storage::api::StorageCommand> make_set_cluster_state_cmd() {
 
 }
 
-class BmStorageLink : public StorageLink,
-                      public StorageReplyErrorChecker
-{
-    std::mutex _mutex;
-    vespalib::hash_map<uint64_t, PendingTracker *> _pending;
-public:
-    BmStorageLink();
-    ~BmStorageLink() override;
-    bool onDown(const std::shared_ptr<storage::api::StorageMessage>& msg) override;
-    bool onUp(const std::shared_ptr<storage::api::StorageMessage>& msg) override;
-    void retain(uint64_t msg_id, PendingTracker &tracker) {
-        tracker.retain();
-        std::lock_guard lock(_mutex);
-        _pending.insert(std::make_pair(msg_id, &tracker));
-    }
-    bool release(uint64_t msg_id) {
-        PendingTracker *tracker = nullptr;
-        {
-            std::lock_guard lock(_mutex);
-            auto itr = _pending.find(msg_id);
-            if (itr == _pending.end()) {
-                return false;
-            }
-            tracker = itr->second;
-            _pending.erase(itr);
-        }
-        tracker->release();
-        return true;
-    }
-};
-
-BmStorageLink::BmStorageLink()
-    : storage::StorageLink("vespa-bm-feed"),
-      StorageReplyErrorChecker(),
-      _mutex(),
-      _pending()
-{
-}
-
-BmStorageLink::~BmStorageLink()
-{
-    std::lock_guard lock(_mutex);
-    assert(_pending.empty());
-}
-
-bool
-BmStorageLink::onDown(const std::shared_ptr<storage::api::StorageMessage>& msg)
-{
-    (void) msg;
-    return false;
-}
-
-bool
-BmStorageLink::onUp(const std::shared_ptr<storage::api::StorageMessage>& msg)
-{
-    check_error(*msg);
-    return release(msg->getMsgId());
-}
-
-struct StorageApiChainBmFeedHandler::Context {
-    BmStorageLink* bm_link;
-    Context()
-        : bm_link(nullptr)
-    {
-    }
-    ~Context() = default;
-};
-
-class MyStorageChainBuilder : public storage::StorageChainBuilder
-{
-    using Parent = storage::StorageChainBuilder;
-    std::shared_ptr<StorageApiChainBmFeedHandler::Context> _context;
-public:
-    MyStorageChainBuilder(std::shared_ptr<StorageApiChainBmFeedHandler::Context> context);
-    ~MyStorageChainBuilder() override;
-    void add(std::unique_ptr<StorageLink> link) override;
-};
-
-MyStorageChainBuilder::MyStorageChainBuilder(std::shared_ptr<StorageApiChainBmFeedHandler::Context> context)
-    : storage::StorageChainBuilder(),
-      _context(std::move(context))
-{
-}
-
-MyStorageChainBuilder::~MyStorageChainBuilder() = default;
-
-void
-MyStorageChainBuilder::add(std::unique_ptr<StorageLink> link)
-{
-    vespalib::string name = link->getName();
-    Parent::add(std::move(link));
-    if (name == "Communication manager") {
-        auto my_link = std::make_unique<BmStorageLink>();
-        _context->bm_link = my_link.get();
-        Parent::add(std::move(my_link));
-    }
-}
-
-StorageApiChainBmFeedHandler::StorageApiChainBmFeedHandler(std::shared_ptr<Context> context)
+StorageApiChainBmFeedHandler::StorageApiChainBmFeedHandler(std::shared_ptr<BmStorageLinkContext> context, bool distributor)
     : IBmFeedHandler(),
+      _name(vespalib::string("StorageApiChainBmFeedHandler(") + (distributor ? "distributor" : "servicelayer") + ")"),
+      _distributor(distributor),
       _context(std::move(context))
 {
     auto cmd = make_set_cluster_state_cmd();
@@ -174,22 +75,28 @@ StorageApiChainBmFeedHandler::remove(const document::Bucket& bucket, const Docum
     send_msg(std::move(cmd), tracker);
 }
 
-std::shared_ptr<StorageApiChainBmFeedHandler::Context>
-StorageApiChainBmFeedHandler::get_context()
-{
-    return std::make_shared<Context>();
-}
-
-std::unique_ptr<storage::IStorageChainBuilder>
-StorageApiChainBmFeedHandler::get_storage_chain_builder(std::shared_ptr<Context> context)
-{
-    return std::make_unique<MyStorageChainBuilder>(std::move(context));
-}
-
 uint32_t
 StorageApiChainBmFeedHandler::get_error_count() const
 {
     return _context->bm_link->get_error_count();
+}
+
+const vespalib::string&
+StorageApiChainBmFeedHandler::get_name() const
+{
+    return _name;
+}
+
+bool
+StorageApiChainBmFeedHandler::manages_buckets() const
+{
+    return _distributor;
+}
+
+bool
+StorageApiChainBmFeedHandler::manages_timestamp() const
+{
+    return _distributor;
 }
 
 }
