@@ -271,6 +271,17 @@
       "public static final enum com.yahoo.application.Networking disable"
     ]
   },
+  "com.yahoo.application.container.DocumentAccesses": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.documentapi.local.LocalDocumentAccess createFromSchemas(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.application.container.DocumentProcessing": {
     "superClass": "java.lang.Object",
     "interfaces": [],
