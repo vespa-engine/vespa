@@ -36,7 +36,7 @@ assertCellValue(double expValue, const TensorAddress &address,
     bool found = tensor.index().lookup_address(addressRef, idx);
     EXPECT_TRUE(found);
     auto cells = tensor.cells();
-    if (EXPECT_TRUE(cells.type == CellType::DOUBLE)) {
+    if (EXPECT_TRUE(cells.type == ValueType::CellType::DOUBLE)) {
         auto arr = cells.typify<double>();
         EXPECT_EQUAL(expValue, arr[idx]);
     }

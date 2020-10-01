@@ -104,10 +104,10 @@ template<typename T>
 SparseTensorT<T>::~SparseTensorT() = default;
 
 template<typename T>
-TypedCells
+eval::TypedCells
 SparseTensorT<T>::cells() const
 {
-    return TypedCells(_values);
+    return eval::TypedCells(_values);
 }
 
 template<typename T>
@@ -184,16 +184,16 @@ SparseTensorT<T>::join(join_fun_t function, const Tensor &arg) const
     }
     const auto & lhs_type = fast_type();
     const auto & rhs_type = rhs->fast_type();
+    auto rhs_ct = rhs_type.cell_type();
     auto res_type = eval::ValueType::join(lhs_type, rhs_type);
     if (function == eval::operation::Mul::f) {
         if (lhs_type.dimensions() == rhs_type.dimensions()) {
-            return typify_invoke<1,eval::TypifyCellType,FastSparseJoin<T>>(
-                    rhs_type.cell_type(),
+            return typify_invoke<1,eval::TypifyCellType,FastSparseJoin<T>>(rhs_ct,
                     *this, *rhs, std::move(res_type));
         }
     }
-    return typify_invoke<2,eval::TypifyCellType,GenericSparseJoin<T>>(
-            rhs_type.cell_type(), res_type.cell_type(),
+    auto res_ct = res_type.cell_type();
+    return typify_invoke<2,eval::TypifyCellType,GenericSparseJoin<T>>(rhs_ct, res_ct,
             *this, *rhs, std::move(res_type), function);
 }
 

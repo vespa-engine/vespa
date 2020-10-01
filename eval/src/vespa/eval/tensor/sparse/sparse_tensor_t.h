@@ -21,7 +21,7 @@ private:
 public:
     SparseTensorT(eval::ValueType type_in, SparseTensorIndex index_in, std::vector<T> cells_in);
     ~SparseTensorT() override;
-    TypedCells cells() const override;
+    eval::TypedCells cells() const override;
     T get_value(size_t idx) const { return _values[idx]; }
     size_t my_size() const { return _values.size(); }
     const std::vector<T> &my_values() const { return _values; }
