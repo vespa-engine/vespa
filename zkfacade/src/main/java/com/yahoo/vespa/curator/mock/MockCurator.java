@@ -137,7 +137,7 @@ public class MockCurator extends Curator {
      *                       This is not what ZooKeeper does.
      */
     public MockCurator(boolean stableOrdering) {
-        super("", "", (retryPolicy) -> null);
+        super("", "", (retryPolicy) -> null, Optional.empty());
         this.stableOrdering = stableOrdering;
         curatorFramework = new MockCuratorFramework();
         curatorFramework.start();
