@@ -7,7 +7,7 @@ namespace vespalib::tensor {
 
 template <typename T>
 ArrayRef<T> 
-SparseTensorValueBuilder<T>::add_subspace(const std::vector<vespalib::stringref> &addr)
+SparseTensorValueBuilder<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr)
 {
     uint32_t idx = _cells.size();
     _addr_builder.clear();

@@ -135,7 +135,7 @@ struct ValueBuilder : ValueBuilderBase {
     // returned subspaces will be invalidated when new subspaces are
     // added. Also note that adding the same subspace multiple times
     // is not allowed.
-    virtual ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) = 0;
+    virtual ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) = 0;
 
     // Given the ownership of the builder itself, produce the newly
     // created value. This means that builders can only be used once,

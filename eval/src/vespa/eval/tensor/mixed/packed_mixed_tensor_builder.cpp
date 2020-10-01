@@ -6,8 +6,9 @@ namespace vespalib::eval::packed_mixed_tensor {
 
 template <typename T>
 ArrayRef<T> 
-PackedMixedTensorBuilder<T>::add_subspace(const std::vector<vespalib::stringref> &addr)
+PackedMixedTensorBuilder<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr_in)
 {
+    std::vector<vespalib::stringref> addr(addr_in.begin(), addr_in.end());
     uint32_t idx = _mappings_builder.add_mapping_for(addr);
     size_t offset = idx * _subspace_size;
     assert(offset <= _cells.size());

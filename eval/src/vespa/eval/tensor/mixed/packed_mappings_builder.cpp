@@ -8,14 +8,15 @@ namespace vespalib::eval::packed_mixed_tensor {
 PackedMappingsBuilder::~PackedMappingsBuilder() = default;
 
 uint32_t
-PackedMappingsBuilder::add_mapping_for(SparseAddress address)
+PackedMappingsBuilder::add_mapping_for(ConstArrayRef<vespalib::stringref> address_in)
 {
-    assert(address.size() == _num_dims);
-    for (auto & label_value : address) {
+    SparseAddress address;
+    for (auto & label_value : address_in) {
         // store label string in our own set:
         auto iter = _labels.insert(label_value).first;
-        label_value = *iter;
+        address.push_back(*iter);
     }
+    assert(address.size() == _num_dims);
     uint32_t next_index = _mappings.size();
     auto iter = _mappings.emplace(address, next_index).first;
     return iter->second;

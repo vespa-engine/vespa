@@ -102,7 +102,7 @@ public:
 //-----------------------------------------------------------------------------
 
 void
-SimpleValue::add_mapping(const std::vector<vespalib::stringref> &addr)
+SimpleValue::add_mapping(ConstArrayRef<vespalib::stringref> addr)
 {
     size_t id = _index.size();
     std::vector<vespalib::string> my_addr;
@@ -145,7 +145,7 @@ SimpleValueT<T>::~SimpleValueT() = default;
 
 template <typename T>
 ArrayRef<T>
-SimpleValueT<T>::add_subspace(const std::vector<vespalib::stringref> &addr)
+SimpleValueT<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr)
 {
     size_t old_size = _cells.size();
     assert(old_size == (index().size() * subspace_size()));

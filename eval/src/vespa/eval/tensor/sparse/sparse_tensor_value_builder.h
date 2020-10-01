@@ -34,7 +34,7 @@ public:
 
     ~SparseTensorValueBuilder() override = default;
 
-    ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) override;
+    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override;
     std::unique_ptr<eval::Value> build(std::unique_ptr<eval::ValueBuilder<T>> self) override;
 };
 
