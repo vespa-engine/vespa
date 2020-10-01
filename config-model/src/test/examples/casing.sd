@@ -4,7 +4,6 @@ search music {
 
     field Color type string {
        indexing: index
-       # index-to: color
        alias color: Colour
        match {
          exact

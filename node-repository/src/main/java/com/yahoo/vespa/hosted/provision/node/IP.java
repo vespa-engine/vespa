@@ -222,8 +222,8 @@ public class IP {
         /**
          * Find a free allocation in this pool. Note that the allocation is not final until it is assigned to a node
          *
-         * @param nodes A locked list of all nodes in the repository
-         * @return An allocation from the pool, if any can be made
+         * @param nodes a locked list of all nodes in the repository
+         * @return an allocation from the pool, if any can be made
          */
         public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver) {
             var unusedAddresses = findUnused(nodes);

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
@@ -123,7 +123,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final ConfigConvergenceChecker convergeChecker;
     private final HttpProxy httpProxy;
     private final Clock clock;
-    private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
     private final FileDistributionStatus fileDistributionStatus = new FileDistributionStatus();
     private final Orchestrator orchestrator;
@@ -304,20 +303,24 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         PrepareResult prepareResult;
         try {
-            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams);
+            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, logger);
         } finally {
-            cleanupTempDirectory(tempDir);
+            cleanupTempDirectory(tempDir, logger);
         }
         return prepareResult;
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
+        return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams));
+    }
+
+    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, DeployHandlerLogger logger) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
         deployment.activate();
 
@@ -380,6 +383,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         SessionRepository sessionRepository = tenant.getSessionRepository();
+        DeployLogger logger = new SilentDeployLogger();
         LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         sessionRepository.addLocalSession(newSession);
         boolean internalRestart = deployWithInternalRestart.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
@@ -401,6 +405,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   long sessionId,
                                   TimeoutBudget timeoutBudget,
                                   boolean force) {
+        DeployLogger logger = new SilentDeployLogger();
         LocalSession localSession = getLocalSession(tenant, sessionId);
         Deployment deployment = Deployment.prepared(localSession, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
@@ -469,47 +474,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return true if the application was found and deleted, false if it was not present
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
-    boolean delete(ApplicationId applicationId) {
-        return delete(applicationId, Duration.ofSeconds(60));
-    }
-
-    /**
-     * Deletes an application
-     *
-     * @return true if the application was found and deleted, false if it was not present
-     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
-     */
-    public boolean delete(ApplicationId applicationId, Duration waitTime) {
+    public boolean delete(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
         if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
         try (Lock lock = tenantApplications.lock(applicationId)) {
-            if ( ! tenantApplications.exists(applicationId)) return false;
-
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
-            // Deleting an application is done by deleting the remote session and waiting
-            // until the config server where the deployment happened picks it up and deletes
-            // the local session
-            long sessionId = activeSession.get();
-
-            RemoteSession remoteSession;
+            // Deleting an application is done by deleting the remote session, other config
+            // servers will pick this up and clean up through the watcher in this class
             try {
-                remoteSession = getRemoteSession(tenant, sessionId);
-                Transaction deleteTransaction = remoteSession.createDeleteTransaction();
-                deleteTransaction.commit();
-                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
-
-                if ( ! waitTime.isZero() && localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
-                    log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
-                } else {
-                    deleteTransaction.rollbackOrLog();
-                    throw new InternalServerException(applicationId + " was not deleted (waited " + waitTime + "), session " + sessionId);
-                }
+                RemoteSession remoteSession = getRemoteSession(tenant, activeSession.get());
+                tenant.getSessionRepository().delete(remoteSession);
             } catch (NotFoundException e) {
-                // For the case where waiting timed out in a previous attempt at deleting the application, continue and do the steps below
                 log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
             }
 
@@ -656,17 +635,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private boolean localSessionHasBeenDeleted(ApplicationId applicationId, long sessionId, Duration waitTime) {
-        SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        Instant end = Instant.now().plus(waitTime);
-        do {
-            if (sessionRepository.getRemoteSession(sessionId) == null) return true;
-            try { Thread.sleep(10); } catch (InterruptedException e) { /* ignored */}
-        } while (Instant.now().isBefore(end));
-
-        return false;
-    }
-
     public Optional<String> getApplicationPackageReference(ApplicationId applicationId) {
         Optional<String> applicationPackage = Optional.empty();
         RemoteSession session = getActiveSession(applicationId);
@@ -808,13 +776,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in, String contentType) {
+    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in,
+                              String contentType, DeployLogger logger) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         long sessionId;
         try {
             sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
         } finally {
-            cleanupTempDirectory(tempDir);
+            cleanupTempDirectory(tempDir, logger);
         }
         return sessionId;
     }
@@ -971,8 +940,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private void cleanupTempDirectory(File tempDir) {
-        logger.log(Level.FINE, "Deleting tmp dir '" + tempDir + "'");
+    private void cleanupTempDirectory(File tempDir, DeployLogger logger) {
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
             logger.log(Level.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
         }

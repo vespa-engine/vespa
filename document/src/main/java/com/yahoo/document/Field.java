@@ -176,7 +176,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * @param type The new type of the field.
      * @deprecated do not use
      */
-    @Deprecated // todo - refactor SD processing to avoid needing this
+    @Deprecated // TODO: Refactor SD processing to avoid needing this
     public void setDataType(DataType type) {
         dataType = type;
         fieldId = calculateIdV7(null);
@@ -243,4 +243,5 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     public FieldSet clone() throws CloneNotSupportedException {
         return (Field)super.clone();
     }
+
 }

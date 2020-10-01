@@ -268,9 +268,9 @@ public class NodeRepository extends AbstractComponent {
         return db.readNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
-    /** Returns a filterable list of all nodes in this repository */
-    public NodeList list() {
-        return NodeList.copyOf(getNodes());
+    /** Returns a filterable list of nodes in this repository in any of the given states */
+    public NodeList list(State ... inState) {
+        return NodeList.copyOf(getNodes(inState));
     }
 
     /** Returns a filterable list of all nodes of an application */

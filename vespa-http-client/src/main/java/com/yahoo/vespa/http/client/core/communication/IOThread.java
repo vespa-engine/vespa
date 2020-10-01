@@ -6,10 +6,10 @@ import com.yahoo.vespa.http.client.FeedProtocolException;
 import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
-import com.yahoo.vespa.http.client.core.Exceptions;
-import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
 import com.yahoo.vespa.http.client.core.EndpointResult;
+import com.yahoo.vespa.http.client.core.Exceptions;
 import com.yahoo.vespa.http.client.core.ServerResponseException;
+import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,8 +58,8 @@ public class IOThread implements Runnable, AutoCloseable {
     private final Random random = new Random();
     private final OldConnectionsDrainer oldConnectionsDrainer;
 
-    private GatewayConnection currentConnection;
-    private ConnectionState connectionState = ConnectionState.DISCONNECTED;
+    private volatile GatewayConnection currentConnection;
+    private volatile ConnectionState connectionState = ConnectionState.DISCONNECTED;
 
     private enum ConnectionState { DISCONNECTED, CONNECTED, SESSION_SYNCED };
     private final AtomicInteger wrongSessionDetectedCounter = new AtomicInteger(0);
@@ -224,7 +224,7 @@ public class IOThread implements Runnable, AutoCloseable {
 
     private void addDocumentsToResultQueue(List<Document> docs) {
         for (Document doc : docs) {
-            resultQueue.operationSent(doc.getOperationId());
+            resultQueue.operationSent(doc.getOperationId(), currentConnection);
         }
     }
 
@@ -517,6 +517,8 @@ public class IOThread implements Runnable, AutoCloseable {
      */
     private static class OldConnectionsDrainer implements Runnable {
 
+        private static final Logger log = Logger.getLogger(OldConnectionsDrainer.class.getName());
+
         private final Endpoint endpoint;
         private final int clusterId;
         private final long pollIntervalUS;
@@ -571,35 +573,33 @@ public class IOThread implements Runnable, AutoCloseable {
         }
 
         public void checkOldConnections() {
-            List<GatewayConnection> toRemove = null;
-            try {
-                for (GatewayConnection connection : connections) {
-                    if (closingTime(connection).isBefore(clock.instant())) {
-                        try {
-                            try {
-                                IOThread.processResponse(connection.poll(), endpoint, clusterId, statusReceivedCounter, resultQueue);
-                            } finally {
-                                connection.close();
-                            }
-                        } catch (Exception e) {
-                            // Old connection; best effort
-                        } finally {
-                            if (toRemove == null)
-                                toRemove = new ArrayList<>(1);
-                            toRemove.add(connection);
-                        }
-                    } else if (timeToPoll(connection)) {
-                        try {
-                            IOThread.processResponse(connection.poll(), endpoint, clusterId, statusReceivedCounter, resultQueue);
-                        } catch (Exception e) {
-                            // Old connection; best effort
-                        }
-                    }
+            for (GatewayConnection connection : connections) {
+                if (!resultQueue.hasInflightOperations(connection)) {
+                    log.fine(() -> connection + " no longer has inflight operations");
+                    closeConnection(connection);
+                } else if (closingTime(connection).isBefore(clock.instant())) {
+                    log.fine(() -> connection + " still has inflight operations, but drain period is over");
+                    tryPollAndDrainInflightOperations(connection);
+                    closeConnection(connection);
+                } else if (timeToPoll(connection)) {
+                    tryPollAndDrainInflightOperations(connection);
                 }
-            } finally {
-                if (toRemove != null)
-                    connections.removeAll(toRemove);
+            }
+        }
 
+        private void closeConnection(GatewayConnection connection) {
+            log.fine(() -> "Closing " + connection);
+            connection.close();
+            connections.remove(connection); // Safe as CopyOnWriteArrayList allows removal during iteration
+        }
+
+        private void tryPollAndDrainInflightOperations(GatewayConnection connection) {
+            try {
+                log.fine(() -> "Polling and draining inflight operations for " + connection);
+                IOThread.processResponse(connection.poll(), endpoint, clusterId, statusReceivedCounter, resultQueue);
+            } catch (Exception e) {
+                // Old connection; best effort
+                log.log(Level.FINE, e, () -> "Polling status of inflight operations failed: " + e.getMessage());
             }
         }
 
@@ -609,6 +609,7 @@ public class IOThread implements Runnable, AutoCloseable {
             // Exponential (2^x) dropoff:
             double connectionEndOfLife = connection.connectionTime().plus(connectionTimeToLive).toEpochMilli();
             double connectionLastPolled = connection.lastPollTime().toEpochMilli();
+            // connectionEndOfLife < connectionLastPolled < clock.millis()
             return clock.millis() - connectionEndOfLife > 2 * (connectionLastPolled - connectionEndOfLife);
         }
 

@@ -75,10 +75,6 @@ public class RemoteSession extends Session {
         applicationSet = null;
     }
 
-    public Transaction createDeleteTransaction() {
-        return sessionZooKeeperClient.createWriteStatusTransaction(Status.DELETE);
-    }
-    
     void confirmUpload() {
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.getUploadWaiter();
         log.log(Level.FINE, "Notifying upload waiter for session " + getSessionId());

@@ -30,6 +30,7 @@ class ConsumersConfigGenerator {
         var allConsumers = new LinkedHashMap<>(userConsumers);
         allConsumers.put(MetricsConsumer.vespa.id(),
                          combineConsumers(defaultConsumer, allConsumers.get(MetricsConsumer.vespa.id())));
+        allConsumers.put(MetricsConsumer.autoscaling.id(), MetricsConsumer.autoscaling);
 
         return allConsumers.values().stream()
                 .map(ConsumersConfigGenerator::toConsumerBuilder)

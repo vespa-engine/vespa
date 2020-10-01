@@ -35,7 +35,7 @@ public class RetiringUpgrader implements Upgrader {
 
     @Override
     public void upgradeTo(OsVersionTarget target) {
-        NodeList activeNodes = nodeRepository.list().nodeType(target.nodeType()).state(Node.State.active);
+        NodeList activeNodes = nodeRepository.list(Node.State.active).nodeType(target.nodeType());
         if (activeNodes.size() == 0) return; // No nodes eligible for upgrade
 
         Instant now = nodeRepository.clock().instant();

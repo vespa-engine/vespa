@@ -14,6 +14,7 @@ namespace feedbm {
  */
 class SpiBmFeedHandler : public IBmFeedHandler
 {
+    vespalib::string _name;
     storage::spi::PersistenceProvider& _provider;
     std::atomic<uint32_t> _errors;
 public:
@@ -24,6 +25,9 @@ public:
     void remove(const document::Bucket& bucket, const document::DocumentId& document_id,  uint64_t timestamp, PendingTracker& tracker) override;
     void create_bucket(const document::Bucket& bucket);
     uint32_t get_error_count() const override;
+    const vespalib::string &get_name() const override;
+    bool manages_buckets() const override;
+    bool manages_timestamp() const override;
 };
 
 }

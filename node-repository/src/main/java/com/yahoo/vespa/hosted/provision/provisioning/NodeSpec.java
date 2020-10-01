@@ -61,7 +61,7 @@ public interface NodeSpec {
     boolean needsResize(Node node);
 
     /** Returns true if there exist some circumstance where we may accept to have this node allocated */
-    boolean acceptable(Node node);
+    boolean acceptable(NodeCandidate node);
 
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
@@ -160,7 +160,7 @@ public interface NodeSpec {
         }
 
         @Override
-        public boolean acceptable(Node node) { return true; }
+        public boolean acceptable(NodeCandidate node) { return true; }
 
         @Override
         public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
@@ -217,7 +217,7 @@ public interface NodeSpec {
         public boolean needsResize(Node node) { return false; }
 
         @Override
-        public boolean acceptable(Node node) {
+        public boolean acceptable(NodeCandidate node) {
             // Since we consume all offered nodes we should not accept previously deactivated nodes
             return node.state() != Node.State.inactive;
         }

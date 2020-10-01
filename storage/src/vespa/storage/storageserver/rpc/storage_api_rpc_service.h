@@ -60,6 +60,10 @@ public:
     void RPC_rpc_v1_send(FRT_RPCRequest* req);
     void encode_rpc_v1_response(FRT_RPCRequest& request, const api::StorageReply& reply);
     void send_rpc_v1_request(std::shared_ptr<api::StorageCommand> cmd);
+
+    static constexpr const char* rpc_v1_method_name() noexcept {
+        return "storageapi.v1.send";
+    }
 private:
     // TODO dedupe
     void detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd, FRT_RPCRequest* req);
@@ -74,12 +78,15 @@ private:
 
     void register_server_methods(SharedRpcResources&);
     template <typename PayloadCodecCallback>
-    void uncompress_rpc_payload(const FRT_Values& params, PayloadCodecCallback payload_callback);
+    [[nodiscard]] bool uncompress_rpc_payload(const FRT_Values& params, PayloadCodecCallback payload_callback);
     template <typename MessageType>
     void encode_and_compress_rpc_payload(const MessageType& msg, FRT_Values& params);
     void RequestDone(FRT_RPCRequest* request) override;
 
     void handle_request_done_rpc_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);
+    void handle_request_done_decode_error(const RpcRequestContext& req_ctx,
+                                          vespalib::stringref description);
+    void create_and_dispatch_error_reply(api::StorageCommand& cmd, api::ReturnCode error);
 
     api::ReturnCode map_frt_error_to_storage_api_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);
     api::ReturnCode make_no_address_for_service_error(const api::StorageMessageAddress& addr) const;

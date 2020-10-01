@@ -137,7 +137,8 @@ BufferState::onHold()
     _compacting = false;
     assert(_deadElems <= _usedElems);
     assert(_holdElems <= (_usedElems - _deadElems));
-    _holdElems = _usedElems - _deadElems; // Put everyting not dead on hold
+    _deadElems = 0;
+    _holdElems = _usedElems; // Put everyting on hold
     _typeHandler->onHold(&_usedElems);
     if (!_freeList.empty()) {
         removeFromFreeListList();

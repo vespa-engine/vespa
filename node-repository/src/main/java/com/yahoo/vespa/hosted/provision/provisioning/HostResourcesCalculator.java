@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.Nodelike;
 
 /**
  * Some cloud providers advertise that a certain amount of resources are available in a flavor
@@ -17,7 +18,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 public interface HostResourcesCalculator {
 
     /** Returns the real resources available on a node */
-    NodeResources realResourcesOf(Node node, NodeRepository nodeRepository);
+    NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository);
 
     /** Returns the advertised resources of a flavor */
     NodeResources advertisedResourcesOf(Flavor flavor);

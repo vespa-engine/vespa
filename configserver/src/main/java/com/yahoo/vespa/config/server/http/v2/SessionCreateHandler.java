@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
@@ -59,7 +59,8 @@ public class SessionCreateHandler extends SessionHandler {
             logger = DeployHandlerLogger.forTenant(tenantName, verbose);
             // TODO: Avoid using application id here at all
             ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.defaultName(), InstanceName.defaultName());
-            sessionId = applicationRepository.createSession(applicationId, timeoutBudget, request.getData(), request.getHeader(ApplicationApiHandler.contentTypeHeader));
+            sessionId = applicationRepository.createSession(applicationId, timeoutBudget, request.getData(),
+                                                            request.getHeader(ApplicationApiHandler.contentTypeHeader), logger);
         }
         return new SessionCreateResponse(logger.slime(), tenantName, request.getHost(), request.getPort(), sessionId);
     }

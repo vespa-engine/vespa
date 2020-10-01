@@ -133,6 +133,8 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         return TIMEOUT;
     }
 
+    public Executor executor() { return executor; }
+
     private void logRejectedRequests() {
         if (numRejectedRequests == 0) {
             return;
@@ -168,8 +170,6 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
         ResponseDispatch.newInstance(Response.Status.SERVICE_UNAVAILABLE).dispatch(responseHandler);
     }
-
-    protected Executor executor() { return executor; }
 
     private class RequestTask implements ResponseHandler, Runnable {
 

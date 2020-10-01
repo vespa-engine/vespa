@@ -248,15 +248,17 @@ public class FileReceiver {
         byte [] part = req.parameters().get(3).asData();
         Session session = getSession(sessionId);
         int retval = verifySession(session, sessionId, reference);
-        try {
-            session.addPart(partId, part);
-        } catch (Exception e) {
-            log.severe("Got exception " + e);
-            retval = 1;
+        if (retval == 0) {
+            try {
+                session.addPart(partId, part);
+            } catch (Exception e) {
+                log.severe("Got exception " + e);
+                retval = 1;
+            }
+            double completeness = (double) session.currentFileSize / (double) session.fileSize;
+            log.log(Level.FINEST, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
+            downloader.setDownloadStatus(reference, completeness);
         }
-        double completeness = (double) session.currentFileSize / (double) session.fileSize;
-        log.log(Level.FINEST, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
-        downloader.setDownloadStatus(reference, completeness);
         req.returnValues().add(new Int32Value(retval));
     }
 
@@ -280,6 +282,7 @@ public class FileReceiver {
             return sessions.get(sessionId);
         }
     }
+
     private static int verifySession(Session session, int sessionId, FileReference reference) {
         if (session == null) {
             log.severe("session-id " + sessionId + " does not exist.");

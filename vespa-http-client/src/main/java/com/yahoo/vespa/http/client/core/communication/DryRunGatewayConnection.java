@@ -45,7 +45,7 @@ public class DryRunGatewayConnection implements GatewayConnection {
     }
 
     @Override
-    public InputStream write(List<Document> docs) throws IOException {
+    public synchronized InputStream write(List<Document> docs) throws IOException {
         if (throwThisOnWrite != null)
             throw throwThisOnWrite;
 
@@ -65,27 +65,27 @@ public class DryRunGatewayConnection implements GatewayConnection {
     }
 
     @Override
-    public InputStream poll() throws IOException {
+    public synchronized InputStream poll() throws IOException {
         lastPollTime = clock.instant();
         return write(new ArrayList<>());
     }
 
     @Override
-    public Instant lastPollTime() { return lastPollTime; }
+    public synchronized Instant lastPollTime() { return lastPollTime; }
 
     @Override
-    public InputStream drain() throws IOException {
+    public synchronized InputStream drain() throws IOException {
         return write(new ArrayList<>());
     }
 
     @Override
-    public boolean connect() {
+    public synchronized boolean connect() {
         connectionTime = clock.instant();
         return true;
     }
 
     @Override
-    public Instant connectionTime() { return connectionTime; }
+    public synchronized Instant connectionTime() { return connectionTime; }
 
     @Override
     public Endpoint getEndpoint() {
@@ -93,26 +93,26 @@ public class DryRunGatewayConnection implements GatewayConnection {
     }
 
     @Override
-    public void handshake() throws ServerResponseException {
+    public synchronized void handshake() throws ServerResponseException {
         if (throwThisOnHandshake != null)
             throw throwThisOnHandshake;
     }
 
     @Override
-    public void close() { }
+    public synchronized void close() { }
 
-    public void hold(boolean hold) {
+    public synchronized void hold(boolean hold) {
         this.hold = hold;
     }
 
     /** Returns the document currently held in this */
-    public List<Document> held() { return Collections.unmodifiableList(held); }
+    public synchronized List<Document> held() { return Collections.unmodifiableList(held); }
 
-    public void throwOnWrite(IOException throwThisOnWrite) {
+    public synchronized void throwOnWrite(IOException throwThisOnWrite) {
         this.throwThisOnWrite = throwThisOnWrite;
     }
 
-    public void throwOnHandshake(ServerResponseException throwThisOnHandshake) {
+    public synchronized void throwOnHandshake(ServerResponseException throwThisOnHandshake) {
         this.throwThisOnHandshake = throwThisOnHandshake;
     }
 

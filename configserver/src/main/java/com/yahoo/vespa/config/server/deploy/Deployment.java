@@ -116,7 +116,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         ApplicationId applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
-            if ( ! timeoutBudget.hasTimeLeft()) throw new RuntimeException("Timeout exceeded when trying to activate '" + applicationId + "'");
+            timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
             RemoteSession previousActiveSession;
             CompletionWaiter waiter;
