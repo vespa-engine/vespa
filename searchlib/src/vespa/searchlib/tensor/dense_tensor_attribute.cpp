@@ -287,7 +287,7 @@ DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
     }
 }
 
-vespalib::tensor::TypedCells
+vespalib::eval::TypedCells
 DenseTensorAttribute::get_vector(uint32_t docid) const
 {
     assert(docid < _refVector.size());

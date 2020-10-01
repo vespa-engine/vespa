@@ -7,7 +7,7 @@ using search::tensor::DenseTensorAttribute;
 using vespalib::ConstArrayRef;
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
-using vespalib::tensor::TypedCells;
+using vespalib::eval::TypedCells;
 
 using CellType = vespalib::eval::ValueType::CellType;
 

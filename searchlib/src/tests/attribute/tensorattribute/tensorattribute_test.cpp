@@ -181,7 +181,7 @@ public:
         _adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
-                                                        vespalib::tensor::TypedCells vector,
+                                                        vespalib::eval::TypedCells vector,
                                                         vespalib::GenerationHandler::Guard guard) const override {
         (void) guard;
         auto d_vector = vector.typify<double>();
@@ -222,13 +222,13 @@ public:
         _index_value = (reinterpret_cast<const int*>(buf.buffer()))[0];
         return true;
     }
-    std::vector<Neighbor> find_top_k(uint32_t k, vespalib::tensor::TypedCells vector, uint32_t explore_k) const override {
+    std::vector<Neighbor> find_top_k(uint32_t k, vespalib::eval::TypedCells vector, uint32_t explore_k) const override {
         (void) k;
         (void) vector;
         (void) explore_k;
         return std::vector<Neighbor>();
     }
-    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, vespalib::tensor::TypedCells vector,
+    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, vespalib::eval::TypedCells vector,
                                                  const search::BitVector& filter, uint32_t explore_k) const override
     {
         (void) k;

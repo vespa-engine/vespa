@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/eval/tensor/dense/typed_cells.h>
+#include <vespa/eval/eval/typed_cells.h>
 #include <cstdint>
 
 namespace search::tensor {
@@ -15,7 +15,7 @@ namespace search::tensor {
 class DocVectorAccess {
 public:
     virtual ~DocVectorAccess() {}
-    virtual vespalib::tensor::TypedCells get_vector(uint32_t docid) const = 0;
+    virtual vespalib::eval::TypedCells get_vector(uint32_t docid) const = 0;
 };
 
 }

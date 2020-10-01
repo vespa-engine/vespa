@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace vespalib::tensor { struct TypedCells; }
+namespace vespalib::eval { struct TypedCells; }
 
 namespace search::tensor {
 
@@ -18,10 +18,10 @@ class DistanceFunction {
 public:
     using UP = std::unique_ptr<DistanceFunction>;
     virtual ~DistanceFunction() {}
-    virtual double calc(const vespalib::tensor::TypedCells& lhs, const vespalib::tensor::TypedCells& rhs) const = 0;
+    virtual double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const = 0;
     virtual double to_rawscore(double distance) const = 0;
-    virtual double calc_with_limit(const vespalib::tensor::TypedCells& lhs,
-                                   const vespalib::tensor::TypedCells& rhs,
+    virtual double calc_with_limit(const vespalib::eval::TypedCells& lhs,
+                                   const vespalib::eval::TypedCells& rhs,
                                    double limit) const = 0;
 };
 

@@ -6,7 +6,6 @@
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
 #include <vespa/searchlib/util/state_explorer_utils.h>
-#include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>

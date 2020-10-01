@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/tensor/dense/typed_cells.h>
+#include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -10,7 +10,7 @@
 LOG_SETUP("distance_function_test");
 
 using namespace search::tensor;
-using vespalib::tensor::TypedCells;
+using vespalib::eval::TypedCells;
 using search::attribute::DistanceMetric;
 
 TypedCells t(const std::vector<double> &v) { return TypedCells(v); }
