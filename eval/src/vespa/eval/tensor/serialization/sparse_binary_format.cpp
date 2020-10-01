@@ -131,6 +131,18 @@ SparseBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
     stream.write(cells.peek(), cells.size());
 }
 
+struct BuildSparseCells {
+    template<typename CT>
+    static auto invoke(ValueType type, nbostream &stream,
+                       size_t dimensionsSize, 
+                       size_t cellsSize)
+    {
+        DirectSparseTensorBuilder<CT> builder(std::move(type));
+        decodeCells<CT>(stream, dimensionsSize, cellsSize, builder);
+        return builder.build();
+    }
+};
+
 std::unique_ptr<Tensor>
 SparseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
 {
@@ -143,19 +155,8 @@ SparseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
     }
     size_t cellsSize = stream.getInt1_4Bytes();
     ValueType type = ValueType::tensor_type(std::move(dimensions), cell_type);
-    switch (cell_type) {
-    case CellType::DOUBLE: {
-        DirectSparseTensorBuilder<double> builder(type);
-        builder.reserve(cellsSize);
-        decodeCells<double>(stream, dimensionsSize, cellsSize, builder);
-        return builder.build(); }
-    case CellType::FLOAT: {
-        DirectSparseTensorBuilder<float> builder(type);
-        builder.reserve(cellsSize);
-        decodeCells<float>(stream, dimensionsSize, cellsSize, builder);
-        return builder.build(); }
-    }
-    abort();
+    return typify_invoke<1,eval::TypifyCellType,BuildSparseCells>(cell_type,
+        std::move(type), stream, dimensionsSize, cellsSize);
 }
 
 } // namespace
