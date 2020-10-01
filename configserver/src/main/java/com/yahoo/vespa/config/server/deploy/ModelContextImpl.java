@@ -234,7 +234,7 @@ public class ModelContextImpl implements ModelContext {
             this.applicationRoles = applicationRoles;
             feedCoreThreadPoolSizeFactor = Flags.FEED_CORE_THREAD_POOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.quota = maybeQuota.orElseGet(Quota::empty);
+            this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.useNewRestapiHandler = Flags.USE_NEW_RESTAPI_HANDLER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
                     .value();
