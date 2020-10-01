@@ -245,6 +245,7 @@ class BMParams {
     bool     _enable_distributor;
     bool     _enable_service_layer;
     bool     _use_storage_chain;
+    bool     _use_legacy_bucket_db;
     uint32_t get_start(uint32_t thread_id) const {
         return (_documents / _threads) * thread_id + std::min(thread_id, _documents % _threads);
     }
@@ -258,7 +259,8 @@ public:
           _rpc_network_threads(1),
           _enable_distributor(false),
           _enable_service_layer(false),
-          _use_storage_chain(false)
+          _use_storage_chain(false),
+          _use_legacy_bucket_db(false)
     {
     }
     BMRange get_range(uint32_t thread_id) const {
@@ -273,6 +275,7 @@ public:
     bool get_enable_distributor() const { return _enable_distributor; }
     bool get_enable_service_layer() const { return _enable_service_layer || _enable_distributor; }
     bool get_use_storage_chain() const { return _use_storage_chain; }
+    bool get_use_legacy_bucket_db() const { return _use_legacy_bucket_db; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_threads(uint32_t threads_in) { _threads = threads_in; }
     void set_put_passes(uint32_t put_passes_in) { _put_passes = put_passes_in; }
@@ -282,6 +285,7 @@ public:
     void set_enable_distributor(bool enable_distributor_in) { _enable_distributor = enable_distributor_in; }
     void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
     void set_use_storage_chain(bool use_storage_chain_in) { _use_storage_chain = use_storage_chain_in; }
+    void set_use_legacy_bucket_db(bool use_legacy_bucket_db_in) { _use_legacy_bucket_db = use_legacy_bucket_db_in; }
     bool check() const;
 };
 
@@ -371,7 +375,8 @@ struct MyStorageConfig
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
 
-    MyStorageConfig(bool distributor, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in, int slobrok_port, int mbus_port, int rpc_port, int status_port, int rpc_network_threads)
+    MyStorageConfig(bool distributor, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+                    int slobrok_port, int mbus_port, int rpc_port, int status_port, const BMParams& params)
         : config_id(config_id_in),
           documenttypes(documenttypes_in),
           stor_distribution(),
@@ -407,6 +412,7 @@ struct MyStorageConfig
             dc.readyCopies = 1;
         }
         stor_server.isDistributor = distributor;
+        stor_server.useContentNodeBtreeBucketDb = !params.get_use_legacy_bucket_db();
         if (distributor) {
             stor_server.rootFolder = "distributor";
         } else {
@@ -418,7 +424,7 @@ struct MyStorageConfig
             slobroks.slobrok.push_back(std::move(slobrok));
         }
         stor_communicationmanager.useDirectStorageapiRpc = true;
-        stor_communicationmanager.rpc.numNetworkThreads = rpc_network_threads;
+        stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
 
@@ -454,8 +460,9 @@ struct MyServiceLayerConfig : public MyStorageConfig
     StorBucketInitConfigBuilder   stor_bucket_init;
     StorVisitorConfigBuilder      stor_visitor;
 
-    MyServiceLayerConfig(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in, int slobrok_port, int mbus_port, int rpc_port, int status_port, uint32_t rpc_network_threads)
-        : MyStorageConfig(false, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, rpc_network_threads),
+    MyServiceLayerConfig(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+                         int slobrok_port, int mbus_port, int rpc_port, int status_port, const BMParams& params)
+        : MyStorageConfig(false, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
           persistence(),
           stor_filestor(),
           stor_bucket_init(),
@@ -481,8 +488,9 @@ struct MyDistributorConfig : public MyStorageConfig
     StorDistributormanagerConfigBuilder stor_distributormanager;
     StorVisitordispatcherConfigBuilder  stor_visitordispatcher;
 
-    MyDistributorConfig(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in, int slobrok_port, int mbus_port, int rpc_port, int status_port, int rpc_network_threads)
-        : MyStorageConfig(true, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, rpc_network_threads),
+    MyDistributorConfig(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+                        int slobrok_port, int mbus_port, int rpc_port, int status_port, const BMParams& params)
+        : MyStorageConfig(true, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
           stor_distributormanager(),
           stor_visitordispatcher()
     {
@@ -620,8 +628,8 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _write_filter(),
       _persistence_engine(),
       _bucket_bits(16),
-      _service_layer_config("bm-servicelayer", *_document_types, _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port, _service_layer_status_port, params.get_rpc_network_threads()),
-      _distributor_config("bm-distributor", *_document_types, _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port, params.get_rpc_network_threads()),
+      _service_layer_config("bm-servicelayer", *_document_types, _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port, _service_layer_status_port, params),
+      _distributor_config("bm-distributor", *_document_types, _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port, params),
       _rpc_client_config("bm-rpc-client", _slobrok_port),
       _config_set(),
       _config_context(std::make_shared<ConfigContext>(_config_set)),
@@ -1128,7 +1136,8 @@ App::get_options()
         { "rpc-network-threads", 1, nullptr, 0 },
         { "enable-distributor", 0, nullptr, 0 },
         { "enable-service-layer", 0, nullptr, 0 },
-        { "use-storage-chain", 0, nullptr, 0 }
+        { "use-storage-chain", 0, nullptr, 0 },
+        { "use-legacy-bucket-db", 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_THREADS,
@@ -1139,7 +1148,8 @@ App::get_options()
         LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_ENABLE_DISTRIBUTOR,
         LONGOPT_ENABLE_SERVICE_LAYER,
-        LONGOPT_USE_STORAGE_CHAIN
+        LONGOPT_USE_STORAGE_CHAIN,
+        LONGOPT_USE_LEGACY_BUCKET_DB,
     };
     int opt_index = 1;
     resetOptIndex(opt_index);
@@ -1173,6 +1183,9 @@ App::get_options()
                 break;
             case LONGOPT_USE_STORAGE_CHAIN:
                 _bm_params.set_use_storage_chain(true);
+                break;
+            case LONGOPT_USE_LEGACY_BUCKET_DB:
+                _bm_params.set_use_legacy_bucket_db(true);
                 break;
             default:
                 return false;
