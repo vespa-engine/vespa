@@ -153,21 +153,20 @@ public class SessionRepository {
     public ConfigChangeActions prepareLocalSession(LocalSession session,
                                                    DeployLogger logger,
                                                    PrepareParams params,
-                                                   Optional<ApplicationSet> currentActiveApplicationSet,
                                                    Path tenantPath,
                                                    Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-        Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
+        Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
-                                                              currentActiveApplicationSet, tenantPath, now,
+                                                              activeApplicationSet, tenantPath, now,
                                                               getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
         setPrepared(session);
-        waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
+        sessionZooKeeperClient.createPrepareWaiter().awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
     }
 
@@ -436,8 +435,9 @@ public class SessionRepository {
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId,
-                                      TimeoutBudget timeoutBudget, Optional<Long> activeSessionId) {
+    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+        applicationRepo.createApplication(applicationId);
+        Optional<Long> activeSessionId = applicationRepo.activeSessionOf(applicationId);
         return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
     }
 
@@ -558,6 +558,18 @@ public class SessionRepository {
                                                                   internalRedeploy);
         applicationPackage.writeMetaData();
         return applicationPackage;
+    }
+
+    public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
+        Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
+        try {
+            long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
+            RemoteSession currentActiveSession = getRemoteSession(currentActiveSessionId);
+            currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
+        } catch (IllegalArgumentException e) {
+            // Do nothing if we have no currently active session
+        }
+        return currentActiveApplicationSet;
     }
 
     private void copyApp(File sourceDir, File destinationDir) throws IOException {

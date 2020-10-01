@@ -283,13 +283,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         bootstrapping.set(false);
     }
 
-    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
+    public PrepareResult prepare(long sessionId, PrepareParams prepareParams) {
         DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
-        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        Deployment deployment = prepare(sessionId, prepareParams, logger);
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
-    private Deployment prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, DeployLogger logger) {
+    private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
+        Tenant tenant = getTenant(prepareParams.getApplicationId());
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
@@ -320,8 +321,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, DeployHandlerLogger logger) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        Tenant tenant = getTenant(applicationId);
-        Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
+        Deployment deployment = prepare(sessionId, prepareParams, logger);
         deployment.activate();
 
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
@@ -648,11 +648,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public List<Version> getAllVersions(ApplicationId applicationId) {
-        Optional<ApplicationSet> applicationSet = getCurrentActiveApplicationSet(getTenant(applicationId), applicationId);
-        if (applicationSet.isEmpty())
-            return List.of();
-        else
-            return applicationSet.get().getAllVersions(applicationId);
+        Optional<ApplicationSet> applicationSet = getActiveApplicationSet(applicationId);
+        return applicationSet.isEmpty()
+                ? List.of()
+                : applicationSet.get().getAllVersions(applicationId);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
@@ -790,14 +789,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
-        Tenant tenant = getTenant(applicationId);
-        tenant.getApplicationRepo().createApplication(applicationId);
-        Optional<Long> activeSessionId = tenant.getApplicationRepo().activeSessionOf(applicationId);
-        LocalSession session = tenant.getSessionRepository().createSession(applicationDirectory,
-                                                                           applicationId,
-                                                                           timeoutBudget,
-                                                                           activeSessionId);
-        tenant.getSessionRepository().addLocalSession(session);
+        SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
+        LocalSession session = sessionRepository.createSession(applicationDirectory, applicationId, timeoutBudget);
+        sessionRepository.addLocalSession(session);
         return session.getSessionId();
     }
 
@@ -925,17 +919,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
-    public Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
-        Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        try {
-            long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
-            RemoteSession currentActiveSession = getRemoteSession(tenant, currentActiveSessionId);
-            currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
-        } catch (IllegalArgumentException e) {
-            // Do nothing if we have no currently active session
-        }
-        return currentActiveApplicationSet;
+    public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
+        return getTenant(appId).getSessionRepository().getActiveApplicationSet(appId);
     }
 
     private File decompressApplication(InputStream in, String contentType, File tempDir) {

@@ -135,14 +135,12 @@ public class SessionActiveHandlerTest {
         ApplicationMetaData getMetaData() { return metaData; }
 
         void invoke() {
-            Tenant tenant = applicationRepository.getTenant(applicationId());
             long sessionId = applicationRepository.createSession(applicationId(),
                                                                  new TimeoutBudget(componentRegistry.getClock(), Duration.ofSeconds(10)),
                                                                  testApp);
-            applicationRepository.prepare(tenant,
-                                          sessionId,
-                                          new PrepareParams.Builder().applicationId(applicationId()).build());
+            applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
+            Tenant tenant = applicationRepository.getTenant(applicationId());
             LocalSession session = applicationRepository.getActiveLocalSession(tenant, applicationId());
             metaData = session.getMetaData();
             this.sessionId = sessionId;
