@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.net.HostName;
 import com.yahoo.search.Query;
@@ -179,10 +180,24 @@ public class SearchHandlerTestCase {
                     "http://localhost/search/?yql=select%20*%20from%20foo%20where%20bar%20%3E%201453501295%27%3B");
             responseHandler.readAll();
             assertThat(responseHandler.getStatus(), is(400));
+            assertEquals(Request.RequestType.READ, responseHandler.getResponse().getRequestType());
         }
     }
 
+    @Test
+    public void testRequestType() throws Exception {
+        IOUtils.copyDirectory(new File(testDir, "config_yql"), new File(tempDir), 1);
+        generateComponentsConfigForActive();
+        configurer.reloadConfig();
 
+        SearchHandler newSearchHandler = fetchSearchHandler(configurer);
+        try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
+            RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(
+                    "http://localhost/search/?query=foo");
+            responseHandler.readAll();
+            assertEquals(Request.RequestType.READ, responseHandler.getResponse().getRequestType());
+        }
+    }
 
     // Query handling takes a different code path when a query profile is active, so we test both paths.
     @Test

@@ -251,6 +251,9 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
+    @Override
+    public Request.RequestType getRequestType() { return Request.RequestType.READ; }
+
     private int getHttpResponseStatus(com.yahoo.container.jdisc.HttpRequest httpRequest, Result result) {
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(httpRequest);
         if (benchmarkOutput) {
@@ -326,9 +329,7 @@ public class SearchHandler extends LoggingRequestHandler {
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer,
                                                              extractTraceNode(query));
-        response.setRequestType(Request.RequestType.READ);
-        if (hostResponseHeaderKey.isPresent())
-            response.headers().add(hostResponseHeaderKey.get(), selfHostname);
+        hostResponseHeaderKey.ifPresent(key -> response.headers().add(key, selfHostname));
 
         if (benchmarking)
             VespaHeaders.benchmarkOutput(response.headers(), benchmarkCoverage, response.getTiming(),
