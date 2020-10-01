@@ -166,8 +166,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         catch (IllegalArgumentException e) {
             return badRequest(request, e, responseHandler);
         }
-        catch (RuntimeException e) {
-            return serverError(request, e, responseHandler);
+        catch (Throwable t) {
+            return serverError(request, t, responseHandler);
         }
     }
 
@@ -250,8 +250,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                   }
                                               }
                                               // TODO jonmv: This shouldn't happen much, but ... expose errors too?
-                                              catch (RuntimeException e) {
-                                                  log.log(WARNING, "Exception serializing document in document/v1 visit response", e);
+                                              catch (Throwable t) {
+                                                  log.log(WARNING, "Exception serializing document in document/v1 visit response", t);
                                               }
                                           });
     }
@@ -296,8 +296,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
             }
-            catch (RuntimeException e) {
-                serverError(request, e, handler);
+            catch (Throwable t) {
+                serverError(request, t, handler);
             }
         });
     }
@@ -318,8 +318,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
             }
-            catch (RuntimeException e) {
-                serverError(request, e, handler);
+            catch (Throwable t) {
+                serverError(request, t, handler);
             }
         });
     }
@@ -423,10 +423,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         return respond(Response.Status.TOO_MANY_REQUESTS, root, handler);
     }
 
-    private static ContentChannel serverError(HttpRequest request, RuntimeException e, ResponseHandler handler) {
-        log.log(WARNING, "Uncaught exception handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ":", e);
+    private static ContentChannel serverError(HttpRequest request, Throwable t, ResponseHandler handler) {
+        log.log(WARNING, "Uncaught exception handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ":", t);
         Cursor root = responseRoot(request);
-        root.setString("message", Exceptions.toMessageString(e));
+        root.setString("message", Exceptions.toMessageString(t));
         return respond(Response.Status.INTERNAL_SERVER_ERROR, root, handler);
     }
 
