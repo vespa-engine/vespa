@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -213,6 +214,19 @@ TEST(ValueCodecTest, dense_tensors_can_be_encoded_and_decoded) {
     f1.verify_encode_decode(true);
 }
 
+TEST(ValueCodecTest, dense_tensors_without_values_are_filled) {
+    TensorSpec empty_dense_spec("tensor(x[3],y[2])");
+    auto value = value_from_spec(empty_dense_spec, SimpleValueBuilderFactory::get());
+    EXPECT_EQ(value->cells().size, 6);
+    auto cells = value->cells().typify<double>();
+    EXPECT_EQ(cells[0], 0.0);
+    EXPECT_EQ(cells[1], 0.0);
+    EXPECT_EQ(cells[2], 0.0);
+    EXPECT_EQ(cells[3], 0.0);
+    EXPECT_EQ(cells[4], 0.0);
+    EXPECT_EQ(cells[5], 0.0);
+}
+
 //-----------------------------------------------------------------------------
 
 struct MixedTensorExample : TensorExample {
@@ -272,5 +286,115 @@ TEST(ValueCodecTest, mixed_tensors_can_be_encoded_and_decoded) {
 }
 
 //-----------------------------------------------------------------------------
+
+struct BadSparseTensorExample : TensorExample {
+    TensorSpec make_spec(bool use_float) const override {
+        return TensorSpec(make_type_spec(use_float, "(x{},y{})"))
+            .add({{"x","a"},{"y","a"}}, 1)
+            .add({{"x","b"},{"y","a"}}, 3);
+    }
+    std::unique_ptr<Value> make_tensor(bool use_float) const override {
+        return value_from_spec(make_spec(use_float), factory);
+    }
+    template <typename T>
+    void encode_inner(nbostream &dst) const {
+        dst.putInt1_4Bytes(2);
+        dst.writeSmallString("x");
+        dst.writeSmallString("y");
+        dst.putInt1_4Bytes(12345678);
+        dst.writeSmallString("a");
+        dst.writeSmallString("a");
+        dst << (T) 1;
+        dst.writeSmallString("b");
+        dst.writeSmallString("a");
+        dst << (T) 3;
+    }
+    void encode_default(nbostream &dst) const override {
+        dst.putInt1_4Bytes(1);
+        encode_inner<double>(dst);
+    }
+    void encode_with_double(nbostream &dst) const override {
+        dst.putInt1_4Bytes(5);
+        dst.putInt1_4Bytes(0);
+        encode_inner<double>(dst);
+    }
+    void encode_with_float(nbostream &dst) const override {
+        dst.putInt1_4Bytes(5);
+        dst.putInt1_4Bytes(1);
+        encode_inner<float>(dst);
+    }
+};
+
+TEST(ValueCodecTest, bad_sparse_tensors_are_caught) {
+    BadSparseTensorExample bad;
+    nbostream data_default;
+    nbostream data_double;
+    nbostream data_float;
+    bad.encode_default(data_default);
+    bad.encode_with_double(data_double);
+    bad.encode_with_float(data_float);
+    EXPECT_EXCEPTION(decode_value(data_default, factory), vespalib::IllegalStateException,
+                     "serialized input claims 12345678 blocks of size 1*8, but only");
+    EXPECT_EXCEPTION(decode_value(data_double, factory), vespalib::IllegalStateException,
+                     "serialized input claims 12345678 blocks of size 1*8, but only");
+    EXPECT_EXCEPTION(decode_value(data_float, factory), vespalib::IllegalStateException,
+                     "serialized input claims 12345678 blocks of size 1*4, but only");
+}
+
+//-----------------------------------------------------------------------------
+
+struct BadDenseTensorExample : TensorExample {
+    TensorSpec make_spec(bool use_float) const override {
+        return TensorSpec(make_type_spec(use_float, "(x[3],y[2])"))
+            .add({{"x",0},{"y",0}}, 1)
+            .add({{"x",2},{"y",1}}, 6);
+    }
+    std::unique_ptr<Value> make_tensor(bool use_float) const override {
+        return value_from_spec(make_spec(use_float), factory);
+    }
+    template <typename T>
+    void encode_inner(nbostream &dst) const {
+        dst.putInt1_4Bytes(2);
+        dst.writeSmallString("x");
+        dst.putInt1_4Bytes(300);
+        dst.writeSmallString("y");
+        dst.putInt1_4Bytes(200);
+        dst << (T) 1;
+        dst << (T) 6;
+    }
+    void encode_default(nbostream &dst) const override {
+        dst.putInt1_4Bytes(2);
+        encode_inner<double>(dst);
+    }
+    void encode_with_double(nbostream &dst) const override {
+        dst.putInt1_4Bytes(6);
+        dst.putInt1_4Bytes(0);
+        encode_inner<double>(dst);
+    }
+    void encode_with_float(nbostream &dst) const override {
+        dst.putInt1_4Bytes(6);
+        dst.putInt1_4Bytes(1);
+        encode_inner<float>(dst);
+    }
+};
+
+TEST(ValueCodecTest, bad_dense_tensors_are_caught) {
+    BadDenseTensorExample bad;
+    nbostream data_default;
+    nbostream data_double;
+    nbostream data_float;
+    bad.encode_default(data_default);
+    bad.encode_with_double(data_double);
+    bad.encode_with_float(data_float);
+    EXPECT_EXCEPTION(decode_value(data_default, factory), vespalib::IllegalStateException,
+                     "serialized input claims 1 blocks of size 60000*8, but only");
+    EXPECT_EXCEPTION(decode_value(data_double, factory), vespalib::IllegalStateException,
+                     "serialized input claims 1 blocks of size 60000*8, but only");
+    EXPECT_EXCEPTION(decode_value(data_float, factory), vespalib::IllegalStateException,
+                     "serialized input claims 1 blocks of size 60000*4, but only");
+}
+
+//-----------------------------------------------------------------------------
+
 
 GTEST_MAIN_RUN_ALL_TESTS()
