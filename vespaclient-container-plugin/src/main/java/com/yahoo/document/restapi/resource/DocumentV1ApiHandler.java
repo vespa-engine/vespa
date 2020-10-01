@@ -115,15 +115,14 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final Map<String, Map<Method, Handler>> handlers;
 
     @Inject
-    public DocumentV1ApiHandler(Clock clock,
-                                Metric metric,
+    public DocumentV1ApiHandler(Metric metric,
                                 MetricReceiver metricReceiver,
                                 VespaDocumentAccess documentAccess,
                                 DocumentmanagerConfig documentManagerConfig,
                                 ClusterListConfig clusterListConfig,
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
-        this(clock,
+        this(Clock.systemUTC(),
              new DocumentOperationExecutorImpl(clusterListConfig, bucketSpacesConfig, executorConfig, documentAccess, clock),
              new DocumentOperationParser(documentManagerConfig),
              metric,
