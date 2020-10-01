@@ -929,10 +929,24 @@ put_async_task(PersistenceProviderFixture &f, BMRange range, const vespalib::nbo
     pending_tracker.drain();
 }
 
+class AvgSampler {
+private:
+    double _total;
+    size_t _samples;
+
+public:
+    AvgSampler() : _total(0), _samples(0) {}
+    void sample(double val) {
+        _total += val;
+        ++_samples;
+    }
+    double avg() const { return _total / (double)_samples; }
+};
+
 void
-run_put_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor &executor, int pass, int64_t& time_bias, const std::vector<vespalib::nbostream> &serialized_feed_v, const BMParams& bm_params)
+run_put_async_tasks(PersistenceProviderFixture& f, vespalib::ThreadStackExecutor& executor, int pass, int64_t& time_bias,
+                    const std::vector<vespalib::nbostream>& serialized_feed_v, const BMParams& bm_params, AvgSampler& sampler)
 {
-    LOG(info, "putAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
     uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
     for (uint32_t i = 0; i < bm_params.get_client_threads(); ++i) {
@@ -944,7 +958,9 @@ run_put_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
     uint32_t new_errors = f._feed_handler->get_error_count() - old_errors;
-    LOG(info, "%8.2f puts/s, %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
+    double throughput = bm_params.get_documents() / elapsed.count();
+    sampler.sample(throughput);
+    LOG(info, "putAsync: pass=%u, errors=%u, puts/s: %8.2f", pass, new_errors, throughput);
     time_bias += bm_params.get_documents();
 }
 
@@ -983,9 +999,9 @@ update_async_task(PersistenceProviderFixture &f, BMRange range, const vespalib::
 }
 
 void
-run_update_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor &executor, int pass, int64_t& time_bias, const std::vector<vespalib::nbostream> &serialized_feed_v, const BMParams& bm_params)
+run_update_async_tasks(PersistenceProviderFixture& f, vespalib::ThreadStackExecutor& executor, int pass, int64_t& time_bias,
+                       const std::vector<vespalib::nbostream>& serialized_feed_v, const BMParams& bm_params, AvgSampler& sampler)
 {
-    LOG(info, "updateAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
     uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
     for (uint32_t i = 0; i < bm_params.get_client_threads(); ++i) {
@@ -997,7 +1013,9 @@ run_update_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
     uint32_t new_errors = f._feed_handler->get_error_count() - old_errors;
-    LOG(info, "%8.2f updates/s, %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
+    double throughput = bm_params.get_documents() / elapsed.count();
+    sampler.sample(throughput);
+    LOG(info, "updateAsync: pass=%u, errors=%u, updates/s: %8.2f", pass, new_errors, throughput);
     time_bias += bm_params.get_documents();
 }
 
@@ -1036,9 +1054,9 @@ remove_async_task(PersistenceProviderFixture &f, BMRange range, const vespalib::
 }
 
 void
-run_remove_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor &executor, int pass, int64_t& time_bias, const std::vector<vespalib::nbostream> &serialized_feed_v, const BMParams &bm_params)
+run_remove_async_tasks(PersistenceProviderFixture& f, vespalib::ThreadStackExecutor& executor, int pass, int64_t& time_bias,
+                       const std::vector<vespalib::nbostream>& serialized_feed_v, const BMParams& bm_params, AvgSampler& sampler)
 {
-    LOG(info, "removeAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
     uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
     for (uint32_t i = 0; i < bm_params.get_client_threads(); ++i) {
@@ -1050,8 +1068,55 @@ run_remove_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
     auto end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
     uint32_t new_errors = f._feed_handler->get_error_count() - old_errors;
-    LOG(info, "%8.2f removes/s, %u errors for pass=%u", bm_params.get_documents() / elapsed.count(), new_errors, pass);
+    double throughput = bm_params.get_documents() / elapsed.count();
+    sampler.sample(throughput);
+    LOG(info, "removeAsync: pass=%u, errors=%u, removes/s: %8.2f", pass, new_errors, throughput);
     time_bias += bm_params.get_documents();
+}
+
+void
+benchmark_async_put(PersistenceProviderFixture& f, vespalib::ThreadStackExecutor& executor,
+                    int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const BMParams& params)
+{
+    AvgSampler sampler;
+    LOG(info, "--------------------------------");
+    LOG(info, "putAsync: %u small documents, passes=%u", params.get_documents(), params.get_put_passes());
+    for (uint32_t pass = 0; pass < params.get_put_passes(); ++pass) {
+        run_put_async_tasks(f, executor, pass, time_bias, feed, params, sampler);
+    }
+    LOG(info, "putAsync: AVG puts/s: %8.2f", sampler.avg());
+}
+
+void
+benchmark_async_update(PersistenceProviderFixture& f, vespalib::ThreadStackExecutor& executor,
+                       int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const BMParams& params)
+{
+    if (params.get_update_passes() == 0) {
+        return;
+    }
+    AvgSampler sampler;
+    LOG(info, "--------------------------------");
+    LOG(info, "updateAsync: %u small documents, passes=%u", params.get_documents(), params.get_update_passes());
+    for (uint32_t pass = 0; pass < params.get_update_passes(); ++pass) {
+        run_update_async_tasks(f, executor, pass, time_bias, feed, params, sampler);
+    }
+    LOG(info, "updateAsync: AVG updates/s: %8.2f", sampler.avg());
+}
+
+void
+benchmark_async_remove(PersistenceProviderFixture& f, vespalib::ThreadStackExecutor& executor,
+                       int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const BMParams& params)
+{
+    if (params.get_remove_passes() == 0) {
+        return;
+    }
+    LOG(info, "--------------------------------");
+    LOG(info, "removeAsync: %u small documents, passes=%u", params.get_documents(), params.get_remove_passes());
+    AvgSampler sampler;
+    for (uint32_t pass = 0; pass < params.get_remove_passes(); ++pass) {
+        run_remove_async_tasks(f, executor, pass, time_bias, feed, params, sampler);
+    }
+    LOG(info, "removeAsync: AVG removes/s: %8.2f", sampler.avg());
 }
 
 void benchmark_async_spi(const BMParams &bm_params)
@@ -1077,16 +1142,12 @@ void benchmark_async_spi(const BMParams &bm_params)
     auto update_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_update_feed(f, range, bucket_selector); }, f.num_buckets(), "update");
     auto remove_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_remove_feed(f, range, bucket_selector); }, f.num_buckets(), "remove");
     int64_t time_bias = 1;
-    LOG(info, "Feed handler is %s", f._feed_handler->get_name().c_str());
-    for (uint32_t pass = 0; pass < bm_params.get_put_passes(); ++pass) {
-        run_put_async_tasks(f, executor, pass, time_bias, put_feed, bm_params);
-    }
-    for (uint32_t pass = 0; pass < bm_params.get_update_passes(); ++pass) {
-        run_update_async_tasks(f, executor, pass, time_bias, update_feed, bm_params);
-    }
-    for (uint32_t pass = 0; pass < bm_params.get_remove_passes(); ++pass) {
-        run_remove_async_tasks(f, executor, pass, time_bias, remove_feed, bm_params);
-    }
+    LOG(info, "Feed handler is '%s'", f._feed_handler->get_name().c_str());
+    benchmark_async_put(f, executor, time_bias, put_feed, bm_params);
+    benchmark_async_update(f, executor, time_bias, update_feed, bm_params);
+    benchmark_async_remove(f, executor, time_bias, remove_feed, bm_params);
+    LOG(info, "--------------------------------");
+
     f.shutdown_feed_handler();
     f.shutdown_distributor();
     f.shutdown_service_layer();
