@@ -29,6 +29,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Duration;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ThreadLocalRandom;
@@ -116,7 +117,7 @@ public class VespaRecordWriter extends RecordWriter {
         feedParamsBuilder.setRoute(configuration.route());
         feedParamsBuilder.setMaxSleepTimeMs(configuration.maxSleepTimeMs());
         feedParamsBuilder.setMaxInFlightRequests(configuration.maxInFlightRequests());
-        feedParamsBuilder.setLocalQueueTimeOut(3600*1000); //1 hour queue timeout
+        feedParamsBuilder.setLocalQueueTimeOut(Duration.ofMinutes(10).toMillis());
         return feedParamsBuilder;
     }
 
