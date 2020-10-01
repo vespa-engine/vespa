@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_bm_feed_handler.h"
+#include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
 
 namespace document { class DocumentTypeRepo; }
 namespace storage::api {
@@ -13,7 +14,6 @@ class StorageCommand;
 namespace storage::rpc {
 class MessageCodecProvider;
 class SharedRpcResources;
-class StorageApiRpcService;
 }
 
 namespace feedbm {
@@ -35,7 +35,10 @@ class StorageApiRpcBmFeedHandler : public IBmFeedHandler
 
     void send_rpc(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& tracker);
 public:
-    StorageApiRpcBmFeedHandler(storage::rpc::SharedRpcResources& shared_rpc_resources_in, std::shared_ptr<const document::DocumentTypeRepo> repo, bool distributor);
+    StorageApiRpcBmFeedHandler(storage::rpc::SharedRpcResources& shared_rpc_resources_in,
+                               std::shared_ptr<const document::DocumentTypeRepo> repo,
+                               const storage::rpc::StorageApiRpcService::Params& rpc_params,
+                               bool distributor);
     ~StorageApiRpcBmFeedHandler();
     void put(const document::Bucket& bucket, std::unique_ptr<document::Document> document, uint64_t timestamp, PendingTracker& tracker) override;
     void update(const document::Bucket& bucket, std::unique_ptr<document::DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker) override;
