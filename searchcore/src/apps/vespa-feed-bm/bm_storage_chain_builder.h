@@ -6,7 +6,7 @@
 
 namespace feedbm {
 
-class BmStorageLinkContext;
+struct BmStorageLinkContext;
 
 /*
  * Storage chain builder that inserts a BmStorageLink right below the
