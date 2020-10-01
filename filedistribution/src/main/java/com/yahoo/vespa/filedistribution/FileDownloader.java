@@ -119,14 +119,7 @@ public class FileDownloader implements AutoCloseable {
 
     /** Download, the future returned will be complete()d by receiving method in {@link FileReceiver} */
     private synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
-        FileReference fileReference = fileReferenceDownload.fileReference();
-        FileReferenceDownload inProgress = fileReferenceDownloader.getDownloadInProgress(fileReference);
-        return (inProgress == null) ? queueForDownload(fileReferenceDownload) : inProgress.future();
-    }
-
-    private Future<Optional<File>> queueForDownload(FileReferenceDownload fileReferenceDownload) {
-        fileReferenceDownloader.addToDownloadQueue(fileReferenceDownload);
-        return fileReferenceDownload.future();
+        return fileReferenceDownloader.download(fileReferenceDownload);
     }
 
     public FileReferenceDownloader fileReferenceDownloader() {

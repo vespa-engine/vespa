@@ -6,6 +6,8 @@ import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
+
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
@@ -20,7 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -79,14 +80,18 @@ public class FileReferenceDownloader {
         }
     }
 
-    void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
-        FileReference fileReference = fileReferenceDownload.fileReference();
-        log.log(Level.FINE, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
+    Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
         synchronized (downloads) {
+            FileReference fileReference = fileReferenceDownload.fileReference();
+            FileReferenceDownload inProgress = downloads.get(fileReference);
+            if (inProgress != null) return inProgress.future();
+
+            log.log(Level.FINE, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
             downloads.put(fileReference, fileReferenceDownload);
             downloadStatus.put(fileReference, 0.0);
+            downloadExecutor.submit(() -> startDownload(fileReferenceDownload));
+            return fileReferenceDownload.future();
         }
-        downloadExecutor.submit(() -> startDownload(fileReferenceDownload));
     }
 
     void completedDownloading(FileReference fileReference, File file) {
@@ -140,12 +145,6 @@ public class FileReferenceDownloader {
     boolean isDownloading(FileReference fileReference) {
         synchronized (downloads) {
             return downloads.containsKey(fileReference);
-        }
-    }
-
-    FileReferenceDownload getDownloadInProgress(FileReference fileReference) {
-        synchronized (downloads) {
-            return downloads.get(fileReference);
         }
     }
 
