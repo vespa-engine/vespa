@@ -189,12 +189,12 @@ SparseTensorT<T>::join(join_fun_t function, const Tensor &arg) const
         if (lhs_type.dimensions() == rhs_type.dimensions()) {
             return typify_invoke<1,eval::TypifyCellType,FastSparseJoin<T>>(
                     rhs_type.cell_type(),
-                    *this, *rhs, res_type);
+                    *this, *rhs, std::move(res_type));
         }
     }
     return typify_invoke<2,eval::TypifyCellType,GenericSparseJoin<T>>(
             rhs_type.cell_type(), res_type.cell_type(),
-            *this, *rhs, res_type, function);
+            *this, *rhs, std::move(res_type), function);
 }
 
 template<typename T>
