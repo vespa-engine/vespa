@@ -96,12 +96,12 @@ public class IOThread implements Runnable, AutoCloseable {
         this.maxInFlightRequests = maxInFlightRequests;
         this.connectionTimeToLive = connectionTimeToLive;
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
-        this.pollIntervalUS = Math.max(1, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1us, 10s]
+        this.pollIntervalUS = Math.max(1000, (long)(1000000.0/Math.max(0.1, idlePollFrequency))); // ensure range [1ms, 10s]
         this.clock = clock;
         this.localQueueTimeOut = localQueueTimeOut;
         this.oldConnectionsDrainer = new OldConnectionsDrainer(endpoint,
                                                                clusterId,
-                                                               pollIntervalUS,
+                                                               Duration.ofMillis(pollIntervalUS/1000),
                                                                connectionTimeToLive,
                                                                localQueueTimeOut,
                                                                statusReceivedCounter,
@@ -521,7 +521,7 @@ public class IOThread implements Runnable, AutoCloseable {
 
         private final Endpoint endpoint;
         private final int clusterId;
-        private final long pollIntervalUS;
+        private final Duration pollInterval;
         private final Duration connectionTimeToLive;
         private final Duration localQueueTimeOut;
         private final AtomicInteger statusReceivedCounter;
@@ -537,7 +537,7 @@ public class IOThread implements Runnable, AutoCloseable {
 
         OldConnectionsDrainer(Endpoint endpoint,
                              int clusterId,
-                             long pollIntervalUS,
+                             Duration pollInterval,
                              Duration connectionTimeToLive,
                              Duration localQueueTimeOut,
                              AtomicInteger statusReceivedCounter,
@@ -546,7 +546,7 @@ public class IOThread implements Runnable, AutoCloseable {
                              Clock clock) {
             this.endpoint = endpoint;
             this.clusterId = clusterId;
-            this.pollIntervalUS = pollIntervalUS;
+            this.pollInterval = pollInterval;
             this.connectionTimeToLive = connectionTimeToLive;
             this.localQueueTimeOut = localQueueTimeOut;
             this.statusReceivedCounter = statusReceivedCounter;
@@ -563,11 +563,16 @@ public class IOThread implements Runnable, AutoCloseable {
         @Override
         public void run() {
             while (stopSignal.getCount() > 0) {
-                checkOldConnections();
                 try {
-                    Thread.sleep(pollIntervalUS/1000);
+                    checkOldConnections();
+                    Thread.sleep(pollInterval.toMillis());
                 }
                 catch (InterruptedException e) {
+                    log.log(Level.WARNING, "Close thread was interrupted: " + e.getMessage(), e);
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Connection draining failed: " + e.getMessage(), e);
                 }
             }
         }
@@ -604,13 +609,16 @@ public class IOThread implements Runnable, AutoCloseable {
         }
 
         private boolean timeToPoll(GatewayConnection connection) {
-            if (connection.lastPollTime() == null) return true;
+            // connectionEndOfLife < connectionLastPolled < now
+            Instant now = clock.instant();
+            Instant endOfLife = connection.connectionTime().plus(connectionTimeToLive);
+            if (connection.lastPollTime() == null) return endOfLife.plus(pollInterval).isBefore(now);
+            if (connection.lastPollTime().plus(pollInterval).isAfter(now)) return false;
 
             // Exponential (2^x) dropoff:
-            double connectionEndOfLife = connection.connectionTime().plus(connectionTimeToLive).toEpochMilli();
+            double connectionEndOfLife = endOfLife.toEpochMilli();
             double connectionLastPolled = connection.lastPollTime().toEpochMilli();
-            // connectionEndOfLife < connectionLastPolled < clock.millis()
-            return clock.millis() - connectionEndOfLife > 2 * (connectionLastPolled - connectionEndOfLife);
+            return now.toEpochMilli() - connectionEndOfLife > 2 * (connectionLastPolled - connectionEndOfLife);
         }
 
         private Instant closingTime(GatewayConnection connection) {
