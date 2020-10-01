@@ -37,13 +37,13 @@ struct Value {
             // partial address for the dimensions given to
             // create_view. Results from the lookup is extracted using
             // the next_result function.
-            virtual void lookup(const std::vector<const vespalib::stringref*> &addr) = 0;
+            virtual void lookup(ConstArrayRef<const vespalib::stringref*> addr) = 0;
 
             // Extract the next result (if any) from the previous
             // lookup into the given partial address and index. Only
             // the labels for the dimensions NOT specified in
             // create_view will be extracted here.
-            virtual bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) = 0;
+            virtual bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) = 0;
 
             virtual ~View() {}
         };

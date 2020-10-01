@@ -40,14 +40,14 @@ public:
                           const std::vector<size_t> &dims)
       : map(map_in), iter(map.end()), lookup_dims(dims), lookup_refs() {}
     ~SparseTensorValueView();
-    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
-    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override;
+    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override;
 };
 
 SparseTensorValueView::~SparseTensorValueView() = default;
 
 void
-SparseTensorValueView::lookup(const std::vector<const vespalib::stringref*> &addr)
+SparseTensorValueView::lookup(ConstArrayRef<const vespalib::stringref*> addr)
 {
     lookup_refs.clear();
     for (auto ptr : addr) {
@@ -58,7 +58,7 @@ SparseTensorValueView::lookup(const std::vector<const vespalib::stringref*> &add
 }
 
 bool
-SparseTensorValueView::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
+SparseTensorValueView::next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out)
 {
     size_t total_dims = lookup_refs.size() + addr_out.size();
     while (iter != map.end()) {
@@ -108,14 +108,14 @@ private:
 public:
     SparseTensorValueLookup(const IndexMap & map_in) : map(map_in), iter(map.end()) {}
     ~SparseTensorValueLookup();
-    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
-    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override;
+    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override;
 };
 
 SparseTensorValueLookup::~SparseTensorValueLookup() = default;
 
 void
-SparseTensorValueLookup::lookup(const std::vector<const vespalib::stringref*> &addr)
+SparseTensorValueLookup::lookup(ConstArrayRef<const vespalib::stringref*> addr)
 {
     SparseTensorAddressBuilder builder;
     for (const auto & label : addr) {
@@ -126,7 +126,7 @@ SparseTensorValueLookup::lookup(const std::vector<const vespalib::stringref*> &a
 }
 
 bool
-SparseTensorValueLookup::next_result(const std::vector<vespalib::stringref*> &, size_t &idx_out)
+SparseTensorValueLookup::next_result(ConstArrayRef<vespalib::stringref*>, size_t &idx_out)
 {
     if (iter != map.end()) {
         idx_out = iter->second;
@@ -146,20 +146,20 @@ private:
 public:
     SparseTensorValueAllMappings(const IndexMap & map_in) : map(map_in), iter(map.end()) {}
     ~SparseTensorValueAllMappings();
-    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
-    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override;
+    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override;
 };
 
 SparseTensorValueAllMappings::~SparseTensorValueAllMappings() = default;
 
 void
-SparseTensorValueAllMappings::lookup(const std::vector<const vespalib::stringref*> &)
+SparseTensorValueAllMappings::lookup(ConstArrayRef<const vespalib::stringref*>)
 {
     iter = map.begin();
 }
 
 bool
-SparseTensorValueAllMappings::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
+SparseTensorValueAllMappings::next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out)
 {
     if (iter != map.end()) {
         const auto & ref = iter->first;

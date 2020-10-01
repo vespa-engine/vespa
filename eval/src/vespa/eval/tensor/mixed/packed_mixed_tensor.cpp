@@ -30,13 +30,13 @@ public:
         _full_enums.resize(num_full_dims());
     }
 
-    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
-    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override;
+    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override;
     ~PackedMixedTensorIndexView() override = default;
 };
 
 void
-PackedMixedTensorIndexView::lookup(const std::vector<const vespalib::stringref*> &addr)
+PackedMixedTensorIndexView::lookup(ConstArrayRef<const vespalib::stringref*> addr)
 {
     _index = 0;
     assert(addr.size() == num_view_dims());
@@ -53,7 +53,7 @@ PackedMixedTensorIndexView::lookup(const std::vector<const vespalib::stringref*>
 }
 
 bool
-PackedMixedTensorIndexView::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
+PackedMixedTensorIndexView::next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out)
 {
     assert(addr_out.size() == num_rest_dims());
     while (_index < _mappings.size()) {
@@ -109,13 +109,13 @@ public:
         _lookup_enums.reserve(num_full_dims());
     }
 
-    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
-    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override;
+    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override;
     ~PackedMixedTensorLookup() override = default;
 };
 
 void
-PackedMixedTensorLookup::lookup(const std::vector<const vespalib::stringref*> &addr)
+PackedMixedTensorLookup::lookup(ConstArrayRef<const vespalib::stringref*> addr)
 {
     assert(addr.size() == num_full_dims());
     _lookup_enums.clear();
@@ -132,7 +132,7 @@ PackedMixedTensorLookup::lookup(const std::vector<const vespalib::stringref*> &a
 }
 
 bool
-PackedMixedTensorLookup::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
+PackedMixedTensorLookup::next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out)
 {
     assert(addr_out.size() == 0);
     if (_first_time) {
@@ -164,20 +164,20 @@ public:
         _full_address.resize(_mappings.num_mapped_dims());
     }
 
-    void lookup(const std::vector<const vespalib::stringref*> &addr) override;
-    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override;
+    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override;
+    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override;
     ~PackedMixedTensorAllMappings() override = default;
 };
 
 void
-PackedMixedTensorAllMappings::lookup(const std::vector<const vespalib::stringref*> &addr)
+PackedMixedTensorAllMappings::lookup(ConstArrayRef<const vespalib::stringref*> addr)
 {
     _index = 0;
     assert(addr.size() == 0);
 }
 
 bool
-PackedMixedTensorAllMappings::next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out)
+PackedMixedTensorAllMappings::next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out)
 {
     assert(addr_out.size() == _mappings.num_mapped_dims());
     while (_index < _mappings.size()) {

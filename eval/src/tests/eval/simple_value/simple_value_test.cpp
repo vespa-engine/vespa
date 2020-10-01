@@ -15,6 +15,9 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
+using PA = std::vector<vespalib::stringref *>;
+using CPA = std::vector<const vespalib::stringref *>;
+
 std::vector<Layout> layouts = {
     {},
     {x(3)},
@@ -105,14 +108,14 @@ TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
     vespalib::stringref query = "b";
     vespalib::stringref label;
     size_t subspace;
-    view->lookup({&query});
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    view->lookup(CPA{&query});
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "aa");
     EXPECT_EQ(subspace, 2);
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "bb");
     EXPECT_EQ(subspace, 3);
-    EXPECT_FALSE(view->next_result({&label}, subspace));
+    EXPECT_FALSE(view->next_result(PA{&label}, subspace));
 }
 
 TEST(SimpleValueTest, new_generic_join_works_for_simple_values) {

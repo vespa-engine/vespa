@@ -10,8 +10,8 @@ namespace {
 
 struct TrivialView : Value::Index::View {
     bool first = false;
-    void lookup(const std::vector<const vespalib::stringref*> &) override { first = true; }
-    bool next_result(const std::vector<vespalib::stringref*> &, size_t &idx_out) override {
+    void lookup(ConstArrayRef<const vespalib::stringref*> ) override { first = true; }
+    bool next_result(ConstArrayRef<vespalib::stringref*> , size_t &idx_out) override {
         if (first) {
             idx_out = 0;
             first = false;
