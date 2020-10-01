@@ -145,7 +145,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         return parameters;
     }
 
-    /** Assumes this stops receiving operations roughly when this is called, then waits up to 50 seconds to drain operations. */
+    /** Assumes this stops receiving operations roughly when this is called, then waits up to 20 seconds to drain operations. */
     @Override
     public void shutdown() {
         long shutdownMillis = clock.instant().plusSeconds(20).toEpochMilli();
