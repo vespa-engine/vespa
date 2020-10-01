@@ -242,6 +242,7 @@ class BMParams {
     uint32_t _update_passes;
     uint32_t _remove_passes;
     uint32_t _rpc_network_threads;
+    uint32_t _response_threads;
     bool     _enable_distributor;
     bool     _enable_service_layer;
     bool     _use_storage_chain;
@@ -256,7 +257,8 @@ public:
           _put_passes(2),
           _update_passes(1),
           _remove_passes(2),
-          _rpc_network_threads(1),
+          _rpc_network_threads(1), // Same default as in stor-communicationmanager.def
+          _response_threads(2), // Same default as in stor-filestor.def
           _enable_distributor(false),
           _enable_service_layer(false),
           _use_storage_chain(false),
@@ -272,6 +274,7 @@ public:
     uint32_t get_update_passes() const { return _update_passes; }
     uint32_t get_remove_passes() const { return _remove_passes; }
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
+    uint32_t get_response_threads() const { return _response_threads; }
     bool get_enable_distributor() const { return _enable_distributor; }
     bool get_enable_service_layer() const { return _enable_service_layer || _enable_distributor; }
     bool get_use_storage_chain() const { return _use_storage_chain; }
@@ -282,6 +285,7 @@ public:
     void set_update_passes(uint32_t update_passes_in) { _update_passes = update_passes_in; }
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }
+    void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_enable_distributor(bool enable_distributor_in) { _enable_distributor = enable_distributor_in; }
     void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
     void set_use_storage_chain(bool use_storage_chain_in) { _use_storage_chain = use_storage_chain_in; }
@@ -310,6 +314,10 @@ BMParams::check() const
     }
     if (_rpc_network_threads < 1) {
         std::cerr << "Too few rpc network threads: " << _rpc_network_threads << std::endl;
+        return false;
+    }
+    if (_response_threads < 1) {
+        std::cerr << "Too few response threads: " << _response_threads << std::endl;
         return false;
     }
     return true;
@@ -468,6 +476,7 @@ struct MyServiceLayerConfig : public MyStorageConfig
           stor_bucket_init(),
           stor_visitor()
     {
+        stor_filestor.numResponseThreads = params.get_response_threads();
     }
 
     ~MyServiceLayerConfig();
@@ -1134,6 +1143,7 @@ App::get_options()
         { "update-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
+        { "response-threads", 1, nullptr, 0 },
         { "enable-distributor", 0, nullptr, 0 },
         { "enable-service-layer", 0, nullptr, 0 },
         { "use-storage-chain", 0, nullptr, 0 },
@@ -1146,6 +1156,7 @@ App::get_options()
         LONGOPT_UPDATE_PASSES,
         LONGOPT_REMOVE_PASSES,
         LONGOPT_RPC_NETWORK_THREADS,
+        LONGOPT_RESPONSE_THREADS,
         LONGOPT_ENABLE_DISTRIBUTOR,
         LONGOPT_ENABLE_SERVICE_LAYER,
         LONGOPT_USE_STORAGE_CHAIN,
@@ -1174,6 +1185,9 @@ App::get_options()
                 break;
             case LONGOPT_RPC_NETWORK_THREADS:
                 _bm_params.set_rpc_network_threads(atoi(opt_argument));
+                break;
+            case LONGOPT_RESPONSE_THREADS:
+                _bm_params.set_response_threads(atoi(opt_argument));
                 break;
             case LONGOPT_ENABLE_DISTRIBUTOR:
                 _bm_params.set_enable_distributor(true);
