@@ -160,7 +160,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         }
         catch (InterruptedException | ExecutionException | TimeoutException e) {
             throttleShutdown.cancel(true);
-            throttleShutdown.cancel(true);
+            timeoutShutdown.cancel(true);
             log.log(WARNING, "Exception shutting down " + getClass().getName(), e);
         }
     }
