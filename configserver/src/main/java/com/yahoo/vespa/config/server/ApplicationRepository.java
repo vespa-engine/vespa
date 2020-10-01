@@ -63,6 +63,8 @@ import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.stats.LockStats;
+import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -305,10 +307,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
         DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
+        ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         PrepareResult prepareResult;
         try {
+            threadLockStats.startRecording("deploy of " + prepareParams.getApplicationId().serializedForm());
             prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, logger);
         } finally {
+            threadLockStats.stopRecording();
             cleanupTempDirectory(tempDir, logger);
         }
         return prepareResult;

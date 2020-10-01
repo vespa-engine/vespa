@@ -3,6 +3,8 @@ package com.yahoo.vespa.curator.stats;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,6 +21,7 @@ public class LockAttempt {
     private final String lockPath;
     private final Instant callAcquireInstant;
     private final Duration timeout;
+    private final List<LockAttempt> nestedLockAttempts = new ArrayList<>();
 
     private volatile Optional<Instant> lockAcquiredInstant = Optional.empty();
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
@@ -56,6 +59,7 @@ public class LockAttempt {
     public Optional<Instant> getTimeLockWasAcquired() { return lockAcquiredInstant; }
     public Optional<Instant> getTimeTerminalStateWasReached() { return terminalStateInstant; }
     public Optional<String> getStackTrace() { return stackTrace; }
+    public List<LockAttempt> getNestedLockAttempts() { return List.copyOf(nestedLockAttempts); }
 
     public Duration getDurationOfAcquire() {
         return Duration.between(callAcquireInstant, lockAcquiredInstant.orElseGet(Instant::now));
@@ -80,6 +84,10 @@ public class LockAttempt {
         // which is fine.
 
         this.stackTrace = Optional.of(threadLockStats.getStackTrace());
+    }
+
+    void addNestedLockAttempt(LockAttempt nestedLockAttempt) {
+        nestedLockAttempts.add(nestedLockAttempt);
     }
 
     void acquireFailed() { setTerminalState(LockState.ACQUIRE_FAILED); }
