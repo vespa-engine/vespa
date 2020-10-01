@@ -221,7 +221,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         catch (IllegalArgumentException | ParseException e) {
             context.error(BAD_REQUEST, Exceptions.toMessageString(e));
         }
-        catch (RuntimeException e) {
+        catch (RuntimeException | LinkageError e) {
             context.error(ERROR, Exceptions.toMessageString(e));
         }
     }
