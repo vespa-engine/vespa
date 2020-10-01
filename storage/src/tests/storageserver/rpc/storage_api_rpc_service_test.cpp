@@ -308,6 +308,7 @@ TEST_F(StorageApiRpcServiceTest, can_send_and_respond_to_request_end_to_end) {
 TEST_F(StorageApiRpcServiceTest, send_to_unknown_address_bounces_with_error_reply) {
     auto cmd = _node_0->create_dummy_put_command();
     cmd->setAddress(non_existing_address());
+    cmd->getTrace().setLevel(9);
     _node_0->send_request(cmd);
 
     auto bounced_msg = _node_0->wait_and_receive_single_message();
@@ -323,6 +324,7 @@ TEST_F(StorageApiRpcServiceTest, send_to_unknown_address_bounces_with_error_repl
             to_slobrok_id(non_existing_address()).c_str(), vespalib::HostName::get().c_str());
 
     EXPECT_EQ(put_reply->getResult(), api::ReturnCode(expected_code, expected_msg));
+    EXPECT_THAT(put_reply->getTrace().toString(), HasSubstr("The service must be having problems"));
 }
 
 TEST_F(StorageApiRpcServiceTest, request_metadata_is_propagated_to_receiver) {
@@ -407,5 +409,18 @@ TEST_F(StorageApiRpcServiceTest, malformed_request_payload_returns_rpc_error) {
 }
 
 // TODO also test bad response header/payload
+
+TEST_F(StorageApiRpcServiceTest, trace_events_are_emitted_for_send_and_receive) {
+    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd){
+        cmd.getTrace().setLevel(9);
+    });
+    auto recv_reply = respond_and_receive_put_reply_at_node_0(recv_cmd);
+    auto trace_str = recv_reply->getTrace().toString();
+    // Ordering of traced events matter, so we use a cheeky regex.
+    EXPECT_THAT(trace_str, ContainsRegex("Sending request from.+"
+                                         "Request received at.+"
+                                         "Sending response from.+"
+                                         "Response received at"));
+}
 
 }

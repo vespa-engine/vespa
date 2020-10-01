@@ -58,14 +58,13 @@ public:
     [[nodiscard]] bool target_supports_direct_rpc(const api::StorageMessageAddress& addr) const noexcept;
 
     void RPC_rpc_v1_send(FRT_RPCRequest* req);
-    void encode_rpc_v1_response(FRT_RPCRequest& request, const api::StorageReply& reply);
+    void encode_rpc_v1_response(FRT_RPCRequest& request, api::StorageReply& reply);
     void send_rpc_v1_request(std::shared_ptr<api::StorageCommand> cmd);
 
     static constexpr const char* rpc_v1_method_name() noexcept {
         return "storageapi.v1.send";
     }
 private:
-    // TODO dedupe
     void detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd, FRT_RPCRequest* req);
 
     struct RpcRequestContext {
