@@ -14,16 +14,15 @@ namespace vespalib::tensor {
  * Creates a new tensor by adding the cells of the argument tensor to this tensor.
  * Existing cell values are overwritten.
  */
+template<typename T>
 class SparseTensorAdd : public TensorVisitor
 {
-    using Cells = SparseTensor::Cells;
-    eval::ValueType _type;
-    Cells _cells;
-    Stash _stash;
+    eval::ValueType        _type;
+    SparseTensorIndex      _index;
+    std::vector<T>         _values;
     SparseTensorAddressBuilder _addressBuilder;
-
 public:
-    SparseTensorAdd(const eval::ValueType &type, Cells &&cells, Stash &&stash);
+    SparseTensorAdd(eval::ValueType type, SparseTensorIndex index, std::vector<T> values);
     ~SparseTensorAdd();
     void visit(const TensorAddress &address, double value) override;
     std::unique_ptr<Tensor> build();

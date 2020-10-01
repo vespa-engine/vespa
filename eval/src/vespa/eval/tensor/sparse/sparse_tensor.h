@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include "sparse_tensor_address_ref.h"
+#include "sparse_tensor_index.h"
 #include <vespa/eval/tensor/cell_function.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/tensor_address.h>
 #include <vespa/eval/tensor/types.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stash.h>
 
 namespace vespalib::tensor {
 
@@ -20,42 +18,22 @@ namespace vespalib::tensor {
  */
 class SparseTensor : public Tensor
 {
-public:
-    using Cells = hash_map<SparseTensorAddressRef, double, hash<SparseTensorAddressRef>,
-                           std::equal_to<>, hashtable_base::and_modulator>;
-
-    static constexpr size_t STASH_CHUNK_SIZE = 16384u;
-
 private:
     eval::ValueType _type;
-    Cells _cells;
-    Stash _stash;
+    SparseTensorIndex _index;
 
 public:
-    explicit SparseTensor(const eval::ValueType &type_in, const Cells &cells_in);
-    SparseTensor(eval::ValueType &&type_in, Cells &&cells_in, Stash &&stash_in);
-    TypedCells cells() const override { abort(); }
-    const Index &index() const override { abort(); }
+    SparseTensor(eval::ValueType type_in, SparseTensorIndex index_in);
     ~SparseTensor() override;
-    const Cells &my_cells() const { return _cells; }
+    size_t my_size() const { return _index.get_map().size(); }
+    const SparseTensorIndex &index() const override { return _index; }
     const eval::ValueType &fast_type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;
     eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;
 
     const eval::ValueType &type() const override;
-    double as_double() const override;
-    Tensor::UP apply(const CellFunction &func) const override;
-    Tensor::UP join(join_fun_t function, const Tensor &arg) const override;
-    Tensor::UP merge(join_fun_t function, const Tensor &arg) const override;
-    Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const override;
-    std::unique_ptr<Tensor> modify(join_fun_t op, const CellValues &cellValues) const override;
-    std::unique_ptr<Tensor> add(const Tensor &arg) const override;
-    std::unique_ptr<Tensor> remove(const CellValues &cellAddresses) const override;
     bool equals(const Tensor &arg) const override;
-    Tensor::UP clone() const override;
     eval::TensorSpec toSpec() const override;
-    void accept(TensorVisitor &visitor) const override;
-    MemoryUsage get_memory_usage() const override;
 };
 
 }

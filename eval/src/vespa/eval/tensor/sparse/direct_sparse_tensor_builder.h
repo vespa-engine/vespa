@@ -12,56 +12,56 @@ namespace vespalib::tensor {
  * Utility class to build tensors of type SparseTensor, to be used by
  * tensor operations.
  */
+template<typename T>
 class DirectSparseTensorBuilder
 {
 public:
-    using Cells = SparseTensor::Cells;
     using AddressBuilderType = SparseTensorAddressBuilder;
     using AddressRefType = SparseTensorAddressRef;
 
 private:
-    Stash _stash;
     eval::ValueType _type;
-    Cells _cells;
+    SparseTensorIndex _index;
+    std::vector<T> _values;
 
 public:
-    void copyCells(const Cells &cells_in);
     DirectSparseTensorBuilder();
     DirectSparseTensorBuilder(const eval::ValueType &type_in);
-    DirectSparseTensorBuilder(const eval::ValueType &type_in, const Cells &cells_in);
     ~DirectSparseTensorBuilder();
 
     Tensor::UP build();
 
     template <class Function>
-    void insertCell(SparseTensorAddressRef address, double value, Function &&func)
+    void insertCell(SparseTensorAddressRef address, T value, Function &&func)
     {
-        auto res = _cells.insert(std::make_pair(address, value));
-        if (res.second) {
-            // Replace key with own copy
-            res.first->first = SparseTensorAddressRef(address, _stash);
+        size_t idx;
+        if (_index.lookup_address(address, idx)) {
+            _values[idx] = func(_values[idx], value);
         } else {
-            res.first->second = func(res.first->second, value);
+            idx = _index.lookup_or_add(address);
+            assert(idx == _values.size());
+            _values.push_back(value);
         }
     }
 
-    void insertCell(SparseTensorAddressRef address, double value) {
+    void insertCell(SparseTensorAddressRef address, T value) {
         // This address should not already exist and a new cell should be inserted.
-        insertCell(address, value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
+        _index.add_address(address);
+        _values.push_back(value);
     }
 
     template <class Function>
-    void insertCell(SparseTensorAddressBuilder &address, double value, Function &&func) {
+    void insertCell(SparseTensorAddressBuilder &address, T value, Function &&func) {
         insertCell(address.getAddressRef(), value, func);
     }
 
-    void insertCell(SparseTensorAddressBuilder &address, double value) {
+    void insertCell(SparseTensorAddressBuilder &address, T value) {
         // This address should not already exist and a new cell should be inserted.
-        insertCell(address.getAddressRef(), value, [](double, double) -> double { HDR_ABORT("should not be reached"); });
+        insertCell(address.getAddressRef(), value);
     }
 
     eval::ValueType &fast_type() { return _type; }
-    Cells &cells() { return _cells; }
+
     void reserve(uint32_t estimatedCells);
 };
 

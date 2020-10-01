@@ -7,50 +7,39 @@
 
 namespace vespalib::tensor::sparse {
 
-template <typename Function>
+template <typename T, typename Function>
 std::unique_ptr<Tensor>
-reduceAll(const SparseTensor &tensor,
-          DirectSparseTensorBuilder &builder, Function &&func)
+reduceAll(const SparseTensorT<T> &tensor, Function &&func)
 {
-    auto itr = tensor.my_cells().begin();
-    auto itrEnd = tensor.my_cells().end();
+    DirectSparseTensorBuilder<double> builder;
+    size_t sz = tensor.my_size();
     double result = 0.0;
-    if (itr != itrEnd) {
-        result = itr->second;
-        ++itr;
+    if (sz != 0) {
+        result = tensor.get_value(0);
     }
-    for (; itr != itrEnd; ++itr) {
-        result = func(result, itr->second);
+    for (size_t i = 1; i < sz; ++i) {
+        result = func(result, tensor.get_value(i));
     }
-    builder.insertCell(SparseTensorAddressBuilder().getAddressRef(), result);
+    builder.insertCell(SparseTensorAddressRef(), result);
     return builder.build();
 }
 
-template <typename Function>
+template <typename T, typename Function>
 std::unique_ptr<Tensor>
-reduceAll(const SparseTensor &tensor, Function &&func)
-{
-    DirectSparseTensorBuilder builder;
-    return reduceAll(tensor, builder, func);
-}
-
-template <typename Function>
-std::unique_ptr<Tensor>
-reduce(const SparseTensor &tensor,
+reduce(const SparseTensorT<T> &tensor,
        const std::vector<vespalib::string> &dimensions, Function &&func)
 {
-    if (dimensions.empty()) {
+    auto tt = tensor.fast_type().reduce(dimensions);
+    if (tt.is_double()) {
         return reduceAll(tensor, func);
     }
-    DirectSparseTensorBuilder builder(tensor.fast_type().reduce(dimensions));
-    if (builder.fast_type().dimensions().empty()) {
-        return reduceAll(tensor, builder, func);
-    }
+    DirectSparseTensorBuilder<T> builder(std::move(tt));
+    builder.reserve(tensor.my_size());
     TensorAddressReducer addressReducer(tensor.fast_type(), dimensions);
-    builder.reserve(tensor.my_cells().size()*2);
-    for (const auto &cell : tensor.my_cells()) {
-        addressReducer.reduce(cell.first);
-        builder.insertCell(addressReducer.getAddressRef(), cell.second, func);
+    for (const auto & kv : tensor.index().get_map()) {
+        addressReducer.reduce(kv.first);
+        auto v = tensor.get_value(kv.second);
+        builder.insertCell(addressReducer.getAddressRef(), v, func);
     }
     return builder.build();
 }

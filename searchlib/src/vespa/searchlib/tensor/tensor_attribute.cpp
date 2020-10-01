@@ -5,7 +5,7 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
-#include <vespa/eval/tensor/sparse/sparse_tensor.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -16,7 +16,7 @@ using document::TensorDataType;
 using document::WrongTensorTypeException;
 using vespalib::eval::SimpleTensor;
 using vespalib::eval::ValueType;
-using vespalib::tensor::SparseTensor;
+using vespalib::tensor::DirectSparseTensorBuilder;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedDenseTensorBuilder;
 using vespalib::tensor::WrappedSimpleTensor;
@@ -34,22 +34,23 @@ constexpr size_t DEAD_SLACK = 0x10000u;
 struct CallMakeEmptyTensor {
     template <typename CT>
     static Tensor::UP invoke(const ValueType &type) {
-        TypedDenseTensorBuilder<CT> builder(type);
-        return builder.build();
+        if (type.is_dense()) {
+            TypedDenseTensorBuilder<CT> builder(type);
+            return builder.build();
+        }
+        if (type.is_sparse()) {
+            DirectSparseTensorBuilder<CT> builder(type);
+            return builder.build();
+        }
+        return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
     }
 };
 
 Tensor::UP
 createEmptyTensor(const ValueType &type)
 {
-    if (type.is_sparse()) {
-        return std::make_unique<SparseTensor>(type, SparseTensor::Cells());
-    } else if (type.is_dense()) {
-        using MyTypify = vespalib::eval::TypifyCellType;
-        return vespalib::typify_invoke<1,MyTypify,CallMakeEmptyTensor>(type.cell_type(), type);
-    } else {
-        return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
-    }
+    using MyTypify = vespalib::eval::TypifyCellType;
+    return vespalib::typify_invoke<1,MyTypify,CallMakeEmptyTensor>(type.cell_type(), type);
 }
 
 vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)

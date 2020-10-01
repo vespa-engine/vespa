@@ -1,50 +1,46 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "direct_sparse_tensor_builder.h"
+#include "sparse_tensor_t.h"
+#include <type_traits>
 
 namespace vespalib::tensor {
 
-void
-DirectSparseTensorBuilder::copyCells(const Cells &cells_in)
+template<typename T>
+DirectSparseTensorBuilder<T>::DirectSparseTensorBuilder()
+    : _type(eval::ValueType::double_type()),
+      _index(0),
+      _values()
 {
-    for (const auto &cell : cells_in) {
-        SparseTensorAddressRef oldRef = cell.first;
-        SparseTensorAddressRef newRef(oldRef, _stash);
-        _cells[newRef] = cell.second;
-    }
+    assert((std::is_same_v<T,double>));
 }
 
-DirectSparseTensorBuilder::DirectSparseTensorBuilder()
-    : _stash(SparseTensor::STASH_CHUNK_SIZE),
-      _type(eval::ValueType::double_type()),
-      _cells()
-{
-}
-
-DirectSparseTensorBuilder::DirectSparseTensorBuilder(const eval::ValueType &type_in)
-    : _stash(SparseTensor::STASH_CHUNK_SIZE),
-      _type(type_in),
-      _cells()
+template<typename T>
+DirectSparseTensorBuilder<T>::DirectSparseTensorBuilder(const eval::ValueType &type_in)
+    : _type(type_in),
+      _index(_type.count_mapped_dimensions()),
+      _values()
 {
 }
 
-DirectSparseTensorBuilder::DirectSparseTensorBuilder(const eval::ValueType &type_in, const Cells &cells_in)
-    : _stash(SparseTensor::STASH_CHUNK_SIZE),
-      _type(type_in),
-      _cells()
-{
-    copyCells(cells_in);
-}
+template<typename T>
+DirectSparseTensorBuilder<T>::~DirectSparseTensorBuilder() = default;
 
-DirectSparseTensorBuilder::~DirectSparseTensorBuilder() = default;
-
+template<typename T>
 Tensor::UP
-DirectSparseTensorBuilder::build() {
-    return std::make_unique<SparseTensor>(std::move(_type), std::move(_cells), std::move(_stash));
+DirectSparseTensorBuilder<T>::build() {
+    using tt = SparseTensorT<T>;
+    return std::make_unique<tt>(std::move(_type), std::move(_index), std::move(_values));
 }
 
-void DirectSparseTensorBuilder::reserve(uint32_t estimatedCells) {
-    _cells.resize(estimatedCells*2);
+template<typename T>
+void
+DirectSparseTensorBuilder<T>::reserve(uint32_t estimatedCells) {
+    _index.reserve(estimatedCells);
+    _values.reserve(estimatedCells);
 }
+
+template class DirectSparseTensorBuilder<float>;
+template class DirectSparseTensorBuilder<double>;
 
 }
