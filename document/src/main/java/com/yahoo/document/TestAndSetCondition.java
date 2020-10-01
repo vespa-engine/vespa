@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -40,6 +41,19 @@ public class TestAndSetCondition {
         return conditionString
                 .map(TestAndSetCondition::new)
                 .orElse(TestAndSetCondition.NOT_PRESENT_CONDITION);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TestAndSetCondition that = (TestAndSetCondition) o;
+        return conditionStr.equals(that.conditionStr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(conditionStr);
     }
 
     @Override

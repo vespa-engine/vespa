@@ -36,6 +36,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -85,17 +91,22 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
     }
 
     @Test
-    public void testAsyncFetch() {
-        AsyncSession session = access.createAsyncSession(new AsyncParameters());
+    public void testAsyncFetch() throws InterruptedException, ExecutionException, TimeoutException {
+        LocalAsyncSession session = access.createAsyncSession(new AsyncParameters());
         List<DocumentId> ids = new ArrayList<>();
         ids.add(new DocumentId("id:music:music::1"));
         ids.add(new DocumentId("id:music:music::2"));
         ids.add(new DocumentId("id:music:music::3"));
         for (DocumentId id : ids)
             session.put(new Document(access.getDocumentTypeManager().getDocumentType("music"), id));
-        int timeout = 100;
+
+        // Let all async operations wait for a signal from the test thread before sending their responses, and let test
+        // thread wait for all responses to be delivered afterwards.
+        Phaser phaser = new Phaser(1);
+        access.setPhaser(phaser);
 
         long startTime = System.currentTimeMillis();
+        int timeoutMillis = 1000;
         Set<Long> outstandingRequests = new HashSet<>();
         for (DocumentId id : ids) {
             Result result = session.get(id);
@@ -104,27 +115,38 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
             outstandingRequests.add(result.getRequestId());
         }
 
-        List<Document> documents = new ArrayList<>();
-        try {
-            while ( ! outstandingRequests.isEmpty()) {
-                int timeSinceStart = (int)(System.currentTimeMillis() - startTime);
-                Response response = session.getNext(timeout - timeSinceStart);
-                if (response == null)
-                    throw new RuntimeException("Timed out waiting for documents"); // or return what you have
-                if ( ! outstandingRequests.contains(response.getRequestId())) continue; // Stale: Ignore
+        // Wait for responses in separate thread.
+        Future<?> futureWithAssertions = Executors.newSingleThreadExecutor().submit(() -> {
+            try {
+                List<Document> documents = new ArrayList<>();
+                while ( ! outstandingRequests.isEmpty()) {
+                    int timeSinceStart = (int) (System.currentTimeMillis() - startTime);
+                    Response response = session.getNext(timeoutMillis - timeSinceStart);
+                    if (response == null)
+                        throw new RuntimeException("Timed out waiting for documents"); // or return what you have
+                    if ( ! outstandingRequests.contains(response.getRequestId())) continue; // Stale: Ignore
 
-                if (response.isSuccess())
-                    documents.add(((DocumentResponse)response).getDocument());
-                outstandingRequests.remove(response.getRequestId());
+                    if (response.isSuccess())
+                        documents.add(((DocumentResponse) response).getDocument());
+                    outstandingRequests.remove(response.getRequestId());
+                }
+                assertEquals(3, documents.size());
+                for (Document document : documents)
+                    assertNotNull(document);
             }
-        }
-        catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while waiting for documents", e);
-        }
+            catch (InterruptedException e) {
+                throw new IllegalArgumentException("Interrupted while waiting for responses");
+            }
+        });
 
-        assertEquals(3, documents.size());
-        for (Document document : documents)
-            assertNotNull(document);
+        // All operations, and receiver, now waiting for this thread to arrive.
+        assertEquals(4, phaser.getRegisteredParties());
+        assertEquals(0, phaser.getPhase());
+        phaser.arrive();
+        assertEquals(1, phaser.getPhase());
+        phaser.awaitAdvance(phaser.arriveAndDeregister());
+
+        futureWithAssertions.get(1000, TimeUnit.MILLISECONDS);
     }
 
     @Test

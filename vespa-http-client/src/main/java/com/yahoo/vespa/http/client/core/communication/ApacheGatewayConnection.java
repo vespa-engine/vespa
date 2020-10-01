@@ -240,7 +240,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             httpPost.addHeader(headerName, headerValue);
         });
 
-        if (useCompression) {
+        if (useCompression) { // This causes the apache client to gzip the request content. Weird, huh?
             httpPost.setHeader("Content-Encoding", "gzip");
         }
         return httpPost;

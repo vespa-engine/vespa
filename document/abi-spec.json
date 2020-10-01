@@ -399,6 +399,8 @@
       "public com.yahoo.document.DocumentId getId()",
       "public void <init>(com.yahoo.document.DocumentPut)",
       "public void <init>(com.yahoo.document.DocumentPut, com.yahoo.document.Document)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -1929,6 +1931,8 @@
       "public java.lang.String getSelection()",
       "public boolean isPresent()",
       "public static com.yahoo.document.TestAndSetCondition fromConditionString(java.util.Optional)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()"
     ],
     "fields": [

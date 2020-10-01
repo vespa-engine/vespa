@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAmount;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** 
  * A clock which initially has the time of its creation but can only be advanced by calling advance
@@ -17,7 +18,7 @@ import java.time.temporal.TemporalAmount;
  */
 public class ManualClock extends Clock {
 
-    private Instant currentTime = Instant.now();
+    private AtomicReference<Instant> currentTime = new AtomicReference<>(Instant.now());
 
     @Inject
     public ManualClock() {}
@@ -27,19 +28,19 @@ public class ManualClock extends Clock {
     }
 
     public ManualClock(Instant currentTime) {
-        this.currentTime = currentTime;
+        setInstant(currentTime);
     }
 
     public void advance(TemporalAmount temporal) {
-        currentTime = currentTime.plus(temporal);
+        currentTime.updateAndGet(time -> time.plus(temporal));
     }
 
     public void setInstant(Instant time) {
-        currentTime = time;
+        currentTime.set(time);
     }
 
     @Override
-    public Instant instant() { return currentTime; }
+    public Instant instant() { return currentTime.get(); }
 
     @Override
     public ZoneId getZone() { return null; }
@@ -48,7 +49,7 @@ public class ManualClock extends Clock {
     public Clock withZone(ZoneId zone) { return null; }
 
     @Override
-    public long millis() { return currentTime.toEpochMilli(); }
+    public long millis() { return instant().toEpochMilli(); }
 
     public static Instant at(String utcIsoTime) {
         return LocalDateTime.parse(utcIsoTime, DateTimeFormatter.ISO_DATE_TIME).atZone(ZoneOffset.UTC).toInstant();

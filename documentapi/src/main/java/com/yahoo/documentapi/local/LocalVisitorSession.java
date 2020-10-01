@@ -23,6 +23,7 @@ import com.yahoo.yolean.Exceptions;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -42,6 +43,7 @@ public class LocalVisitorSession implements VisitorSession {
     private final DocumentSelector selector;
     private final FieldSet fieldSet;
     private final AtomicReference<State> state;
+    private final AtomicReference<Phaser> phaser;
 
     public LocalVisitorSession(LocalDocumentAccess access, VisitorParameters parameters) throws ParseException {
         if (parameters.getResumeToken() != null)
@@ -64,11 +66,16 @@ public class LocalVisitorSession implements VisitorSession {
         this.outstanding = new ConcurrentSkipListMap<>(Comparator.comparing(DocumentId::toString));
         this.outstanding.putAll(access.documents);
         this.state = new AtomicReference<>(State.RUNNING);
+        this.phaser = access.phaser;
 
         start();
     }
 
     void start() {
+        Phaser synchronizer = phaser.get();
+        if (synchronizer != null)
+            synchronizer.register();
+
         new Thread(() -> {
             try {
                 // Iterate through all documents and pass on to data handler
@@ -76,14 +83,26 @@ public class LocalVisitorSession implements VisitorSession {
                     if (state.get() != State.RUNNING)
                         return;
 
-                    if (selector.accepts(new DocumentPut(document)) != Result.TRUE)
+                    try {
+                        if (selector.accepts(new DocumentPut(document)) != Result.TRUE)
+                            return;
+                    }
+                    catch (RuntimeException e) {
                         return;
+                    }
 
                     Document copy = new Document(document.getDataType(), document.getId());
                     new FieldSetRepo().copyFields(document, copy, fieldSet);
 
+
+                    if (synchronizer != null)
+                        synchronizer.arriveAndAwaitAdvance();
+
                     data.onMessage(new PutDocumentMessage(new DocumentPut(copy)),
                                    new AckToken(id));
+
+                    if (synchronizer != null)
+                        synchronizer.arriveAndAwaitAdvance();
                 });
                 // Transition to a terminal state when done
                 state.updateAndGet(current -> {
@@ -107,6 +126,9 @@ public class LocalVisitorSession implements VisitorSession {
                 control.onDone(VisitorControlHandler.CompletionCode.FAILURE, Exceptions.toMessageString(e));
             }
             finally {
+                if (synchronizer != null)
+                    synchronizer.arriveAndDeregister();
+
                 data.onDone();
             }
         }).start();
