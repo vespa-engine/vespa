@@ -1,12 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_cluster_controller.h"
+#include "bm_message_bus.h"
 #include "bm_storage_chain_builder.h"
 #include "bm_storage_link_context.h"
 #include "pending_tracker.h"
 #include "spi_bm_feed_handler.h"
 #include "storage_api_chain_bm_feed_handler.h"
+#include "storage_api_message_bus_bm_feed_handler.h"
 #include "storage_api_rpc_bm_feed_handler.h"
+#include "document_api_message_bus_bm_feed_handler.h"
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-bucketspaces.h>
@@ -123,11 +126,14 @@ using document::FieldUpdate;
 using document::IntFieldValue;
 using document::test::makeBucketSpace;
 using feedbm::BmClusterController;
+using feedbm::BmMessageBus;
 using feedbm::BmStorageChainBuilder;
 using feedbm::BmStorageLinkContext;
 using feedbm::IBmFeedHandler;
+using feedbm::DocumentApiMessageBusBmFeedHandler;
 using feedbm::SpiBmFeedHandler;
 using feedbm::StorageApiChainBmFeedHandler;
+using feedbm::StorageApiMessageBusBmFeedHandler;
 using feedbm::StorageApiRpcBmFeedHandler;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
@@ -193,6 +199,23 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
             doc_type_name.getName());
 }
 
+void
+make_slobroks_config(SlobroksConfigBuilder& slobroks, int slobrok_port)
+{
+    SlobroksConfigBuilder::Slobrok slobrok;
+    slobrok.connectionspec = vespalib::make_string("tcp/localhost:%d", slobrok_port);
+    slobroks.slobrok.push_back(std::move(slobrok));
+}
+
+void
+make_bucketspaces_config(BucketspacesConfigBuilder &bucketspaces)
+{
+    BucketspacesConfigBuilder::Documenttype bucket_space_map;
+    bucket_space_map.name = "test";
+    bucket_space_map.bucketspace = "default";
+    bucketspaces.documenttype.emplace_back(std::move(bucket_space_map));
+}
+
 class MyPersistenceEngineOwner : public IPersistenceEngineOwner
 {
     void setClusterState(BucketSpace, const storage::spi::ClusterState &) override { }
@@ -245,6 +268,8 @@ class BMParams {
     uint32_t _response_threads;
     bool     _enable_distributor;
     bool     _enable_service_layer;
+    bool     _use_document_api;
+    bool     _use_message_bus;
     bool     _use_storage_chain;
     bool     _use_legacy_bucket_db;
     uint32_t get_start(uint32_t thread_id) const {
@@ -261,6 +286,8 @@ public:
           _response_threads(2), // Same default as in stor-filestor.def
           _enable_distributor(false),
           _enable_service_layer(false),
+          _use_document_api(false),
+          _use_message_bus(false),
           _use_storage_chain(false),
           _use_legacy_bucket_db(false)
     {
@@ -276,7 +303,8 @@ public:
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
     uint32_t get_response_threads() const { return _response_threads; }
     bool get_enable_distributor() const { return _enable_distributor; }
-    bool get_enable_service_layer() const { return _enable_service_layer || _enable_distributor; }
+    bool get_use_document_api() const { return _use_document_api; }
+    bool get_use_message_bus() const { return _use_message_bus; }
     bool get_use_storage_chain() const { return _use_storage_chain; }
     bool get_use_legacy_bucket_db() const { return _use_legacy_bucket_db; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
@@ -288,9 +316,14 @@ public:
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_enable_distributor(bool enable_distributor_in) { _enable_distributor = enable_distributor_in; }
     void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
+    void set_use_document_api(bool use_document_api_in) { _use_document_api = use_document_api_in;; }
+    void set_use_message_bus(bool use_message_bus_in) { _use_message_bus = use_message_bus_in; }
     void set_use_storage_chain(bool use_storage_chain_in) { _use_storage_chain = use_storage_chain_in; }
     void set_use_legacy_bucket_db(bool use_legacy_bucket_db_in) { _use_legacy_bucket_db = use_legacy_bucket_db_in; }
     bool check() const;
+    bool needs_service_layer() const { return _enable_service_layer || _enable_distributor || _use_storage_chain || _use_message_bus || _use_document_api; }
+    bool needs_distributor() const { return _enable_distributor || _use_document_api; }
+    bool needs_message_bus() const { return _use_message_bus || _use_document_api; }
 };
 
 bool
@@ -426,17 +459,14 @@ struct MyStorageConfig
         } else {
             stor_server.rootFolder = "storage";
         }
-        {
-            SlobroksConfigBuilder::Slobrok slobrok;
-            slobrok.connectionspec = vespalib::make_string("tcp/localhost:%d", slobrok_port);
-            slobroks.slobrok.push_back(std::move(slobrok));
-        }
+        make_slobroks_config(slobroks, slobrok_port);
         stor_communicationmanager.useDirectStorageapiRpc = true;
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
 
         stor_status.httpport = status_port;
+        make_bucketspaces_config(bucketspaces);
     }
 
     ~MyStorageConfig();
@@ -524,11 +554,7 @@ struct MyRpcClientConfig {
         : config_id(config_id_in),
           slobroks()
     {
-        {
-            SlobroksConfigBuilder::Slobrok slobrok;
-            slobrok.connectionspec = vespalib::make_string("tcp/localhost:%d", slobrok_port);
-            slobroks.slobrok.push_back(std::move(slobrok));
-        }
+        make_slobroks_config(slobroks, slobrok_port);
     }
     ~MyRpcClientConfig();
 
@@ -538,6 +564,28 @@ struct MyRpcClientConfig {
 };
 
 MyRpcClientConfig::~MyRpcClientConfig() = default;
+
+struct MyMessageBusConfig {
+    vespalib::string              config_id;
+    SlobroksConfigBuilder         slobroks;
+    MessagebusConfigBuilder       messagebus;
+
+    MyMessageBusConfig(const vespalib::string &config_id_in, int slobrok_port)
+        : config_id(config_id_in),
+          slobroks(),
+          messagebus()
+    {
+        make_slobroks_config(slobroks, slobrok_port);
+    }
+    ~MyMessageBusConfig();
+
+    void add_builders(ConfigSet &set) {
+        set.addBuilder(config_id, &slobroks);
+        set.addBuilder(config_id, &messagebus);
+    }
+};
+
+MyMessageBusConfig::~MyMessageBusConfig() = default;
 
 }
 
@@ -576,6 +624,7 @@ struct PersistenceProviderFixture {
     MyServiceLayerConfig                       _service_layer_config;
     MyDistributorConfig                        _distributor_config;
     MyRpcClientConfig                          _rpc_client_config;
+    MyMessageBusConfig                         _message_bus_config;
     ConfigSet                                  _config_set;
     std::shared_ptr<IConfigContext>            _config_context;
     std::unique_ptr<IBmFeedHandler>            _feed_handler;
@@ -585,6 +634,7 @@ struct PersistenceProviderFixture {
     std::unique_ptr<SharedRpcResources>        _rpc_client_shared_rpc_resources;
     std::shared_ptr<BmStorageLinkContext>      _distributor_chain_context;
     std::unique_ptr<storage::DistributorProcess> _distributor;
+    std::unique_ptr<BmMessageBus>              _message_bus;
 
     PersistenceProviderFixture(const BMParams& params);
     ~PersistenceProviderFixture();
@@ -599,8 +649,10 @@ struct PersistenceProviderFixture {
     void wait_slobrok(const vespalib::string &name);
     void start_service_layer(const BMParams& params);
     void start_distributor(const BMParams& params);
+    void start_message_bus();
     void create_feed_handler(const BMParams& params);
     void shutdown_feed_handler();
+    void shutdown_message_bus();
     void shutdown_distributor();
     void shutdown_service_layer();
 };
@@ -640,6 +692,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _service_layer_config("bm-servicelayer", *_document_types, _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port, _service_layer_status_port, params),
       _distributor_config("bm-distributor", *_document_types, _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port, params),
       _rpc_client_config("bm-rpc-client", _slobrok_port),
+      _message_bus_config("bm-message-bus", _slobrok_port),
       _config_set(),
       _config_context(std::make_shared<ConfigContext>(_config_set)),
       _feed_handler(),
@@ -648,7 +701,8 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _service_layer(),
       _rpc_client_shared_rpc_resources(),
       _distributor_chain_context(),
-      _distributor()
+      _distributor(),
+      _message_bus()
 {
     create_document_db();
     _persistence_engine = std::make_unique<PersistenceEngine>(_persistence_owner, _write_filter, -1, false);
@@ -657,6 +711,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
     _service_layer_config.add_builders(_config_set);
     _distributor_config.add_builders(_config_set);
     _rpc_client_config.add_builders(_config_set);
+    _message_bus_config.add_builders(_config_set);
     _feed_handler = std::make_unique<SpiBmFeedHandler>(*_persistence_engine);
 }
 
@@ -772,7 +827,7 @@ PersistenceProviderFixture::start_service_layer(const BMParams& params)
     LOG(info, "start service layer");
     config::ConfigUri config_uri("bm-servicelayer", _config_context);
     std::unique_ptr<BmStorageChainBuilder> chain_builder;
-    if (params.get_use_storage_chain() && !params.get_enable_distributor()) {
+    if (params.get_use_storage_chain() && !params.needs_distributor()) {
         chain_builder = std::make_unique<BmStorageChainBuilder>();
         _service_layer_chain_context = chain_builder->get_context();
     }
@@ -797,7 +852,7 @@ PersistenceProviderFixture::start_distributor(const BMParams& params)
 {
     config::ConfigUri config_uri("bm-distributor", _config_context);
     std::unique_ptr<BmStorageChainBuilder> chain_builder;
-    if (params.get_use_storage_chain()) {
+    if (params.get_use_storage_chain() && !params.get_use_document_api()) {
         chain_builder = std::make_unique<BmStorageChainBuilder>();
         _distributor_chain_context = chain_builder->get_context();
     }
@@ -816,24 +871,39 @@ PersistenceProviderFixture::start_distributor(const BMParams& params)
 }
 
 void
+PersistenceProviderFixture::start_message_bus()
+{
+    config::ConfigUri config_uri("bm-message-bus", _config_context);
+    LOG(info, "Starting message bus");
+    _message_bus = std::make_unique<BmMessageBus>(config_uri,
+                                                  _repo,
+                                                  documentapi::LoadTypeSet());
+    LOG(info, "Started message bus");
+}
+
+void
 PersistenceProviderFixture::create_feed_handler(const BMParams& params)
 {
     StorageApiRpcService::Params rpc_params;
     // This is the same compression config as the default in stor-communicationmanager.def.
     rpc_params.compression_config = CompressionConfig(CompressionConfig::Type::LZ4, 3, 90, 1024);
-    if (params.get_enable_distributor()) {
+    if (params.get_use_document_api()) {
+        _feed_handler = std::make_unique<DocumentApiMessageBusBmFeedHandler>(*_message_bus);
+    } else if (params.get_enable_distributor()) {
         if (params.get_use_storage_chain()) {
             assert(_distributor_chain_context);
             _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_distributor_chain_context, true);
+        } else if (params.get_use_message_bus()) {
+            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(*_message_bus, true);
         } else {
             _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, rpc_params, true);
         }
-        return;
-    }
-    if (params.get_enable_service_layer()) {
+    } else if (params.needs_service_layer()) {
         if (params.get_use_storage_chain()) {
             assert(_service_layer_chain_context);
             _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_service_layer_chain_context, false);
+        } else if (params.get_use_message_bus()) {
+            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(*_message_bus, false);
         } else {
             _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, rpc_params, false);
         }
@@ -844,6 +914,15 @@ void
 PersistenceProviderFixture::shutdown_feed_handler()
 {
     _feed_handler.reset();
+}
+
+void
+PersistenceProviderFixture::shutdown_message_bus()
+{
+    if (_message_bus) {
+        LOG(info, "stop message bus");
+        _message_bus.reset();
+    }
 }
 
 void
@@ -1130,11 +1209,14 @@ void benchmark_async_spi(const BMParams &bm_params)
     if (!f._feed_handler->manages_buckets()) {
         f.create_buckets();
     }
-    if (bm_params.get_enable_service_layer()) {
+    if (bm_params.needs_service_layer()) {
         f.start_service_layer(bm_params);
     }
-    if (bm_params.get_enable_distributor()) {
+    if (bm_params.needs_distributor()) {
         f.start_distributor(bm_params);
+    }
+    if (bm_params.needs_message_bus()) {
+        f.start_message_bus();
     }
     f.create_feed_handler(bm_params);
     vespalib::ThreadStackExecutor executor(bm_params.get_client_threads(), 128 * 1024);
@@ -1149,6 +1231,7 @@ void benchmark_async_spi(const BMParams &bm_params)
     LOG(info, "--------------------------------");
 
     f.shutdown_feed_handler();
+    f.shutdown_message_bus();
     f.shutdown_distributor();
     f.shutdown_service_layer();
 }
@@ -1189,6 +1272,8 @@ App::usage()
         "[--response-threads threads]\n"
         "[--enable-distributor]\n"
         "[--enable-service-layer]\n"
+        "[--use-document-api]\n"
+        "[--use-message-bus\n"
         "[--use-storage-chain]\n"
         "[--use-legacy-bucket-db]" << std::endl;
 }
@@ -1209,6 +1294,8 @@ App::get_options()
         { "response-threads", 1, nullptr, 0 },
         { "enable-distributor", 0, nullptr, 0 },
         { "enable-service-layer", 0, nullptr, 0 },
+        { "use-document-api", 0, nullptr, 0 },
+        { "use-message-bus", 0, nullptr, 0 },
         { "use-storage-chain", 0, nullptr, 0 },
         { "use-legacy-bucket-db", 0, nullptr, 0 }
     };
@@ -1222,6 +1309,8 @@ App::get_options()
         LONGOPT_RESPONSE_THREADS,
         LONGOPT_ENABLE_DISTRIBUTOR,
         LONGOPT_ENABLE_SERVICE_LAYER,
+        LONGOPT_USE_DOCUMENT_API,
+        LONGOPT_USE_MESSAGE_BUS,
         LONGOPT_USE_STORAGE_CHAIN,
         LONGOPT_USE_LEGACY_BUCKET_DB
     };
@@ -1257,6 +1346,12 @@ App::get_options()
                 break;
             case LONGOPT_ENABLE_SERVICE_LAYER:
                 _bm_params.set_enable_service_layer(true);
+                break;
+            case LONGOPT_USE_DOCUMENT_API:
+                _bm_params.set_use_document_api(true);
+                break;
+            case LONGOPT_USE_MESSAGE_BUS:
+                _bm_params.set_use_message_bus(true);
                 break;
             case LONGOPT_USE_STORAGE_CHAIN:
                 _bm_params.set_use_storage_chain(true);
