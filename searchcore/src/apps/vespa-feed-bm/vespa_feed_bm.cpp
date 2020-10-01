@@ -237,7 +237,7 @@ public:
 
 class BMParams {
     uint32_t _documents;
-    uint32_t _threads;
+    uint32_t _client_threads;
     uint32_t _put_passes;
     uint32_t _update_passes;
     uint32_t _remove_passes;
@@ -248,12 +248,12 @@ class BMParams {
     bool     _use_storage_chain;
     bool     _use_legacy_bucket_db;
     uint32_t get_start(uint32_t thread_id) const {
-        return (_documents / _threads) * thread_id + std::min(thread_id, _documents % _threads);
+        return (_documents / _client_threads) * thread_id + std::min(thread_id, _documents % _client_threads);
     }
 public:
     BMParams()
         : _documents(160000),
-          _threads(32),
+          _client_threads(1),
           _put_passes(2),
           _update_passes(1),
           _remove_passes(2),
@@ -269,7 +269,7 @@ public:
         return BMRange(get_start(thread_id), get_start(thread_id + 1));
     }
     uint32_t get_documents() const { return _documents; }
-    uint32_t get_threads() const { return _threads; }
+    uint32_t get_client_threads() const { return _client_threads; }
     uint32_t get_put_passes() const { return _put_passes; }
     uint32_t get_update_passes() const { return _update_passes; }
     uint32_t get_remove_passes() const { return _remove_passes; }
@@ -280,7 +280,7 @@ public:
     bool get_use_storage_chain() const { return _use_storage_chain; }
     bool get_use_legacy_bucket_db() const { return _use_legacy_bucket_db; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
-    void set_threads(uint32_t threads_in) { _threads = threads_in; }
+    void set_client_threads(uint32_t threads_in) { _client_threads = threads_in; }
     void set_put_passes(uint32_t put_passes_in) { _put_passes = put_passes_in; }
     void set_update_passes(uint32_t update_passes_in) { _update_passes = update_passes_in; }
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
@@ -296,15 +296,15 @@ public:
 bool
 BMParams::check() const
 {
-    if (_threads < 1) {
-        std::cerr << "Too few threads: " << _threads << std::endl;
+    if (_client_threads < 1) {
+        std::cerr << "Too few client threads: " << _client_threads << std::endl;
         return false;
     }
-    if (_threads > 256) {
-        std::cerr << "Too many threads: " << _threads << std::endl;
+    if (_client_threads > 256) {
+        std::cerr << "Too many client threads: " << _client_threads << std::endl;
         return false;
     }
-    if (_documents < _threads) {
+    if (_documents < _client_threads) {
         std::cerr << "Too few documents: " << _documents << std::endl;
         return false;
     }
@@ -895,10 +895,10 @@ make_feed(vespalib::ThreadStackExecutor &executor, const BMParams &bm_params, st
     LOG(info, "make_feed %s %u small documents", label.c_str(), bm_params.get_documents());
     std::vector<vespalib::nbostream> serialized_feed_v;
     auto start_time = std::chrono::steady_clock::now();
-    serialized_feed_v.resize(bm_params.get_threads());
-    for (uint32_t i = 0; i < bm_params.get_threads(); ++i) {
+    serialized_feed_v.resize(bm_params.get_client_threads());
+    for (uint32_t i = 0; i < bm_params.get_client_threads(); ++i) {
         auto range = bm_params.get_range(i);
-        BucketSelector bucket_selector(i, bm_params.get_threads(), num_buckets);
+        BucketSelector bucket_selector(i, bm_params.get_client_threads(), num_buckets);
         executor.execute(makeLambdaTask([&serialized_feed_v, i, range, &func, bucket_selector]()
                                         { serialized_feed_v[i] = func(range, bucket_selector); }));
     }
@@ -935,7 +935,7 @@ run_put_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecutor
     LOG(info, "putAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
     uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < bm_params.get_threads(); ++i) {
+    for (uint32_t i = 0; i < bm_params.get_client_threads(); ++i) {
         auto range = bm_params.get_range(i);
         executor.execute(makeLambdaTask([&f, &serialized_feed = serialized_feed_v[i], range, time_bias]()
                                         { put_async_task(f, range, serialized_feed, time_bias); }));
@@ -988,7 +988,7 @@ run_update_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
     LOG(info, "updateAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
     uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < bm_params.get_threads(); ++i) {
+    for (uint32_t i = 0; i < bm_params.get_client_threads(); ++i) {
         auto range = bm_params.get_range(i);
         executor.execute(makeLambdaTask([&f, &serialized_feed = serialized_feed_v[i], range, time_bias]()
                                         { update_async_task(f, range, serialized_feed, time_bias); }));
@@ -1041,7 +1041,7 @@ run_remove_async_tasks(PersistenceProviderFixture &f, vespalib::ThreadStackExecu
     LOG(info, "removeAsync %u small documents, pass=%u", bm_params.get_documents(), pass);
     uint32_t old_errors = f._feed_handler->get_error_count();
     auto start_time = std::chrono::steady_clock::now();
-    for (uint32_t i = 0; i < bm_params.get_threads(); ++i) {
+    for (uint32_t i = 0; i < bm_params.get_client_threads(); ++i) {
         auto range = bm_params.get_range(i);
         executor.execute(makeLambdaTask([&f, &serialized_feed = serialized_feed_v[i], range, time_bias]()
                                         { remove_async_task(f, range, serialized_feed, time_bias); }));
@@ -1072,7 +1072,7 @@ void benchmark_async_spi(const BMParams &bm_params)
         f.start_distributor(bm_params);
     }
     f.create_feed_handler(bm_params);
-    vespalib::ThreadStackExecutor executor(bm_params.get_threads(), 128 * 1024);
+    vespalib::ThreadStackExecutor executor(bm_params.get_client_threads(), 128 * 1024);
     auto put_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_put_feed(f, range, bucket_selector); }, f.num_buckets(), "put");
     auto update_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_update_feed(f, range, bucket_selector); }, f.num_buckets(), "update");
     auto remove_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_remove_feed(f, range, bucket_selector); }, f.num_buckets(), "remove");
@@ -1137,7 +1137,7 @@ App::get_options()
     const char *opt_argument = nullptr;
     int long_opt_index = 0;
     static struct option long_opts[] = {
-        { "threads", 1, nullptr, 0 },
+        { "client-threads", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
         { "put-passes", 1, nullptr, 0 },
         { "update-passes", 1, nullptr, 0 },
@@ -1150,7 +1150,7 @@ App::get_options()
         { "use-legacy-bucket-db", 0, nullptr, 0 }
     };
     enum longopts_enum {
-        LONGOPT_THREADS,
+        LONGOPT_CLIENT_THREADS,
         LONGOPT_DOCUMENTS,
         LONGOPT_PUT_PASSES,
         LONGOPT_UPDATE_PASSES,
@@ -1168,8 +1168,8 @@ App::get_options()
         switch (c) {
         case 0:
             switch(long_opt_index) {
-            case LONGOPT_THREADS:
-                _bm_params.set_threads(atoi(opt_argument));
+            case LONGOPT_CLIENT_THREADS:
+                _bm_params.set_client_threads(atoi(opt_argument));
                 break;
             case LONGOPT_DOCUMENTS:
                 _bm_params.set_documents(atoi(opt_argument));
