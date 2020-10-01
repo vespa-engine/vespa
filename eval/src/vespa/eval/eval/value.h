@@ -3,7 +3,7 @@
 #pragma once
 
 #include "value_type.h"
-#include <vespa/eval/tensor/dense/typed_cells.h>
+#include "typed_cells.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
@@ -19,7 +19,6 @@ class Tensor;
 struct Value {
     using UP = std::unique_ptr<Value>;
     using CREF = std::reference_wrapper<const Value>;
-    using TypedCells = tensor::TypedCells;
     virtual const ValueType &type() const = 0;
     virtual ~Value() {}
 

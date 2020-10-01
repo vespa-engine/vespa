@@ -152,7 +152,7 @@ bool sameCells(TypedCells lhs, TypedCells rhs)
         return false;
     }
     for (size_t i = 0; i < lhs.size; ++i) {
-        if (lhs.get(i) != rhs.get(i)) {
+        if (GetCell::from(lhs, i) != GetCell::from(rhs, i)) {
             return false;
         }
     }

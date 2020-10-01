@@ -13,8 +13,6 @@ namespace vespalib::eval {
 
 class TensorSpec;
 
-using TypedCells = ::vespalib::tensor::TypedCells;
-
 /**
  * A simple implementation of a generic value that can also be used to
  * build new values. This class focuses on simplicity over speed and

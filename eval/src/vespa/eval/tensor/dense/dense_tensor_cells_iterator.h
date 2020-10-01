@@ -4,7 +4,7 @@
 
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/arrayref.h>
-#include "typed_cells.h"
+#include "typed_cells_dispatch.h"
 
 namespace vespalib::tensor {
 
@@ -39,7 +39,7 @@ public:
         }
     }
     bool valid() const { return _cellIdx < _cells.size; }
-    double cell() const { return _cells.get(_cellIdx); }
+    double cell() const { return GetCell::from(_cells, _cellIdx); }
     const Address &address() const { return _address; }
     const eval::ValueType &fast_type() const { return _type; }
 };

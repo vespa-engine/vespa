@@ -165,13 +165,13 @@ TEST(OnnxTest, simple_onnx_model_can_be_evaluated)
     auto cells = static_cast<const DenseTensorView&>(output).cellsRef();
     EXPECT_EQ(cells.type, ValueType::CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(cells.get(0), 79.0);
+    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
     //-------------------------------------------------------------------------
     std::vector<float> new_bias_values({10.0});
     DenseTensorView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(static_cast<const DenseTensorView&>(output).cellsRef().get(0), 80.0);
+    EXPECT_EQ(GetCell::from(output.cells(), 0), 80.0);
     //-------------------------------------------------------------------------
 }
 
@@ -211,13 +211,13 @@ TEST(OnnxTest, dynamic_onnx_model_can_be_evaluated)
     auto cells = static_cast<const DenseTensorView&>(output).cellsRef();
     EXPECT_EQ(cells.type, ValueType::CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(cells.get(0), 79.0);
+    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
     //-------------------------------------------------------------------------
     std::vector<float> new_bias_values({5.0,6.0});
     DenseTensorView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(static_cast<const DenseTensorView&>(output).cellsRef().get(0), 81.0);
+    EXPECT_EQ(GetCell::from(output.cells(), 0), 81.0);
     //-------------------------------------------------------------------------
 }
 
@@ -257,13 +257,13 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
     auto cells = static_cast<const DenseTensorView&>(output).cellsRef();
     EXPECT_EQ(cells.type, ValueType::CellType::DOUBLE);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(cells.get(0), 79.0);
+    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
     //-------------------------------------------------------------------------
     std::vector<double> new_bias_values({10.0});
     DenseTensorView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(static_cast<const DenseTensorView&>(output).cellsRef().get(0), 80.0);
+    EXPECT_EQ(GetCell::from(output.cells(), 0), 80.0);
     //-------------------------------------------------------------------------
 }
 

@@ -32,7 +32,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     index_lookup_table.cpp
     mutable_dense_tensor_view.cpp
     onnx_wrapper.cpp
-    typed_cells.cpp
+    typed_cells_dispatch.cpp
     typed_dense_tensor_builder.cpp
     vector_from_doubles_function.cpp
 )
