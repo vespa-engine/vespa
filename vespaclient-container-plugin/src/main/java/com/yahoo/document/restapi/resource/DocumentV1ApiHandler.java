@@ -122,8 +122,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 ClusterListConfig clusterListConfig,
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
-        this(Clock.systemU
-             TC(),
+        this(Clock.systemUTC(),
              new DocumentOperationExecutorImpl(clusterListConfig, bucketSpacesConfig, executorConfig, documentAccess, clock),
              new DocumentOperationParser(documentManagerConfig),
              metric,
