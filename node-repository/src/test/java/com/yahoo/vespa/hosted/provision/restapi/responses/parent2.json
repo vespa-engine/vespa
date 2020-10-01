@@ -19,7 +19,7 @@
     {
       "event": "provisioned",
       "at": 123,
-      "agent": "system"
+      "agent": "operator"
     }
   ],
   "ipAddresses": [

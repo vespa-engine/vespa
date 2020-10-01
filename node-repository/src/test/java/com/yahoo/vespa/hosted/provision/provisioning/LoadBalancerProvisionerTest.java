@@ -273,7 +273,7 @@ public class LoadBalancerProvisionerTest {
                                              nodeType);
             nodes.add(node);
         }
-        nodes = tester.nodeRepository().database().addNodesInState(nodes, Node.State.reserved);
+        nodes = tester.nodeRepository().database().addNodesInState(nodes, Node.State.reserved, Agent.system);
         nodes = tester.nodeRepository().setDirty(nodes, Agent.system, getClass().getSimpleName());
         tester.nodeRepository().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
