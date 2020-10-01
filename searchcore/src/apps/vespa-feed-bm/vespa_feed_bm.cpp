@@ -1,26 +1,39 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "bm_cluster_controller.h"
+#include "bm_storage_chain_builder.h"
+#include "bm_storage_link_context.h"
 #include "pending_tracker.h"
 #include "spi_bm_feed_handler.h"
-#include "storage_api_rpc_bm_feed_handler.h"
 #include "storage_api_chain_bm_feed_handler.h"
-#include "bm_storage_chain_builder.h"
-#include "bm_cluster_controller.h"
-#include "bm_storage_link_context.h"
-#include <vespa/vespalib/testkit/testapp.h>
+#include "storage_api_rpc_bm_feed_handler.h"
 #include <tests/proton/common/dummydbowner.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-load-type.h>
+#include <vespa/config-persistence.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/config-slobroks.h>
+#include <vespa/config-stor-distribution.h>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
-#include <vespa/fastos/file.h>
+#include <vespa/config-upgrading.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/fastos/app.h>
+#include <vespa/fastos/file.h>
+#include <vespa/messagebus/config-messagebus.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/metrics/config-metricsmanager.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -37,75 +50,62 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-summary.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/fastos/app.h>
+#include <vespa/slobrok/sbmirror.h>
 #include <vespa/storage/bucketdb/config-stor-bucket-init.h>
+#include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-opslogger.h>
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/config/config-stor-status.h>
-#include <vespa/storage/visiting/config-stor-visitor.h>
-#include <vespa/config-load-type.h>
-#include <vespa/config-persistence.h>
-#include <vespa/config-stor-distribution.h>
-#include <vespa/config-stor-filestor.h>
-#include <vespa/config-upgrading.h>
-#include <vespa/config-slobroks.h>
-#include <vespa/metrics/config-metricsmanager.h>
-#include <vespa/storageserver/app/servicelayerprocess.h>
-#include <vespa/storage/common/i_storage_chain_builder.h>
-#include <vespa/storage/storageserver/storagenode.h>
-#include <vespa/messagebus/config-messagebus.h>
-#include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
-#include <vespa/storageserver/app/distributorprocess.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
-#include <vespa/slobrok/sbmirror.h>
+#include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
+#include <vespa/storage/storageserver/storagenode.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
+#include <vespa/storageserver/app/distributorprocess.h>
+#include <vespa/storageserver/app/servicelayerprocess.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <getopt.h>
 #include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-feed-bm");
 
+using namespace cloud::config::filedistribution;
 using namespace config;
 using namespace proton;
-using namespace cloud::config::filedistribution;
+using namespace std::chrono_literals;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
-using namespace std::chrono_literals;
-using vespa::config::content::core::BucketspacesConfig;
-using vespa::config::content::core::BucketspacesConfigBuilder;
+using vespa::config::content::LoadTypeConfigBuilder;
+using vespa::config::content::PersistenceConfigBuilder;
 using vespa::config::content::StorDistributionConfigBuilder;
 using vespa::config::content::StorFilestorConfigBuilder;
-using vespa::config::content::PersistenceConfigBuilder;
+using vespa::config::content::UpgradingConfigBuilder;
+using vespa::config::content::core::BucketspacesConfig;
+using vespa::config::content::core::BucketspacesConfigBuilder;
 using vespa::config::content::core::StorBouncerConfigBuilder;
-using vespa::config::content::core::StorCommunicationmanagerConfigBuilder;
 using vespa::config::content::core::StorBucketInitConfigBuilder;
+using vespa::config::content::core::StorCommunicationmanagerConfigBuilder;
+using vespa::config::content::core::StorDistributormanagerConfigBuilder;
 using vespa::config::content::core::StorOpsloggerConfigBuilder;
 using vespa::config::content::core::StorPrioritymappingConfigBuilder;
-using vespa::config::content::LoadTypeConfigBuilder;
-using vespa::config::content::UpgradingConfigBuilder;
-using vespa::config::content::core::StorDistributormanagerConfigBuilder;
 using vespa::config::content::core::StorServerConfigBuilder;
 using vespa::config::content::core::StorStatusConfigBuilder;
 using vespa::config::content::core::StorVisitorConfigBuilder;
 using vespa::config::content::core::StorVisitordispatcherConfigBuilder;
-using metrics::MetricsmanagerConfigBuilder;
 using cloud::config::SlobroksConfigBuilder;
 using messagebus::MessagebusConfigBuilder;
+using metrics::MetricsmanagerConfigBuilder;
 
 using config::ConfigContext;
-using config::ConfigUri;
 using config::ConfigSet;
+using config::ConfigUri;
 using config::IConfigContext;
 using document::AssignValueUpdate;
 using document::BucketId;
@@ -115,28 +115,30 @@ using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
+using document::DocumentUpdate;
 using document::DocumenttypesConfig;
 using document::DocumenttypesConfigBuilder;
-using document::DocumentUpdate;
 using document::Field;
 using document::FieldUpdate;
 using document::IntFieldValue;
 using document::test::makeBucketSpace;
+using feedbm::BmClusterController;
+using feedbm::BmStorageChainBuilder;
+using feedbm::BmStorageLinkContext;
+using feedbm::IBmFeedHandler;
+using feedbm::SpiBmFeedHandler;
+using feedbm::StorageApiChainBmFeedHandler;
+using feedbm::StorageApiRpcBmFeedHandler;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using search::transactionlog::TransLogServer;
 using storage::rpc::SharedRpcResources;
+using storage::rpc::StorageApiRpcService;
 using storage::spi::PersistenceProvider;
+using vespalib::compression::CompressionConfig;
 using vespalib::makeLambdaTask;
-using feedbm::BmClusterController;
-using feedbm::BmStorageChainBuilder;
-using feedbm::BmStorageLinkContext;
-using feedbm::IBmFeedHandler;
-using feedbm::SpiBmFeedHandler;
-using feedbm::StorageApiRpcBmFeedHandler;
-using feedbm::StorageApiChainBmFeedHandler;
 
 using DocumentDBMap = std::map<DocTypeName, std::shared_ptr<DocumentDB>>;
 
@@ -799,12 +801,15 @@ PersistenceProviderFixture::start_distributor(const BMParams& params)
 void
 PersistenceProviderFixture::create_feed_handler(const BMParams& params)
 {
+    StorageApiRpcService::Params rpc_params;
+    // This is the same compression config as the default in stor-communicationmanager.def.
+    rpc_params.compression_config = CompressionConfig(CompressionConfig::Type::LZ4, 3, 90, 1024);
     if (params.get_enable_distributor()) {
         if (params.get_use_storage_chain()) {
             assert(_distributor_chain_context);
             _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_distributor_chain_context, true);
         } else {
-            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, true);
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, rpc_params, true);
         }
         return;
     }
@@ -813,7 +818,7 @@ PersistenceProviderFixture::create_feed_handler(const BMParams& params)
             assert(_service_layer_chain_context);
             _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_service_layer_chain_context, false);
         } else {
-            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, false);
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(*_rpc_client_shared_rpc_resources, _repo, rpc_params, false);
         }
     }
 }

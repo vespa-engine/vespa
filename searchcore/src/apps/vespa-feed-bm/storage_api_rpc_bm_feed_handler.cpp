@@ -22,6 +22,7 @@ using document::DocumentUpdate;
 using document::DocumentTypeRepo;
 using storage::api::StorageMessageAddress;
 using storage::rpc::SharedRpcResources;
+using storage::rpc::StorageApiRpcService;
 using storage::lib::NodeType;
 
 namespace feedbm {
@@ -72,7 +73,10 @@ StorageApiRpcBmFeedHandler::MyMessageDispatcher::~MyMessageDispatcher()
     assert(_pending.empty());
 }
 
-StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& shared_rpc_resources_in, std::shared_ptr<const DocumentTypeRepo> repo, bool distributor)
+StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& shared_rpc_resources_in,
+                                                       std::shared_ptr<const DocumentTypeRepo> repo,
+                                                       const StorageApiRpcService::Params& rpc_params,
+                                                       bool distributor)
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiRpcBmFeedHandler(") + (distributor ? "distributor" : "servicelayer") + ")"),
       _distributor(distributor),
@@ -80,7 +84,7 @@ StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& share
       _shared_rpc_resources(shared_rpc_resources_in),
       _message_dispatcher(std::make_unique<MyMessageDispatcher>()),
       _message_codec_provider(std::make_unique<storage::rpc::MessageCodecProvider>(repo, std::make_shared<documentapi::LoadTypeSet>())),
-      _rpc_client(std::make_unique<storage::rpc::StorageApiRpcService>(*_message_dispatcher, _shared_rpc_resources, *_message_codec_provider, storage::rpc::StorageApiRpcService::Params()))
+      _rpc_client(std::make_unique<storage::rpc::StorageApiRpcService>(*_message_dispatcher, _shared_rpc_resources, *_message_codec_provider, rpc_params))
 {
 }
 
