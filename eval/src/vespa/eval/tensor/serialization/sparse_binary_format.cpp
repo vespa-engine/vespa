@@ -146,10 +146,12 @@ SparseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
     switch (cell_type) {
     case CellType::DOUBLE: {
         DirectSparseTensorBuilder<double> builder(type);
+        builder.reserve(cellsSize);
         decodeCells<double>(stream, dimensionsSize, cellsSize, builder);
         return builder.build(); }
     case CellType::FLOAT: {
         DirectSparseTensorBuilder<float> builder(type);
+        builder.reserve(cellsSize);
         decodeCells<float>(stream, dimensionsSize, cellsSize, builder);
         return builder.build(); }
     }

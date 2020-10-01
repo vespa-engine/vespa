@@ -42,6 +42,7 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
 {
     _attrBuffer.fill(*_attribute, docId);
     vespalib::tensor::DirectSparseTensorBuilder<double> builder(_type);
+    builder.reserve(_attrBuffer.size());
     vespalib::tensor::SparseTensorAddressBuilder address;
     for (size_t i = 0; i < _attrBuffer.size(); ++i) {
         address.clear();

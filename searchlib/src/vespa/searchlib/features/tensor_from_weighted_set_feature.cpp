@@ -107,6 +107,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
         WeightedStringVector vector;
         WeightedSetParser::parse(prop.get(), vector);
         DirectSparseTensorBuilder<double> tensorBuilder(type);
+        tensorBuilder.reserve(vector._data.size());
         SparseTensorAddressBuilder address;
         for (const auto &elem : vector._data) {
             address.clear();
