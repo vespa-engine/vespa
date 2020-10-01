@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.stats;
 
+import com.yahoo.jdisc.Metric;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,14 +23,17 @@ public class LockAttempt {
     private final String lockPath;
     private final Instant callAcquireInstant;
     private final Duration timeout;
+    private final Optional<Metric> metric;
+    private final Optional<Metric.Context> metricContext;
     private final List<LockAttempt> nestedLockAttempts = new ArrayList<>();
 
     private volatile Optional<Instant> lockAcquiredInstant = Optional.empty();
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
     private volatile Optional<String> stackTrace = Optional.empty();
 
-    public static LockAttempt invokingAcquire(ThreadLockStats threadLockStats, String lockPath, Duration timeout) {
-        return new LockAttempt(threadLockStats, lockPath, timeout, Instant.now());
+    public static LockAttempt invokingAcquire(ThreadLockStats threadLockStats, String lockPath, Duration timeout,
+                                              Optional<Metric> metric, Optional<Metric.Context> metricContext) {
+        return new LockAttempt(threadLockStats, lockPath, timeout, Instant.now(), metric, metricContext);
     }
 
     public enum LockState {
@@ -44,11 +49,16 @@ public class LockAttempt {
 
     private volatile LockState lockState = LockState.ACQUIRING;
 
-    private LockAttempt(ThreadLockStats threadLockStats, String lockPath, Duration timeout, Instant callAcquireInstant) {
+    private LockAttempt(ThreadLockStats threadLockStats, String lockPath, Duration timeout, Instant callAcquireInstant,
+                        Optional<Metric> metric, Optional<Metric.Context> metricContext) {
         this.threadLockStats = threadLockStats;
         this.lockPath = lockPath;
         this.callAcquireInstant = callAcquireInstant;
         this.timeout = timeout;
+        this.metric = metric;
+        this.metricContext = metricContext;
+
+        addToMetric("lockAttempt.acquiring", 1);
     }
 
     public String getThreadName() { return threadLockStats.getThreadName(); }
@@ -57,13 +67,16 @@ public class LockAttempt {
     public Duration getAcquireTimeout() { return timeout; }
     public LockState getLockState() { return lockState; }
     public Optional<Instant> getTimeLockWasAcquired() { return lockAcquiredInstant; }
+    public Instant getTimeAcquireEndedOrNow() {
+        return lockAcquiredInstant.orElseGet(() -> getTimeTerminalStateWasReached().orElseGet(Instant::now));
+    }
     public Optional<Instant> getTimeTerminalStateWasReached() { return terminalStateInstant; }
     public Optional<String> getStackTrace() { return stackTrace; }
     public List<LockAttempt> getNestedLockAttempts() { return List.copyOf(nestedLockAttempts); }
+    public Optional<Metric> metric() { return metric; }
+    public Optional<Metric.Context> metricContext() { return metricContext; }
 
-    public Duration getDurationOfAcquire() {
-        return Duration.between(callAcquireInstant, lockAcquiredInstant.orElseGet(Instant::now));
-    }
+    public Duration getDurationOfAcquire() { return Duration.between(callAcquireInstant, getTimeAcquireEndedOrNow()); }
 
     public Duration getDurationWithLock() {
         return lockAcquiredInstant
@@ -90,14 +103,41 @@ public class LockAttempt {
         nestedLockAttempts.add(nestedLockAttempt);
     }
 
-    void acquireFailed() { setTerminalState(LockState.ACQUIRE_FAILED); }
-    void timedOut() { setTerminalState(LockState.TIMED_OUT); }
-    void released() { setTerminalState(LockState.RELEASED); }
-    void releasedWithError() { setTerminalState(LockState.RELEASED_WITH_ERROR); }
+    void acquireFailed() {
+        setTerminalState(LockState.ACQUIRE_FAILED);
+        addToMetric("lockAttempt.acquiring", -1);
+        addToMetric("lockAttempt.acquireFailed", 1);
+        setMetricTo("lockAttempt.acquiringLatency", getDurationOfAcquire().toMillis() / 1000.);
+    }
+
+    void timedOut() {
+        setTerminalState(LockState.TIMED_OUT);
+        addToMetric("lockAttempt.acquiring", -1);
+        addToMetric("lockAttempt.acquireTimedOut", 1);
+        setMetricTo("lockAttempt.acquiringLatency", getDurationOfAcquire().toMillis() / 1000.);
+    }
 
     void lockAcquired() {
         lockState = LockState.ACQUIRED;
         lockAcquiredInstant = Optional.of(Instant.now());
+        addToMetric("lockAttempt.acquiring", -1);
+        addToMetric("lockAttempt.acquired", 1);
+        setMetricTo("lockAttempt.locked", 1);
+        setMetricTo("lockAttempt.acquiringLatency", getDurationOfAcquire().toMillis() / 1000.);
+    }
+
+    void released() {
+        setTerminalState(LockState.RELEASED);
+        setMetricTo("lockAttempt.locked", 0);
+        addToMetric("lockAttempt.released", 1);
+        setMetricTo("lockAttempt.lockedLatency", getDurationWithLock().toMillis() / 1000.);
+    }
+
+    void releasedWithError() {
+        setTerminalState(LockState.RELEASED_WITH_ERROR);
+        setMetricTo("lockAttempt.locked", 0);
+        addToMetric("lockAttempt.releaseError", 1);
+        setMetricTo("lockAttempt.lockedLatency", getDurationWithLock().toMillis() / 1000.);
     }
 
     void setTerminalState(LockState terminalState) { setTerminalState(terminalState, Instant.now()); }
@@ -105,5 +145,17 @@ public class LockAttempt {
     void setTerminalState(LockState terminalState, Instant instant) {
         lockState = terminalState;
         terminalStateInstant = Optional.of(instant);
+    }
+
+    private void addToMetric(String key, Number value) {
+        if (metric.isPresent() && metricContext.isPresent()) {
+            metric.get().add(key, value, metricContext.get());
+        }
+    }
+
+    private void setMetricTo(String key, Number value) {
+        if (metric.isPresent() && metricContext.isPresent()) {
+            metric.get().set(key, value, metricContext.get());
+        }
     }
 }

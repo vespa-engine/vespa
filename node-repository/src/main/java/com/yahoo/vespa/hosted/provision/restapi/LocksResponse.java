@@ -74,7 +74,7 @@ public class LocksResponse extends HttpResponse {
             threadCursor.setString("thread-name", threadLockStats.getThreadName());
 
             ongoingLockAttempt.ifPresent(lockAttempt -> {
-                setLockAttempt(threadCursor.setObject("active-lock"), lockAttempt, false);
+                setLockAttempt(threadCursor.setObject("active-lock"), lockAttempt, false, false);
                 threadsCursor.setString("stack-trace", threadLockStats.getStackTrace());
             });
 
@@ -84,7 +84,7 @@ public class LocksResponse extends HttpResponse {
         Cursor historicSamplesCursor = root.setArray("slow-locks");
         historicSamples.stream()
                 .sorted(Comparator.comparing(LockAttempt::getDuration).reversed())
-                .forEach(lockAttempt -> setLockAttempt(historicSamplesCursor.addObject(), lockAttempt, true));
+                .forEach(lockAttempt -> setLockAttempt(historicSamplesCursor.addObject(), lockAttempt, true, true));
 
         List<RecordedLockAttempts> historicRecordings = LockStats.getGlobal().getHistoricRecordings().stream()
                 .sorted(Comparator.comparing(RecordedLockAttempts::duration).reversed())
@@ -110,11 +110,12 @@ public class LocksResponse extends HttpResponse {
         cursor.setString("start-time", toString(recording.startInstant()));
         cursor.setString("duration", recording.duration().toString());
         Cursor locksCursor = cursor.setArray("locks");
-        recording.lockAttempts().forEach(lockAttempt -> setLockAttempt(locksCursor.addObject(), lockAttempt, false));
+        recording.lockAttempts().forEach(lockAttempt -> setLockAttempt(locksCursor.addObject(), lockAttempt, false, false));
     }
 
-    private void setLockAttempt(Cursor lockAttemptCursor, LockAttempt lockAttempt, boolean includeThreadInfo) {
-        if (includeThreadInfo) {
+    private void setLockAttempt(Cursor lockAttemptCursor, LockAttempt lockAttempt, boolean includeThreadName,
+                                boolean includeStackTrace) {
+        if (includeThreadName) {
             lockAttemptCursor.setString("thread-name", lockAttempt.getThreadName());
         }
         lockAttemptCursor.setString("lock-path", lockAttempt.getLockPath());
@@ -126,7 +127,7 @@ public class LocksResponse extends HttpResponse {
         lockAttemptCursor.setString("acquire-duration", lockAttempt.getDurationOfAcquire().toString());
         lockAttemptCursor.setString("locked-duration", lockAttempt.getDurationWithLock().toString());
         lockAttemptCursor.setString("total-duration", lockAttempt.getDuration().toString());
-        if (includeThreadInfo) {
+        if (includeStackTrace) {
             lockAttempt.getStackTrace().ifPresent(stackTrace -> lockAttemptCursor.setString("stack-trace", stackTrace));
         }
 
@@ -134,7 +135,7 @@ public class LocksResponse extends HttpResponse {
         if (!nestedLockAttempts.isEmpty()) {
             Cursor nestedLockAttemptsCursor = lockAttemptCursor.setArray("nested-locks");
             nestedLockAttempts.forEach(nestedLockAttempt ->
-                    setLockAttempt(nestedLockAttemptsCursor.addObject(), nestedLockAttempt, includeThreadInfo));
+                    setLockAttempt(nestedLockAttemptsCursor.addObject(), nestedLockAttempt, false, includeStackTrace));
         }
     }
 

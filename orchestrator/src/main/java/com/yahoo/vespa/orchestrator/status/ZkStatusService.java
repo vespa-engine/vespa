@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -23,9 +22,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -168,7 +169,7 @@ public class ZkStatusService implements StatusService {
 
         Duration duration = context.getTimeLeft();
         String lockPath = applicationInstanceLock2Path(reference);
-        Lock lock = new Lock(lockPath, curator);
+        Lock lock = new Lock(lockPath, curator, Optional.of(metric));
 
         Instant startTime = timer.currentTime();
         Instant acquireEndTime;
@@ -179,6 +180,7 @@ public class ZkStatusService implements StatusService {
         } finally {
             acquireEndTime = timer.currentTime();
             double seconds = durationInSeconds(startTime, acquireEndTime);
+            // TODO: These metrics are redundant with Lock's metrics
             metric.set("orchestrator.lock.acquire-latency", seconds, metricContext);
             metric.set("orchestrator.lock.acquired", lockAcquired ? 1 : 0, metricContext);
 

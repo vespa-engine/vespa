@@ -2,6 +2,7 @@
 package com.yahoo.vespa.curator;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.stats.LockStats;
@@ -9,6 +10,8 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,21 +26,25 @@ public class Lock implements Mutex {
 
     private final InterProcessLock mutex;
     private final String lockPath;
+    private final Optional<Metric> metric;
+    private final Optional<Metric.Context> metricContext;
 
-    public Lock(String lockPath, Curator curator) {
-        this(lockPath, curator.createMutex(lockPath));
+    public Lock(String lockPath, Curator curator, Optional<Metric> metric) {
+        this(lockPath, curator.createMutex(lockPath), metric);
     }
 
     /** Public for testing only */
-    public Lock(String lockPath, InterProcessLock mutex) {
+    public Lock(String lockPath, InterProcessLock mutex, Optional<Metric> metric) {
         this.lockPath = lockPath;
         this.mutex = mutex;
+        this.metric = metric;
+        this.metricContext = metric.map(aMetric -> aMetric.createContext(Map.of("lockPath", lockPath)));
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) throws UncheckedTimeoutException {
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
-        threadLockStats.invokingAcquire(lockPath, timeout);
+        threadLockStats.invokingAcquire(lockPath, timeout, metric, metricContext);
 
         final boolean acquired;
         try {

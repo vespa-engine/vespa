@@ -27,7 +27,7 @@ public class LockTest {
     private final InterProcessLock mutex = mock(InterProcessLock.class);
     private final String lockPath = "/lock/path";
     private final Duration acquireTimeout = Duration.ofSeconds(10);
-    private final Lock lock = new Lock(lockPath, mutex);
+    private final Lock lock = new Lock(lockPath, mutex, Optional.empty());
 
     @Before
     public void setUp() {
@@ -120,7 +120,7 @@ public class LockTest {
         when(mutex.acquire(anyLong(), any())).thenReturn(true);
 
         String lockPath2 = "/lock/path/2";
-        Lock lock2 = new Lock(lockPath2, mutex);
+        Lock lock2 = new Lock(lockPath2, mutex, Optional.empty());
 
         lock.acquire(acquireTimeout);
         lock2.acquire(acquireTimeout);

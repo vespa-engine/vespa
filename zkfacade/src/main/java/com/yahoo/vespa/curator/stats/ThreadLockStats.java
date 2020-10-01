@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.stats;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Duration;
@@ -60,11 +61,12 @@ public class ThreadLockStats {
     public Optional<RecordedLockAttempts> getOngoingRecording() { return ongoingRecording; }
 
     /** Mutable method (see class doc) */
-    public void invokingAcquire(String lockPath, Duration timeout) {
+    public void invokingAcquire(String lockPath, Duration timeout,
+                                Optional<Metric> metric, Optional<Metric.Context> metricContext) {
         LockCounters lockCounters = getGlobalLockCounters(lockPath);
         lockCounters.invokeAcquireCount.incrementAndGet();
         lockCounters.inCriticalRegionCount.incrementAndGet();
-        LockAttempt lockAttempt = LockAttempt.invokingAcquire(this, lockPath, timeout);
+        LockAttempt lockAttempt = LockAttempt.invokingAcquire(this, lockPath, timeout, metric, metricContext);
 
         LockAttempt lastLockAttempt = lockAttemptsStack.peekLast();
         if (lastLockAttempt == null) {
@@ -93,11 +95,11 @@ public class ThreadLockStats {
     /** Mutable method (see class doc) */
     public void lockAcquired(String lockPath) {
         getGlobalLockCounters(lockPath).lockAcquiredCount.incrementAndGet();
-        LockAttempt lastLockAttempt = lockAttemptsStack.peekLast();
-        if (lastLockAttempt == null) {
+        LockAttempt lockAttempt = lockAttemptsStack.peekLast();
+        if (lockAttempt == null) {
             throw new IllegalStateException("lockAcquired invoked without lockAttempts");
         }
-        lastLockAttempt.lockAcquired();
+        lockAttempt.lockAcquired();
     }
 
     /** Mutable method (see class doc) */

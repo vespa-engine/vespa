@@ -6,19 +6,16 @@ import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.test.TestTimer;
-import java.util.logging.Level;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.TestIds;
 import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
-import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.test.KillSession;
@@ -49,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,7 +57,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -137,21 +134,6 @@ public class ZkStatusServiceTest {
                 }
             }
         }
-
-        // Time
-        //   1    Start before lock
-        //   3    After acquire => orchestrator.lock.acquire-latency = 3ms - 1ms
-        //   6    After release => orchestrator.lock.hold-latency = 6ms - 3ms
-        verify(metric).set(eq("orchestrator.lock.acquire-latency"), eq(0.002), any());
-        verify(metric).set(eq("orchestrator.lock.acquired"), eq(1), any());
-        verify(metric).set(eq("orchestrator.lock.hold-latency"), eq(0.003), any());
-        verify(metric).createContext(captor.capture());
-
-        assertEquals(
-                Map.of("app", "test-application.test-instance-key",
-                        "tenantName", "test-tenant",
-                        "applicationId", "test-tenant.test-application.test-instance-key"),
-                captor.getValue());
     }
 
     @Test
