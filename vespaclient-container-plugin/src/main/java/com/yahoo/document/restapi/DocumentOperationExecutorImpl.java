@@ -148,11 +148,11 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
     /** Assumes this stops receiving operations roughly when this is called, then waits up to 50 seconds to drain operations. */
     @Override
     public void shutdown() {
-        long shutdownMillis = clock.instant().plusSeconds(50).toEpochMilli();
+        long shutdownMillis = clock.instant().plusSeconds(20).toEpochMilli();
         visits.values().forEach(VisitorSession::destroy);
-        Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(30),
+        Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(10),
                                                         context -> context.error(OVERLOAD, "Retry on overload failed due to shutdown"));
-        Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(40),
+        Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(15),
                                                       context -> context.error(TIMEOUT, "Timed out due to shutdown"));
         try {
             throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
