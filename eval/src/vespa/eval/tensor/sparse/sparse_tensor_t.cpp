@@ -50,9 +50,9 @@ struct FastSparseJoin {
         auto & rhs = static_cast<const SparseTensorT<RCT> &>(rhs_in);
         // Ensure that first tensor to fastMatch has fewest cells.
         if (rhs.my_size() < lhs.my_size()) {
-            return SparseTensorMatch(rhs, lhs, std::move(res_type)).result();
+            return SparseTensorMatch<RCT,LCT>(rhs, lhs, std::move(res_type)).result();
         } else {
-            return SparseTensorMatch(lhs, rhs, std::move(res_type)).result();
+            return SparseTensorMatch<LCT,RCT>(lhs, rhs, std::move(res_type)).result();
         }
     }
 };
