@@ -145,14 +145,14 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         return parameters;
     }
 
-    /** Assumes this stops receiving operations roughly when this is called, then waits up to 50 seconds to drain operations. */
+    /** Assumes this stops receiving operations roughly when this is called, then waits up to 20 seconds to drain operations. */
     @Override
     public void shutdown() {
-        long shutdownMillis = clock.instant().plusSeconds(50).toEpochMilli();
+        long shutdownMillis = clock.instant().plusSeconds(20).toEpochMilli();
         visits.values().forEach(VisitorSession::destroy);
-        Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(30),
+        Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(10),
                                                         context -> context.error(OVERLOAD, "Retry on overload failed due to shutdown"));
-        Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(40),
+        Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(15),
                                                       context -> context.error(TIMEOUT, "Timed out due to shutdown"));
         try {
             throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
@@ -160,7 +160,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         }
         catch (InterruptedException | ExecutionException | TimeoutException e) {
             throttleShutdown.cancel(true);
-            throttleShutdown.cancel(true);
+            timeoutShutdown.cancel(true);
             log.log(WARNING, "Exception shutting down " + getClass().getName(), e);
         }
     }
@@ -221,8 +221,8 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         catch (IllegalArgumentException | ParseException e) {
             context.error(BAD_REQUEST, Exceptions.toMessageString(e));
         }
-        catch (Throwable t) {
-            context.error(ERROR, Exceptions.toMessageString(t));
+        catch (RuntimeException | LinkageError e) {
+            context.error(ERROR, Exceptions.toMessageString(e));
         }
     }
 

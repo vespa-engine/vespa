@@ -166,8 +166,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         catch (IllegalArgumentException e) {
             return badRequest(request, e, responseHandler);
         }
-        catch (Throwable t) {
-            return serverError(request, t, responseHandler);
+        catch (RuntimeException | LinkageError e) {
+            return serverError(request, e, responseHandler);
         }
     }
 
@@ -250,8 +250,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                   }
                                               }
                                               // TODO jonmv: This shouldn't happen much, but ... expose errors too?
-                                              catch (Throwable t) {
-                                                  log.log(WARNING, "Exception serializing document in document/v1 visit response", t);
+                                              catch (RuntimeException | LinkageError e) {
+                                                  log.log(WARNING, "Exception serializing document in document/v1 visit response", e);
                                               }
                                           });
     }
@@ -296,8 +296,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
             }
-            catch (Throwable t) {
-                serverError(request, t, handler);
+            catch (RuntimeException | LinkageError e) {
+                serverError(request, e, handler);
             }
         });
     }
@@ -318,8 +318,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
             }
-            catch (Throwable t) {
-                serverError(request, t, handler);
+            catch (RuntimeException | LinkageError e) {
+                serverError(request, e, handler);
             }
         });
     }
