@@ -249,7 +249,7 @@ public class DynamicProvisioningMaintainerTest {
                     createNode("proxyhost1", Optional.empty(), NodeType.proxyhost, Node.State.provisioned, Optional.empty()),
                     createNode("proxyhost2", Optional.empty(), NodeType.proxyhost, Node.State.active, Optional.of(proxyHostApp)),
                     createNode("proxy2", Optional.of("proxyhost2"), NodeType.proxy, Node.State.active, Optional.of(proxyApp)))
-                .forEach(node -> nodeRepository.database().addNodesInState(List.of(node), node.state()));
+                .forEach(node -> nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system));
             return this;
         }
 
@@ -259,7 +259,7 @@ public class DynamicProvisioningMaintainerTest {
 
         private Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, ApplicationId application) {
             Node node = createNode(hostname, parentHostname, nodeType, state, Optional.ofNullable(application));
-            return nodeRepository.database().addNodesInState(List.of(node), node.state()).get(0);
+            return nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system).get(0);
         }
 
         private Node createNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, Optional<ApplicationId> application) {

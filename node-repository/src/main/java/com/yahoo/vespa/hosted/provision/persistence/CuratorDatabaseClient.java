@@ -108,17 +108,15 @@ public class CuratorDatabaseClient {
         provisionIndexCounter.initialize(100);
     }
 
-    /**
-     * Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state.
-     */
-    public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState) {
+    /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */
+    public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState, Agent agent) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             if (node.state() != expectedState)
                 throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
 
-            node = node.with(node.history().recordStateTransition(null, expectedState, Agent.system, clock.instant()));
+            node = node.with(node.history().recordStateTransition(null, expectedState, agent, clock.instant()));
             curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
         }
         transaction.commit();

@@ -428,7 +428,7 @@ public class NodeRepository extends AbstractComponent {
                         existing.get() + ", " + existing.get().history() + "). Node to be added: " +
                         node + ", " + node.history());
         }
-        return db.addNodesInState(nodes.asList(), State.reserved);
+        return db.addNodesInState(nodes.asList(), State.reserved, Agent.system);
     }
 
     /**
@@ -463,8 +463,7 @@ public class NodeRepository extends AbstractComponent {
 
                 nodesToAdd.add(node);
             }
-            List<Node> resultingNodes = new ArrayList<>();
-            resultingNodes.addAll(db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), State.provisioned));
+            List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), State.provisioned, agent);
             db.removeNodes(nodesToRemove);
             return resultingNodes;
         }

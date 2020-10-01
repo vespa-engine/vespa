@@ -313,7 +313,7 @@ public class Curator implements AutoCloseable {
         try {
             return framework().getChildren().forPath(path.getAbsolute());
         } catch (KeeperException.NoNodeException e) {
-                return List.of();
+            return List.of();
         } catch (Exception e) {
             throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
         }
