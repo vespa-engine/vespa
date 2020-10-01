@@ -63,6 +63,7 @@ MyOperationComplete::addResultHandler(const storage::spi::ResultHandler * result
 
 SpiBmFeedHandler::SpiBmFeedHandler(PersistenceProvider& provider)
     : IBmFeedHandler(),
+      _name("SpiBmFeedHandler"),
       _provider(provider),
       _errors(0u)
 {
@@ -100,4 +101,23 @@ SpiBmFeedHandler::get_error_count() const
 {
     return _errors;
 }
+
+const vespalib::string&
+SpiBmFeedHandler::get_name() const
+{
+    return _name;
+}
+
+bool
+SpiBmFeedHandler::manages_buckets() const
+{
+    return false;
+}
+
+bool
+SpiBmFeedHandler::manages_timestamp() const
+{
+    return false;
+}
+
 }

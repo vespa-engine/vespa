@@ -334,8 +334,6 @@ public class SessionRepository {
         if (session.getStatus() == Session.Status.NEW) {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();
-        } else {
-            log.log(Level.WARNING, () -> session.logPre() + "Session " + sessionId + " added, but with unexpected status " + session.getStatus());
         }
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);

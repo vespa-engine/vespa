@@ -35,7 +35,7 @@ public class TimeoutBudgetTest {
         assertThat(budget.timeLeft().toMillis(), is(0L));
 
         clock.advance(Duration.ofMillis(1));
-        assertThat(budget.timesUsed(), is("[0 ms, 1 ms, 5 ms, 0 ms, 1 ms, 5 ms, total: 13 ms]"));
+        assertThat(budget.timesUsed(), is("[total: 13 ms]"));
     }
 
     @Test
@@ -55,7 +55,7 @@ public class TimeoutBudgetTest {
         assertThat(budget.hasTimeLeft(), is(false));
 
         clock.advance(Duration.ofMillis(1));
-        assertThat(budget.timesUsed(), is("[0 ms, 1 ms, 5 ms, 0 ms, 1 ms, 5 ms, total: 13 ms]"));
+        assertThat(budget.timesUsed(), is("[total: 13 ms]"));
     }
 
     @Test

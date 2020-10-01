@@ -9,17 +9,11 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/storageserver/message_dispatcher.h>
-#include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
 #include <vespa/storage/storageserver/rpc/message_codec_provider.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
-#include <vespa/storage/storageserver/rpc/slime_cluster_state_bundle_codec.h>
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vdslib/state/cluster_state_bundle.h>
-#include <vespa/fnet/frt/target.h>
-#include <vespa/slobrok/sbmirror.h>
 #include <cassert>
 
 using document::Document;
@@ -28,36 +22,9 @@ using document::DocumentUpdate;
 using document::DocumentTypeRepo;
 using storage::api::StorageMessageAddress;
 using storage::rpc::SharedRpcResources;
+using storage::lib::NodeType;
 
 namespace feedbm {
-
-namespace {
-
-FRT_RPCRequest *
-make_set_cluster_state_request() {
-    storage::lib::ClusterStateBundle bundle(storage::lib::ClusterState("version:2 distributor:1 storage:1"));
-    storage::rpc::SlimeClusterStateBundleCodec codec;
-    auto encoded_bundle = codec.encode(bundle);
-    auto *req = new FRT_RPCRequest();
-    auto* params = req->GetParams();
-    params->AddInt8(static_cast<uint8_t>(encoded_bundle._compression_type));
-    params->AddInt32(encoded_bundle._uncompressed_length);
-    params->AddData(std::move(*encoded_bundle._buffer));
-    req->SetMethodName("setdistributionstates");
-    return req;
-}
-
-void
-set_cluster_up(SharedRpcResources &shared_rpc_resources, storage::api::StorageMessageAddress &storage_address) {
-    auto req = make_set_cluster_state_request();
-    auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(shared_rpc_resources.slobrok_mirror(), shared_rpc_resources.target_factory());
-    auto target = target_resolver->resolve_rpc_target(storage_address);
-    target->_target->get()->InvokeSync(req, 10.0); // 10 seconds timeout
-    assert(!req->IsError());
-    req->SubRef();
-}
-
-}
 
 class StorageApiRpcBmFeedHandler::MyMessageDispatcher : public storage::MessageDispatcher,
                                  public StorageReplyErrorChecker
@@ -105,15 +72,16 @@ StorageApiRpcBmFeedHandler::MyMessageDispatcher::~MyMessageDispatcher()
     assert(_pending.empty());
 }
 
-StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& shared_rpc_resources_in, std::shared_ptr<const DocumentTypeRepo> repo)
+StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& shared_rpc_resources_in, std::shared_ptr<const DocumentTypeRepo> repo, bool distributor)
     : IBmFeedHandler(),
-      _storage_address(std::make_unique<StorageMessageAddress>("storage", storage::lib::NodeType::STORAGE, 0)),
+      _name(vespalib::string("StorageApiRpcBmFeedHandler(") + (distributor ? "distributor" : "servicelayer") + ")"),
+      _distributor(distributor),
+      _storage_address(std::make_unique<StorageMessageAddress>("storage", distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
       _shared_rpc_resources(shared_rpc_resources_in),
       _message_dispatcher(std::make_unique<MyMessageDispatcher>()),
       _message_codec_provider(std::make_unique<storage::rpc::MessageCodecProvider>(repo, std::make_shared<documentapi::LoadTypeSet>())),
       _rpc_client(std::make_unique<storage::rpc::StorageApiRpcService>(*_message_dispatcher, _shared_rpc_resources, *_message_codec_provider, storage::rpc::StorageApiRpcService::Params()))
 {
-    set_cluster_up(_shared_rpc_resources, *_storage_address);
 }
 
 StorageApiRpcBmFeedHandler::~StorageApiRpcBmFeedHandler() = default;
@@ -152,6 +120,24 @@ uint32_t
 StorageApiRpcBmFeedHandler::get_error_count() const
 {
     return _message_dispatcher->get_error_count();
+}
+
+const vespalib::string&
+StorageApiRpcBmFeedHandler::get_name() const
+{
+    return _name;
+}
+
+bool
+StorageApiRpcBmFeedHandler::manages_buckets() const
+{
+    return _distributor;
+}
+
+bool
+StorageApiRpcBmFeedHandler::manages_timestamp() const
+{
+    return _distributor;
 }
 
 }

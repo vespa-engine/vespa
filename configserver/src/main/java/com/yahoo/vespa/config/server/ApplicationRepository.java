@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
@@ -125,7 +125,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final ConfigConvergenceChecker convergeChecker;
     private final HttpProxy httpProxy;
     private final Clock clock;
-    private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
     private final FileDistributionStatus fileDistributionStatus = new FileDistributionStatus();
     private final Orchestrator orchestrator;
@@ -292,7 +291,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
-    private Deployment prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
+    private Deployment prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, DeployLogger logger) {
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
@@ -305,24 +304,28 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
+        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         PrepareResult prepareResult;
         try {
             threadLockStats.startRecording("deploy of " + prepareParams.getApplicationId().serializedForm());
-            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams);
+            prepareResult = deploy(decompressApplication(in, tempDir), prepareParams, logger);
         } finally {
             threadLockStats.stopRecording();
-            cleanupTempDirectory(tempDir);
+            cleanupTempDirectory(tempDir, logger);
         }
         return prepareResult;
     }
 
     public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
+        return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams));
+    }
+
+    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, DeployHandlerLogger logger) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Tenant tenant = getTenant(applicationId);
-        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
         Deployment deployment = prepare(tenant, sessionId, prepareParams, logger);
         deployment.activate();
 
@@ -385,6 +388,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         SessionRepository sessionRepository = tenant.getSessionRepository();
+        DeployLogger logger = new SilentDeployLogger();
         LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         sessionRepository.addLocalSession(newSession);
         boolean internalRestart = deployWithInternalRestart.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
@@ -406,6 +410,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   long sessionId,
                                   TimeoutBudget timeoutBudget,
                                   boolean force) {
+        DeployLogger logger = new SilentDeployLogger();
         LocalSession localSession = getLocalSession(tenant, sessionId);
         Deployment deployment = Deployment.prepared(localSession, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
@@ -777,13 +782,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in, String contentType) {
+    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in,
+                              String contentType, DeployLogger logger) {
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         long sessionId;
         try {
             sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
         } finally {
-            cleanupTempDirectory(tempDir);
+            cleanupTempDirectory(tempDir, logger);
         }
         return sessionId;
     }
@@ -954,8 +960,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private void cleanupTempDirectory(File tempDir) {
-        logger.log(Level.FINE, "Deleting tmp dir '" + tempDir + "'");
+    private void cleanupTempDirectory(File tempDir, DeployLogger logger) {
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
             logger.log(Level.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
         }

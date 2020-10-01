@@ -1,0 +1,31 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "storage_reply_error_checker.h"
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+
+namespace feedbm {
+
+class PendingTracker;
+
+/*
+ * Storage link used to feed storage api messages to a distributor or
+ * service layer node. A count of error replies is maintained.
+ */
+class BmStorageLink : public storage::StorageLink,
+                      public StorageReplyErrorChecker
+{
+    std::mutex _mutex;
+    vespalib::hash_map<uint64_t, PendingTracker *> _pending;
+    PendingTracker *release(uint64_t msg_id);
+public:
+    BmStorageLink();
+    ~BmStorageLink() override;
+    bool onDown(const std::shared_ptr<storage::api::StorageMessage>& msg) override;
+    bool onUp(const std::shared_ptr<storage::api::StorageMessage>& msg) override;
+    void retain(uint64_t msg_id, PendingTracker &tracker);
+};
+
+}
