@@ -1180,15 +1180,17 @@ App::usage()
         "USAGE:\n";
     std::cerr <<
         "vespa-feed-bm\n"
-        "[--threads threads]\n"
+        "[--client-threads threads]\n"
         "[--documents documents]\n"
         "[--put-passes put-passes]\n"
         "[--update-passes update-passes]\n"
         "[--remove-passes remove-passes]\n"
         "[--rpc-network-threads threads]\n"
+        "[--response-threads threads]\n"
         "[--enable-distributor]\n"
         "[--enable-service-layer]\n"
-        "[--use-storage-chain]" << std::endl;
+        "[--use-storage-chain]\n"
+        "[--use-legacy-bucket-db]" << std::endl;
 }
 
 bool
@@ -1221,7 +1223,7 @@ App::get_options()
         LONGOPT_ENABLE_DISTRIBUTOR,
         LONGOPT_ENABLE_SERVICE_LAYER,
         LONGOPT_USE_STORAGE_CHAIN,
-        LONGOPT_USE_LEGACY_BUCKET_DB,
+        LONGOPT_USE_LEGACY_BUCKET_DB
     };
     int opt_index = 1;
     resetOptIndex(opt_index);
