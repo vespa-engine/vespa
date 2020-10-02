@@ -10,7 +10,6 @@
 
 namespace vespalib::eval::instruction {
 
-using TypedCells = Value::TypedCells;
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
 

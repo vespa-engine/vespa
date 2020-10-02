@@ -26,7 +26,7 @@ public:
         : _space(), _tensor(tensor) {}
     explicit WrappedSimpleTensor(std::unique_ptr<eval::SimpleTensor> tensor)
         : _space(std::move(tensor)), _tensor(*_space) {}
-    TypedCells cells() const override { abort(); }
+    eval::TypedCells cells() const override { abort(); }
     const Index &index() const override { abort(); }
     ~WrappedSimpleTensor() {}
     const eval::SimpleTensor &get() const { return _tensor; }

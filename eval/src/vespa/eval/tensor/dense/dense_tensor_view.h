@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "typed_cells.h"
+#include "typed_cells_dispatch.h"
 #include "dense_tensor_cells_iterator.h"
 #include <vespa/eval/tensor/tensor.h>
 

@@ -137,7 +137,7 @@ DenseTensorStore::getTensor(EntryRef ref) const
     if (!ref.valid()) {
         return std::unique_ptr<Tensor>();
     }
-    vespalib::tensor::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
+    vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
     return std::make_unique<DenseTensorView>(_type, cells_ref);
 }
 
@@ -145,21 +145,21 @@ void
 DenseTensorStore::getTensor(EntryRef ref, MutableDenseTensorView &tensor) const
 {
     if (!ref.valid()) {
-        vespalib::tensor::TypedCells cells_ref(&_emptySpace[0], _type.cell_type(), getNumCells());
+        vespalib::eval::TypedCells cells_ref(&_emptySpace[0], _type.cell_type(), getNumCells());
         tensor.setCells(cells_ref);
     } else {
-        vespalib::tensor::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
+        vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
         tensor.setCells(cells_ref);
     }
 }
 
-vespalib::tensor::TypedCells
+vespalib::eval::TypedCells
 DenseTensorStore::get_typed_cells(EntryRef ref) const
 {
     if (!ref.valid()) {
-        return vespalib::tensor::TypedCells(&_emptySpace[0], _type.cell_type(), getNumCells());
+        return vespalib::eval::TypedCells(&_emptySpace[0], _type.cell_type(), getNumCells());
     }
-    return vespalib::tensor::TypedCells(getRawBuffer(ref), _type.cell_type(), getNumCells());
+    return vespalib::eval::TypedCells(getRawBuffer(ref), _type.cell_type(), getNumCells());
 }
 
 template <class TensorType>

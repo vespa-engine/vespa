@@ -4,7 +4,6 @@
 
 #include "distance_function.h"
 #include "prepare_result.h"
-#include <vespa/eval/tensor/dense/typed_cells.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <cstdint>
@@ -47,7 +46,7 @@ public:
      * The given read guard must be kept in the result.
      */
     virtual std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
-                                                                vespalib::tensor::TypedCells vector,
+                                                                vespalib::eval::TypedCells vector,
                                                                 vespalib::GenerationHandler::Guard read_guard) const = 0;
     /**
      * Performs the complete step in a two-phase operation to add a document to the index.
@@ -73,12 +72,12 @@ public:
     virtual bool load(const fileutil::LoadedBuffer& buf) = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
-                                             vespalib::tensor::TypedCells vector,
+                                             vespalib::eval::TypedCells vector,
                                              uint32_t explore_k) const = 0;
 
     // only return neighbors where the corresponding filter bit is set
     virtual std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
-                                                         vespalib::tensor::TypedCells vector,
+                                                         vespalib::eval::TypedCells vector,
                                                          const BitVector &filter,
                                                          uint32_t explore_k) const = 0;
 

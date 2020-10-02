@@ -3,7 +3,7 @@
 #pragma once
 
 #include "value_type.h"
-#include <vespa/eval/tensor/dense/typed_cells.h>
+#include "typed_cells.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
@@ -19,7 +19,6 @@ class Tensor;
 struct Value {
     using UP = std::unique_ptr<Value>;
     using CREF = std::reference_wrapper<const Value>;
-    using TypedCells = tensor::TypedCells;
     virtual const ValueType &type() const = 0;
     virtual ~Value() {}
 
@@ -38,13 +37,13 @@ struct Value {
             // partial address for the dimensions given to
             // create_view. Results from the lookup is extracted using
             // the next_result function.
-            virtual void lookup(const std::vector<const vespalib::stringref*> &addr) = 0;
+            virtual void lookup(ConstArrayRef<const vespalib::stringref*> addr) = 0;
 
             // Extract the next result (if any) from the previous
             // lookup into the given partial address and index. Only
             // the labels for the dimensions NOT specified in
             // create_view will be extracted here.
-            virtual bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) = 0;
+            virtual bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) = 0;
 
             virtual ~View() {}
         };
@@ -136,7 +135,7 @@ struct ValueBuilder : ValueBuilderBase {
     // returned subspaces will be invalidated when new subspaces are
     // added. Also note that adding the same subspace multiple times
     // is not allowed.
-    virtual ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) = 0;
+    virtual ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) = 0;
 
     // Given the ownership of the builder itself, produce the newly
     // created value. This means that builders can only be used once,

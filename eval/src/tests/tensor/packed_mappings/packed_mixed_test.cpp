@@ -9,6 +9,9 @@
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
+using PA = std::vector<vespalib::stringref *>;
+using CPA = std::vector<const vespalib::stringref *>;
+
 std::vector<Layout> layouts = {
     {},
     {x(3)},
@@ -40,7 +43,8 @@ TEST(PackedMixedTest, packed_mixed_tensors_can_be_built_and_inspected) {
     float seq = 0.0;
     for (vespalib::string x: {"a", "b", "c"}) {
         for (vespalib::string y: {"aa", "bb"}) {
-            auto subspace = builder->add_subspace({x, y});
+            std::vector<vespalib::stringref> addr = {x, y};
+            auto subspace = builder->add_subspace(addr);
             EXPECT_EQ(subspace.size(), 2);
             subspace[0] = seq + 1.0;
             subspace[1] = seq + 5.0;
@@ -54,64 +58,65 @@ TEST(PackedMixedTest, packed_mixed_tensors_can_be_built_and_inspected) {
     vespalib::stringref query = "b";
     vespalib::stringref label;
     size_t subspace;
-    view->lookup({&query});
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    view->lookup(CPA{&query});
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "aa");
     EXPECT_EQ(subspace, 2);
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "bb");
     EXPECT_EQ(subspace, 3);
-    EXPECT_FALSE(view->next_result({&label}, subspace));
+    EXPECT_FALSE(view->next_result(PA{&label}, subspace));
 
     query = "c";
-    view->lookup({&query});
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    view->lookup(CPA{&query});
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "aa");
     EXPECT_EQ(subspace, 4);
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "bb");
     EXPECT_EQ(subspace, 5);
-    EXPECT_FALSE(view->next_result({&label}, subspace));
+    EXPECT_FALSE(view->next_result(PA{&label}, subspace));
     
     query = "notpresent";
-    view->lookup({&query});
-    EXPECT_FALSE(view->next_result({&label}, subspace));
+    view->lookup(CPA{&query});
+    EXPECT_FALSE(view->next_result(PA{&label}, subspace));
 
     view = value->index().create_view({1});
     query = "aa";
-    view->lookup({&query});
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    view->lookup(CPA{&query});
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "a");
     EXPECT_EQ(subspace, 0);
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "b");
     EXPECT_EQ(subspace, 2);
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "c");
     EXPECT_EQ(subspace, 4);
-    EXPECT_FALSE(view->next_result({&label}, subspace));
+    EXPECT_FALSE(view->next_result(PA{&label}, subspace));
 
     query = "bb";
-    view->lookup({&query});
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    view->lookup(CPA{&query});
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "a");
     EXPECT_EQ(subspace, 1);
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "b");
     EXPECT_EQ(subspace, 3);
-    EXPECT_TRUE(view->next_result({&label}, subspace));
+    EXPECT_TRUE(view->next_result(PA{&label}, subspace));
     EXPECT_EQ(label, "c");
     EXPECT_EQ(subspace, 5);
-    EXPECT_FALSE(view->next_result({&label}, subspace));
+    EXPECT_FALSE(view->next_result(PA{&label}, subspace));
 
     query = "notpresent";
-    view->lookup({&query});
-    EXPECT_FALSE(view->next_result({&label}, subspace));
+    view->lookup(CPA{&query});
+    EXPECT_FALSE(view->next_result(PA{&label}, subspace));
 
     view = value->index().create_view({0,1});
     vespalib::stringref query_x = "b";
     vespalib::stringref query_y = "bb";
-    view->lookup({&query_x, &query_y});
+    CPA addr = {&query_x, &query_y};
+    view->lookup(addr);
     EXPECT_TRUE(view->next_result({}, subspace));
     EXPECT_EQ(subspace, 3);
     EXPECT_FALSE(view->next_result({}, subspace));

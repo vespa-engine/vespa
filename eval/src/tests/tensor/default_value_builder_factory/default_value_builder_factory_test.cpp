@@ -18,6 +18,9 @@ Value::UP v_of(const TensorSpec &spec) {
     return value_from_spec(spec, DefaultValueBuilderFactory::get());
 }
 
+using PA = std::vector<vespalib::stringref *>;
+using CPA = std::vector<const vespalib::stringref *>;
+
 TEST(DefaultValueBuilderFactoryTest, all_built_value_types_are_correct) {
     auto dbl = v_of(TensorSpec("double").add({}, 3.0));
     auto trivial = v_of(TensorSpec("tensor(x[1])").add({{"x",0}}, 7.0));
@@ -40,19 +43,19 @@ TEST(DefaultValueBuilderFactoryTest, all_built_value_types_are_correct) {
     stringref y_look = "bar";
     stringref x_res = "xxx";
     auto view = sparse->index().create_view({1});
-    view->lookup({&y_look});
+    view->lookup(CPA{&y_look});
     size_t ss = 12345;
-    bool br = view->next_result({&x_res}, ss);
+    bool br = view->next_result(PA{&x_res}, ss);
     EXPECT_TRUE(br);
     EXPECT_EQ(ss, 0);
     EXPECT_EQ(x_res, "foo");
-    br = view->next_result({&x_res}, ss);
+    br = view->next_result(PA{&x_res}, ss);
     EXPECT_FALSE(br);
 
     ss = 12345;
     view = mixed->index().create_view({});
     view->lookup({});
-    br = view->next_result({&x_res}, ss);
+    br = view->next_result(PA{&x_res}, ss);
     EXPECT_TRUE(br);
     EXPECT_EQ(ss, 0);
     EXPECT_EQ(x_res, "quux");

@@ -9,7 +9,7 @@
 #include "nearest_neighbor_index.h"
 #include "random_level_generator.h"
 #include "hnsw_graph.h"
-#include <vespa/eval/tensor/dense/typed_cells.h>
+#include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
@@ -72,7 +72,7 @@ protected:
     using LevelArrayRef = HnswGraph::LevelArrayRef;
     using LevelArray = vespalib::Array<AtomicEntryRef>;
 
-    using TypedCells = vespalib::tensor::TypedCells;
+    using TypedCells = vespalib::eval::TypedCells;
 
     HnswGraph _graph;
     const DocVectorAccess& _vectors;

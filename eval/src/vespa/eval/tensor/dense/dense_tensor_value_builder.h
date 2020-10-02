@@ -19,7 +19,7 @@ public:
     DenseTensorValueBuilder(const eval::ValueType &type, size_t subspace_size_in);
     ~DenseTensorValueBuilder() override;
     ArrayRef<T>
-    add_subspace(const std::vector<vespalib::stringref> &) override {
+    add_subspace(ConstArrayRef<vespalib::stringref>) override {
         return _cells;
     }
     std::unique_ptr<eval::Value>

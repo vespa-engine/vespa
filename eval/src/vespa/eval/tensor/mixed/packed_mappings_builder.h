@@ -20,8 +20,6 @@ namespace vespalib::eval::packed_mixed_tensor {
  **/
 class PackedMappingsBuilder {
 public:
-    using SparseAddress = std::vector<vespalib::stringref>;
-
     PackedMappingsBuilder(uint32_t num_mapped_dims)
       : _num_dims(num_mapped_dims),
         _labels(),
@@ -33,7 +31,7 @@ public:
     // returns a new index for new addresses
     // may be called multiple times with same address,
     // will then return the same index for that address.
-    uint32_t add_mapping_for(SparseAddress address);
+    uint32_t add_mapping_for(ConstArrayRef<vespalib::stringref> address);
 
     // how much extra memory is needed by target_memory
     // not including sizeof(PackedMappings)
@@ -56,6 +54,7 @@ public:
 private:
     uint32_t _num_dims;
     std::set<vespalib::string> _labels;
+    using SparseAddress = std::vector<vespalib::stringref>;
     using IndexMap = std::map<SparseAddress, uint32_t>;
     IndexMap _mappings;
 };

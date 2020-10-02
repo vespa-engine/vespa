@@ -13,8 +13,6 @@ namespace vespalib::eval {
 
 class TensorSpec;
 
-using TypedCells = ::vespalib::tensor::TypedCells;
-
 /**
  * A simple implementation of a generic value that can also be used to
  * build new values. This class focuses on simplicity over speed and
@@ -32,7 +30,7 @@ private:
     std::map<Addr,size_t> _index;
 protected:
     size_t subspace_size() const { return _subspace_size; }
-    void add_mapping(const std::vector<vespalib::stringref> &addr);
+    void add_mapping(ConstArrayRef<vespalib::stringref> addr);
 public:
     SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValue() override;
@@ -54,7 +52,7 @@ public:
     SimpleValueT(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValueT() override;
     TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
-    ArrayRef<T> add_subspace(const std::vector<vespalib::stringref> &addr) override;
+    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override;
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         ValueBuilder<T>* me = this;
         assert(me == self.get());

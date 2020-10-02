@@ -48,7 +48,7 @@ public:
     void get_state(const vespalib::slime::Inserter& inserter) const override;
 
     // Implements DocVectorAccess
-    vespalib::tensor::TypedCells get_vector(uint32_t docid) const override;
+    vespalib::eval::TypedCells get_vector(uint32_t docid) const override;
 
     const NearestNeighborIndex* nearest_neighbor_index() const { return _index.get(); }
 };

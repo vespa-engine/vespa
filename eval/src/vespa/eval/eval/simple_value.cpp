@@ -64,7 +64,7 @@ public:
         assert((_match_dims.size() + _extract_dims.size()) == _num_mapped_dims);
     }
 
-    void lookup(const std::vector<const vespalib::stringref*> &addr) override {
+    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
         assert(addr.size() == _match_dims.size());
         for (size_t i = 0; i < _match_dims.size(); ++i) {
             _query[_match_dims[i]] = *addr[i];
@@ -76,7 +76,7 @@ public:
         }
     }
 
-    bool next_result(const std::vector<vespalib::stringref*> &addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override {
         assert(addr_out.size() == _extract_dims.size());
         while (_pos != _index.end()) {
             if (is_match()) {
@@ -102,7 +102,7 @@ public:
 //-----------------------------------------------------------------------------
 
 void
-SimpleValue::add_mapping(const std::vector<vespalib::stringref> &addr)
+SimpleValue::add_mapping(ConstArrayRef<vespalib::stringref> addr)
 {
     size_t id = _index.size();
     std::vector<vespalib::string> my_addr;
@@ -145,7 +145,7 @@ SimpleValueT<T>::~SimpleValueT() = default;
 
 template <typename T>
 ArrayRef<T>
-SimpleValueT<T>::add_subspace(const std::vector<vespalib::stringref> &addr)
+SimpleValueT<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr)
 {
     size_t old_size = _cells.size();
     assert(old_size == (index().size() * subspace_size()));
