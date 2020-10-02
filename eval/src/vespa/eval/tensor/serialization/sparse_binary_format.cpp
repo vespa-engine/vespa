@@ -138,6 +138,7 @@ struct BuildSparseCells {
                        size_t cellsSize)
     {
         DirectSparseTensorBuilder<CT> builder(std::move(type));
+        builder.reserve(cellsSize);
         decodeCells<CT>(stream, dimensionsSize, cellsSize, builder);
         return builder.build();
     }
