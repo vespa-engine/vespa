@@ -552,16 +552,30 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             this.reader = reader;
         }
 
+        /** Write is complete when we have stored the buffer — call completion handler. */
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
-            delegate.write(buf, handler);
+            try {
+                delegate.write(buf, logException);
+                handler.completed();
+            }
+            catch (Exception e) {
+                handler.failed(e);
+            }
         }
 
+        /** Close is complete when we have close the buffer. */
         @Override
         public void close(CompletionHandler handler) {
-            delegate.close(handler);
-            try (UnsafeContentInputStream in = new UnsafeContentInputStream(delegate)) {
-                reader.accept(in);
+            try {
+                delegate.close(logException);
+                try (UnsafeContentInputStream in = new UnsafeContentInputStream(delegate)) {
+                    reader.accept(in);
+                }
+                handler.completed();
+            }
+            catch (Exception e) {
+                handler.failed(e);
             }
         }
 
