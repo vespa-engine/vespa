@@ -16,7 +16,7 @@ using namespace vespalib;
 const TensorEngine &engine = DefaultTensorEngine::ref();
 
 TypedCells getCellsRef(const eval::Value &value) {
-    return static_cast<const DenseTensorView &>(value).cellsRef();
+    return value.cells();
 }
 
 struct ChildMock : Leaf {
