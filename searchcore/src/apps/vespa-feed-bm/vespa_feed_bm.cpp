@@ -33,7 +33,6 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/fastos/app.h>
-#include <vespa/fastos/file.h>
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/metrics/config-metricsmanager.h>
@@ -65,7 +64,6 @@
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
-#include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/servicelayerprocess.h>
@@ -261,6 +259,7 @@ public:
 class BMParams {
     uint32_t _documents;
     uint32_t _client_threads;
+    vespalib::string _indexing_sequencer;
     uint32_t _put_passes;
     uint32_t _update_passes;
     uint32_t _remove_passes;
@@ -279,6 +278,7 @@ public:
     BMParams()
         : _documents(160000),
           _client_threads(1),
+          _indexing_sequencer(),
           _put_passes(2),
           _update_passes(1),
           _remove_passes(2),
@@ -297,6 +297,7 @@ public:
     }
     uint32_t get_documents() const { return _documents; }
     uint32_t get_client_threads() const { return _client_threads; }
+    const vespalib::string & get_indexing_sequencer() const { return _indexing_sequencer; }
     uint32_t get_put_passes() const { return _put_passes; }
     uint32_t get_update_passes() const { return _update_passes; }
     uint32_t get_remove_passes() const { return _remove_passes; }
@@ -309,6 +310,7 @@ public:
     bool get_use_legacy_bucket_db() const { return _use_legacy_bucket_db; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_client_threads(uint32_t threads_in) { _client_threads = threads_in; }
+    void set_indexing_sequencer(vespalib::stringref sequencer) { _indexing_sequencer = sequencer; }
     void set_put_passes(uint32_t put_passes_in) { _put_passes = put_passes_in; }
     void set_update_passes(uint32_t update_passes_in) { _update_passes = update_passes_in; }
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
@@ -353,6 +355,7 @@ BMParams::check() const
         std::cerr << "Too few response threads: " << _response_threads << std::endl;
         return false;
     }
+
     return true;
 }
 
@@ -638,7 +641,7 @@ struct PersistenceProviderFixture {
 
     PersistenceProviderFixture(const BMParams& params);
     ~PersistenceProviderFixture();
-    void create_document_db();
+    void create_document_db(const BMParams & params);
     uint32_t num_buckets() const { return (1u << _bucket_bits); }
     BucketId make_bucket_id(uint32_t n) const { return BucketId(_bucket_bits, n & (num_buckets() - 1)); }
     document::Bucket make_bucket(uint32_t n) const { return document::Bucket(_bucket_space, make_bucket_id(n)); }
@@ -704,7 +707,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _distributor(),
       _message_bus()
 {
-    create_document_db();
+    create_document_db(params);
     _persistence_engine = std::make_unique<PersistenceEngine>(_persistence_owner, _write_filter, -1, false);
     auto proxy = std::make_shared<PersistenceHandlerProxy>(_document_db);
     _persistence_engine->putHandler(_persistence_engine->getWLock(), _bucket_space, _doc_type_name, proxy);
@@ -727,7 +730,7 @@ PersistenceProviderFixture::~PersistenceProviderFixture()
 }
 
 void
-PersistenceProviderFixture::create_document_db()
+PersistenceProviderFixture::create_document_db(const BMParams & params)
 {
     vespalib::mkdir(_base_dir, false);
     vespalib::mkdir(_base_dir + "/" + _doc_type_name.getName(), false);
@@ -739,10 +742,16 @@ PersistenceProviderFixture::create_document_db()
     config::DirSpec spec(input_cfg + "/config-1");
     auto tuneFileDocDB = std::make_shared<TuneFileDocumentDB>();
     DocumentDBConfigHelper mgr(spec, _doc_type_name.getName());
+    auto protonCfg = std::make_shared<ProtonConfigBuilder>();
+    if ( ! params.get_indexing_sequencer().empty()) {
+        vespalib::string sequencer = params.get_indexing_sequencer();
+        std::transform(sequencer.begin(), sequencer.end(), sequencer.begin(), [](unsigned char c){ return std::toupper(c); });
+        protonCfg->indexing.optimize = ProtonConfig::Indexing::getOptimize(sequencer);
+    }
     auto bootstrap_config = std::make_shared<BootstrapConfig>(1,
                                                               _document_types,
                                                               _repo,
-                                                              std::make_shared<ProtonConfig>(),
+                                                              std::move(protonCfg),
                                                               std::make_shared<FiledistributorrpcConfig>(),
                                                               std::make_shared<BucketspacesConfig>(),
                                                               tuneFileDocDB, HwInfo());
@@ -992,7 +1001,7 @@ void
 put_async_task(PersistenceProviderFixture &f, BMRange range, const vespalib::nbostream &serialized_feed, int64_t time_bias)
 {
     LOG(debug, "put_async_task([%u..%u))", range.get_start(), range.get_end());
-    feedbm::PendingTracker pending_tracker(100);
+    feedbm::PendingTracker pending_tracker(1000);
     auto &repo = *f._repo;
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
     BucketId bucket_id;
@@ -1264,6 +1273,7 @@ App::usage()
     std::cerr <<
         "vespa-feed-bm\n"
         "[--client-threads threads]\n"
+        "[--indexing-sequencer [latency,throughput,adaptive]]\n"
         "[--documents documents]\n"
         "[--put-passes put-passes]\n"
         "[--update-passes update-passes]\n"
@@ -1286,6 +1296,7 @@ App::get_options()
     int long_opt_index = 0;
     static struct option long_opts[] = {
         { "client-threads", 1, nullptr, 0 },
+        { "indexing-sequencer", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
         { "put-passes", 1, nullptr, 0 },
         { "update-passes", 1, nullptr, 0 },
@@ -1301,6 +1312,7 @@ App::get_options()
     };
     enum longopts_enum {
         LONGOPT_CLIENT_THREADS,
+        LONGOPT_INDEXING_SEQUENCER,
         LONGOPT_DOCUMENTS,
         LONGOPT_PUT_PASSES,
         LONGOPT_UPDATE_PASSES,
@@ -1322,6 +1334,9 @@ App::get_options()
             switch(long_opt_index) {
             case LONGOPT_CLIENT_THREADS:
                 _bm_params.set_client_threads(atoi(opt_argument));
+                break;
+            case LONGOPT_INDEXING_SEQUENCER:
+                _bm_params.set_indexing_sequencer(opt_argument);
                 break;
             case LONGOPT_DOCUMENTS:
                 _bm_params.set_documents(atoi(opt_argument));
