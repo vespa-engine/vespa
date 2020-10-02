@@ -63,6 +63,13 @@ use_direct_storageapi_rpc bool default=false
 ## The number of network (FNET) threads used by the shared rpc resource.
 rpc.num_network_threads int default=1
 
+## The number of (FNET) RPC targets to use per node in the cluster.
+##
+## The bucket id associated with a message is used to select the RPC target.
+## This ensures the same RPC target is used for all messages to the same bucket to the same node,
+## and the RPC target itself handles sequencing of these messages.
+rpc.num_targets_per_node int default=1
+
 # Minimum size of packets to compress (0 means no compression)
 rpc.compress.limit int default=1024
 

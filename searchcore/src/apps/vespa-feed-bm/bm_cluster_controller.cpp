@@ -44,9 +44,11 @@ BmClusterController::set_cluster_up(bool distributor)
 {
     StorageMessageAddress storage_address("storage", distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0);
     auto req = make_set_cluster_state_request();
-    auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(_shared_rpc_resources.slobrok_mirror(), _shared_rpc_resources.target_factory());
-    auto target = target_resolver->resolve_rpc_target(storage_address);
-    target->_target->get()->InvokeSync(req, 10.0); // 10 seconds timeout
+    auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(_shared_rpc_resources.slobrok_mirror(),
+                                                                                    _shared_rpc_resources.target_factory(), 1);
+    uint64_t fake_bucket_id = 0;
+    auto target = target_resolver->resolve_rpc_target(storage_address, fake_bucket_id);
+    target->get()->InvokeSync(req, 10.0); // 10 seconds timeout
     assert(!req->IsError());
     req->SubRef();
 }

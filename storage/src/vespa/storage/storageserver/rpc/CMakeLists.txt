@@ -16,7 +16,7 @@ vespa_add_library(storage_storageserver_rpc OBJECT
     caching_rpc_target_resolver.cpp
     cluster_controller_api_rpc_service.cpp
     message_codec_provider.cpp
-    rpc_target.cpp
+    rpc_target_pool.cpp
     shared_rpc_resources.cpp
     slime_cluster_state_bundle_codec.cpp
     storage_api_rpc_service.cpp

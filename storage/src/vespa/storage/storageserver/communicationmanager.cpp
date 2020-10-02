@@ -436,6 +436,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
     rpc::StorageApiRpcService::Params rpc_params;
     rpc_params.compression_config = convert_to_rpc_compression_config(*config);
+    rpc_params.num_rpc_targets_per_node = config->rpc.numTargetsPerNode;
     _storage_api_rpc_service = std::make_unique<rpc::StorageApiRpcService>(
             *this, *_shared_rpc_resources, *_message_codec_provider, rpc_params);
 

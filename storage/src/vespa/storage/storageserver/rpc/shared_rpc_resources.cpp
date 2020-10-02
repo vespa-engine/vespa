@@ -23,19 +23,22 @@ namespace storage::rpc {
 
 namespace {
 
-class WrappedFrtTargetImpl : public WrappedFrtTarget {
+class RpcTargetImpl : public RpcTarget {
 private:
     FRT_Target* _target;
+    vespalib::string _spec;
 
 public:
-    WrappedFrtTargetImpl(FRT_Target* target)
-        : _target(target)
+    RpcTargetImpl(FRT_Target* target, const vespalib::string& spec)
+        : _target(target),
+          _spec(spec)
     {}
-    ~WrappedFrtTargetImpl() override {
+    ~RpcTargetImpl() override {
         _target->SubRef();
     }
     FRT_Target* get() noexcept override { return _target; }
     bool is_valid() const noexcept override { return _target->IsValid(); }
+    const vespalib::string& spec() const noexcept override { return _spec; }
 };
 
 }
@@ -48,11 +51,10 @@ public:
     RpcTargetFactoryImpl(FRT_Supervisor& orb)
         : _orb(orb)
     {}
-    std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec, uint32_t slobrok_gen) const override {
+    std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec) const override {
         auto* raw_target = _orb.GetTarget(connection_spec.c_str());
         if (raw_target) {
-            return std::make_unique<RpcTarget>
-                    (std::make_unique<WrappedFrtTargetImpl>(raw_target), connection_spec, slobrok_gen);
+            return std::make_unique<RpcTargetImpl>(raw_target, connection_spec);
         }
         return std::unique_ptr<RpcTarget>();
     }
