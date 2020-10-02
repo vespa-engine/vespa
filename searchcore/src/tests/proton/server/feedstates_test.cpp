@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
@@ -28,6 +29,7 @@ using search::SerialNum;
 using storage::spi::Timestamp;
 using vespalib::ConstBufferRef;
 using vespalib::nbostream;
+using vespalib::ForegroundThreadExecutor;
 using namespace proton;
 
 namespace {
@@ -49,13 +51,6 @@ MyFeedView::~MyFeedView() = default;
 
 struct MyReplayConfig : IReplayConfig {
     void replayConfig(SerialNum) override {}
-};
-
-struct InstantExecutor : vespalib::Executor {
-    Task::UP execute(Task::UP task) override {
-        task->run();
-        return Task::UP();
-    }
 };
 
 struct Fixture
@@ -112,7 +107,7 @@ TEST_F("require that active FeedView can change during replay", Fixture)
 {
     RemoveOperationContext opCtx(10);
     auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, nullptr);
-    InstantExecutor executor;
+    ForegroundThreadExecutor executor;
 
     EXPECT_EQUAL(0, f.feed_view1.remove_handled);
     EXPECT_EQUAL(0, f.feed_view2.remove_handled);
@@ -130,7 +125,7 @@ TEST_F("require that replay progress is tracked", Fixture)
     RemoveOperationContext opCtx(10);
     TlsReplayProgress progress("test", 5, 15);
     PacketWrapper::SP wrap(new PacketWrapper(*opCtx.packet, &progress));
-    InstantExecutor executor;
+    ForegroundThreadExecutor executor;
 
     f.state.receive(wrap, executor);
     EXPECT_EQUAL(10u, progress.getCurrent());
