@@ -34,12 +34,13 @@ public class SessionPrepareHandler extends SessionHandler {
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 
-    @Override
+  @Override
     protected HttpResponse handlePUT(HttpRequest request) {
+        Tenant tenant = getExistingTenant(request);
+        TenantName tenantName = tenant.getName();
         long sessionId = getSessionIdV2(request);
-        TenantName tenantName = getExistingTenant(request).getName();
         PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
-        PrepareResult result = applicationRepository.prepare(sessionId, prepareParams);
+        PrepareResult result = applicationRepository.prepare(tenant, sessionId, prepareParams);
         return new SessionPrepareResponse(result, tenantName, request);
     }
 
