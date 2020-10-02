@@ -25,6 +25,7 @@
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
+#include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -64,6 +65,7 @@ struct Impl {
     virtual Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const = 0;
     virtual Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const = 0;
     virtual Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
+    virtual Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const = 0;
     virtual const TensorEngine &engine() const { return SimpleTensorEngine::ref(); } // engine used by EvalSingle
     virtual ~Impl() {}
 };
@@ -82,6 +84,9 @@ struct ValueImpl : Impl {
     }
     Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const override {
         return GenericRename::make_instruction(lhs, from, to, my_factory, stash);
+    }
+    Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
+        return GenericMerge::make_instruction(lhs, rhs, function, my_factory, stash);
     }
 };
 
@@ -109,6 +114,13 @@ struct EngineImpl : Impl {
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rename_node = tensor_function::rename(lhs_node, from, to, stash);
         return rename_node.compile_self(my_engine, stash);
+    }
+    Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
+        const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
+        const auto &merge_node = tensor_function::merge(lhs_node, rhs_node, function, stash); 
+        return merge_node.compile_self(my_engine, stash);
     }
     const TensorEngine &engine() const override { return my_engine; }
 };
@@ -311,6 +323,27 @@ void benchmark_rename(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
+void benchmark_merge(const vespalib::string &desc, const TensorSpec &lhs,
+                     const TensorSpec &rhs, operation::op2_t function)
+{
+    Stash stash;
+    ValueType lhs_type = ValueType::from_spec(lhs.type());
+    ValueType rhs_type = ValueType::from_spec(rhs.type());
+    ValueType res_type = ValueType::merge(lhs_type, rhs_type);
+    ASSERT_FALSE(lhs_type.is_error());
+    ASSERT_FALSE(rhs_type.is_error());
+    ASSERT_FALSE(res_type.is_error());
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_merge(lhs_type, rhs_type, function, stash);
+        std::vector<CREF<TensorSpec>> stack_spec({lhs, rhs});
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+    }
+    benchmark(desc, list);
+}
+
+//-----------------------------------------------------------------------------
+
 struct D {
     vespalib::string name;
     bool mapped;
@@ -501,18 +534,44 @@ TEST(ReduceBench, mixed_reduce) {
 //-----------------------------------------------------------------------------
 
 TEST(RenameBench, dense_rename) {
-    auto lhs = make_matrix(D::idx("a", 16), D::idx("b", 16), 1.0);
+    auto lhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.0);
     benchmark_rename("dense transpose", lhs, {"a", "b"}, {"b", "a"});
 }
 
 TEST(RenameBench, sparse_rename) {
-    auto lhs = make_matrix(D::map("a", 16, 1), D::map("b", 16, 1), 1.0);
+    auto lhs = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.0);
     benchmark_rename("sparse transpose", lhs, {"a", "b"}, {"b", "a"});
 }
 
 TEST(RenameBench, mixed_rename) {
     auto lhs = make_spec(1.0, D::map("a", 8, 1), D::map("b", 8, 1), D::idx("c", 8), D::idx("d", 8));
     benchmark_rename("mixed multi-transpose", lhs, {"a", "b", "c", "d"}, {"b", "a", "d", "c"});
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(MergeBench, dense_merge) {
+    auto lhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.0);
+    auto rhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 2.0);
+    benchmark_merge("dense merge", lhs, rhs, operation::Max::f);
+}
+
+TEST(MergeBench, sparse_merge_big_small) {
+    auto lhs = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.0);
+    auto rhs = make_matrix(D::map("a", 8, 1), D::map("b", 8, 1), 2.0);
+    benchmark_merge("sparse merge big vs small", lhs, rhs, operation::Max::f);
+}
+
+TEST(MergeBench, sparse_merge_minimal_overlap) {
+    auto lhs = make_matrix(D::map("a", 64, 11), D::map("b", 32, 11), 1.0);
+    auto rhs = make_matrix(D::map("a", 32, 13), D::map("b", 64, 13), 2.0);
+    benchmark_merge("sparse merge minimal overlap", lhs, rhs, operation::Max::f);
+}
+
+TEST(MergeBench, mixed_merge) {
+    auto lhs = make_matrix(D::map("a", 64, 1), D::idx("b", 64), 1.0);
+    auto rhs = make_matrix(D::map("a", 64, 2), D::idx("b", 64), 2.0);
+    benchmark_merge("mixed merge", lhs, rhs, operation::Max::f);
 }
 
 //-----------------------------------------------------------------------------
@@ -531,7 +590,7 @@ void print_results(const vespalib::string &desc, const std::vector<BenchmarkResu
     header.print_trailer();
 }
 
-TEST(PrintResults, print_results) {
+void print_summary() {
     std::vector<BenchmarkResult> bad_results;
     std::vector<BenchmarkResult> neutral_results;
     std::vector<BenchmarkResult> good_results;
@@ -552,4 +611,9 @@ TEST(PrintResults, print_results) {
     print_results("GOOD", good_results);
 }
 
-GTEST_MAIN_RUN_ALL_TESTS()
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    int result = RUN_ALL_TESTS();
+    print_summary();
+    return result;
+}
