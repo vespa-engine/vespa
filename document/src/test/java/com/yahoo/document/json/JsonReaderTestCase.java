@@ -31,7 +31,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
-import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
 import com.yahoo.document.serialization.DocumentSerializer;
@@ -214,7 +213,7 @@ public class JsonReaderTestCase {
                 "    'nalle': 'bamse'",
                 "  }",
                 "}"));
-        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentParser.SupportedOperation.PUT,
+        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
                                                              "id:unittest:smoke::doc1");
         smokeTestDoc(put.getDocument());
     }
@@ -225,7 +224,7 @@ public class JsonReaderTestCase {
                 "  'fields': {",
                 "    'something': {",
                 "      'assign': 'orOther' }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof AssignValueUpdate);
@@ -237,7 +236,7 @@ public class JsonReaderTestCase {
                 "  'fields': {",
                 "    'int1': {",
                 "      'assign': null }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("int1");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof ClearValueUpdate);
@@ -1216,8 +1215,8 @@ public class JsonReaderTestCase {
                 "    'tensorfield': null",
                 "  }",
                 "}"));
-        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentParser.SupportedOperation.PUT,
-                "id:unittest:testnull::doc1");
+        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
+                                                             "id:unittest:testnull::doc1");
         Document doc = put.getDocument();
         assertFieldValueNull(doc, "intfield");
         assertFieldValueNull(doc, "stringfield");
@@ -1234,7 +1233,7 @@ public class JsonReaderTestCase {
                 "    'arrayfield': [ null ]",
                 "  }",
                 "}"));
-        r.readSingleDocument(DocumentParser.SupportedOperation.PUT, "id:unittest:testnull::doc1");
+        r.readSingleDocument(DocumentOperationType.PUT, "id:unittest:testnull::doc1");
         fail();
     }
 
@@ -1465,7 +1464,7 @@ public class JsonReaderTestCase {
                                                        "  'fields': {",
                                                        "    'something': {",
                                                        "      'modify': {} }}}"));
-            reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::doc1");
+            reader.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::doc1");
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {

@@ -2,8 +2,8 @@
 package com.yahoo.document.json.readers;
 
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.json.DocumentOperationType;
 import com.yahoo.document.json.TokenBuffer;
-import com.yahoo.document.json.document.DocumentParser;
 
 import java.util.Optional;
 
@@ -11,6 +11,6 @@ public class DocumentParseInfo {
     public DocumentId documentId;
     public Optional<Boolean> create = Optional.empty();
     public Optional<String> condition = Optional.empty();
-    public DocumentParser.SupportedOperation operationType = null;
+    public DocumentOperationType operationType = null;
     public TokenBuffer fieldsBuffer = new TokenBuffer();
 }
