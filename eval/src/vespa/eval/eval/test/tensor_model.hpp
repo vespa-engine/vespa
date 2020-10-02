@@ -38,7 +38,7 @@ struct Div10 : Sequence {
     double operator[](size_t i) const override { return (seq[i] / 10.0); }
 };
 
-// Sequence of another sequence divided by 10
+// Sequence of another sequence divided by 16
 struct Div16 : Sequence {
     const Sequence &seq;
     Div16(const Sequence &seq_in) : seq(seq_in) {}
