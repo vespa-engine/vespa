@@ -136,6 +136,7 @@ public class NodePrioritizer {
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
+                .filter(node -> node.state() == Node.State.active || canStillAllocateToParentOf(node))
                 .map(node -> candidateFrom(node, false))
                 .forEach(candidate -> nodes.add(candidate));
     }
@@ -175,6 +176,19 @@ public class NodePrioritizer {
         if (nodeFailedNodes == 0) return false;
 
         return requestedNodes.fulfilledBy(nofNodesInCluster - nodeFailedNodes);
+    }
+
+    /**
+     * Even though a node is allocated to a parent, we may regret it and not offer it to the application
+     * now, if the node is currently not active. E.g if we want to retire the host.
+     *
+     * @return true if we still want to allocate the given node to its parent
+     */
+    private boolean canStillAllocateToParentOf(Node node) {
+        if (node.parentHostname().isEmpty()) return true;
+        Optional<Node> parent = node.parentHostname().flatMap(nodeRepository::getNode);
+        if (parent.isEmpty()) return false;
+        return nodeRepository.canAllocateTenantNodeTo(parent.get());
     }
 
     private static NodeResources resources(NodeSpec requestedNodes) {
