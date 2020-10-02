@@ -48,6 +48,7 @@ public:
 
     // Hostname of host node is running on.
     [[nodiscard]] const vespalib::string& hostname() const noexcept { return _hostname; }
+    [[nodiscard]] const vespalib::string handle() const noexcept { return _handle; }
 
     const RpcTargetFactory& target_factory() const;
 private:
