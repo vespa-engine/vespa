@@ -14,10 +14,10 @@ import java.time.Duration;
  * This class sets up a zookeeper server, such that we can test fleetcontroller zookeeper parts without stubbing in the client.
  */
 public class ZooKeeperTestServer {
-    private File zooKeeperDir;
-    private ZooKeeperServer server;
+    private final File zooKeeperDir;
+    private final ZooKeeperServer server;
     private static final Duration tickTime = Duration.ofMillis(2000);
-    private NIOServerCnxnFactory factory;
+    private final NIOServerCnxnFactory factory;
     private static final String DIR_PREFIX = "test_fltctrl_zk";
     private static final String DIR_POSTFIX = "sdir";
 
@@ -39,7 +39,7 @@ public class ZooKeeperTestServer {
         try{
             factory.startup(server);
         } catch (InterruptedException e) {
-            throw (RuntimeException) new IllegalStateException("Interrupted during test startup: ").initCause(e);
+            throw new IllegalStateException("Interrupted during test startup: ", e);
         }
     }
 
