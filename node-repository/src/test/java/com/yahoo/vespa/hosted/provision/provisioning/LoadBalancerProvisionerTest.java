@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -158,9 +159,10 @@ public class LoadBalancerProvisionerTest {
 
     @Test
     public void provision_load_balancers_with_dynamic_node_provisioning() {
-        var nodes = prepare(app1, Capacity.from(new ClusterResources(2, 1, new NodeResources(1, 4, 10, 0.3)), false, true),
-                                           true,
-                                           clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")));
+        NodeResources resources = new NodeResources(1, 4, 10, 0.3);
+        tester.makeReadyHosts(2, resources);
+        tester.activateTenantHosts();
+        var nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         Supplier<LoadBalancer> lb = () -> tester.nodeRepository().loadBalancers(app1).asList().get(0);
         assertTrue("Load balancer provisioned with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
         assignIps(tester.nodeRepository().getNodes(app1));
@@ -171,14 +173,12 @@ public class LoadBalancerProvisionerTest {
         NestedTransaction removeTransaction = new NestedTransaction();
         tester.provisioner().remove(removeTransaction, app1);
         removeTransaction.commit();
-        tester.nodeRepository().database().removeNodes(tester.nodeRepository().getNodes());
-        assertTrue("Nodes are deleted", tester.nodeRepository().getNodes().isEmpty());
+        tester.nodeRepository().database().removeNodes(tester.nodeRepository().getNodes(NodeType.tenant));
+        assertTrue("Nodes are deleted", tester.nodeRepository().getNodes(NodeType.tenant).isEmpty());
         assertSame("Load balancer is deactivated", LoadBalancer.State.inactive, lb.get().state());
 
         // Application is redeployed
-        nodes = prepare(app1, Capacity.from(new ClusterResources(2, 1, new NodeResources(1, 4, 10, 0.3)), false, true),
-                        true,
-                        clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")));
+        nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         assertTrue("Load balancer is reconfigured with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
         assignIps(tester.nodeRepository().getNodes(app1));
         tester.activate(app1, nodes);
@@ -188,7 +188,6 @@ public class LoadBalancerProvisionerTest {
     @Test
     public void does_not_provision_load_balancers_for_non_tenant_node_type() {
         tester.activate(infraApp1, prepare(infraApp1, Capacity.fromRequiredNodeType(NodeType.host),
-                                           false,
                                            clusterRequest(ClusterSpec.Type.container,
                                                           ClusterSpec.Id.from("tenant-host"))));
         assertTrue("No load balancer provisioned", tester.loadBalancerService().instances().isEmpty());
@@ -220,7 +219,7 @@ public class LoadBalancerProvisionerTest {
         ApplicationId configServerApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
         Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(configServerApp).asList();
         var cluster = ClusterSpec.Id.from("zone-config-servers");
-        var nodes = prepare(configServerApp, Capacity.fromRequiredNodeType(NodeType.config), false,
+        var nodes = prepare(configServerApp, Capacity.fromRequiredNodeType(NodeType.config),
                             clusterRequest(ClusterSpec.Type.admin, cluster));
         assertEquals(1, lbs.get().size());
         assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
@@ -235,7 +234,7 @@ public class LoadBalancerProvisionerTest {
         ApplicationId controllerApp = ApplicationId.from("hosted-vespa", "controller", "default");
         Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(controllerApp).asList();
         var cluster = ClusterSpec.Id.from("zone-config-servers");
-        var nodes = prepare(controllerApp, Capacity.fromRequiredNodeType(NodeType.controller), false,
+        var nodes = prepare(controllerApp, Capacity.fromRequiredNodeType(NodeType.controller),
                             clusterRequest(ClusterSpec.Type.container, cluster));
         assertEquals(1, lbs.get().size());
         assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
@@ -249,15 +248,11 @@ public class LoadBalancerProvisionerTest {
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {
-        return prepare(application, Capacity.from(new ClusterResources(2, 1, new NodeResources(1, 4, 10, 0.3)), false, true), false, specs);
+        return prepare(application, Capacity.from(new ClusterResources(2, 1, new NodeResources(1, 4, 10, 0.3)), false, true), specs);
     }
 
-    private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, boolean dynamicDockerNodes, ClusterSpec... specs) {
-        if (dynamicDockerNodes) {
-            makeDynamicDockerNodes(specs.length * 2, capacity.type());
-        } else {
-            tester.makeReadyNodes(specs.length * 2, new NodeResources(1, 4, 10, 0.3), capacity.type());
-        }
+    private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, ClusterSpec... specs) {
+        tester.makeReadyNodes(specs.length * 2, new NodeResources(1, 4, 10, 0.3), capacity.type());
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
             allNodes.addAll(tester.prepare(application, spec, capacity));
@@ -266,9 +261,11 @@ public class LoadBalancerProvisionerTest {
     }
 
     private void makeDynamicDockerNodes(int n, NodeType nodeType) {
+        tester.makeReadyHosts(n, new NodeResources(1, 4, 10, 0.3));
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 1; i <= n; i++) {
-            var node = Node.createDockerNode(Set.of(), "node" + i, "parent" + i,
+            var node = Node.createDockerNode(Set.of(), "vnode" + i,
+                                             tester.nodeRepository().getNodes(NodeType.host).get(n - 1).hostname(),
                                              new NodeResources(1, 4, 10, 0.3),
                                              nodeType);
             nodes.add(node);
