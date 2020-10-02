@@ -179,8 +179,8 @@ public class NodePrioritizer {
     }
 
     /**
-     * Even though a node is allocated to a parent, we may regret it and not offer it to the application
-     * now, if the node is currently not active. E.g if we want to retire the host.
+     * We may regret that a non-active node is allocated to a host and not offer it to the application
+     * now, e.g if we want to retire the host.
      *
      * @return true if we still want to allocate the given node to its parent
      */
