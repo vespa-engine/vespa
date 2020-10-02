@@ -9,6 +9,7 @@ namespace storage::api { class StorageMessage; }
 namespace feedbm {
 
 class StorageReplyErrorChecker {
+protected:
     std::atomic<uint32_t> _errors;
 public:
     StorageReplyErrorChecker();
