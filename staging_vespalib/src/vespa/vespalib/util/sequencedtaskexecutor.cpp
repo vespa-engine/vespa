@@ -14,8 +14,17 @@ namespace {
 constexpr uint32_t stackSize = 128 * 1024;
 constexpr uint8_t MAGIC = 255;
 
+bool
+isLazy(const std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> & executors) {
+    for (const auto &executor : executors) {
+        if (dynamic_cast<const vespalib::SingleExecutor *>(executor.get()) == nullptr) {
+            return false;
+        }
+    }
+    return true;
 }
 
+}
 
 std::unique_ptr<ISequencedTaskExecutor>
 SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize, uint32_t kindOfWatermark, duration reactionTime)
@@ -46,6 +55,7 @@ SequencedTaskExecutor::~SequencedTaskExecutor()
 SequencedTaskExecutor::SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executors)
     : ISequencedTaskExecutor(executors->size()),
       _executors(std::move(executors)),
+      _lazyExecutors(isLazy(*_executors)),
       _component2Id(vespalib::hashtable_base::getModuloStl(getNumExecutors()*8), MAGIC),
       _mutex(),
       _nextId(0)
@@ -70,17 +80,20 @@ SequencedTaskExecutor::executeTask(ExecutorId id, vespalib::Executor::Task::UP t
 }
 
 void
-SequencedTaskExecutor::sync()
-{
-    for (auto &executor : *_executors) {
-        SingleExecutor * single = dynamic_cast<vespalib::SingleExecutor *>(executor.get());
-        if (single) {
-            //Enforce parallel wakeup of napping executors.
-            single->startSync();
-        }
-    }
+SequencedTaskExecutor::sync() {
+    wakeup();
     for (auto &executor : *_executors) {
         executor->sync();
+    }
+}
+
+void
+SequencedTaskExecutor::wakeup() {
+    if (_lazyExecutors) {
+        for (auto &executor : *_executors) {
+            //Enforce parallel wakeup of napping executors.
+            executor->wakeup();
+        }
     }
 }
 

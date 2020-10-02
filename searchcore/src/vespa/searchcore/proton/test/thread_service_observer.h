@@ -48,6 +48,10 @@ public:
         _service.setTaskLimit(taskLimit);
     }
 
+    void wakeup() override {
+        _service.wakeup();
+    }
+
 };
 
 }

@@ -19,13 +19,14 @@ public:
     using ISequencedTaskExecutor::getExecutorId;
     using OptimizeFor = vespalib::Executor::OptimizeFor;
 
-    ~SequencedTaskExecutor();
+    ~SequencedTaskExecutor() override;
 
     void setTaskLimit(uint32_t taskLimit) override;
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     ExecutorId getExecutorId(uint64_t componentId) const override;
     void sync() override;
     Stats getStats() override;
+    void wakeup() override;
 
     /*
      * Note that if you choose Optimize::THROUGHPUT, you must ensure only a single producer, or synchronize on the outside.
@@ -39,9 +40,10 @@ public:
     uint32_t getComponentHashSize() const { return _component2Id.size(); }
     uint32_t getComponentEffectiveHashSize() const { return _nextId; }
 private:
-    SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
+    explicit SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
 
     std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> _executors;
+    const bool                   _lazyExecutors;
     mutable std::vector<uint8_t> _component2Id;
     mutable std::mutex           _mutex;
     mutable uint32_t             _nextId;

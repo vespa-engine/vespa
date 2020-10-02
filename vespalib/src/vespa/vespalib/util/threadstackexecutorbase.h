@@ -219,6 +219,7 @@ public:
 
     size_t getNumThreads() const override;
     void setTaskLimit(uint32_t taskLimit) override;
+    void wakeup() override;
 
     /**
      * Shut down this executor. This will make this executor reject
