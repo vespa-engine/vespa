@@ -35,28 +35,22 @@ DocumentApiMessageBusBmFeedHandler::send_msg(std::unique_ptr<documentapi::Docume
 }
 
 void
-DocumentApiMessageBusBmFeedHandler::put(const document::Bucket& bucket, std::unique_ptr<Document> document, uint64_t timestamp, PendingTracker& tracker)
+DocumentApiMessageBusBmFeedHandler::put(const document::Bucket&, std::unique_ptr<Document> document, uint64_t, PendingTracker& tracker)
 {
-    (void) bucket;
-    (void) timestamp;
     auto msg = std::make_unique<documentapi::PutDocumentMessage>(std::move(document));
     send_msg(std::move(msg), tracker);
 }
 
 void
-DocumentApiMessageBusBmFeedHandler::update(const document::Bucket& bucket, std::unique_ptr<DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker)
+DocumentApiMessageBusBmFeedHandler::update(const document::Bucket&, std::unique_ptr<DocumentUpdate> document_update, uint64_t, PendingTracker& tracker)
 {
-    (void) bucket;
-    (void) timestamp;
     auto msg = std::make_unique<documentapi::UpdateDocumentMessage>(std::move(document_update));
     send_msg(std::move(msg), tracker);
 }
 
 void
-DocumentApiMessageBusBmFeedHandler::remove(const document::Bucket& bucket, const DocumentId& document_id, uint64_t timestamp, PendingTracker& tracker)
+DocumentApiMessageBusBmFeedHandler::remove(const document::Bucket&, const DocumentId& document_id, uint64_t, PendingTracker& tracker)
 {
-    (void) bucket;
-    (void) timestamp;
     auto msg = std::make_unique<documentapi::RemoveDocumentMessage>(document_id);
     send_msg(std::move(msg), tracker);
 }
