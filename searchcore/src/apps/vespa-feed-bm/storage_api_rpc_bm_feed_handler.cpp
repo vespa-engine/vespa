@@ -2,6 +2,7 @@
 
 #include "storage_api_rpc_bm_feed_handler.h"
 #include "pending_tracker.h"
+#include "pending_tracker_hash.h"
 #include "storage_reply_error_checker.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
@@ -12,8 +13,6 @@
 #include <vespa/storage/storageserver/rpc/message_codec_provider.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
 
 using document::Document;
@@ -30,14 +29,12 @@ namespace feedbm {
 class StorageApiRpcBmFeedHandler::MyMessageDispatcher : public storage::MessageDispatcher,
                                  public StorageReplyErrorChecker
 {
-    std::mutex _mutex;
-    vespalib::hash_map<uint64_t, PendingTracker *> _pending;
+    PendingTrackerHash _pending_hash;
 public:
     MyMessageDispatcher()
         : storage::MessageDispatcher(),
           StorageReplyErrorChecker(),
-          _mutex(),
-          _pending()
+          _pending_hash()
     {
     }
     ~MyMessageDispatcher() override;
@@ -49,28 +46,19 @@ public:
         check_error(*msg);
         release(msg->getMsgId());
     }
-    void retain(uint64_t msg_id, PendingTracker &tracker) {
-        tracker.retain();
-        std::lock_guard lock(_mutex);
-        _pending.insert(std::make_pair(msg_id, &tracker));
-    }
+    void retain(uint64_t msg_id, PendingTracker &tracker) { _pending_hash.retain(msg_id, tracker); }
     void release(uint64_t msg_id) {
-        PendingTracker *tracker = nullptr;
-        {
-            std::lock_guard lock(_mutex);
-            auto itr = _pending.find(msg_id);
-            assert(itr != _pending.end());
-            tracker = itr->second;
-            _pending.erase(itr);
+        auto tracker = _pending_hash.release(msg_id);
+        if (tracker != nullptr) {
+            tracker->release();
+        } else {
+            ++_errors;
         }
-        tracker->release();
     }
 };
 
 StorageApiRpcBmFeedHandler::MyMessageDispatcher::~MyMessageDispatcher()
 {
-    std::lock_guard lock(_mutex);
-    assert(_pending.empty());
 }
 
 StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& shared_rpc_resources_in,
@@ -78,7 +66,7 @@ StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& share
                                                        const StorageApiRpcService::Params& rpc_params,
                                                        bool distributor)
     : IBmFeedHandler(),
-      _name(vespalib::string("StorageApiRpcBmFeedHandler(") + (distributor ? "distributor" : "servicelayer") + ")"),
+      _name(vespalib::string("StorageApiRpcBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
       _storage_address(std::make_unique<StorageMessageAddress>("storage", distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
       _shared_rpc_resources(shared_rpc_resources_in),

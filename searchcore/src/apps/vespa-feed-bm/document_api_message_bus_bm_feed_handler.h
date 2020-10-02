@@ -4,30 +4,30 @@
 
 #include "i_bm_feed_handler.h"
 
-namespace storage::api { class StorageCommand; }
+namespace document { class DocumentTypeRepo; }
+namespace documentapi { class DocumentMessage; };
+namespace storage::api { class StorageMessageAddress; }
 
 namespace feedbm {
 
-struct BmStorageLinkContext;
+class BmMessageBus;
 
 /*
- * Benchmark feed handler for feed to service layer or distributor
- * using storage api protocol directly on the storage chain.
+ * Benchmark feed handler for feed to distributor using document api protocol
+ * over message bus.
  */
-class StorageApiChainBmFeedHandler : public IBmFeedHandler
+class DocumentApiMessageBusBmFeedHandler : public IBmFeedHandler
 {
-private:
-    vespalib::string                      _name;
-    bool                                  _distributor;
-    std::shared_ptr<BmStorageLinkContext> _context;
-    void send_msg(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& tracker);
+    vespalib::string _name;
+    std::unique_ptr<storage::api::StorageMessageAddress> _storage_address;
+    BmMessageBus&                                        _message_bus;
+    void send_msg(std::unique_ptr<documentapi::DocumentMessage> msg, PendingTracker& tracker);
 public:
-    StorageApiChainBmFeedHandler(std::shared_ptr<BmStorageLinkContext> context, bool distributor);
-    ~StorageApiChainBmFeedHandler();
+    DocumentApiMessageBusBmFeedHandler(BmMessageBus &message_bus);
+    ~DocumentApiMessageBusBmFeedHandler();
     void put(const document::Bucket& bucket, std::unique_ptr<document::Document> document, uint64_t timestamp, PendingTracker& tracker) override;
     void update(const document::Bucket& bucket, std::unique_ptr<document::DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker) override;
     void remove(const document::Bucket& bucket, const document::DocumentId& document_id,  uint64_t timestamp, PendingTracker& tracker) override;
-
     uint32_t get_error_count() const override;
     const vespalib::string &get_name() const override;
     bool manages_buckets() const override;

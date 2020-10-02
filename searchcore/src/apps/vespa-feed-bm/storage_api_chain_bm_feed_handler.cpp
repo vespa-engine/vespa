@@ -33,7 +33,7 @@ std::shared_ptr<storage::api::StorageCommand> make_set_cluster_state_cmd() {
 
 StorageApiChainBmFeedHandler::StorageApiChainBmFeedHandler(std::shared_ptr<BmStorageLinkContext> context, bool distributor)
     : IBmFeedHandler(),
-      _name(vespalib::string("StorageApiChainBmFeedHandler(") + (distributor ? "distributor" : "servicelayer") + ")"),
+      _name(vespalib::string("StorageApiChainBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
       _context(std::move(context))
 {

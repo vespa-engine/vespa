@@ -54,7 +54,7 @@ import static org.junit.Assert.fail;
  */
 public abstract class FleetControllerTest implements Waiter {
 
-    private static Logger log = Logger.getLogger(FleetControllerTest.class.getName());
+    private static final Logger log = Logger.getLogger(FleetControllerTest.class.getName());
     private static final int DEFAULT_NODE_COUNT = 10;
 
     Supervisor supervisor;
@@ -342,10 +342,6 @@ public abstract class FleetControllerTest implements Waiter {
         fleetController.waitForCompleteCycle(timeoutMS);
     }
 
-    protected void verifyNodeEvents(Node n, String exp) {
-        verifyNodeEvents(n, exp, null);
-    }
-
     private static class ExpectLine {
         Pattern regex;
         int matchedCount = 0;
@@ -390,17 +386,15 @@ public abstract class FleetControllerTest implements Waiter {
      *   <li>The rest of the line is a regular expression.
      *   </ul>
      */
-    private void verifyNodeEvents(Node n, String exp, String ignoreRegex) {
-        Pattern ignorePattern = (ignoreRegex == null ? null : Pattern.compile(ignoreRegex));
+    protected void verifyNodeEvents(Node n, String exp) {
         List<NodeEvent> events = fleetController.getNodeEvents(n);
         String[] expectLines = exp.split("\n");
-        List<ExpectLine> expected = new ArrayList<ExpectLine>();
+        List<ExpectLine> expected = new ArrayList<>();
         for (String line : expectLines) {
             expected.add(new ExpectLine(line));
         }
 
         boolean mismatch = false;
-        StringBuilder eventLog = new StringBuilder();
         StringBuilder errors = new StringBuilder();
 
         int gotno = 0;
@@ -413,16 +407,10 @@ public abstract class FleetControllerTest implements Waiter {
                 eventLine = e.toString();
             }
 
-            if (ignorePattern != null && ignorePattern.matcher(eventLine).matches()) {
-                ++gotno;
-                continue;
-            }
-
             ExpectLine pattern = null;
             if (expno < expected.size()) {
                 pattern = expected.get(expno);
             }
-            eventLog.append(eventLine).append("\n");
 
             if (pattern == null) {
                 errors.append("Exhausted expected list before matching event " + gotno
@@ -456,9 +444,6 @@ public abstract class FleetControllerTest implements Waiter {
             StringBuilder eventsGotten = new StringBuilder();
             for (Event e : events) {
                 String eventLine = e.toString();
-                if (ignorePattern != null && ignorePattern.matcher(eventLine).matches()) {
-                    continue;
-                }
                 eventsGotten.append(eventLine).append("\n");
             }
             errors.append("\nExpected events matching:\n" + exp + "\n");

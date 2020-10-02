@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -29,8 +28,6 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 class Activator {
-
-    private static final Logger logger = Logger.getLogger(Activator.class.getName());
 
     private final NodeRepository nodeRepository;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
