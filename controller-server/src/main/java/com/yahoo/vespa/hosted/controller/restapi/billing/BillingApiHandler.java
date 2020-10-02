@@ -341,6 +341,20 @@ public class BillingApiHandler extends LoggingRequestHandler {
         lineItem.applicationId().ifPresent(appId -> {
             cursor.setString("application", appId.application().value());
         });
+        lineItem.zoneId().ifPresent(zoneId ->
+            cursor.setString("zone", zoneId.value())
+        );
+
+        lineItem.getCpuHours().ifPresent(cpuHours ->
+                cursor.setString("cpuHours", cpuHours.toString())
+        );
+        lineItem.getMemoryHours().ifPresent(memoryHours ->
+                cursor.setString("memoryHours", memoryHours.toString())
+        );
+        lineItem.getDiskHours().ifPresent(diskHours ->
+                cursor.setString("diskHours", diskHours.toString())
+        );
+
     }
 
     private HttpResponse deleteInstrument(String tenant, String userId, String instrument) {

@@ -50,6 +50,5 @@ public class MockMeteringClient implements MeteringClient {
     public void setMeteringData(MeteringData meteringData) {
         this.meteringData = Optional.of(meteringData);
         this.resources = meteringData.getSnapshotHistory().entrySet().stream().map(Map.Entry::getValue).flatMap(List::stream).collect(Collectors.toList());
-        boolean a = false;
     }
 }

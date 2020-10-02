@@ -129,8 +129,12 @@ public class Invoice {
         private final Optional<ZonedDateTime> endedAt;
         private final Optional<ApplicationId> applicationId;
         private final Optional<ZoneId> zoneId;
+        private final Optional<BigDecimal> cpuHours;
+        private final Optional<BigDecimal> memoryHours;
+        private final Optional<BigDecimal> diskHours;
 
-        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId) {
+        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
+                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours) {
             this.id = id;
             this.description = description;
             this.amount = amount;
@@ -145,10 +149,13 @@ public class Invoice {
 
             this.applicationId = Optional.ofNullable(applicationId);
             this.zoneId = Optional.ofNullable(zoneId);
+            this.cpuHours = Optional.ofNullable(cpuHours);
+            this.memoryHours = Optional.ofNullable(memoryHours);
+            this.diskHours = Optional.ofNullable(diskHours);
         }
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
-            this(id, description, amount, plan, agent, addedAt, null, null, null, null);
+            this(id, description, amount, plan, agent, addedAt, null, null, null, null, null, null, null);
         }
 
         /** The opaque ID of this */
@@ -199,6 +206,18 @@ public class Invoice {
         /** Optionally - what zone deployment is this line item about */
         public Optional<ZoneId> zoneId() {
             return zoneId;
+        }
+
+        public Optional<BigDecimal> getCpuHours() {
+            return cpuHours;
+        }
+
+        public Optional<BigDecimal> getMemoryHours() {
+            return memoryHours;
+        }
+
+        public Optional<BigDecimal> getDiskHours() {
+            return diskHours;
         }
 
         @Override

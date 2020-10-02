@@ -66,4 +66,8 @@ public class CostInfo {
         return diskCost;
     }
 
+    public int getTotalCost() {
+        return cpuCost + memoryCost + diskCost;
+    }
+
 }
