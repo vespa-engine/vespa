@@ -537,7 +537,7 @@ public class ApplicationRepositoryTest {
         long firstSession = result.sessionId();
 
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
-        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId, prepareParams());
+        applicationRepository.prepare(sessionId, prepareParams());
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
@@ -562,7 +562,7 @@ public class ApplicationRepositoryTest {
         PrepareResult result2 = deployApp(testAppJdiscOnly);
         result2.sessionId();
 
-        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId2, prepareParams());
+        applicationRepository.prepare(sessionId2, prepareParams());
         exceptionRule.expect(ActivationConflictException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false);
@@ -575,7 +575,7 @@ public class ApplicationRepositoryTest {
 
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("Session is active: 2"));
-        applicationRepository.prepare(applicationRepository.getTenant(applicationId()), sessionId, prepareParams());
+        applicationRepository.prepare(sessionId, prepareParams());
 
         exceptionRule.expect(IllegalStateException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Session 2 is already active"));
