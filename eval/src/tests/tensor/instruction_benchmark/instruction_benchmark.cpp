@@ -14,15 +14,17 @@
 // improvement in generic dense join and possibly also in sparse join
 // with partial dimensional overlap. Benchmarks are done using float
 // cells since this is what gives best overall performance in
-// production. Also, we use the multiply operation since it is the
-// most optimized operations across all implementations. When
-// benchmarking different implementations against each other, a smoke
-// test is performed by verifying that all implementations produce the
-// same result.
+// production. Also, we use the multiply operation for join and sum
+// operation for reduce since those are the most optimized operations
+// across all implementations. When benchmarking different
+// implementations against each other, a smoke test is performed by
+// verifying that all implementations produce the same result.
 
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/instruction/generic_join.h>
+#include <vespa/eval/instruction/generic_reduce.h>
+#include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -60,6 +62,8 @@ struct Impl {
     virtual Value::UP create_value(const TensorSpec &spec) const = 0;
     virtual TensorSpec create_spec(const Value &value) const = 0;
     virtual Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const = 0;
+    virtual Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const = 0;
+    virtual Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
     virtual const TensorEngine &engine() const { return SimpleTensorEngine::ref(); } // engine used by EvalSingle
     virtual ~Impl() {}
 };
@@ -73,6 +77,12 @@ struct ValueImpl : Impl {
     Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
         return GenericJoin::make_instruction(lhs, rhs, function, my_factory, stash);
     }
+    Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const override {
+        return GenericReduce::make_instruction(lhs, aggr, dims, my_factory, stash);
+    }
+    Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const override {
+        return GenericRename::make_instruction(lhs, from, to, my_factory, stash);
+    }
 };
 
 struct EngineImpl : Impl {
@@ -82,11 +92,23 @@ struct EngineImpl : Impl {
     Value::UP create_value(const TensorSpec &spec) const override { return my_engine.from_spec(spec); }
     TensorSpec create_spec(const Value &value) const override { return my_engine.to_spec(value); }
     Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
-        // create a complete tensor function joining two parameters, but only compile the join instruction itself
+        // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &join_node = tensor_function::join(lhs_node, rhs_node, function, stash); 
         return join_node.compile_self(my_engine, stash);
+    }
+    Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const override {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
+        const auto &reduce_node = tensor_function::reduce(lhs_node, aggr, dims, stash); 
+        return reduce_node.compile_self(my_engine, stash);
+    }
+    Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const override {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
+        const auto &rename_node = tensor_function::rename(lhs_node, from, to, stash);
+        return rename_node.compile_self(my_engine, stash);
     }
     const TensorEngine &engine() const override { return my_engine; }
 };
@@ -100,7 +122,11 @@ ValueImpl    packed_mixed_tensor_impl(2, "  PackedMixedTensor", "  Packed", Pack
 ValueImpl   default_tensor_value_impl(0, "       DefaultValue", "NEW PROD", DefaultValueBuilderFactory::get());
 vespalib::string                                   short_header("--------");
 
-double budget = 5.0;
+constexpr double budget = 5.0;
+constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
+constexpr double bad_limit = 0.90; // BAD: new prod has performance lower than 90% of old prod
+constexpr double good_limit = 1.10; // GOOD: new prod has performance higher than 110% of old prod
+
 std::vector<CREF<Impl>> impl_list = {simple_tensor_engine_impl,
                                      default_tensor_engine_impl,
                                      simple_value_impl,
@@ -117,18 +143,17 @@ struct BenchmarkHeader {
             short_names[impl.order] = impl.short_name;
         }
     }
+    void print_header(const vespalib::string &desc) const {
+        for (const auto &name: short_names) {
+            fprintf(stderr, "|%s", name.c_str());
+        }
+        fprintf(stderr, "| %s Benchmark cases\n", desc.c_str());
+    }
     void print_trailer() const {
         for (size_t i = 0; i < short_names.size(); ++i) {
             fprintf(stderr, "+%s", short_header.c_str());
         }
         fprintf(stderr, "+------------------------------------------------\n");
-    }
-    void print() const {
-        for (const auto &name: short_names) {
-            fprintf(stderr, "|%s", name.c_str());
-        }
-        fprintf(stderr, "| Benchmark description\n");
-        print_trailer();
     }
 };
 
@@ -136,6 +161,7 @@ struct BenchmarkResult {
     vespalib::string desc;
     std::optional<double> ref_time;
     std::vector<double> relative_perf;
+    double star_rating;
     BenchmarkResult(const vespalib::string &desc_in, size_t num_values)
         : desc(desc_in), ref_time(std::nullopt), relative_perf(num_values, 0.0) {}
     ~BenchmarkResult();
@@ -150,13 +176,20 @@ struct BenchmarkResult {
         }
     }
     void normalize() {
+        star_rating = 0.0;
         for (double &perf: relative_perf) {
             perf = ref_time.value() / perf;
+            star_rating = std::max(star_rating, perf);
         }
+        star_rating *= best_limit;
     }
     void print() const {
         for (double perf: relative_perf) {
-            fprintf(stderr, "|%8.2f", perf);
+            if (perf > star_rating) {
+                fprintf(stderr, "|*%7.2f", perf);
+            } else {
+                fprintf(stderr, "| %7.2f", perf);
+            }
         }
         fprintf(stderr, "| %s\n", desc.c_str());
     }
@@ -239,6 +272,45 @@ void benchmark_join(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
+void benchmark_reduce(const vespalib::string &desc, const TensorSpec &lhs,
+                      Aggr aggr, const std::vector<vespalib::string> &dims)
+{
+    Stash stash;
+    ValueType lhs_type = ValueType::from_spec(lhs.type());
+    ValueType res_type = lhs_type.reduce(dims);
+    ASSERT_FALSE(lhs_type.is_error());
+    ASSERT_FALSE(res_type.is_error());
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_reduce(lhs_type, aggr, dims, stash);
+        std::vector<CREF<TensorSpec>> stack_spec({lhs});
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+    }
+    benchmark(desc, list);
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_rename(const vespalib::string &desc, const TensorSpec &lhs,
+                      const std::vector<vespalib::string> &from,
+                      const std::vector<vespalib::string> &to)
+{
+    Stash stash;
+    ValueType lhs_type = ValueType::from_spec(lhs.type());
+    ValueType res_type = lhs_type.rename(from, to);
+    ASSERT_FALSE(lhs_type.is_error());
+    ASSERT_FALSE(res_type.is_error());
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_rename(lhs_type, from, to, stash);
+        std::vector<CREF<TensorSpec>> stack_spec({lhs});
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+    }
+    benchmark(desc, list);
+}
+
+//-----------------------------------------------------------------------------
+
 struct D {
     vespalib::string name;
     bool mapped;
@@ -281,6 +353,7 @@ template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
 }
 
 TensorSpec make_vector(const D &d1, double seq) { return make_spec(seq, d1); }
+TensorSpec make_matrix(const D &d1, const D &d2, double seq) { return make_spec(seq, d1, d2); }
 TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) { return make_spec(seq, d1, d2, d3); }
 
 //-----------------------------------------------------------------------------
@@ -392,15 +465,91 @@ TEST(MixedJoin, no_overlap) {
 
 //-----------------------------------------------------------------------------
 
-TEST(PrintResults, print_results) {
+TEST(ReduceBench, dense_reduce) {
+    auto lhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::idx("c", 16), 1.0);
+    benchmark_reduce("dense reduce inner", lhs, Aggr::SUM, {"c"});
+    benchmark_reduce("dense reduce middle", lhs, Aggr::SUM, {"b"});
+    benchmark_reduce("dense reduce outer", lhs, Aggr::SUM, {"a"});
+    benchmark_reduce("dense multi-reduce inner", lhs, Aggr::SUM, {"b", "c"});
+    benchmark_reduce("dense multi-reduce outer", lhs, Aggr::SUM, {"a", "b"});
+    benchmark_reduce("dense multi-reduce outer-inner", lhs, Aggr::SUM, {"a", "c"});
+    benchmark_reduce("dense reduce all", lhs, Aggr::SUM, {});
+}
+
+TEST(ReduceBench, sparse_reduce) {
+    auto lhs = make_cube(D::map("a", 16, 1), D::map("b", 16, 1), D::map("c", 16, 1), 1.0);
+    benchmark_reduce("sparse reduce inner", lhs, Aggr::SUM, {"c"});
+    benchmark_reduce("sparse reduce middle", lhs, Aggr::SUM, {"b"});
+    benchmark_reduce("sparse reduce outer", lhs, Aggr::SUM, {"a"});
+    benchmark_reduce("sparse multi-reduce inner", lhs, Aggr::SUM, {"b", "c"});
+    benchmark_reduce("sparse multi-reduce outer", lhs, Aggr::SUM, {"a", "b"});
+    benchmark_reduce("sparse multi-reduce outer-inner", lhs, Aggr::SUM, {"a", "c"});
+    benchmark_reduce("sparse reduce all", lhs, Aggr::SUM, {});
+}
+
+TEST(ReduceBench, mixed_reduce) {
+    auto lhs = make_spec(1.0, D::map("a", 4, 1), D::map("b", 4, 1), D::map("c", 4, 1),
+                         D::idx("d", 4), D::idx("e", 4), D::idx("f", 4));
+    benchmark_reduce("mixed reduce middle dense", lhs, Aggr::SUM, {"e"});
+    benchmark_reduce("mixed reduce middle sparse", lhs, Aggr::SUM, {"b"});
+    benchmark_reduce("mixed reduce middle sparse/dense", lhs, Aggr::SUM, {"b", "e"});
+    benchmark_reduce("mixed reduce all dense", lhs, Aggr::SUM, {"d", "e", "f"});
+    benchmark_reduce("mixed reduce all sparse", lhs, Aggr::SUM, {"a", "b", "c"});
+    benchmark_reduce("mixed reduce all", lhs, Aggr::SUM, {});
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(RenameBench, dense_rename) {
+    auto lhs = make_matrix(D::idx("a", 16), D::idx("b", 16), 1.0);
+    benchmark_rename("dense transpose", lhs, {"a", "b"}, {"b", "a"});
+}
+
+TEST(RenameBench, sparse_rename) {
+    auto lhs = make_matrix(D::map("a", 16, 1), D::map("b", 16, 1), 1.0);
+    benchmark_rename("sparse transpose", lhs, {"a", "b"}, {"b", "a"});
+}
+
+TEST(RenameBench, mixed_rename) {
+    auto lhs = make_spec(1.0, D::map("a", 8, 1), D::map("b", 8, 1), D::idx("c", 8), D::idx("d", 8));
+    benchmark_rename("mixed multi-transpose", lhs, {"a", "b", "c", "d"}, {"b", "a", "d", "c"});
+}
+
+//-----------------------------------------------------------------------------
+
+void print_results(const vespalib::string &desc, const std::vector<BenchmarkResult> &results) {
+    if (results.empty()) {
+        return;
+    }
     BenchmarkHeader header;
-    std::sort(benchmark_results.begin(), benchmark_results.end(),
-              [](const auto &a, const auto &b){ return (a.relative_perf[0] < b.relative_perf[0]); });
-    header.print();
-    for (const auto &result: benchmark_results) {
+    header.print_trailer();
+    header.print_header(desc);
+    header.print_trailer();
+    for (const auto &result: results) {
         result.print();
     }
     header.print_trailer();
+}
+
+TEST(PrintResults, print_results) {
+    std::vector<BenchmarkResult> bad_results;
+    std::vector<BenchmarkResult> neutral_results;
+    std::vector<BenchmarkResult> good_results;
+    std::sort(benchmark_results.begin(), benchmark_results.end(),
+              [](const auto &a, const auto &b){ return (a.relative_perf[0] < b.relative_perf[0]); });
+    for (const auto &result: benchmark_results) {
+        double perf = result.relative_perf[0];
+        if (perf < bad_limit) {
+            bad_results.push_back(result);
+        } else if (perf > good_limit) {
+            good_results.push_back(result);
+        } else {
+            neutral_results.push_back(result);
+        }
+    }
+    print_results("BAD", bad_results);
+    print_results("NEUTRAL", neutral_results);
+    print_results("GOOD", good_results);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

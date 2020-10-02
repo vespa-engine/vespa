@@ -111,12 +111,12 @@ TensorSpec reference_rename(const TensorSpec &a, const FromTo &ft) {
     return result;
 }
 
-TensorSpec perform_generic_rename(const TensorSpec &a, const ValueType &res_type,
-                              const FromTo &ft, const ValueBuilderFactory &factory)
+TensorSpec perform_generic_rename(const TensorSpec &a,
+                                  const FromTo &ft, const ValueBuilderFactory &factory)
 {
     Stash stash;
     auto lhs = value_from_spec(a, factory);
-    auto my_op = GenericRename::make_instruction(lhs->type(), res_type, ft.from, ft.to, factory, stash);
+    auto my_op = GenericRename::make_instruction(lhs->type(), ft.from, ft.to, factory, stash);
     InterpretedFunction::EvalSingle single(my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }
@@ -132,7 +132,7 @@ void test_generic_rename(const ValueBuilderFactory &factory) {
             // printf("type %s -> %s\n", lhs_type.to_spec().c_str(), renamed_type.to_spec().c_str());
             SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
             auto expect = reference_rename(lhs, from_to);
-            auto actual = perform_generic_rename(lhs, renamed_type, from_to, factory);
+            auto actual = perform_generic_rename(lhs, from_to, factory);
             EXPECT_EQ(actual, expect);
         }
     }
