@@ -84,9 +84,7 @@ BmMessageBus::ReplyHandler::ReplyHandler()
 {
 }
 
-BmMessageBus::ReplyHandler::~ReplyHandler()
-{
-}
+BmMessageBus::ReplyHandler::~ReplyHandler() = default;
 
 void
 BmMessageBus::ReplyHandler::handleReply(std::unique_ptr<Reply> reply)
