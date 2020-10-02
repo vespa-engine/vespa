@@ -159,6 +159,7 @@ public class SessionRepository {
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
+        Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
         Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               activeApplicationSet, tenantPath, now,
@@ -166,7 +167,7 @@ public class SessionRepository {
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
         setPrepared(session);
-        sessionZooKeeperClient.createPrepareWaiter().awaitCompletion(params.getTimeoutBudget().timeLeft());
+        waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
     }
 
