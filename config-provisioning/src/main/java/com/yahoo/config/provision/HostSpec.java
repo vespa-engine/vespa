@@ -94,12 +94,6 @@ public class HostSpec implements Comparable<HostSpec> {
     /** The total advertised resources of this node, typically matching what's requested. */
     public NodeResources advertisedResources() { return advertisedResources; }
 
-    /** A flavor contained the advertised resources of this host */
-    // TODO: Remove when models older than 7.285 are gone
-    public Optional<Flavor> flavor() {
-        return advertisedResources.asOptional().map(resources -> new Flavor(resources));
-    }
-
     /** Returns the current version of Vespa running on this node, or empty if not known */
     public Optional<com.yahoo.component.Version> version() { return version; }
 

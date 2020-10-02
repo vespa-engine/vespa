@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 /**
  * Represents an application package, that is, used as input when creating a VespaModel and as
@@ -199,11 +198,6 @@ public interface ApplicationPackage {
      * @throws IllegalArgumentException if the file was not found or could not be read
      */
     Reader getRankingExpression(String name);
-
-    // TODO: Unused, remove when 7.264 is latest version in use
-    static Map<String, String> getBundleSdFiles(String path, JarFile bundle) throws IOException {
-        return Map.of();
-    }
 
     /**
      * The name of an SD in a JarEntry

@@ -119,7 +119,6 @@
       "public abstract java.util.Optional getValidationOverrides()",
       "public abstract java.util.List getComponentsInfo(com.yahoo.component.Version)",
       "public abstract java.io.Reader getRankingExpression(java.lang.String)",
-      "public static java.util.Map getBundleSdFiles(java.lang.String, java.util.jar.JarFile)",
       "public static java.lang.String getFileName(java.util.jar.JarEntry)",
       "public abstract com.yahoo.config.application.api.ApplicationMetaData getMetaData()",
       "public abstract java.io.File getFileReference(com.yahoo.path.Path)",
