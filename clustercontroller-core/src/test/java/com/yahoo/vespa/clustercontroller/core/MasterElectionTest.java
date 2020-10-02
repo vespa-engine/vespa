@@ -31,10 +31,10 @@ import static org.junit.Assert.assertTrue;
 
 public class MasterElectionTest extends FleetControllerTest {
 
-    private static Logger log = Logger.getLogger(MasterElectionTest.class.getName());
+    private static final Logger log = Logger.getLogger(MasterElectionTest.class.getName());
 
     private Supervisor supervisor;
-    private List<FleetController> fleetControllers = new ArrayList<>();
+    private final List<FleetController> fleetControllers = new ArrayList<>();
 
     @Rule
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
@@ -74,12 +74,12 @@ public class MasterElectionTest extends FleetControllerTest {
 
     private void waitForZookeeperDisconnected() throws TimeoutException {
         long maxTime = System.currentTimeMillis() + timeoutMS;
-        for(FleetController f : fleetControllers) {
-            while (true) {
-                if (!f.hasZookeeperConnection()) break;
+        for (FleetController f : fleetControllers) {
+            while (f.hasZookeeperConnection()) {
                 timer.advanceTime(1000);
-                try{ Thread.sleep(1); } catch (InterruptedException e) {}
-                if (System.currentTimeMillis() > maxTime) throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeoutMS + " ms");
+                try { Thread.sleep(1); } catch (InterruptedException e) {}
+                if (System.currentTimeMillis() > maxTime)
+                    throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeoutMS + " ms");
             }
         }
         waitForCompleteCycles();
@@ -116,7 +116,6 @@ public class MasterElectionTest extends FleetControllerTest {
 
     /** Ignored for unknown reasons */
     @Test
-    @Ignore
     public void testMasterElection() throws Exception {
         startingTest("MasterElectionTest::testMasterElection");
         log.log(Level.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
@@ -226,24 +225,20 @@ public class MasterElectionTest extends FleetControllerTest {
         startingTest("MasterElectionTest::testClusterStateVersionIncreasesAcrossMasterElections");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
-        setUpFleetController(5, false, options);
+        setUpFleetController(3, false, options);
         // Currently need to have content nodes present for the cluster controller to even bother
         // attempting to persisting its cluster state version to ZK.
         setUpVdsNodes(false, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForStableSystem();
         waitForMaster(0);
-        Stream.of(0, 1, 2, 3, 4).forEach(this::waitForCompleteCycle);
+        Stream.of(0, 1, 2).forEach(this::waitForCompleteCycle);
         StrictlyIncreasingVersionChecker checker = StrictlyIncreasingVersionChecker.bootstrappedWith(
                 fleetControllers.get(0).getClusterState());
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
-        Stream.of(1, 2, 3, 4).forEach(this::waitForCompleteCycle);
+        Stream.of(1, 2).forEach(this::waitForCompleteCycle);
         checker.updateAndVerify(fleetControllers.get(1).getClusterState());
-        fleetControllers.get(1).shutdown();
-        waitForMaster(2); // Still a quorum available
-        Stream.of(2, 3, 4).forEach(this::waitForCompleteCycle);
-        checker.updateAndVerify(fleetControllers.get(2).getClusterState());
     }
 
     @Test
@@ -275,7 +270,7 @@ public class MasterElectionTest extends FleetControllerTest {
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 100;
         options.zooKeeperServerAddress = "localhost";
-        setUpFleetController(5, false, options);
+        setUpFleetController(3, false, options);
         waitForMaster(0);
 
         log.log(Level.INFO, "STOPPING ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
@@ -329,12 +324,21 @@ public class MasterElectionTest extends FleetControllerTest {
         long endTime = System.currentTimeMillis() + timeoutMS;
         while (System.currentTimeMillis() < endTime) {
             boolean allOk = true;
-            for (int i=0; i<nodes.length; ++i) {
+            for (int node : nodes) {
                 Request req = new Request("getMaster");
-                connections.get(nodes[i]).invokeSync(req, FleetControllerTest.timeoutS);
-                if (req.isError()) { allOk = false; break; }
-                if (master != null && master != req.returnValues().get(0).asInt32()) { allOk = false; break; }
-                if (reason != null && !reason.equals(req.returnValues().get(1).asString())) { allOk = false; break; }
+                connections.get(node).invokeSync(req, FleetControllerTest.timeoutS);
+                if (req.isError()) {
+                    allOk = false;
+                    break;
+                }
+                if (master != null && master != req.returnValues().get(0).asInt32()) {
+                    allOk = false;
+                    break;
+                }
+                if (reason != null && ! reason.equals(req.returnValues().get(1).asString())) {
+                    allOk = false;
+                    break;
+                }
             }
             if (allOk) return;
             try{ Thread.sleep(100); } catch (InterruptedException e) {}
@@ -354,7 +358,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(0);
 
         supervisor = new Supervisor(new Transport());
-        List<Target> connections = new ArrayList<Target>();
+        List<Target> connections = new ArrayList<>();
         for (FleetController fleetController : fleetControllers) {
             int rpcPort = fleetController.getRpcPort();
             Target connection = supervisor.connect(new Spec("localhost", rpcPort));
