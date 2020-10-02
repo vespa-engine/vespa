@@ -16,6 +16,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,9 @@ public class MasterElectionTest extends FleetControllerTest {
 
     @Rule
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
+
+    @Rule
+    public Timeout globalTimeout= Timeout.seconds(120);
 
     private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
 
@@ -116,6 +120,7 @@ public class MasterElectionTest extends FleetControllerTest {
 
     /** Ignored for unknown reasons */
     @Test
+    @Ignore
     public void testMasterElection() throws Exception {
         startingTest("MasterElectionTest::testMasterElection");
         log.log(Level.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
