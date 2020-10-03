@@ -1278,6 +1278,7 @@ App::usage()
         "vespa-feed-bm\n"
         "[--client-threads threads]\n"
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
+        "[--max-pending max-pending]\n"
         "[--documents documents]\n"
         "[--put-passes put-passes]\n"
         "[--update-passes update-passes]\n"
@@ -1300,37 +1301,37 @@ App::get_options()
     int long_opt_index = 0;
     static struct option long_opts[] = {
         { "client-threads", 1, nullptr, 0 },
-        { "indexing-sequencer", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
+        { "enable-distributor", 0, nullptr, 0 },
+        { "enable-service-layer", 0, nullptr, 0 },
+        { "indexing-sequencer", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
         { "put-passes", 1, nullptr, 0 },
         { "update-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
-        { "rpc-network-threads", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
-        { "enable-distributor", 0, nullptr, 0 },
-        { "enable-service-layer", 0, nullptr, 0 },
+        { "rpc-network-threads", 1, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
+        { "use-legacy-bucket-db", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
-        { "use-storage-chain", 0, nullptr, 0 },
-        { "use-legacy-bucket-db", 0, nullptr, 0 }
+        { "use-storage-chain", 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_CLIENT_THREADS,
+        LONGOPT_DOCUMENTS,
+        LONGOPT_ENABLE_DISTRIBUTOR,
+        LONGOPT_ENABLE_SERVICE_LAYER,
         LONGOPT_INDEXING_SEQUENCER,
         LONGOPT_MAX_PENDING,
-        LONGOPT_DOCUMENTS,
         LONGOPT_PUT_PASSES,
         LONGOPT_UPDATE_PASSES,
         LONGOPT_REMOVE_PASSES,
-        LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_RESPONSE_THREADS,
-        LONGOPT_ENABLE_DISTRIBUTOR,
-        LONGOPT_ENABLE_SERVICE_LAYER,
+        LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_USE_DOCUMENT_API,
+        LONGOPT_USE_LEGACY_BUCKET_DB,
         LONGOPT_USE_MESSAGE_BUS,
-        LONGOPT_USE_STORAGE_CHAIN,
-        LONGOPT_USE_LEGACY_BUCKET_DB
+        LONGOPT_USE_STORAGE_CHAIN
     };
     int opt_index = 1;
     resetOptIndex(opt_index);
@@ -1341,11 +1342,17 @@ App::get_options()
             case LONGOPT_CLIENT_THREADS:
                 _bm_params.set_client_threads(atoi(opt_argument));
                 break;
-            case LONGOPT_INDEXING_SEQUENCER:
-                _bm_params.set_indexing_sequencer(opt_argument);
-                break;
             case LONGOPT_DOCUMENTS:
                 _bm_params.set_documents(atoi(opt_argument));
+                break;
+            case LONGOPT_ENABLE_DISTRIBUTOR:
+                _bm_params.set_enable_distributor(true);
+                break;
+            case LONGOPT_ENABLE_SERVICE_LAYER:
+                _bm_params.set_enable_service_layer(true);
+                break;
+            case LONGOPT_INDEXING_SEQUENCER:
+                _bm_params.set_indexing_sequencer(opt_argument);
                 break;
             case LONGOPT_MAX_PENDING:
                 _bm_params.set_max_pending(atoi(opt_argument));
@@ -1359,29 +1366,23 @@ App::get_options()
             case LONGOPT_REMOVE_PASSES:
                 _bm_params.set_remove_passes(atoi(opt_argument));
                 break;
-            case LONGOPT_RPC_NETWORK_THREADS:
-                _bm_params.set_rpc_network_threads(atoi(opt_argument));
-                break;
             case LONGOPT_RESPONSE_THREADS:
                 _bm_params.set_response_threads(atoi(opt_argument));
                 break;
-            case LONGOPT_ENABLE_DISTRIBUTOR:
-                _bm_params.set_enable_distributor(true);
-                break;
-            case LONGOPT_ENABLE_SERVICE_LAYER:
-                _bm_params.set_enable_service_layer(true);
+            case LONGOPT_RPC_NETWORK_THREADS:
+                _bm_params.set_rpc_network_threads(atoi(opt_argument));
                 break;
             case LONGOPT_USE_DOCUMENT_API:
                 _bm_params.set_use_document_api(true);
+                break;
+            case LONGOPT_USE_LEGACY_BUCKET_DB:
+                _bm_params.set_use_legacy_bucket_db(true);
                 break;
             case LONGOPT_USE_MESSAGE_BUS:
                 _bm_params.set_use_message_bus(true);
                 break;
             case LONGOPT_USE_STORAGE_CHAIN:
                 _bm_params.set_use_storage_chain(true);
-                break;
-            case LONGOPT_USE_LEGACY_BUCKET_DB:
-                _bm_params.set_use_legacy_bucket_db(true);
                 break;
             default:
                 return false;
