@@ -95,7 +95,7 @@ struct SparseReduceState {
         std::vector<vespalib::stringref> addr;
         addr.reserve(map_entry.first.size());
         for (const vespalib::string &label: map_entry.first) {
-            addr.emplace_back(label);
+            addr.push_back(label);
         }
         return addr;
     }
