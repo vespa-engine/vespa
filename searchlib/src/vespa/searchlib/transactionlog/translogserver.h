@@ -11,7 +11,6 @@
 class FRT_Supervisor;
 class FNET_Transport;
 
-namespace std {class thread; }
 namespace search::common { class FileHeaderContext; }
 namespace search::transactionlog {
 
