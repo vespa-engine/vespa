@@ -10,6 +10,7 @@
 #include <atomic>
 #include <filesystem>
 #include <mutex>
+#include <vector>
 
 namespace proton {
 
