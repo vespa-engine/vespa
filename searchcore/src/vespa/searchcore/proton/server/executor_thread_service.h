@@ -39,6 +39,7 @@ public:
     size_t getNumThreads() const override { return _executor.getNumThreads(); }
 
     void setTaskLimit(uint32_t taskLimit) override;
+    void wakeup() override;
 };
 
 } // namespace proton

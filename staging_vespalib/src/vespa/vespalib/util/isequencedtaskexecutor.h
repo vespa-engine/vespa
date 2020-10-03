@@ -50,6 +50,10 @@ public:
      * @param task   unique pointer to the task to be executed
      */
     virtual void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) = 0;
+    /**
+     * Call this one to ensure you get the attention of the workers.
+     */
+    virtual void wakeup() { }
 
     /**
      * Wrap lambda function into a task and schedule it to be run.

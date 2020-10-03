@@ -771,6 +771,7 @@ AttributeWriter::forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone)
         auto commitTask = std::make_unique<CommitTask>(wc, serialNum, onWriteDone);
         _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(commitTask));
     }
+    _attributeFieldWriter.wakeup();
 }
 
 

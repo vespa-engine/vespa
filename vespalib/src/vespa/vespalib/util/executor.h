@@ -38,9 +38,10 @@ public:
     virtual Task::UP execute(Task::UP task) = 0;
 
     /**
-     * Empty.
+     * In case you have a lazy executor that naps inbetween.
      **/
-    virtual ~Executor() {}
+    virtual void wakeup() = 0;
+    virtual ~Executor() =default;
 };
 
 } // namespace vespalib

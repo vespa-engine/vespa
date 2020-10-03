@@ -174,6 +174,11 @@ ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit)
 }
 
 void
+ThreadStackExecutorBase::wakeup() {
+    // Nothing to do here as workers are always attentive.
+}
+
+void
 ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
 {
     MonitorGuard monitor(_monitor);

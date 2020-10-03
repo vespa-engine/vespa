@@ -51,6 +51,7 @@ public:
         _done.countDown();
         return Task::UP();
     }
+    void wakeup() override { }
 };
 
 class SimpleGetSerialNum : public IGetSerialNum

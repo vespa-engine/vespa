@@ -24,7 +24,7 @@ public:
     Task::UP execute(Task::UP task) override;
     void setTaskLimit(uint32_t taskLimit) override;
     SingleExecutor & sync() override;
-    void startSync();
+    void wakeup() override;
     size_t getNumThreads() const override;
     uint32_t getTaskLimit() const { return _taskLimit.load(std::memory_order_relaxed); }
     Stats getStats() override;

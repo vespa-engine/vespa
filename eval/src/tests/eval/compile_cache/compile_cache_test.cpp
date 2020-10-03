@@ -28,6 +28,7 @@ struct MyExecutor : public Executor {
         tasks.clear();
     }
     ~MyExecutor() { run_tasks(); }
+    void wakeup() override { }
 };
 
 //-----------------------------------------------------------------------------

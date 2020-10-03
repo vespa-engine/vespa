@@ -83,7 +83,7 @@ SingleExecutor::drain(Lock & lock) {
 }
 
 void
-SingleExecutor::startSync() {
+SingleExecutor::wakeup() {
     _consumerCondition.notify_one();
 }
 

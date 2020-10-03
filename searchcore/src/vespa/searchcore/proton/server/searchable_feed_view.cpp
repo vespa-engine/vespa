@@ -214,6 +214,7 @@ SearchableFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneTy
 {
     Parent::internalForceCommit(serialNum, onCommitDone);
     _writeService.index().execute(makeLambdaTask([=]() { performIndexForceCommit(serialNum, onCommitDone); }));
+    _writeService.index().wakeup();
 }
 
 } // namespace proton

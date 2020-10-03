@@ -81,4 +81,9 @@ void ExecutorThreadService::setTaskLimit(uint32_t taskLimit) {
     _executor.setTaskLimit(taskLimit);
 }
 
+void
+ExecutorThreadService::wakeup() {
+    _executor.wakeup();
+}
+
 } // namespace proton
