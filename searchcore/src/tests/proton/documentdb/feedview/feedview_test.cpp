@@ -323,7 +323,7 @@ struct MyAttributeWriter : public IAttributeWriter
     MyTracer &_tracer;
 
     MyAttributeWriter(MyTracer &tracer);
-    ~MyAttributeWriter();
+    ~MyAttributeWriter() override;
 
     std::vector<AttributeVector *>
     getWritableAttributes() const override {

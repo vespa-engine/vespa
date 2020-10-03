@@ -30,13 +30,12 @@ public:
                        search::SerialNum initSerialNum,
                        const vespalib::string &subDbName,
                        search::SerialNum configSerialNum);
-    ~AttributePopulator();
+    ~AttributePopulator() override;
 
     const IAttributeWriter &getWriter() const { return _writer; }
 
-    // Implements IReprocessingReader
-    virtual void handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
-    virtual void done() override;
+    void handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
+    void done() override;
 };
 
 } // namespace proton
