@@ -77,10 +77,10 @@ class TrivialIndex : public Value::Index {
 private:
     TrivialIndex();
     static TrivialIndex _index;
-    size_t size() const override;
-    std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 public:
     static const TrivialIndex &get() { return _index; }
+    size_t size() const override;
+    std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 };
 
 class DoubleValue : public Value
