@@ -4,7 +4,6 @@ package com.yahoo.vespa.curator;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.io.IOUtils;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -67,31 +66,28 @@ public class Curator implements AutoCloseable {
     // All lock keys, to allow re-entrancy. This will grow forever, but this should be too slow to be a problem
     private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
-    private final Optional<Metric> metric;
-
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
-        return new Curator(connectionSpec, connectionSpec, Optional.empty(), Optional.of(ZK_CLIENT_CONFIG_FILE));
+        return new Curator(connectionSpec, connectionSpec, Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
     // For testing only, use Optional.empty for clientConfigFile parameter to create default zookeeper client config
     public static Curator create(String connectionSpec, Optional<File> clientConfigFile) {
-        return new Curator(connectionSpec, connectionSpec, Optional.empty(), clientConfigFile);
+        return new Curator(connectionSpec, connectionSpec, clientConfigFile);
     }
 
     // Depend on ZooKeeperServer to make sure it is started first
     // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
-    public Curator(ConfigserverConfig configserverConfig, Metric metric, VespaZooKeeperServer server) {
-        this(configserverConfig, Optional.of(metric), Optional.of(ZK_CLIENT_CONFIG_FILE));
+    public Curator(ConfigserverConfig configserverConfig, VespaZooKeeperServer server) {
+        this(configserverConfig, Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
-    Curator(ConfigserverConfig configserverConfig, Optional<Metric> metric, Optional<File> clientConfigFile) {
-        this(createConnectionSpec(configserverConfig), createEnsembleConnectionSpec(configserverConfig), metric, clientConfigFile);
+    Curator(ConfigserverConfig configserverConfig, Optional<File> clientConfigFile) {
+        this(createConnectionSpec(configserverConfig), createEnsembleConnectionSpec(configserverConfig), clientConfigFile);
     }
 
-    private Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Optional<Metric> metric,
-                    Optional<File> clientConfigFile) {
+    private Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Optional<File> clientConfigFile) {
         this(connectionSpec,
                 zooKeeperEnsembleConnectionSpec,
                 (retryPolicy) -> CuratorFrameworkFactory
@@ -102,24 +98,20 @@ public class Curator implements AutoCloseable {
                         .connectString(connectionSpec)
                         .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
                         .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
-                        .build(),
-                metric);
+                        .build());
     }
 
     protected Curator(String connectionSpec,
                       String zooKeeperEnsembleConnectionSpec,
-                      Function<RetryPolicy, CuratorFramework> curatorFactory,
-                      Optional<Metric> metric) {
+                      Function<RetryPolicy, CuratorFramework> curatorFactory) {
         this(connectionSpec, zooKeeperEnsembleConnectionSpec, curatorFactory,
-                new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES),
-                metric);
+                new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES));
     }
 
     private Curator(String connectionSpec,
                     String zooKeeperEnsembleConnectionSpec,
                     Function<RetryPolicy, CuratorFramework> curatorFactory,
-                    RetryPolicy retryPolicy,
-                    Optional<Metric> metric) {
+                    RetryPolicy retryPolicy) {
         this.connectionSpec = connectionSpec;
         this.retryPolicy = retryPolicy;
         this.curatorFramework = curatorFactory.apply(retryPolicy);
@@ -132,7 +124,6 @@ public class Curator implements AutoCloseable {
 
         this.zooKeeperEnsembleConnectionSpec = zooKeeperEnsembleConnectionSpec;
         this.zooKeeperEnsembleCount = zooKeeperEnsembleConnectionSpec.split(",").length;
-        this.metric = metric;
     }
 
     private static String createConnectionSpec(ConfigserverConfig configserverConfig) {
@@ -363,7 +354,7 @@ public class Curator implements AutoCloseable {
     /** Create and acquire a re-entrant lock in given path */
     public Lock lock(Path path, Duration timeout) {
         create(path);
-        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), this, metric));
+        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), this));
         lock.acquire(timeout);
         return lock;
     }

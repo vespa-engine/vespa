@@ -57,6 +57,20 @@ public class TestMetric implements Metric {
         return sum;
     }
 
+    double sumNumberValues(String key) {
+        double sum = 0.0;
+        for(Context c : context.get(key)) {
+            TestContext tc = (TestContext) c;
+            sum += tc.value.doubleValue();
+        }
+        return sum;
+    }
+
+    public void remove(String key) {
+        values.remove(key);
+        context.remove(key);
+    }
+
     /**
      * Context where the propertymap is not shared - but unique to each value.
      */

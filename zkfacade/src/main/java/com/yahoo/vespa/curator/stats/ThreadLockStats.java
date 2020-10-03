@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.stats;
 
-import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Duration;
@@ -9,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 /**
  * This class manages thread-specific statistics and information related to acquiring and releasing
@@ -19,6 +19,8 @@ import java.util.function.Consumer;
  * @author hakon
  */
 public class ThreadLockStats {
+
+    private static final Logger logger = Logger.getLogger(ThreadLockStats.class.getName());
 
     private final Thread thread;
 
@@ -61,12 +63,8 @@ public class ThreadLockStats {
     public Optional<RecordedLockAttempts> getOngoingRecording() { return ongoingRecording; }
 
     /** Mutable method (see class doc) */
-    public void invokingAcquire(String lockPath, Duration timeout,
-                                Optional<Metric> metric, Optional<Metric.Context> metricContext) {
-        LockCounters lockCounters = getGlobalLockCounters(lockPath);
-        lockCounters.invokeAcquireCount.incrementAndGet();
-        lockCounters.inCriticalRegionCount.incrementAndGet();
-        LockAttempt lockAttempt = LockAttempt.invokingAcquire(this, lockPath, timeout, metric, metricContext);
+    public void invokingAcquire(String lockPath, Duration timeout) {
+        LockAttempt lockAttempt = LockAttempt.invokingAcquire(this, lockPath, timeout, getGlobalLockMetrics(lockPath));
 
         LockAttempt lastLockAttempt = lockAttemptsStack.peekLast();
         if (lastLockAttempt == null) {
@@ -78,42 +76,34 @@ public class ThreadLockStats {
     }
 
     /** Mutable method (see class doc) */
-    public void acquireFailed(String lockPath) {
-        LockCounters lockCounters = getGlobalLockCounters(lockPath);
-        lockCounters.acquireFailedCount.incrementAndGet();
-        removeLastLockAttempt(lockCounters, LockAttempt::acquireFailed);
+    public void acquireFailed() {
+        removeLastLockAttempt(LockAttempt::acquireFailed);
     }
 
     /** Mutable method (see class doc) */
-    public void acquireTimedOut(String lockPath) {
-        LockCounters lockCounters = getGlobalLockCounters(lockPath);
-
-        lockCounters.acquireTimedOutCount.incrementAndGet();
-        removeLastLockAttempt(lockCounters, LockAttempt::timedOut);
+    public void acquireTimedOut() {
+        removeLastLockAttempt(LockAttempt::timedOut);
     }
 
     /** Mutable method (see class doc) */
-    public void lockAcquired(String lockPath) {
-        getGlobalLockCounters(lockPath).lockAcquiredCount.incrementAndGet();
+    public void lockAcquired() {
         LockAttempt lockAttempt = lockAttemptsStack.peekLast();
         if (lockAttempt == null) {
-            throw new IllegalStateException("lockAcquired invoked without lockAttempts");
+            logger.warning("Unable to get last lock attempt as the lock attempt stack is empty");
+            return;
         }
+
         lockAttempt.lockAcquired();
     }
 
     /** Mutable method (see class doc) */
-    public void lockReleased(String lockPath) {
-        LockCounters lockCounters = getGlobalLockCounters(lockPath);
-        lockCounters.locksReleasedCount.incrementAndGet();
-        removeLastLockAttempt(lockCounters, LockAttempt::released);
+    public void lockReleased() {
+        removeLastLockAttempt(LockAttempt::released);
     }
 
     /** Mutable method (see class doc) */
-    public void lockReleaseFailed(String lockPath) {
-        LockCounters lockCounters = getGlobalLockCounters(lockPath);
-        lockCounters.lockReleaseErrorCount.incrementAndGet();
-        removeLastLockAttempt(lockCounters, LockAttempt::releasedWithError);
+    public void lockReleaseFailed() {
+        removeLastLockAttempt(LockAttempt::releasedWithError);
     }
 
     /** Mutable method (see class doc) */
@@ -133,19 +123,17 @@ public class ThreadLockStats {
         }
     }
 
-    private LockCounters getGlobalLockCounters(String lockPath) {
-        return LockStats.getGlobal().getLockCounters(lockPath);
+    private LockMetrics getGlobalLockMetrics(String lockPath) {
+        return LockStats.getGlobal().getLockMetrics(lockPath);
     }
 
-    private void removeLastLockAttempt(LockCounters lockCounters, Consumer<LockAttempt> completeLockAttempt) {
-        lockCounters.inCriticalRegionCount.decrementAndGet();
-
-        if (lockAttemptsStack.isEmpty()) {
-            lockCounters.noLocksErrorCount.incrementAndGet();
+    private void removeLastLockAttempt(Consumer<LockAttempt> completeLockAttempt) {
+        LockAttempt lockAttempt = lockAttemptsStack.pollLast();
+        if (lockAttempt == null) {
+            logger.warning("Unable to remove last lock attempt as the lock attempt stack is empty");
             return;
         }
 
-        LockAttempt lockAttempt = lockAttemptsStack.pollLast();
         completeLockAttempt.accept(lockAttempt);
 
         LockStats.getGlobal().maybeSample(lockAttempt);

@@ -6,14 +6,16 @@ import com.yahoo.net.HostName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.curator.stats.LatencyMetrics;
+import com.yahoo.vespa.curator.stats.LockMetrics;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.LockAttempt;
-import com.yahoo.vespa.curator.stats.LockCounters;
 import com.yahoo.vespa.curator.stats.RecordedLockAttempts;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -32,14 +34,14 @@ public class LocksResponse extends HttpResponse {
 
     public LocksResponse() {
         this(HostName.getLocalhost(),
-             new TreeMap<>(LockStats.getGlobal().getLockCountersByPath()),
+             new TreeMap<>(LockStats.getGlobal().getLockMetricsByPath()),
              LockStats.getGlobal().getThreadLockStats(),
              LockStats.getGlobal().getLockAttemptSamples());
     }
 
     /** For testing */
     LocksResponse(String hostname,
-                  TreeMap<String, LockCounters> lockCountersByPath,
+                  TreeMap<String, LockMetrics> lockMetricsByPath,
                   List<ThreadLockStats> threadLockStatsList,
                   List<LockAttempt> historicSamples) {
         super(200);
@@ -49,17 +51,21 @@ public class LocksResponse extends HttpResponse {
         root.setString("hostname", hostname);
 
         Cursor lockPathsCursor = root.setArray("lock-paths");
-        lockCountersByPath.forEach((lockPath, lockCounters) -> {
+        lockMetricsByPath.forEach((lockPath, lockMetrics) -> {
             Cursor lockPathCursor = lockPathsCursor.addObject();
             lockPathCursor.setString("path", lockPath);
-            lockPathCursor.setLong("in-critical-region", lockCounters.inCriticalRegionCount());
-            lockPathCursor.setLong("invoke-acquire", lockCounters.invokeAcquireCount());
-            lockPathCursor.setLong("acquire-failed", lockCounters.acquireFailedCount());
-            lockPathCursor.setLong("acquire-timed-out", lockCounters.acquireTimedOutCount());
-            lockPathCursor.setLong("lock-acquired", lockCounters.lockAcquiredCount());
-            lockPathCursor.setLong("locks-released", lockCounters.locksReleasedCount());
-            lockPathCursor.setLong("no-locks-errors", lockCounters.noLocksErrorCount());
-            lockPathCursor.setLong("lock-release-errors", lockCounters.lockReleaseErrorCount());
+            lockPathCursor.setLong("acquireCount", lockMetrics.getCumulativeAcquireCount());
+            lockPathCursor.setLong("acquireFailedCount", lockMetrics.getCumulativeAcquireFailedCount());
+            lockPathCursor.setLong("acquireTimedOutCount", lockMetrics.getCumulativeAcquireTimedOutCount());
+            lockPathCursor.setLong("lockedCount", lockMetrics.getCumulativeAcquireSucceededCount());
+            lockPathCursor.setLong("releaseCount", lockMetrics.getCumulativeReleaseCount());
+            lockPathCursor.setLong("releaseFailedCount", lockMetrics.getCumulativeReleaseFailedCount());
+
+            lockPathCursor.setLong("acquireNow", lockMetrics.getAcquiringNow());
+            lockPathCursor.setLong("lockedNow", lockMetrics.getAcquiringNow());
+
+            setLatency(lockPathCursor, "acquire", lockMetrics.getAcquireLatencyMetrics());
+            setLatency(lockPathCursor, "locked", lockMetrics.getLockedLatencyMetrics());
         });
 
         Cursor threadsCursor = root.setArray("threads");
@@ -95,6 +101,17 @@ public class LocksResponse extends HttpResponse {
         }
     }
 
+    private static void setLatency(Cursor cursor, String name, LatencyMetrics latencyMetrics) {
+        cursor.setDouble(name + "LatencyAverage", roundDouble(latencyMetrics.averageInSeconds(), 3));
+        cursor.setDouble(name + "LatencyCount", latencyMetrics.count());
+        cursor.setDouble(name + "LatencyLoad", roundDouble(latencyMetrics.load(), 3));
+    }
+
+    private static double roundDouble(double value, int decimalPlaces) {
+        double factor = Math.pow(10, decimalPlaces);
+        return Math.round(value * factor) / factor;
+    }
+
     @Override
     public void render(OutputStream stream) throws IOException {
         new JsonFormat(true).encode(stream, slime);
@@ -124,9 +141,9 @@ public class LocksResponse extends HttpResponse {
         lockAttempt.getTimeLockWasAcquired().ifPresent(instant -> lockAttemptCursor.setString("lock-acquired-time", toString(instant)));
         lockAttemptCursor.setString("lock-state", lockAttempt.getLockState().name());
         lockAttempt.getTimeTerminalStateWasReached().ifPresent(instant -> lockAttemptCursor.setString("terminal-state-time", toString(instant)));
-        lockAttemptCursor.setString("acquire-duration", lockAttempt.getDurationOfAcquire().toString());
-        lockAttemptCursor.setString("locked-duration", lockAttempt.getDurationWithLock().toString());
-        lockAttemptCursor.setString("total-duration", lockAttempt.getDuration().toString());
+        lockAttemptCursor.setString("acquire-duration", toString(lockAttempt.getDurationOfAcquire()));
+        lockAttemptCursor.setString("locked-duration", toString(lockAttempt.getDurationWithLock()));
+        lockAttemptCursor.setString("total-duration", toString(lockAttempt.getDuration()));
         if (includeStackTrace) {
             lockAttempt.getStackTrace().ifPresent(stackTrace -> lockAttemptCursor.setString("stack-trace", stackTrace));
         }
@@ -137,6 +154,10 @@ public class LocksResponse extends HttpResponse {
             nestedLockAttempts.forEach(nestedLockAttempt ->
                     setLockAttempt(nestedLockAttemptsCursor.addObject(), nestedLockAttempt, false, includeStackTrace));
         }
+    }
+
+    private static String toString(Duration duration) {
+        return Duration.ofMillis(duration.toMillis()).toString();
     }
 
     private static String toString(Instant time) {

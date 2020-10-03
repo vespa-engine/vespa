@@ -68,8 +68,8 @@
     "methods": [
       "public static com.yahoo.vespa.curator.Curator create(java.lang.String)",
       "public static com.yahoo.vespa.curator.Curator create(java.lang.String, java.util.Optional)",
-      "public void <init>(com.yahoo.cloud.config.ConfigserverConfig, com.yahoo.jdisc.Metric, com.yahoo.vespa.zookeeper.VespaZooKeeperServer)",
-      "protected void <init>(java.lang.String, java.lang.String, java.util.function.Function, java.util.Optional)",
+      "public void <init>(com.yahoo.cloud.config.ConfigserverConfig, com.yahoo.vespa.zookeeper.VespaZooKeeperServer)",
+      "protected void <init>(java.lang.String, java.lang.String, java.util.function.Function)",
       "public java.lang.String connectionSpec()",
       "public org.apache.curator.framework.recipes.atomic.DistributedAtomicLong createAtomicCounter(java.lang.String)",
       "public org.apache.curator.framework.recipes.locks.InterProcessLock createMutex(java.lang.String)",
@@ -104,8 +104,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, com.yahoo.vespa.curator.Curator, java.util.Optional)",
-      "public void <init>(java.lang.String, org.apache.curator.framework.recipes.locks.InterProcessLock, java.util.Optional)",
+      "public void <init>(java.lang.String, com.yahoo.vespa.curator.Curator)",
+      "public void <init>(java.lang.String, org.apache.curator.framework.recipes.locks.InterProcessLock)",
       "public void acquire(java.time.Duration)",
       "public void close()"
     ],
