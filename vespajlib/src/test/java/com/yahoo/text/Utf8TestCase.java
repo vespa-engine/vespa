@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -8,7 +9,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.Function;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 import static com.yahoo.text.Utf8.calculateBytePositions;
@@ -549,6 +552,39 @@ public class Utf8TestCase {
             handEncoded[i] = buffer.get();
         }
         assertArrayEquals(stringAsUtf8, handEncoded);
+    }
+
+    @Test
+    @Ignore
+    public void benchmarkDecoding() {
+        String ascii = "This is just sort of random mix.";
+        String unicode = "This is just sort of random mix. \u5370\u57df\u60c5\u5831\u53EF\u4EE5\u6709x\u00e9\u00e8";
+        int iterations = 100_000; // Use 100_000+ for benchmarking
+
+        ImmutableMap.of("ascii", ascii, "unicode", unicode).forEach((type, s) -> {
+            long time1 = benchmarkDecoding(Utf8::toString, s, iterations);
+            System.out.printf("Utf8::toString of %s string took %d ms\n", type, time1);
+            long time2 = benchmarkDecoding((b) -> new String(b, StandardCharsets.UTF_8), s, iterations);
+            System.out.printf("String::new of %s string took %d ms\n", type, time2);
+            double change = ((double) time2 / (double) time1) - 1;
+            System.out.printf("Change = %.02f%%\n", change * 100);
+        });
+    }
+
+    private String decode(Function<byte[], String> stringFunction, String s, int iterations) {
+        String res = null;
+        for (int i = 0; i < iterations; i++) {
+            res = stringFunction.apply((s + i).getBytes());
+        }
+        return res;
+    }
+
+    private long benchmarkDecoding(Function<byte[], String> stringFunction, String s, int iterations) {
+        decode(stringFunction, s, iterations); // Warmup
+        long start = System.currentTimeMillis();
+        decode(stringFunction, s, iterations);
+        long end = System.currentTimeMillis();
+        return end - start;
     }
 
 }

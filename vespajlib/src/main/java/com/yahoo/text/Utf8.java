@@ -48,8 +48,7 @@ public final class Utf8 {
      * @return String decoded from UTF-8
      */
     public static String toString(byte[] data, int offset, int length) {
-        String s = toStringAscii(data, offset, length);
-        return s != null ? s : toString(ByteBuffer.wrap(data, offset, length));
+        return toString(ByteBuffer.wrap(data, offset, length));
     }
 
     /**
@@ -118,14 +117,14 @@ public final class Utf8 {
         return utf8 != null ? utf8 : string.getBytes(StandardCharsets.UTF_8);
     }
     /**
-     * Will try an optimistic approach to utf8 decoding.
+     * Decode a UTF-8 string.
      *
      * @param utf8 The string to encode.
      * @return Utf8 encoded array
      */
     public static String toString(byte [] utf8) {
-        String s = toStringAscii(utf8, 0, utf8.length);
-        return s != null ? s : new String(utf8, StandardCharsets.UTF_8);
+        // This is just wrapper for String::new now. Pre-Java 9 this had an more efficient approach for ASCII strings.
+        return new String(utf8, StandardCharsets.UTF_8);
     }
 
     /**
@@ -143,22 +142,6 @@ public final class Utf8 {
             utf8[i] = (byte)c;
         }
         return utf8;
-    }
-
-    private static String toStringAscii(byte [] b, int offset, int length) {
-        if (length > 0) {
-            char [] s = new char[length];
-            for (int i=0; i < length; i++) {
-                if (b[offset + i] >= 0) {
-                    s[i] = (char)b[offset+i];
-                } else {
-                    return null;
-                }
-            }
-            return new String(s);
-        } else {
-            return "";
-        }
     }
 
     /**
