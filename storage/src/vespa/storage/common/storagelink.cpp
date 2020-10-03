@@ -213,6 +213,12 @@ bool StorageLink::onUp(const shared_ptr<StorageMessage> & msg)
     return msg->callHandler(*this, msg);
 }
 
+void
+StorageLink::print(std::ostream& out, bool, const std::string&) const
+{
+    out << getName();
+}
+
 const char*
 StorageLink::stateToString(State state)
 {

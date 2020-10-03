@@ -126,9 +126,7 @@ public:
      */
     virtual bool onUp(const api::StorageMessage::SP&);
 
-    void print(std::ostream& out, bool, const std::string&) const override {
-        out << getName();
-    }
+    void print(std::ostream& out, bool, const std::string&) const override;
 
     static const char* stateToString(State state);
 
