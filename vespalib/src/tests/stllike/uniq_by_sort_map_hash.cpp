@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 #include <algorithm>
+#include <pthread.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 template <typename T>
