@@ -184,7 +184,7 @@ struct CreateValueFromTensorSpec {
                 assert(pos != entry.first.end());
                 assert(pos->second.is_mapped() == dim.is_mapped());
                 if (dim.is_mapped()) {
-                    sparse_key.emplace_back(pos->second.name);
+                    sparse_key.push_back(pos->second.name);
                 } else {
                     dense_key = (dense_key * dim.size) + pos->second.index;
                 }

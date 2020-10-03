@@ -4,7 +4,7 @@
 #include "caching_rpc_target_resolver.h"
 #include "message_codec_provider.h"
 #include "shared_rpc_resources.h"
-#include "rpc_envelope.pb.h"
+#include "rpc_envelope_proto.h"
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
