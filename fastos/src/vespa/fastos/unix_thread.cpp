@@ -5,7 +5,9 @@
 #include <unistd.h>
 
 namespace {
+#ifdef __linux__
    std::atomic_size_t _G_nextCpuId(0);
+#endif
    volatile size_t _G_maxNumCpus=0;  // Non zero means use cpu pinning.
 }
 
