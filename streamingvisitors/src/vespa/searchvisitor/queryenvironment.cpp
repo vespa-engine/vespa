@@ -54,5 +54,15 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
 
 QueryEnvironment::~QueryEnvironment() {}
 
+QueryEnvironment::GeoLocationSpecPtrs
+QueryEnvironment::getAllLocations() const
+{
+    GeoLocationSpecPtrs retval;
+    for (const auto & loc : _locations) {
+        retval.push_back(&loc);
+    }
+    return retval;
+}
+
 } // namespace streaming
 

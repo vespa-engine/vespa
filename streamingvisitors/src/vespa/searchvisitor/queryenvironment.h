@@ -48,13 +48,7 @@ public:
     }
 
     // inherit documentation
-    GeoLocationSpecPtrs getAllLocations() const override {
-        GeoLocationSpecPtrs retval;
-        for (const auto & loc : _locations) {
-            retval.push_back(&loc);
-        }
-        return retval;
-    }
+    GeoLocationSpecPtrs getAllLocations() const override;
 
     // inherit documentation
     virtual const search::attribute::IAttributeContext & getAttributeContext() const override { return *_attrCtx; }
