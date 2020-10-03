@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("document_field_populator_test");
-#include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("document_field_populator_test");
 
 using namespace document;
 using namespace proton;

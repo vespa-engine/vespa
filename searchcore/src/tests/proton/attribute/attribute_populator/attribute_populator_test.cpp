@@ -41,7 +41,7 @@ makeDocTypeRepo()
                      Struct("searchdocument.header"),
                      Struct("searchdocument.body").
                      addField("a1", DataType::T_INT));
-    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
+    return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
 struct DocContext
@@ -76,13 +76,12 @@ struct Fixture
           _attributeFieldWriter(),
           _shared(),
           _hwInfo(),
-          _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
-                                    _fileHeader, _attributeFieldWriter, _shared, _hwInfo)),
+          _mgr(std::make_shared<AttributeManager>(TEST_DIR, "test.subdb", TuneFileAttributes(),
+                                                  _fileHeader, _attributeFieldWriter, _shared, _hwInfo)),
           _pop(),
           _ctx()
     {
-        _mgr->addAttribute({ "a1", AVConfig(AVBasicType::INT32)},
-                CREATE_SERIAL_NUM);
+        _mgr->addAttribute({ "a1", AVConfig(AVBasicType::INT32)}, CREATE_SERIAL_NUM);
         _pop = std::make_unique<AttributePopulator>(_mgr, 1, "test", CREATE_SERIAL_NUM);
     }
     AttributeGuard::UP getAttr() {

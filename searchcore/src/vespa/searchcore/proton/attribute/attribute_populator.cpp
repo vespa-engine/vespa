@@ -65,8 +65,7 @@ AttributePopulator::AttributePopulator(const proton::IAttributeManager::SP &mgr,
 AttributePopulator::~AttributePopulator()
 {
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::populateAttributeComplete(getNames(),
-                _currSerialNum - _initSerialNum);
+        EventLogger::populateAttributeComplete(getNames(),_currSerialNum - _initSerialNum);
     }
 }
 

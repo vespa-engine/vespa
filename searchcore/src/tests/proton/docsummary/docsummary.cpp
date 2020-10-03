@@ -1045,10 +1045,9 @@ TEST("requireThatPositionsAreUsed")
                        endDocument();
     dc.put(*exp, 1);
 
-    IDocumentStore & store =
-        dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
-    EXPECT_TRUE(act.get() != nullptr);
+    EXPECT_TRUE(act);
     EXPECT_EQUAL(exp->getType(), act->getType());
 
     DocsumRequest req;
