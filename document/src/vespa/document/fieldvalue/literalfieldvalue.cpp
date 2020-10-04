@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "literalfieldvalue.h"
+#include "literalfieldvalue.hpp"
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <sstream>
@@ -153,4 +154,8 @@ LiteralFieldValueB::operator=(double value)
     setValue(valueToString(value));
     return *this;
 }
+
+template class LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>;
+template class LiteralFieldValue<StringFieldValue, DataType::T_STRING, true>;
+
 }  // namespace document
