@@ -20,9 +20,7 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * A component which sets up all the node repo maintenance jobs.
@@ -30,9 +28,6 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public class NodeRepositoryMaintenance extends AbstractComponent {
-
-    private static final Logger log = Logger.getLogger(NodeRepositoryMaintenance.class.getName());
-    private static final String envPrefix = "vespa_node_repository__";
 
     private final NodeFailer nodeFailer;
     private final PeriodicApplicationMaintainer periodicApplicationMaintainer;
@@ -74,7 +69,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         DefaultTimes defaults = new DefaultTimes(zone, Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource).value());
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,
-                                    defaults.nodeFailerInterval, clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
+                                    defaults.nodeFailerInterval, clock, orchestrator, defaults.throttlePolicy, metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository,
                                                                           defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval, flagSource);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
@@ -124,17 +119,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeMetricsDbMaintainer.close();
         autoscalingMaintainer.close();
         scalingSuggestionsMaintainer.close();
-    }
-
-    private static Optional<NodeFailer.ThrottlePolicy> throttlePolicyFromEnv() {
-        String policyName = System.getenv(envPrefix + "throttle_policy");
-        try {
-            return Optional.ofNullable(policyName).map(NodeFailer.ThrottlePolicy::valueOf);
-        } catch (IllegalArgumentException e) {
-            log.info(String.format("Ignoring invalid throttle policy name: '%s'. Must be one of %s", policyName,
-                                   Arrays.toString(NodeFailer.ThrottlePolicy.values())));
-            return Optional.empty();
-        }
     }
 
     private static class DefaultTimes {
