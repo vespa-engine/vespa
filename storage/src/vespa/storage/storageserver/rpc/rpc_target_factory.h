@@ -6,7 +6,7 @@
 
 namespace storage::rpc {
 
-struct RpcTarget;
+class RpcTarget;
 
 /**
  * Factory for creating instances of RpcTarget based on a connection spec.
@@ -14,7 +14,7 @@ struct RpcTarget;
 class RpcTargetFactory {
 public:
     virtual ~RpcTargetFactory() = default;
-    virtual std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec, uint32_t slobrok_gen) const = 0;
+    virtual std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec) const = 0;
 };
 
 }

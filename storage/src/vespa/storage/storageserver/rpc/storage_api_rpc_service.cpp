@@ -35,7 +35,8 @@ StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher
       _rpc_resources(rpc_resources),
       _message_codec_provider(message_codec_provider),
       _params(params),
-      _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory())),
+      _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory(),
+                                                                  params.num_rpc_targets_per_node)),
       _direct_rpc_supported(true)
 {
     register_server_methods(rpc_resources);
@@ -43,7 +44,10 @@ StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher
 
 StorageApiRpcService::~StorageApiRpcService() = default;
 
-StorageApiRpcService::Params::Params() = default;
+StorageApiRpcService::Params::Params()
+    : compression_config(),
+      num_rpc_targets_per_node(1)
+{}
 
 StorageApiRpcService::Params::~Params() = default;
 
@@ -216,7 +220,7 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
         cmd->getType().getName().c_str(), cmd->getAddress()->toString().c_str());
 
     assert(cmd->getAddress() != nullptr);
-    auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress());
+    auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress(), cmd->getBucketId().getId());
     if (!target) {
         auto reply = cmd->makeReply();
         reply->setResult(make_no_address_for_service_error(*cmd->getAddress()));
@@ -233,7 +237,7 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
                               vespalib::make_string("Sending request from '%s' to '%s' (%s) with timeout of %g seconds",
                                                     _rpc_resources.handle().c_str(),
                                                     CachingRpcTargetResolver::address_to_slobrok_id(*cmd->getAddress()).c_str(),
-                                                    target->_spec.c_str(), vespalib::to_s(cmd->getTimeout())));
+                                                    target->spec().c_str(), vespalib::to_s(cmd->getTimeout())));
     }
     std::unique_ptr<FRT_RPCRequest, SubRefDeleter> req(_rpc_resources.supervisor().AllocRPCRequest());
     req->SetMethodName(rpc_v1_method_name());
@@ -251,7 +255,7 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
     auto& req_ctx = req->getStash().create<RpcRequestContext>(std::move(cmd));
     req->SetContext(FNET_Context(&req_ctx));
 
-    target->_target->get()->InvokeAsync(req.release(), vespalib::to_s(timeout), this);
+    target->get()->InvokeAsync(req.release(), vespalib::to_s(timeout), this);
 }
 
 void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {

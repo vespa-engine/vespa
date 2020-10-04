@@ -29,13 +29,14 @@ public:
     void inc_gen() { ++gen; }
 };
 
-class MockWrappedFrtTarget : public WrappedFrtTarget {
+class MockRpcTarget : public RpcTarget {
 private:
     bool& _valid;
 public:
-    MockWrappedFrtTarget(bool& valid) : _valid(valid) {}
+    MockRpcTarget(bool& valid) : _valid(valid) {}
     FRT_Target* get() noexcept override { return nullptr; }
     bool is_valid() const noexcept override { return _valid; }
+    const vespalib::string& spec() const noexcept override { abort(); }
 };
 
 class MockTargetFactory : public RpcTargetFactory {
@@ -43,9 +44,8 @@ public:
     mutable bool valid_target;
 
     MockTargetFactory() : valid_target(true) {}
-    std::unique_ptr<RpcTarget> make_target(const vespalib::string& connection_spec, uint32_t slobrok_gen) const override {
-        return std::make_unique<RpcTarget>(std::make_unique<MockWrappedFrtTarget>(valid_target),
-                connection_spec, slobrok_gen);
+    std::unique_ptr<RpcTarget> make_target([[maybe_unused]] const vespalib::string& connection_spec) const override {
+        return std::make_unique<MockRpcTarget>(valid_target);
     }
 };
 
@@ -58,15 +58,21 @@ public:
     StorageMessageAddress address_1;
     vespalib::string spec_0;
     vespalib::string spec_1;
+    uint64_t bucket_id_0;
+    uint64_t bucket_id_1;
+    uint64_t bucket_id_2;
 
     CachingRpcTargetResolverTest()
         : mirror(),
           factory(),
-          resolver(mirror, factory),
+          resolver(mirror, factory, 2),
           address_0("my_cluster", NodeType::STORAGE, 5),
           address_1("my_cluster", NodeType::DISTRIBUTOR, 7),
           spec_0("tcp/my:41"),
-          spec_1("tcp/my:42")
+          spec_1("tcp/my:42"),
+          bucket_id_0(3),
+          bucket_id_1(4),
+          bucket_id_2(5)
     {
         add_mapping(address_0, spec_0);
     }
@@ -75,6 +81,9 @@ public:
     }
     static vespalib::string to_slobrok_id(const storage::api::StorageMessageAddress& address) {
         return CachingRpcTargetResolver::address_to_slobrok_id(address);
+    }
+    std::shared_ptr<RpcTarget> resolve_rpc_target(const StorageMessageAddress& address) {
+        return resolver.resolve_rpc_target(address, bucket_id_0);
     }
 };
 
@@ -86,49 +95,58 @@ TEST_F(CachingRpcTargetResolverTest, converts_storage_message_address_to_slobrok
 
 TEST_F(CachingRpcTargetResolverTest, resolves_rpc_target_and_caches_result)
 {
-    auto target_a = resolver.resolve_rpc_target(address_0);
+    auto target_a = resolve_rpc_target(address_0);
     ASSERT_TRUE(target_a);
-    EXPECT_EQ(spec_0, target_a->_spec);
-    EXPECT_EQ(1, target_a->_slobrok_gen);
-    auto target_b = resolver.resolve_rpc_target(address_0);
+    auto target_b = resolve_rpc_target(address_0);
     ASSERT_TRUE(target_b);
     EXPECT_EQ(target_a.get(), target_b.get());
-    EXPECT_EQ(spec_0, target_b->_spec);
-    EXPECT_EQ(1, target_b->_slobrok_gen);
 }
 
-TEST_F(CachingRpcTargetResolverTest, cached_rpc_target_is_updated_when_slobrok_generation_changes)
+TEST_F(CachingRpcTargetResolverTest, rpc_target_pool_is_updated_when_slobrok_generation_changes)
 {
-    auto target_a = resolver.resolve_rpc_target(address_0);
+    auto target_a = resolve_rpc_target(address_0);
     mirror.inc_gen();
-    auto target_b = resolver.resolve_rpc_target(address_0);
+    auto target_b = resolve_rpc_target(address_0);
     EXPECT_EQ(target_a.get(), target_b.get());
-    EXPECT_EQ(2, target_b->_slobrok_gen);
+    auto pool = resolver.resolve_rpc_target_pool(address_0);
+    EXPECT_EQ(2, pool->slobrok_gen());
 }
 
 TEST_F(CachingRpcTargetResolverTest, new_rpc_target_is_created_if_connection_spec_changes)
 {
-    auto target_a = resolver.resolve_rpc_target(address_0);
+    auto target_a = resolve_rpc_target(address_0);
     add_mapping(address_0, spec_1);
     mirror.inc_gen();
-    auto target_b = resolver.resolve_rpc_target(address_0);
+    auto target_b = resolve_rpc_target(address_0);
     EXPECT_NE(target_a.get(), target_b.get());
-    EXPECT_EQ(spec_1, target_b->_spec);
-    EXPECT_EQ(2, target_b->_slobrok_gen);
+    auto pool = resolver.resolve_rpc_target_pool(address_0);
+    EXPECT_EQ(spec_1, pool->spec());
+    EXPECT_EQ(2, pool->slobrok_gen());
 }
 
 TEST_F(CachingRpcTargetResolverTest, new_rpc_target_is_created_if_raw_target_is_invalid)
 {
-    auto target_a = resolver.resolve_rpc_target(address_0);
+    auto target_a = resolve_rpc_target(address_0);
     factory.valid_target = false;
-    auto target_b = resolver.resolve_rpc_target(address_0);
+    auto target_b = resolve_rpc_target(address_0);
     EXPECT_NE(target_a.get(), target_b.get());
-    EXPECT_EQ(spec_0, target_b->_spec);
-    EXPECT_EQ(1, target_b->_slobrok_gen);
 }
 
 TEST_F(CachingRpcTargetResolverTest, null_rpc_target_is_returned_if_slobrok_id_is_not_found)
 {
-    auto target = resolver.resolve_rpc_target(address_1);
+    auto target = resolve_rpc_target(address_1);
     EXPECT_FALSE(target);
+}
+
+TEST_F(CachingRpcTargetResolverTest, bucket_id_is_used_to_select_target)
+{
+    auto target_a = resolver.resolve_rpc_target(address_0, bucket_id_0);
+    auto target_b = resolver.resolve_rpc_target(address_0, bucket_id_0);
+    auto target_c = resolver.resolve_rpc_target(address_0, bucket_id_2);
+    auto target_d = resolver.resolve_rpc_target(address_0, bucket_id_1);
+    auto target_e = resolver.resolve_rpc_target(address_0, bucket_id_1);
+    EXPECT_EQ(target_a.get(), target_b.get());
+    EXPECT_EQ(target_a.get(), target_c.get());
+    EXPECT_EQ(target_d.get(), target_e.get());
+    EXPECT_NE(target_a.get(), target_d.get());
 }

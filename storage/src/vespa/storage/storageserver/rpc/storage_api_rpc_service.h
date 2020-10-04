@@ -37,6 +37,7 @@ class StorageApiRpcService : public FRT_Invokable, public FRT_IRequestWait {
 public:
     struct Params {
         vespalib::compression::CompressionConfig compression_config;
+        size_t num_rpc_targets_per_node;
 
         Params();
         ~Params();
