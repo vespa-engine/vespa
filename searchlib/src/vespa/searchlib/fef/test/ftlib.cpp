@@ -62,7 +62,8 @@ FtUtil::tokenize(const vespalib::string & str, const vespalib::string & separato
 
     std::vector<vespalib::string> retval;
     if (separator != vespalib::string("")) {
-        Tokenizer tnz(str, Separator(separator.c_str()));
+        std::string stdstr(str);
+        Tokenizer tnz(stdstr, Separator(separator.c_str()));
         for (Tokenizer::const_iterator itr = tnz.begin(); itr != tnz.end(); ++itr) {
             retval.push_back(*itr);
         }
