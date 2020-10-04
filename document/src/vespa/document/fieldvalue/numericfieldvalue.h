@@ -58,5 +58,12 @@ public:
     bool hasChanged() const override final { return _altered; }
 };
 
+extern template class NumericFieldValue<float>;
+extern template class NumericFieldValue<double>;
+extern template class NumericFieldValue<int8_t>;
+extern template class NumericFieldValue<int16_t>;
+extern template class NumericFieldValue<int32_t>;
+extern template class NumericFieldValue<int64_t>;
+
 } // document
 
