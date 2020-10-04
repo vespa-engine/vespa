@@ -6,8 +6,6 @@
 #include <memory>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/generationholder.h>
-#include <bits/stl_algo.h>
-#include <bits/stl_function.h>
 #include <vespa/fastos/dynamiclibrary.h>
 
 namespace vespalib {
