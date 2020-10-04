@@ -507,18 +507,15 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         if (useDocumentStore(serialNum)) {
             putSummary(serialNum, lid, std::move(futureStream), onWriteDone);
         }
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
         _writeService
-                .attributeFieldWriter()
-                .execute(serialNum,
+                .shared()
+                .execute(makeLambdaTask(
                          [upd = updOp.getUpdate(), serialNum, lid, onWriteDone, promisedDoc = std::move(promisedDoc),
                           promisedStream = std::move(promisedStream), this]() mutable
-                         {
+                          {
                              makeUpdatedDocument(serialNum, lid, *upd, onWriteDone,
                                                  std::move(promisedDoc), std::move(promisedStream));
-                         });
-#pragma GCC diagnostic pop
+                          }));
         updateAttributes(serialNum, lid, std::move(futureDoc), immediateCommit, onWriteDone);
     }
 }
