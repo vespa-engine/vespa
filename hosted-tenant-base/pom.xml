@@ -201,6 +201,9 @@
                                 <goals>
                                     <goal>generate-test-bundle-osgi-manifest</goal>
                                 </goals>
+                                <configuration>
+                                    <Bundle-SymbolicName>${project.artifactId}-test</Bundle-SymbolicName>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>assemble-test-bundle</id>
