@@ -106,4 +106,10 @@ FloatingPointAttribute::getChangeVectorMemoryUsage() const
 
 template class FloatingPointAttributeTemplate<float>;
 template class FloatingPointAttributeTemplate<double>;
+
+template bool AttributeVector::clearDoc(FloatingPointAttribute::ChangeVector& changes, DocId doc);
+template bool AttributeVector::update(FloatingPointAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<double>& v);
+template bool AttributeVector::append(FloatingPointAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<double>& v, int32_t w, bool doCount);
+template bool AttributeVector::remove(FloatingPointAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<double>& v, int32_t w);
+
 }

@@ -106,4 +106,9 @@ template class IntegerAttributeTemplate<int16_t>;
 template class IntegerAttributeTemplate<int32_t>;
 template class IntegerAttributeTemplate<int64_t>;
 
+template bool AttributeVector::clearDoc(IntegerAttribute::ChangeVector& changes, DocId doc);
+template bool AttributeVector::update(IntegerAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<largeint_t>& v);
+template bool AttributeVector::append(IntegerAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<largeint_t>& v, int32_t w, bool doCount);
+template bool AttributeVector::remove(IntegerAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<largeint_t>& v, int32_t w);
+
 }

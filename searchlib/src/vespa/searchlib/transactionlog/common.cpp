@@ -99,13 +99,6 @@ Packet::Entry::serialize(nbostream & os) const
     return os;
 }
 
-Packet::Entry::Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d) :
-    _unique(u),
-    _type(t),
-    _valid(true),
-    _data(d)
-{ }
-
 void
 Packet::add(const Packet::Entry & e)
 {

@@ -264,6 +264,7 @@ class BMParams {
     uint32_t _update_passes;
     uint32_t _remove_passes;
     uint32_t _rpc_network_threads;
+    uint32_t _rpc_targets_per_node;
     uint32_t _response_threads;
     uint32_t _max_pending;
     bool     _enable_distributor;
@@ -284,6 +285,7 @@ public:
           _update_passes(1),
           _remove_passes(2),
           _rpc_network_threads(1), // Same default as in stor-communicationmanager.def
+          _rpc_targets_per_node(1), // Same default as in stor-communicationmanager.def
           _response_threads(2), // Same default as in stor-filestor.def
           _max_pending(1000),
           _enable_distributor(false),
@@ -305,6 +307,7 @@ public:
     uint32_t get_update_passes() const { return _update_passes; }
     uint32_t get_remove_passes() const { return _remove_passes; }
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
+    uint32_t get_rpc_targets_per_node() const { return _rpc_targets_per_node; }
     uint32_t get_response_threads() const { return _response_threads; }
     bool get_enable_distributor() const { return _enable_distributor; }
     bool get_use_document_api() const { return _use_document_api; }
@@ -319,6 +322,7 @@ public:
     void set_update_passes(uint32_t update_passes_in) { _update_passes = update_passes_in; }
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }
+    void set_rpc_targets_per_node(uint32_t targets_in) { _rpc_targets_per_node = targets_in; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_enable_distributor(bool enable_distributor_in) { _enable_distributor = enable_distributor_in; }
     void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
@@ -353,6 +357,10 @@ BMParams::check() const
     }
     if (_rpc_network_threads < 1) {
         std::cerr << "Too few rpc network threads: " << _rpc_network_threads << std::endl;
+        return false;
+    }
+    if (_rpc_targets_per_node < 1) {
+        std::cerr << "Too few rpc targets per node: " << _rpc_targets_per_node << std::endl;
         return false;
     }
     if (_response_threads < 1) {
@@ -469,6 +477,7 @@ struct MyStorageConfig
         make_slobroks_config(slobroks, slobrok_port);
         stor_communicationmanager.useDirectStorageapiRpc = true;
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
+        stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
 
@@ -900,6 +909,7 @@ PersistenceProviderFixture::create_feed_handler(const BMParams& params)
     StorageApiRpcService::Params rpc_params;
     // This is the same compression config as the default in stor-communicationmanager.def.
     rpc_params.compression_config = CompressionConfig(CompressionConfig::Type::LZ4, 3, 90, 1024);
+    rpc_params.num_rpc_targets_per_node = params.get_rpc_targets_per_node();
     if (params.get_use_document_api()) {
         _feed_handler = std::make_unique<DocumentApiMessageBusBmFeedHandler>(*_message_bus);
     } else if (params.get_enable_distributor()) {
@@ -1284,6 +1294,7 @@ App::usage()
         "[--update-passes update-passes]\n"
         "[--remove-passes remove-passes]\n"
         "[--rpc-network-threads threads]\n"
+        "[--rpc-targets-per-node targets]\n"
         "[--response-threads threads]\n"
         "[--enable-distributor]\n"
         "[--enable-service-layer]\n"
@@ -1311,6 +1322,7 @@ App::get_options()
         { "remove-passes", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
+        { "rpc-targets-per-node", 1, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
         { "use-legacy-bucket-db", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
@@ -1328,6 +1340,7 @@ App::get_options()
         LONGOPT_REMOVE_PASSES,
         LONGOPT_RESPONSE_THREADS,
         LONGOPT_RPC_NETWORK_THREADS,
+        LONGOPT_RPC_TARGETS_PER_NODE,
         LONGOPT_USE_DOCUMENT_API,
         LONGOPT_USE_LEGACY_BUCKET_DB,
         LONGOPT_USE_MESSAGE_BUS,
@@ -1371,6 +1384,9 @@ App::get_options()
                 break;
             case LONGOPT_RPC_NETWORK_THREADS:
                 _bm_params.set_rpc_network_threads(atoi(opt_argument));
+                break;
+            case LONGOPT_RPC_TARGETS_PER_NODE:
+                _bm_params.set_rpc_targets_per_node(atoi(opt_argument));
                 break;
             case LONGOPT_USE_DOCUMENT_API:
                 _bm_params.set_use_document_api(true);

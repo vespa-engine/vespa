@@ -6,8 +6,6 @@ LOG_SETUP("attributecontent_test");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 
-#include <vespa/searchlib/attribute/attributevector.hpp>
-
 using namespace search::attribute;
 
 namespace search {

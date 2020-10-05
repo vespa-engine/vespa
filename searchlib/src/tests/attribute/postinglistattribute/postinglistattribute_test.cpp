@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
+#include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/postinglistattribute.h>
@@ -13,7 +14,6 @@
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/fastos/file.h>

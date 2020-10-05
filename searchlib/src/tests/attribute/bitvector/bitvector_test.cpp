@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>

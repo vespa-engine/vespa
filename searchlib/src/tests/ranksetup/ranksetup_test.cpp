@@ -7,7 +7,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/integerbase.h>
 
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
