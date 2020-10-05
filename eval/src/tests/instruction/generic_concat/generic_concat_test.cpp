@@ -5,7 +5,7 @@
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/instruction/generic_join.h>
+#include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -107,15 +107,36 @@ TensorSpec reference_concat(const TensorSpec &a, const TensorSpec &b, const std:
     return result;
 }
 
+TensorSpec perform_generic_concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim) {
+    Stash stash;
+    const auto &factory = SimpleValueBuilderFactory::get();
+    auto lhs = value_from_spec(a, factory);
+    auto rhs = value_from_spec(b, factory);
+    auto my_op = GenericConcat::make_instruction(lhs->type(), rhs->type(), concat_dim, factory, stash);
+    InterpretedFunction::EvalSingle single(my_op);
+    return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
+}
+
 TEST(GenericConcatTest, generic_reference_concat_works) {
     ASSERT_TRUE((concat_layouts.size() % 2) == 0);
     for (size_t i = 0; i < concat_layouts.size(); i += 2) {
         const TensorSpec lhs = spec(concat_layouts[i], N());
         const TensorSpec rhs = spec(concat_layouts[i + 1], Div16(N()));
         SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+        auto actual = reference_concat(lhs, rhs, "x");
+        auto expect = perform_simpletensor_concat(lhs, rhs, "x");
+        EXPECT_EQ(actual, expect);
+    }
+}
+
+TEST(GenericConcatTest, generic_concat_works_for_simple_values) {
+    ASSERT_TRUE((concat_layouts.size() % 2) == 0);
+    for (size_t i = 0; i < concat_layouts.size(); i += 2) {
+        const TensorSpec lhs = spec(concat_layouts[i], N());
+        const TensorSpec rhs = spec(concat_layouts[i + 1], Div16(N()));
+        SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+        auto actual = perform_generic_concat(lhs, rhs, "x");
         auto expect = reference_concat(lhs, rhs, "x");
-        auto actual = perform_simpletensor_concat(lhs, rhs, "x");
-        // auto actual = perform_generic_concat(lhs, rhs, "x");
         EXPECT_EQ(actual, expect);
     }
 }

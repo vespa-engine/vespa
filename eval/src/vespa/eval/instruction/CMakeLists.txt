@@ -2,6 +2,7 @@
 
 vespa_add_library(eval_instruction OBJECT
     SOURCES
+    generic_concat
     generic_join
     generic_reduce
     generic_merge
