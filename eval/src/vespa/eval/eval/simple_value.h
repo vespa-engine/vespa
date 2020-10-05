@@ -3,6 +3,7 @@
 #pragma once
 
 #include "value.h"
+#include "simple_sparse_map.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
@@ -15,24 +16,23 @@ class TensorSpec;
 
 /**
  * A simple implementation of a generic value that can also be used to
- * build new values. This class focuses on simplicity over speed and
- * is intended as a reference implementation that can also be used to
- * test the correctness of tensor operations as they are moved away
- * from the implementation of individual tensor classes.
+ * build new values. This class focuses on simplicity and is intended
+ * as a reference implementation that can also be used to test the
+ * correctness of tensor operations as they are moved away from the
+ * implementation of individual tensor classes.
  **/
 class SimpleValue : public Value, public Value::Index
 {
 private:
-    using Addr = std::vector<vespalib::string>;
     ValueType _type;
     size_t _num_mapped_dims;
     size_t _subspace_size;
-    std::map<Addr,size_t> _index;
+    SimpleSparseMap _index;
 protected:
     size_t subspace_size() const { return _subspace_size; }
-    void add_mapping(ConstArrayRef<vespalib::stringref> addr);
+    void add_mapping(ConstArrayRef<vespalib::stringref> addr) { _index.add_mapping(addr); }
 public:
-    SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
+    SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
     ~SimpleValue() override;
     const ValueType &type() const override { return _type; }
     const Value::Index &index() const override { return *this; }
@@ -49,7 +49,7 @@ class SimpleValueT : public SimpleValue, public ValueBuilder<T>
 private:
     std::vector<T> _cells;
 public:
-    SimpleValueT(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
+    SimpleValueT(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
     ~SimpleValueT() override;
     TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override;
@@ -69,7 +69,7 @@ private:
     SimpleValueBuilderFactory();
     static SimpleValueBuilderFactory _factory;
     std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,
-            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const override;    
+            size_t num_mapped_dims, size_t subspace_size, size_t expected_subspaces) const override;
 public:
     static const SimpleValueBuilderFactory &get() { return _factory; }
 };

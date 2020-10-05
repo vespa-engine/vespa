@@ -24,6 +24,7 @@ vespa_define_module(
     src/tests/eval/node_tools
     src/tests/eval/node_types
     src/tests/eval/param_usage
+    src/tests/eval/simple_sparse_map
     src/tests/eval/simple_tensor
     src/tests/eval/simple_value
     src/tests/eval/tensor_function
@@ -34,8 +35,8 @@ vespa_define_module(
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
     src/tests/instruction/generic_join
-    src/tests/instruction/generic_reduce
     src/tests/instruction/generic_merge
+    src/tests/instruction/generic_reduce
     src/tests/instruction/generic_rename
     src/tests/tensor/default_value_builder_factory
     src/tests/tensor/dense_add_dimension_optimizer
