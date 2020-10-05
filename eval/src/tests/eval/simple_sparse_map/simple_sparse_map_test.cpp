@@ -24,7 +24,7 @@ public:
         }
     }
     ~StringList();
-    const std::vector<vespalib::string> direct_str() const { return _str_list; }
+    ConstArrayRef<vespalib::string> direct_str() const { return _str_list; }
     ConstArrayRef<vespalib::stringref> direct_ref() const { return _ref_list; }
     ConstArrayRef<const vespalib::stringref *> indirect_ref() const { return _ref_ptr_list; }
 };
@@ -55,10 +55,12 @@ TEST(SimpleSparseMapTest, simple_sparse_map_basic_usage_works) {
     EXPECT_EQ(map.lookup(a4.direct_ref()), map.npos());
     EXPECT_EQ(map.lookup(a4.indirect_ref()), map.npos());
     EXPECT_EQ(SimpleSparseMap::npos(), map.npos());
-    SL expect_labels({"a","a","a",
-                      "a","a","b",
-                      "a","b","a"});
-    EXPECT_EQ(map.labels(), expect_labels.direct_str());
+    EXPECT_EQ(map.labels().size(), 9);
+    auto dump = [&](auto addr_tag, auto subspace, auto hash) {
+        auto addr = map.make_addr(addr_tag);
+        fprintf(stderr, "   [%s,%s,%s]: %u (%zu)\n", addr[0].label.c_str(), addr[1].label.c_str(), addr[2].label.c_str(), subspace, hash);
+    };
+    map.each_map_entry(dump);
 }
 
 TEST(SimpleSparseMapTest, simple_sparse_map_works_with_no_labels) {

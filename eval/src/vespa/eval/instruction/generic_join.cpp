@@ -2,14 +2,17 @@
 
 #include "generic_join.h"
 #include <vespa/eval/eval/inline_operation.h>
+#include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
+#include <typeindex>
 #include <cassert>
 
 namespace vespalib::eval::instruction {
 
+using operation::SwapArgs2;
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
 
@@ -29,33 +32,16 @@ template <typename T> const T &unwrap_param(uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-struct JoinParam {
-    ValueType res_type;
-    SparseJoinPlan sparse_plan;
-    DenseJoinPlan dense_plan;
-    join_fun_t function;
-    const ValueBuilderFactory &factory;
-    JoinParam(const ValueType &lhs_type, const ValueType &rhs_type,
-             join_fun_t function_in, const ValueBuilderFactory &factory_in)
-        : res_type(ValueType::join(lhs_type, rhs_type)),
-          sparse_plan(lhs_type, rhs_type),
-          dense_plan(lhs_type, rhs_type),
-          function(function_in),
-          factory(factory_in)
-    {
-        assert(!res_type.is_error());
-    }
-    ~JoinParam();
-};
-JoinParam::~JoinParam() = default;
-
-//-----------------------------------------------------------------------------
-
-
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 void my_mixed_join_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<JoinParam>(param_in);
     Fun fun(param.function);
+    auto dense_join = [&](const LCT *my_lhs, const RCT *my_rhs, OCT *my_res)
+                      {
+                          param.dense_plan.execute(0, 0, [&](size_t lhs_idx, size_t rhs_idx) {
+                                      *my_res++ = fun(my_lhs[lhs_idx], my_rhs[rhs_idx]);
+                                  });
+                      };
     const Value &lhs = state.peek(1);
     const Value &rhs = state.peek(0);
     auto lhs_cells = lhs.cells().typify<LCT>();
@@ -68,15 +54,56 @@ void my_mixed_join_op(State &state, uint64_t param_in) {
     while (outer->next_result(sparse.first_address, sparse.first_subspace)) {
         inner->lookup(sparse.address_overlap);
         while (inner->next_result(sparse.second_only_address, sparse.second_subspace)) {
-            OCT *dst = builder->add_subspace(sparse.full_address).begin();
-            auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
-            param.dense_plan.execute(param.dense_plan.lhs_size * sparse.lhs_subspace, param.dense_plan.rhs_size * sparse.rhs_subspace, join_cells);
+            dense_join(lhs_cells.begin() + param.dense_plan.lhs_size * sparse.lhs_subspace,
+                       rhs_cells.begin() + param.dense_plan.rhs_size * sparse.rhs_subspace,
+                       builder->add_subspace(sparse.full_address).begin());
         }
     }
     auto &result = state.stash.create<std::unique_ptr<Value>>(builder->build(std::move(builder)));
     const Value &result_ref = *(result.get());
     state.pop_pop_push(result_ref);
 };
+
+//-----------------------------------------------------------------------------
+
+template <typename LCT, typename RCT, typename OCT, typename Fun>
+void my_sparse_full_overlap_join_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<JoinParam>(param_in);
+    const Value &lhs = state.peek(1);
+    const Value &rhs = state.peek(0);
+    auto lhs_cells = lhs.cells().typify<LCT>();
+    auto rhs_cells = rhs.cells().typify<RCT>();
+    const Value::Index &lhs_index = lhs.index();
+    const Value::Index &rhs_index = rhs.index();
+    if ((std::type_index(typeid(lhs_index)) == std::type_index(typeid(FastValueIndex))) &&
+        (std::type_index(typeid(rhs_index)) == std::type_index(typeid(FastValueIndex))))
+    {
+        const FastValueIndex &lhs_fast = static_cast<const FastValueIndex&>(lhs_index);
+        const FastValueIndex &rhs_fast = static_cast<const FastValueIndex&>(rhs_index);
+        return (rhs_fast.map.size() < lhs_fast.map.size())
+            ? state.pop_pop_push(FastValueIndex::sparse_full_overlap_join<RCT,LCT,OCT,SwapArgs2<Fun>>
+                                 (param.res_type, SwapArgs2<Fun>(param.function), rhs_fast, lhs_fast, rhs_cells, lhs_cells, state.stash))
+            : state.pop_pop_push(FastValueIndex::sparse_full_overlap_join<LCT,RCT,OCT,Fun>
+                                 (param.res_type, Fun(param.function), lhs_fast, rhs_fast, lhs_cells, rhs_cells, state.stash));
+    }
+    Fun fun(param.function);
+    SparseJoinState sparse(param.sparse_plan, lhs_index, rhs_index);
+    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, sparse.first_index.size());
+    auto outer = sparse.first_index.create_view({});
+    auto inner = sparse.second_index.create_view(sparse.second_view_dims);
+    outer->lookup({});
+    while (outer->next_result(sparse.first_address, sparse.first_subspace)) {
+        inner->lookup(sparse.address_overlap);
+        if (inner->next_result(sparse.second_only_address, sparse.second_subspace)) {
+            builder->add_subspace(sparse.full_address)[0] = fun(lhs_cells[sparse.lhs_subspace], rhs_cells[sparse.rhs_subspace]);
+        }
+    }
+    auto &result = state.stash.create<std::unique_ptr<Value>>(builder->build(std::move(builder)));
+    const Value &result_ref = *(result.get());
+    state.pop_pop_push(result_ref);
+};
+
+//-----------------------------------------------------------------------------
 
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 void my_dense_join_op(State &state, uint64_t param_in) {
@@ -91,12 +118,16 @@ void my_dense_join_op(State &state, uint64_t param_in) {
     state.pop_pop_push(state.stash.create<DenseValueView>(param.res_type, TypedCells(out_cells)));
 };
 
+//-----------------------------------------------------------------------------
+
 template <typename Fun>
 void my_double_join_op(State &state, uint64_t param_in) {
     Fun fun(unwrap_param<JoinParam>(param_in).function);
     state.pop_pop_push(state.stash.create<DoubleValue>(fun(state.peek(1).cells().typify<double>()[0],
                                                            state.peek(0).cells().typify<double>()[0])));
 };
+
+//-----------------------------------------------------------------------------
 
 struct SelectGenericJoinOp {
     template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke(const JoinParam &param) {
@@ -109,6 +140,11 @@ struct SelectGenericJoinOp {
         }
         if (param.sparse_plan.sources.empty()) {
             return my_dense_join_op<LCT,RCT,OCT,Fun>;
+        }
+        if ((param.dense_plan.out_size == 1) &&
+            (param.sparse_plan.sources.size() == param.sparse_plan.lhs_overlap.size()))
+        {
+            return my_sparse_full_overlap_join_op<LCT,RCT,OCT,Fun>;
         }
         return my_mixed_join_op<LCT,RCT,OCT,Fun>;
     }
@@ -218,6 +254,10 @@ SparseJoinState::SparseJoinState(const SparseJoinPlan &plan, const Value::Index 
 }
 
 SparseJoinState::~SparseJoinState() = default;
+
+//-----------------------------------------------------------------------------
+
+JoinParam::~JoinParam() = default;
 
 //-----------------------------------------------------------------------------
 

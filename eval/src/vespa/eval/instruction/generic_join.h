@@ -79,6 +79,28 @@ struct SparseJoinState {
     ~SparseJoinState();
 };
 
+/**
+ * Full set of parameters passed to low-level generic join function
+ **/
+struct JoinParam {
+    ValueType res_type;
+    SparseJoinPlan sparse_plan;
+    DenseJoinPlan dense_plan;
+    join_fun_t function;
+    const ValueBuilderFactory &factory;
+    JoinParam(const ValueType &lhs_type, const ValueType &rhs_type,
+             join_fun_t function_in, const ValueBuilderFactory &factory_in)
+        : res_type(ValueType::join(lhs_type, rhs_type)),
+          sparse_plan(lhs_type, rhs_type),
+          dense_plan(lhs_type, rhs_type),
+          function(function_in),
+          factory(factory_in)
+    {
+        assert(!res_type.is_error());
+    }
+    ~JoinParam();
+};
+
 //-----------------------------------------------------------------------------
 
 } // namespace

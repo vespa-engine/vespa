@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -79,6 +80,16 @@ TensorSpec perform_generic_join(const TensorSpec &a, const TensorSpec &b, join_f
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
 
+TensorSpec perform_generic_join_fast(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
+    Stash stash;
+    const auto &factory = FastValueBuilderFactory::get();
+    auto lhs = value_from_spec(a, factory);
+    auto rhs = value_from_spec(b, factory);
+    auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
+    InterpretedFunction::EvalSingle single(my_op);
+    return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
+}
+
 TEST(GenericJoinTest, dense_join_plan_can_be_created) {
     auto lhs = ValueType::from_spec("tensor(a{},b[6],c[5],e[3],f[2],g{})");
     auto rhs = ValueType::from_spec("tensor(a{},b[6],c[5],d[4],h{})");
@@ -121,7 +132,7 @@ TEST(GenericJoinTest, dense_join_plan_can_be_executed) {
     EXPECT_EQ(c, expect);
 }
 
-TEST(GenericJoinTest, generic_join_works_for_simple_values) {
+TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
     ASSERT_TRUE((join_layouts.size() % 2) == 0);
     for (size_t i = 0; i < join_layouts.size(); i += 2) {
         TensorSpec lhs = spec(join_layouts[i], Div16(N()));
@@ -130,7 +141,9 @@ TEST(GenericJoinTest, generic_join_works_for_simple_values) {
             SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
             auto expect = reference_join(lhs, rhs, fun);
             auto actual = perform_generic_join(lhs, rhs, fun);
+            auto fast = perform_generic_join_fast(lhs, rhs, fun); 
             EXPECT_EQ(actual, expect);
+            EXPECT_EQ(fast, expect);
         }
     }
 }

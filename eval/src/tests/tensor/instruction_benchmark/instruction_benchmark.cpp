@@ -21,6 +21,7 @@
 // verifying that all implementations produce the same result.
 
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_reduce.h>
@@ -127,11 +128,12 @@ struct EngineImpl : Impl {
 
 //-----------------------------------------------------------------------------
 
-EngineImpl  simple_tensor_engine_impl(4, " SimpleTensorEngine", " SimpleT", SimpleTensorEngine::ref());
+EngineImpl  simple_tensor_engine_impl(5, " SimpleTensorEngine", " SimpleT", SimpleTensorEngine::ref());
 EngineImpl default_tensor_engine_impl(1, "DefaultTensorEngine", "OLD PROD", DefaultTensorEngine::ref());
-ValueImpl           simple_value_impl(3, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get());
-ValueImpl    packed_mixed_tensor_impl(2, "  PackedMixedTensor", "  Packed", PackedMixedTensorBuilderFactory::get());
-ValueImpl   default_tensor_value_impl(0, "       DefaultValue", "NEW PROD", DefaultValueBuilderFactory::get());
+ValueImpl           simple_value_impl(2, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get());
+ValueImpl             fast_value_impl(0, "          FastValue", "NEW PROD", FastValueBuilderFactory::get());
+ValueImpl    packed_mixed_tensor_impl(4, "  PackedMixedTensor", "  Packed", PackedMixedTensorBuilderFactory::get());
+ValueImpl   default_tensor_value_impl(3, "       DefaultValue", "DefaultV", DefaultValueBuilderFactory::get());
 vespalib::string                                   short_header("--------");
 
 constexpr double budget = 5.0;
@@ -142,6 +144,7 @@ constexpr double good_limit = 1.10; // GOOD: new prod has performance higher tha
 std::vector<CREF<Impl>> impl_list = {simple_tensor_engine_impl,
                                      default_tensor_engine_impl,
                                      simple_value_impl,
+                                     fast_value_impl,
                                      packed_mixed_tensor_impl,
                                      default_tensor_value_impl};
 
