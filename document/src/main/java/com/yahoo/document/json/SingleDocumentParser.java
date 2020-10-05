@@ -6,7 +6,6 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.vespaxmlparser.DocumentFeedOperation;
 import com.yahoo.vespaxmlparser.DocumentUpdateFeedOperation;
 import com.yahoo.vespaxmlparser.FeedOperation;
@@ -29,22 +28,22 @@ public class SingleDocumentParser {
     }
 
     public FeedOperation parsePut(InputStream inputStream, String docId) {
-        return parse(inputStream, docId, DocumentParser.SupportedOperation.PUT);
+        return parse(inputStream, docId, DocumentOperationType.PUT);
     }
 
     public FeedOperation parseUpdate(InputStream inputStream, String docId)  {
-        return parse(inputStream, docId, DocumentParser.SupportedOperation.UPDATE);
+        return parse(inputStream, docId, DocumentOperationType.UPDATE);
     }
 
-    private FeedOperation parse(InputStream inputStream, String docId, DocumentParser.SupportedOperation supportedOperation)  {
+    private FeedOperation parse(InputStream inputStream, String docId, DocumentOperationType documentOperationType)  {
         JsonReader reader = new JsonReader(docMan, inputStream, jsonFactory);
-        DocumentOperation documentOperation = reader.readSingleDocument(supportedOperation, docId);
+        DocumentOperation documentOperation = reader.readSingleDocument(documentOperationType, docId);
         try {
             inputStream.close();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        if (supportedOperation == DocumentParser.SupportedOperation.PUT) {
+        if (documentOperationType == DocumentOperationType.PUT) {
             return new DocumentFeedOperation(((DocumentPut) documentOperation).getDocument(), documentOperation.getCondition());
         } else {
             return new DocumentUpdateFeedOperation((DocumentUpdate) documentOperation, documentOperation.getCondition());

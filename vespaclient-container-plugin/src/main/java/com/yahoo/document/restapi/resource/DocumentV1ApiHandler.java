@@ -12,9 +12,9 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.document.json.DocumentOperationType;
 import com.yahoo.document.json.JsonReader;
 import com.yahoo.document.json.JsonWriter;
-import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.restapi.DocumentOperationExecutor;
 import com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType;
 import com.yahoo.document.restapi.DocumentOperationExecutor.Group;
@@ -26,7 +26,6 @@ import com.yahoo.document.restapi.DocumentOperationExecutorImpl;
 import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
-import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
@@ -166,7 +165,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         catch (IllegalArgumentException e) {
             return badRequest(request, e, responseHandler);
         }
-        catch (RuntimeException | LinkageError e) {
+        catch (RuntimeException e) {
             return serverError(request, e, responseHandler);
         }
     }
@@ -250,7 +249,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                   }
                                               }
                                               // TODO jonmv: This shouldn't happen much, but ... expose errors too?
-                                              catch (RuntimeException | LinkageError e) {
+                                              catch (RuntimeException e) {
                                                   log.log(WARNING, "Exception serializing document in document/v1 visit response", e);
                                               }
                                           });
@@ -283,7 +282,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel postDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         DocumentId id = path.id();
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, DocumentOperationType.PUT, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.PUT, clock.instant());
         return new ForwardingContentChannel(in -> {
             try {
                 DocumentPut put = parser.parsePut(in, id.toString());
@@ -296,7 +295,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
             }
-            catch (RuntimeException | LinkageError e) {
+            catch (RuntimeException e) {
                 serverError(request, e, handler);
             }
         });
@@ -304,7 +303,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel putDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         DocumentId id = path.id();
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, DocumentOperationType.UPDATE, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.UPDATE, clock.instant());
         return new ForwardingContentChannel(in -> {
             try {
                 DocumentUpdate update = parser.parseUpdate(in, id.toString());
@@ -318,7 +317,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
             }
-            catch (RuntimeException | LinkageError e) {
+            catch (RuntimeException e) {
                 serverError(request, e, handler);
             }
         });
@@ -326,7 +325,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel deleteDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         DocumentId id = path.id();
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, DocumentOperationType.REMOVE, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.REMOVE, clock.instant());
         executor.remove(id,
                         getProperty(request, ROUTE).map(parameters()::withRoute).orElse(parameters()),
                         new OperationContext((type, message) -> handleError(request, type, message, responseRoot(request, id), handler),
@@ -423,10 +422,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         return respond(Response.Status.TOO_MANY_REQUESTS, root, handler);
     }
 
-    private static ContentChannel serverError(HttpRequest request, Throwable t, ResponseHandler handler) {
-        log.log(WARNING, "Uncaught exception handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ":", t);
+    private static ContentChannel serverError(HttpRequest request, RuntimeException e, ResponseHandler handler) {
+        log.log(WARNING, "Uncaught exception handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ":", e);
         Cursor root = responseRoot(request);
-        root.setString("message", Exceptions.toMessageString(t));
+        root.setString("message", Exceptions.toMessageString(e));
         return respond(Response.Status.INTERNAL_SERVER_ERROR, root, handler);
     }
 
@@ -593,14 +592,14 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         DocumentPut parsePut(InputStream inputStream, String docId) {
-            return (DocumentPut) parse(inputStream, docId, DocumentParser.SupportedOperation.PUT);
+            return (DocumentPut) parse(inputStream, docId, DocumentOperationType.PUT);
         }
 
         DocumentUpdate parseUpdate(InputStream inputStream, String docId)  {
-            return (DocumentUpdate) parse(inputStream, docId, DocumentParser.SupportedOperation.UPDATE);
+            return (DocumentUpdate) parse(inputStream, docId, DocumentOperationType.UPDATE);
         }
 
-        private DocumentOperation parse(InputStream inputStream, String docId, DocumentParser.SupportedOperation operation)  {
+        private DocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation)  {
             return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
         }
 
@@ -609,10 +608,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private class MeasuringResponseHandler implements ResponseHandler {
 
         private final ResponseHandler delegate;
-        private final DocumentOperationType type;
+        private final com.yahoo.documentapi.metrics.DocumentOperationType type;
         private final Instant start;
 
-        private MeasuringResponseHandler(ResponseHandler delegate, DocumentOperationType type, Instant start) {
+        private MeasuringResponseHandler(ResponseHandler delegate, com.yahoo.documentapi.metrics.DocumentOperationType type, Instant start) {
             this.delegate = delegate;
             this.type = type;
             this.start = start;

@@ -4,6 +4,7 @@ package com.yahoo.document.json.document;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.json.DocumentOperationType;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 
 import java.io.IOException;
@@ -12,13 +13,10 @@ import java.util.Optional;
 /**
  * Parses a document operation.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class DocumentParser {
 
-    public enum SupportedOperation {
-        PUT, UPDATE, REMOVE
-    }
     private static final String UPDATE = "update";
     private static final String PUT = "put";
     private static final String ID = "id";
@@ -134,15 +132,15 @@ public class DocumentParser {
         }
     }
 
-    private static SupportedOperation operationNameToOperationType(String operationName) {
+    private static DocumentOperationType operationNameToOperationType(String operationName) {
         switch (operationName) {
             case PUT:
             case ID:
-                return SupportedOperation.PUT;
+                return DocumentOperationType.PUT;
             case REMOVE:
-                return SupportedOperation.REMOVE;
+                return DocumentOperationType.REMOVE;
             case UPDATE:
-                return SupportedOperation.UPDATE;
+                return DocumentOperationType.UPDATE;
             default:
                 throw new IllegalArgumentException(
                         "Got " + operationName + " as document operation, only \"put\", " +

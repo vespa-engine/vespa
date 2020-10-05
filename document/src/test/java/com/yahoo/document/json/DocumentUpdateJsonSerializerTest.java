@@ -14,7 +14,6 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
@@ -97,7 +96,7 @@ public class DocumentUpdateJsonSerializerTest {
     private static DocumentUpdate jsonToDocumentUpdate(String jsonDoc, String docId) {
         final InputStream rawDoc = new ByteArrayInputStream(Utf8.toBytes(jsonDoc));
         JsonReader reader = new JsonReader(types, rawDoc, parserFactory);
-        return (DocumentUpdate) reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, docId);
+        return (DocumentUpdate) reader.readSingleDocument(DocumentOperationType.UPDATE, docId);
     }
 
     private static String documentUpdateToJson(DocumentUpdate update) {
