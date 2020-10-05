@@ -153,11 +153,11 @@ DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
 {
     Case prev_case = Case::NONE;
     auto update_plan = [&](Case my_case, size_t in_size, size_t out_size, size_t in_val, size_t out_val) {
-        /*if (my_case == prev_case) {
+        if (my_case == prev_case) {
             assert(!out_loop_cnt.empty());
             in_loop_cnt.back() *= in_size;
             out_loop_cnt.back() *= out_size;
-        } else */ {
+        } else {
             in_loop_cnt.push_back(in_size);
             out_loop_cnt.push_back(out_size);
             in_stride.push_back(in_val);
@@ -221,8 +221,6 @@ DenseConcatPlan::DenseConcatPlan(const ValueType &lhs_type,
     }
     assert(right_offset > 0);
     assert(left.output_size  == right.output_size);
-    assert(left.out_loop_cnt == right.out_loop_cnt);
-    assert(left.out_stride   == right.out_stride);
 }
 
 DenseConcatPlan::~DenseConcatPlan() = default;
