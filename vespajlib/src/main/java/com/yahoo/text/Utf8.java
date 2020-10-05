@@ -106,42 +106,24 @@ public final class Utf8 {
     }
 
     /**
-     * Will try an optimistic approach to utf8 encoding.
-     * That is 4.6x faster that the brute encode for ascii, not accounting for reduced memory footprint and GC.
+     * Encode a UTF-8 string.
      *
      * @param string The string to encode.
      * @return Utf8 encoded array
      */
     public static byte[] toBytes(String string) {
-        byte [] utf8 = toBytesAscii(string);
-        return utf8 != null ? utf8 : string.getBytes(StandardCharsets.UTF_8);
+        // This is just wrapper for String::getBytes. Pre-Java 9 this had an more efficient approach for ASCII-only strings.
+        return string.getBytes(StandardCharsets.UTF_8);
     }
     /**
      * Decode a UTF-8 string.
      *
-     * @param utf8 The string to encode.
+     * @param utf8 The bytes to decode.
      * @return Utf8 encoded array
      */
     public static String toString(byte [] utf8) {
-        // This is just wrapper for String::new now. Pre-Java 9 this had an more efficient approach for ASCII strings.
+        // This is just wrapper for String::new. Pre-Java 9 this had an more efficient approach for ASCII-onlu strings.
         return new String(utf8, StandardCharsets.UTF_8);
-    }
-
-    /**
-     * If String is purely ascii 7bit it will encode it as a byte array.
-     * @param str The string to encode
-     * @return Utf8 encoded array
-     */
-    private static byte[] toBytesAscii(final CharSequence str) {
-        byte [] utf8 = new byte[str.length()];
-        for (int i=0; i < utf8.length; i++) {
-            char c = str.charAt(i);
-            if ((c < 0) || (c >= 0x80)) {
-                return null;
-            }
-            utf8[i] = (byte)c;
-        }
-        return utf8;
     }
 
     /**
