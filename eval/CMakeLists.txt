@@ -34,6 +34,7 @@ vespa_define_module(
     src/tests/eval/value_codec
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
+    src/tests/instruction/generic_concat
     src/tests/instruction/generic_join
     src/tests/instruction/generic_merge
     src/tests/instruction/generic_reduce

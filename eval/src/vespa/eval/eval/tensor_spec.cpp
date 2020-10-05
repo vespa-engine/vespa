@@ -45,6 +45,13 @@ TensorSpec & TensorSpec::operator = (const TensorSpec &) = default;
 
 TensorSpec::~TensorSpec() { }
 
+TensorSpec &
+TensorSpec::set(Address address, double value) {
+    auto res = _cells.emplace(std::move(address), value);
+    if (!res.second) { assert(res.first->second.value == value); }
+    return *this;
+}
+
 vespalib::string
 TensorSpec::to_string() const
 {
