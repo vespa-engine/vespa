@@ -1,20 +1,20 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
-
-import static org.junit.Assert.*;
-
-import java.util.Arrays;
-import java.util.zip.Deflater;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.yahoo.text.Utf8;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.zip.Deflater;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Check decompressor used among other things for packed summary fields.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SlowInflateTestCase {
 
@@ -27,7 +27,7 @@ public class SlowInflateTestCase {
     @Before
     public void setUp() throws Exception {
         value = "000000000000000000000000000000000000000000000000000000000000000";
-        raw = Utf8.toBytesStd(value);
+        raw = value.getBytes(StandardCharsets.UTF_8);
         output = new byte[raw.length * 2];
         Deflater compresser = new Deflater();
         compresser.setInput(raw);

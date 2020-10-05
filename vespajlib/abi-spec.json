@@ -3061,10 +3061,8 @@
     "methods": [
       "public void <init>()",
       "public static java.nio.charset.Charset getCharset()",
-      "public static java.lang.String toStringStd(byte[])",
       "public static java.lang.String toString(byte[], int, int)",
       "public static java.lang.String toString(java.nio.ByteBuffer)",
-      "public static byte[] toBytesStd(java.lang.String)",
       "public static byte[] toAsciiBytes(long)",
       "public static byte[] toAsciiBytes(boolean)",
       "public static byte[] toBytes(java.lang.String)",

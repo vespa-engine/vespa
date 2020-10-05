@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
 import com.yahoo.text.Utf8;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -201,7 +200,7 @@ public class JsonFormatTestCase {
     public void testDecodeUnicodeAmp() {
         final String json = "{\"body\":\"some text\\u0026more text\"}";
         Slime slime = new Slime();
-        new JsonDecoder().decode(slime, Utf8.toBytesStd(json));
+        new JsonDecoder().decode(slime, json.getBytes(StandardCharsets.UTF_8));
         Cursor a = slime.get().field("body");
         assertThat(a.asString(), is("some text&more text"));
     }
@@ -224,7 +223,7 @@ public class JsonFormatTestCase {
                 "        }\n";
 
         Slime slime = new Slime();
-        slime = new JsonDecoder().decode(slime, Utf8.toBytesStd(json));
+        slime = new JsonDecoder().decode(slime, json.getBytes(StandardCharsets.UTF_8));
         Cursor a = slime.get().field("rules");
         assertThat(a.asString(), is(str));
     }
@@ -261,7 +260,7 @@ public class JsonFormatTestCase {
     private void verifyEncodeDecode(String json, boolean compact) {
         try {
             Slime slime = new Slime();
-            new JsonDecoder().decode(slime, Utf8.toBytesStd(json));
+            new JsonDecoder().decode(slime, json.getBytes(StandardCharsets.UTF_8));
             ByteArrayOutputStream a = new ByteArrayOutputStream();
             new JsonFormat(compact).encode(a, slime);
             assertEquals(json, Utf8.toString(a.toByteArray()));
