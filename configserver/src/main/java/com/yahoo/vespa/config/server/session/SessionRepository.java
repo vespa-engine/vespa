@@ -359,7 +359,7 @@ public class SessionRepository {
     void activate(RemoteSession session) {
         long sessionId = session.getSessionId();
         Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
-        log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + sessionId);
+        log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + session);
         ApplicationSet app = ensureApplicationLoaded(session);
         log.log(Level.FINE, () -> session.logPre() + "Reloading config for " + sessionId);
         applicationRepo.reloadConfig(app);
@@ -425,7 +425,7 @@ public class SessionRepository {
         RemoteSession activated = session.activated(applicationSet);
         long sessionId = activated.getSessionId();
         remoteSessionCache.put(sessionId, activated);
-        addSessionStateWatcher(sessionId, activated);
+        updateSessionStateWatcher(sessionId, activated);
 
         return applicationSet;
     }
@@ -529,7 +529,7 @@ public class SessionRepository {
         RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
         remoteSessionCache.put(sessionId, session);
         loadSessionIfActive(session);
-        addSessionStateWatcher(sessionId, session);
+        updateSessionStateWatcher(sessionId, session);
         return session;
     }
 
@@ -756,11 +756,14 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void addSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
-        if ( ! sessionStateWatchers.containsKey(sessionId)) {
+    private void updateSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
+        SessionStateWatcher sessionStateWatcher = sessionStateWatchers.get(sessionId);
+        if (sessionStateWatcher == null) {
             Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
             sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metrics, zkWatcherExecutor, this));
+        } else {
+            sessionStateWatcher.updateRemoteSession(remoteSession);
         }
     }
 

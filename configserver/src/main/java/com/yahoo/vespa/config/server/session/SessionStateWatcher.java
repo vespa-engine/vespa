@@ -7,6 +7,7 @@ import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +25,7 @@ public class SessionStateWatcher {
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
-    private final RemoteSession session;
+    private volatile RemoteSession session;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
     private final SessionRepository sessionRepository;
@@ -43,7 +44,7 @@ public class SessionStateWatcher {
         this.sessionRepository = sessionRepository;
     }
 
-    private void sessionStatusChanged(Status newStatus) {
+    private synchronized void sessionStatusChanged(Status newStatus) {
         long sessionId = session.getSessionId();
         switch (newStatus) {
             case NEW:
@@ -103,6 +104,10 @@ public class SessionStateWatcher {
                 metrics.incSessionChangeErrors();
             }
         });
+    }
+
+    public synchronized void updateRemoteSession(RemoteSession session) {
+        this.session = session;
     }
 
 }
