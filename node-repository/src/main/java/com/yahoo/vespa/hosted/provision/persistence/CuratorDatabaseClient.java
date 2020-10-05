@@ -77,16 +77,14 @@ public class CuratorDatabaseClient {
     private final Clock clock;
     private final Zone zone;
     private final CuratorCounter provisionIndexCounter;
-    private final boolean logStackTracesOnLockTimeout;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache, boolean logStackTracesOnLockTimeout,
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache,
                                  long nodeObjectCacheSize) {
         this.nodeSerializer = new NodeSerializer(flavors, nodeObjectCacheSize);
         this.zone = zone;
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
-        this.logStackTracesOnLockTimeout = logStackTracesOnLockTimeout;
         initZK();
     }
 
@@ -396,22 +394,6 @@ public class CuratorDatabaseClient {
         try {
             return db.lock(lockPath(application), timeout);
         } catch (UncheckedTimeoutException e) {
-            if (logStackTracesOnLockTimeout) {
-                log.log(Level.WARNING, "Logging stack trace from all threads due to lock timeout");
-                Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-                for (Map.Entry<Thread, StackTraceElement[]> kv : stackTraces.entrySet()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Thread '")
-                      .append(kv.getKey().getName())
-                      .append("'\n");
-                    for (var stackTraceElement : kv.getValue()) {
-                        sb.append("\tat ")
-                          .append(stackTraceElement)
-                          .append("\n");
-                    }
-                    log.log(Level.WARNING, sb.toString());
-                }
-            }
             throw new ApplicationLockException(e);
         }
     }
@@ -424,7 +406,7 @@ public class CuratorDatabaseClient {
 
     public List<ApplicationId> readApplicationIds() {
         return db.getChildren(applicationsPath).stream()
-                 .map(path -> ApplicationId.fromSerializedForm(path))
+                 .map(ApplicationId::fromSerializedForm)
                  .collect(Collectors.toList());
     }
 
