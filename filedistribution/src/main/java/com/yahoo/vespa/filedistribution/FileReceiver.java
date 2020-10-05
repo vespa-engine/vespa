@@ -56,7 +56,7 @@ public class FileReceiver {
         private final long fileSize;
         private long currentFileSize;
         private long currentPartId;
-        private long currentHash;
+        private final long currentHash;
         private final File fileReferenceDir;
         private final File tmpDir;
         private final File inprogressFile;
@@ -96,9 +96,12 @@ public class FileReceiver {
             try {
                 Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             } catch (IOException e) {
-                log.log(Level.SEVERE, "Failed writing to file (" + inprogressFile.toPath() + "): " + e.getMessage(), e);
-                inprogressFile.delete();
-                throw new RuntimeException("Failed writing to file (" + inprogressFile.toPath() + "): ", e);
+                String message = "Failed writing to file (" + inprogressFile.toPath() + "): ";
+                log.log(Level.SEVERE, message + e.getMessage(), e);
+                boolean successfulDelete = inprogressFile.delete();
+                if ( ! successfulDelete)
+                    log.log(Level.INFO, "Unable to delete " + inprogressFile.toPath());
+                throw new RuntimeException(message, e);
             }
             currentFileSize += part.length;
             currentPartId++;
@@ -192,7 +195,7 @@ public class FileReceiver {
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already). Delete temp file/dir in that case, to avoid filling the disk.
-            log.log(Level.INFO, "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() +
+            log.log(Level.FINE, "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() +
                     "', '" + destination.getAbsolutePath() + "' already exists");
             deleteFileOrDirectory(tempFile);
         } catch (IOException e) {
