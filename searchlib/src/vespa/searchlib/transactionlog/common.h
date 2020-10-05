@@ -48,7 +48,12 @@ public:
     {
     public:
         Entry() : _unique(0), _type(0), _valid(false), _data() { }
-        Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d);
+        Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d)
+            : _unique(u),
+              _type(t),
+              _valid(true),
+              _data(d)
+        { }
         SerialNum            serial() const { return _unique; }
         Type                   type() const { return _type; }
         bool                  valid() const { return _valid; }
