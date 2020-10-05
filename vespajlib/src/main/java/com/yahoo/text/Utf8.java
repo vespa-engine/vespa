@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
 import java.io.IOException;
@@ -31,6 +31,11 @@ public final class Utf8 {
         return StandardCharsets.UTF_8;
     }
 
+    /** To be used instead of String.String(byte[] bytes) */
+    public static String toStringStd(byte[] data) {
+        return new String(data, StandardCharsets.UTF_8);
+    }
+
     /**
      * Utility method as toString(byte[]).
      *
@@ -58,6 +63,13 @@ public final class Utf8 {
     public static String toString(ByteBuffer data) {
         CharBuffer c = StandardCharsets.UTF_8.decode(data);
         return c.toString();
+    }
+
+    /**
+     * Uses String.getBytes directly.
+     */
+    public static byte[] toBytesStd(String str) {
+        return str.getBytes(StandardCharsets.UTF_8);
     }
 
     /**

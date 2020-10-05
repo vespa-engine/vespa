@@ -1,23 +1,23 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
-
-import com.yahoo.text.Utf8;
-import com.yahoo.text.Utf8Array;
-import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.IdentityHashMap;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.Arrays;
+import java.util.IdentityHashMap;
+
+import com.yahoo.text.Utf8;
+import com.yahoo.text.Utf8Array;
+import org.junit.Test;
 
 /**
  * Test the ByteWriter class. ByteWriter is also implicitly tested in
@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
  */
 public class ByteWriterTestCase {
 
-    private final CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
+    private final CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
     private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
     /**
@@ -281,7 +281,7 @@ public class ByteWriterTestCase {
     @Test
     public void testUnMappableCharacter() throws java.io.IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        ByteWriter writer = new ByteWriter(stream, StandardCharsets.US_ASCII.newEncoder());
+        ByteWriter writer = new ByteWriter(stream, Charset.forName("ascii").newEncoder());
         writer.write("yahoo\u9999bahoo");
         writer.close();
         assertTrue(stream.toString("ascii").contains("yahoo"));

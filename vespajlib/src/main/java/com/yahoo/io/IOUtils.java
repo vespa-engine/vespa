@@ -1,23 +1,25 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
 
 
 import java.io.*;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.List;
 import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
 
+
 /**
- * Some static I/O convenience methods.
+ * <p>Some static io convenience methods.</p>
  *
- * @author bratseth
- * @author Bjorn Borud
+ * @author  bratseth
+ * @author  Bjorn Borud
  */
 public abstract class IOUtils {
+
+    static private final Charset utf8Charset = Charset.forName("utf-8");
 
     /** Closes a writer, or does nothing if the writer is null */
     public static void closeWriter(Writer writer) {
@@ -327,7 +329,7 @@ public abstract class IOUtils {
      * Encodes string as UTF-8 into ByteBuffer
      */
     public static ByteBuffer utf8ByteBuffer(String s) {
-        return StandardCharsets.UTF_8.encode(s);
+        return utf8Charset.encode(s);
     }
 
     /**
@@ -339,7 +341,7 @@ public abstract class IOUtils {
     public static String readFile(File file) throws IOException {
         try {
             if (file == null) return null;
-            return Files.readString(file.toPath());
+            return new String(Files.readAllBytes(file.toPath()), "utf-8");
         }
         catch (NoSuchFileException e) {
             throw new NoSuchFileException("Could not find file '" + file.getAbsolutePath() + "'");
