@@ -404,12 +404,6 @@ public class Flags {
             "Takes effect on next deploy from controller",
             APPLICATION_ID, ZONE_ID);
 
-    public static final UnboundLongFlag NODE_OBJECT_CACHE_SIZE = defineLongFlag(
-            "node-object-cache-size",
-            2000,
-            "The number of deserialized Node objects to store in-memory.",
-            "Takes effect on config server restart");
-
     public static final UnboundBooleanFlag USE_NEW_RESTAPI_HANDLER = defineFeatureFlag(
             "use-new-restapi-handler",
             false,
