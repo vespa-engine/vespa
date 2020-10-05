@@ -52,8 +52,9 @@ public interface DocumentOperationExecutor {
         NOT_FOUND,
         PRECONDITION_FAILED,
         BAD_REQUEST,
+        ERROR,
         TIMEOUT,
-        ERROR;
+        INSUFFICIENT_STORAGE;
     }
 
 
