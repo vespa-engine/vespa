@@ -51,7 +51,7 @@ public class SessionStateWatcher {
                 break;
             case PREPARE:
                 createLocalSession(sessionId);
-                sessionRepository.prepareRemoteSession(session);
+                sessionRepository.prepare(session);
                 break;
             case ACTIVATE:
                 createLocalSession(sessionId);

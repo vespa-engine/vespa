@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
@@ -8,11 +8,9 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
-import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
@@ -24,7 +22,6 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
-import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -38,7 +35,6 @@ import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.zookeeper.KeeperException;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -54,7 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
@@ -264,23 +259,11 @@ public class SessionRepository {
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
-                deleteRemoteSessionFromZooKeeper(session);
+                session.delete();
                 deleted++;
             }
         }
         return deleted;
-    }
-
-    public void deactivate(RemoteSession remoteSession) {
-        RemoteSession session = remoteSession.deactivated();
-        remoteSessionCache.put(session.getSessionId(), session);
-    }
-
-    public void deleteRemoteSessionFromZooKeeper(RemoteSession session) {
-        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
-        Transaction transaction = sessionZooKeeperClient.deleteTransaction();
-        transaction.commit();
-        transaction.close();
     }
 
     // TODO: Delete after 7.294 has been rolled out everywhere
@@ -350,7 +333,7 @@ public class SessionRepository {
         RemoteSession session = createRemoteSession(sessionId);
         if (session.getStatus() == Session.Status.NEW) {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
-            confirmUpload(session);
+            session.confirmUpload();
         }
         if (distributeApplicationPackage())
             createLocalSessionUsingDistributedApplicationPackage(sessionId);
@@ -360,20 +343,24 @@ public class SessionRepository {
         long sessionId = session.getSessionId();
         Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
         log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + sessionId);
-        ApplicationSet app = ensureApplicationLoaded(session);
+        ApplicationSet app = session.ensureApplicationLoaded();
         log.log(Level.FINE, () -> session.logPre() + "Reloading config for " + sessionId);
         applicationRepo.reloadConfig(app);
         log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
-        notifyCompletion(waiter, session);
+        session.notifyCompletion(waiter);
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
+    }
+
+    public void deactivate(RemoteSession remoteSession) {
+        remoteSession.deactivate();
     }
 
     public void delete(RemoteSession remoteSession) {
         long sessionId = remoteSession.getSessionId();
         // TODO: Change log level to FINE when debugging is finished
         log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
-        deactivate(remoteSession);
-        deleteRemoteSessionFromZooKeeper(remoteSession);
+        remoteSession.deactivate();
+        remoteSession.delete();
         remoteSessionCache.remove(sessionId);
         LocalSession localSession = getLocalSession(sessionId);
         if (localSession != null) {
@@ -381,6 +368,10 @@ public class SessionRepository {
             log.log(Level.INFO, () -> localSession.logPre() + "Deleting local session " + sessionId);
             deleteLocalSession(localSession);
         }
+    }
+
+    void prepare(RemoteSession session) {
+        session.prepare();
     }
 
     boolean distributeApplicationPackage() {
@@ -392,7 +383,7 @@ public class SessionRepository {
         if (watcher != null) watcher.close();
         RemoteSession session = remoteSessionCache.remove(sessionId);
         if (session != null) {
-            deactivate(session);
+            session.deactivate();
         }
         metrics.incRemovedSessions();
     }
@@ -401,84 +392,11 @@ public class SessionRepository {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
-                applicationRepo.reloadConfig(ensureApplicationLoaded(session));
+                applicationRepo.reloadConfig(session.ensureApplicationLoaded());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }
         }
-    }
-
-    void prepareRemoteSession(RemoteSession session) {
-        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
-        Curator.CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
-        ensureApplicationLoaded(session);
-        notifyCompletion(waiter, session);
-    }
-
-    public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
-
-        if (session.applicationSet().isPresent()) {
-            return session.applicationSet().get();
-        }
-
-        ApplicationSet applicationSet = loadApplication(session);
-        RemoteSession activated = session.activated(applicationSet);
-        long sessionId = activated.getSessionId();
-        remoteSessionCache.put(sessionId, activated);
-        addSessionStateWatcher(sessionId, activated);
-
-        return applicationSet;
-    }
-
-    void confirmUpload(RemoteSession session) {
-        Curator.CompletionWaiter waiter = session.getSessionZooKeeperClient().getUploadWaiter();
-        long sessionId = session.getSessionId();
-        log.log(Level.FINE, "Notifying upload waiter for session " + sessionId);
-        notifyCompletion(waiter, session);
-        log.log(Level.FINE, "Done notifying upload for session " + sessionId);
-    }
-
-    void notifyCompletion(Curator.CompletionWaiter completionWaiter, RemoteSession session) {
-        try {
-            completionWaiter.notifyCompletion();
-        } catch (RuntimeException e) {
-            // Throw only if we get something else than NoNodeException or NodeExistsException.
-            // NoNodeException might happen when the session is no longer in use (e.g. the app using this session
-            // has been deleted) and this method has not been called yet for the previous session operation on a
-            // minority of the config servers.
-            // NodeExistsException might happen if an event for this node is delivered more than once, in that case
-            // this is a no-op
-            Set<Class<? extends KeeperException>> acceptedExceptions = Set.of(KeeperException.NoNodeException.class,
-                                                                              KeeperException.NodeExistsException.class);
-            Class<? extends Throwable> exceptionClass = e.getCause().getClass();
-            if (acceptedExceptions.contains(exceptionClass))
-                log.log(Level.FINE, "Not able to notify completion for session " + session.getSessionId() +
-                                    " (" + completionWaiter + ")," +
-                                    " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
-                        ? "has been deleted"
-                        : "already exists"));
-            else
-                throw e;
-        }
-    }
-
-    private ApplicationSet loadApplication(RemoteSession session) {
-        log.log(Level.FINE, () -> "Loading application for " + session);
-        SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
-        ApplicationPackage applicationPackage = sessionZooKeeperClient.loadApplicationPackage();
-        ActivatedModelsBuilder builder = new ActivatedModelsBuilder(session.getTenantName(),
-                                                                    session.getSessionId(),
-                                                                    sessionZooKeeperClient,
-                                                                    componentRegistry);
-        // Read hosts allocated on the config server instance which created this
-        SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
-
-        return ApplicationSet.fromList(builder.buildModels(session.getApplicationId(),
-                                                           sessionZooKeeperClient.readDockerImageRepository(),
-                                                           sessionZooKeeperClient.readVespaVersion(),
-                                                           applicationPackage,
-                                                           allocatedHosts,
-                                                           clock.instant()));
     }
 
     private void nodeChanged() {
@@ -526,7 +444,7 @@ public class SessionRepository {
 
     public synchronized RemoteSession createRemoteSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, sessionZKClient);
         remoteSessionCache.put(sessionId, session);
         loadSessionIfActive(session);
         addSessionStateWatcher(sessionId, session);
@@ -648,7 +566,7 @@ public class SessionRepository {
         try {
             long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
             RemoteSession currentActiveSession = getRemoteSession(currentActiveSessionId);
-            currentActiveApplicationSet = Optional.ofNullable(ensureApplicationLoaded(currentActiveSession));
+            currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
         } catch (IllegalArgumentException e) {
             // Do nothing if we have no currently active session
         }
