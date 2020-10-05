@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
@@ -77,16 +78,14 @@ public class CuratorDatabaseClient {
     private final Clock clock;
     private final Zone zone;
     private final CuratorCounter provisionIndexCounter;
-    private final boolean logStackTracesOnLockTimeout;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache, boolean logStackTracesOnLockTimeout,
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache,
                                  long nodeObjectCacheSize) {
         this.nodeSerializer = new NodeSerializer(flavors, nodeObjectCacheSize);
         this.zone = zone;
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
-        this.logStackTracesOnLockTimeout = logStackTracesOnLockTimeout;
         initZK();
     }
 
@@ -392,31 +391,33 @@ public class CuratorDatabaseClient {
      * transaction. The config server then commits (writes) the transaction which may include operations that modify
      * data in paths owned by this class.
      */
-    public Lock lock(ApplicationId application, Duration timeout) {
+    // TODO(mpolden): Simplify once we are down to one application lock
+    public Mutex lock(ApplicationId application, Duration timeout) {
+        Mutex legacyLock;
+        Mutex lock;
+        // Take the application lock (same as config server). This is likely held at this point, but is re-entrant.
         try {
-            return db.lock(lockPath(application), timeout);
+            lock = db.lock(lockPath(application), timeout);
         } catch (UncheckedTimeoutException e) {
-            if (logStackTracesOnLockTimeout) {
-                log.log(Level.WARNING, "Logging stack trace from all threads due to lock timeout");
-                Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-                for (Map.Entry<Thread, StackTraceElement[]> kv : stackTraces.entrySet()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Thread '")
-                      .append(kv.getKey().getName())
-                      .append("'\n");
-                    for (var stackTraceElement : kv.getValue()) {
-                        sb.append("\tat ")
-                          .append(stackTraceElement)
-                          .append("\n");
-                    }
-                    log.log(Level.WARNING, sb.toString());
-                }
-            }
             throw new ApplicationLockException(e);
         }
+        // Take the legacy node-repository lock
+        try {
+            legacyLock = db.lock(legacyLockPath(application), timeout);
+        } catch (UncheckedTimeoutException e) {
+            lock.close();
+            throw new ApplicationLockException(e);
+        }
+        return () -> {
+            try {
+                legacyLock.close();
+            } finally {
+                lock.close();
+            }
+        };
     }
 
-    public Lock lock(ApplicationId application) {
+    public Mutex lock(ApplicationId application) {
         return lock(application, defaultLockTimeout);
     }
 
@@ -424,7 +425,7 @@ public class CuratorDatabaseClient {
 
     public List<ApplicationId> readApplicationIds() {
         return db.getChildren(applicationsPath).stream()
-                 .map(path -> ApplicationId.fromSerializedForm(path))
+                 .map(ApplicationId::fromSerializedForm)
                  .collect(Collectors.toList());
     }
 
