@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
@@ -28,7 +28,7 @@ import java.util.Optional;
  */
 public abstract class Session implements Comparable<Session>  {
 
-    private final long sessionId;
+    protected final long sessionId;
     protected final TenantName tenant;
     protected final SessionZooKeeperClient sessionZooKeeperClient;
     protected final Optional<ApplicationPackage> applicationPackage;
