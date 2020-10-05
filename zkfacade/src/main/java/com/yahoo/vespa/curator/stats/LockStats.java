@@ -27,7 +27,7 @@ public class LockStats {
     private final PriorityQueue<RecordedLockAttempts> interestingRecordings =
             new PriorityQueue<>(MAX_RECORDINGS, Comparator.comparing(RecordedLockAttempts::duration));
 
-    private final ConcurrentHashMap<String, LockCounters> countersByLockPath = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, LockMetrics> metricsByLockPath = new ConcurrentHashMap<>();
 
     /** Returns global stats. */
     public static LockStats getGlobal() { return stats; }
@@ -37,13 +37,13 @@ public class LockStats {
         return stats.statsByThread.computeIfAbsent(Thread.currentThread(), ThreadLockStats::new);
     }
 
-    static void clearForTesting() {
+    public static void clearForTesting() {
         stats = new LockStats();
     }
 
     private LockStats() {}
 
-    public Map<String, LockCounters> getLockCountersByPath() { return Map.copyOf(countersByLockPath); }
+    public Map<String, LockMetrics> getLockMetricsByPath() { return Map.copyOf(metricsByLockPath); }
     public List<ThreadLockStats> getThreadLockStats() { return List.copyOf(statsByThread.values()); }
     public List<LockAttempt> getLockAttemptSamples() { return completedLockAttemptSamples.asList(); }
 
@@ -53,8 +53,8 @@ public class LockStats {
         }
     }
 
-    LockCounters getLockCounters(String lockPath) {
-        return countersByLockPath.computeIfAbsent(lockPath, __ -> new LockCounters());
+    LockMetrics getLockMetrics(String lockPath) {
+        return metricsByLockPath.computeIfAbsent(lockPath, __ -> new LockMetrics());
     }
 
     void maybeSample(LockAttempt lockAttempt) {

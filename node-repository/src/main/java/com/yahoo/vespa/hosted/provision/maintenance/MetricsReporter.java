@@ -10,6 +10,8 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.curator.stats.LatencyMetrics;
+import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -64,6 +66,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         NodeList nodes = nodeRepository().list();
         ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
+        updateLockMetrics();
         nodes.forEach(node -> updateNodeMetrics(node, serviceModel));
         updateStateMetrics(nodes);
         updateMaintenanceMetrics();
@@ -228,6 +231,30 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             List<Node> nodesInState = nodesByState.getOrDefault(state, List.of());
             metric.set("hostedVespa." + state.name() + "Hosts", nodesInState.size(), null);
         }
+    }
+
+    private void updateLockMetrics() {
+        LockStats.getGlobal().getLockMetricsByPath()
+                .forEach((lockPath, lockMetrics) -> {
+                    Metric.Context context = getContextAt("lockPath", lockPath);
+
+                    metric.set("lockAttempt.acquire", lockMetrics.getAndResetAcquireCount(), context);
+                    metric.set("lockAttempt.acquireFailed", lockMetrics.getAndResetAcquireFailedCount(), context);
+                    metric.set("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
+                    metric.set("lockAttempt.locked", lockMetrics.getAndResetAcquireSucceededCount(), context);
+                    metric.set("lockAttempt.release", lockMetrics.getAndResetReleaseCount(), context);
+                    metric.set("lockAttempt.releaseFailed", lockMetrics.getAndResetReleaseFailedCount(), context);
+
+                    setLockLatencyMetrics("acquire", lockMetrics.getAndResetAcquireLatencyMetrics(), context);
+                    setLockLatencyMetrics("locked", lockMetrics.getAndResetLockedLatencyMetrics(), context);
+                });
+    }
+
+    private void setLockLatencyMetrics(String name, LatencyMetrics latencyMetrics, Metric.Context context) {
+        metric.set("lockAttempt." + name + "Latency", latencyMetrics.latencySeconds(), context);
+        metric.set("lockAttempt." + name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds(), context);
+        metric.set("lockAttempt." + name + "Hz", latencyMetrics.startHz(), context);
+        metric.set("lockAttempt." + name + "Load", latencyMetrics.load(), context);
     }
 
     private void updateDockerMetrics(NodeList nodes) {

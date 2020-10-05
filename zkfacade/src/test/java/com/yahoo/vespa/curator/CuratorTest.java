@@ -99,7 +99,7 @@ public class CuratorTest {
     }
 
     private Curator createCurator(ConfigserverConfig configserverConfig)  {
-        return new Curator(configserverConfig, Optional.empty(), Optional.empty());
+        return new Curator(configserverConfig, Optional.empty());
     }
 
     private static class PortAllocator {

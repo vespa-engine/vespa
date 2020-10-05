@@ -8,10 +8,10 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -27,7 +27,7 @@ public class LockTest {
     private final InterProcessLock mutex = mock(InterProcessLock.class);
     private final String lockPath = "/lock/path";
     private final Duration acquireTimeout = Duration.ofSeconds(10);
-    private final Lock lock = new Lock(lockPath, mutex, Optional.empty());
+    private final Lock lock = new Lock(lockPath, mutex);
 
     @Before
     public void setUp() {
@@ -46,10 +46,12 @@ public class LockTest {
             assertSame(e.getCause(), exception);
         }
 
-        var expectedCounters = new LockCounters();
-        expectedCounters.invokeAcquireCount.set(1);
-        expectedCounters.acquireFailedCount.set(1);
-        assertEquals(Map.of(lockPath, expectedCounters), LockStats.getGlobal().getLockCountersByPath());
+        var expectedMetrics = new LockMetrics();
+        expectedMetrics.setAcquireCount(1);
+        expectedMetrics.setCumulativeAcquireCount(1);
+        expectedMetrics.setAcquireFailedCount(1);
+        expectedMetrics.setCumulativeAcquireFailedCount(1);
+        assertLockMetrics(expectedMetrics);
 
         List<LockAttempt> slowLockAttempts = LockStats.getGlobal().getLockAttemptSamples();
         assertEquals(1, slowLockAttempts.size());
@@ -67,6 +69,25 @@ public class LockTest {
         assertEquals(0, threadLockStats.getOngoingLockAttempts().size());
     }
 
+    private void assertLockMetrics(LockMetrics expected) {
+        LockMetrics actual = LockStats.getGlobal().getLockMetricsByPath().get(lockPath);
+        assertNotNull(actual);
+
+        assertEquals(expected.getCumulativeAcquireCount(), actual.getCumulativeAcquireCount());
+        assertEquals(expected.getCumulativeAcquireFailedCount(), actual.getCumulativeAcquireFailedCount());
+        assertEquals(expected.getCumulativeAcquireTimedOutCount(), actual.getCumulativeAcquireTimedOutCount());
+        assertEquals(expected.getCumulativeAcquireSucceededCount(), actual.getCumulativeAcquireSucceededCount());
+        assertEquals(expected.getCumulativeReleaseCount(), actual.getCumulativeReleaseCount());
+        assertEquals(expected.getCumulativeReleaseFailedCount(), actual.getCumulativeReleaseFailedCount());
+
+        assertEquals(expected.getAndResetAcquireCount(), actual.getAndResetAcquireCount());
+        assertEquals(expected.getAndResetAcquireFailedCount(), actual.getAndResetAcquireFailedCount());
+        assertEquals(expected.getAndResetAcquireTimedOutCount(), actual.getAndResetAcquireTimedOutCount());
+        assertEquals(expected.getAndResetAcquireSucceededCount(), actual.getAndResetAcquireSucceededCount());
+        assertEquals(expected.getAndResetReleaseCount(), actual.getAndResetReleaseCount());
+        assertEquals(expected.getAndResetReleaseFailedCount(), actual.getAndResetReleaseFailedCount());
+    }
+
     @Test
     public void acquireTimesOut() throws Exception {
         when(mutex.acquire(anyLong(), any())).thenReturn(false);
@@ -78,10 +99,12 @@ public class LockTest {
             assertTrue("unexpected exception: " + e.getMessage(), e.getMessage().contains("Timed out"));
         }
 
-        var expectedCounters = new LockCounters();
-        expectedCounters.invokeAcquireCount.set(1);
-        expectedCounters.acquireTimedOutCount.set(1);
-        assertEquals(Map.of(lockPath, expectedCounters), LockStats.getGlobal().getLockCountersByPath());
+        var expectedMetrics = new LockMetrics();
+        expectedMetrics.setAcquireCount(1);
+        expectedMetrics.setCumulativeAcquireCount(1);
+        expectedMetrics.setAcquireTimedOutCount(1);
+        expectedMetrics.setCumulativeAcquireTimedOutCount(1);
+        assertLockMetrics(expectedMetrics);
     }
 
     @Test
@@ -90,29 +113,35 @@ public class LockTest {
 
         lock.acquire(acquireTimeout);
 
-        var expectedCounters = new LockCounters();
-        expectedCounters.invokeAcquireCount.set(1);
-        expectedCounters.lockAcquiredCount.set(1);
-        expectedCounters.inCriticalRegionCount.set(1);
-        assertEquals(Map.of(lockPath, expectedCounters), LockStats.getGlobal().getLockCountersByPath());
+        var expectedMetrics = new LockMetrics();
+        expectedMetrics.setAcquireCount(1);
+        expectedMetrics.setCumulativeAcquireCount(1);
+        expectedMetrics.setAcquireSucceededCount(1);
+        expectedMetrics.setCumulativeAcquireSucceededCount(1);
+        assertLockMetrics(expectedMetrics);
 
         // reenter
+        // NB: non-cumulative counters are reset on fetch
         lock.acquire(acquireTimeout);
-        expectedCounters.invokeAcquireCount.set(2);
-        expectedCounters.lockAcquiredCount.set(2);
-        expectedCounters.inCriticalRegionCount.set(2);
+        expectedMetrics.setAcquireCount(1);  // reset to 0 above, + 1
+        expectedMetrics.setCumulativeAcquireCount(2);
+        expectedMetrics.setAcquireSucceededCount(1); // reset to 0 above, +1
+        expectedMetrics.setCumulativeAcquireSucceededCount(2);
+        assertLockMetrics(expectedMetrics);
 
         // inner-most closes
         lock.close();
-        expectedCounters.inCriticalRegionCount.set(1);
-        expectedCounters.locksReleasedCount.set(1);
-        assertEquals(Map.of(lockPath, expectedCounters), LockStats.getGlobal().getLockCountersByPath());
+        expectedMetrics.setAcquireCount(0);  // reset to 0 above
+        expectedMetrics.setAcquireSucceededCount(0); // reset to 0 above
+        expectedMetrics.setReleaseCount(1);
+        expectedMetrics.setCumulativeReleaseCount(1);
+        assertLockMetrics(expectedMetrics);
 
         // outer-most closes
         lock.close();
-        expectedCounters.inCriticalRegionCount.set(0);
-        expectedCounters.locksReleasedCount.set(2);
-        assertEquals(Map.of(lockPath, expectedCounters), LockStats.getGlobal().getLockCountersByPath());
+        expectedMetrics.setReleaseCount(1);  // reset to 0 above, +1
+        expectedMetrics.setCumulativeReleaseCount(2);
+        assertLockMetrics(expectedMetrics);
     }
 
     @Test
@@ -120,7 +149,7 @@ public class LockTest {
         when(mutex.acquire(anyLong(), any())).thenReturn(true);
 
         String lockPath2 = "/lock/path/2";
-        Lock lock2 = new Lock(lockPath2, mutex, Optional.empty());
+        Lock lock2 = new Lock(lockPath2, mutex);
 
         lock.acquire(acquireTimeout);
         lock2.acquire(acquireTimeout);

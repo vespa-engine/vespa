@@ -6,7 +6,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -54,8 +53,8 @@ public class LockAttemptSamplesTest {
     }
 
     private boolean maybeSample(String lockPath, int secondsDuration) {
-        LockAttempt lockAttempt = LockAttempt.invokingAcquire(threadLockStats, lockPath, Duration.ofSeconds(1),
-                Optional.empty(), Optional.empty());
+        LockAttempt lockAttempt = LockAttempt.invokingAcquire(threadLockStats, lockPath,
+                Duration.ofSeconds(1), new LockMetrics());
         Instant instant = lockAttempt.getTimeAcquiredWasInvoked().plus(Duration.ofSeconds(secondsDuration));
         lockAttempt.setTerminalState(LockAttempt.LockState.RELEASED, instant);
         return samples.maybeSample(lockAttempt);

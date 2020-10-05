@@ -169,7 +169,7 @@ public class ZkStatusService implements StatusService {
 
         Duration duration = context.getTimeLeft();
         String lockPath = applicationInstanceLock2Path(reference);
-        Lock lock = new Lock(lockPath, curator, Optional.of(metric));
+        Lock lock = new Lock(lockPath, curator);
 
         Instant startTime = timer.currentTime();
         Instant acquireEndTime;

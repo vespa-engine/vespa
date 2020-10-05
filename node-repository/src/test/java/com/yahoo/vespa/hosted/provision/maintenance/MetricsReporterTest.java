@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -38,11 +39,11 @@ import org.junit.Test;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,6 +73,7 @@ public class MetricsReporterTest {
         ApplicationInstance applicationInstance = mock(ApplicationInstance.class);
         when(serviceModel.getApplication(any())).thenReturn(Optional.of(applicationInstance));
         when(applicationInstance.reference()).thenReturn(reference);
+        LockStats.clearForTesting();
     }
 
     @Test
@@ -94,7 +96,7 @@ public class MetricsReporterTest {
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
         nodeRepository.addNodes(List.of(hostNode), Agent.system);
 
-        Map<String, Number> expectedMetrics = new HashMap<>();
+        Map<String, Number> expectedMetrics = new TreeMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
         expectedMetrics.put("hostedVespa.parkedHosts", 0);
         expectedMetrics.put("hostedVespa.readyHosts", 0);
@@ -149,7 +151,29 @@ public class MetricsReporterTest {
                 clock);
         metricsReporter.maintain();
 
-        assertEquals(expectedMetrics, metric.values);
+        // Verify sum of values across dimensions, and remove these metrics to avoid checking against
+        // metric.values below, which is not sensitive to dimensions.
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquire", 3);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireFailed", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireTimedOut", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.locked", 3);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.release", 3);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.releaseFailed", 0);
+        metric.remove("lockAttempt.acquireLatency");
+        metric.remove("lockAttempt.acquireMaxActiveLatency");
+        metric.remove("lockAttempt.acquireHz");
+        metric.remove("lockAttempt.acquireLoad");
+        metric.remove("lockAttempt.lockedLatency");
+        metric.remove("lockAttempt.lockedMaxActiveLatency");
+        metric.remove("lockAttempt.lockedHz");
+        metric.remove("lockAttempt.lockedLoad");
+
+        assertEquals(expectedMetrics, new TreeMap<>(metric.values));
+    }
+
+    private void verifyAndRemoveIntegerMetricSum(TestMetric metric, String key, int expected) {
+        assertEquals(expected, (int) metric.sumNumberValues(key));
+        metric.remove(key);
     }
 
     @Test
