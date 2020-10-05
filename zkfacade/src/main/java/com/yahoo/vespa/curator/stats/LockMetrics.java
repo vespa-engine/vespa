@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.stats;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -24,49 +23,43 @@ public class LockMetrics {
     private final AtomicInteger cumulativeReleaseCount = new AtomicInteger(0);
     private final AtomicInteger cumulativeReleaseFailedCount = new AtomicInteger(0);
 
-    private final AtomicInteger acquiringNow = new AtomicInteger(0);
-    private final AtomicInteger lockedNow = new AtomicInteger(0);
+    private final LatencyStats acquireStats = new LatencyStats();
+    private final LatencyStats lockedStats = new LatencyStats();
 
-    private final LatencyStore acquireLatencyStore = new LatencyStore();
-    private final LatencyStore lockedLatencyStore = new LatencyStore();
-
-    void acquireInvoked() {
+    /** Returns a Runnable that must be invoked when the acquire() finishes. */
+    LatencyStats.ActiveInterval acquireInvoked() {
         acquireCount.incrementAndGet();
         cumulativeAcquireCount.incrementAndGet();
-        acquiringNow.incrementAndGet();
+        return acquireStats.startNewInterval();
     }
 
-    void acquireFailed(Duration acquireLatency) {
-        acquiringNow.decrementAndGet();
+    void acquireFailed(LatencyStats.ActiveInterval acquireInterval) {
+        acquireInterval.close();
         acquireFailedCount.incrementAndGet();
         cumulativeAcquireFailedCount.incrementAndGet();
-        acquireLatencyStore.reportLatency(acquireLatency);
     }
 
-    void acquireTimedOut(Duration acquireLatency) {
-        acquiringNow.decrementAndGet();
+    void acquireTimedOut(LatencyStats.ActiveInterval acquireInterval) {
+        acquireInterval.close();
         acquireTimedOutCount.incrementAndGet();
         cumulativeAcquireTimedOutCount.incrementAndGet();
-        acquireLatencyStore.reportLatency(acquireLatency);
     }
 
-    void lockAcquired(Duration acquireLatency) {
-        acquiringNow.decrementAndGet();
+    LatencyStats.ActiveInterval lockAcquired(LatencyStats.ActiveInterval acquireInterval) {
+        acquireInterval.close();
         acquireSucceededCount.incrementAndGet();
         cumulativeAcquireSucceededCount.incrementAndGet();
-        acquireLatencyStore.reportLatency(acquireLatency);
-        lockedNow.incrementAndGet();
+        return lockedStats.startNewInterval();
     }
 
-    void release(Duration lockedLatency, Duration totalLatency) {
-        lockedNow.decrementAndGet();
+    void release(LatencyStats.ActiveInterval lockedInterval) {
+        lockedInterval.close();
         releaseCount.incrementAndGet();
         cumulativeReleaseCount.incrementAndGet();
-        lockedLatencyStore.reportLatency(lockedLatency);
     }
 
-    void releaseFailed(Duration lockedLatency, Duration totalLatency) {
-        release(lockedLatency, totalLatency);
+    void releaseFailed(LatencyStats.ActiveInterval lockedInterval) {
+        release(lockedInterval);
         releaseFailedCount.incrementAndGet();
         cumulativeReleaseFailedCount.incrementAndGet();
     }
@@ -85,14 +78,11 @@ public class LockMetrics {
     public int getCumulativeReleaseCount() { return cumulativeReleaseCount.get(); }
     public int getCumulativeReleaseFailedCount() { return cumulativeReleaseFailedCount.get(); }
 
-    public int getAcquiringNow() { return acquiringNow.get(); }
-    public int getLockedNow() { return lockedNow.get(); }
+    public LatencyMetrics getAcquireLatencyMetrics() { return acquireStats.getLatencyMetrics(); }
+    public LatencyMetrics getLockedLatencyMetrics() { return lockedStats.getLatencyMetrics(); }
 
-    public LatencyMetrics getAcquireLatencyMetrics() { return acquireLatencyStore.getLatencyMetrics(); }
-    public LatencyMetrics getLockedLatencyMetrics() { return lockedLatencyStore.getLatencyMetrics(); }
-
-    public LatencyMetrics getAndResetAcquireLatencyMetrics() { return acquireLatencyStore.getAndResetLatencyMetrics(); }
-    public LatencyMetrics getAndResetLockedLatencyMetrics() { return lockedLatencyStore.getAndResetLatencyMetrics(); }
+    public LatencyMetrics getAndResetAcquireLatencyMetrics() { return acquireStats.getLatencyMetricsAndStartNewPeriod(); }
+    public LatencyMetrics getAndResetLockedLatencyMetrics() { return lockedStats.getLatencyMetricsAndStartNewPeriod(); }
 
     //  For tests
     void setAcquireCount(int count) { acquireCount.set(count); }
@@ -110,10 +100,6 @@ public class LockMetrics {
     void setCumulativeReleaseCount(int count) { cumulativeReleaseCount.set(count); }
     void setCumulativeReleaseFailedCount(int count) { cumulativeReleaseFailedCount.set(count); }
 
-    //  For tests
-    void setAcquiringNow(int count) { acquiringNow.set(count); }
-    void setLockedNow(int count) { lockedNow.set(count); }
-
     @Override
     public String toString() {
         return "LockMetrics{" +
@@ -129,10 +115,8 @@ public class LockMetrics {
                 ", cumulativeAcquireSucceededCount=" + cumulativeAcquireSucceededCount +
                 ", cumulativeReleaseCount=" + cumulativeReleaseCount +
                 ", cumulativeReleaseFailedCount=" + cumulativeReleaseFailedCount +
-                ", acquiringNow=" + acquiringNow +
-                ", lockedNow=" + lockedNow +
-                ", acquireLatencyStore=" + acquireLatencyStore +
-                ", lockedLatencyStore=" + lockedLatencyStore +
+                ", acquireStats=" + acquireStats +
+                ", lockedStats=" + lockedStats +
                 '}';
     }
 }

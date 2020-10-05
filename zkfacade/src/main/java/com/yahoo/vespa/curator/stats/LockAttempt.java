@@ -23,6 +23,9 @@ public class LockAttempt {
     private final Duration timeout;
     private final LockMetrics lockMetrics;
     private final List<LockAttempt> nestedLockAttempts = new ArrayList<>();
+    private final LatencyStats.ActiveInterval activeAcquireInterval;
+    // Only accessed by mutating thread:
+    private LatencyStats.ActiveInterval activeLockedInterval = null;
 
     private volatile Optional<Instant> lockAcquiredInstant = Optional.empty();
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
@@ -53,8 +56,7 @@ public class LockAttempt {
         this.callAcquireInstant = callAcquireInstant;
         this.timeout = timeout;
         this.lockMetrics = lockMetrics;
-
-        lockMetrics.acquireInvoked();
+        this.activeAcquireInterval = lockMetrics.acquireInvoked();
     }
 
     public String getThreadName() { return threadLockStats.getThreadName(); }
@@ -99,28 +101,28 @@ public class LockAttempt {
 
     void acquireFailed() {
         setTerminalState(LockState.ACQUIRE_FAILED);
-        lockMetrics.acquireFailed(getDurationOfAcquire());
+        lockMetrics.acquireFailed(activeAcquireInterval);
     }
 
     void timedOut() {
         setTerminalState(LockState.TIMED_OUT);
-        lockMetrics.acquireTimedOut(getDurationOfAcquire());
+        lockMetrics.acquireTimedOut(activeAcquireInterval);
     }
 
     void lockAcquired() {
         lockState = LockState.ACQUIRED;
         lockAcquiredInstant = Optional.of(Instant.now());
-        lockMetrics.lockAcquired(getDurationOfAcquire());
+        activeLockedInterval = lockMetrics.lockAcquired(activeAcquireInterval);
     }
 
     void released() {
         setTerminalState(LockState.RELEASED);
-        lockMetrics.release(getDurationWithLock(), getDuration());
+        lockMetrics.release(activeLockedInterval);
     }
 
     void releasedWithError() {
         setTerminalState(LockState.RELEASED_WITH_ERROR);
-        lockMetrics.releaseFailed(getDurationWithLock(), getDuration());
+        lockMetrics.releaseFailed(activeLockedInterval);
     }
 
     void setTerminalState(LockState terminalState) { setTerminalState(terminalState, Instant.now()); }

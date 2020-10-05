@@ -86,9 +86,6 @@ public class LockTest {
         assertEquals(expected.getAndResetAcquireSucceededCount(), actual.getAndResetAcquireSucceededCount());
         assertEquals(expected.getAndResetReleaseCount(), actual.getAndResetReleaseCount());
         assertEquals(expected.getAndResetReleaseFailedCount(), actual.getAndResetReleaseFailedCount());
-
-        assertEquals(expected.getAcquiringNow(), actual.getAcquiringNow());
-        assertEquals(expected.getLockedNow(), actual.getLockedNow());
     }
 
     @Test
@@ -121,7 +118,6 @@ public class LockTest {
         expectedMetrics.setCumulativeAcquireCount(1);
         expectedMetrics.setAcquireSucceededCount(1);
         expectedMetrics.setCumulativeAcquireSucceededCount(1);
-        expectedMetrics.setLockedNow(1);
         assertLockMetrics(expectedMetrics);
 
         // reenter
@@ -131,7 +127,6 @@ public class LockTest {
         expectedMetrics.setCumulativeAcquireCount(2);
         expectedMetrics.setAcquireSucceededCount(1); // reset to 0 above, +1
         expectedMetrics.setCumulativeAcquireSucceededCount(2);
-        expectedMetrics.setLockedNow(2);
         assertLockMetrics(expectedMetrics);
 
         // inner-most closes
@@ -140,14 +135,12 @@ public class LockTest {
         expectedMetrics.setAcquireSucceededCount(0); // reset to 0 above
         expectedMetrics.setReleaseCount(1);
         expectedMetrics.setCumulativeReleaseCount(1);
-        expectedMetrics.setLockedNow(1);
         assertLockMetrics(expectedMetrics);
 
         // outer-most closes
         lock.close();
         expectedMetrics.setReleaseCount(1);  // reset to 0 above, +1
         expectedMetrics.setCumulativeReleaseCount(2);
-        expectedMetrics.setLockedNow(0);
         assertLockMetrics(expectedMetrics);
     }
 

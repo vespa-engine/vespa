@@ -245,22 +245,16 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     metric.set("lockAttempt.release", lockMetrics.getAndResetReleaseCount(), context);
                     metric.set("lockAttempt.releaseFailed", lockMetrics.getAndResetReleaseFailedCount(), context);
 
-                    metric.set("lockAttempt.acquireNow", lockMetrics.getAcquiringNow(), context);
-                    metric.set("lockAttempt.lockedNow", lockMetrics.getLockedNow(), context);
-
                     setLockLatencyMetrics("acquire", lockMetrics.getAndResetAcquireLatencyMetrics(), context);
                     setLockLatencyMetrics("locked", lockMetrics.getAndResetLockedLatencyMetrics(), context);
                 });
     }
 
     private void setLockLatencyMetrics(String name, LatencyMetrics latencyMetrics, Metric.Context context) {
-        metric.set("lockAttempt." + name + "Latency", roundDouble(latencyMetrics.averageInSeconds(), 3), context);
-        metric.set("lockAttempt." + name + "Load", roundDouble(latencyMetrics.load(), 3), context);
-    }
-
-    private double roundDouble(double value, int decimalPlaces) {
-        double factor = Math.pow(10, decimalPlaces);
-        return Math.round(value * factor) / factor;
+        metric.set("lockAttempt." + name + "Latency", latencyMetrics.latencySeconds(), context);
+        metric.set("lockAttempt." + name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds(), context);
+        metric.set("lockAttempt." + name + "Hz", latencyMetrics.startHz(), context);
+        metric.set("lockAttempt." + name + "Load", latencyMetrics.load(), context);
     }
 
     private void updateDockerMetrics(NodeList nodes) {

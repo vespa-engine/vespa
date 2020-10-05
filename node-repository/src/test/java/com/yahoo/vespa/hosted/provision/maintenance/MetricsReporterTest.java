@@ -159,11 +159,13 @@ public class MetricsReporterTest {
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.locked", 3);
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.release", 3);
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.releaseFailed", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireNow", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.lockedNow", 0);
         metric.remove("lockAttempt.acquireLatency");
+        metric.remove("lockAttempt.acquireMaxActiveLatency");
+        metric.remove("lockAttempt.acquireHz");
         metric.remove("lockAttempt.acquireLoad");
         metric.remove("lockAttempt.lockedLatency");
+        metric.remove("lockAttempt.lockedMaxActiveLatency");
+        metric.remove("lockAttempt.lockedHz");
         metric.remove("lockAttempt.lockedLoad");
 
         assertEquals(expectedMetrics, new TreeMap<>(metric.values));

@@ -61,9 +61,6 @@ public class LocksResponse extends HttpResponse {
             lockPathCursor.setLong("releaseCount", lockMetrics.getCumulativeReleaseCount());
             lockPathCursor.setLong("releaseFailedCount", lockMetrics.getCumulativeReleaseFailedCount());
 
-            lockPathCursor.setLong("acquireNow", lockMetrics.getAcquiringNow());
-            lockPathCursor.setLong("lockedNow", lockMetrics.getAcquiringNow());
-
             setLatency(lockPathCursor, "acquire", lockMetrics.getAcquireLatencyMetrics());
             setLatency(lockPathCursor, "locked", lockMetrics.getLockedLatencyMetrics());
         });
@@ -102,9 +99,10 @@ public class LocksResponse extends HttpResponse {
     }
 
     private static void setLatency(Cursor cursor, String name, LatencyMetrics latencyMetrics) {
-        cursor.setDouble(name + "LatencyAverage", roundDouble(latencyMetrics.averageInSeconds(), 3));
-        cursor.setDouble(name + "LatencyCount", latencyMetrics.count());
-        cursor.setDouble(name + "LatencyLoad", roundDouble(latencyMetrics.load(), 3));
+        cursor.setDouble(name + "Latency", latencyMetrics.latencySeconds());
+        cursor.setDouble(name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds());
+        cursor.setDouble(name + "Hz", latencyMetrics.endHz());
+        cursor.setDouble(name + "Load", latencyMetrics.load());
     }
 
     private static double roundDouble(double value, int decimalPlaces) {

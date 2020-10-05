@@ -48,7 +48,7 @@ public class TestMetric implements Metric {
 
     double sumDoubleValues(String key, Context sumContext) {
         double sum = 0.0;
-        for(Context c : context.get(key)) {
+        for(Context c : context.getOrDefault(key, List.of())) {
             TestContext tc = (TestContext) c;
             if (tc.value instanceof Double && tc.properties.equals(((TestContext) sumContext).properties)) {
                 sum += (double) tc.value;
@@ -59,7 +59,7 @@ public class TestMetric implements Metric {
 
     double sumNumberValues(String key) {
         double sum = 0.0;
-        for(Context c : context.get(key)) {
+        for(Context c : context.getOrDefault(key, List.of())) {
             TestContext tc = (TestContext) c;
             sum += tc.value.doubleValue();
         }
