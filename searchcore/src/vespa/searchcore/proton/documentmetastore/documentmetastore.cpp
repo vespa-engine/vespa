@@ -302,59 +302,6 @@ DocumentMetaStore::onLoad()
     return true;
 }
 
-bool
-DocumentMetaStore::checkBuckets(const GlobalId &gid, const BucketId &bucketId,
-                                const TreeType::Iterator &itr, bool found)
-{
-    bool success = true;
-#if 0
-    TreeType::Iterator p = itr;
-    --p;
-    if (p.valid()) {
-        DocId prevLid = p.getKey();
-        RawDocumentMetaData &prevMetaData = _metaDataStore[prevLid];
-        BucketId prevBucketId = prevMetaData.getBucketId();
-        if (bucketId != prevBucketId &&
-            (bucketId.contains(prevBucketId) ||
-             prevBucketId.contains(bucketId))) {
-            LOG(error,
-                "Bucket overlap, gid %s bucketId %s and prev gid %s bucket %s",
-                gid.toString().c_str(),
-                bucketId.toString().c_str(),
-                prevMetaData.getGid().toString().c_str(),
-                prevBucketId.toString().c_str());
-            success = false;
-        }
-    }
-    TreeType::Iterator n = itr;
-    if (found)
-        ++n;
-    if (n.valid()) {
-        DocId nextLid = n.getKey();
-        RawDocumentMetaData &nextMetaData = _metaDataStore[nextLid];
-        BucketId nextBucketId = nextMetaData.getBucketId();
-        if (bucketId != nextBucketId &&
-            (bucketId.contains(nextBucketId) ||
-             nextBucketId.contains(bucketId))) {
-            LOG(error,
-                "Bucket overlap, gid %s bucketId %s and next gid %s bucket %s",
-                gid.toString().c_str(),
-                bucketId.toString().c_str(),
-                nextMetaData.getGid().toString().c_str(),
-                nextBucketId.toString().c_str());
-            success = false;
-        }
-    }
-#else
-    (void) gid;
-    (void) bucketId;
-    (void) itr;
-    (void) found;
-#endif
-    return success;
-}
-
-
 template <typename TreeView>
 typename TreeView::Iterator
 DocumentMetaStore::lowerBound(const BucketId &bucketId,
@@ -523,9 +470,7 @@ DocumentMetaStore::put(const GlobalId &gid,
     TreeType::Iterator itr = _gidToLidMap.lowerBound(KeyComp::FIND_DOC_ID,
             comp);
     bool found = itr.valid() && !comp(KeyComp::FIND_DOC_ID, itr.getKey());
-    if (!checkBuckets(gid, bucketId, itr, found)) {
-        // Failure
-    } else if (!found) {
+    if (!found) {
         if (validLid(lid)) {
             throw IllegalStateException(
                     make_string(

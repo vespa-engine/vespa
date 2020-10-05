@@ -91,12 +91,6 @@ private:
     std::unique_ptr<search::AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     bool onLoad() override;
 
-    bool
-    checkBuckets(const GlobalId &gid,
-                 const BucketId &bucketId,
-                 const TreeType::Iterator &itr,
-                 bool found);
-
     template <typename TreeView>
     typename TreeView::Iterator
     lowerBound(const BucketId &bucketId,
