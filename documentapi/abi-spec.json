@@ -412,6 +412,7 @@
       "public static final enum com.yahoo.documentapi.Response$Outcome SUCCESS",
       "public static final enum com.yahoo.documentapi.Response$Outcome CONDITION_FAILED",
       "public static final enum com.yahoo.documentapi.Response$Outcome NOT_FOUND",
+      "public static final enum com.yahoo.documentapi.Response$Outcome INSUFFICIENT_STORAGE",
       "public static final enum com.yahoo.documentapi.Response$Outcome ERROR"
     ]
   },
