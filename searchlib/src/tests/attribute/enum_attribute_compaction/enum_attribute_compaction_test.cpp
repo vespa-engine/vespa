@@ -3,7 +3,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>

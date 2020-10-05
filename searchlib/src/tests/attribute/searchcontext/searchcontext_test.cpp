@@ -19,7 +19,6 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");

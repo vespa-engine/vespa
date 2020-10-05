@@ -415,4 +415,9 @@ StringAttribute::getChangeVectorMemoryUsage() const
     return _changes.getMemoryUsage();
 }
 
+template bool AttributeVector::clearDoc(StringAttribute::ChangeVector& changes, DocId doc);
+template bool AttributeVector::update(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v);
+template bool AttributeVector::append(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v, int32_t w, bool doCount);
+template bool AttributeVector::remove(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v, int32_t w);
+
 }

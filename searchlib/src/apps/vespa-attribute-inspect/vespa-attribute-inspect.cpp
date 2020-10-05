@@ -7,7 +7,6 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <fstream>
 
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/app.h>
 
