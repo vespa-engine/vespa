@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -64,8 +64,7 @@ public class RpcServerTest {
             ApplicationRepository applicationRepository = tester.applicationRepository();
             applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
             TenantApplications applicationRepo = tester.tenant().getApplicationRepo();
-            ApplicationSet applicationSet = tester.tenant().getSessionRepository().ensureApplicationLoaded(applicationRepository.getActiveSession(applicationId));
-            applicationRepo.reloadConfig(applicationSet);
+            applicationRepo.reloadConfig(applicationRepository.getActiveSession(applicationId).ensureApplicationLoaded());
             testPrintStatistics(tester);
             testGetConfig(tester);
             testEnabled(tester);
