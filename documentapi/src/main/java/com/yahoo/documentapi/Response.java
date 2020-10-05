@@ -124,6 +124,9 @@ public class Response {
         /** The operation failed because its target document was not found. */
         NOT_FOUND,
 
+        /** The operation failed because the cluster had insufficient storage to accept it. */
+        INSUFFICIENT_STORAGE,
+
         /** The operation failed for some unknown reason. */
         ERROR
 

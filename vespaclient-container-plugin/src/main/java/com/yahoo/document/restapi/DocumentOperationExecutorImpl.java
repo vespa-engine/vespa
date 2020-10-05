@@ -55,6 +55,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.BAD_REQUEST;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.ERROR;
+import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.INSUFFICIENT_STORAGE;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.NOT_FOUND;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.OVERLOAD;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.PRECONDITION_FAILED;
@@ -272,6 +273,8 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
                 return NOT_FOUND;
             case CONDITION_FAILED:
                 return PRECONDITION_FAILED;
+            case INSUFFICIENT_STORAGE:
+                return INSUFFICIENT_STORAGE;
             default:
                 log.log(WARNING, "Unexpected response outcome: " + outcome);
             case ERROR: // intentional fallthrough

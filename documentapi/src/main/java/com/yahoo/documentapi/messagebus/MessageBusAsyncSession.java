@@ -45,6 +45,7 @@ import java.util.logging.Logger;
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
+import static com.yahoo.documentapi.Response.Outcome.INSUFFICIENT_STORAGE;
 import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
 import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
 
@@ -294,13 +295,21 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")"));
     }
 
+    private static Response.Outcome toOutcome(Reply reply) {
+        if (   reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
+            || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound())
+            return NOT_FOUND;
+        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_NO_SPACE))
+            return INSUFFICIENT_STORAGE;
+        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED))
+            return CONDITION_FAILED;
+        return ERROR;
+    }
+
     private static Response toError(Reply reply, long reqId) {
-        boolean definitelyNotFound =    reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
-                                     || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound();
-        boolean conditionFailed = reply.getErrorCodes().contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED);
-        Response.Outcome outcome = definitelyNotFound ? NOT_FOUND : conditionFailed ? CONDITION_FAILED : ERROR;
         Message msg = reply.getMessage();
         String err = getErrorMessage(reply);
+        Response.Outcome outcome = toOutcome(reply);
         switch (msg.getType()) {
         case DocumentProtocol.MESSAGE_PUTDOCUMENT:
             return new DocumentResponse(reqId, ((PutDocumentMessage)msg).getDocumentPut().getDocument(), err, outcome, reply.getTrace());

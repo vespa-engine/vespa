@@ -37,6 +37,7 @@ import java.util.Optional;
 
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.BAD_REQUEST;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.ERROR;
+import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.INSUFFICIENT_STORAGE;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.OVERLOAD;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.PRECONDITION_FAILED;
 import static com.yahoo.document.restapi.DocumentOperationExecutor.ErrorType.TIMEOUT;
@@ -308,6 +309,17 @@ public class DocumentV1ApiTest {
                        "}",
                        response.readAll());
         assertEquals(504, response.getStatus());
+
+        // INSUFFICIENT_STORAGE is a 504
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");
+        executor.lastOperationContext().error(INSUFFICIENT_STORAGE, "disk full");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"id\": \"id:space:music:n=1:two\"," +
+                       "  \"message\": \"disk full\"" +
+                       "}",
+                       response.readAll());
+        assertEquals(507, response.getStatus());
 
         // OVERLOAD is a 429
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");

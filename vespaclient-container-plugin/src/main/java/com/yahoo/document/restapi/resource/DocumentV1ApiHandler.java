@@ -351,6 +351,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             case TIMEOUT:
                 timeout(request, message, root, handler);
                 break;
+            case INSUFFICIENT_STORAGE:
+                insufficientStorage(request, message, root, handler);
+                break;
             default:
                 log.log(WARNING, "Unexpected error type '" + type + "'");
             case ERROR: // intentional fallthrough
@@ -440,6 +443,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         log.log(FINE, () -> "Timeout handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
         root.setString("message", message);
         return respond(Response.Status.GATEWAY_TIMEOUT, root, handler);
+    }
+
+    private static ContentChannel insufficientStorage(HttpRequest request, String message, Cursor root, ResponseHandler handler) {
+        log.log(FINE, () -> "Insufficient storage for " + request.getMethod() + " " + request.getUri().getRawPath() + ": " + message);
+        root.setString("message", message);
+        return respond(Response.Status.INSUFFICIENT_STORAGE, root, handler);
     }
 
     private static ContentChannel respond(Inspector root, ResponseHandler handler) {
