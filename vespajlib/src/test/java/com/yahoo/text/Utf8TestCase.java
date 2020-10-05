@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
 import com.google.common.collect.ImmutableMap;
@@ -24,8 +24,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author Bjorn Borud
- * @author Steinar Knutsen
+ * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class Utf8TestCase {
 
@@ -322,7 +322,7 @@ public class Utf8TestCase {
             for (char c=0; c < i; c++) {
                 sb.append(c);
             }
-            assertTrue(Arrays.equals(sb.toString().getBytes(StandardCharsets.UTF_8), Utf8.toBytes(sb.toString())));
+            assertTrue(Arrays.equals(Utf8.toBytesStd(sb.toString()), Utf8.toBytes(sb.toString())));
         }
     }
 

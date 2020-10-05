@@ -1,9 +1,10 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
 
 import java.nio.Buffer;
+import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+
 
 /**
  * Conventient utility for reading lines from ByteBuffers.  Please
@@ -11,10 +12,11 @@ import java.nio.charset.StandardCharsets;
  * ByteBuffer abstraction is somewhat clumsy and thus usage of this
  * code requires that you understand the semantics clearly.
  *
- * @author Bjorn Borud
+ * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
  *
  */
 public class ReadLine {
+    static private Charset charset = Charset.forName("latin1");
 
     /**
      * Extract next line from a byte buffer.  Looks for EOL characters
@@ -47,7 +49,7 @@ public class ReadLine {
                 // The downcast to Buffer is done to avoid "redundant cast" warning on Java 9.
                 // TODO: when Java 8 is gone, remove the casts and above comments.
                 // extract string between start and i.
-                String line = StandardCharsets.ISO_8859_1.decode((ByteBuffer) ((Buffer)buffer.slice()).limit(i - start)).toString();
+                String line = charset.decode((ByteBuffer) ((Buffer)buffer.slice()).limit(i - start)).toString();
 
                 // skip remaining
                 for (; (i < buffer.limit()) && isEolChar(buffer.get(i)); i++) {
@@ -78,5 +80,4 @@ public class ReadLine {
     static boolean isEolChar(byte b) {
         return ((10 == b) || (13 == b));
     }
-
 }

@@ -1,9 +1,9 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
 import com.google.common.collect.ImmutableSet;
 
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
@@ -18,6 +18,8 @@ import java.util.Set;
  */
 // TODO: Text utilities should which are still needed should move to Text. This should be deprecated.
 public class StringUtilities {
+
+    private static Charset UTF8 = Charset.forName("utf8");
 
     private static byte toHex(int val) { return (byte) (val < 10 ? '0' + val : 'a' + (val - 10)); }
 
@@ -63,7 +65,7 @@ public class StringUtilities {
      * @return The escaped string
      */
     public static String escape(String source, char delimiter) {
-        byte bytes[] = source.getBytes(StandardCharsets.UTF_8);
+        byte bytes[] = source.getBytes(UTF8);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         for (byte b : bytes) {
             int val = b;
@@ -84,11 +86,11 @@ public class StringUtilities {
                 result.write(replacementCharacters.replacement2[val]);
             }
         }
-        return new String(result.toByteArray(), StandardCharsets.UTF_8);
+        return new String(result.toByteArray(), UTF8);
     }
 
     public static String unescape(String source) {
-        byte bytes[] = source.getBytes(StandardCharsets.UTF_8);
+        byte bytes[] = source.getBytes(UTF8);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         for (int i=0; i<bytes.length; ++i) {
             if (bytes[i] != '\\') {
@@ -118,7 +120,7 @@ public class StringUtilities {
             result.write((byte) Integer.parseInt(hexdigits, 16));
             i += 3;
         }
-        return new String(result.toByteArray(), StandardCharsets.UTF_8);
+        return new String(result.toByteArray(), UTF8);
     }
 
     /**
