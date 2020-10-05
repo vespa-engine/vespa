@@ -74,7 +74,7 @@ public class RetiredExpirerTest {
                                                                      new InMemoryFlagSource(),
                                                                      true,
                                                                      false,
-                                                                     0);
+                                                                     0, 1000);
     private final NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 

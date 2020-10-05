@@ -265,7 +265,7 @@ public class SpareCapacityMaintainerTest {
                                                 new InMemoryFlagSource(),
                                                 true,
                                                 false,
-                                                1);
+                                                1, 1000);
             deployer = new MockDeployer(nodeRepository);
             maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofDays(1), maxIterations);
         }

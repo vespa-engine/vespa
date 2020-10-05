@@ -44,7 +44,7 @@ public class MaintenanceTester {
                                                                     new InMemoryFlagSource(),
                                                                     true,
                                                                     false,
-                                                                    0);
+                                                                    0, 1000);
 
     public MaintenanceTester() {
         curator.setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");

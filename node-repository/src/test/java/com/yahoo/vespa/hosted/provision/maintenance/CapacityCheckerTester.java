@@ -72,7 +72,7 @@ public class CapacityCheckerTester {
                                             new InMemoryFlagSource(),
                                             true,
                                             false,
-                                            0);
+                                            0, 1000);
     }
 
     private void updateCapacityChecker() {

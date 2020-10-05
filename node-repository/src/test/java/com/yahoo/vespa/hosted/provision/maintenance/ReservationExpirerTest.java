@@ -55,7 +55,7 @@ public class ReservationExpirerTest {
                                                            new InMemoryFlagSource(),
                                                            true,
                                                            false,
-                                                           0);
+                                                           0, 1000);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
 
         List<Node> nodes = new ArrayList<>(2);

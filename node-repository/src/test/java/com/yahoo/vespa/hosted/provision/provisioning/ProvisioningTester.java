@@ -109,7 +109,7 @@ public class ProvisioningTester {
                                                  flagSource,
                                                  true,
                                                  provisionServiceProvider.getHostProvisioner().isPresent(),
-                                                 spareCount);
+                                                 spareCount, 1000);
         this.orchestrator = orchestrator;
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);

@@ -85,7 +85,7 @@ public class NodeFailTester {
                                             new InMemoryFlagSource(),
                                             true,
                                             false,
-                                            0);
+                                            0, 1000);
         provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
         hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();

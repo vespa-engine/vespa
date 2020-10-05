@@ -45,7 +45,7 @@ public class NodeRepositoryTester {
                                             new InMemoryFlagSource(),
                                             true,
                                             false,
-                                            0);
+                                            0, 1000);
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }
