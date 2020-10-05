@@ -6,7 +6,6 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/log/log.h>

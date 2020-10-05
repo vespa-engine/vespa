@@ -21,7 +21,6 @@
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>

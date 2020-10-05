@@ -13,8 +13,8 @@
 #include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/enumcomparator.h>
+#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/postinglistattribute.h>
 #include <vespa/searchlib/attribute/singleenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>

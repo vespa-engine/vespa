@@ -22,8 +22,6 @@
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/data/databuffer.h>
 
-#include <vespa/searchlib/attribute/attributevector.hpp>
-
 #include <limits>
 #include <iostream>
 #include <cmath>

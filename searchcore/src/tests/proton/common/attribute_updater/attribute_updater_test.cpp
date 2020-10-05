@@ -13,6 +13,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/addvalueupdate.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
@@ -25,7 +26,6 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_tensor_attribute.h>
