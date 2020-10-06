@@ -166,7 +166,7 @@ enum Policy {
     /** Read the generated bills */
     billingInformationRead(Privilege.grant(Action.read)
                                     .on(PathGroup.billingList)
-                                    .in(SystemName.PublicCd)),
+                                    .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())
