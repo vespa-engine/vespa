@@ -26,7 +26,7 @@ public final class ApplicationContainer extends Container implements QrStartConf
     }
 
     public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
-        super(parent, name, retired, index);
+        super(parent, name, retired, index, isHostedVespa);
         this.isHostedVespa = isHostedVespa;
 
         addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone

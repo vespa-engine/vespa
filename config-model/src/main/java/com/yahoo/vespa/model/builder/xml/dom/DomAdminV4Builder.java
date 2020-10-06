@@ -6,7 +6,6 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
-import java.util.logging.Level;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
@@ -22,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -105,7 +105,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
         logserverClusterModel.setCluster(logServerCluster);
 
-        LogserverContainer container = new LogserverContainer(logServerCluster);
+        LogserverContainer container = new LogserverContainer(logServerCluster, deployState.isHosted());
         container.setHostResource(hostResource);
         container.initService(deployState.getDeployLogger());
         logServerCluster.addContainer(container);
