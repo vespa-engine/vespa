@@ -90,7 +90,7 @@ public class MetricsReporterTest {
                                                            new InMemoryFlagSource(),
                                                            true,
                                                            false,
-                                                           0);
+                                                           0, 1000);
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(List.of(node), Agent.system);
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
@@ -190,7 +190,7 @@ public class MetricsReporterTest {
                                                            new InMemoryFlagSource(),
                                                            true,
                                                            false,
-                                                           0);
+                                                           0, 1000);
 
         // Allow 4 containers
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");

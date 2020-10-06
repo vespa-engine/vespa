@@ -261,7 +261,7 @@ public class FailedExpirerTest {
                                                      new InMemoryFlagSource(),
                                                      true,
                                                      false,
-                                                     0);
+                                                     0, 1000);
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30), new TestMetric());
         }

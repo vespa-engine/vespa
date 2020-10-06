@@ -80,8 +80,8 @@ public class CuratorDatabaseClient {
     private final CuratorCounter provisionIndexCounter;
 
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache,
-                                 long nodeObjectCacheSize) {
-        this.nodeSerializer = new NodeSerializer(flavors, nodeObjectCacheSize);
+                                 long nodeCacheSize) {
+        this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
         this.zone = zone;
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;

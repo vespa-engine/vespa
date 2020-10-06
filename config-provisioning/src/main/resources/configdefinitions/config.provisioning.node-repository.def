@@ -5,4 +5,8 @@ namespace=config.provisioning
 # version. Example: my-docker-registry.domain.tld:8080/dist/vespa
 dockerImage string default="dummyImage"
 
+# Whether to cache data read from ZooKeeper in-memory.
 useCuratorClientCache bool default=false
+
+# The number of Node objects to cache in-memory.
+nodeCacheSize long default=2000

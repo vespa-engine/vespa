@@ -135,7 +135,8 @@ public class NodeRepository extends AbstractComponent {
              flagSource,
              config.useCuratorClientCache(),
              provisionServiceProvider.getHostProvisioner().isPresent(),
-             zone.environment().isProduction() && provisionServiceProvider.getHostProvisioner().isEmpty() ? 1 : 0);
+             zone.environment().isProduction() && provisionServiceProvider.getHostProvisioner().isEmpty() ? 1 : 0,
+             config.nodeCacheSize());
     }
 
     /**
@@ -152,11 +153,11 @@ public class NodeRepository extends AbstractComponent {
                           FlagSource flagSource,
                           boolean useCuratorClientCache,
                           boolean canProvisionHosts,
-                          int spareCount) {
+                          int spareCount,
+                          long nodeCacheSize) {
         // Flag is read once here as it shouldn't not change at runtime
         this.useConfigServerLock = Flags.USE_CONFIG_SERVER_LOCK.bindTo(flagSource).value();
-        long nodeObjectCacheSize = Flags.NODE_OBJECT_CACHE_SIZE.bindTo(flagSource).value();
-        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, nodeObjectCacheSize);
+        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;

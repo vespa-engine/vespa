@@ -67,7 +67,7 @@ public class MockNodeRepository extends NodeRepository {
               new InMemoryFlagSource(),
               true,
               false,
-              0);
+              0, 1000);
         this.flavors = flavors;
 
         curator.setZooKeeperEnsembleConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");

@@ -70,7 +70,7 @@ public class PeriodicApplicationMaintainerTest {
                                                  new InMemoryFlagSource(),
                                                  true,
                                                  false,
-                                                 0);
+                                                 0, 1000);
         this.fixture = new Fixture(zone, nodeRepository);
 
         createReadyNodes(15, fixture.nodeResources, nodeRepository);
