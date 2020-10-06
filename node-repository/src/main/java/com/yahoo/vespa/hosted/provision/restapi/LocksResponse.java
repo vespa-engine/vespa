@@ -49,6 +49,7 @@ public class LocksResponse extends HttpResponse {
         Cursor root = slime.setObject();
 
         root.setString("hostname", hostname);
+        root.setString("time", Instant.now().toString());
 
         Cursor lockPathsCursor = root.setArray("lock-paths");
         lockMetricsByPath.forEach((lockPath, lockMetrics) -> {
@@ -78,7 +79,7 @@ public class LocksResponse extends HttpResponse {
 
             ongoingLockAttempt.ifPresent(lockAttempt -> {
                 setLockAttempt(threadCursor.setObject("active-lock"), lockAttempt, false, false);
-                threadsCursor.setString("stack-trace", threadLockStats.getStackTrace());
+                threadCursor.setString("stack-trace", threadLockStats.getStackTrace());
             });
 
             ongoingRecording.ifPresent(recording -> setRecording(threadCursor.setObject("ongoing-recording"), recording));
