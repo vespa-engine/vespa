@@ -20,7 +20,7 @@ public:
     typedef typename HashTable::insert_result insert_result;
 public:
     hash_set(hash_set &&) noexcept = default;
-    hash_set & operator = (hash_set &&) noexcept = default;
+    hash_set & operator = (hash_set &&) = default;
     hash_set(const hash_set &) = default;
     hash_set & operator = (const hash_set &) = default;
     hash_set(size_t reserveSize=0);
