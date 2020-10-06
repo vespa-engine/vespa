@@ -55,14 +55,14 @@ struct IStore
      * Inspect the meta data associated with the given gid.
      * If the gid is not found the result is not valid.
      */
-    virtual Result inspectExisting(const GlobalId &gid) const = 0;
+    virtual Result inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num) = 0;
 
     /**
      * Inspect the meta data associated with the given gid.
      * If the gid is not found the next available lid is returned in the result.
      * This lid can be used if calling put() right afterwards.
      */
-    virtual Result inspect(const GlobalId &gid) = 0;
+    virtual Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) = 0;
 
     /**
      * Puts the given <lid, meta data> pair to this store.
@@ -73,7 +73,8 @@ struct IStore
                        const BucketId &bucketId,
                        const Timestamp &timestamp,
                        uint32_t docSize,
-                       DocId lid) = 0;
+                       DocId lid,
+                       uint64_t prepare_serial_num) = 0;
 
     /*
      * Update the meta data associated with the given lid.
@@ -90,7 +91,7 @@ struct IStore
      * found or could not be removed.
      * The caller must call removeComplete() after document removal is done.
      **/
-    virtual bool remove(DocId lid) = 0;
+    virtual bool remove(DocId lid, uint64_t prepare_serial_num) = 0;
 
     /**
      * Signal that the removal of the document associated with this lid is complete.
@@ -104,7 +105,7 @@ struct IStore
      * is updated atomically from fromLid to toLid.
      * The caller must call removeComplete() with fromLid after document move is done.
      */
-    virtual void move(DocId fromLid, DocId toLid) = 0;
+    virtual void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) = 0;
 
     /**
      * Check if the lid is valid.

@@ -21,7 +21,8 @@ DocumentOperation::DocumentOperation(Type type) noexcept
       _prevDbdId(),
       _prevMarkedAsRemoved(false),
       _prevTimestamp(),
-      _serializedDocSize(0)
+      _serializedDocSize(0),
+      _prepare_serial_num(0u)
 {
 }
 
@@ -34,7 +35,8 @@ DocumentOperation::DocumentOperation(Type type, BucketId bucketId, Timestamp tim
       _prevDbdId(),
       _prevMarkedAsRemoved(false),
       _prevTimestamp(),
-      _serializedDocSize(0)
+      _serializedDocSize(0),
+      _prepare_serial_num(0u)
 {
 }
 

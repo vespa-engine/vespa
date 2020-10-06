@@ -169,7 +169,7 @@ void putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_i
 {
     documentmetastore::IStore::Result putRes(
             meta_store.put(doc_id.getGlobalId(),
-                           op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid()));
+                           op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid(), op.get_prepare_serial_num()));
     if (!putRes.ok()) {
         throw IllegalStateException(
                 make_string("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
@@ -187,7 +187,7 @@ void removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid,
     const RawDocumentMetaData &meta(meta_store.getRawMetaData(op.getPrevLid()));
     assert(meta.getGid() == gid);
     (void) meta;
-    if (!meta_store.remove(op.getPrevLid())) {
+    if (!meta_store.remove(op.getPrevLid(), op.get_prepare_serial_num())) {
         throw IllegalStateException(
                 make_string("Could not remove <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
                             is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
@@ -206,7 +206,7 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
     (void) meta;
     assert(meta.getGid() == doc_id.getGlobalId());
     assert(meta.getTimestamp() == op.getTimestamp());
-    meta_store.move(op.getPrevLid(), op.getLid());
+    meta_store.move(op.getPrevLid(), op.getLid(), op.get_prepare_serial_num());
 }
 
 std::unique_ptr<PendingLidTrackerBase>
@@ -292,7 +292,7 @@ StoreOnlyFeedView::preparePut(PutOperation &putOp)
 {
     const DocumentId &docId = putOp.getDocument()->getId();
     const document::GlobalId &gid = docId.getGlobalId();
-    documentmetastore::IStore::Result inspectResult = _metaStore.inspect(gid);
+    documentmetastore::IStore::Result inspectResult = _metaStore.inspect(gid, putOp.get_prepare_serial_num());
     putOp.setDbDocumentId(DbDocumentId(_params._subDbId, inspectResult._lid));
     assert(_params._subDbType != SubDbType::REMOVED);
     setPrev(putOp, inspectResult, _params._subDbId, false);
@@ -386,7 +386,7 @@ StoreOnlyFeedView::prepareUpdate(UpdateOperation &updOp)
 {
     const DocumentId &docId = updOp.getUpdate()->getId();
     const document::GlobalId &gid = docId.getGlobalId();
-    documentmetastore::IStore::Result inspectResult = _metaStore.inspect(gid);
+    documentmetastore::IStore::Result inspectResult = _metaStore.inspect(gid, updOp.get_prepare_serial_num());
     updOp.setDbDocumentId(DbDocumentId(_params._subDbId, inspectResult._lid));
     assert(_params._subDbType != SubDbType::REMOVED);
     setPrev(updOp, inspectResult, _params._subDbId, false);
@@ -578,7 +578,7 @@ StoreOnlyFeedView::removeIndexedFields(SerialNum, Lid, bool, OnRemoveDoneType) {
 void
 StoreOnlyFeedView::prepareRemove(RemoveOperation &rmOp)
 {
-    documentmetastore::IStore::Result inspectRes = _metaStore.inspect(rmOp.getGlobalId());
+    documentmetastore::IStore::Result inspectRes = _metaStore.inspect(rmOp.getGlobalId(), rmOp.get_prepare_serial_num());
     if ((_params._subDbType == SubDbType::REMOVED) && (rmOp.getType() == FeedOperation::REMOVE)) {
         rmOp.setDbDocumentId(DbDocumentId(_params._subDbId, inspectRes._lid));
     }
@@ -785,7 +785,7 @@ StoreOnlyFeedView::prepareMove(MoveOperation &moveOp)
 {
     const DocumentId &docId = moveOp.getDocument()->getId();
     const document::GlobalId &gid = docId.getGlobalId();
-    documentmetastore::IStore::Result inspectResult = _metaStore.inspect(gid);
+    documentmetastore::IStore::Result inspectResult = _metaStore.inspect(gid, moveOp.get_prepare_serial_num());
     assert(!inspectResult._found);
     moveOp.setDbDocumentId(DbDocumentId(_params._subDbId, inspectResult._lid));
 }

@@ -142,7 +142,7 @@ struct MySubDb
             for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
                 const test::Document &testDoc = bucketDocs.getDocs()[i];
                 _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
-                               testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid());
+                               testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
                 _realRetriever->_docs.push_back(testDoc.getDoc());
                 ASSERT_EQUAL(testDoc.getLid() + 1,
                              _realRetriever->_docs.size());
@@ -166,7 +166,7 @@ struct MySubDb
     void removeBucket(uint32_t userId) {
         const test::DocumentVector &userDocs = _docs.getDocs(userId);
         for (size_t i = 0; i < userDocs.size(); ++i) {
-            _metaStore.remove(userDocs[i].getLid());
+            _metaStore.remove(userDocs[i].getLid(), 0u);
             if (_metaStore.getFreeListActive()) {
                 _metaStore.removeComplete(userDocs[i].getLid());
             }

@@ -245,7 +245,7 @@ public:
         IDocumentMetaStore &dms = _ddb->getReadySubDB()->getDocumentMetaStoreContext().get();
         uint32_t docSize = 1;
         PutRes putRes(dms.put(docId.getGlobalId(), BucketFactory::getBucketId(docId),
-                              Timestamp(0u), docSize, lid));
+                              Timestamp(0u), docSize, lid, 0u));
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().incSerialNum();
         _aw->put(serialNum, doc, lid, true, std::shared_ptr<IDestructorCallback>());

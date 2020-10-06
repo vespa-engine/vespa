@@ -198,7 +198,7 @@ struct MyWorld {
             const document::GlobalId &gid = docId.getGlobalId();
             document::BucketId bucketId(BucketFactory::getBucketId(docId));
             uint32_t docSize = 1;
-            metaStore.put(gid, bucketId, Timestamp(0u), docSize, i);
+            metaStore.put(gid, bucketId, Timestamp(0u), docSize, i, 0u);
             metaStore.setBucketState(bucketId, true);
         }
     }

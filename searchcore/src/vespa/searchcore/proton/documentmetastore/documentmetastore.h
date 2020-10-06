@@ -68,6 +68,8 @@ private:
 
     MetaDataStore       _metaDataStore;
     TreeType            _gidToLidMap;
+    Iterator            _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
+    SerialNum           _gid_to_lid_map_write_itr_prepare_serial_num;
     documentmetastore::LidAllocator _lidAlloc;
     IGidCompare::SP     _gidCompare;
     BucketDBOwner::SP   _bucketDB;
@@ -79,7 +81,7 @@ private:
     DocId getFreeLid();
     DocId peekFreeLid();
     VESPA_DLL_LOCAL void ensureSpace(DocId lid);
-    bool insert(DocId lid, const RawDocumentMetaData &metaData);
+    void insert(DocId lid, const RawDocumentMetaData &metaData);
 
     const GlobalId & getRawGid(DocId lid) const { return getRawMetaData(lid).getGid(); }
 
@@ -126,7 +128,7 @@ private:
 
     VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
 
-    bool remove(DocId lid, BucketDBOwner::Guard &bucketGuard);
+    void remove(DocId lid, uint64_t cached_iterator_sequence_id, BucketDBOwner::Guard &bucketGuard);
 
 public:
     typedef TreeType::Iterator Iterator;
@@ -147,8 +149,8 @@ public:
     /**
      * Implements documentmetastore::IStore.
      */
-    Result inspectExisting(const GlobalId &gid) const override;
-    Result inspect(const GlobalId &gid) override;
+    Result inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num) override;
+    Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) override;
     /**
      * Puts the given <lid, meta data> pair to this store.
      * This function should only be called before constructFreeList()
@@ -158,9 +160,9 @@ public:
      * was used to create the <lid, gid> pairs.
      **/
     Result put(const GlobalId &gid, const BucketId &bucketId,
-               const Timestamp &timestamp, uint32_t docSize, DocId lid) override;
+               const Timestamp &timestamp, uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override;
     bool updateMetaData(DocId lid, const BucketId &bucketId, const Timestamp &timestamp) override;
-    bool remove(DocId lid) override;
+    bool remove(DocId lid, uint64_t prepare_serial_num) override;
 
     BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
     vespalib::GenerationHandler::Guard getGuard() const override;
@@ -172,7 +174,7 @@ public:
      * document store).
      */
     void removeComplete(DocId lid) override;
-    void move(DocId fromLid, DocId toLid) override;
+    void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
     bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }

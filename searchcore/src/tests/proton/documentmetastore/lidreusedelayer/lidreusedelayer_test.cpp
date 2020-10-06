@@ -58,15 +58,15 @@ public:
 
     ~MyMetaStore() override = default;
 
-    Result inspectExisting(const GlobalId &) const override {
+    Result inspectExisting(const GlobalId &, uint64_t) override {
         return Result();
     }
 
-    Result inspect(const GlobalId &) override {
+    Result inspect(const GlobalId &, uint64_t) override {
         return Result();
     }
 
-    Result put(const GlobalId &, const BucketId &, const Timestamp &, uint32_t, DocId) override {
+    Result put(const GlobalId &, const BucketId &, const Timestamp &, uint32_t, DocId, uint64_t) override {
         return Result();
     }
 
@@ -74,7 +74,7 @@ public:
         return true;
     }
 
-    bool remove(DocId) override {
+    bool remove(DocId, uint64_t) override {
         return true;
     }
 
@@ -83,7 +83,7 @@ public:
         ++_removeCompleteLids;
     }
 
-    void move(DocId, DocId) override {
+    void move(DocId, DocId, uint64_t) override {
     }
 
     bool validLid(DocId) const override {
