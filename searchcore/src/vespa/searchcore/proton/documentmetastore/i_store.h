@@ -6,7 +6,6 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <persistence/spi/types.h>
-#include <vespa/searchlib/common/serialnum.h>
 
 namespace proton::documentmetastore {
 
