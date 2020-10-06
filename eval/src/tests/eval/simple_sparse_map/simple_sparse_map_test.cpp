@@ -17,7 +17,7 @@ public:
         : _str_list(list), _ref_list(), _ref_ptr_list()
     {
         for (const auto &str: _str_list) {
-            _ref_list.emplace_back(str);
+            _ref_list.push_back(str);
         }
         for (const auto &ref: _ref_list) {
             _ref_ptr_list.push_back(&ref);
