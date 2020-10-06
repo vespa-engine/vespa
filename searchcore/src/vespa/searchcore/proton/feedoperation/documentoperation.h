@@ -19,6 +19,7 @@ protected:
     bool                    _prevMarkedAsRemoved;
     storage::spi::Timestamp _prevTimestamp;
     mutable uint32_t        _serializedDocSize; // Set by serialize()/deserialize()
+    uint64_t                _prepare_serial_num;
 
     DocumentOperation(Type type) noexcept;
 
@@ -83,6 +84,8 @@ public:
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
 
     uint32_t getSerializedDocSize() const { return _serializedDocSize; }
+    void set_prepare_serial_num(uint64_t prepare_serial_num_in) { _prepare_serial_num = prepare_serial_num_in; }
+    uint64_t get_prepare_serial_num() const { return _prepare_serial_num; }
 
     // Provided as a hook for tests.
     void serializeDocumentOperationOnly(vespalib::nbostream &os) const;

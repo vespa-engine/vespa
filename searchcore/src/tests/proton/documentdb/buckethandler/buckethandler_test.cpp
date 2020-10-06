@@ -47,7 +47,7 @@ struct MySubDb
             for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
                 const test::Document &testDoc = bucketDocs.getDocs()[i];
                 _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
-                               testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid());
+                               testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
             }
         }
     }

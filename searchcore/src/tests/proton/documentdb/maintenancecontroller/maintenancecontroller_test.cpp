@@ -539,7 +539,7 @@ MyDocumentSubDB::handlePut(PutOperation &op)
                                      op.getBucketId(),
                                      op.getTimestamp(),
                                      op.getSerializedDocSize(),
-                                     op.getLid()));
+                                     op.getLid(), 0u));
         assert(putRes.ok());
         assert(op.getLid() == putRes._lid);
         _docs[op.getLid()] = doc;
@@ -552,7 +552,7 @@ MyDocumentSubDB::handlePut(PutOperation &op)
         assert(meta.getGid() == gid);
         (void) meta;
 
-        bool remres = _metaStore.remove(op.getPrevLid());
+        bool remres = _metaStore.remove(op.getPrevLid(), 0u);
         assert(remres);
         (void) remres;
         _metaStore.removeComplete(op.getPrevLid());
@@ -581,7 +581,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
                                      op.getBucketId(),
                                      op.getTimestamp(),
                                      op.getSerializedDocSize(),
-                                     op.getLid()));
+                                     op.getLid(), 0u));
         assert(putRes.ok());
         assert(op.getLid() == putRes._lid);
         const document::DocumentType *docType =
@@ -598,7 +598,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
         assert(meta.getGid() == gid);
         (void) meta;
 
-        bool remres = _metaStore.remove(op.getPrevLid());
+        bool remres = _metaStore.remove(op.getPrevLid(), 0u);
         assert(remres);
         (void) remres;
 
@@ -617,7 +617,7 @@ MyDocumentSubDB::prepareMove(MoveOperation &op)
 {
     const DocumentId &docId = op.getDocument()->getId();
     const document::GlobalId &gid = docId.getGlobalId();
-    DocumentMetaStore::Result inspectResult = _metaStore.inspect(gid);
+    DocumentMetaStore::Result inspectResult = _metaStore.inspect(gid, 0u);
     assert(!inspectResult._found);
     op.setDbDocumentId(DbDocumentId(_subDBId, inspectResult._lid));
 }
@@ -639,7 +639,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
                                      op.getBucketId(),
                                      op.getTimestamp(),
                                      op.getSerializedDocSize(),
-                                     op.getLid()));
+                                     op.getLid(), 0u));
         assert(putRes.ok());
         assert(op.getLid() == putRes._lid);
         _docs[op.getLid()] = doc;
@@ -652,7 +652,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
         assert(meta.getGid() == gid);
         (void) meta;
 
-        bool remres = _metaStore.remove(op.getPrevLid());
+        bool remres = _metaStore.remove(op.getPrevLid(), 0u);
         assert(remres);
         (void) remres;
 

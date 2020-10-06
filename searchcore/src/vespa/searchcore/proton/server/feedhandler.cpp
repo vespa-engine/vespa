@@ -140,6 +140,7 @@ FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
 void
 FeedHandler::performPut(FeedToken token, PutOperation &op) {
     op.assertValid();
+    op.set_prepare_serial_num(inc_prepare_serial_num());
     _activeFeedView->preparePut(op);
     if (ignoreOperation(op)) {
         LOG(debug, "performPut(): ignoreOperation: docId(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
@@ -168,6 +169,7 @@ FeedHandler::performPut(FeedToken token, PutOperation &op) {
 void
 FeedHandler::performUpdate(FeedToken token, UpdateOperation &op)
 {
+    op.set_prepare_serial_num(inc_prepare_serial_num());
     _activeFeedView->prepareUpdate(op);
     if (op.getPrevDbDocumentId().valid() && !op.getPrevMarkedAsRemoved()) {
         if (considerUpdateOperationForRejection(token, op)) {
@@ -205,6 +207,7 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
     doc->setRepo(*_activeFeedView->getDocumentTypeRepo());
     op.getUpdate()->applyTo(*doc);
     PutOperation putOp(op.getBucketId(), op.getTimestamp(), std::move(doc));
+    putOp.set_prepare_serial_num(op.get_prepare_serial_num());
     _activeFeedView->preparePut(putOp);
     appendOperation(putOp, token);
     if (token) {
@@ -218,6 +221,7 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
 
 void
 FeedHandler::performRemove(FeedToken token, RemoveOperation &op) {
+    op.set_prepare_serial_num(inc_prepare_serial_num());
     _activeFeedView->prepareRemove(op);
     if (ignoreOperation(op)) {
         LOG(debug, "performRemove(): ignoreOperation: remove(%s), timestamp(%" PRIu64 "), prevTimestamp(%" PRIu64 ")",
@@ -402,6 +406,7 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
+      _prepare_serial_num(0u),
       _numOperationsPendingCommit(0),
       _numOperationsCompleted(0),
       _numCommitsCompleted(0),
@@ -702,6 +707,7 @@ void
 FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx)
 {
     assert(_writeService.master().isCurrentThread());
+    op.set_prepare_serial_num(inc_prepare_serial_num());
     _activeFeedView->prepareMove(op);
     assert(op.getValidDbdId());
     assert(op.getValidPrevDbdId());

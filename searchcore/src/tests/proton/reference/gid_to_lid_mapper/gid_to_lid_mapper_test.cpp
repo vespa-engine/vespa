@@ -97,19 +97,19 @@ struct Fixture
         bumpTimeStamp();
         const GlobalId gid(toGid(docId));
         uint32_t docSize = 1;
-        _dms->put(gid, toBucketId(gid), _timestamp, docSize, lid);
+        _dms->put(gid, toBucketId(gid), _timestamp, docSize, lid, 0u);
         _dms->commit();
     }
 
     uint32_t put(vespalib::stringref docId) {
-        auto inspectRes = _dms->inspect(toGid(docId));
+        auto inspectRes = _dms->inspect(toGid(docId), 0u);
         uint32_t lid = inspectRes.getLid();
         put(docId, lid);
         return lid;
     }
 
     void remove(uint32_t lid) {
-        if (_dms->remove(lid)) {
+        if (_dms->remove(lid, 0u)) {
             _dms->removeComplete(lid);
         }
         _dms->commit();

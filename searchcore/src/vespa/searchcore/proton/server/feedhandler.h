@@ -76,6 +76,7 @@ private:
     // the serial num of the last message in the transaction log
     SerialNum                              _serialNum;
     SerialNum                              _prunedSerialNum;
+    uint64_t                               _prepare_serial_num;
     size_t                                 _numOperationsPendingCommit;
     size_t                                 _numOperationsCompleted;
     size_t                                 _numCommitsCompleted;
@@ -210,6 +211,7 @@ public:
     SerialNum incSerialNum() { return ++_serialNum; }
     SerialNum getSerialNum() const override { return _serialNum; }
     SerialNum getPrunedSerialNum() const { return _prunedSerialNum; }
+    uint64_t  inc_prepare_serial_num() { return ++_prepare_serial_num; }
 
     bool isDoingReplay() const;
     float getReplayProgress() const {

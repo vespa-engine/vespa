@@ -223,12 +223,12 @@ struct FixtureBase {
     void addSingleDocToMetaStore(uint32_t expected_lid) {
         using Result = DocumentMetaStore::Result;
         DocumentId id(make_string("id:test:foo:g=foo:%d", expected_lid));
-        Result inspect = metaStore->inspect(id.getGlobalId());
+        Result inspect = metaStore->inspect(id.getGlobalId(), 0u);
         uint32_t docSize = 1;
         EXPECT_EQUAL(expected_lid,
                      metaStore->put(id.getGlobalId(),
                                      id.getGlobalId().convertToBucketId(),
-                                     Timestamp(10), docSize, inspect.getLid()).getLid());
+                                     Timestamp(10), docSize, inspect.getLid(), 0u).getLid());
     }
 
     void addDocsToMetaStore(int count) {
@@ -331,11 +331,11 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     uint32_t docSize = 1;
     f.runInMaster([&] () { f.metaStore->put(doc1id.getGlobalId(),
                       doc1id.getGlobalId().convertToBucketId(),
-                      Timestamp(9), docSize, 1); });
+                      Timestamp(9), docSize, 1, 0u); });
     f.runInMaster([&] () { f.metaStore->put(doc->getId().getGlobalId(),
                       doc->getId().getGlobalId().convertToBucketId(),
-                      Timestamp(10), docSize, 2); });
-    f.runInMaster([&] () { f.metaStore->remove(1); });
+                      Timestamp(10), docSize, 2, 0u); });
+    f.runInMaster([&] () { f.metaStore->remove(1, 0u); });
     f.metaStore->removeComplete(1);
     MoveOperation::UP op = makeMoveOp(doc, DbDocumentId(subdb_id, 2), subdb_id);
     op->setTargetLid(1);

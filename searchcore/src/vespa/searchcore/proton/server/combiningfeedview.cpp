@@ -76,7 +76,7 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
         const documentmetastore::IStore *metaStore = _metaStores[subDbId];
         if (metaStore == nullptr)
             continue;
-        documentmetastore::IStore::Result inspectRes(metaStore->inspectExisting(gid));
+        documentmetastore::IStore::Result inspectRes(const_cast<documentmetastore::IStore *>(metaStore)->inspectExisting(gid, op.get_prepare_serial_num()));
         if (inspectRes._found) {
             op.setPrevDbDocumentId(DbDocumentId(subDbId, inspectRes._lid));
             op.setPrevMarkedAsRemoved(subDbId == getRemFeedViewId());

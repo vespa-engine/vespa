@@ -57,34 +57,35 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     /**
      * Implements documentmetastore::IStore.
      */
-    virtual Result inspectExisting(const GlobalId &gid) const override {
-        return _store.inspectExisting(gid);
+    virtual Result inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num) override {
+        return _store.inspectExisting(gid, prepare_serial_num);
     }
-    virtual Result inspect(const GlobalId &gid) override {
-        return _store.inspect(gid);
+    virtual Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) override {
+        return _store.inspect(gid, prepare_serial_num);
     }
     virtual Result put(const GlobalId &gid,
                        const BucketId &bucketId,
                        const Timestamp &timestamp,
                        uint32_t docSize,
-                       DocId lid) override {
-        return _store.put(gid, bucketId, timestamp, docSize, lid);
+                       DocId lid,
+                       uint64_t prepare_serial_num) override {
+        return _store.put(gid, bucketId, timestamp, docSize, lid, prepare_serial_num);
     }
     virtual bool updateMetaData(DocId lid,
                                 const BucketId &bucketId,
                                 const Timestamp &timestamp) override {
         return _store.updateMetaData(lid, bucketId, timestamp);
     }
-    virtual bool remove(DocId lid) override {
-        return _store.remove(lid);
+    virtual bool remove(DocId lid, uint64_t prepare_serial_num) override {
+        return _store.remove(lid, prepare_serial_num);
     }
     virtual void removeComplete(DocId lid) override {
         ++_removeCompleteCnt;
         _removeCompleteLid = lid;
         _store.removeComplete(lid);
     }
-    virtual void move(DocId fromLid, DocId toLid) override {
-        _store.move(fromLid, toLid);
+    virtual void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override {
+        _store.move(fromLid, toLid, prepare_serial_num);
     }
     virtual bool validLid(DocId lid) const override {
         return _store.validLid(lid);
