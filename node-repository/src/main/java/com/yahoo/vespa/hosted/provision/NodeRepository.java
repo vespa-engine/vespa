@@ -18,7 +18,6 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -112,7 +111,6 @@ public class NodeRepository extends AbstractComponent {
     private final Applications applications;
     private final boolean canProvisionHosts;
     private final int spareCount;
-    private final boolean useConfigServerLock;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -155,8 +153,6 @@ public class NodeRepository extends AbstractComponent {
                           boolean canProvisionHosts,
                           int spareCount,
                           long nodeCacheSize) {
-        // Flag is read once here as it shouldn't not change at runtime
-        this.useConfigServerLock = Flags.USE_CONFIG_SERVER_LOCK.bindTo(flagSource).value();
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
         this.clock = clock;
@@ -178,23 +174,11 @@ public class NodeRepository extends AbstractComponent {
     private void rewriteNodes() {
         Instant start = clock.instant();
         int nodesWritten = 0;
-        if (useConfigServerLock) {
-            for (var state : State.values()) {
-                for (var node : db.readNodes(state)) {
-                    try (var lock = lock(node)) {
-                        var currentNode = db.readNode(node.hostname());
-                        if (currentNode.isEmpty()) continue; // Node disappeared while running this loop
-                        db.writeTo(currentNode.get().state(), currentNode.get(), Agent.system, Optional.empty());
-                        nodesWritten++;
-                    }
-                }
-            }
-        } else {
-            for (State state : State.values()) {
-                List<Node> nodes = db.readNodes(state);
-                db.writeTo(state, nodes, Agent.system, Optional.empty());
-                nodesWritten += nodes.size();
-            }
+        for (State state : State.values()) {
+            List<Node> nodes = db.readNodes(state);
+            // TODO(mpolden): This should take the lock before writing
+            db.writeTo(state, nodes, Agent.system, Optional.empty());
+            nodesWritten += nodes.size();
         }
         Instant end = clock.instant();
         log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
@@ -860,12 +844,12 @@ public class NodeRepository extends AbstractComponent {
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application) {
-        return useConfigServerLock ? db.lock(application) : db.legacyLock(application);
+        return db.lock(application);
     }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application, Duration timeout) {
-        return useConfigServerLock ? db.lock(application, timeout) : db.legacyLock(application, timeout);
+        return db.lock(application, timeout);
     }
 
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */

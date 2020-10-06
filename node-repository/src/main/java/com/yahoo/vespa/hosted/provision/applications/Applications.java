@@ -25,7 +25,10 @@ public class Applications {
         // read and write all to make sure they are stored in the latest version of the serialized format
         for (ApplicationId id : ids()) {
             try (Mutex lock = db.lock(id)) {
-                get(id).ifPresent(application -> put(application, lock));
+                // TODO(mpolden): Remove inner lock
+                try (Mutex innerLock = db.configLock(id)) {
+                    get(id).ifPresent(application -> put(application, lock));
+                }
             }
         }
     }
