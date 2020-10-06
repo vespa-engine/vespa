@@ -18,6 +18,8 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/attribute/multivalueattribute.hpp>
+#include <vespa/searchlib/attribute/multienumattribute.hpp>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
