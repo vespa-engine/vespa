@@ -103,8 +103,8 @@ public:
         : _next(next), _node(node) {}
     hash_node(V &&node, next_t next=npos)
         : _next(next), _node(std::move(node)) {}
-    hash_node(hash_node &&) noexcept = default;
-    hash_node &operator=(hash_node &&) noexcept = default;
+    hash_node(hash_node &&) noexcept(std::is_nothrow_move_constructible<V>::value) = default;
+    hash_node &operator=(hash_node &&) noexcept(std::is_nothrow_move_assignable<V>::value) = default;
     hash_node(const hash_node &) = default;             // These will not be created
     hash_node &operator=(const hash_node &) = default;  // if V is non-copyable.
     bool operator == (const hash_node & rhs) const {
