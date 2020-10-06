@@ -32,9 +32,7 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -84,7 +82,6 @@ public class SessionRepository {
     private final Curator curator;
     private final Executor zkWatcherExecutor;
     private final TenantFileSystemDirs tenantFileSystemDirs;
-    private final BooleanFlag distributeApplicationPackage;
     private final MetricUpdater metrics;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
@@ -109,7 +106,6 @@ public class SessionRepository {
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
-        this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         this.locksPath = TenantRepository.getLocksPath(tenantName);
         loadSessions(); // Needs to be done before creating cache below
@@ -352,8 +348,7 @@ public class SessionRepository {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
         }
-        if (distributeApplicationPackage())
-            createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        createLocalSessionUsingDistributedApplicationPackage(sessionId);
     }
 
     void activate(RemoteSession session) {
@@ -381,10 +376,6 @@ public class SessionRepository {
             log.log(Level.INFO, () -> localSession.logPre() + "Deleting local session " + sessionId);
             deleteLocalSession(localSession);
         }
-    }
-
-    boolean distributeApplicationPackage() {
-        return distributeApplicationPackage.value();
     }
 
     private void sessionRemoved(long sessionId) {
@@ -590,7 +581,7 @@ public class SessionRepository {
         LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
-        if (distributeApplicationPackage() && existingSession.getApplicationPackageReference() != null) {
+        if (existingSession.getApplicationPackageReference() != null) {
             session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
         }
         session.setVespaVersion(existingSession.getVespaVersion());

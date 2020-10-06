@@ -7,7 +7,6 @@ import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,9 +69,7 @@ public class SessionStateWatcher {
     }
 
     private void createLocalSession(long sessionId) {
-        if (sessionRepository.distributeApplicationPackage()) {
-            sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
-        }
+        sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
     }
 
     public long getSessionId() {

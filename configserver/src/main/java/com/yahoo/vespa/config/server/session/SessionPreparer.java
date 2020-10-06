@@ -48,9 +48,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerialize
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -86,7 +84,6 @@ public class SessionPreparer {
     private final Curator curator;
     private final Zone zone;
     private final SecretStore secretStore;
-    private final BooleanFlag distributeApplicationPackage;
     private final FlagSource flagSource;
 
     @Inject
@@ -109,7 +106,6 @@ public class SessionPreparer {
         this.curator = curator;
         this.zone = zone;
         this.secretStore = secretStore;
-        this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.flagSource = flagSource;
     }
 
@@ -245,8 +241,6 @@ public class SessionPreparer {
         }
 
         Optional<FileReference> distributeApplicationPackage() {
-            if ( ! distributeApplicationPackage.value()) return Optional.empty();
-
             FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addApplicationPackage();
             FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();
@@ -349,7 +343,7 @@ public class SessionPreparer {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
-            if (distributeApplicationPackage.value()) zooKeeperClient.writeApplicationPackageReference(distributedApplicationPackage);
+            zooKeeperClient.writeApplicationPackageReference(distributedApplicationPackage);
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
             zooKeeperClient.writeAthenzDomain(athenzDomain);

@@ -245,7 +245,7 @@ public class ConfigServerBootstrapTest {
     }
 
     private VersionState createVersionState() throws IOException {
-        return new VersionState(temporaryFolder.newFile(), curator, new InMemoryFlagSource());
+        return new VersionState(temporaryFolder.newFile(), curator);
     }
 
     public static class MockRpcServer extends com.yahoo.vespa.config.server.rpc.MockRpcServer {

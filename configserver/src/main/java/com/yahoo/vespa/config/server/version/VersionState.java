@@ -9,9 +9,6 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.io.FileReader;
@@ -32,17 +29,15 @@ public class VersionState {
 
     private final File versionFile;
     private final Curator curator;
-    private final BooleanFlag distributeApplicationPackage;
 
     @Inject
-    public VersionState(ConfigserverConfig config, Curator curator, FlagSource flagsource) {
-        this(new File(Defaults.getDefaults().underVespaHome(config.configServerDBDir()), "vespa_version"), curator, flagsource);
+    public VersionState(ConfigserverConfig config, Curator curator) {
+        this(new File(Defaults.getDefaults().underVespaHome(config.configServerDBDir()), "vespa_version"), curator);
     }
 
-    public VersionState(File versionFile, Curator curator, FlagSource flagSource) {
+    public VersionState(File versionFile, Curator curator) {
         this.versionFile = versionFile;
         this.curator = curator;
-        this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
     }
 
     public boolean isUpgraded() {
@@ -63,14 +58,12 @@ public class VersionState {
     }
 
     public Version storedVersion() {
-        if (distributeApplicationPackage.value()) {
-            Optional<byte[]> version = curator.getData(versionPath);
-            if(version.isPresent()) {
-                try {
-                    return Version.fromString(Utf8.toString(version.get()));
-                } catch (Exception e) {
-                    // continue, use value in file
-                }
+        Optional<byte[]> version = curator.getData(versionPath);
+        if (version.isPresent()) {
+            try {
+                return Version.fromString(Utf8.toString(version.get()));
+            } catch (Exception e) {
+                // continue, use value in file
             }
         }
         try (FileReader reader = new FileReader(versionFile)) {
