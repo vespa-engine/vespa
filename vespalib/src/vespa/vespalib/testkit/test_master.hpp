@@ -4,10 +4,10 @@
 
 namespace vespalib {
 
-#if !defined(__clang__) && defined(__GNUC__) &&  __GNUC__ < 9
+#if (!defined(__clang__) && defined(__GNUC__) &&  __GNUC__ < 9) || (defined(__clang__) && defined(__apple_build_version__))
 // cf. https://cplusplus.github.io/LWG/issue2221
 template<class charT, class traits>
-std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& os, nullptr_t)
+std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& os, std::nullptr_t)
 {
   return os << (void*) nullptr;
 }
