@@ -86,21 +86,21 @@ bool concat_addresses(const TensorSpec::Address &a, const TensorSpec::Address &b
 TensorSpec reference_concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim) {
     ValueType a_type = ValueType::from_spec(a.type());
     ValueType b_type = ValueType::from_spec(b.type());
-    size_t cc_dim_a_size = 1;
-    for (const auto & dim : a_type.dimensions()) {
-        if (dim.name == concat_dim) {
-            EXPECT_TRUE(dim.is_indexed());
-            cc_dim_a_size = dim.size;
-        }
-    }
     ValueType res_type = ValueType::concat(a_type, b_type, concat_dim);
     EXPECT_FALSE(res_type.is_error());
+    size_t b_offset = 1;
+    size_t concat_dim_index = a_type.dimension_index(concat_dim);
+    if (concat_dim_index != ValueType::Dimension::npos) {
+        const auto &dim = a_type.dimensions()[concat_dim_index];
+        EXPECT_TRUE(dim.is_indexed());
+        b_offset = dim.size;
+    }
     TensorSpec result(res_type.to_spec());
     for (const auto &cell_a: a.cells()) {
         for (const auto &cell_b: b.cells()) {
             TensorSpec::Address addr_a;
             TensorSpec::Address addr_b;
-            if (concat_addresses(cell_a.first, cell_b.first, concat_dim, cc_dim_a_size, addr_a, addr_b)) {
+            if (concat_addresses(cell_a.first, cell_b.first, concat_dim, b_offset, addr_a, addr_b)) {
                 result.set(addr_a, cell_a.second);
                 result.set(addr_b, cell_b.second);
             }
