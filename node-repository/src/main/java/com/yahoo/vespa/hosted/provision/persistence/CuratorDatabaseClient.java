@@ -11,7 +11,6 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
@@ -391,33 +390,15 @@ public class CuratorDatabaseClient {
      * transaction. The config server then commits (writes) the transaction which may include operations that modify
      * data in paths owned by this class.
      */
-    // TODO(mpolden): Simplify once we are down to one application lock
-    public Mutex lock(ApplicationId application, Duration timeout) {
-        Mutex legacyLock;
-        Mutex lock;
-        // Take the application lock (same as config server). This is likely held at this point, but is re-entrant.
+    public Lock lock(ApplicationId application, Duration timeout) {
         try {
-            lock = db.lock(lockPath(application), timeout);
+            return db.lock(lockPath(application), timeout);
         } catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
-        // Take the legacy node-repository lock
-        try {
-            legacyLock = db.lock(legacyLockPath(application), timeout);
-        } catch (UncheckedTimeoutException e) {
-            lock.close();
-            throw new ApplicationLockException(e);
-        }
-        return () -> {
-            try {
-                legacyLock.close();
-            } finally {
-                lock.close();
-            }
-        };
     }
 
-    public Mutex lock(ApplicationId application) {
+    public Lock lock(ApplicationId application) {
         return lock(application, defaultLockTimeout);
     }
 
