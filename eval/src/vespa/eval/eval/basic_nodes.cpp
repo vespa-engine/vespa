@@ -6,16 +6,14 @@
 #include "interpreted_function.h"
 #include "simple_tensor_engine.h"
 
-namespace vespalib {
-namespace eval {
-namespace nodes {
+namespace vespalib::eval::nodes {
 
 namespace {
 
 struct Frame {
     const Node &node;
     size_t child_idx;
-    explicit Frame(const Node &node_in) : node(node_in), child_idx(0) {}
+    explicit Frame(const Node &node_in) noexcept : node(node_in), child_idx(0) {}
     bool has_next_child() const { return (child_idx < node.num_children()); }
     const Node &next_child() { return node.get_child(child_idx++); }
 };
@@ -85,6 +83,4 @@ If::If(Node_UP cond_in, Node_UP true_expr_in, Node_UP false_expr_in, double p_tr
     }
 }
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}

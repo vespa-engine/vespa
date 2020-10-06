@@ -91,9 +91,9 @@ public:
     std::unique_ptr<FieldValue> createValue() const;
 
     // Note that only id is checked for equality.
-    bool operator==(const Field & other) const { return (_fieldId == other._fieldId); }
-    bool operator!=(const Field & other) const { return (_fieldId != other._fieldId); }
-    bool operator<(const Field & other) const { return (getName() < other.getName()); }
+    bool operator==(const Field & other) const noexcept { return (_fieldId == other._fieldId); }
+    bool operator!=(const Field & other) const noexcept { return (_fieldId != other._fieldId); }
+    bool operator<(const Field & other) const noexcept { return (getName() < other.getName()); }
 
     const DataType &getDataType() const { return *_dataType; }
 

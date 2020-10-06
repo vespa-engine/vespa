@@ -14,8 +14,8 @@ namespace vespalib::eval {
  **/
 struct CommaTracker {
     bool first;
-    CommaTracker() : first(true) {}
-    CommaTracker(bool first_in) : first(first_in) {}
+    CommaTracker() noexcept : first(true) {}
+    CommaTracker(bool first_in) noexcept : first(first_in) {}
     bool maybe_add_comma(vespalib::string &dst) {
         if (first) {
             first = false;

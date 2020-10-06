@@ -28,7 +28,7 @@ public:
         AllocSpec(size_t minArraysInBuffer_,
                   size_t maxArraysInBuffer_,
                   size_t numArraysForNewBuffer_,
-                  float allocGrowFactor_)
+                  float allocGrowFactor_) noexcept
             : minArraysInBuffer(minArraysInBuffer_),
               maxArraysInBuffer(maxArraysInBuffer_),
               numArraysForNewBuffer(numArraysForNewBuffer_),

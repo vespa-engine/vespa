@@ -41,7 +41,7 @@ public:
         size_t index;
         vespalib::string name;
         static constexpr size_t npos = -1;
-        Label(const TensorSpec::Label &label)
+        Label(const TensorSpec::Label &label) noexcept
             : index(label.index), name(label.name) {}
         bool operator<(const Label &rhs) const {
             if (index != rhs.index) {

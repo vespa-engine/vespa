@@ -52,7 +52,7 @@ struct CmpNode {
     uint32_t tree_id;
     BitRange false_mask;
     bool false_is_default;
-    CmpNode(float v, uint32_t t, BitRange m, bool f_def)
+    CmpNode(float v, uint32_t t, BitRange m, bool f_def) noexcept
         : value(v), tree_id(t), false_mask(m), false_is_default(f_def) {}
     bool operator<(const CmpNode &rhs) const {
         return (value < rhs.value);
@@ -170,14 +170,14 @@ struct FixedForest : FastForest {
         float value;
         uint32_t tree;
         T bits;
-        Mask(float v, uint32_t t, T b)
+        Mask(float v, uint32_t t, T b) noexcept
             : value(v), tree(t), bits(b) {}
     };
 
     struct DMask {
         uint32_t tree;
         T bits;
-        DMask(uint32_t t, T b)
+        DMask(uint32_t t, T b) noexcept
             : tree(t), bits(b) {}
     };
 
@@ -352,7 +352,7 @@ struct MultiWordForest : FastForest {
     struct Sizes {
         uint32_t fixed;
         uint32_t rle;
-        Sizes(uint32_t f, uint32_t r) : fixed(f), rle(r) {}
+        Sizes(uint32_t f, uint32_t r) noexcept : fixed(f), rle(r) {}
     };
 
     struct Mask {
@@ -362,9 +362,9 @@ struct MultiWordForest : FastForest {
             uint32_t bits;
             uint8_t rle_mask[3];
         };
-        Mask(float v, uint32_t word_offset, uint32_t mask_bits)
+        Mask(float v, uint32_t word_offset, uint32_t mask_bits) noexcept
             : value(v), offset(word_offset), bits(mask_bits) {}
-        Mask(float v, uint32_t byte_offset, uint8_t first_bits, uint8_t empty_bytes, uint8_t last_bits)
+        Mask(float v, uint32_t byte_offset, uint8_t first_bits, uint8_t empty_bytes, uint8_t last_bits) noexcept
             : value(v), offset(byte_offset), rle_mask{first_bits, empty_bytes, last_bits} {}
     };
 
@@ -374,9 +374,9 @@ struct MultiWordForest : FastForest {
             uint32_t bits;
             uint8_t rle_mask[3];
         };
-        DMask(uint32_t word_offset, uint32_t mask_bits)
+        DMask(uint32_t word_offset, uint32_t mask_bits) noexcept
             : offset(word_offset), bits(mask_bits) {}
-        DMask(uint32_t byte_offset, uint8_t first_bits, uint8_t empty_bytes, uint8_t last_bits)
+        DMask(uint32_t byte_offset, uint8_t first_bits, uint8_t empty_bytes, uint8_t last_bits) noexcept
             : offset(byte_offset), rle_mask{first_bits, empty_bytes, last_bits} {}
     };
 

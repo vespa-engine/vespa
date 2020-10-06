@@ -21,12 +21,12 @@ class SparseTensorAddressRef
         return res;
     }
 public:
-    SparseTensorAddressRef()
+    SparseTensorAddressRef() noexcept
         : _start(nullptr), _size(0u), _hash(0u)
     {
     }
 
-    SparseTensorAddressRef(const void *start_in, uint32_t size_in)
+    SparseTensorAddressRef(const void *start_in, uint32_t size_in) noexcept
         : _start(start_in), _size(size_in),
           _hash(calcHash())
     {
@@ -40,9 +40,9 @@ public:
 
     uint32_t hash() const { return _hash; }
 
-    uint32_t calcHash() const;
+    uint32_t calcHash() const noexcept;
 
-    bool operator<(const SparseTensorAddressRef &rhs) const {
+    bool operator<(const SparseTensorAddressRef &rhs) const noexcept {
         size_t minSize = std::min(_size, rhs._size);
         int res = memcmp(_start, rhs._start, minSize);
         if (res != 0) {
@@ -51,7 +51,7 @@ public:
         return _size < rhs._size;
     }
 
-    bool operator==(const SparseTensorAddressRef &rhs) const
+    bool operator==(const SparseTensorAddressRef &rhs) const noexcept
     {
         if (_size != rhs._size || _hash != rhs._hash) {
             return false;

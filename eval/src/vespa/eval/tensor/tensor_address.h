@@ -30,13 +30,13 @@ public:
 
     public:
         static const vespalib::string UNDEFINED_LABEL;
-        Element(const vespalib::string &dimension_in, const vespalib::string &label_in)
+        Element(const vespalib::string &dimension_in, const vespalib::string &label_in) noexcept
             : _dimension(dimension_in), _label(label_in)
         {}
-        Element(const Element &) = default;
-        Element & operator = (const Element &) = default;
-        Element(Element &&) = default;
-        Element & operator = (Element &&) = default;
+        Element(const Element &) noexcept = default;
+        Element & operator = (const Element &) noexcept = default;
+        Element(Element &&) noexcept = default;
+        Element & operator = (Element &&) noexcept = default;
         ~Element();
         const vespalib::string &dimension() const { return _dimension; }
         const vespalib::string &label() const { return _label; }

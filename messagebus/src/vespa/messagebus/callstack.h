@@ -24,7 +24,7 @@ class CallStack
 {
 private:
     struct Frame {
-        Frame(IReplyHandler *r, IDiscardHandler * d, Context c) : replyHandler(r), discardHandler(d), ctx(c) {}
+        Frame(IReplyHandler *r, IDiscardHandler * d, Context c) noexcept : replyHandler(r), discardHandler(d), ctx(c) {}
         IReplyHandler   *replyHandler;
         IDiscardHandler *discardHandler;
         Context          ctx;

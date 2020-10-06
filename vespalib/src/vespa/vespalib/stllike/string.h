@@ -23,9 +23,13 @@ public:
     typedef size_t size_type;
     static const size_type npos = static_cast<size_type>(-1);
     stringref() : _s(""), _sz(0) { }
-    stringref(const char * s) : _s(s), _sz(strlen(s)) { }
-    stringref(const char * s, size_type sz) : _s(s), _sz(sz) { }
-    stringref(const std::string & s) : _s(s.c_str()), _sz(s.size()) { }
+    stringref(const char * s) noexcept : _s(s), _sz(strlen(s)) { }
+    stringref(const char * s, size_type sz) noexcept : _s(s), _sz(sz) { }
+    stringref(const std::string & s) noexcept : _s(s.c_str()), _sz(s.size()) { }
+    stringref(const stringref &) noexcept = default;
+    stringref & operator =(const stringref &) noexcept = default;
+    stringref(stringref &&) noexcept = default;
+    stringref & operator =(stringref &&) noexcept = default;
 
     /**
      * return a pointer to the data held, or NULL.
@@ -172,10 +176,10 @@ public:
     typedef char * reverse_iterator;
     typedef const char * const_reverse_iterator;
     static const size_type npos = static_cast<size_type>(-1);
-    small_string() : _buf(_stack), _sz(0), _bufferSize(StackSize) { _stack[0] = '\0'; }
-    small_string(const char * s) : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
-    small_string(const void * s, size_type sz) : _buf(_stack), _sz(sz) { init(s); }
-    small_string(stringref s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
+    small_string() noexcept : _buf(_stack), _sz(0), _bufferSize(StackSize) { _stack[0] = '\0'; }
+    small_string(const char * s) noexcept : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
+    small_string(const void * s, size_type sz) noexcept : _buf(_stack), _sz(sz) { init(s); }
+    small_string(stringref s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(const std::string & s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(small_string && rhs) noexcept
         : _sz(rhs.size()), _bufferSize(rhs._bufferSize)
@@ -216,13 +220,13 @@ public:
     small_string& operator= (const small_string &rhs) noexcept {
         return assign(rhs.data(), rhs.size());
     }
-    small_string & operator= (stringref rhs) {
+    small_string & operator= (stringref rhs) noexcept {
         return assign(rhs.data(), rhs.size());
     }
-    small_string& operator= (const char *s) {
+    small_string& operator= (const char *s) noexcept {
         return assign(s);
     }
-    small_string& operator= (const std::string &rhs) {
+    small_string& operator= (const std::string &rhs) noexcept {
         return operator= (stringref(rhs));
     }
     void swap(small_string & rhs) noexcept {
@@ -544,7 +548,7 @@ private:
             _reserveBytes(newBufferSize);
         }
     }
-    void move(small_string && rhs) {
+    void move(small_string && rhs) noexcept {
         if (rhs.isAllocated()) {
             _buf = rhs._buf;
             rhs._buf = rhs._stack;
@@ -627,21 +631,21 @@ operator + (const char * a, const small_string<StackSize> & b);
 
 template<typename T, uint32_t StackSize>
 bool
-operator == (const T& a, const small_string<StackSize>& b)
+operator == (const T& a, const small_string<StackSize>& b) noexcept
 {
     return b == a;
 }
 
 template<typename T, uint32_t StackSize>
 bool
-operator != (const T& a, const small_string<StackSize>& b)
+operator != (const T& a, const small_string<StackSize>& b) noexcept
 {
     return b != a;
 }
 
 template<typename T, uint32_t StackSize>
 bool
-operator < (const T& a, const small_string<StackSize>& b)
+operator < (const T& a, const small_string<StackSize>& b) noexcept
 {
     return b > a;
 }

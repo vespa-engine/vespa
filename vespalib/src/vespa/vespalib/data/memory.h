@@ -26,7 +26,7 @@ struct Memory
         : data(str_ref.data()), size(str_ref.size()) {}
     vespalib::string make_string() const;
     vespalib::stringref make_stringref() const { return stringref(data, size); }
-    bool operator == (const Memory &rhs) const {
+    bool operator == (const Memory &rhs) const noexcept {
         return ((size == rhs.size) &&
                 ((data == rhs.data) ||
                  (memcmp(data, rhs.data, size) == 0)));

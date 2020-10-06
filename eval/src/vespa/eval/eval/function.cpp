@@ -96,7 +96,7 @@ struct ImplicitParams : Params {
 struct ResolveContext {
     const Params &params;
     const SymbolExtractor *symbol_extractor;
-    ResolveContext(const Params &params_in, const SymbolExtractor *symbol_extractor_in)
+    ResolveContext(const Params &params_in, const SymbolExtractor *symbol_extractor_in) noexcept
         : params(params_in), symbol_extractor(symbol_extractor_in) {}
 };
 

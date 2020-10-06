@@ -33,7 +33,7 @@ public:
 
     TickingThreadRunner(vespalib::Monitor& m,
                         TickingThread& ticker,
-                        uint32_t threadIndex)
+                        uint32_t threadIndex) noexcept
         : _monitor(m), _tickingThread(ticker),
           _threadIndex(threadIndex), _wantToFreeze(false), _frozen(false) {}
 

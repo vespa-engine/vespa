@@ -330,7 +330,7 @@ class CloneablePtr
 {
 public:
     /** @brief construct (from pointer) */
-    CloneablePtr(T * p=nullptr) : _p(p) { }
+    CloneablePtr(T * p=nullptr) noexcept : _p(p) { }
 
     CloneablePtr(CloneablePtr && rhs) noexcept : _p(rhs._p) { rhs._p = nullptr; }
     CloneablePtr & operator = (CloneablePtr && rhs) noexcept {
