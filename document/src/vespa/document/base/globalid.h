@@ -97,7 +97,7 @@ public:
      * @param other The global id whose value to copy to this.
      * @return This.
      */
-    GlobalId& operator=(const GlobalId& other) { memcpy(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)); return *this; }
+    GlobalId& operator=(const GlobalId& other) noexcept { memcpy(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)); return *this; }
 
     /**
      * Implements the equality operator.
