@@ -92,7 +92,6 @@ public class SessionRepository {
     private final Path sessionsPath;
     private final TenantName tenantName;
     private final GlobalComponentRegistry componentRegistry;
-    private final Path locksPath;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -111,7 +110,6 @@ public class SessionRepository {
         this.sessionPreparer = sessionPreparer;
         this.distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
-        this.locksPath = TenantRepository.getLocksPath(tenantName);
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
@@ -281,24 +279,6 @@ public class SessionRepository {
         Transaction transaction = sessionZooKeeperClient.deleteTransaction();
         transaction.commit();
         transaction.close();
-    }
-
-    // TODO: Delete after 7.294 has been rolled out everywhere
-    public int deleteExpiredLocks(Clock clock, Duration expiryTime) {
-        int deleted = 0;
-        for (var lock : curator.getChildren(locksPath)) {
-            Path path = locksPath.append(lock);
-            if (zooKeeperNodeCreated(path).orElse(clock.instant()).isBefore(clock.instant().minus(expiryTime))) {
-                log.log(Level.FINE, () -> "Lock  " + path + " has expired, deleting it");
-                curator.delete(path);
-                deleted++;
-            }
-        }
-        return deleted;
-    }
-
-    private Optional<Instant> zooKeeperNodeCreated(Path path) {
-        return curator.getStat(path).map(s -> Instant.ofEpochMilli(s.getCtime()));
     }
 
     private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
