@@ -57,6 +57,28 @@ struct SparseJoinPlan {
     ~SparseJoinPlan();
 };
 
+// Contains various state needed to perform the sparse part (all
+// mapped dimensions) of the join operation. Performs swapping of
+// sparse indexes to ensure that we look up entries from the smallest
+// index in the largest index.
+struct SparseJoinState {
+    bool                                    swapped;
+    const Value::Index                     &first_index;
+    const Value::Index                     &second_index;
+    const std::vector<size_t>              &second_view_dims;
+    std::vector<vespalib::stringref>        full_address;
+    std::vector<vespalib::stringref*>       first_address;
+    std::vector<const vespalib::stringref*> address_overlap;
+    std::vector<vespalib::stringref*>       second_only_address;
+    size_t                                  lhs_subspace;
+    size_t                                  rhs_subspace;
+    size_t                                 &first_subspace;
+    size_t                                 &second_subspace;
+
+    SparseJoinState(const SparseJoinPlan &plan, const Value::Index &lhs, const Value::Index &rhs);
+    ~SparseJoinState();
+};
+
 //-----------------------------------------------------------------------------
 
 } // namespace

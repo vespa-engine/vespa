@@ -51,49 +51,6 @@ JoinParam::~JoinParam() = default;
 
 //-----------------------------------------------------------------------------
 
-// Contains various state needed to perform the sparse part (all
-// mapped dimensions) of the join operation. Performs swapping of
-// sparse indexes to ensure that we look up entries from the smallest
-// index in the largest index.
-struct SparseJoinState {
-    bool                                    swapped;
-    const Value::Index                     &first_index;
-    const Value::Index                     &second_index;
-    const std::vector<size_t>              &second_view_dims;
-    std::vector<vespalib::stringref>        full_address;
-    std::vector<vespalib::stringref*>       first_address;
-    std::vector<const vespalib::stringref*> address_overlap;
-    std::vector<vespalib::stringref*>       second_only_address;
-    size_t                                  lhs_subspace;
-    size_t                                  rhs_subspace;
-    size_t                                 &first_subspace;
-    size_t                                 &second_subspace;
-
-    SparseJoinState(const SparseJoinPlan &plan, const Value::Index &lhs, const Value::Index &rhs)
-        : swapped(rhs.size() < lhs.size()),
-          first_index(swapped ? rhs : lhs), second_index(swapped ? lhs : rhs),
-          second_view_dims(swapped ? plan.lhs_overlap : plan.rhs_overlap),
-          full_address(plan.sources.size()),
-          first_address(), address_overlap(), second_only_address(),
-          lhs_subspace(), rhs_subspace(),
-          first_subspace(swapped ? rhs_subspace : lhs_subspace),
-          second_subspace(swapped ? lhs_subspace : rhs_subspace)
-    {
-        auto first_source = swapped ? SparseJoinPlan::Source::RHS : SparseJoinPlan::Source::LHS;
-        for (size_t i = 0; i < full_address.size(); ++i) {
-            if (plan.sources[i] == SparseJoinPlan::Source::BOTH) {
-                first_address.push_back(&full_address[i]);
-                address_overlap.push_back(&full_address[i]);
-            } else if (plan.sources[i] == first_source) {
-                first_address.push_back(&full_address[i]);
-            } else {
-                second_only_address.push_back(&full_address[i]);
-            }
-        }
-    }
-    ~SparseJoinState();
-};
-SparseJoinState::~SparseJoinState() = default;
 
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 void my_mixed_join_op(State &state, uint64_t param_in) {
@@ -237,11 +194,32 @@ SparseJoinPlan::~SparseJoinPlan() = default;
 
 //-----------------------------------------------------------------------------
 
+SparseJoinState::SparseJoinState(const SparseJoinPlan &plan, const Value::Index &lhs, const Value::Index &rhs)
+    : swapped(rhs.size() < lhs.size()),
+      first_index(swapped ? rhs : lhs), second_index(swapped ? lhs : rhs),
+      second_view_dims(swapped ? plan.lhs_overlap : plan.rhs_overlap),
+      full_address(plan.sources.size()),
+      first_address(), address_overlap(), second_only_address(),
+      lhs_subspace(), rhs_subspace(),
+      first_subspace(swapped ? rhs_subspace : lhs_subspace),
+      second_subspace(swapped ? lhs_subspace : rhs_subspace)
+{
+    auto first_source = swapped ? SparseJoinPlan::Source::RHS : SparseJoinPlan::Source::LHS;
+    for (size_t i = 0; i < full_address.size(); ++i) {
+        if (plan.sources[i] == SparseJoinPlan::Source::BOTH) {
+            first_address.push_back(&full_address[i]);
+            address_overlap.push_back(&full_address[i]);
+        } else if (plan.sources[i] == first_source) {
+            first_address.push_back(&full_address[i]);
+        } else {
+            second_only_address.push_back(&full_address[i]);
+        }
+    }
 }
 
-//-----------------------------------------------------------------------------
+SparseJoinState::~SparseJoinState() = default;
 
-namespace vespalib::eval::instruction {
+//-----------------------------------------------------------------------------
 
 using JoinTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
 
