@@ -25,7 +25,6 @@ struct DenseConcatPlan {
         size_t input_size;
         size_t output_size;
         std::vector<size_t> in_loop_cnt;
-        std::vector<size_t> out_loop_cnt;
         std::vector<size_t> in_stride;
         std::vector<size_t> out_stride;
         template <typename F> void execute(size_t in_off, size_t out_off, const F &f) const {

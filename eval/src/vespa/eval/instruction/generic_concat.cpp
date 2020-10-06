@@ -107,6 +107,7 @@ DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
                                       std::string concat_dimension,
                                       const ValueType &out_type)
 {
+    std::vector<size_t> out_loop_cnt;
     Case prev_case = Case::NONE;
     auto update_plan = [&](Case my_case, size_t in_size, size_t out_size, size_t in_val, size_t out_val) {
         if (my_case == prev_case) {
