@@ -101,8 +101,8 @@ TensorSpec reference_concat(const TensorSpec &a, const TensorSpec &b, const std:
             TensorSpec::Address addr_a;
             TensorSpec::Address addr_b;
             if (concat_addresses(cell_a.first, cell_b.first, concat_dim, b_offset, addr_a, addr_b)) {
-                result.set(addr_a, cell_a.second);
-                result.set(addr_b, cell_b.second);
+                result.add(addr_a, cell_a.second);
+                result.add(addr_b, cell_b.second);
             }
         }
     }
