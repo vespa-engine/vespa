@@ -566,10 +566,10 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num, BucketDBOwner:
 bool
 DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
 {
-    BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
     if (!validLid(lid)) {
         return false;
     }
+    BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
     remove(lid, prepare_serial_num, bucketGuard);
     incGeneration();
     if (_op_listener) {
