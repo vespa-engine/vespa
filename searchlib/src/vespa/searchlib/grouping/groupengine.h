@@ -12,20 +12,20 @@ class GroupEngine : protected Collect
 public:
     class GroupHash {
     public:
-        GroupHash(const GroupEngine & engine) : _engine(engine) { }
-        uint32_t operator () (GroupRef a) const { return _engine.hash(a); }
+        GroupHash(const GroupEngine & engine) : _engine(&engine) { }
+        uint32_t operator () (GroupRef a) const { return _engine->hash(a); }
         uint32_t operator () (const expression::ResultNode & a) const { return a.hash(); }
     private:
-        const GroupEngine & _engine;
+        const GroupEngine * _engine;
     };
     class GroupEqual {
     public:
-        GroupEqual(const GroupEngine & engine) : _engine(engine) { }
-        bool operator () (GroupRef a, GroupRef b) const { return _engine.cmpId(a, b) == 0; }
-        bool operator () (const expression::ResultNode & a, GroupRef b) const { return a.cmpFast(_engine.getGroupId(b)) == 0; }
-        bool operator () (GroupRef a, const expression::ResultNode & b) const { return _engine.getGroupId(a).cmpFast(b) == 0; }
+        GroupEqual(const GroupEngine & engine) : _engine(&engine) { }
+        bool operator () (GroupRef a, GroupRef b) const { return _engine->cmpId(a, b) == 0; }
+        bool operator () (const expression::ResultNode & a, GroupRef b) const { return a.cmpFast(_engine->getGroupId(b)) == 0; }
+        bool operator () (GroupRef a, const expression::ResultNode & b) const { return _engine->getGroupId(a).cmpFast(b) == 0; }
     private:
-        const GroupEngine & _engine;
+        const GroupEngine * _engine;
     };
     class GroupIdLess {
     public:
