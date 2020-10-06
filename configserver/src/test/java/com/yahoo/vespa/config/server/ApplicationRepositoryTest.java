@@ -48,8 +48,6 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
@@ -116,10 +114,6 @@ public class ApplicationRepositoryTest {
 
     @Before
     public void setup() throws IOException {
-        setup(new InMemoryFlagSource());
-    }
-
-    public void setup(FlagSource flagSource) throws IOException {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
@@ -128,6 +122,7 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .configServerConfig(configserverConfig)
@@ -672,14 +667,6 @@ public class ApplicationRepositoryTest {
         exceptionRule.expect(com.yahoo.vespa.config.server.NotFoundException.class);
         exceptionRule.expectMessage(containsString("No such application id: test1.testapp"));
         resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
-    }
-
-    @Test
-    public void testDistributionOfApplicationPackage() throws IOException {
-        FlagSource flagSource = new InMemoryFlagSource()
-                .withBooleanFlag(Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.id(), true);
-        setup(flagSource);
-        applicationRepository.deploy(app1, prepareParams());
     }
 
     private PrepareResult prepareAndActivate(File application) {

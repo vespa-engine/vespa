@@ -292,11 +292,6 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID);
 
-    public static final UnboundBooleanFlag CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE = defineFeatureFlag(
-            "configserver-distribute-application-package", true,
-            "Whether the application package should be distributed to other config servers during a deployment",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag PROVISION_APPLICATION_ROLES = defineFeatureFlag(
             "provision-application-roles", false,
             "Whether application roles should be provisioned",

@@ -11,9 +11,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.FileDownloader;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.time.Duration;
@@ -35,7 +33,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private final ApplicationRepository applicationRepository;
     private final ConnectionPool connectionPool;
     private final File downloadDirectory;
-    private final BooleanFlag distributeApplicationPackage;
 
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
                                  Curator curator,
@@ -46,14 +43,12 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
         connectionPool = createConnectionPool(configserverConfig);
 
-        distributeApplicationPackage = Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.bindTo(flagSource);
         downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
     }
 
     @Override
     protected boolean maintain() {
         boolean success = true;
-        if (! distributeApplicationPackage.value()) return success;
 
         try (var fileDownloader = new FileDownloader(connectionPool, downloadDirectory)) {
             for (var applicationId : applicationRepository.listApplications()) {

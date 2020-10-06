@@ -5,8 +5,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -24,7 +22,6 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  */
 public class VersionStateTest {
-    InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
@@ -32,12 +29,6 @@ public class VersionStateTest {
 
     @Test
     public void upgrade() throws IOException {
-        upgrade(true);
-        upgrade(false);
-    }
-
-    public void upgrade(boolean distributeApplicationPackage) throws IOException {
-        flagSource.withBooleanFlag(Flags.CONFIGSERVER_DISTRIBUTE_APPLICATION_PACKAGE.id(), distributeApplicationPackage);
         Version unknownVersion = new Version(0, 0, 0);
 
         VersionState state = createVersionState();
@@ -61,11 +52,9 @@ public class VersionStateTest {
 
         // Save new version, remove version in file, should find version in ZooKeeper
         state.saveNewVersion("6.0.0");
-        if (distributeApplicationPackage) {
-            Files.delete(state.versionFile().toPath());
-            assertThat(state.storedVersion(), is(new Version(6, 0, 0)));
-            assertTrue(state.isUpgraded());
-        }
+        Files.delete(state.versionFile().toPath());
+        assertThat(state.storedVersion(), is(new Version(6, 0, 0)));
+        assertTrue(state.isUpgraded());
 
         state.saveNewVersion();
         assertThat(state.currentVersion(), is(state.storedVersion()));
@@ -75,9 +64,7 @@ public class VersionStateTest {
     @Test
     public void serverdbfile() throws IOException {
         File dbDir = tempDir.newFolder();
-        VersionState state = new VersionState(new ConfigserverConfig.Builder().configServerDBDir(dbDir.getAbsolutePath()).build(),
-                                              curator,
-                                              new InMemoryFlagSource());
+        VersionState state = new VersionState(new ConfigserverConfig.Builder().configServerDBDir(dbDir.getAbsolutePath()).build(), curator);
         state.saveNewVersion();
         File versionFile = new File(dbDir, "vespa_version");
         assertTrue(versionFile.exists());
@@ -86,7 +73,7 @@ public class VersionStateTest {
     }
 
     private VersionState createVersionState() throws IOException {
-        return new VersionState(tempDir.newFile(), curator, flagSource);
+        return new VersionState(tempDir.newFile(), curator);
     }
 
 }
