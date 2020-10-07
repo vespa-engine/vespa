@@ -354,7 +354,7 @@ LockableMap<Map>::print(std::ostream& out, bool verbose,
     out << "LockableMap {\n" << indent << "  ";
 
     if (verbose) {
-        for (const auto & entry : _map) {
+        for (const auto entry : _map) {
             out << "Key: " << BucketId(BucketId::keyToBucketId(entry.first))
                 << " Value: " << entry.second << "\n" << indent << "  ";
         }
