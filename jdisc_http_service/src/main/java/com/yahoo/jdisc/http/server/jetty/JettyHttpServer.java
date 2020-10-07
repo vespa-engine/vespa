@@ -15,12 +15,12 @@ import com.yahoo.jdisc.http.server.FilterBindings;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
@@ -381,7 +381,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     private void setConnectorMetrics(JDiscServerConnector connector) {
-        ServerConnectionStatistics statistics = connector.getStatistics();
+        ConnectionStatistics statistics = connector.getStatistics();
         metric.set(Metrics.NUM_CONNECTIONS, statistics.getConnectionsTotal(), connector.getConnectorMetricContext());
         metric.set(Metrics.NUM_OPEN_CONNECTIONS, statistics.getConnections(), connector.getConnectorMetricContext());
         metric.set(Metrics.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsMax(), connector.getConnectorMetricContext());

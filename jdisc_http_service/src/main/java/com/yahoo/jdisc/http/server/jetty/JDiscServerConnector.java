@@ -3,9 +3,9 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
 
 import javax.servlet.ServletRequest;
@@ -25,7 +25,7 @@ class JDiscServerConnector extends ServerConnector {
     public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
     private final Metric.Context metricCtx;
     private final Map<RequestDimensions, Metric.Context> requestMetricContextCache = new ConcurrentHashMap<>();
-    private final ServerConnectionStatistics statistics;
+    private final ConnectionStatistics statistics;
     private final ConnectorConfig config;
     private final boolean tcpKeepAlive;
     private final boolean tcpNoDelay;
@@ -43,7 +43,7 @@ class JDiscServerConnector extends ServerConnector {
         this.listenPort = config.listenPort();
         this.metricCtx = metric.createContext(createConnectorDimensions(listenPort, connectorName));
 
-        this.statistics = new ServerConnectionStatistics();
+        this.statistics = new ConnectionStatistics();
         addBean(statistics);
         ConnectorConfig.Throttling throttlingConfig = config.throttling();
         if (throttlingConfig.enabled()) {
@@ -61,7 +61,7 @@ class JDiscServerConnector extends ServerConnector {
         }
     }
 
-    public ServerConnectionStatistics getStatistics() {
+    public ConnectionStatistics getStatistics() {
         return statistics;
     }
 
