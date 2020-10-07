@@ -159,9 +159,9 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(15),
                                                       context -> context.error(TIMEOUT, "Timed out due to shutdown"));
         try {
-            throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
-            timeoutShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
-            visitSessionShutdownExecutor.awaitTermination(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            throttleShutdown.get(Math.max(1, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            timeoutShutdown.get(Math.max(1, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            visitSessionShutdownExecutor.awaitTermination(Math.max(1, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException | ExecutionException | TimeoutException e) {
             throttleShutdown.cancel(true);
@@ -396,7 +396,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
                     synchronized (this) {
                         do {
                             notify();
-                            wait(Math.max(0, waitUntilMillis - clock.millis()));
+                            wait(Math.max(1, waitUntilMillis - clock.millis()));
                         }
                         while (clock.millis() < waitUntilMillis);
                     }
