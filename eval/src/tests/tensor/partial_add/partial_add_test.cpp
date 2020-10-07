@@ -43,11 +43,16 @@ TensorSpec reference_add(const TensorSpec &a, const TensorSpec &b) {
     return result;
 }
 
-TensorSpec perform_partial_add(const TensorSpec &a, const TensorSpec &b) {
+Value::UP try_partial_add(const TensorSpec &a, const TensorSpec &b) {
     const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    auto up = tensor::TensorPartialUpdate::add(*lhs, *rhs, factory);
+    return tensor::TensorPartialUpdate::add(*lhs, *rhs, factory);
+}
+
+TensorSpec perform_partial_add(const TensorSpec &a, const TensorSpec &b) {
+    auto up = try_partial_add(a, b);
+    EXPECT_TRUE(up);
     if (up) {
         return spec_from_value(*up);
     } else {
@@ -90,8 +95,28 @@ TEST(PartialAddTest, partial_add_works_like_old_add) {
         auto expect = perform_old_add(lhs, rhs);
         auto actual = perform_partial_add(lhs, rhs);
         EXPECT_EQ(actual, expect);
-        printf("%s add %s -> %s\n", lhs.to_string().c_str(), rhs.to_string().c_str(), actual.to_string().c_str());
+    }
+}
 
+std::vector<Layout> bad_layouts = {
+    {x(3)},                               {x(3),y(1)},
+    {x(3),y(1)},                          {x(3)},
+    {x(3),y(3)},                          {x(3),y({"a"})},
+    {x(3),y({"a"})},                      {x(3),y(3)},
+    {x({"a"})},                           {x({"a"}),y({"b"})},
+    {x({"a"}),y({"b"})},                  {x({"a"})},
+    {x({"a"})},                           {x({"a"}),y(1)}
+};
+
+TEST(PartialAddTest, partial_add_returns_nullptr_on_invalid_inputs) {
+    ASSERT_TRUE((bad_layouts.size() % 2) == 0);
+    for (size_t i = 0; i < bad_layouts.size(); i += 2) {
+        TensorSpec lhs = spec(bad_layouts[i], N());
+        TensorSpec rhs = spec(bad_layouts[i + 1], Div16(N()));
+        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+        auto actual = try_partial_add(lhs, rhs);
+        auto expect = Value::UP();
+        EXPECT_EQ(actual, expect);
     }
 }
 
