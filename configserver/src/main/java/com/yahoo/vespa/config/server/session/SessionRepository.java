@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.FlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -93,7 +92,6 @@ public class SessionRepository {
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
                              TenantApplications applicationRepo,
-                             FlagSource flagSource,
                              SessionPreparer sessionPreparer) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
@@ -256,12 +254,12 @@ public class SessionRepository {
      * This method is used when creating a session based on a remote session and the distributed application package
      * It does not wait for session being created on other servers
      */
-    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
+    private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
             Optional<Long> currentlyActiveSessionId = getActiveSessionId(applicationId);
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
-            return createLocalSession(sessionId, applicationPackage);
+            createLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -539,7 +537,7 @@ public class SessionRepository {
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
-        if (componentRegistry.getConfigCurator().exists(sessionPath.getAbsolute())) {
+        if (curator.exists(sessionPath)) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
     }
@@ -630,7 +628,7 @@ public class SessionRepository {
      * Will also add the session to the local session cache if necessary
      */
     public void createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
-        if (applicationRepo.hasLocalSession(sessionId)) {
+        if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
             log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
             createSessionFromId(sessionId);
             return;
