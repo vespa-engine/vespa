@@ -11,5 +11,5 @@ defaultTimeoutSeconds int default=180
 visitTimeoutSeconds   int default=120
 
 # Bound on number of document operations to keep in retry queue — further operations are rejected
-maxThrottled          int default=200
+maxThrottled          int default=1000
 
