@@ -47,22 +47,6 @@ public class Flags {
             "Takes effect on next tick.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
-            "enable-crowdstrike", true,
-            "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag ENABLE_NESSUS = defineFeatureFlag(
-            "enable-nessus", true,
-            "Whether to enable Nessus.", "Takes effect on next host admin tick",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag ENABLE_FLEET_SSHD_CONFIG = defineFeatureFlag(
-            "enable-fleet-sshd-config", true,
-            "Whether fleet should manage the /etc/ssh/sshd_config file.",
-            "Takes effect on next host admin tick.",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
             "fleet-canary", false,
             "Whether the host is a fleet canary.",
