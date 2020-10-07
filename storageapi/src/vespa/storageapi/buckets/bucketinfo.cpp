@@ -5,7 +5,7 @@
 
 namespace storage::api {
 
-BucketInfo::BucketInfo()
+BucketInfo::BucketInfo() noexcept
     : _lastModified(0),
       _checksum(0),
       _docCount(0),
@@ -17,7 +17,7 @@ BucketInfo::BucketInfo()
 {}
 
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
-                       uint32_t totDocSize)
+                       uint32_t totDocSize) noexcept
     : _lastModified(0),
       _checksum(checksum),
       _docCount(docCount),
@@ -30,7 +30,7 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
 
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
                        uint32_t totDocSize, uint32_t metaCount,
-                       uint32_t usedFileSize)
+                       uint32_t usedFileSize) noexcept
     : _lastModified(0),
       _checksum(checksum),
       _docCount(docCount),
@@ -44,7 +44,7 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
                        uint32_t totDocSize, uint32_t metaCount,
                        uint32_t usedFileSize,
-                       bool ready, bool active)
+                       bool ready, bool active) noexcept
     : _lastModified(0),
       _checksum(checksum),
       _docCount(docCount),
@@ -58,7 +58,7 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
                        uint32_t totDocSize, uint32_t metaCount,
                        uint32_t usedFileSize,
-                       bool ready, bool active, Timestamp lastModified)
+                       bool ready, bool active, Timestamp lastModified) noexcept
     : _lastModified(lastModified),
       _checksum(checksum),
       _docCount(docCount),
@@ -69,9 +69,9 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
       _active(active)
 {}
 
-BucketInfo::BucketInfo(const BucketInfo &) = default;
-BucketInfo & BucketInfo::operator = (const BucketInfo &) = default;
-BucketInfo::~BucketInfo() {}
+BucketInfo::BucketInfo(const BucketInfo &) noexcept = default;
+BucketInfo & BucketInfo::operator = (const BucketInfo &) noexcept = default;
+BucketInfo::~BucketInfo() = default;
 
 bool
 BucketInfo::operator==(const BucketInfo& info) const

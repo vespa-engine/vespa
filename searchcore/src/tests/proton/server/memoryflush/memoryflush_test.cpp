@@ -22,19 +22,13 @@ typedef IFlushTarget::DiskGain DiskGain;
 
 class MyFlushHandler : public IFlushHandler {
 public:
-    MyFlushHandler(const vespalib::string &name) : IFlushHandler(name) {}
-    // Implements IFlushHandler
-    virtual std::vector<IFlushTarget::SP> getFlushTargets() override {
+    MyFlushHandler(const vespalib::string &name) noexcept : IFlushHandler(name) {}
+    std::vector<IFlushTarget::SP> getFlushTargets() override {
         return std::vector<IFlushTarget::SP>();
     }
-    virtual SerialNum getCurrentSerialNumber() const override { return 0; }
-    virtual void flushDone(SerialNum oldestSerial) override { (void) oldestSerial; }
-
-    virtual void
-    syncTls(search::SerialNum syncTo) override
-    {
-        (void) syncTo;
-    }
+    SerialNum getCurrentSerialNumber() const override { return 0; }
+    void flushDone(SerialNum oldestSerial) override { (void) oldestSerial; }
+    void syncTls(search::SerialNum syncTo) override {(void) syncTo;}
 };
 
 class MyFlushTarget : public test::DummyFlushTarget {
@@ -47,7 +41,7 @@ private:
 public:
     MyFlushTarget(const vespalib::string &name, MemoryGain memoryGain,
                   DiskGain diskGain, SerialNum flushedSerial,
-                  system_time lastFlushTime, bool urgentFlush) :
+                  system_time lastFlushTime, bool urgentFlush) noexcept :
         test::DummyFlushTarget(name),
         _memoryGain(memoryGain),
         _diskGain(diskGain),
@@ -56,12 +50,11 @@ public:
         _urgentFlush(urgentFlush)
     {
     }
-    // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
-    virtual DiskGain getApproxDiskGain() const override { return _diskGain; }
-    virtual SerialNum getFlushedSerialNum() const override { return _flushedSerial; }
-    virtual system_time getLastFlushTime() const override { return _lastFlushTime; }
-    virtual bool needUrgentFlush() const override { return _urgentFlush; }
+    MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
+    DiskGain getApproxDiskGain() const override { return _diskGain; }
+    SerialNum getFlushedSerialNum() const override { return _flushedSerial; }
+    system_time getLastFlushTime() const override { return _lastFlushTime; }
+    bool needUrgentFlush() const override { return _urgentFlush; }
 };
 
 struct StringList : public std::vector<vespalib::string> {

@@ -140,8 +140,9 @@ struct Result {
         uint32_t docid;
         double raw_score;
         int32_t match_weight;
-        Hit(uint32_t id, double raw, int32_t match_weight_in)
-            : docid(id), raw_score(raw), match_weight(match_weight_in) {}
+        Hit(uint32_t id, double raw, int32_t match_weight_in) noexcept
+            : docid(id), raw_score(raw), match_weight(match_weight_in)
+        {}
     };
     size_t est_hits;
     bool est_empty;
@@ -590,7 +591,7 @@ TEST("require that attribute weighted set term works") {
 TEST("require that predicate query in non-predicate field yields empty.") {
     MyAttributeManager attribute_manager = makeAttributeManager("foo");
 
-    PredicateQueryTerm::UP term(new PredicateQueryTerm);
+    auto term = std::make_unique<PredicateQueryTerm>();
     SimplePredicateQuery node(std::move(term), field, 0, Weight(1));
     Result result = do_search(attribute_manager, node, true);
     EXPECT_TRUE(result.est_empty);
@@ -605,7 +606,7 @@ TEST("require that predicate query in predicate field yields results.") {
     const_cast<PredicateAttribute::IntervalRange *>(attr->getIntervalRangeVector())[2] = 1u;
     MyAttributeManager attribute_manager(attr);
 
-    PredicateQueryTerm::UP term(new PredicateQueryTerm);
+    auto term = std::make_unique<PredicateQueryTerm>();
     SimplePredicateQuery node(std::move(term), field, 0, Weight(1));
     Result result = do_search(attribute_manager, node, true);
     EXPECT_FALSE(result.est_empty);

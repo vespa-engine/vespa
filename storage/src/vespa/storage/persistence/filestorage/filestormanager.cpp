@@ -871,7 +871,7 @@ FileStorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPat
 
 namespace {
     struct Deactivator {
-        StorBucketDatabase::Decision operator()(document::BucketId::Type, StorBucketDatabase::Entry& data)
+        StorBucketDatabase::Decision operator() (document::BucketId::Type, StorBucketDatabase::Entry& data) noexcept
         {
             data.info.setActive(false);
             return StorBucketDatabase::Decision::UPDATE;

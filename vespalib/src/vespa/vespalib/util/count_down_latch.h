@@ -37,7 +37,7 @@ public:
      *
      * @param cnt initial count
      **/
-    CountDownLatch(uint32_t cnt) : _lock(), _cond(), _count(cnt) {}
+    CountDownLatch(uint32_t cnt) noexcept : _lock(), _cond(), _count(cnt) {}
 
     /**
      * Count down this latch. When the count reaches 0, all threads

@@ -36,7 +36,7 @@ public:
     /** Convert easily to a document bucket id to make class easy to use. */
     operator document::BucketId() const { return _bucket.getBucketId(); }
 
-    bool operator==(const Bucket& o) const {
+    bool operator==(const Bucket& o) const noexcept {
         return (_bucket == o._bucket && _partition == o._partition);
     }
 

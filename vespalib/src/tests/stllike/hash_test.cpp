@@ -15,14 +15,14 @@ namespace {
     struct Foo {
         int i;
 
-        Foo() : i(0) {}
-        Foo(int i_) : i(i_) {}
+        Foo() noexcept : i(0) {}
+        Foo(int i_) noexcept : i(i_) {}
 
-        bool operator==(const Foo& f) const
+        bool operator==(const Foo& f) const noexcept
             { return (i == f.i); }
 
         struct hash {
-            size_t operator() (const Foo& f) const {
+            size_t operator() (const Foo& f) const noexcept {
                 return (f.i % 16);
             }
         };
@@ -332,10 +332,10 @@ TEST("test hash map with simple key and value type")
 
 class S {
 public:
-    explicit S(uint64_t l=0) : _a(l&0xfffffffful), _b(l>>32) { }
+    explicit S(uint64_t l=0) noexcept : _a(l&0xfffffffful), _b(l>>32) { }
     uint32_t hash() const { return _a; }
     uint32_t a() const { return _a; }
-    friend bool operator == (const S & a, const S & b) { return a._a == b._a && a._b == b._b; }
+    friend bool operator == (const S & a, const S & b) noexcept { return a._a == b._a && a._b == b._b; }
 private:
     uint32_t _a, _b;
 };

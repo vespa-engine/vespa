@@ -62,8 +62,9 @@ struct InputInfo {
     std::vector<double> cmp_with;
     double usage_probability;
     double expected_usage;
-    InputInfo(vespalib::stringref name_in, double usage_probability_in, double expected_usage_in)
-        : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in) {}
+    InputInfo(vespalib::stringref name_in, double usage_probability_in, double expected_usage_in) noexcept
+        : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in)
+    {}
     double select_value() const {
         return cmp_with.empty() ? 0.5 : cmp_with[(cmp_with.size()-1)/2];
     }

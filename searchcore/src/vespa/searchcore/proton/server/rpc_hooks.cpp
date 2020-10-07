@@ -19,7 +19,7 @@ namespace {
 struct Pair {
     string key;
     string value;
-    Pair(const string &k, const string &v)
+    Pair(const string &k, const string &v) noexcept
         : key(k),
           value(v)
     {

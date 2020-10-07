@@ -23,8 +23,8 @@ public:
 
     class Hit {
     public:
-        Hit() : gid(), docid(0), path(0) {}
-        Hit(const document::GlobalId & gid_) : gid(gid_), docid(0), path(0) {}
+        Hit() noexcept : gid(), docid(0), path(0) {}
+        Hit(const document::GlobalId & gid_) noexcept : gid(gid_), docid(0), path(0) {}
 
         document::GlobalId gid;
         mutable uint32_t  docid; // converted in backend

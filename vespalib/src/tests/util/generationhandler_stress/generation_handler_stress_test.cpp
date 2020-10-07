@@ -15,7 +15,7 @@ struct WorkContext
 {
     uint64_t _generation;
 
-    WorkContext()
+    WorkContext() noexcept
         : _generation(0)
     {
     }

@@ -186,12 +186,12 @@ public:
         document::BucketId bucketId;
         Timestamp timestamp;
 
-        BucketTimestampPair() : bucketId(), timestamp(0) {}
-        BucketTimestampPair(const document::BucketId& bucket,
-                            const Timestamp& ts)
-            : bucketId(bucket), timestamp(ts) {}
+        BucketTimestampPair() noexcept : bucketId(), timestamp(0) {}
+        BucketTimestampPair(const document::BucketId& bucket, const Timestamp& ts) noexcept
+            : bucketId(bucket), timestamp(ts)
+        {}
 
-        bool operator==(const BucketTimestampPair& other) const {
+        bool operator==(const BucketTimestampPair& other) const noexcept {
             return (bucketId == other.bucketId && timestamp && other.timestamp);
         }
     };
@@ -203,7 +203,7 @@ private:
 
 public:
     VisitorInfoCommand();
-    ~VisitorInfoCommand();
+    ~VisitorInfoCommand() override;
 
     void setErrorCode(const ReturnCode& code) { _error = code; }
     void setCompleted() { _completed = true; }

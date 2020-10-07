@@ -20,15 +20,15 @@ struct CompressionConfig {
         ZSTD = 7
     };
 
-    CompressionConfig()
+    CompressionConfig() noexcept
         : type(NONE), compressionLevel(0), threshold(90), minSize(0) {}
-    CompressionConfig(Type t)
+    CompressionConfig(Type t) noexcept
         : type(t), compressionLevel(9), threshold(90), minSize(0) {}
 
-    CompressionConfig(Type t, uint8_t level, uint8_t minRes)
+    CompressionConfig(Type t, uint8_t level, uint8_t minRes) noexcept
         : type(t), compressionLevel(level), threshold(minRes), minSize(0) {}
 
-    CompressionConfig(Type t, uint8_t lvl, uint8_t minRes, size_t minSz)
+    CompressionConfig(Type t, uint8_t lvl, uint8_t minRes, size_t minSz) noexcept
         : type(t), compressionLevel(lvl), threshold(minRes), minSize(minSz) {}
 
     bool operator==(const CompressionConfig& o) const {

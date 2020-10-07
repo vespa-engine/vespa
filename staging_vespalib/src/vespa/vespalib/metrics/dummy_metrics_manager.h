@@ -10,8 +10,7 @@
 #include "metrics_manager.h"
 #include "clock.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 /**
  * Dummy manager that discards everything, use
@@ -21,9 +20,9 @@ namespace metrics {
 class DummyMetricsManager : public MetricsManager
 {
 protected:
-    DummyMetricsManager() {}
+    DummyMetricsManager() noexcept {}
 public:
-    ~DummyMetricsManager();
+    ~DummyMetricsManager() override;
 
     static std::shared_ptr<MetricsManager> create() {
         return std::shared_ptr<MetricsManager>(new DummyMetricsManager());
@@ -58,5 +57,4 @@ public:
     void sample(Gauge::Measurement) override {}
 };
 
-} // namespace vespalib::metrics
-} // namespace vespalib
+}

@@ -7,12 +7,12 @@
 namespace proton {
 
 
-DocTypeName::DocTypeName(const search::engine::Request &request)
+DocTypeName::DocTypeName(const search::engine::Request &request) noexcept
     : _name(request.propertiesMap.matchProperties().lookup("documentdb", "searchdoctype").get(""))
 {}
 
 
-DocTypeName::DocTypeName(const document::DocumentType &docType)
+DocTypeName::DocTypeName(const document::DocumentType &docType) noexcept
     : _name(docType.getName())
 {}
 

@@ -21,15 +21,15 @@ private:
     struct ctor_tag {};
     std::unique_ptr<search::BitVector> bit_vector;
 
+public:
     GlobalFilter(const GlobalFilter &) = delete;
     GlobalFilter(GlobalFilter &&) = delete;
-public:
 
-    GlobalFilter(ctor_tag, std::unique_ptr<search::BitVector> bit_vector_in)
+    GlobalFilter(ctor_tag, std::unique_ptr<search::BitVector> bit_vector_in) noexcept
       : bit_vector(std::move(bit_vector_in))
     {}
 
-    GlobalFilter(ctor_tag) : bit_vector() {}
+    GlobalFilter(ctor_tag) noexcept : bit_vector() {}
 
     ~GlobalFilter() {}
 

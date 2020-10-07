@@ -3,26 +3,22 @@
 #pragma once
 
 #include <vespa/storage/bucketdb/bucketcopy.h>
-#include <cassert>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 struct MergeMetaData {
     uint16_t _nodeIndex;
     bool _sourceOnly;
     const BucketCopy* _copy;
 
-    MergeMetaData() : _nodeIndex(0), _sourceOnly(false), _copy(0) {}
-    MergeMetaData(uint16_t nodeIndex, const BucketCopy& copy)
+    MergeMetaData() noexcept : _nodeIndex(0), _sourceOnly(false), _copy(nullptr) {}
+    MergeMetaData(uint16_t nodeIndex, const BucketCopy& copy) noexcept
         : _nodeIndex(nodeIndex), _sourceOnly(false), _copy(&copy) {}
 
     bool trusted() const {
-        assert(_copy != 0);
         return _copy->trusted();
     }
     uint32_t checksum() const {
-        assert(_copy != 0);
         return _copy->getChecksum();
     }
     bool source_only() const noexcept { return _sourceOnly; }
@@ -30,6 +26,4 @@ struct MergeMetaData {
 
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const MergeMetaData& e);
 
-} // distributor
-} // storage
-
+}

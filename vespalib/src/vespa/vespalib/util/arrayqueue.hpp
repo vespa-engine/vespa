@@ -101,15 +101,16 @@ public:
     /**
      * Create an empty queue with an initial capacity of 0.
      **/
-    ArrayQueue() : _data(0), _capacity(0), _used(0), _skew(0) {}
+    ArrayQueue() noexcept : _data(0), _capacity(0), _used(0), _skew(0) {}
 
     /**
      * Create an empty queue with the given initial capacity.
      *
      * @param cap initial capacity
      **/
-    explicit ArrayQueue(uint32_t cap) : _data((T*)malloc(sizeof(T) * cap)),
-                                        _capacity(cap), _used(0), _skew(0) {}
+    explicit ArrayQueue(uint32_t cap) noexcept
+        : _data((T*)malloc(sizeof(T) * cap)), _capacity(cap), _used(0), _skew(0)
+    {}
 
     /**
      * Create a queue that is a copy of another queue. Now with funky
@@ -119,8 +120,8 @@ public:
      * @param q the queue that should be copied
      **/
     ArrayQueue(typename std::conditional<is_copyable<T>::value, void_tag, const ArrayQueue &>::type q) = delete;
-    ArrayQueue(typename std::conditional<is_copyable<T>::value, const ArrayQueue &, void_tag>::type q) : _data((T*)malloc(sizeof(T) * q._capacity)),
-                                                                                                         _capacity(q._capacity), _used(0), _skew(0)
+    ArrayQueue(typename std::conditional<is_copyable<T>::value, const ArrayQueue &, void_tag>::type q)
+        : _data((T*)malloc(sizeof(T) * q._capacity)), _capacity(q._capacity), _used(0), _skew(0)
     {
         try {
             q.copyInto(*this);
@@ -136,7 +137,7 @@ public:
      *
      * @param q the queue that should be moved
      **/
-    ArrayQueue(ArrayQueue &&q) : _data(0), _capacity(0), _used(0), _skew(0)
+    ArrayQueue(ArrayQueue &&q) noexcept : _data(0), _capacity(0), _used(0), _skew(0)
     {
         swap(q);
     }
@@ -358,7 +359,7 @@ public:
      *
      * @param q the queue we want to swap state with
      **/
-    void swap(ArrayQueue<T> &q) {
+    void swap(ArrayQueue<T> &q) noexcept {
         std::swap(_data, q._data);
         std::swap(_capacity, q._capacity);
         std::swap(_used, q._used);

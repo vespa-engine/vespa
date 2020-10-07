@@ -5,7 +5,7 @@
 TEST("verify how std::function copies lambda closures") {
     size_t count = 0;
     size_t value = 0;
-    auto closure = [count,&value]()mutable{ ++count; value += count; };
+    auto closure = [count,&value]() mutable noexcept { ++count; value += count; };
     closure();
     EXPECT_EQUAL(0u, count);
     EXPECT_EQUAL(1u, value); // +1

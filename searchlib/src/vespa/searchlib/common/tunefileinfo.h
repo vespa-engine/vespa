@@ -19,7 +19,7 @@ private:
     TuneControl _tuneControl;
 
 public:
-    TuneFileSeqRead() : _tuneControl(NORMAL) { }
+    TuneFileSeqRead() noexcept : _tuneControl(NORMAL) { }
     void setWantDirectIO() { _tuneControl = DIRECTIO; }
     bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
 
@@ -62,7 +62,7 @@ private:
     TuneControl _tuneControl;
 
 public:
-    TuneFileSeqWrite() : _tuneControl(NORMAL) { }
+    TuneFileSeqWrite() noexcept : _tuneControl(NORMAL) { }
     void setWantDirectIO() { _tuneControl = DIRECTIO; }
     bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
     bool getWantSyncWrites() const { return _tuneControl == OSYNC; }
@@ -99,7 +99,7 @@ private:
     int         _mmapFlags;
     int         _advise;
 public:
-    TuneFileRandRead()
+    TuneFileRandRead() noexcept
         : _tuneControl(NORMAL),
           _mmapFlags(0),
           _advise(0)
@@ -139,9 +139,9 @@ public:
     TuneFileSeqRead _read;
     TuneFileSeqWrite _write;
 
-    TuneFileIndexing() : _read(), _write() {}
+    TuneFileIndexing() noexcept : _read(), _write() {}
 
-    TuneFileIndexing(const TuneFileSeqRead &r, const TuneFileSeqWrite &w) : _read(r), _write(w) { }
+    TuneFileIndexing(const TuneFileSeqRead &r, const TuneFileSeqWrite &w) noexcept : _read(r), _write(w) { }
 
     bool operator==(const TuneFileIndexing &rhs) const {
         return _read == rhs._read && _write == rhs._write;
@@ -161,8 +161,8 @@ class TuneFileSearch
 public:
     TuneFileRandRead _read;
 
-    TuneFileSearch() : _read() { }
-    TuneFileSearch(const TuneFileRandRead &r) : _read(r) { }
+    TuneFileSearch() noexcept : _read() { }
+    TuneFileSearch(const TuneFileRandRead &r) noexcept : _read(r) { }
     bool operator==(const TuneFileSearch &rhs) const { return _read == rhs._read; }
     bool operator!=(const TuneFileSearch &rhs) const { return _read != rhs._read; }
 };
@@ -178,7 +178,7 @@ public:
     TuneFileIndexing _indexing;
     TuneFileSearch   _search;
 
-    TuneFileIndexManager() : _indexing(), _search() { }
+    TuneFileIndexManager() noexcept : _indexing(), _search() { }
 
     bool operator==(const TuneFileIndexManager &rhs) const {
         return _indexing == rhs._indexing && _search == rhs._search;
@@ -198,7 +198,7 @@ class TuneFileAttributes
 public:
     TuneFileSeqWrite _write;
 
-    TuneFileAttributes() : _write() { }
+    TuneFileAttributes() noexcept : _write() { }
 
     bool operator==(const TuneFileAttributes &rhs) const {
         return _write == rhs._write;
@@ -220,7 +220,7 @@ public:
     TuneFileSeqWrite _write;
     TuneFileRandRead _randRead;
 
-    TuneFileSummary() : _seqRead(), _write(), _randRead() { }
+    TuneFileSummary() noexcept : _seqRead(), _write(), _randRead() { }
 
     bool operator==(const TuneFileSummary &rhs) const {
         return _seqRead == rhs._seqRead &&
@@ -248,7 +248,7 @@ public:
     TuneFileAttributes _attr;
     TuneFileSummary _summary;
 
-    TuneFileDocumentDB() : _index(), _attr(), _summary() { }
+    TuneFileDocumentDB() noexcept : _index(), _attr(), _summary() { }
 
     bool operator==(const TuneFileDocumentDB &rhs) const {
         return _index == rhs._index &&

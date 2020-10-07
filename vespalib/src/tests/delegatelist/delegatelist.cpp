@@ -77,15 +77,15 @@ struct Command
     int          cmd;
     int          cnt;
     Handler *handler;
-    Command(DL *dl_, int cmd_, int cnt_, Handler *handler_)
+    Command(DL *dl_, int cmd_, int cnt_, Handler *handler_) noexcept
         : dl(dl_), cmd(cmd_), cnt(cnt_), handler(handler_) {}
-    Command(const Command &rhs)
+    Command(const Command &rhs) noexcept
         : dl(rhs.dl), cmd(rhs.cmd), cnt(rhs.cnt), handler(rhs.handler) {}
-    Command &operator=(const Command &rhs) {
+    Command &operator=(const Command &rhs) noexcept {
         memcpy(this, &rhs, sizeof(Command));
         return *this;
     }
-    bool operator==(const Command &rhs) {
+    bool operator==(const Command &rhs) noexcept {
         return memcmp(this, &rhs, sizeof(Command)) == 0;
     }
 };

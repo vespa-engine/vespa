@@ -361,14 +361,14 @@ public:
 public:
     typedef std::shared_ptr<SimpleStrategy> SP;
 
-    SimpleStrategy() {}
+    SimpleStrategy() noexcept : _targets() {}
 
     uint32_t
     indexOf(const IFlushTarget::SP &target) const
     {
         IFlushTarget *raw = target.get();
         CachedFlushTarget *cached = dynamic_cast<CachedFlushTarget*>(raw);
-        if (cached != NULL) {
+        if (cached != nullptr) {
             raw = cached->getFlushTarget().get();
         }
         WrappedFlushTarget *wrapped = dynamic_cast<WrappedFlushTarget *>(raw);

@@ -16,9 +16,9 @@ struct HnswCandidate {
     uint32_t docid;
     HnswGraph::NodeRef node_ref;
     double distance;
-    HnswCandidate(uint32_t docid_in, double distance_in)
+    HnswCandidate(uint32_t docid_in, double distance_in) noexcept
       : docid(docid_in), node_ref(), distance(distance_in) {}
-    HnswCandidate(uint32_t docid_in, HnswGraph::NodeRef node_ref_in, double distance_in)
+    HnswCandidate(uint32_t docid_in, HnswGraph::NodeRef node_ref_in, double distance_in) noexcept
       : docid(docid_in), node_ref(node_ref_in), distance(distance_in) {}
 };
 

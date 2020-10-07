@@ -13,6 +13,9 @@ TimeQueue<T>::TimeQueue(double window, double tick)
 {
 }
 
+template<typename T>
+TimeQueue<T>::~TimeQueue() = default;
+
 template <typename T>
 void
 TimeQueue<T>::close()

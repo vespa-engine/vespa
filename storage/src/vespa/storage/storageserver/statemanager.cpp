@@ -224,7 +224,7 @@ StateManager::removeStateListener(StateListener& listener)
 struct StateManager::ExternalStateLock : public NodeStateUpdater::Lock {
     StateManager& _manager;
 
-    explicit ExternalStateLock(StateManager& manager) : _manager(manager) {}
+    explicit ExternalStateLock(StateManager& manager) noexcept : _manager(manager) {}
     ~ExternalStateLock() override {
         {
             vespalib::MonitorGuard lock(_manager._stateLock);

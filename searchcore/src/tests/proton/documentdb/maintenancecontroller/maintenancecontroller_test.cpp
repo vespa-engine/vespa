@@ -147,7 +147,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
     MyDocumentSubDB &_subDB;
 
-    explicit MyDocumentRetriever(MyDocumentSubDB &subDB)
+    explicit MyDocumentRetriever(MyDocumentSubDB &subDB) noexcept
         : _subDB(subDB)
     {
     }

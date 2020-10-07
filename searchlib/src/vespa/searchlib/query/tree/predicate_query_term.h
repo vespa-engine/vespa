@@ -22,7 +22,7 @@ class PredicateQueryTerm {
 
     public:
         Entry(const vespalib::string &key, const ValueType &value,
-              uint64_t sub_query_bitmap = ALL_SUB_QUERIES)
+              uint64_t sub_query_bitmap = ALL_SUB_QUERIES) noexcept
             : _key(key), _value(value), _sub_query_bitmap(sub_query_bitmap) {}
 
         vespalib::string getKey() const { return _key; }
@@ -41,13 +41,7 @@ class PredicateQueryTerm {
 public:
     typedef std::unique_ptr<PredicateQueryTerm> UP;
 
-    PredicateQueryTerm() : _features(), _range_features() {}
-
-    PredicateQueryTerm(const std::vector<Entry<vespalib::string>> &features,
-                       const std::vector<Entry<uint64_t>> &range_features)
-        : _features(features),
-          _range_features(range_features) {
-    }
+    PredicateQueryTerm() noexcept : _features(), _range_features() {}
 
     void addFeature(const vespalib::string &key, const vespalib::string &value,
                     uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {

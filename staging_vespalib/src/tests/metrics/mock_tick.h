@@ -55,7 +55,7 @@ private:
     }
 
 public:
-    MockTick(TimeStamp first_value)
+    explicit MockTick(TimeStamp first_value)
         : _first_value(first_value), _lock(), _cond(), _alive(true), _prev(), _next() {}
     TimeStamp first() override { return _first_value; }
     TimeStamp next(TimeStamp prev) override {
@@ -81,7 +81,7 @@ class TickProxy : public Tick {
 private:
     std::shared_ptr<Tick> _tick;
 public:
-    TickProxy(std::shared_ptr<Tick> tick) : _tick(std::move(tick)) {}
+    explicit TickProxy(std::shared_ptr<Tick> tick) noexcept : _tick(std::move(tick)) {}
     TimeStamp first() override { return _tick->first(); }
     TimeStamp next(TimeStamp prev) override { return _tick->next(prev); }
     bool alive() const override { return _tick->alive(); }

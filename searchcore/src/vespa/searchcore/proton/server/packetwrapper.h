@@ -20,8 +20,7 @@ struct PacketWrapper {
     search::transactionlog::client::RPC::Result result;
     vespalib::Gate gate;
 
-    PacketWrapper(const search::transactionlog::Packet &p,
-                  TlsReplayProgress *progress_)
+    PacketWrapper(const search::transactionlog::Packet &p, TlsReplayProgress *progress_) noexcept
         : packet(p),
           progress(progress_),
           result(search::transactionlog::client::RPC::ERROR),

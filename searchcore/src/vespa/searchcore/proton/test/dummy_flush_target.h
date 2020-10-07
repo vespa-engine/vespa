@@ -3,39 +3,33 @@
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 struct DummyFlushTarget : public searchcorespi::IFlushTarget
 {
-    DummyFlushTarget(const vespalib::string &name)
+    DummyFlushTarget(const vespalib::string &name) noexcept
         : searchcorespi::IFlushTarget(name)
     {}
     DummyFlushTarget(const vespalib::string &name,
                      const Type &type,
-                     const Component &component)
+                     const Component &component) noexcept
         : searchcorespi::IFlushTarget(name, type, component)
     {}
-    // Implements searchcorespi::IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override { return MemoryGain(0, 0); }
-    virtual DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
-    virtual SerialNum getFlushedSerialNum() const override { return 0; }
-    virtual Time getLastFlushTime() const override { return Time(); }
-    virtual bool needUrgentFlush() const override { return false; }
-    virtual searchcorespi::FlushTask::UP initFlush(SerialNum) override {
+    MemoryGain getApproxMemoryGain() const override { return MemoryGain(0, 0); }
+    DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
+    SerialNum getFlushedSerialNum() const override { return 0; }
+    Time getLastFlushTime() const override { return Time(); }
+    bool needUrgentFlush() const override { return false; }
+    searchcorespi::FlushTask::UP initFlush(SerialNum) override {
         return searchcorespi::FlushTask::UP();
     }
-    virtual searchcorespi::FlushStats getLastFlushStats() const override {
+    searchcorespi::FlushStats getLastFlushStats() const override {
         return searchcorespi::FlushStats();
     }
 
-    virtual uint64_t getApproxBytesToWriteToDisk() const override {
+    uint64_t getApproxBytesToWriteToDisk() const override {
         return 0;
     }
 };
 
-} // namespace test
-
-} // namespace proton
-
+}

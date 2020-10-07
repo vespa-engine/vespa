@@ -21,14 +21,14 @@ private:
     struct Entry {
         std::unique_ptr<T> object;
         double time;
-        Entry(std::unique_ptr<T> obj, double t) : object(std::move(obj)), time(t) {}
-        Entry(Entry &&rhs) : object(std::move(rhs.object)), time(rhs.time) {}
-        Entry &operator=(Entry &&rhs) {
+        Entry(std::unique_ptr<T> obj, double t) noexcept : object(std::move(obj)), time(t) {}
+        Entry(Entry &&rhs) noexcept : object(std::move(rhs.object)), time(rhs.time) {}
+        Entry &operator=(Entry &&rhs) noexcept {
             object = std::move(rhs.object);
             time = rhs.time;
             return *this;
         }
-        bool operator<(const Entry &rhs) const {
+        bool operator<(const Entry &rhs) const noexcept {
             return (time < rhs.time);
         }
     };
@@ -42,6 +42,7 @@ private:
 
 public:
     TimeQueue(double window, double tick);
+    ~TimeQueue();
     void close() override;
     void discard();
     void insert(std::unique_ptr<T> obj, double time);

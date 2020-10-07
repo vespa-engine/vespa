@@ -28,7 +28,7 @@ public:
      *
      * @param name The unique name of this handler.
      */
-    IFlushHandler(const vespalib::string &name)
+    IFlushHandler(const vespalib::string &name) noexcept
         : _name(name)
     { }
 

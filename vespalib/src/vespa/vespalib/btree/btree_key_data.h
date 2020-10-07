@@ -28,12 +28,12 @@ public:
     KeyT _key;
     DataT _data;
 
-    BTreeKeyData()
+    BTreeKeyData() noexcept
         : _key(),
           _data()
     {}
 
-    BTreeKeyData(const KeyT &key, const DataT &data)
+    BTreeKeyData(const KeyT &key, const DataT &data) noexcept
         : _key(key),
           _data(data)
     {}
@@ -60,9 +60,9 @@ public:
 
     KeyT _key;
 
-    BTreeKeyData() : _key() {}
+    BTreeKeyData() noexcept : _key() {}
 
-    BTreeKeyData(const KeyT &key, const BTreeNoLeafData &)
+    BTreeKeyData(const KeyT &key, const BTreeNoLeafData &) noexcept
         : _key(key)
     {
     }

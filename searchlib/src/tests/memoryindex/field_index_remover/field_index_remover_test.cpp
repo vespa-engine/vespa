@@ -16,10 +16,10 @@ using namespace search::memoryindex;
 struct WordFieldPair {
     vespalib::string _word;
     uint32_t _fieldId;
-    WordFieldPair(vespalib::stringref word, uint32_t fieldId)
+    WordFieldPair(vespalib::stringref word, uint32_t fieldId) noexcept
         : _word(word), _fieldId(fieldId)
     {}
-    bool operator<(const WordFieldPair &rhs) const {
+    bool operator<(const WordFieldPair &rhs) const noexcept {
         if (_word != rhs._word) {
             return _word < rhs._word;
         }

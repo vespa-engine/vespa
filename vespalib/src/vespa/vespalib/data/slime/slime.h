@@ -86,7 +86,7 @@ public:
 
     ~Slime();
 
-    Slime(Slime &&rhs) :
+    Slime(Slime &&rhs) noexcept :
         _names(std::move(rhs._names)),
         _stash(std::move(rhs._stash)),
         _root(std::move(rhs._root))

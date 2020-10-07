@@ -4,11 +4,7 @@
 
 #include <mutex>
 
-namespace search
-{
-
-namespace attribute
-{
+namespace search::attribute {
 
 class InterlockGuard;
 
@@ -35,7 +31,7 @@ class Interlock {
     std::mutex _mutex;
     friend class InterlockGuard;
 public:
-    Interlock()
+    Interlock() noexcept
         : _mutex()
     {
     }
@@ -59,7 +55,5 @@ public:
     ~InterlockGuard() { }
 };
 
-
-}
 
 }

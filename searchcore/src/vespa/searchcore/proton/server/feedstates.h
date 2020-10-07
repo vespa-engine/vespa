@@ -24,7 +24,7 @@ class InitState : public FeedState {
     vespalib::string _doc_type_name;
 
 public:
-    InitState(const vespalib::string &name)
+    InitState(const vespalib::string &name) noexcept
         : FeedState(INIT),
           _doc_type_name(name)
     {
@@ -73,7 +73,7 @@ class NormalState : public FeedState {
     FeedHandler         &_handler;
 
 public:
-    NormalState(FeedHandler &handler)
+    NormalState(FeedHandler &handler) noexcept
         : FeedState(NORMAL),
           _handler(handler) {
     }
