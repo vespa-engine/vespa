@@ -57,6 +57,34 @@ FileStorThreadMetrics::OpWithRequestSize<BaseOp>::clone(
             ->assignValues(*this));
 }
 
+template <typename BaseOp>
+FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::OpWithTestAndSetFailed(const std::string& id, const std::string& name, MetricSet* owner)
+    : BaseOp(id, name, owner),
+      test_and_set_failed("test_and_set_failed", {{"yamasdefault"}},
+                           "Number of times operations were failed due to a "
+                           "test-and-set condition mismatch", this)
+{
+}
+
+template <typename BaseOp>
+FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::~OpWithTestAndSetFailed() = default;
+
+// FIXME this has very non-intuitive semantics, ending up with copy&paste patterns (yet again...)
+template <typename BaseOp>
+MetricSet*
+FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::clone(
+        std::vector<Metric::UP>& ownerList,
+        CopyType copyType,
+        MetricSet* owner,
+        bool includeUnused) const
+{
+    if (copyType == INACTIVE) {
+        return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
+    }
+    return static_cast<OpWithTestAndSetFailed<BaseOp>*>((new OpWithTestAndSetFailed<BaseOp>(this->getName(), this->_name, owner))
+            ->assignValues(*this));
+}
+
 FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, const std::string& name, MetricSet* owner)
     : Op(id, name, owner),
       notFound("not_found", {},
@@ -81,7 +109,7 @@ FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList,
 }
 
 FileStorThreadMetrics::Update::Update(MetricSet* owner)
-    : OpWithRequestSize("update", "Update", owner),
+    : OpWithTestAndSetFailed("update", "Update", owner),
       latencyRead("latency_read", {}, "Latency of the source read in the request.", this)
 { }
 
@@ -122,9 +150,9 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
     : MetricSet(name, {{"filestor"},{"partofsum"}}, desc),
       operations("operations", {}, "Number of operations processed.", this),
       failedOperations("failedoperations", {}, "Number of operations throwing exceptions.", this),
-      put(lt, OpWithRequestSize<Op>("put", "Put"), this),
-      get(lt, OpWithRequestSize<OpWithNotFound>("get", "Get"), this),
-      remove(lt, OpWithRequestSize<OpWithNotFound>("remove", "Remove"), this),
+      put(lt, PutMetricType("put", "Put"), this),
+      get(lt, GetMetricType("get", "Get"), this),
+      remove(lt, RemoveMetricType("remove", "Remove"), this),
       removeLocation(lt, Op("remove_location", "Remove location"), this),
       statBucket(lt, Op("stat_bucket", "Stat bucket"), this),
       update(lt, Update(), this),
@@ -258,8 +286,9 @@ template class metrics::LoadMetric<storage::FileStorThreadMetrics::Op>;
 template class metrics::LoadMetric<storage::FileStorThreadMetrics::OpWithNotFound>;
 template class metrics::LoadMetric<storage::FileStorThreadMetrics::Update>;
 template class metrics::LoadMetric<storage::FileStorThreadMetrics::Visitor>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::OpWithRequestSize<storage::FileStorThreadMetrics::Op>>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::OpWithRequestSize<storage::FileStorThreadMetrics::OpWithNotFound>>;
+template class metrics::LoadMetric<storage::FileStorThreadMetrics::PutMetricType>;
+template class metrics::LoadMetric<storage::FileStorThreadMetrics::GetMetricType>;
+template class metrics::LoadMetric<storage::FileStorThreadMetrics::RemoveMetricType>;
 template class metrics::SumMetric<storage::FileStorThreadMetrics::Op>;
 template class metrics::SumMetric<storage::FileStorThreadMetrics::OpWithNotFound>;
 template class metrics::SumMetric<storage::FileStorThreadMetrics::Update>;
