@@ -143,4 +143,16 @@ TEST(GenericConcatTest, generic_concat_works_for_simple_values) {
     }
 }
 
+TEST(GenericConcatTest, dense_concat_plan_can_be_created) {
+    auto lhs = ValueType::from_spec("tensor(a[2],b[3],c[5],d{},f[2],g[3])");
+    auto rhs = ValueType::from_spec("tensor(a[2],b[3],c[7],e{},h[3],i[4])");
+    auto res_type = ValueType::concat(lhs, rhs, "c");
+    auto plan = DenseConcatPlan(lhs, rhs, "c", res_type);
+    EXPECT_EQ(plan.right_offset, 5*2*3*3*4);
+    EXPECT_EQ(plan.left.input_size, 2*3*5*2*3);
+    EXPECT_EQ(plan.left.output_size, 2*3*12*2*3*3*4);
+    EXPECT_EQ(plan.right.input_size, 2*3*7*3*4);
+    EXPECT_EQ(plan.right.output_size, 2*3*12*2*3*3*4);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
