@@ -21,6 +21,7 @@ using vespalib::make_string_short::fmt;
 std::vector<Layout> remove_layouts = {
     {x({"a"})},                           {x({"b"})},
     {x({"a","b"})},                       {x({"a","c"})},
+    {x({"a","b"})},                       {x({"a","b"})},
     float_cells({x({"a","b"})}),          {x({"a","c"})},
     {x({"a","b"})},                       float_cells({x({"a","c"})}),
     float_cells({x({"a","b"})}),          float_cells({x({"a","c"})}),
@@ -50,11 +51,15 @@ TensorSpec reference_remove(const TensorSpec &a, const TensorSpec &b) {
     return result;
 }
 
-TensorSpec perform_partial_remove(const TensorSpec &a, const TensorSpec &b) {
+Value::UP try_partial_remove(const TensorSpec &a, const TensorSpec &b) {
     const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    auto up = tensor::TensorPartialUpdate::remove(*lhs, *rhs, factory);
+    return tensor::TensorPartialUpdate::remove(*lhs, *rhs, factory);
+}
+
+TensorSpec perform_partial_remove(const TensorSpec &a, const TensorSpec &b) {
+    auto up = try_partial_remove(a, b);
     if (up) {
         return spec_from_value(*up);
     } else {
@@ -100,6 +105,25 @@ TEST(PartialAddTest, partial_remove_works_like_old_remove) {
         EXPECT_EQ(actual, expect);
         // printf("%s remove %s -> %s\n", lhs.to_string().c_str(), rhs.to_string().c_str(), actual.to_string().c_str());
 
+    }
+}
+
+std::vector<Layout> bad_layouts = {
+    {x(3)},                               {x(3)},
+    {x(3),y({"a"})},                      {x(3)},
+    {x({"a"})},                           {y({"a"})},
+    {x({"a"})},                           {x({"a"}),y({"b"})}
+};
+
+TEST(PartialRemoveTest, partial_remove_returns_nullptr_on_invalid_inputs) {
+    ASSERT_TRUE((bad_layouts.size() % 2) == 0);
+    for (size_t i = 0; i < bad_layouts.size(); i += 2) {
+        TensorSpec lhs = spec(bad_layouts[i], N());
+        TensorSpec rhs = spec(bad_layouts[i + 1], Div16(N()));
+        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+        auto actual = try_partial_remove(lhs, rhs);
+        auto expect = Value::UP();
+        EXPECT_EQ(actual, expect);
     }
 }
 
