@@ -5,8 +5,9 @@
 namespace vespalib {
 
 using alloc::Alloc;
+using LockGuard = std::lock_guard<std::mutex>;
 
-MemoryDataStore::MemoryDataStore(Alloc && initialAlloc, Lock * lock) :
+MemoryDataStore::MemoryDataStore(Alloc && initialAlloc, std::mutex * lock) :
     _buffers(),
     _writePos(0),
     _lock(lock)

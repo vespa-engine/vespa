@@ -37,7 +37,7 @@ __thread TestMaster::ThreadState *TestMaster::_threadState = 0;
 TestMaster::TraceItem::~TraceItem() = default;
 
 TestMaster::ThreadState &
-TestMaster::threadState(const vespalib::LockGuard &)
+TestMaster::threadState(const lock_guard &)
 {
     if (_threadState == 0) {
         std::ostringstream threadName;
@@ -55,7 +55,7 @@ TestMaster::threadState()
         return *_threadState;
     }
     {
-        vespalib::LockGuard guard(_lock);
+        lock_guard guard(_lock);
         return threadState(guard);
     }
 }
@@ -63,7 +63,7 @@ TestMaster::threadState()
 //-----------------------------------------------------------------------------
 
 void
-TestMaster::checkFailed(const vespalib::LockGuard &guard,
+TestMaster::checkFailed(const lock_guard &guard,
                         const char *file, uint32_t line, const char *str)
 {
     ThreadState &thread = threadState(guard);
@@ -81,7 +81,7 @@ TestMaster::checkFailed(const vespalib::LockGuard &guard,
 }
 
 void
-TestMaster::printDiff(const vespalib::LockGuard &guard,
+TestMaster::printDiff(const lock_guard &guard,
                       const std::string &text, const std::string &file, uint32_t line,
                       const std::string &lhs, const std::string &rhs)
 {
@@ -106,7 +106,7 @@ TestMaster::printDiff(const vespalib::LockGuard &guard,
 }
 
 void
-TestMaster::handleFailure(const vespalib::LockGuard &guard, bool fatal)
+TestMaster::handleFailure(const lock_guard &guard, bool fatal)
 {
     ThreadState &thread = threadState(guard);
     if (fatal) {
@@ -120,7 +120,7 @@ TestMaster::handleFailure(const vespalib::LockGuard &guard, bool fatal)
 }
 
 void
-TestMaster::closeDebugFiles(const vespalib::LockGuard &)
+TestMaster::closeDebugFiles(const lock_guard &)
 {
     if (_state.lhsFile != NULL) {
         fclose(_state.lhsFile);
@@ -133,7 +133,7 @@ TestMaster::closeDebugFiles(const vespalib::LockGuard &)
 }
 
 void
-TestMaster::importThreads(const vespalib::LockGuard &)
+TestMaster::importThreads(const lock_guard &)
 {
     size_t importCnt = 0;
     for (size_t i = 0; i < _threadStorage.size(); ++i) {
@@ -149,7 +149,7 @@ TestMaster::importThreads(const vespalib::LockGuard &)
 }
 
 bool
-TestMaster::reportConclusion(const vespalib::LockGuard &)
+TestMaster::reportConclusion(const lock_guard &)
 {
     bool ok = (_state.failCnt == 0);
     fprintf(stderr, "%s: info:  summary --- %zu check(s) passed --- %zu check(s) failed\n",
@@ -175,7 +175,7 @@ TestMaster::TestMaster()
 void
 TestMaster::init(const char *name)
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_lock);
     _name = skip_path(name);
     fprintf(stderr, "%s: info:  running test suite '%s'\n", _name.c_str(), _name.c_str());
 }
@@ -183,7 +183,7 @@ TestMaster::init(const char *name)
 std::string
 TestMaster::getName()
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_lock);
     return _name;
 }
 
@@ -226,7 +226,7 @@ TestMaster::setThreadIgnore(bool ignore)
         size_t revertCnt = (thread.failCnt - thread.preIgnoreFailCnt);
         thread.failCnt = thread.preIgnoreFailCnt;
         if (revertCnt > 0) {
-            vespalib::LockGuard guard(_lock);
+            lock_guard guard(_lock);
             assert(_state.failCnt >= revertCnt);
             _state.failCnt -= revertCnt;
         }
@@ -272,7 +272,7 @@ TestMaster::getThreadFailCnt()
 TestMaster::Progress
 TestMaster::getProgress()
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_lock);
     return Progress(_state.passCnt, _state.failCnt);
 }
 
@@ -280,7 +280,7 @@ void
 TestMaster::openDebugFiles(const std::string &lhsFile,
                            const std::string &rhsFile)
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_lock);
     closeDebugFiles(guard);
     _state.lhsFile = fopen(lhsFile.c_str(), "w");
     _state.rhsFile = fopen(rhsFile.c_str(), "w");
@@ -318,7 +318,7 @@ TestMaster::check(bool rc, const char *file, uint32_t line,
         return true;
     }
     {
-        vespalib::LockGuard guard(_lock);
+        lock_guard guard(_lock);
         checkFailed(guard, file, line, str);
         handleFailure(guard, fatal);
     }
@@ -330,7 +330,7 @@ TestMaster::flush(const char *file, uint32_t line)
 {
     ThreadState &thread = threadState();
     if (thread.passCnt > 0) {
-        vespalib::LockGuard guard(_lock);
+        lock_guard guard(_lock);
         _state.passCnt += thread.passCnt;
         fprintf(stderr, "%s: info:  flushed %zu passed check(s) from thread '%s' (%s:%d)\n",
                 _name.c_str(), thread.passCnt, thread.name.c_str(), skip_path(file), line);
@@ -349,7 +349,7 @@ TestMaster::trace(const char *file, uint32_t line)
 bool
 TestMaster::discardFailedChecks(size_t failCnt)
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_lock);
     ThreadState &thread = threadState(guard);
     if (failCnt == _state.failCnt) {
         fprintf(stderr, "%s: info:  discarding %zu failed check(s)\n", _name.c_str(), _state.failCnt);
@@ -367,7 +367,7 @@ TestMaster::discardFailedChecks(size_t failCnt)
 bool
 TestMaster::fini()
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_lock);
     closeDebugFiles(guard);
     importThreads(guard);
     return reportConclusion(guard);

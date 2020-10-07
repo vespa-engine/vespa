@@ -1,11 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "urldatatype.h"
+#include <mutex>
 
 namespace document {
 
+namespace {
+
+std::mutex   _G_lock;
+
+}
+
 StructDataType::UP UrlDataType::_instance;
-vespalib::Lock     UrlDataType::_lock;
 
 const vespalib::string UrlDataType::STRUCT_NAME("url");
 const vespalib::string UrlDataType::FIELD_ALL("all");
@@ -34,7 +40,7 @@ const StructDataType &
 UrlDataType::getInstance()
 {
     if ( ! _instance ) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_G_lock);
         if ( ! _instance ) {
             _instance = createInstance();
         }

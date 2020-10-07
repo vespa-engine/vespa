@@ -127,7 +127,7 @@ private:
     vespalib::PtrHolder<DocsumTools>          _docsumTools;
     std::unique_ptr<JuniperProperties>        _juniperProps;
 
-    vespalib::Lock                                  _lock;
+    std::mutex                                _lock;
 
     VSMAdapter(const VSMAdapter &);
     VSMAdapter &operator=(const VSMAdapter &);

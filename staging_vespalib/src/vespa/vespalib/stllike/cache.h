@@ -123,7 +123,6 @@ protected:
     vespalib::LockGuard getGuard();
     void invalidate(const vespalib::LockGuard & guard, const K & key);
     bool hasKey(const vespalib::LockGuard & guard, const K & key) const;
-    bool hasLock() const;
 private:
     /**
      * Called when an object is inserted, to see if the LRU should be removed.

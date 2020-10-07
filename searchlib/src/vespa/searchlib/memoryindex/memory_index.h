@@ -48,14 +48,14 @@ private:
     std::unique_ptr<DocumentInverter>  _inverter0;
     std::unique_ptr<DocumentInverter>  _inverter1;
     DocumentInverter                  *_inverter;
-    bool              _frozen;
-    uint32_t          _maxDocId;
-    uint32_t          _numDocs;
-    vespalib::Lock    _lock;
-    std::vector<bool> _hiddenFields;
-    index::Schema::SP _prunedSchema;
+    bool                _frozen;
+    uint32_t            _maxDocId;
+    uint32_t            _numDocs;
+    mutable std::mutex  _lock;
+    std::vector<bool>   _hiddenFields;
+    index::Schema::SP   _prunedSchema;
     vespalib::hash_set<uint32_t> _indexedDocs; // documents in memory index
-    const uint64_t    _staticMemoryFootprint;
+    const uint64_t      _staticMemoryFootprint;
 
     MemoryIndex(const MemoryIndex &) = delete;
     MemoryIndex(MemoryIndex &&) = delete;

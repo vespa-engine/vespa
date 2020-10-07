@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 namespace vespalib {
 
@@ -69,24 +69,25 @@ private:
     };
 
 private:
-    vespalib::Lock                                 _lock;
+    std::mutex                                     _lock;
     std::string                                    _name;
     std::string                                    _path_prefix;
     SharedState                                    _state;
     std::vector<std::unique_ptr<ThreadState> > _threadStorage;
+    using lock_guard = std::lock_guard<std::mutex>;
 
 private:
-    ThreadState &threadState(const vespalib::LockGuard &);
+    ThreadState &threadState(const lock_guard &);
     ThreadState &threadState();
-    void checkFailed(const vespalib::LockGuard &,
+    void checkFailed(const lock_guard &,
                      const char *file, uint32_t line, const char *str);
-    void printDiff(const vespalib::LockGuard &,
+    void printDiff(const lock_guard &,
                    const std::string &text, const std::string &file, uint32_t line,
                    const std::string &lhs, const std::string &rhs);
-    void handleFailure(const vespalib::LockGuard &, bool do_abort);
-    void closeDebugFiles(const vespalib::LockGuard &);
-    void importThreads(const vespalib::LockGuard &);
-    bool reportConclusion(const vespalib::LockGuard &);
+    void handleFailure(const lock_guard &, bool do_abort);
+    void closeDebugFiles(const lock_guard &);
+    void importThreads(const lock_guard &);
+    bool reportConclusion(const lock_guard &);
 
 private:
     TestMaster();

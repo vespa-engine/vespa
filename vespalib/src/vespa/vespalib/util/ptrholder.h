@@ -4,7 +4,7 @@
 
 #include <algorithm>
 #include <memory>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace vespalib {
 
@@ -29,11 +29,11 @@ class PtrHolder
 private:
     std::shared_ptr<T>  _current;
     std::shared_ptr<T>  _next;
-    mutable Lock  _lock;
-
-    PtrHolder(const PtrHolder &);
-    PtrHolder &operator=(const PtrHolder &);
+    mutable std::mutex  _lock;
+    using LockGuard = std::lock_guard<std::mutex>;
 public:
+    PtrHolder(const PtrHolder &) = delete;
+    PtrHolder &operator=(const PtrHolder &) = delete;
     /**
      * @brief Create an empty PtrHolder with both current and new
      * pointers set to 0
@@ -53,14 +53,14 @@ public:
      *
      * @return true if the current value is set (not 0)
      **/
-    bool hasValue() const { return (_current.get() != nullptr); }
+    bool hasValue() const { return bool(_current); }
 
     /**
      * @brief Check if the new value is set (not 0)
      *
      * @return true if the new value is set (not 0)
      **/
-    bool hasNewValue() const { return (_next.get() != nullptr); }
+    bool hasNewValue() const { return bool(_next); }
 
     /**
      * @brief Set a new value

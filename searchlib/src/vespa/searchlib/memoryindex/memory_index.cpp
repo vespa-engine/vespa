@@ -18,7 +18,6 @@ LOG_SETUP(".searchlib.memoryindex.memory_index");
 
 using document::ArrayFieldValue;
 using document::WeightedSetFieldValue;
-using vespalib::LockGuard;
 
 namespace search {
 
@@ -215,7 +214,7 @@ MemoryIndex::getNumWords() const {
 void
 MemoryIndex::pruneRemovedFields(const Schema &schema)
 {
-    LockGuard lock(_lock);
+    std::lock_guard lock(_lock);
     if (_prunedSchema.get() == nullptr) {
         auto newSchema = Schema::intersect(_schema, schema);
         if (_schema == *newSchema) {
@@ -241,7 +240,7 @@ MemoryIndex::pruneRemovedFields(const Schema &schema)
 Schema::SP
 MemoryIndex::getPrunedSchema() const
 {
-    LockGuard lock(_lock);
+    std::lock_guard lock(_lock);
     return _prunedSchema;
 }
 

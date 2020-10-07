@@ -47,7 +47,7 @@ private:
     vespalib::PtrHolder<FastOS_FileInterface> _holder;
     int                                       _mmapFlags;
     int                                       _fadviseOptions;
-    vespalib::Lock                            _lock;
+    std::mutex                                _lock;
 };
 
 class NormalRandRead : public FileRandRead

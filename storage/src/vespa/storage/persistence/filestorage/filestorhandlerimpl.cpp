@@ -75,7 +75,7 @@ FileStorHandlerImpl::~FileStorHandlerImpl() = default;
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP status)
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     if (_mergeStates.find(bucket) != _mergeStates.end()) {
         LOG(warning, "A merge status already existed for %s. Overwriting it.", bucket.toString().c_str());
     }
@@ -85,7 +85,7 @@ FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus:
 MergeStatus&
 FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     MergeStatus::SP status = _mergeStates[bucket];
     if (status.get() == 0) {
         throw vespalib::IllegalStateException("No merge state exist for " + bucket.toString(), VESPA_STRLOC);
@@ -96,21 +96,21 @@ FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 bool
 FileStorHandlerImpl::isMerging(const document::Bucket& bucket) const
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     return (_mergeStates.find(bucket) != _mergeStates.end());
 }
 
 uint32_t
 FileStorHandlerImpl::getNumActiveMerges() const
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     return _mergeStates.size();
 }
 
 void
 FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api::ReturnCode* code)
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     auto it = _mergeStates.find(bucket);
     if (it == _mergeStates.end()) {
         if (code != 0) {
@@ -301,7 +301,7 @@ void
 FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
 {
     for (Disk & disk : _diskInfo) {
-        vespalib::MonitorGuard lockGuard(_mergeStatesLock);
+        std::lock_guard lockGuard(_mergeStatesLock);
         disk.metrics->pendingMerges.addValue(_mergeStates.size());
         disk.metrics->queueSize.addValue(disk.getQueueSize());
 
@@ -1310,7 +1310,7 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
         out << "</ul>\n";
     }
 
-    vespalib::LockGuard mergeGuard(_mergeStatesLock);
+    std::lock_guard mergeGuard(_mergeStatesLock);
     out << "<tr><td>Active merge operations</td><td>" << _mergeStates.size() << "</td></tr>\n";
     if (verbose) {
         out << "<h4>Active merges</h4>\n";

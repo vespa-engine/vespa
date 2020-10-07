@@ -19,47 +19,10 @@ Monitor::Monitor() noexcept
 Monitor::Monitor(Monitor &&rhs) noexcept = default;
 Monitor::~Monitor() = default;
 
-
-TryLock::TryLock(const Lock &lock)
-    : _guard(*lock._mutex, std::try_to_lock),
-      _cond(nullptr)
-{}
-
-TryLock::TryLock(const Monitor &mon)
-    : _guard(*mon._mutex, std::try_to_lock),
-      _cond(_guard ? mon._cond.get() : nullptr)
-{}
-
-TryLock::TryLock(TryLock &&rhs) noexcept
-    : _guard(std::move(rhs._guard)),
-      _cond(rhs._cond)
-{
-    rhs._cond = nullptr;
-}
-
-TryLock::~TryLock() = default;
-
-bool
-TryLock::hasLock() const {
-    return static_cast<bool>(_guard);
-}
-
-void
-TryLock::unlock() {
-    if (_guard) {
-        _guard.unlock();
-        _cond = nullptr;
-    }
-}
-
 LockGuard::LockGuard() : _guard() {}
 
 LockGuard::LockGuard(LockGuard &&rhs) noexcept : _guard(std::move(rhs._guard)) { }
 LockGuard::LockGuard(const Lock &lock) : _guard(*lock._mutex) { }
-LockGuard::LockGuard(TryLock &&tlock) : _guard(std::move(tlock._guard))
-{
-    tlock._cond = nullptr;
-}
 
 LockGuard &
 LockGuard::operator=(LockGuard &&rhs) noexcept{
@@ -93,16 +56,6 @@ MonitorGuard::MonitorGuard(const Monitor &monitor)
     : _guard(*monitor._mutex),
       _cond(monitor._cond.get())
 { }
-MonitorGuard::MonitorGuard(TryLock &&tlock)
-    : _guard(),
-      _cond(nullptr)
-{
-    if (tlock._guard && tlock._cond != nullptr) {
-        _guard = std::move(tlock._guard);
-        _cond = tlock._cond;
-        tlock._cond = nullptr;
-    }
-}
 
 MonitorGuard &
 MonitorGuard::operator=(MonitorGuard &&rhs) noexcept {

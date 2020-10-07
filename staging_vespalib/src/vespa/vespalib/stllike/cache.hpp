@@ -42,13 +42,7 @@ cache<P>::hasKey(const K & key) const {
 }
 
 template< typename P >
-bool
-cache<P>::hasLock() const {
-    return TryLock(_hashLock).hasLock();
-}
-
-template< typename P >
-cache<P>::~cache() { }
+cache<P>::~cache() = default;
 
 template< typename P >
 cache<P>::cache(BackingStore & b, size_t maxBytes) :

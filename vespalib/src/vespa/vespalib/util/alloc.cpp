@@ -4,11 +4,11 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/backtrace.h>
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 #include <atomic>
 #include <unordered_map>
 #include <cassert>
+#include <mutex>
 #include <vespa/fastos/file.h>
 #include <unistd.h>
 
@@ -25,7 +25,7 @@ int  _G_HugeFlags = 0;
 const size_t _G_pageSize = getpagesize();
 size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
-Lock _G_lock;
+std::mutex _G_lock;
 std::atomic<size_t> _G_mmapCount(0);
 
 size_t
@@ -362,7 +362,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
         }
 #endif
         if (sz >= _G_MMapLogLimit) {
-            LockGuard guard(_G_lock);
+            std::lock_guard guard(_G_lock);
             _G_HugeMappings[buf] = MMapInfo(mmapId, sz, stackTrace);
             LOG(info, "%ld mappings of accumulated size %ld", _G_HugeMappings.size(), sum(_G_HugeMappings));
         }
@@ -412,7 +412,7 @@ void MMapAllocator::sfree(PtrAndSize alloc)
         retval = munmap(alloc.first, alloc.second);
         assert(retval == 0);
         if (alloc.second >= _G_MMapLogLimit) {
-            LockGuard guard(_G_lock);
+            std::lock_guard guard(_G_lock);
             MMapInfo info = _G_HugeMappings[alloc.first];
             assert(alloc.second == info._sz);
             _G_HugeMappings.erase(alloc.first);

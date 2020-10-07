@@ -288,7 +288,7 @@ private:
     std::vector<Disk>     _diskInfo;
     MessageSender&        _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;
-    vespalib::Lock        _mergeStatesLock;
+    mutable std::mutex    _mergeStatesLock;
     std::map<document::Bucket, MergeStatus::SP> _mergeStates;
     uint32_t              _getNextMessageTimeout;
     const uint32_t        _max_active_merges_per_stripe; // Read concurrently by stripes.
