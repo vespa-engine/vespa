@@ -57,11 +57,15 @@ TensorSpec reference_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t
     return result;
 }
 
-TensorSpec perform_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
+Value::UP try_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
     const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    auto up = tensor::TensorPartialUpdate::modify(*lhs, fun, *rhs, factory);
+    return tensor::TensorPartialUpdate::modify(*lhs, fun, *rhs, factory);
+}
+
+TensorSpec perform_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
+    auto up = try_partial_modify(a, b, fun);
     if (up) {
         return spec_from_value(*up);
     } else {
@@ -115,6 +119,28 @@ TEST(PartialModifyTest, partial_modify_works_like_old_modify) {
             if (fun == operation::Max::f) {
                 printf("%s modify(sub) %s -> %s\n", lhs.to_string().c_str(), rhs.to_string().c_str(), actual.to_string().c_str());
             }
+        }
+    }
+}
+
+std::vector<Layout> bad_layouts = {
+    {x(3)},                               {x(3)},
+    {x(3),y({"a"})},                      {x(3),y({"a"})},
+    {x({"a"})},                           {x({"a"}),y({"b"})},
+    {x({"a"}),y({"b"})},                  {x({"a"})},
+    {x({"a"})},                           {x({"a"}),y(1)}
+};
+
+TEST(PartialModifyTest, partial_modify_returns_nullptr_on_invalid_inputs) {
+    ASSERT_TRUE((bad_layouts.size() % 2) == 0);
+    for (size_t i = 0; i < bad_layouts.size(); i += 2) {
+        TensorSpec lhs = spec(bad_layouts[i], N());
+        TensorSpec rhs = spec(bad_layouts[i + 1], Div16(N()));
+        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+        for (auto fun: {operation::Add::f}) {
+            auto actual = try_partial_modify(lhs, rhs, fun);
+            auto expect = Value::UP();
+            EXPECT_EQ(actual, expect);
         }
     }
 }
