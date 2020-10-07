@@ -48,7 +48,7 @@ struct Signal {
     bool valid;
     size_t generation;
     Monitor monitor;
-    Signal() : valid(true), generation(0), monitor() {}
+    Signal() noexcept : valid(true), generation(0), monitor() {}
     size_t wait(size_t &localGen) {
         MonitorGuard guard(monitor);
         while (localGen == generation) {

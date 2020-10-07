@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".mergethrottler");

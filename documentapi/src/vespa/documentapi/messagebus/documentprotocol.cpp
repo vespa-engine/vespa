@@ -9,6 +9,7 @@
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documentprotocol");

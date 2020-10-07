@@ -79,11 +79,9 @@ public:
     const ContentBucketSpaceRepo &getBucketSpaceRepo() const;
     StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const;
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {
-        assert(_minUsedBitsTracker != 0);
         return *_minUsedBitsTracker;
     }
     const MinimumUsedBitsTracker& getMinUsedBitsTracker() const {
-        assert(_minUsedBitsTracker != 0);
         return *_minUsedBitsTracker;
     }
     uint16_t getIdealPartition(const document::Bucket&) const;

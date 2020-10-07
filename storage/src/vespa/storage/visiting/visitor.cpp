@@ -13,6 +13,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <unordered_map>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.visitor");

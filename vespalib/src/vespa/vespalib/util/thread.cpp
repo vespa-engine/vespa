@@ -2,6 +2,7 @@
 
 #include "thread.h"
 #include <thread>
+#include <cassert>
 
 namespace vespalib {
 

@@ -13,6 +13,7 @@
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <sstream>
 #include <algorithm>
+#include <cassert>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".metrics.manager");

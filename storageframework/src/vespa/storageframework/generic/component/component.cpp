@@ -4,6 +4,7 @@
 #include "componentregister.h"
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/thread/threadpool.h>
+#include <cassert>
 
 namespace storage::framework {
 

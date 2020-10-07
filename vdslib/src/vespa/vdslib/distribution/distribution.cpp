@@ -14,6 +14,7 @@
 #include <list>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".vdslib.distribution");

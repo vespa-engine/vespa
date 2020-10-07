@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <fstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documenttyperepo");

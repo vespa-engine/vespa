@@ -10,6 +10,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.manager");

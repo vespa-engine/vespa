@@ -119,17 +119,7 @@ Test::Main()
             CHECK_UNLOCKED(monitor);
         }
     }
-    // copy/assign is nop, but legal
-    {
-        Lock a;
-        Lock b(a);
-        b = a;
-    }
-    {
-        Monitor a;
-        Monitor b(a);
-        b = a;
-    }
+
     // you can lock const objects
     {
         const Lock lock;

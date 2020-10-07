@@ -10,6 +10,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/messagebus/network/inetwork.h>
 #include <stack>
+#include <cassert>
 
 using vespalib::make_string;
 

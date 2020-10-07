@@ -8,6 +8,7 @@
 #include <map>
 #include <atomic>
 #include <unordered_map>
+#include <cassert>
 #include <vespa/fastos/file.h>
 #include <unistd.h>
 

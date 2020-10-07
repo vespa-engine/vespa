@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 #include <chrono>
+#include <cassert>
 
 namespace storage {
 

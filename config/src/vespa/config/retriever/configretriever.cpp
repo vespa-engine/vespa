@@ -2,6 +2,7 @@
 
 #include "configretriever.h"
 #include <vespa/config/common/exceptions.h>
+#include <cassert>
 
 using std::chrono::milliseconds;
 

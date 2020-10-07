@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dummystoragelink.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <sys/time.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 namespace storage {
 
-DummyStorageLink* DummyStorageLink::_last(0);
+DummyStorageLink* DummyStorageLink::_last(nullptr);
 
 DummyStorageLink::DummyStorageLink()
     : StorageLink("Dummy storage link"),

@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".posocc_field_params");

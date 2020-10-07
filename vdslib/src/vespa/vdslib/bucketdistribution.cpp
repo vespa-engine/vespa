@@ -17,10 +17,7 @@ BucketDistribution::BucketDistribution(uint32_t numColumns, uint32_t numBucketBi
     setNumColumns(numColumns);
 }
 
-BucketDistribution::BucketDistribution(const BucketDistribution &) = default;
-BucketDistribution & BucketDistribution::operator = (const BucketDistribution &) = default;
-
-BucketDistribution::~BucketDistribution() {}
+BucketDistribution::~BucketDistribution() = default;
 
 void
 BucketDistribution::getBucketCount(uint32_t numColumns, uint32_t numBucketBits, std::vector<uint32_t> &ret)
@@ -47,9 +44,8 @@ BucketDistribution::getBucketMigrateCount(uint32_t numColumns, uint32_t numBucke
 void
 BucketDistribution::reset()
 {
-    for (std::vector<uint32_t>::iterator it = _bucketToColumn.begin();
-         it != _bucketToColumn.end(); ++it) {
-        *it = 0;
+    for (uint32_t & value : _bucketToColumn) {
+        value = 0;
     }
     _numColumns = 1;
 }
