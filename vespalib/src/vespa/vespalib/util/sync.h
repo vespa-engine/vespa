@@ -70,89 +70,6 @@ public:
 
 
 /**
- * @brief A TryLock object is used to try to obtain the lock on a Lock
- * or a Monitor without blocking.
- *
- * A TryLock will typically fail to obatin the lock if someone else
- * already has it. In that case, the TryLock object has no further
- * use.
- *
- * If the TryLock managed to acquire the lock, it can be passed over
- * to a LockGuard or MonitorGuard object. If the lock is not passed
- * on, the TryLock object will release it when it goes out of scope.
- *
- * Note that passing the lock obtained from a Lock to a MonitorGuard
- * is illegal. Also note that if the TryLock fails to aquire the lock,
- * it cannot be passed on. Trying to do so will result in an assert.
- *
- * copy/assignment of a TryLock is illegal.
- *
- * <pre>
- * Example:
- *
- * Lock lock;
- * TryLock tl(lock);
- * if (tl.hasLock()) {
- *   LockGuard guard(tl)
- *   ... do stuff
- * } // the lock is released as 'guard' goes out of scope
- * </pre>
- **/
-class TryLock
-{
-private:
-    friend class LockGuard;
-    friend class MonitorGuard;
-
-    std::unique_lock<std::mutex> _guard;
-    std::condition_variable     *_cond;
-
-public:
-    /**
-     * @brief Try to obtain the lock represented by the given Lock object
-     *
-     * @param lock the lock to obtain
-     **/
-    TryLock(const Lock &lock);
-
-    /**
-     * @brief Try to lock the given Monitor
-     *
-     * @param mon the monitor to lock
-     **/
-    TryLock(const Monitor &mon);
-
-    TryLock(TryLock &&rhs) noexcept;
-
-    /**
-     * @brief Release the lock held by this object, if any
-     **/
-    ~TryLock();
-
-    TryLock(const TryLock &) = delete;
-    TryLock &operator=(const TryLock &) = delete;
-
-    TryLock &operator=(TryLock &&rhs) noexcept;
-
-    /**
-     * @brief Check whether this object holds a lock
-     *
-     * @return true if this object holds a lock
-     **/
-    bool hasLock() const;
-    /**
-     * @brief Release the lock held by this object.
-     *
-     * No methods may be invoked after invoking unlock (except the
-     * destructor). Note that this method should only be used if you
-     * need to release the lock before the object is destructed, as
-     * the destructor will release the lock.
-     **/
-    void unlock();
-};
-
-
-/**
  * @brief A LockGuard holds the lock on either a Lock or a Monitor.
  *
  * LockGuards are typically created on the stack to hold a lock within
@@ -190,17 +107,6 @@ public:
      * @param lock take it
      **/
     LockGuard(const Lock &lock);
-
-    /**
-     * @brief Create a LockGuard from a TryLock.
-     *
-     * The TryLock may have been created from either a Lock or a
-     * Monitor, but it must have managed to acquire the lock. The lock
-     * will be handed over from the TryLock to the new object.
-     *
-     * @param tlock take the lock from this one
-     **/
-    LockGuard(TryLock &&tlock);
 
     LockGuard &operator=(LockGuard &&rhs) noexcept;
 
@@ -267,16 +173,6 @@ public:
      * @param monitor take the lock on it
      **/
     MonitorGuard(const Monitor &monitor);
-    /**
-     * @brief Create a MonitorGuard from a TryLock.
-     *
-     * The TryLock must have been created from a Monitor, and it must
-     * have managed to acquire the lock. The lock will be handed over
-     * from the TryLock to the new object.
-     *
-     * @param tlock take the lock from this one
-     **/
-    MonitorGuard(TryLock &&tlock);
 
     MonitorGuard &operator=(MonitorGuard &&rhs) noexcept;
 

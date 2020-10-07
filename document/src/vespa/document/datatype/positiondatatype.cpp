@@ -1,17 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "positiondatatype.h"
+#include <mutex>
 
 namespace document {
 
 namespace {
 
 const vespalib::string ZCURVE("_zcurve");
+std::mutex     _G_lock;
 
 }
 
 StructDataType::UP PositionDataType::_instance;
-vespalib::Lock     PositionDataType::_lock;
 
 const vespalib::string PositionDataType::STRUCT_NAME("position");
 const vespalib::string PositionDataType::FIELD_X("x");
@@ -30,7 +31,7 @@ const StructDataType &
 PositionDataType::getInstance()
 {
     if ( ! _instance) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_G_lock);
         if ( ! _instance) {
             _instance = createInstance();
         }

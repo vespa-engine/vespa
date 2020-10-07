@@ -33,7 +33,7 @@ TestMaster::compare(const char *file, uint32_t line,
     lhs << a;
     rhs << b;
     {
-        vespalib::LockGuard guard(_lock);
+        lock_guard guard(_lock);
         checkFailed(guard, file, line, str.c_str());
         printDiff(guard, str, file, line, lhs.str(), rhs.str());
         handleFailure(guard, fatal);

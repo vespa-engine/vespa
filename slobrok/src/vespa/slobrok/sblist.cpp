@@ -5,7 +5,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.list");
 
-using vespalib::LockGuard;
+using LockGuard = std::lock_guard<std::mutex>;
 
 namespace slobrok::api {
 
@@ -83,7 +83,7 @@ SlobrokList::setup(const std::vector<std::string> &specList)
         _slobrokSpecs.push_back(specList[i]);
     }
 
-    vespalib::RandomGen randomizer(time(NULL));
+    vespalib::RandomGen randomizer(time(nullptr));
     // randomize order
     for (size_t i = 0; i + 1 < cfgSz; ++i) {
         size_t lim = cfgSz - i;

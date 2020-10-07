@@ -69,7 +69,7 @@ SimpleThreadBundle::UP
 SimpleThreadBundle::Pool::obtain()
 {
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (!_bundles.empty()) {
             SimpleThreadBundle::UP ret(_bundles.back());
             _bundles.pop_back();
@@ -82,7 +82,7 @@ SimpleThreadBundle::Pool::obtain()
 void
 SimpleThreadBundle::Pool::release(SimpleThreadBundle::UP bundle)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _bundles.push_back(bundle.get());
     bundle.release();
 }

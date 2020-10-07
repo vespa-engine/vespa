@@ -116,7 +116,7 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
 void
 VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     LOG(debug, "(re-)configure VSM (docsum tools)");
 
     std::shared_ptr<SummaryConfig>      summary(snapshot.getConfig<SummaryConfig>().release());
@@ -141,7 +141,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     }
 
     // init keyword extractor
-    std::unique_ptr<KeywordExtractor> kwExtractor(new KeywordExtractor(NULL));
+    auto kwExtractor = std::make_unique<KeywordExtractor>(nullptr);
     kwExtractor->AddLegalIndexSpec(_highlightindexes.c_str());
     vespalib::string spec = kwExtractor->GetLegalIndexSpec();
     LOG(debug, "index highlight spec: '%s'", spec.c_str());

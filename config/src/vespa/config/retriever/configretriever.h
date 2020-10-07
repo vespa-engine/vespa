@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "configkeyset.h"
 #include "configsnapshot.h"
 #include "genericconfigsubscriber.h"
 #include "fixedconfigsubscriber.h"
@@ -94,7 +93,7 @@ public:
 private:
     FixedConfigSubscriber                    _bootstrapSubscriber;
     std::unique_ptr<GenericConfigSubscriber> _configSubscriber;
-    vespalib::Lock                           _lock;
+    std::mutex                               _lock;
     std::vector<ConfigSubscription::SP>      _subscriptionList;
     ConfigKeySet                _lastKeySet;
     IConfigContext::SP          _context;
