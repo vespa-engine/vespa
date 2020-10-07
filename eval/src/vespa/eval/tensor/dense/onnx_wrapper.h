@@ -42,9 +42,9 @@ public:
     struct DimSize {
         size_t value;
         vespalib::string name;
-        DimSize() : value(0), name() {}
-        DimSize(size_t size) : value(size), name() {}
-        DimSize(const vespalib::string &symbol) : value(0), name(symbol) {}
+        DimSize() noexcept : value(0), name() {}
+        DimSize(size_t size) noexcept : value(size), name() {}
+        DimSize(const vespalib::string &symbol) noexcept : value(0), name(symbol) {}
         bool is_known() const { return (value > 0); }
         bool is_symbolic() const { return !name.empty(); }
         vespalib::string as_string() const;
@@ -66,7 +66,7 @@ public:
     struct TensorType {
         ElementType elements;
         std::vector<int64_t> dimensions;
-        TensorType(ElementType elements_in, std::vector<int64_t> dimensions_in)
+        TensorType(ElementType elements_in, std::vector<int64_t> dimensions_in) noexcept
             : elements(elements_in), dimensions(std::move(dimensions_in)) {}
     };
 

@@ -49,7 +49,7 @@ private:
         const Group* _group;
         uint16_t _redundancy;
 
-        ResultGroup(const Group& group, uint16_t redundancy)
+        ResultGroup(const Group& group, uint16_t redundancy) noexcept
             : _group(&group), _redundancy(redundancy) {}
 
         bool operator<(const ResultGroup& other) const {

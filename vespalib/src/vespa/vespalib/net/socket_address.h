@@ -29,9 +29,9 @@ private:
     const sockaddr_un *addr_un() const { return reinterpret_cast<const sockaddr_un *>(&_addr); }
     SocketAddress(const sockaddr *addr_in, socklen_t addrlen_in);
 public:
-    SocketAddress() { memset(this, 0, sizeof(SocketAddress)); }
-    SocketAddress(const SocketAddress &rhs) { memcpy(this, &rhs, sizeof(SocketAddress)); }
-    SocketAddress &operator=(const SocketAddress &rhs) {
+    SocketAddress() noexcept { memset(this, 0, sizeof(SocketAddress)); }
+    SocketAddress(const SocketAddress &rhs) noexcept { memcpy(this, &rhs, sizeof(SocketAddress)); }
+    SocketAddress &operator=(const SocketAddress &rhs) noexcept {
         memcpy(this, &rhs, sizeof(SocketAddress));
         return *this;
     }

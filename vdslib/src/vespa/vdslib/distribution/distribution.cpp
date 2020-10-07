@@ -352,7 +352,7 @@ namespace {
         double _score;
 
         ScoredGroup() : _group(nullptr), _score(0) {}
-        ScoredGroup(const Group* group, double score)
+        ScoredGroup(const Group* group, double score) noexcept
             : _group(group), _score(score) {}
 
         bool operator<(const ScoredGroup& other) const {

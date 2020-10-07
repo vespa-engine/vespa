@@ -8,8 +8,7 @@
 #include <atomic>
 #include <mutex>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 /**
  * A compilation cache used to reduce application configuration cost
@@ -29,7 +28,7 @@ private:
         std::mutex lock;
         std::condition_variable cond;
         CompiledFunction::UP compiled_function;
-        Result() : cf(nullptr), lock(), cond(), compiled_function(nullptr) {}
+        Result() noexcept : cf(nullptr), lock(), cond(), compiled_function(nullptr) {}
     };
     struct Value {
         size_t num_refs;
@@ -110,5 +109,4 @@ private:
     };
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

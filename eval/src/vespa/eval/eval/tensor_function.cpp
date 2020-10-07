@@ -469,7 +469,7 @@ Peek::push_children(std::vector<Child::CREF> &children) const
                        [&](const Child &child) {
                            children.emplace_back(child);
                        },
-                       [](const TensorSpec::Label &){}
+                       [](const TensorSpec::Label &) noexcept {}
                    }, dim.second);
     }
 }

@@ -89,7 +89,7 @@ public:
      */
     explicit GlobalId(const void *gid) noexcept { set(gid); }
 
-    GlobalId(const GlobalId &rhs) = default;
+    GlobalId(const GlobalId &rhs) noexcept = default;
 
     /**
      * Implements the assignment operator.
@@ -105,7 +105,7 @@ public:
      * @param other The global id to compare to.
      * @return True if this equals the other, false otherwise.
      */
-    bool operator==(const GlobalId& other) const { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) == 0); }
+    bool operator==(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) == 0); }
 
     /**
      * Implements the inequality operator.
@@ -113,7 +113,7 @@ public:
      * @param other The global id to compare to.
      * @return True if this does NOT equal the other, false otherwise.
      */
-    bool operator!=(const GlobalId& other) const { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) != 0); }
+    bool operator!=(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) != 0); }
 
     /**
      * Implements the less-than operator. If you intend to map global ids in such a way that they can
@@ -123,7 +123,7 @@ public:
      * @param other The global id to compare to.
      * @return True if comparing the bits of this to the other yields a negative result.
      */
-    bool operator<(const GlobalId& other) const { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) < 0); }
+    bool operator<(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) < 0); }
 
     /**
      * Copies the first LENGTH bytes from the given address into the internal byte array.

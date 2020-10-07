@@ -6,7 +6,7 @@
 namespace vespalib::tensor {
 
 uint32_t
-SparseTensorAddressRef::calcHash() const {
+SparseTensorAddressRef::calcHash() const noexcept {
     return XXH32(_start, _size, 0);
 }
 

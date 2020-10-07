@@ -68,9 +68,9 @@ public:
         op_function function;
         uint64_t    param;
     public:
-        explicit Instruction(op_function function_in)
+        explicit Instruction(op_function function_in) noexcept
             : function(function_in), param(0) {}
-        Instruction(op_function function_in, uint64_t param_in)
+        Instruction(op_function function_in, uint64_t param_in) noexcept
             : function(function_in), param(param_in) {}
         void perform(State &state) const {
             if (function == nullptr) {

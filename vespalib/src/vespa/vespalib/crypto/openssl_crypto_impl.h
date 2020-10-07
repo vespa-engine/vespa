@@ -11,7 +11,7 @@ class PrivateKeyImpl : public PrivateKey {
     EvpPkeyPtr _pkey;
     Type _type;
 public:
-    PrivateKeyImpl(EvpPkeyPtr pkey, Type type)
+    PrivateKeyImpl(EvpPkeyPtr pkey, Type type) noexcept
         : _pkey(std::move(pkey)),
           _type(type)
     {}
@@ -29,7 +29,7 @@ public:
 class X509CertificateImpl : public X509Certificate {
     X509Ptr _cert;
 public:
-    explicit X509CertificateImpl(X509Ptr cert) : _cert(std::move(cert)) {}
+    explicit X509CertificateImpl(X509Ptr cert) noexcept : _cert(std::move(cert)) {}
     ~X509CertificateImpl() = default;
 
     ::X509* native_cert() noexcept { return _cert.get(); }

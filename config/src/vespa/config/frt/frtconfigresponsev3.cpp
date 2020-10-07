@@ -25,7 +25,7 @@ std::string make_json(const Slime &slime, bool compact) {
 class V3Payload : public Payload
 {
 public:
-    explicit V3Payload(Slime::UP data)
+    explicit V3Payload(Slime::UP data) noexcept
         : _data(std::move(data))
     {
     }

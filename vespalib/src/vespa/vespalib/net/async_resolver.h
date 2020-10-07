@@ -75,7 +75,7 @@ private:
         HostResolver::SP _resolver;
         seconds _max_resolve_time;
     public:
-        LoggingHostResolver(Clock::SP clock, HostResolver::SP resolver, seconds max_resolve_time)
+        LoggingHostResolver(Clock::SP clock, HostResolver::SP resolver, seconds max_resolve_time) noexcept
             : _clock(std::move(clock)), _resolver(std::move(resolver)), _max_resolve_time(max_resolve_time) {}
         vespalib::string ip_address(const vespalib::string &host_name) override;
     };

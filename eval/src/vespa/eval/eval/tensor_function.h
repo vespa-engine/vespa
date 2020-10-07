@@ -68,7 +68,7 @@ struct TensorFunction
         mutable const TensorFunction *ptr;
     public:
         using CREF = std::reference_wrapper<const Child>;
-        Child(const TensorFunction &child) : ptr(&child) {}
+        Child(const TensorFunction &child) noexcept : ptr(&child) {}
         const TensorFunction &get() const { return *ptr; }
         void set(const TensorFunction &child) const { ptr = &child; }
     };

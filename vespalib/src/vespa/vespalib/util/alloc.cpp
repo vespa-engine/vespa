@@ -184,7 +184,7 @@ private:
 
 
 struct MMapLimitAndAlignmentHash {
-    std::size_t operator ()(MMapLimitAndAlignment key) const { return key.hash(); }
+    std::size_t operator ()(MMapLimitAndAlignment key) const noexcept { return key.hash(); }
 };
 
 using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, AutoAllocator::UP, MMapLimitAndAlignmentHash>;

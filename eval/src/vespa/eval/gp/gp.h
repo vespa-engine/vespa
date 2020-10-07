@@ -71,7 +71,7 @@ struct OpRepo {
         vespalib::string name;
         value_op2 fun;
         size_t cost;
-        Entry(const vespalib::string &name_in, value_op2 fun_in, size_t cost_in)
+        Entry(const vespalib::string &name_in, value_op2 fun_in, size_t cost_in) noexcept
             : name(name_in), fun(fun_in), cost(cost_in) {}
     };
     feedback_fun _find_weakness;
@@ -119,7 +119,7 @@ struct Program : public Sim {
         size_t code;
         Ref    lhs;
         Ref    rhs;
-        Op(size_t code_in, Ref lhs_in, Ref rhs_in)
+        Op(size_t code_in, Ref lhs_in, Ref rhs_in) noexcept
             : code(code_in), lhs(lhs_in), rhs(rhs_in) {}
     };
     struct Stats {
@@ -127,8 +127,8 @@ struct Program : public Sim {
         size_t   cost;
         size_t   born;
         size_t   alt;
-        Stats(size_t gen) : weakness(0.0), cost(0), born(gen), alt(0) {}
-        Stats(Weakness weakness_in, size_t cost_in, size_t born_in, size_t alt_in)
+        Stats(size_t gen) noexcept : weakness(0.0), cost(0), born(gen), alt(0) {}
+        Stats(Weakness weakness_in, size_t cost_in, size_t born_in, size_t alt_in) noexcept
             : weakness(weakness_in), cost(cost_in), born(born_in), alt(alt_in) {}
         bool operator<(const Stats &rhs) const {
             if (weakness != rhs.weakness) {

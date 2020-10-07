@@ -35,7 +35,7 @@ private:
         const JsonGetHandler *handler;
         Hook(size_t seq_in,
              vespalib::stringref prefix_in,
-             const JsonGetHandler &handler_in)
+             const JsonGetHandler &handler_in) noexcept
             : seq(seq_in), path_prefix(prefix_in), handler(&handler_in) {}
         bool operator <(const Hook &rhs) const {
             if (path_prefix.size() == rhs.path_prefix.size()) {
@@ -48,7 +48,7 @@ private:
     struct Resource {
         size_t seq;
         vespalib::string path;
-        Resource(size_t seq_in, vespalib::stringref path_in)
+        Resource(size_t seq_in, vespalib::stringref path_in) noexcept
             : seq(seq_in), path(path_in) {}
     };
 
@@ -58,7 +58,7 @@ private:
         size_t seq;
         std::vector<Hook> hooks;
         std::vector<Resource> root_resources;
-        State() : lock(), seq(0), hooks(), root_resources() {}
+        State() noexcept : lock(), seq(0), hooks(), root_resources() {}
         size_t bind(vespalib::stringref path_prefix,
                     const JsonGetHandler &get_handler);
         size_t add_root_resource(vespalib::stringref path);
@@ -68,8 +68,8 @@ private:
     struct Unbinder : Token {
         State::SP state;
         size_t my_seq;
-        Unbinder(State::SP state_in, size_t my_seq_in)
-            : state(state_in), my_seq(my_seq_in) {}
+        Unbinder(State::SP state_in, size_t my_seq_in) noexcept
+            : state(std::move(state_in)), my_seq(my_seq_in) {}
         ~Unbinder() override {
             state->unbind(my_seq);
         }

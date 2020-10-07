@@ -80,7 +80,7 @@ private:
         uint64_t handle;
         vespalib::string prefix;
         GetHandler *handler;
-        BindState(uint64_t handle_in, vespalib::string prefix_in, GetHandler &handler_in)
+        BindState(uint64_t handle_in, vespalib::string prefix_in, GetHandler &handler_in) noexcept
             : handle(handle_in), prefix(prefix_in), handler(&handler_in) {}
         bool operator<(const BindState &rhs) const {
             if (prefix.size() == rhs.prefix.size()) {
