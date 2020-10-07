@@ -320,19 +320,17 @@ public class CuratorDatabaseClient {
     }
 
     /** Creates and returns the path to the lock for this application */
-    // TODO(mpolden): Remove when all config servers take the new lock
-    private Path legacyLockPath(ApplicationId application) {
-        Path lockPath =
-                CuratorDatabaseClient.lockPath
-                .append(application.tenant().value())
-                .append(application.application().value())
-                .append(application.instance().value());
+    private Path lockPath(ApplicationId application) {
+        Path lockPath = CuratorDatabaseClient.lockPath.append(application.tenant().value())
+                                                      .append(application.application().value())
+                                                      .append(application.instance().value());
         db.create(lockPath);
         return lockPath;
     }
 
-    /** Creates and returns the lock path for this application */
-    private Path lockPath(ApplicationId application) {
+    /** Creates and returns the config lock path for this application */
+    // TODO(mpolden): Remove
+    private Path configLockPath(ApplicationId application) {
         // This must match the lock path used by com.yahoo.vespa.config.server.application.TenantApplications
         Path lockPath = configLockPath.append(application.tenant().value()).append(application.serializedForm());
         db.create(lockPath);
@@ -360,46 +358,32 @@ public class CuratorDatabaseClient {
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
-    // TODO(mpolden): Remove when all config servers take the new lock
-    public Lock legacyLock(ApplicationId application) {
-        return legacyLock(application, defaultLockTimeout);
+    public Lock lock(ApplicationId application) {
+        return lock(application, defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
-    // TODO(mpolden): Remove when all config servers take the new lock
-    public Lock legacyLock(ApplicationId application, Duration timeout) {
+    public Lock lock(ApplicationId application, Duration timeout) {
         try {
-            return db.lock(legacyLockPath(application), timeout);
+            return db.lock(lockPath(application), timeout);
         }
         catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
     }
 
-    /**
-     * Acquires the single cluster-global, re-entrant lock for given application. Note that this is the same lock
-     * that configserver itself takes when modifying applications.
-     *
-     * This lock must be taken when writes to paths owned by this class may happen on both the configserver and
-     * node-repository side. This behaviour is obviously wrong, but since we pass a NestedTransaction across the
-     * configserver and node-repository boundary, the ownership semantics of the transaction (and its operations)
-     * becomes unclear.
-     *
-     * Example of when to use: The config server creates a new transaction and passes the transaction to
-     * {@link com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner}, which appends operations to the
-     * transaction. The config server then commits (writes) the transaction which may include operations that modify
-     * data in paths owned by this class.
-     */
-    public Lock lock(ApplicationId application, Duration timeout) {
+    // TODO(mpolden): Remove
+    private Lock configLock(ApplicationId application, Duration timeout) {
         try {
-            return db.lock(lockPath(application), timeout);
+            return db.lock(configLockPath(application), timeout);
         } catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
     }
 
-    public Lock lock(ApplicationId application) {
-        return lock(application, defaultLockTimeout);
+    // TODO(mpolden): Remove
+    public Lock configLock(ApplicationId application) {
+        return configLock(application, defaultLockTimeout);
     }
 
     // Applications -----------------------------------------------------------

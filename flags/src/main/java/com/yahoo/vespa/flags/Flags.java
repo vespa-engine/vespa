@@ -363,13 +363,6 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_CONFIG_SERVER_LOCK = defineFeatureFlag(
-            "use-config-server-lock",
-            false,
-            "Whether the node-repository should take the same application lock as the config server when making changes to nodes",
-            "Takes effect on config server restart"
-    );
-
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint",
             false,
