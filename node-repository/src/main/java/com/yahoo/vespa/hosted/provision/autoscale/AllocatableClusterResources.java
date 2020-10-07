@@ -138,21 +138,20 @@ public class AllocatableClusterResources {
                                                              Limits applicationLimits,
                                                              NodeRepository nodeRepository) {
         var systemLimits = new NodeResourceLimits(nodeRepository);
-        if ( !exclusive && nodeRepository.zone().getCloud().allowHostSharing()) { // Check if any flavor can fit these hosts
+        if ( !exclusive && nodeRepository.zone().getCloud().allowHostSharing()) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources());
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterType); // Attempt to ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources); // ... thus, what we really get may change
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterType)) return Optional.empty();
-            for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
-                if (flavor.resources().satisfies(advertisedResources))
+            if (matchesAny(nodeRepository.flavors().getFlavors(), advertisedResources))
                     return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
                                                                        advertisedResources,
                                                                        wantedResources.nodeResources(),
                                                                        clusterType));
-            }
-            return Optional.empty();
+            else
+                return Optional.empty();
         }
         else { // Return the cheapest flavor satisfying the requested resources, if any
             NodeResources cappedWantedResources = applicationLimits.cap(wantedResources.nodeResources());
@@ -183,6 +182,14 @@ public class AllocatableClusterResources {
             }
             return best;
         }
+    }
+
+    /** Returns true if the given resources could be allocated on any of the given flavors */
+    private static boolean matchesAny(List<Flavor> flavors, NodeResources advertisedResources) {
+        // Tenant nodes should not consume more than half the resources of the biggest hosts
+        // to make it easier to shift them between hosts.
+        return flavors.stream().anyMatch(flavor -> flavor.resources().withVcpu(flavor.resources().vcpu() / 2)
+                                                         .satisfies(advertisedResources));
     }
 
     private static boolean between(NodeResources min, NodeResources max, NodeResources r) {

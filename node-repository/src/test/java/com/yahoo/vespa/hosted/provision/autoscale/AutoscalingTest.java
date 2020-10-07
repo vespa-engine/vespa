@@ -78,7 +78,7 @@ public class AutoscalingTest {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
@@ -131,7 +131,7 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_respects_upper_limit() {
-        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
+        NodeResources hostResources = new NodeResources(6, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
         AutoscalingTester tester = new AutoscalingTester(hostResources);
@@ -155,7 +155,7 @@ public class AutoscalingTest {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 4, 1, new NodeResources(1.8, 7.4, 8.5, 1));
         ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
@@ -209,7 +209,7 @@ public class AutoscalingTest {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = min;
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
@@ -227,7 +227,7 @@ public class AutoscalingTest {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 20, new NodeResources(100, 1000, 1000, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
@@ -245,7 +245,7 @@ public class AutoscalingTest {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
-        AutoscalingTester tester = new AutoscalingTester(resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
         ApplicationId application1 = tester.applicationId("application1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
@@ -278,7 +278,7 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_avoids_illegal_configurations() {
-        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
+        NodeResources hostResources = new NodeResources(6, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         AutoscalingTester tester = new AutoscalingTester(hostResources);
@@ -287,7 +287,7 @@ public class AutoscalingTest {
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
-        tester.deploy(application1, cluster1, 6, 1, hostResources);
+        tester.deploy(application1, cluster1, 6, 1, hostResources.withVcpu(hostResources.vcpu() / 2));
         tester.addMeasurements(Resource.memory,  0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
                                6, 1, 2.8, 4.0, 95.0,
