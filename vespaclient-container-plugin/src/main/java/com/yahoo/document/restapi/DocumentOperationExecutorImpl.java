@@ -86,7 +86,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
     private final DelayQueue throttled;
     private final DelayQueue timeouts;
     private final Map<VisitorControlHandler, VisitorSession> visits = new ConcurrentHashMap<>();
-    private final Executor visitSessionShutdownExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService visitSessionShutdownExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("visit-session-shutdown-"));
 
     public DocumentOperationExecutorImpl(ClusterListConfig clustersConfig, AllClustersBucketSpacesConfig bucketsConfig,
                                          DocumentOperationExecutorConfig executorConfig, DocumentAccess access, Clock clock) {
@@ -152,6 +152,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
     @Override
     public void shutdown() {
         long shutdownMillis = clock.instant().plusSeconds(20).toEpochMilli();
+        visitSessionShutdownExecutor.shutdown();
         visits.values().forEach(VisitorSession::destroy);
         Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(10),
                                                         context -> context.error(OVERLOAD, "Retry on overload failed due to shutdown"));
@@ -160,6 +161,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         try {
             throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
             timeoutShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            visitSessionShutdownExecutor.awaitTermination(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException | ExecutionException | TimeoutException e) {
             throttleShutdown.cancel(true);
