@@ -40,6 +40,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -85,6 +86,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
     private final DelayQueue throttled;
     private final DelayQueue timeouts;
     private final Map<VisitorControlHandler, VisitorSession> visits = new ConcurrentHashMap<>();
+    private final ExecutorService visitSessionShutdownExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("visit-session-shutdown-"));
 
     public DocumentOperationExecutorImpl(ClusterListConfig clustersConfig, AllClustersBucketSpacesConfig bucketsConfig,
                                          DocumentOperationExecutorConfig executorConfig, DocumentAccess access, Clock clock) {
@@ -150,14 +152,16 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
     @Override
     public void shutdown() {
         long shutdownMillis = clock.instant().plusSeconds(20).toEpochMilli();
+        visitSessionShutdownExecutor.shutdown();
         visits.values().forEach(VisitorSession::destroy);
         Future<?> throttleShutdown = throttled.shutdown(Duration.ofSeconds(10),
                                                         context -> context.error(OVERLOAD, "Retry on overload failed due to shutdown"));
         Future<?> timeoutShutdown = timeouts.shutdown(Duration.ofSeconds(15),
                                                       context -> context.error(TIMEOUT, "Timed out due to shutdown"));
         try {
-            throttleShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
-            timeoutShutdown.get(Math.max(0, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            throttleShutdown.get(Math.max(1, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            timeoutShutdown.get(Math.max(1, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
+            visitSessionShutdownExecutor.awaitTermination(Math.max(1, shutdownMillis - clock.millis()), TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException | ExecutionException | TimeoutException e) {
             throttleShutdown.cancel(true);
@@ -212,12 +216,18 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
                             context.error(ERROR, message != null ? message : "Visiting failed");
                     }
                     done.set(true); // This may be reached before dispatching thread is done putting us in the map.
-                    visits.computeIfPresent(this, (__, session) -> { session.destroy(); return null; });
+                    visits.computeIfPresent(this, (__, session) -> {
+                        visitSessionShutdownExecutor.execute(() -> session.destroy());
+                        return null;
+                    });
                 }
             });
             visits.put(parameters.getControlHandler(), access.createVisitorSession(parameters));
             if (done.get())
-                visits.computeIfPresent(parameters.getControlHandler(), (__, session) -> { session.destroy(); return null; });
+                visits.computeIfPresent(parameters.getControlHandler(), (__, session) -> {
+                    visitSessionShutdownExecutor.execute(() -> session.destroy());
+                    return null;
+                });
         }
         catch (IllegalArgumentException | ParseException e) {
             context.error(BAD_REQUEST, Exceptions.toMessageString(e));
@@ -386,7 +396,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
                     synchronized (this) {
                         do {
                             notify();
-                            wait(Math.max(0, waitUntilMillis - clock.millis()));
+                            wait(Math.max(1, waitUntilMillis - clock.millis()));
                         }
                         while (clock.millis() < waitUntilMillis);
                     }
