@@ -9,8 +9,8 @@ namespace vespalib {
 template <typename T>
 class VarHolder
 {
-    T     _v;
-    std::mutex  _lock;
+    T                   _v;
+    mutable std::mutex  _lock;
 public:
     VarHolder() : _v(), _lock() {}
     explicit VarHolder(const T &v) : _v(v), _lock() {}
