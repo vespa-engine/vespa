@@ -98,9 +98,7 @@ public class ProvisioningTest {
         assertEquals(5, tester.getNodes(application1, Node.State.inactive).size());
 
         // delete app
-        NestedTransaction removeTransaction = new NestedTransaction();
-        tester.provisioner().remove(removeTransaction, application1);
-        removeTransaction.commit();
+        tester.remove(application1);
         assertEquals(tester.toHostNames(state1.allHosts), tester.toHostNames(tester.nodeRepository().getNodes(application1, Node.State.inactive)));
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
 
@@ -250,9 +248,7 @@ public class ProvisioningTest {
         SystemState state7 = prepare(application1, 8, 2, 2, 2, defaultResources, tester);
 
         // delete app
-        NestedTransaction removeTransaction = new NestedTransaction();
-        tester.provisioner().remove(removeTransaction, application1);
-        removeTransaction.commit();
+        tester.remove(application1);
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
         assertEquals(0, tester.getNodes(application1, Node.State.reserved).size());
     }
@@ -600,9 +596,7 @@ public class ProvisioningTest {
         SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
 
         // Simulate expiry
-        NestedTransaction deactivateTransaction = new NestedTransaction();
-        tester.nodeRepository().deactivate(application, deactivateTransaction);
-        deactivateTransaction.commit();
+        tester.deactivate(application);
 
         try {
             tester.activate(application, state.allHosts);

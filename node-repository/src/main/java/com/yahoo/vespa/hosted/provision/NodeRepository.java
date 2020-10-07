@@ -11,6 +11,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
@@ -502,19 +503,17 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    public void deactivate(ApplicationId application, NestedTransaction transaction) {
-        try (Mutex lock = lock(application)) {
-            deactivate(db.readNodes(application, State.reserved, State.active), transaction);
-            applications.remove(application, transaction, lock);
-        }
+    /** Deactivate nodes owned by application guarded by given lock */
+    public void deactivate(NestedTransaction transaction, ProvisionLock lock) {
+        deactivate(db.readNodes(lock.application(), State.reserved, State.active), transaction, lock);
+        applications.remove(lock.application(), transaction, lock);
     }
 
     /**
-     * Deactivates these nodes in a transaction and returns
-     * the nodes in the new state which will hold if the transaction commits.
-     * This method does <b>not</b> lock
+     * Deactivates these nodes in a transaction and returns the nodes in the new state which will hold if the
+     * transaction commits.
      */
-    public List<Node> deactivate(List<Node> nodes, NestedTransaction transaction) {
+    public List<Node> deactivate(List<Node> nodes, NestedTransaction transaction, @SuppressWarnings("unused") ProvisionLock lock) {
         return db.writeTo(State.inactive, nodes, Agent.application, Optional.empty(), transaction);
     }
 

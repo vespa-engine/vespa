@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
@@ -81,7 +82,7 @@ public class RebalancerTest {
 
         // --- Making the system stable enables rebalancing
         NestedTransaction tx = new NestedTransaction();
-        tester.nodeRepository().deactivate(List.of(cpuSkewedNode), tx);
+        tester.nodeRepository().deactivate(List.of(cpuSkewedNode), tx, new ProvisionLock(cpuApp, () -> {}));
         tx.commit();
 
         //     ... if activation fails when trying, we clean up the state

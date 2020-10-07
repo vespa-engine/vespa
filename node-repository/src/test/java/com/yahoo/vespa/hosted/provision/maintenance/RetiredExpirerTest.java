@@ -183,9 +183,11 @@ public class RetiredExpirerTest {
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodes, int groups, NodeRepositoryProvisioner provisioner) {
         List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.from(new ClusterResources(nodes, groups, nodeResources)), null);
-        NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-        provisioner.activate(transaction, applicationId, hosts);
-        transaction.commit();
+        try (var lock = provisioner.lock(applicationId)) {
+            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
+            provisioner.activate(transaction, hosts, lock);
+            transaction.commit();
+        }
     }
 
     private void createReadyNodes(int count, NodeResources nodeResources, NodeRepository nodeRepository) {
