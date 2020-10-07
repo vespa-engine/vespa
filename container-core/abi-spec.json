@@ -630,6 +630,7 @@
       "protected void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "protected void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric, boolean)",
       "public final com.yahoo.jdisc.handler.ContentChannel handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)",
+      "protected java.util.Optional getRequestType()",
       "public java.time.Duration getTimeout()",
       "public java.util.concurrent.Executor executor()",
       "protected abstract void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.BufferedContentChannel, com.yahoo.jdisc.handler.ResponseHandler)",

@@ -18,6 +18,7 @@ import com.yahoo.container.core.HandlerMetricContextUtil;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -112,11 +113,11 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      * be overridden by setting a request type on individual responses in handleRequest
      * whenever it is invoked (i.e not for requests that are rejected early e.g due to overload).</p>
      *
-     * <p>This default implementation returns null.</p>
+     * <p>This default implementation returns empty.</p>
      *
-     * @return the request type to set, or null to not override the default classification based on request method
+     * @return the request type to set, or empty to not override the default classification based on request method
      */
-    protected Request.RequestType getRequestType() { return null; }
+    protected Optional<Request.RequestType> getRequestType() { return Optional.empty(); }
 
     public Duration getTimeout() {
         return TIMEOUT;
@@ -158,7 +159,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
         Response response = new Response(Response.Status.SERVICE_UNAVAILABLE);
-        response.setRequestType(getRequestType());
+        getRequestType().ifPresent(type -> response.setRequestType(type));
         ResponseDispatch.newInstance(response).dispatch(responseHandler);
     }
 
@@ -202,8 +203,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         @Override
         public ContentChannel handleResponse(Response response) {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
-            if (response.getRequestType() == null)
-                response.setRequestType(getRequestType());
+            getRequestType().ifPresent(type -> response.setRequestType(type));
             ContentChannel cc = responseHandler.handleResponse(response);
             HandlerMetricContextUtil.onHandled(request, metric, getClass());
             return cc;

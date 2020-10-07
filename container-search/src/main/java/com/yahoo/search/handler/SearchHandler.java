@@ -252,7 +252,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     @Override
-    public Request.RequestType getRequestType() { return Request.RequestType.READ; }
+    public Optional<Request.RequestType> getRequestType() { return Optional.of(Request.RequestType.READ); }
 
     private int getHttpResponseStatus(com.yahoo.container.jdisc.HttpRequest httpRequest, Result result) {
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(httpRequest);
