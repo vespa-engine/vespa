@@ -87,23 +87,22 @@ public class ThreadLockStats {
 
     /** Mutable method (see class doc) */
     public void lockAcquired() {
-        LockAttempt lockAttempt = lockAttemptsStack.peekLast();
-        if (lockAttempt == null) {
-            logger.warning("Unable to get last lock attempt as the lock attempt stack is empty");
-            return;
-        }
-
-        lockAttempt.lockAcquired();
+        withLastLockAttempt(LockAttempt::lockAcquired);
     }
 
     /** Mutable method (see class doc) */
-    public void lockReleased() {
-        removeLastLockAttempt(LockAttempt::released);
+    public void preRelease() {
+        withLastLockAttempt(LockAttempt::preRelease);
     }
 
     /** Mutable method (see class doc) */
-    public void lockReleaseFailed() {
-        removeLastLockAttempt(LockAttempt::releasedWithError);
+    public void postRelease() {
+        removeLastLockAttempt(LockAttempt::postRelease);
+    }
+
+    /** Mutable method (see class doc) */
+    public void releaseFailed() {
+        removeLastLockAttempt(LockAttempt::releaseFailed);
     }
 
     /** Mutable method (see class doc) */
@@ -125,6 +124,16 @@ public class ThreadLockStats {
 
     private LockMetrics getGlobalLockMetrics(String lockPath) {
         return LockStats.getGlobal().getLockMetrics(lockPath);
+    }
+
+    private void withLastLockAttempt(Consumer<LockAttempt> lockAttemptConsumer) {
+        LockAttempt lockAttempt = lockAttemptsStack.peekLast();
+        if (lockAttempt == null) {
+            logger.warning("Unable to get last lock attempt as the lock attempt stack is empty");
+            return;
+        }
+
+        lockAttemptConsumer.accept(lockAttempt);
     }
 
     private void removeLastLockAttempt(Consumer<LockAttempt> completeLockAttempt) {

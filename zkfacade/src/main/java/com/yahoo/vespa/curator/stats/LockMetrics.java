@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.stats;
 
+import com.yahoo.vespa.curator.stats.LatencyStats.ActiveInterval;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,39 +29,38 @@ public class LockMetrics {
     private final LatencyStats lockedStats = new LatencyStats();
 
     /** Returns a Runnable that must be invoked when the acquire() finishes. */
-    LatencyStats.ActiveInterval acquireInvoked() {
+    ActiveInterval acquireInvoked() {
         acquireCount.incrementAndGet();
         cumulativeAcquireCount.incrementAndGet();
         return acquireStats.startNewInterval();
     }
 
-    void acquireFailed(LatencyStats.ActiveInterval acquireInterval) {
+    void acquireFailed(ActiveInterval acquireInterval) {
         acquireInterval.close();
         acquireFailedCount.incrementAndGet();
         cumulativeAcquireFailedCount.incrementAndGet();
     }
 
-    void acquireTimedOut(LatencyStats.ActiveInterval acquireInterval) {
+    void acquireTimedOut(ActiveInterval acquireInterval) {
         acquireInterval.close();
         acquireTimedOutCount.incrementAndGet();
         cumulativeAcquireTimedOutCount.incrementAndGet();
     }
 
-    LatencyStats.ActiveInterval lockAcquired(LatencyStats.ActiveInterval acquireInterval) {
+    ActiveInterval lockAcquired(ActiveInterval acquireInterval) {
         acquireInterval.close();
         acquireSucceededCount.incrementAndGet();
         cumulativeAcquireSucceededCount.incrementAndGet();
         return lockedStats.startNewInterval();
     }
 
-    void release(LatencyStats.ActiveInterval lockedInterval) {
+    void preRelease(ActiveInterval lockedInterval) {
         lockedInterval.close();
         releaseCount.incrementAndGet();
         cumulativeReleaseCount.incrementAndGet();
     }
 
-    void releaseFailed(LatencyStats.ActiveInterval lockedInterval) {
-        release(lockedInterval);
+    void releaseFailed() {
         releaseFailedCount.incrementAndGet();
         cumulativeReleaseFailedCount.incrementAndGet();
     }
