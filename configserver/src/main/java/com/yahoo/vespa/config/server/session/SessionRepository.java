@@ -141,7 +141,7 @@ public class SessionRepository {
 
         for (File session : sessions) {
             try {
-                addLocalSession(createSessionFromId(Long.parseLong(session.getName())));
+                createSessionFromId(Long.parseLong(session.getName()));
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Could not load session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
@@ -200,7 +200,7 @@ public class SessionRepository {
     }
 
     private boolean hasExpired(LocalSession candidate) {
-        return (candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant()));
+        return candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant());
     }
 
     private boolean isActiveSession(LocalSession candidate) {
@@ -278,7 +278,7 @@ public class SessionRepository {
     }
 
     private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
-        return (created.plus(expiryTime).isBefore(clock.instant()));
+        return created.plus(expiryTime).isBefore(clock.instant());
     }
 
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
@@ -387,10 +387,7 @@ public class SessionRepository {
     }
 
     public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
-
-        if (session.applicationSet().isPresent()) {
-            return session.applicationSet().get();
-        }
+        if (session.applicationSet().isPresent()) return session.applicationSet().get();
 
         ApplicationSet applicationSet = loadApplication(session);
         RemoteSession activated = session.activated(applicationSet);
@@ -535,7 +532,7 @@ public class SessionRepository {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         sessionZKClient.createNewSession(clock.instant());
         Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+        LocalSession session = createLocalSession(sessionId, applicationPackage);
         waiter.awaitCompletion(timeoutBudget.timeLeft());
         return session;
     }
@@ -592,8 +589,7 @@ public class SessionRepository {
             Optional<Long> currentlyActiveSessionId = getActiveSessionId(applicationId);
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
                                                                              sessionId, currentlyActiveSessionId, false);
-            SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient);
+            return createLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -650,11 +646,17 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    LocalSession createSessionFromId(long sessionId) {
+    void createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+        createLocalSession(sessionId, applicationPackage);
+    }
+
+    LocalSession createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+        addLocalSession(session);
+        return session;
     }
 
     /**
@@ -685,9 +687,7 @@ public class SessionRepository {
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
-            log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
-            addLocalSession(localSession);
+            createLocalSession(sessionDir, applicationId, sessionId);
         }
     }
 
