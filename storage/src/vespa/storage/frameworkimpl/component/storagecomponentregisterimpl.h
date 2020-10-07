@@ -41,24 +41,20 @@ public:
     typedef std::unique_ptr<StorageComponentRegisterImpl> UP;
 
     StorageComponentRegisterImpl();
-    ~StorageComponentRegisterImpl();
+    ~StorageComponentRegisterImpl() override;
 
     const vespalib::string& getClusterName() const { return _clusterName; }
-    const lib::NodeType& getNodeType() const
-        { assert(_nodeType != 0); return *_nodeType; }
+    const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _docTypeRepo; }
     documentapi::LoadTypeSet::SP getLoadTypes() { return _loadTypes; }
     const document::BucketIdFactory& getBucketIdFactory() { return _bucketIdFactory; }
     lib::Distribution::SP getDistribution() { return _distribution; }
-    NodeStateUpdater& getNodeStateUpdater()
-        { assert(_nodeStateUpdater != 0); return *_nodeStateUpdater; }
+    NodeStateUpdater& getNodeStateUpdater() { return *_nodeStateUpdater; }
 
     void registerStorageComponent(StorageComponent&) override;
 
-    void setNodeInfo(vespalib::stringref clusterName,
-                     const lib::NodeType& nodeType,
-                     uint16_t index);
+    void setNodeInfo(vespalib::stringref clusterName, const lib::NodeType& nodeType, uint16_t index);
     virtual void setNodeStateUpdater(NodeStateUpdater& updater);
     virtual void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
     virtual void setLoadTypes(documentapi::LoadTypeSet::SP);

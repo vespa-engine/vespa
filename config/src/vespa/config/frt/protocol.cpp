@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.protocol");

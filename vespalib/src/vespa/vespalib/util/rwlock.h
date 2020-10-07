@@ -119,13 +119,8 @@ class RWLockReader
 {
 private:
     RWLock * _lock;
-    RWLock * stealLock() {
-        RWLock * ret(_lock);
-        assert(ret != NULL);
-        _lock = NULL;
-        return ret;
-    }
-    void cleanup() { if (_lock != NULL) { _lock->unlockRead(); } }
+    RWLock * stealLock();
+    void cleanup() { if (_lock != nullptr) { _lock->unlockRead(); } }
 public:
 
     /**
@@ -141,7 +136,7 @@ public:
      * @brief Construct initially unlocked guard.
      * @param tag (unused) marker argument
      **/
-    RWLockReader(const RWLock::InitiallyUnlockedGuard &tag) : _lock(NULL) { (void)tag; }
+    RWLockReader(const RWLock::InitiallyUnlockedGuard &tag) : _lock(nullptr) { (void)tag; }
 
     /**
      * @brief Steal the lock from the given RWLockReader
@@ -191,13 +186,8 @@ class RWLockWriter
 {
 private:
     RWLock * _lock;
-    RWLock * stealLock() {
-        RWLock * ret(_lock);
-        assert(ret != NULL);
-        _lock = NULL;
-        return ret;
-    }
-    void cleanup() { if (_lock != NULL) { _lock->unlockWrite(); } }
+    RWLock * stealLock();
+    void cleanup() { if (_lock != nullptr) { _lock->unlockWrite(); } }
 public:
 
     /**
@@ -213,7 +203,7 @@ public:
      * @brief Construct initially unlocked guard.
      * @param tag (unused) marker argument
      **/
-    RWLockWriter(const RWLock::InitiallyUnlockedGuard &tag) : _lock(NULL) { (void)tag; }
+    RWLockWriter(const RWLock::InitiallyUnlockedGuard &tag) : _lock(nullptr) { (void)tag; }
 
     /**
      * @brief Steal the lock from the given RWLockWriter

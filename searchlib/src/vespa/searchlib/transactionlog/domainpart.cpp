@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domainpart");

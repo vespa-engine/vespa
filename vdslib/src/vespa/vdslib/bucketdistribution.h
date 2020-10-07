@@ -21,10 +21,6 @@ public:
      * @param numBucketBits The number of bits to use for bucket id.
      */
     BucketDistribution(uint32_t numColumns, uint32_t numBucketBits);
-    BucketDistribution(const BucketDistribution &);
-    BucketDistribution & operator = (const BucketDistribution &);
-    BucketDistribution(BucketDistribution &&) = default;
-    BucketDistribution & operator = (BucketDistribution &&) = default;
     ~BucketDistribution();
 
     /**

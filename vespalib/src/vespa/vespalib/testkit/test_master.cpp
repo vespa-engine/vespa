@@ -3,6 +3,7 @@
 #include "test_master.h"
 #include <vespa/vespalib/util/barrier.h>
 #include <cstring>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.testkit.test_master");
@@ -33,7 +34,7 @@ __thread TestMaster::ThreadState *TestMaster::_threadState = 0;
 
 //-----------------------------------------------------------------------------
 
-TestMaster::TraceItem::~TraceItem() { }
+TestMaster::TraceItem::~TraceItem() = default;
 
 TestMaster::ThreadState &
 TestMaster::threadState(const vespalib::LockGuard &)

@@ -10,6 +10,7 @@
 #include <vespa/config/set/configinstancesourcefactory.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/print/asciiconfigwriter.h>
+#include <cassert>
 
 namespace config {
 

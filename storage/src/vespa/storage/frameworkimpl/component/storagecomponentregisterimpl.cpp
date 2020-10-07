@@ -2,9 +2,9 @@
 
 #include "storagecomponentregisterimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".storage.component.register");
 
 namespace storage {

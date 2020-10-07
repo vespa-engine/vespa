@@ -4,6 +4,7 @@
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 namespace storage::framework::defaultimplementation {
 

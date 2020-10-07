@@ -2,6 +2,7 @@
 
 #include "simple_thread_bundle.h"
 #include "exceptions.h"
+#include <cassert>
 
 using namespace vespalib::fixed_thread_bundle;
 
@@ -75,7 +76,7 @@ SimpleThreadBundle::Pool::obtain()
             return ret;
         }
     }
-    return SimpleThreadBundle::UP(new SimpleThreadBundle(_bundleSize));
+    return std::make_unique<SimpleThreadBundle>(_bundleSize);
 }
 
 void

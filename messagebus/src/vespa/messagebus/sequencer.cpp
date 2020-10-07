@@ -2,6 +2,7 @@
 #include "sequencer.h"
 #include "tracelevel.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 using vespalib::make_string;
 

@@ -50,6 +50,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     stash.cpp
     string_hash.cpp
     stringfmt.cpp
+    sync.cpp
     thread.cpp
     thread_bundle.cpp
     threadstackexecutor.cpp

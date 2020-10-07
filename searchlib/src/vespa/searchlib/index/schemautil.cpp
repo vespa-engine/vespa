@@ -3,6 +3,7 @@
 #include "schemautil.h"
 #include <set>
 #include <fstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".index.schemautil");

@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "simpleconfigurer.h"
+#include <cassert>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".config.retriever.simpleconfigurer");
-#include "simpleconfigurer.h"
 
 namespace config {
 
@@ -12,7 +14,7 @@ SimpleConfigurer::SimpleConfigurer(SimpleConfigRetriever::UP retriever, SimpleCo
       _thread(*this),
       _started(false)
 {
-    assert(_retriever.get() != NULL);
+    assert(_retriever);
 }
 
 void

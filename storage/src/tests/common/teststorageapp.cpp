@@ -57,9 +57,9 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
         _compReg.setPriorityConfig(
                 *config::ConfigGetter<StorageComponent::PriorityConfig>
                     ::getConfig(uri.getConfigId(), uri.getContext()));
-        loadTypes.reset(new documentapi::LoadTypeSet(
+        loadTypes = std::make_shared<documentapi::LoadTypeSet>(
                 *config::ConfigGetter<vespa::config::content::LoadTypeConfig>
-                    ::getConfig(uri.getConfigId(), uri.getContext())));
+                    ::getConfig(uri.getConfigId(), uri.getContext()));
     } else {
         if (index == 0xffff) index = 0;
         loadTypes.reset(new documentapi::LoadTypeSet);
@@ -72,20 +72,18 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
     _compReg.setDocumentTypeRepo(_docMan.getTypeRepoSP());
     _compReg.setLoadTypes(loadTypes);
     _compReg.setBucketIdFactory(document::BucketIdFactory());
-    lib::Distribution::SP distr(new lib::Distribution(
-            lib::Distribution::getDefaultDistributionConfig(
-                redundancy, nodeCount)));
+    auto distr = std::make_shared<lib::Distribution>(
+            lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
     _compReg.setDistribution(distr);
 }
 
-TestStorageApp::~TestStorageApp() {}
+TestStorageApp::~TestStorageApp() = default;
 
 void
 TestStorageApp::setDistribution(Redundancy redundancy, NodeCount nodeCount)
 {
-    lib::Distribution::SP distr(new lib::Distribution(
-            lib::Distribution::getDefaultDistributionConfig(
-                redundancy, nodeCount)));
+    auto distr = std::make_shared<lib::Distribution>(
+            lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
     _compReg.setDistribution(distr);
 }
 
@@ -98,8 +96,7 @@ TestStorageApp::setTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> re
 void
 TestStorageApp::setClusterState(const lib::ClusterState& c)
 {
-    _nodeStateUpdater.setClusterState(
-            lib::ClusterState::CSP(new lib::ClusterState(c)));
+    _nodeStateUpdater.setClusterState(std::make_shared<lib::ClusterState>(c));
 }
 
 void
@@ -109,8 +106,7 @@ TestStorageApp::waitUntilInitialized(
         // Always use real clock for wait timeouts. Component clock may be faked
         // in tests
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(
-            clock.getTimeInMillis() + timeout.getMillis());
+    framework::MilliSecTime endTime(clock.getTimeInMillis() + timeout.getMillis());
     while (!isInitialized()) {
         std::this_thread::sleep_for(1ms);
         framework::MilliSecTime currentTime(clock.getTimeInMillis());
@@ -142,8 +138,7 @@ namespace {
 TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
     : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
                      lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
-      _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(
-                    TestStorageApp::getComponentRegister())),
+      _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _partitions(1)
 {
@@ -157,8 +152,7 @@ TestServiceLayerApp::TestServiceLayerApp(DiskCount dc, NodeIndex index,
                                          vespalib::stringref configId)
     : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
                      lib::NodeType::STORAGE, index, configId),
-      _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(
-                    TestStorageApp::getComponentRegister())),
+      _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _partitions(dc)
 {
@@ -192,9 +186,7 @@ spi::PersistenceProvider&
 TestServiceLayerApp::getPersistenceProvider()
 {
     if (_persistenceProvider.get() == 0) {
-        throw vespalib::IllegalStateException(
-                "Persistence provider requested but not initialized.",
-                VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Persistence provider requested but not initialized.", VESPA_STRLOC);
     }
     return *_persistenceProvider;
 }
@@ -203,9 +195,7 @@ spi::PartitionStateList&
 TestServiceLayerApp::getPartitions()
 {
     if (_persistenceProvider.get() == 0) {
-        throw vespalib::IllegalStateException(
-                "Partition list requested but not initialized.",
-                VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Partition list requested but not initialized.", VESPA_STRLOC);
     }
     return _partitions;
 }
@@ -224,8 +214,7 @@ namespace {
     template<typename T>
     const T getConfig(vespalib::stringref configId) {
         config::ConfigUri uri(configId);
-        return *config::ConfigGetter<T>::getConfig(
-                uri.getConfigId(), uri.getContext());
+        return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
     }
 }
 
@@ -243,8 +232,7 @@ TestDistributorApp::TestDistributorApp(vespalib::stringref configId)
     : TestStorageApp(
             std::make_unique<DistributorComponentRegisterImpl>(),
             lib::NodeType::DISTRIBUTOR, getIndexFromConfig(configId), configId),
-      _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(
-                    TestStorageApp::getComponentRegister())),
+      _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _lastUniqueTimestampRequested(0),
       _uniqueTimestampCounter(0)
 {
@@ -252,13 +240,11 @@ TestDistributorApp::TestDistributorApp(vespalib::stringref configId)
     configure(configId);
 }
 
-TestDistributorApp::TestDistributorApp(NodeIndex index,
-                                       vespalib::stringref configId)
+TestDistributorApp::TestDistributorApp(NodeIndex index, vespalib::stringref configId)
     : TestStorageApp(
             std::make_unique<DistributorComponentRegisterImpl>(),
             lib::NodeType::DISTRIBUTOR, index, configId),
-      _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(
-                    TestStorageApp::getComponentRegister())),
+      _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _lastUniqueTimestampRequested(0),
       _uniqueTimestampCounter(0)
 {
@@ -266,12 +252,12 @@ TestDistributorApp::TestDistributorApp(NodeIndex index,
     configure(configId);
 }
 
-TestDistributorApp::~TestDistributorApp() {}
+TestDistributorApp::~TestDistributorApp() = default;
 
 api::Timestamp
 TestDistributorApp::getUniqueTimestamp()
 {
-    vespalib::Lock lock(_accessLock);
+    vespalib::LockGuard guard(_accessLock);
     uint64_t timeNow(getClock().getTimeInSeconds().getTime());
     if (timeNow == _lastUniqueTimestampRequested) {
         ++_uniqueTimestampCounter;

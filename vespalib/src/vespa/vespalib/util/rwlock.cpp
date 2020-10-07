@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/rwlock.h>
+#include "rwlock.h"
+#include <cassert>
 
 namespace vespalib {
 
@@ -37,6 +38,22 @@ void RWLock::unlockWrite() {
     if (_waitingReaders > 0 || _waitingWriters > 0) {
         guard.broadcast();
     }
+}
+
+RWLock *
+RWLockReader::stealLock() {
+    RWLock * ret(_lock);
+    assert(ret != nullptr);
+    _lock = nullptr;
+    return ret;
+}
+
+RWLock *
+RWLockWriter::stealLock() {
+    RWLock * ret(_lock);
+    assert(ret != nullptr);
+    _lock = nullptr;
+    return ret;
 }
 
 } // namespace vespalib
