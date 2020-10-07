@@ -73,6 +73,8 @@ public:
     GenericBTreeBucketDatabase(GenericBTreeBucketDatabase&&) = delete;
     GenericBTreeBucketDatabase& operator=(GenericBTreeBucketDatabase&&) = delete;
 
+    ~GenericBTreeBucketDatabase();
+
     ValueType entry_from_iterator(const BTreeConstIterator& iter) const;
     ConstValueRef const_value_ref_from_valid_iterator(const BTreeConstIterator& iter) const;
 
