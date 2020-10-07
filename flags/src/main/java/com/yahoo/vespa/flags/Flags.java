@@ -332,13 +332,6 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBooleanFlag WEIGHTED_DNS_PER_REGION = defineFeatureFlag(
-            "weighted-dns-per-region", true,
-            "Whether to create weighted DNS records per region in global endpoints",
-            "Takes effect on next deployment through controller",
-            APPLICATION_ID
-    );
-
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
             "enable-public-only", false,
             "Only access public hosts from container",
