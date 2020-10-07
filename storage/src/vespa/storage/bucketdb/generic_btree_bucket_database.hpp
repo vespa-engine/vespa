@@ -17,6 +17,15 @@ namespace storage::bucketdb {
 using document::BucketId;
 
 template <typename DataStoreTraitsT>
+GenericBTreeBucketDatabase<DataStoreTraitsT>::~GenericBTreeBucketDatabase() {
+    // If there was a snapshot reader concurrent with the last modify operation
+    // on the DB, it's possible for the hold list to be non-empty. Explicitly
+    // clean it up now to ensure that we don't try to destroy any data stores
+    // with a non-empty hold list. Failure to do so might trigger an assertion.
+    commit_tree_changes();
+}
+
+template <typename DataStoreTraitsT>
 BucketId GenericBTreeBucketDatabase<DataStoreTraitsT>::bucket_from_valid_iterator(const BTreeConstIterator& iter) {
     return BucketId(BucketId::keyToBucketId(iter.getKey()));
 }
