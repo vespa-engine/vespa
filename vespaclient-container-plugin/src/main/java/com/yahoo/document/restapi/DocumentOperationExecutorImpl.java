@@ -107,7 +107,7 @@ public class DocumentOperationExecutorImpl implements DocumentOperationExecutor 
         this.asyncSession = access.createAsyncSession(new AsyncParameters());
         this.clock = requireNonNull(clock);
         this.clusters = Map.copyOf(clusters);
-        this.throttled = new DelayQueue(maxThrottled, this::send, resendDelay, clock, "throttle");
+        this.throttled = new DelayQueue(maxThrottled, this::send, Duration.ZERO, clock, "throttle");
         this.timeouts = new DelayQueue(Long.MAX_VALUE, (__, context) -> {
             context.error(TIMEOUT, "Timed out after " + defaultTimeout);
             return true;
