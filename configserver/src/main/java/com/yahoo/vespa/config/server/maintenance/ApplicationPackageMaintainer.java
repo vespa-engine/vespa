@@ -87,7 +87,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         Tenant tenant = applicationRepository.getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         if (sessionRepository.getLocalSession(sessionId) == null)
-            sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
+            sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
     }
 
 }

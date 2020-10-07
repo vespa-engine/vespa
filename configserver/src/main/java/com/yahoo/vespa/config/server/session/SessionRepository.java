@@ -112,7 +112,7 @@ public class SessionRepository {
 
     private void loadSessions() {
         loadLocalSessions();
-        initializeRemoteSessions();
+        loadRemoteSessions();
     }
 
     // ---------------- Local sessions ----------------------------------------------------------------
@@ -188,23 +188,10 @@ public class SessionRepository {
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+    public LocalSession createSessionFromApplicationPackage(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
         applicationRepo.createApplication(applicationId);
         Optional<Long> activeSessionId = applicationRepo.activeSessionOf(applicationId);
         return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
-    }
-
-    private LocalSession createSessionFromApplication(ApplicationPackage applicationPackage,
-                                                      long sessionId,
-                                                      TimeoutBudget timeoutBudget,
-                                                      Clock clock) {
-        log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        sessionZKClient.createNewSession(clock.instant());
-        Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = createLocalSession(sessionId, applicationPackage);
-        waiter.awaitCompletion(timeoutBudget.timeLeft());
-        return session;
     }
 
     /**
@@ -244,22 +231,13 @@ public class SessionRepository {
             ensureSessionPathDoesNotExist(sessionId);
             ApplicationPackage app = createApplicationPackage(applicationFile, applicationId,
                                                               sessionId, currentlyActiveSessionId, internalRedeploy);
-            return createSessionFromApplication(app, sessionId, timeoutBudget, clock);
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating session " + sessionId, e);
-        }
-    }
-
-    /**
-     * This method is used when creating a session based on a remote session and the distributed application package
-     * It does not wait for session being created on other servers
-     */
-    private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
-        try {
-            Optional<Long> currentlyActiveSessionId = getActiveSessionId(applicationId);
-            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
-                                                                             sessionId, currentlyActiveSessionId, false);
-            createLocalSession(sessionId, applicationPackage);
+            SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+            log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
+            sessionZKClient.createNewSession(clock.instant());
+            Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
+            LocalSession session = createLocalSession(sessionId, app);
+            waiter.awaitCompletion(timeoutBudget.timeLeft());
+            return session;
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -325,7 +303,7 @@ public class SessionRepository {
         return children.stream().map(Long::parseLong).collect(Collectors.toList());
     }
 
-    private void initializeRemoteSessions() throws NumberFormatException {
+    private void loadRemoteSessions() throws NumberFormatException {
         getRemoteSessions().forEach(this::sessionAdded);
     }
 
@@ -344,7 +322,7 @@ public class SessionRepository {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
         }
-        createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        createLocalSessionFromDistributedApplicationPackage(sessionId);
     }
 
     void activate(RemoteSession session) {
@@ -627,7 +605,7 @@ public class SessionRepository {
      * Returns a new local session for the given session id if it does not already exist.
      * Will also add the session to the local session cache if necessary
      */
-    public void createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
+    public void createLocalSessionFromDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
             log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
             createSessionFromId(sessionId);
@@ -651,7 +629,14 @@ public class SessionRepository {
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
-            createLocalSession(sessionDir, applicationId, sessionId);
+            try {
+                Optional<Long> activeSessionId = getActiveSessionId(applicationId);
+                ApplicationPackage applicationPackage = createApplicationPackage(sessionDir, applicationId,
+                                                                                 sessionId, activeSessionId, false);
+                createLocalSession(sessionId, applicationPackage);
+            } catch (Exception e) {
+                throw new RuntimeException("Error creating session " + sessionId, e);
+            }
         }
     }
 

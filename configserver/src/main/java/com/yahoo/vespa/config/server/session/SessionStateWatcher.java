@@ -69,7 +69,7 @@ public class SessionStateWatcher {
     }
 
     private void createLocalSession(long sessionId) {
-        sessionRepository.createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
     }
 
     public long getSessionId() {
