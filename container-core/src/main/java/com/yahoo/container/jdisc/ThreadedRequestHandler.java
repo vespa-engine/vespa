@@ -18,6 +18,7 @@ import com.yahoo.container.core.HandlerMetricContextUtil;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -94,7 +95,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             }
         }
         BufferedContentChannel content = new BufferedContentChannel();
-        final RequestTask command = new RequestTask(request, content, responseHandler);
+        RequestTask command = new RequestTask(request, content, responseHandler);
         try {
             executor.execute(command);
         } catch (RejectedExecutionException e) {
@@ -105,6 +106,18 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         }
         return content;
     }
+
+    /**
+     * <p>Returns the request type classification to use for requests to this handler.
+     * This overrides the default classification based on request method, and can in turn
+     * be overridden by setting a request type on individual responses in handleRequest
+     * whenever it is invoked (i.e not for requests that are rejected early e.g due to overload).</p>
+     *
+     * <p>This default implementation returns empty.</p>
+     *
+     * @return the request type to set, or empty to not override the default classification based on request method
+     */
+    protected Optional<Request.RequestType> getRequestType() { return Optional.empty(); }
 
     public Duration getTimeout() {
         return TIMEOUT;
@@ -145,7 +158,9 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      * A subclass may override this method to define a custom response.
      */
     protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
-        ResponseDispatch.newInstance(Response.Status.SERVICE_UNAVAILABLE).dispatch(responseHandler);
+        Response response = new Response(Response.Status.SERVICE_UNAVAILABLE);
+        getRequestType().ifPresent(type -> response.setRequestType(type));
+        ResponseDispatch.newInstance(response).dispatch(responseHandler);
     }
 
     private class RequestTask implements ResponseHandler, Runnable {
@@ -188,6 +203,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         @Override
         public ContentChannel handleResponse(Response response) {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
+            getRequestType().ifPresent(type -> response.setRequestType(type));
             ContentChannel cc = responseHandler.handleResponse(response);
             HandlerMetricContextUtil.onHandled(request, metric, getClass());
             return cc;

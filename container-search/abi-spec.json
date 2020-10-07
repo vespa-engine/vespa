@@ -4225,6 +4225,7 @@
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.search.searchchain.ExecutionFactory, java.util.Optional)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.statistics.Statistics, com.yahoo.language.Linguistics, com.yahoo.jdisc.Metric, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.container.core.ContainerHttpConfig)",
       "public final com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)",
+      "public java.util.Optional getRequestType()",
       "public com.yahoo.search.Result searchAndFill(com.yahoo.search.Query, com.yahoo.component.chain.Chain)",
       "public com.yahoo.processing.rendering.Renderer getRendererCopy(com.yahoo.component.ComponentSpecification)",
       "public com.yahoo.search.searchchain.SearchChainRegistry getSearchChainRegistry()",
