@@ -70,21 +70,21 @@ struct SparseSketch : Sketch<BucketBits, HashT> {
     enum { classId = IDENTIFIABLE_CLASSID_NS(search, SparseSketch) };
 
     struct IdentityHash {
-        size_t operator()(HashT hash) const { return hash; }
+        size_t operator()(HashT hash) const noexcept { return hash; }
     };
     std::unordered_set<HashT, IdentityHash> hash_set;
 
     size_t getSize() const { return hash_set.size(); }
 
-    virtual int aggregate(HashT hash) override {
+    int aggregate(HashT hash) override {
         return hash_set.insert(hash).second ? 1 : 0;
     }
 
-    virtual uint32_t getClassId() const override { return classId; }
-    virtual void serialize(vespalib::Serializer &os) const override;
-    virtual void deserialize(vespalib::Deserializer &is) override;
+    uint32_t getClassId() const override { return classId; }
+    void serialize(vespalib::Serializer &os) const override;
+    void deserialize(vespalib::Deserializer &is) override;
 
-    virtual bool operator==(const SketchType &other) const override {
+    bool operator==(const SketchType &other) const override {
         const SparseSketch<BucketBits, HashT> *other_sparse =
             dynamic_cast<const SparseSketch<BucketBits, HashT> *>(&other);
         if (!other_sparse) {
@@ -101,7 +101,7 @@ struct SparseSketch : Sketch<BucketBits, HashT> {
         return true;
     }
 
-    virtual void print(std::ostream &out) const override {
+    void print(std::ostream &out) const override {
         out << " (" << hash_set.size() << " elements)";
         for (auto hash : hash_set) {
             out << " 0x" << std::hex;

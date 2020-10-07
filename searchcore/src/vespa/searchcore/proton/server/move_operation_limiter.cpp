@@ -10,7 +10,7 @@ using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
 struct MoveOperationLimiter::Callback : public search::IDestructorCallback {
     MoveOperationLimiter::SP _limiter;
-    Callback(MoveOperationLimiter::SP limiter) : _limiter(std::move(limiter)) {}
+    Callback(MoveOperationLimiter::SP limiter) noexcept : _limiter(std::move(limiter)) {}
     virtual ~Callback() { _limiter->endOperation(); }
 };
 

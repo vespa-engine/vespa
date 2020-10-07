@@ -2090,7 +2090,7 @@ public:
     size_t remove_batch_cnt;
     size_t remove_cnt;
 
-    MockOperationListener()
+    MockOperationListener() noexcept
         : remove_batch_cnt(0),
           remove_cnt(0)
     {

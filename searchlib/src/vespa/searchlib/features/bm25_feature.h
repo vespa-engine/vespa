@@ -14,7 +14,7 @@ private:
         fef::TermFieldHandle handle;
         const fef::TermFieldMatchData* tfmd;
         double idf_mul_k1_plus_one;
-        QueryTerm(fef::TermFieldHandle handle_, double inverse_doc_freq, double k1_param)
+        QueryTerm(fef::TermFieldHandle handle_, double inverse_doc_freq, double k1_param) noexcept
             : handle(handle_),
               tfmd(nullptr),
               idf_mul_k1_plus_one(inverse_doc_freq * (k1_param + 1))

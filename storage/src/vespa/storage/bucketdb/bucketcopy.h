@@ -15,12 +15,12 @@ private:
 public:
     static const int TRUSTED = 1;
 
-    BucketCopy()
+    BucketCopy() noexcept
         : _timestamp(0), _flags(0), _node(0xffff) {}
 
     BucketCopy(uint64_t timestamp,
                uint16_t nodeIdx,
-               const api::BucketInfo& info)
+               const api::BucketInfo& info) noexcept
         : _timestamp(timestamp),
           _info(info),
           _flags(0),

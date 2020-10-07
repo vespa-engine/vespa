@@ -153,7 +153,7 @@ private:
 
     void visit(PredicateQuery &node) override {
         replicate(node, _builder.addPredicateQuery(
-                          PredicateQueryTerm::UP(new PredicateQueryTerm(*node.getTerm())),
+                          std::make_unique<PredicateQueryTerm>(*node.getTerm()),
                           node.getView(), node.getId(), node.getWeight()));
     }
 

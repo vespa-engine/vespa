@@ -12,7 +12,7 @@ using document::BucketId;
 using vespalib::makeTask;
 using vespalib::makeClosure;
 
-StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression)
+StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression) noexcept
     : _chunkSerial(0),
       _current(),
       _where(),

@@ -9,8 +9,8 @@
 namespace search {
 
 struct RankedHit {
-    RankedHit() : _docId(0), _rankValue(zero_rank_value) { }
-    RankedHit(unsigned int docId, HitRank rank = zero_rank_value) : _docId(docId), _rankValue(rank) { }
+    RankedHit() noexcept : _docId(0), _rankValue(zero_rank_value) { }
+    RankedHit(unsigned int docId, HitRank rank = zero_rank_value) noexcept : _docId(docId), _rankValue(rank) { }
     unsigned int getDocId() const { return _docId & 0x7fffffff; }
     bool hasMore()          const { return _docId & 0x80000000; }
     HitRank getRank()       const { return _rankValue; }
@@ -21,13 +21,13 @@ struct RankedHit {
 
 class RankedHitIterator {
 public:
-    RankedHitIterator(const RankedHit * h, size_t sz) : _h(h), _sz(sz), _pos(0) { }
-    bool hasNext() const { return _pos < _sz; }
-    uint32_t next() { return _h[_pos++].getDocId(); }
+    RankedHitIterator(const RankedHit * h, size_t sz) noexcept : _h(h), _sz(sz), _pos(0) { }
+    bool hasNext() const noexcept { return _pos < _sz; }
+    uint32_t next() noexcept { return _h[_pos++].getDocId(); }
 private:
     const RankedHit *_h;
-    const size_t _sz;
-    size_t _pos;
+    const size_t     _sz;
+    size_t           _pos;
 };
 
 } // namespace search

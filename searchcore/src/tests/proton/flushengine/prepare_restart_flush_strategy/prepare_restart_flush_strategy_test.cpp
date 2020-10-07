@@ -27,16 +27,16 @@ struct SimpleFlushTarget : public test::DummyFlushTarget
                       const Type &type,
                       SerialNum flushedSerial_,
                       uint64_t approxDiskBytes_,
-                      double replay_operation_cost_)
+                      double replay_operation_cost_) noexcept
         : test::DummyFlushTarget(name, type, Component::OTHER),
           flushedSerial(flushedSerial_),
           approxDiskBytes(approxDiskBytes_),
           replay_operation_cost(replay_operation_cost_)
     {}
-    virtual SerialNum getFlushedSerialNum() const override {
+    SerialNum getFlushedSerialNum() const override {
         return flushedSerial;
     }
-    virtual uint64_t getApproxBytesToWriteToDisk() const override {
+    uint64_t getApproxBytesToWriteToDisk() const override {
         return approxDiskBytes;
     }
     double get_replay_operation_cost() const override {

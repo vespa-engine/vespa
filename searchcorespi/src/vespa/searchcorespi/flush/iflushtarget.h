@@ -45,8 +45,8 @@ public:
     template<typename T>
     class Gain {
     public:
-        Gain() : _before(0), _after(0) { }
-        Gain(T before, T after) : _before(before), _after(after) { }
+        Gain() noexcept : _before(0), _after(0) { }
+        Gain(T before, T after) noexcept : _before(before), _after(after) { }
         T getBefore() const { return _before; }
         T  getAfter() const { return _after; }
         T gain() const { return _before - _after; }
@@ -74,7 +74,7 @@ public:
      *
      * @param name The handler-wide unique name of this target.
      */
-    IFlushTarget(const vespalib::string &name)
+    IFlushTarget(const vespalib::string &name) noexcept
         : _name(name),
           _type(Type::OTHER),
           _component(Component::OTHER)
@@ -89,7 +89,7 @@ public:
      */
     IFlushTarget(const vespalib::string &name,
                  const Type &type,
-                 const Component &component)
+                 const Component &component) noexcept
         : _name(name),
           _type(type),
           _component(component)
@@ -98,7 +98,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IFlushTarget() { }
+    virtual ~IFlushTarget() = default;
 
     /**
      * Returns the handler-wide unique name of this target.

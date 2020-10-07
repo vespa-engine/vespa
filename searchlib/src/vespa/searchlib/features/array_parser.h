@@ -29,7 +29,7 @@ public:
     class ValueAndIndex {
     public:
         typedef T ValueType;
-        ValueAndIndex(T value, uint32_t index) : _value(value), _index(index) { }
+        ValueAndIndex(T value, uint32_t index) noexcept : _value(value), _index(index) { }
         T getValue() const { return _value; }
         uint32_t getIndex() const { return _index; }
         bool operator < (const ValueAndIndex & b) const { return _index < b._index; }

@@ -18,7 +18,7 @@ class PopulateDoneContext : public IDestructorCallback
 {
     std::shared_ptr<document::Document> _doc;
 public:
-    PopulateDoneContext(std::shared_ptr<document::Document> doc)
+    PopulateDoneContext(std::shared_ptr<document::Document> doc) noexcept
         : _doc(std::move(doc))
     {
     }

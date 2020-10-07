@@ -148,7 +148,7 @@ namespace {
 
 template <typename Map>
 struct NonConstProcessor {
-    typename Map::Decision operator()(int key, A& a) {
+    typename Map::Decision operator() (int key, A& a) const noexcept {
         (void) key;
         ++a._val2;
         return Map::UPDATE;

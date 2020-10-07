@@ -510,13 +510,13 @@ Alloc::allocMMap(size_t sz)
 }
 
 Alloc
-Alloc::alloc()
+Alloc::alloc() noexcept
 {
     return Alloc(&AutoAllocator::getDefault());
 }
 
 Alloc
-Alloc::alloc(size_t sz, size_t mmapLimit, size_t alignment)
+Alloc::alloc(size_t sz, size_t mmapLimit, size_t alignment) noexcept
 {
     return Alloc(&AutoAllocator::getAllocator(mmapLimit, alignment), sz);
 }

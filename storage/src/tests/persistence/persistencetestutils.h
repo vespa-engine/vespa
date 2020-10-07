@@ -42,7 +42,7 @@ public:
     class NoBucketLock : public FileStorHandler::BucketLockInterface
     {
     public:
-        NoBucketLock(document::Bucket bucket) : _bucket(bucket) { }
+        NoBucketLock(document::Bucket bucket) noexcept : _bucket(bucket) { }
         const document::Bucket &getBucket() const override {
             return _bucket;
         }

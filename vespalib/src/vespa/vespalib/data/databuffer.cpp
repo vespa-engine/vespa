@@ -11,7 +11,7 @@ size_t padbefore(size_t alignment, const char *buf) {
 }
 }
 
-DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc & initial)
+DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc & initial) noexcept
     : _alignment(alignment),
       _externalBuf(nullptr),
       _bufstart(nullptr),

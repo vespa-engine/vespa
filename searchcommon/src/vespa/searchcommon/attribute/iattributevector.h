@@ -36,8 +36,8 @@ private:
     int32_t _weight;
 
 public:
-    WeightedType() : _value(T()), _weight(1) { }
-    WeightedType(T value_, int32_t weight_ = 1) : _value(value_), _weight(weight_) { }
+    WeightedType() noexcept : _value(T()), _weight(1) { }
+    WeightedType(T value_, int32_t weight_ = 1) noexcept : _value(value_), _weight(weight_) { }
     const T & getValue() const { return _value; }
     const T & value() const { return _value; }
     void setValue(const T & v) { _value = v; }

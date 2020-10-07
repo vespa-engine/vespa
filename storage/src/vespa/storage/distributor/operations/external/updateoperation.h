@@ -55,7 +55,7 @@ private:
 
     class PreviousDocumentVersion {
     public:
-        PreviousDocumentVersion(document::BucketId b, const api::BucketInfo& info, uint64_t o, uint16_t node) :
+        PreviousDocumentVersion(document::BucketId b, const api::BucketInfo& info, uint64_t o, uint16_t node) noexcept :
             bucketId(b), bucketInfo(info), oldTs(o), nodeId(node) {}
 
         document::BucketId bucketId;

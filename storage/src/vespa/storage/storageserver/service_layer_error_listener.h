@@ -23,7 +23,7 @@ class ServiceLayerErrorListener : public ProviderErrorListener {
     std::atomic<bool> _shutdown_initiated;
 public:
     ServiceLayerErrorListener(StorageComponent& component,
-                              MergeThrottler& merge_throttler)
+                              MergeThrottler& merge_throttler) noexcept
         : _component(component),
           _merge_throttler(merge_throttler),
           _shutdown_initiated(false)

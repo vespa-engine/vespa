@@ -10,7 +10,7 @@ class BmStorageLink;
 struct BmStorageLinkContext
 {
     BmStorageLink* bm_link;
-    BmStorageLinkContext()
+    BmStorageLinkContext() noexcept
         : bm_link(nullptr)
     {
     }

@@ -44,8 +44,8 @@ public:
     typedef std::unique_ptr<DataBuffer> UP;
     DataBuffer(const DataBuffer &) = delete;
     DataBuffer &operator=(const DataBuffer &) = delete;
-    DataBuffer(DataBuffer &&) = default;
-    DataBuffer &operator=(DataBuffer &&) = default;
+    DataBuffer(DataBuffer &&) noexcept = default;
+    DataBuffer &operator=(DataBuffer &&) noexcept = default;
 
     /**
      * Construct a databuffer.
@@ -53,7 +53,7 @@ public:
      * @param len the initial size of the buffer.
      * @param alignment required memory alignment for data start
      **/
-    DataBuffer(size_t len = 1024, size_t alignment = 1, const Alloc & initial = Alloc::alloc(0));
+    DataBuffer(size_t len = 1024, size_t alignment = 1, const Alloc & initial = Alloc::alloc(0)) noexcept;
 
     /**
      * Construct a databuffer using externally allocated memory. Note
@@ -63,7 +63,7 @@ public:
      * @param buf pointer to preallocated memory
      * @param len length of preallocated memory
      **/
-    DataBuffer(void *buf, size_t len) :
+    DataBuffer(void *buf, size_t len) noexcept :
         _alignment(1),
         _externalBuf(static_cast<char *>(buf)),
         _bufstart(_externalBuf),
@@ -73,7 +73,7 @@ public:
         _buffer(Alloc::alloc(0))
     { }
 
-    DataBuffer(const void *buf, size_t len) :
+    DataBuffer(const void *buf, size_t len) noexcept :
         _alignment(1),
         _externalBuf(static_cast<char *>(const_cast<void *>(buf))),
         _bufstart(_externalBuf),

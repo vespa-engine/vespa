@@ -23,7 +23,7 @@ struct Override
     BlueprintResolver::FeatureRef ref;
     feature_t                     value;
 
-    Override(const BlueprintResolver::FeatureRef &r, feature_t v)
+    Override(const BlueprintResolver::FeatureRef &r, feature_t v) noexcept
         : ref(r), value(v) {}
 
     bool operator<(const Override &rhs) const {

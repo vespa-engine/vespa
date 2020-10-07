@@ -24,7 +24,7 @@ TermMatchDataMerger::TermMatchDataMerger(const Inputs &allinputs,
     }
 }
 
-TermMatchDataMerger::~TermMatchDataMerger() {}
+TermMatchDataMerger::~TermMatchDataMerger() = default;
 
 void
 TermMatchDataMerger::merge(uint32_t docid)

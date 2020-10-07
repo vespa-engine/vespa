@@ -46,16 +46,16 @@ class IdentifiablePtr : public CloneablePtr<T>
 {
 public:
     IdentifiablePtr(const T &t) : CloneablePtr<T>(t.clone()) {}
-    IdentifiablePtr(IdentifiablePtr &&) = default;
-    IdentifiablePtr & operator = (IdentifiablePtr &&) = default;
+    IdentifiablePtr(IdentifiablePtr &&) noexcept = default;
+    IdentifiablePtr & operator = (IdentifiablePtr &&) noexcept = default;
     IdentifiablePtr(const IdentifiablePtr &) = default;
     IdentifiablePtr & operator = (const IdentifiablePtr &) = default;
-    IdentifiablePtr(T * p=NULL) : CloneablePtr<T>(p) { }
-    IdentifiablePtr(std::unique_ptr<T> &&rhs)
+    IdentifiablePtr(T * p=NULL) noexcept : CloneablePtr<T>(p) { }
+    IdentifiablePtr(std::unique_ptr<T> &&rhs) noexcept
         : CloneablePtr<T>(std::move(rhs))
     {
     }
-    IdentifiablePtr &operator=(std::unique_ptr<T> &&rhs)
+    IdentifiablePtr &operator=(std::unique_ptr<T> &&rhs) noexcept
     {
         CloneablePtr<T>::operator=(std::move(rhs));
         return *this;

@@ -176,7 +176,7 @@ struct MyGidToLidChangeHandler : public MockGidToLidChangeHandler
     uint32_t _changes;
     std::map<document::GlobalId, uint32_t> _gidToLid;
 public:
-    MyGidToLidChangeHandler()
+    MyGidToLidChangeHandler() noexcept
         : MockGidToLidChangeHandler(),
           _changeGid(),
           _changeLid(std::numeric_limits<uint32_t>::max()),

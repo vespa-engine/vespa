@@ -204,7 +204,7 @@ seek_past(LidInfoWithLidV::const_iterator begin, LidInfoWithLidV::const_iterator
 }
 
 struct LidAndBuffer {
-    LidAndBuffer(uint32_t lid, uint32_t sz, vespalib::alloc::Alloc buf) : _lid(lid), _size(sz), _buf(std::move(buf)) {}
+    LidAndBuffer(uint32_t lid, uint32_t sz, vespalib::alloc::Alloc buf) noexcept : _lid(lid), _size(sz), _buf(std::move(buf)) {}
     uint32_t _lid;
     uint32_t _size;
     vespalib::alloc::Alloc _buf;

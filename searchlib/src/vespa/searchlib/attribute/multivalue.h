@@ -10,12 +10,9 @@ template <typename T>
 class Value {
 public:
     typedef T ValueType;
-    Value()
-        : _v()
-    {
-    }
-    Value(T v) : _v(v) { }
-    Value(T v, int32_t w) : _v(v) { (void) w; }
+    Value() noexcept : _v() {}
+    Value(T v) noexcept : _v(v) { }
+    Value(T v, int32_t w) noexcept : _v(v) { (void) w; }
     T value()           const { return _v; }
     operator T ()       const { return _v; }
     operator T & ()           { return _v; }
@@ -36,8 +33,8 @@ template <typename T>
 class WeightedValue {
 public:
     typedef T ValueType;
-    WeightedValue() : _v(), _w(1) { }
-    WeightedValue(T v, int32_t w) : _v(v), _w(w) { }
+    WeightedValue() noexcept : _v(), _w(1) { }
+    WeightedValue(T v, int32_t w) noexcept : _v(v), _w(w) { }
     T value()             const { return _v; }
     operator T ()         const { return _v; }
     operator T & ()             { return _v; }

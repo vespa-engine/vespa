@@ -61,7 +61,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     std::shared_ptr<MockGidToLidChangeHandler> _gidToLidChangeHandler;
 
     MyDocumentDBReference(MyGidToLidMapperFactory::SP factory_,
-                          std::shared_ptr<MockGidToLidChangeHandler> gidToLidChangeHandler)
+                          std::shared_ptr<MockGidToLidChangeHandler> gidToLidChangeHandler) noexcept
         : factory(std::move(factory_)),
           _gidToLidChangeHandler(std::move(gidToLidChangeHandler))
     {

@@ -289,7 +289,7 @@ private:
 
     struct SegmentData {
         SegmentData() : segment(), valid(false) {}
-        SegmentData(SegmentStart::SP ss, bool v = false) : segment(std::move(ss)), valid(v) {}
+        SegmentData(SegmentStart::SP ss, bool v = false) noexcept : segment(std::move(ss)), valid(v) {}
         SegmentStart::SP segment;
         bool valid;
     };

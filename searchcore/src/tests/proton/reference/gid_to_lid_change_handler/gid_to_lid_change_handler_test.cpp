@@ -39,7 +39,7 @@ class ListenerStats {
     uint32_t  _destroyedListeners;
 
 public:
-    ListenerStats()
+    ListenerStats() noexcept
         : _lock(),
           _putChanges(0u),
           _removeChanges(0u),

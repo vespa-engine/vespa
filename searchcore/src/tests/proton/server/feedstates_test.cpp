@@ -124,7 +124,7 @@ TEST_F("require that replay progress is tracked", Fixture)
 {
     RemoveOperationContext opCtx(10);
     TlsReplayProgress progress("test", 5, 15);
-    PacketWrapper::SP wrap(new PacketWrapper(*opCtx.packet, &progress));
+    auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, &progress);
     ForegroundThreadExecutor executor;
 
     f.state.receive(wrap, executor);

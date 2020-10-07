@@ -40,7 +40,7 @@ class BlobSet {
 public:
     class LidPosition {
     public:
-        LidPosition(uint32_t lid, uint32_t offset, uint32_t size) : _lid(lid), _offset(offset), _size(size) { }
+        LidPosition(uint32_t lid, uint32_t offset, uint32_t size) noexcept : _lid(lid), _offset(offset), _size(size) { }
         uint32_t    lid() const { return _lid; }
         uint32_t offset() const { return _offset; }
         uint32_t   size() const { return _size; }

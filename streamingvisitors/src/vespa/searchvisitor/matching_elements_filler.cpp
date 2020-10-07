@@ -30,7 +30,7 @@ struct SubFieldTerm
     vespalib::string _field_name;
     const QueryTerm* _term;
 public:
-    SubFieldTerm(vespalib::string field_name, const QueryTerm* term)
+    SubFieldTerm(vespalib::string field_name, const QueryTerm* term) noexcept
         : _field_name(std::move(field_name)),
           _term(term)
     {

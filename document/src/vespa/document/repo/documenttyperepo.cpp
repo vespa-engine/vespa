@@ -547,13 +547,13 @@ DocumentTypeRepo::~DocumentTypeRepo() {
 }
 
 const DocumentType *
-DocumentTypeRepo::getDocumentType(int32_t type_id) const {
+DocumentTypeRepo::getDocumentType(int32_t type_id) const noexcept {
     const DataTypeRepo *repo = FindPtr(*_doc_types, type_id);
     return repo ? repo->doc_type : nullptr;
 }
 
 const DocumentType *
-DocumentTypeRepo::getDocumentType(stringref name) const {
+DocumentTypeRepo::getDocumentType(stringref name) const noexcept {
     DocumentTypeMap::const_iterator it = _doc_types->find(DocumentType::createId(name));
 
     if (it != _doc_types->end() && it->second->doc_type->getName() == name) {

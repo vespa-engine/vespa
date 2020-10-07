@@ -15,38 +15,36 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     DocId _compactLidSpaceLidLimit;
     uint32_t _holdUnblockShrinkLidSpaceCnt;
 
-    DocumentMetaStoreObserver(IDocumentMetaStore &store)
+    DocumentMetaStoreObserver(IDocumentMetaStore &store) noexcept
         : _store(store),
           _removeCompleteCnt(0),
           _removeCompleteLid(0),
           _compactLidSpaceLidLimit(0),
           _holdUnblockShrinkLidSpaceCnt(0)
-    {
-    }
+    {}
 
     /**
      * Implements search::IDocumentMetaStore
      **/
-    virtual bool getGid(DocId lid, GlobalId &gid) const override {
+    bool getGid(DocId lid, GlobalId &gid) const override {
         return _store.getGid(lid, gid);
     }
-    virtual bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const override {
+    bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const override {
         return _store.getGidEvenIfMoved(lid, gid);
     }
-    virtual bool getLid(const GlobalId &gid, DocId &lid) const override {
+    bool getLid(const GlobalId &gid, DocId &lid) const override {
         return _store.getLid(gid, lid);
     }
-    virtual search::DocumentMetaData getMetaData(const GlobalId &gid) const override {
+    search::DocumentMetaData getMetaData(const GlobalId &gid) const override {
         return _store.getMetaData(gid);
     }
-    virtual void getMetaData(const BucketId &bucketId,
-                             search::DocumentMetaData::Vector &result) const override {
+    void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override {
         _store.getMetaData(bucketId, result);
     }
-    virtual search::LidUsageStats getLidUsageStats() const override {
+    search::LidUsageStats getLidUsageStats() const override {
         return _store.getLidUsageStats();
     }
-    virtual search::queryeval::Blueprint::UP createWhiteListBlueprint() const override {
+    search::queryeval::Blueprint::UP createWhiteListBlueprint() const override {
         return _store.createWhiteListBlueprint();
     }
     uint64_t getCurrentGeneration() const override {
@@ -57,40 +55,39 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     /**
      * Implements documentmetastore::IStore.
      */
-    virtual Result inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num) override {
+    Result inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num) override {
         return _store.inspectExisting(gid, prepare_serial_num);
     }
-    virtual Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) override {
+    Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) override {
         return _store.inspect(gid, prepare_serial_num);
     }
-    virtual Result put(const GlobalId &gid,
-                       const BucketId &bucketId,
-                       const Timestamp &timestamp,
-                       uint32_t docSize,
-                       DocId lid,
-                       uint64_t prepare_serial_num) override {
+    Result put(const GlobalId &gid,
+               const BucketId &bucketId,
+               const Timestamp &timestamp,
+               uint32_t docSize,
+               DocId lid,
+               uint64_t prepare_serial_num) override
+    {
         return _store.put(gid, bucketId, timestamp, docSize, lid, prepare_serial_num);
     }
-    virtual bool updateMetaData(DocId lid,
-                                const BucketId &bucketId,
-                                const Timestamp &timestamp) override {
+    bool updateMetaData(DocId lid, const BucketId &bucketId, const Timestamp &timestamp) override {
         return _store.updateMetaData(lid, bucketId, timestamp);
     }
-    virtual bool remove(DocId lid, uint64_t prepare_serial_num) override {
+    bool remove(DocId lid, uint64_t prepare_serial_num) override {
         return _store.remove(lid, prepare_serial_num);
     }
-    virtual void removeComplete(DocId lid) override {
+    void removeComplete(DocId lid) override {
         ++_removeCompleteCnt;
         _removeCompleteLid = lid;
         _store.removeComplete(lid);
     }
-    virtual void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override {
+    void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override {
         _store.move(fromLid, toLid, prepare_serial_num);
     }
-    virtual bool validLid(DocId lid) const override {
+    bool validLid(DocId lid) const override {
         return _store.validLid(lid);
     }
-    virtual void removeBatch(const std::vector<DocId> &lidsToRemove,
+     void removeBatch(const std::vector<DocId> &lidsToRemove,
                              const DocId docIdLimit) override {
         _store.removeBatch(lidsToRemove, docIdLimit);
     }

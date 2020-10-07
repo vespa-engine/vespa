@@ -8,13 +8,13 @@
 
 struct SqDist {
     double distance;
-    explicit SqDist(double d) : distance(d) {}
+    explicit SqDist(double d) noexcept : distance(d) {}
 };
 
 struct NnsHit {
     uint32_t docid;
     SqDist sq;
-    NnsHit(uint32_t di, SqDist sqD)
+    NnsHit(uint32_t di, SqDist sqD) noexcept
         : docid(di), sq(sqD) {}
 };
 struct NnsHitComparatorLessDistance {

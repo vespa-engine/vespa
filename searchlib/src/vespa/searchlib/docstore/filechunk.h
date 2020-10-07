@@ -76,7 +76,7 @@ public:
     using LockGuard = vespalib::LockGuard;
     class NameId {
     public:
-        explicit NameId(size_t id) : _id(id) { }
+        explicit NameId(size_t id) noexcept : _id(id) { }
         uint64_t getId() const { return _id; }
         vespalib::string createName(const vespalib::string &baseName) const;
         bool operator == (const NameId & rhs) const { return _id == rhs._id; }
@@ -90,7 +90,7 @@ public:
     };
     class FileId {
     public:
-        explicit FileId(uint32_t id) : _id(id) { }
+        explicit FileId(uint32_t id) noexcept : _id(id) { }
         uint32_t getId() const { return _id; }
         bool operator != (const FileId & rhs) const { return _id != rhs._id; }
         bool operator == (const FileId & rhs) const { return _id == rhs._id; }

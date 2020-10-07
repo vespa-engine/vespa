@@ -28,7 +28,7 @@ class TaskRunner {
         using SP = std::shared_ptr<Context>;
         Context(InitializerTask::SP rootTask,
                 vespalib::Executor &contextExecutor,
-                vespalib::Executor::Task::UP doneTask)
+                vespalib::Executor::Task::UP doneTask) noexcept
             : _rootTask(rootTask),
               _contextExecutor(contextExecutor),
               _doneTask(std::move(doneTask))

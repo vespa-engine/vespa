@@ -23,7 +23,7 @@ private:
     std::vector<std::unique_ptr<IGidToLidChangeListener>> _listeners;
 
 public:
-    MockGidToLidChangeHandler()
+    MockGidToLidChangeHandler() noexcept
         : IGidToLidChangeHandler(),
           _adds(),
           _removes(),
@@ -31,7 +31,7 @@ public:
     {
     }
 
-    ~MockGidToLidChangeHandler() override { }
+    ~MockGidToLidChangeHandler() override = default;
 
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override {
         _adds.emplace_back(listener->getDocTypeName(), listener->getName());

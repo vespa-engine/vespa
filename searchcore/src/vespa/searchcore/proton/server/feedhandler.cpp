@@ -111,7 +111,7 @@ TlsMgrWriter::sync(SerialNum syncTo)
 
 class OnCommitDone : public search::IDestructorCallback {
 public:
-    OnCommitDone(Executor & executor, std::unique_ptr<Executor::Task> task)
+    OnCommitDone(Executor & executor, std::unique_ptr<Executor::Task> task) noexcept
         : _executor(executor),
           _task(std::move(task))
     {}

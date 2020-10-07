@@ -28,7 +28,7 @@ class Distributor::Status {
     bool _done;
 
 public:
-    Status(const DelegatedStatusRequest& request)
+    Status(const DelegatedStatusRequest& request) noexcept
         : _request(request),
           _monitor(),
           _done(false)

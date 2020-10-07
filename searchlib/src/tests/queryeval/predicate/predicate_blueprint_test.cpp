@@ -40,9 +40,9 @@ struct Fixture {
 
     Fixture()
         : field(42, 0),
-          attribute(new PredicateAttribute("f", attribute::Config(attribute::BasicType::PREDICATE))),
-          query(PredicateQueryTerm::UP(new PredicateQueryTerm),
-                "view", 0, Weight(1)) {
+          attribute(std::make_shared<PredicateAttribute>("f", attribute::Config(attribute::BasicType::PREDICATE))),
+          query(std::make_unique<PredicateQueryTerm>(),"view", 0, Weight(1))
+    {
         query.getTerm()->addFeature("key", "value");
         query.getTerm()->addRangeFeature("range_key", 42);
     }
@@ -219,7 +219,7 @@ TEST_F("require that blueprint can set up search with subqueries", Fixture) {
         std::vector<Interval>{{0x0002ffff}};
     f.indexDocument(doc_id, annotations);
 
-    SimplePredicateQuery query(PredicateQueryTerm::UP(new PredicateQueryTerm),
+    SimplePredicateQuery query(std::make_unique<PredicateQueryTerm>(),
                                "view", 0, Weight(1));
     query.getTerm()->addFeature("key", "value", 1);
     query.getTerm()->addFeature("key2", "value", 2);

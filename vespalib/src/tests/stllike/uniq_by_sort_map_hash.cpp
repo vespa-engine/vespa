@@ -71,13 +71,13 @@ class Gid
 {
 public:
   struct hash {
-      size_t operator () (const Gid & g) const { return g.getGid()[0]; }
+      size_t operator () (const Gid & g) const noexcept { return g.getGid()[0]; }
   };
-  Gid(unsigned int v=0) : _gid() { _gid[0] = _gid[1] = _gid[2] = v; }
+  Gid(unsigned int v=0) noexcept : _gid() { _gid[0] = _gid[1] = _gid[2] = v; }
   const unsigned int * getGid() const { return _gid; }
-  int cmp(const Gid & b) const { return memcmp(_gid, b._gid, sizeof(_gid)); }
-  bool operator < (const Gid & b) const { return cmp(b) < 0; }
-  bool operator == (const Gid & b) const { return cmp(b) == 0; }
+  int cmp(const Gid & b) const noexcept { return memcmp(_gid, b._gid, sizeof(_gid)); }
+  bool operator < (const Gid & b) const noexcept { return cmp(b) < 0; }
+  bool operator == (const Gid & b) const noexcept { return cmp(b) == 0; }
 private:
   unsigned int _gid[3];
 };
@@ -85,15 +85,15 @@ private:
 class Slot
 {
 public:
-  Slot(unsigned int v=0) : _gid(v) { }
+  Slot(unsigned int v=0) noexcept : _gid(v) { }
   const Gid & getGid() const { return _gid; }
-  int cmp(const Slot & b) const { return _gid.cmp(b.getGid()); }
+  int cmp(const Slot & b) const noexcept { return _gid.cmp(b.getGid()); }
 private:
   Gid _gid;
 };
 
 struct IndirectCmp : public std::binary_function<Slot*, Slot*, bool> {
-    bool operator()(const Slot* s1, const Slot* s2) {
+    bool operator() (const Slot* s1, const Slot* s2) noexcept {
         return s1->cmp(*s2) < 0;
     }
 };

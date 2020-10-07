@@ -33,7 +33,7 @@ public:
     int _fail;
     int _val;
 
-    TestObj()
+    TestObj() noexcept
         : _m(),
           _cv(),
           _done(0),

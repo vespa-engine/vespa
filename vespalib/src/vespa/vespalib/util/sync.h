@@ -32,9 +32,10 @@ public:
      *
      * Creates a Lock that has mutex instrumentation disabled.
      **/
-    Lock() : _mutex() {}
+    Lock() noexcept : _mutex() {}
+    //TODO Remove The below methods are very bad and have a dodgy history.
     Lock(const Lock &) : Lock() { }
-    Lock(Lock &&) : Lock() { }
+    Lock(Lock &&) noexcept : Lock() { }
     Lock &operator=(const Lock &) { return *this; }
     Lock &operator=(Lock &&) { return *this; }
 };
@@ -66,9 +67,10 @@ public:
      *
      * Creates a Monitor that has mutex instrumentation disabled.
      **/
-    Monitor() : Lock(), _cond() {}
+    Monitor() noexcept : Lock(), _cond() {}
+    //TODO Remove The below methods are very bad and have a dodgy history.
     Monitor(const Monitor &) : Monitor() { }
-    Monitor(Monitor &&) : Monitor() { }
+    Monitor(Monitor &&) noexcept : Monitor() { }
     Monitor &operator=(const Monitor &) { return *this; }
     Monitor &operator=(Monitor &&) { return *this; }
 };

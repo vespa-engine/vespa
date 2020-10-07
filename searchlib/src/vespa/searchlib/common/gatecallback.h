@@ -9,7 +9,7 @@ namespace search {
 
 class GateCallback : public IDestructorCallback {
 public:
-    GateCallback(vespalib::Gate & gate) : _gate(gate) {}
+    GateCallback(vespalib::Gate & gate) noexcept : _gate(gate) {}
     ~GateCallback() override;
 private:
     vespalib::Gate & _gate;
@@ -17,7 +17,7 @@ private:
 
 class IgnoreCallback : public IDestructorCallback {
 public:
-    IgnoreCallback() { }
+    IgnoreCallback() noexcept { }
     ~IgnoreCallback() override = default;
 };
 
