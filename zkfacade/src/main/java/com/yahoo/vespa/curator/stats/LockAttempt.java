@@ -115,14 +115,17 @@ public class LockAttempt {
         activeLockedInterval = lockMetrics.lockAcquired(activeAcquireInterval);
     }
 
-    void released() {
-        setTerminalState(LockState.RELEASED);
-        lockMetrics.release(activeLockedInterval);
+    void preRelease() {
+        lockMetrics.preRelease(activeLockedInterval);
     }
 
-    void releasedWithError() {
+    void postRelease() {
+        setTerminalState(LockState.RELEASED);
+    }
+
+    void releaseFailed() {
         setTerminalState(LockState.RELEASED_WITH_ERROR);
-        lockMetrics.releaseFailed(activeLockedInterval);
+        lockMetrics.releaseFailed();
     }
 
     void setTerminalState(LockState terminalState) { setTerminalState(terminalState, Instant.now()); }

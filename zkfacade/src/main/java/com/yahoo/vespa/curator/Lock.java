@@ -57,12 +57,15 @@ public class Lock implements Mutex {
 
     @Override
     public void close() {
+        ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
+        // Update metrics now before release() to avoid double-counting time in locked state.
+        threadLockStats.preRelease();
         try {
             mutex.release();
-            LockStats.getForCurrentThread().lockReleased();
+            threadLockStats.postRelease();
         }
         catch (Exception e) {
-            LockStats.getForCurrentThread().lockReleaseFailed();
+            threadLockStats.releaseFailed();
             throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
         }
     }
