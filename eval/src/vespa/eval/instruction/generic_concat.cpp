@@ -177,12 +177,10 @@ DenseConcatPlan::DenseConcatPlan(const ValueType &lhs_type,
                                  std::string concat_dimension,
                                  const ValueType &out_type)
 {
-    auto left_p = left.fill_from(lhs_type, concat_dimension, out_type);
-    auto right_p = right.fill_from(rhs_type, concat_dimension, out_type);
-    right_offset = left_p.first;
-    output_size = left_p.second;
-    assert(right_p.first > 0);
-    assert(output_size == right_p.second);
+    std::tie(right_offset, output_size) = left.fill_from(lhs_type, concat_dimension, out_type);
+    auto [ other_offset, other_size ] = right.fill_from(rhs_type, concat_dimension, out_type);
+    assert(other_offset > 0);
+    assert(output_size == other_size);
 }
 
 DenseConcatPlan::~DenseConcatPlan() = default;
