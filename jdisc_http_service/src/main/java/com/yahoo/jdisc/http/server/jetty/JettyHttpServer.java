@@ -14,7 +14,6 @@ import com.yahoo.jdisc.http.server.FilterBindings;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpField;
-import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -22,7 +21,6 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
@@ -43,13 +41,9 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -63,12 +57,12 @@ import static java.util.stream.Collectors.toList;
 public class JettyHttpServer extends AbstractServerProvider {
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
-    private final long timeStarted = System.currentTimeMillis();
+
     private final ExecutorService janitor;
-    private final ScheduledExecutorService metricReporterExecutor;
-    private final Metric metric;
+
     private final Server server;
     private final List<Integer> listenedPorts = new ArrayList<>();
+    private final ServerMetricReporter metricsReporter;
 
     @Inject
     public JettyHttpServer(CurrentContainer container,
@@ -83,7 +77,6 @@ public class JettyHttpServer extends AbstractServerProvider {
         super(container);
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
-        this.metric = metric;
 
         initializeJettyLogging();
 
@@ -121,12 +114,7 @@ public class JettyHttpServer extends AbstractServerProvider {
                                                jdiscServlet,
                                                servletHolders,
                                                jDiscFilterInvokerFilter));
-
-        int numMetricReporterThreads = 1;
-        metricReporterExecutor =
-                Executors.newScheduledThreadPool(numMetricReporterThreads,
-                        new DaemonThreadFactory(JettyHttpServer.class.getName() + "-MetricReporter-"));
-        metricReporterExecutor.scheduleAtFixedRate(new MetricTask(), 0, 2, TimeUnit.SECONDS);
+        this.metricsReporter = new ServerMetricReporter(metric, server);
     }
 
     private static void initializeJettyLogging() {
@@ -224,6 +212,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     public void start() {
         try {
             server.start();
+            metricsReporter.start();
             logEffectiveSslConfiguration();
         } catch (final Exception e) {
             if (e instanceof IOException && e.getCause() instanceof BindException) {
@@ -259,7 +248,7 @@ public class JettyHttpServer extends AbstractServerProvider {
             log.log(Level.SEVERE, "Server shutdown threw an unexpected exception.", e);
         }
 
-        metricReporterExecutor.shutdown();
+        metricsReporter.shutdown();
         janitor.shutdown();
     }
 
@@ -272,56 +261,6 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     Server server() { return server; }
-
-    private class MetricTask implements Runnable {
-        @Override
-        public void run() {
-            HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) server.getHandler())
-                    .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
-            if (statisticsCollector != null) {
-                setServerMetrics(statisticsCollector);
-            }
-
-            // reset statisticsHandler to preserve earlier behavior
-            StatisticsHandler statisticsHandler = ((AbstractHandlerContainer) server.getHandler())
-                    .getChildHandlerByClass(StatisticsHandler.class);
-            if (statisticsHandler != null) {
-                statisticsHandler.statsReset();
-            }
-
-            for (Connector connector : server.getConnectors()) {
-                setConnectorMetrics((JDiscServerConnector)connector);
-            }
-        }
-
-    }
-
-    private void setServerMetrics(HttpResponseStatisticsCollector statisticsCollector) {
-        long timeSinceStarted = System.currentTimeMillis() - timeStarted;
-        metric.set(MetricDefinitions.STARTED_MILLIS, timeSinceStarted, null);
-
-        addResponseMetrics(statisticsCollector);
-    }
-
-    private void addResponseMetrics(HttpResponseStatisticsCollector statisticsCollector) {
-        for (var metricEntry : statisticsCollector.takeStatistics()) {
-            Map<String, Object> dimensions = new HashMap<>();
-            dimensions.put(MetricDefinitions.METHOD_DIMENSION, metricEntry.method);
-            dimensions.put(MetricDefinitions.SCHEME_DIMENSION, metricEntry.scheme);
-            dimensions.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, metricEntry.requestType);
-            metric.add(metricEntry.name, metricEntry.value, metric.createContext(dimensions));
-        }
-    }
-
-    private void setConnectorMetrics(JDiscServerConnector connector) {
-        ConnectionStatistics statistics = connector.getStatistics();
-        metric.set(MetricDefinitions.NUM_CONNECTIONS, statistics.getConnectionsTotal(), connector.getConnectorMetricContext());
-        metric.set(MetricDefinitions.NUM_OPEN_CONNECTIONS, statistics.getConnections(), connector.getConnectorMetricContext());
-        metric.set(MetricDefinitions.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsMax(), connector.getConnectorMetricContext());
-        metric.set(MetricDefinitions.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getConnectorMetricContext());
-        metric.set(MetricDefinitions.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getConnectorMetricContext());
-        metric.set(MetricDefinitions.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getConnectorMetricContext());
-    }
 
     private StatisticsHandler newStatisticsHandler() {
         StatisticsHandler statisticsHandler = new StatisticsHandler();
