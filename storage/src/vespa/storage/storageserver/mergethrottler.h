@@ -155,7 +155,7 @@ private:
     mbus::StaticThrottlePolicy::UP _throttlePolicy;
     uint64_t _queueSequence; // TODO: move into a stable priority queue class
     vespalib::Monitor _messageLock;
-    vespalib::Lock _stateLock;
+    mutable std::mutex _stateLock;
     config::ConfigFetcher _configFetcher;
     // Messages pending to be processed by the worker thread
     std::vector<api::StorageMessage::SP> _messagesDown;
@@ -205,7 +205,7 @@ public:
     mbus::StaticThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
     // For unit testing only
     vespalib::Monitor& getMonitor() { return _messageLock; }
-    vespalib::Lock& getStateLock() { return _stateLock; }
+    std::mutex & getStateLock() { return _stateLock; }
 
     Metrics& getMetrics() { return *_metrics; }
     std::size_t getMaxQueueSize() const { return _maxQueueSize; }
