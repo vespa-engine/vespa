@@ -9,7 +9,6 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/ptrholder.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/time.h>
@@ -30,9 +29,9 @@ class IWriteData
 {
 public:
     typedef std::unique_ptr<IWriteData> UP;
-    using LockGuard = vespalib::LockGuard;
+    using LockGuard = std::unique_lock<std::mutex>;
 
-    virtual ~IWriteData() { }
+    virtual ~IWriteData() = default;
 
     virtual void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
     virtual void close() = 0;
@@ -41,7 +40,7 @@ public:
 class IFileChunkVisitorProgress
 {
 public:
-    virtual ~IFileChunkVisitorProgress() { }
+    virtual ~IFileChunkVisitorProgress() = default;
     virtual void updateProgress() = 0;
 };
 
@@ -73,7 +72,7 @@ private:
 class FileChunk
 {
 public:
-    using LockGuard = vespalib::LockGuard;
+    using LockGuard = std::unique_lock<std::mutex>;
     class NameId {
     public:
         explicit NameId(size_t id) noexcept : _id(id) { }

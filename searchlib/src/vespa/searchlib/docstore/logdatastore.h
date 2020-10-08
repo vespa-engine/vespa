@@ -33,7 +33,7 @@ private:
     using FileId = FileChunk::FileId;
 public:
     using NameIdSet = std::set<NameId>;
-    using LockGuard = vespalib::LockGuard;
+    using LockGuard = std::unique_lock<std::mutex>;
     using CompressionConfig = vespalib::compression::CompressionConfig;
     class Config {
     public:
@@ -146,9 +146,9 @@ public:
     }
 
     // Implements IGetLid API
-    LockGuard getLidGuard(uint32_t lid) const override {
+    IGetLid::LockGuard getLidGuard(uint32_t lid) const override {
         (void) lid;
-        return LockGuard(_updateLock);
+        return IGetLid::LockGuard(_updateLock);
     }
 
     // Implements IGetLid API
@@ -160,10 +160,13 @@ public:
             return LidInfo();
         }
     }
-    FileId getActiveFileId(const vespalib::LockGuard & guard) const {
-        assert(guard.locks(_updateLock));
+    FileId getActiveFileId(const LockGuard & guard) const {
+        assert(hasUpdateLock(guard));
         (void) guard;
         return _active;
+    }
+    bool hasUpdateLock(const LockGuard & guard) const {
+        return (guard.mutex() == &_updateLock) && guard.owns_lock();
     }
 
     DataStoreStorageStats getStorageStats() const override;
@@ -185,7 +188,7 @@ private:
     class FileChunkHolder;
 
     // Implements ISetLid API
-    void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) override;
+    void setLid(const ISetLid::LockGuard & guard, uint32_t lid, const LidInfo & lm) override;
 
     void compactWorst(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
     void compactFile(FileId chunkId);
@@ -211,25 +214,21 @@ private:
     vespalib::string ls(const NameIdSet & partList);
 
     WriteableFileChunk & getActive(const LockGuard & guard) {
-        assert(guard.locks(_updateLock));
-        (void) guard;
+        assert(hasUpdateLock(guard));
         return static_cast<WriteableFileChunk &>(*_fileChunks[_active.getId()]);
     }
 
     const WriteableFileChunk & getActive(const LockGuard & guard) const {
-        assert(guard.locks(_updateLock));
-        (void) guard;
+        assert(hasUpdateLock(guard));
         return static_cast<const WriteableFileChunk &>(*_fileChunks[_active.getId()]);
     }
 
     const FileChunk * getPrevActive(const LockGuard & guard) const {
-        assert(guard.locks(_updateLock));
-        (void) guard;
+        assert(hasUpdateLock(guard));
         return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : nullptr;
     }
     void setActive(const LockGuard & guard, FileId fileId) {
-        assert(guard.locks(_updateLock));
-        (void) guard;
+        assert(hasUpdateLock(guard));
         _prevActive = _active;
         _active = fileId;
     }
@@ -270,7 +269,7 @@ private:
     bool shouldCompactToActiveFile(size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
     void incGeneration();
-    bool canShrinkLidSpace(const vespalib::LockGuard &guard) const;
+    bool canShrinkLidSpace(const LockGuard &guard) const;
 
     typedef std::vector<FileId> FileIdxVector;
     Config                                   _config;
@@ -282,7 +281,7 @@ private:
     std::vector<uint32_t>                    _holdFileChunks;
     FileId                                   _active;
     FileId                                   _prevActive;
-    vespalib::Lock                           _updateLock;
+    mutable std::mutex                       _updateLock;
     bool                                     _readOnly;
     vespalib::ThreadExecutor                &_executor;
     SerialNum                                _initFlushSyncToken;
