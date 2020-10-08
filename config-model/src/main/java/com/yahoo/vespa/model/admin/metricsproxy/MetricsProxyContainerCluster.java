@@ -28,7 +28,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.VespaModel;
@@ -196,11 +195,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
                 builder.cloudWatch(cloudWatchBuilder);
             }
         }
-    }
-
-    @Override
-    public void getConfig(ThreadpoolConfig.Builder builder) {
-        builder.maxthreads(10);
     }
 
     protected boolean messageBusEnabled() { return false; }

@@ -4,9 +4,11 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -14,6 +16,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
+import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
@@ -33,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -167,10 +171,9 @@ public class ContainerClusterTest {
         assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
+        root.freezeModelTopology();
 
-        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
-        cluster.getConfig(tpBuilder);
-        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
         assertEquals(10, threadpoolConfig.maxthreads());
         assertEquals(0, threadpoolConfig.queueSize());
     }
@@ -219,10 +222,9 @@ public class ContainerClusterTest {
         MockRoot root = new MockRoot("foo", state);
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        root.freezeModelTopology();
 
-        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
-        cluster.getConfig(tpBuilder);
-        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
         assertEquals(500, threadpoolConfig.maxthreads());
         assertEquals(0, threadpoolConfig.queueSize());
     }
@@ -232,12 +234,49 @@ public class ContainerClusterTest {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        root.freezeModelTopology();
 
-        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
-        cluster.getConfig(tpBuilder);
-        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
         assertEquals(500, threadpoolConfig.maxthreads());
         assertEquals(0, threadpoolConfig.queueSize());
+    }
+
+    @Test
+    public void container_cluster_has_default_threadpool_provider() {
+        MockRoot root = new MockRoot("foo");
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        root.freezeModelTopology();
+
+        ComponentId expectedComponentId = new ComponentId("default-threadpool");
+        var components = cluster.getComponentsMap();
+        assertThat(components, hasKey(expectedComponentId));
+        Component<?, ?> component = components.get(expectedComponentId);
+        assertEquals(ThreadPoolProvider.class.getName(), component.getClassId().getName());
+    }
+
+    @Test
+    public void config_for_default_threadpool_provider_scales_with_node_resources() {
+        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource();
+        MockRoot root = new MockRoot(
+                "foo",
+                new DeployState.Builder()
+                        .properties(new TestProperties()
+                                .setThreadPoolSizeFactor(4)
+                                .setQueueSizeFactor(20))
+                        .applicationPackage(new MockApplicationPackage.Builder().build())
+                        .modelHostProvisioner(hostProvisioner)
+                        .build());
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        HostResource hostResource = new HostResource(
+                new Host(null, "host-c1"),
+                hostProvisioner.allocateHost("host-c1"));
+        addContainerWithHostResource(root.deployLogger(), cluster, "c1", hostResource);
+        root.freezeModelTopology();
+
+        ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
+        assertEquals(16, threadpoolConfig.maxthreads());
+        assertEquals(320, threadpoolConfig.queueSize());
     }
 
     @Test
@@ -287,8 +326,12 @@ public class ContainerClusterTest {
 
 
     private static void addContainer(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, String hostName) {
+        addContainerWithHostResource(deployLogger, cluster, name, new HostResource(new Host(null, hostName)));
+    }
+
+    private static void addContainerWithHostResource(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, HostResource hostResource) {
         ApplicationContainer container = new ApplicationContainer(cluster, name, 0, cluster.isHostedVespa());
-        container.setHostResource(new HostResource(new Host(null, hostName)));
+        container.setHostResource(hostResource);
         container.initService(deployLogger);
         cluster.addContainer(container);
     }
