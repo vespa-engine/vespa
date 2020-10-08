@@ -4,12 +4,11 @@
 
 #include "itablefactory.h"
 #include "itablemanager.h"
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 #include <vector>
+#include <mutex>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class manages a set of tables and contains an ordered list of table factories used to create tables,
@@ -24,11 +23,11 @@ private:
     typedef std::map<vespalib::string, Table::SP> TableCache;
     std::vector<ITableFactory::SP> _factories;
     mutable TableCache             _cache;
-    vespalib::Lock                 _lock;
+    mutable std::mutex             _lock;
 
 public:
     TableManager();
-    ~TableManager();
+    ~TableManager() override;
 
     /**
      * Adds a table factory to this manager.
@@ -46,6 +45,4 @@ public:
     const Table * getTable(const vespalib::string & name) const override;
 };
 
-} // namespace fef
-} // namespace search
-
+}

@@ -2,8 +2,8 @@
 #pragma once
 
 #include "iroutingpolicyfactory.h"
-#include <vespa/vespalib/util/sync.h>
 #include <map>
+#include <mutex>
 
 namespace documentapi {
 
@@ -11,8 +11,8 @@ class RoutingPolicyRepository {
 private:
     typedef std::map<string, IRoutingPolicyFactory::SP> FactoryMap;
 
-    vespalib::Lock       _lock;
-    FactoryMap           _factories;
+    mutable std::mutex  _lock;
+    FactoryMap          _factories;
 
 public:
     RoutingPolicyRepository(const RoutingPolicyRepository &) = delete;

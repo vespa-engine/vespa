@@ -13,7 +13,7 @@ ProtocolRepository::~ProtocolRepository() = default;
 void
 ProtocolRepository::clearPolicyCache()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _routingPolicyCache.clear();
 }
 
@@ -67,7 +67,7 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
 {
     string cacheKey = protocolName;
     cacheKey.append('.').append(policyName).append(".").append(policyParam);
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     RoutingPolicyCache::iterator cit = _routingPolicyCache.find(cacheKey);
     if (cit != _routingPolicyCache.end()) {
         return cit->second;

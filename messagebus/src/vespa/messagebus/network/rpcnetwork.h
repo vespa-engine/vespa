@@ -37,7 +37,7 @@ class RPCNetwork : public INetwork,
 private:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     struct SendContext : public RPCTarget::IVersionHandler {
-        vespalib::Lock            _lock;
+        std::mutex                _lock;
         RPCNetwork               &_net;
         const Message            &_msg;
         uint32_t                  _traceLevel;
@@ -128,7 +128,7 @@ public:
      *
      * @param params A complete set of parameters.
      */
-    RPCNetwork(const RPCNetworkParams &params);
+    explicit RPCNetwork(const RPCNetworkParams &params);
 
     /**
      * Destruct
