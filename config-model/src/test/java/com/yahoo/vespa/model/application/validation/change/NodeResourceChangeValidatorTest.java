@@ -61,7 +61,7 @@ public class NodeResourceChangeValidatorTest {
                                                           Clock.systemUTC().instant());
     }
 
-    private static VespaModel model(int vcpu1, int vcpu2, int vcpu3, int vcpu4) {
+    private static VespaModel model(int mem1, int mem2, int mem3, int mem4) {
         var properties = new TestProperties();
         properties.setHostedVespa(true);
         var deployState = new DeployState.Builder().properties(properties)
@@ -72,17 +72,17 @@ public class NodeResourceChangeValidatorTest {
                 "<services version='1.0'>\n" +
                 "    <container id='container1' version='1.0'>\n" +
                 "       <nodes count='1'>\n" +
-                "           <resources vcpu='" + vcpu1 + "' memory='10Gb' disk='100Gb'/>" +
+                "           <resources vcpu='1' memory='" + mem1 + "Gb' disk='100Gb'/>" +
                 "       </nodes>\n" +
                 "   </container>\n" +
                 "    <container id='container2' version='1.0'>\n" +
                 "       <nodes count='2'>\n" +
-                "           <resources vcpu='" + vcpu2 + "' memory='10Gb' disk='100Gb'/>" +
+                "           <resources vcpu='1' memory='" + mem2 + "Gb' disk='100Gb'/>" +
                 "       </nodes>\n" +
                 "   </container>\n" +
                 "   <content id='content1' version='1.0'>\n" +
                 "       <nodes count='3'>\n" +
-                "           <resources vcpu='" + vcpu3 + "' memory='10Gb' disk='100Gb'/>" +
+                "           <resources vcpu='1' memory='" + mem3 + "Gb' disk='100Gb'/>" +
                 "       </nodes>\n" +
                 "       <documents>\n" +
                 "           <document mode='index' type='test'/>\n" +
@@ -91,7 +91,7 @@ public class NodeResourceChangeValidatorTest {
                 "   </content>\n" +
                 "   <content id='content2' version='1.0'>\n" +
                 "       <nodes count='4'>\n" +
-                "           <resources vcpu='" + vcpu4 + "' memory='10Gb' disk='100Gb'/>" +
+                "           <resources vcpu='1' memory='" + mem4 + "Gb' disk='100Gb'/>" +
                 "       </nodes>\n" +
                 "       <documents>\n" +
                 "           <document mode='streaming' type='test'/>\n" +

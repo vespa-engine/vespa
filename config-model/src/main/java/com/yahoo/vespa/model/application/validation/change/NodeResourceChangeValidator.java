@@ -16,7 +16,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Emits restart change actions for clusters where the node resources are changed.
+ * Emits restart change actions for clusters where the node resources are changed in a way
+ * which requires a "restart" (container recreation) to take effect.
  * Nodes will restart on their own on this condition but we want to emit restart actions to
  * defer applying new config until restart.
  *
@@ -31,10 +32,14 @@ public class NodeResourceChangeValidator implements ChangeValidator {
             Optional<NodeResources> currentResources = resourcesOf(clusterId, current);
             Optional<NodeResources> nextResources = resourcesOf(clusterId, next);
             if (currentResources.isEmpty() || nextResources.isEmpty()) continue; // new or removed cluster
-            if ( ! currentResources.equals(nextResources))
+            if ( changeRequiresRestart(currentResources.get(), nextResources.get()))
                 restartActions.addAll(createRestartActionsFor(clusterId, current));
         }
         return restartActions;
+    }
+
+    private boolean changeRequiresRestart(NodeResources currentResources, NodeResources nextResources) {
+        return currentResources.memoryGb() != nextResources.memoryGb();
     }
 
     private Optional<NodeResources> resourcesOf(ClusterSpec.Id clusterId, VespaModel model) {
