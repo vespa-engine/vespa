@@ -21,19 +21,19 @@ struct GenericConcat {
 
 struct DenseConcatPlan {
     size_t right_offset;
+    size_t output_size;
     struct InOutLoop {
         size_t input_size;
-        size_t output_size;
-        size_t next_offset;
         std::vector<size_t> in_loop_cnt;
         std::vector<size_t> in_stride;
         std::vector<size_t> out_stride;
+        // returns computed "right_offset" and "output_size":
+        std::pair<size_t, size_t> fill_from(const ValueType &in_type,
+                                            std::string concat_dimension,
+                                            const ValueType &out_type);
         template <typename F> void execute(size_t in_off, size_t out_off, const F &f) const {
             run_nested_loop(in_off, out_off, in_loop_cnt, in_stride, out_stride, f);
         }
-        InOutLoop(const ValueType &in_type,
-                  std::string concat_dimension,
-                  const ValueType &out_type);
         ~InOutLoop();
     };
     InOutLoop left;
