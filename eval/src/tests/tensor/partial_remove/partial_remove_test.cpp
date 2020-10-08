@@ -111,6 +111,7 @@ TEST(PartialAddTest, partial_remove_works_like_old_remove) {
 std::vector<Layout> bad_layouts = {
     {x(3)},                               {x(3)},
     {x(3),y({"a"})},                      {x(3)},
+    {x(3),y({"a"})},                      {x(3),y({"a"})},
     {x({"a"})},                           {y({"a"})},
     {x({"a"})},                           {x({"a"}),y({"b"})}
 };

@@ -297,7 +297,7 @@ PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuil
 {
     const ValueType &input_type = input.type();
     const ValueType &modifier_type = modifier.type();
-    if (input_type.mapped_dimensions() != modifier_type.mapped_dimensions()) {
+    if (input_type.mapped_dimensions() != modifier_type.dimensions()) {
         LOG(error, "when removing cells from a tensor, mapped dimensions must be equal");
         return Value::UP();
     }

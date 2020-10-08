@@ -25,8 +25,9 @@ struct TensorPartialUpdate {
     static Value::UP add(const Value &input, const Value &add_cells, const ValueBuilderFactory &factory);
 
     // make a copy of the input, but remove cells present in remove_spec.
+    // remove_spec must be a sparse tensor, with exactly the mapped dimensions
+    // that the input value has.
     // cell values in remove_spec are ignored.
-    // requires same set of mapped dimensions input and remove_spec.
     // not valid for dense tensors, since removing cells for those are impossible.
     // returns null pointer if these constraints are violated.
     static Value::UP remove(const Value &input, const Value &remove_spec, const ValueBuilderFactory &factory);
