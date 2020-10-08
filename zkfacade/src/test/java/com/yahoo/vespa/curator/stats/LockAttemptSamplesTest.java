@@ -54,7 +54,7 @@ public class LockAttemptSamplesTest {
 
     private boolean maybeSample(String lockPath, int secondsDuration) {
         LockAttempt lockAttempt = LockAttempt.invokingAcquire(threadLockStats, lockPath,
-                Duration.ofSeconds(1), new LockMetrics());
+                Duration.ofSeconds(1), new LockMetrics(), false);
         Instant instant = lockAttempt.getTimeAcquiredWasInvoked().plus(Duration.ofSeconds(secondsDuration));
         lockAttempt.setTerminalState(LockAttempt.LockState.RELEASED, instant);
         return samples.maybeSample(lockAttempt);

@@ -21,19 +21,21 @@ public class LockAttempt {
     private final String lockPath;
     private final Instant callAcquireInstant;
     private final Duration timeout;
+    private final boolean reentry;
     private final LockMetrics lockMetrics;
     private final List<LockAttempt> nestedLockAttempts = new ArrayList<>();
     private final LatencyStats.ActiveInterval activeAcquireInterval;
     // Only accessed by mutating thread:
-    private LatencyStats.ActiveInterval activeLockedInterval = null;
+    private Optional<LatencyStats.ActiveInterval> activeLockedInterval = Optional.empty();
 
     private volatile Optional<Instant> lockAcquiredInstant = Optional.empty();
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
     private volatile Optional<String> stackTrace = Optional.empty();
 
     public static LockAttempt invokingAcquire(ThreadLockStats threadLockStats, String lockPath,
-                                              Duration timeout, LockMetrics lockMetrics) {
-        return new LockAttempt(threadLockStats, lockPath, timeout, Instant.now(), lockMetrics);
+                                              Duration timeout, LockMetrics lockMetrics,
+                                              boolean reentry) {
+        return new LockAttempt(threadLockStats, lockPath, timeout, Instant.now(), lockMetrics, reentry);
     }
 
     public enum LockState {
@@ -50,13 +52,14 @@ public class LockAttempt {
     private volatile LockState lockState = LockState.ACQUIRING;
 
     private LockAttempt(ThreadLockStats threadLockStats, String lockPath, Duration timeout,
-                        Instant callAcquireInstant, LockMetrics lockMetrics) {
+                        Instant callAcquireInstant, LockMetrics lockMetrics, boolean reentry) {
         this.threadLockStats = threadLockStats;
         this.lockPath = lockPath;
         this.callAcquireInstant = callAcquireInstant;
         this.timeout = timeout;
         this.lockMetrics = lockMetrics;
-        this.activeAcquireInterval = lockMetrics.acquireInvoked();
+        this.reentry = reentry;
+        this.activeAcquireInterval = lockMetrics.acquireInvoked(reentry);
     }
 
     public String getThreadName() { return threadLockStats.getThreadName(); }
@@ -101,22 +104,22 @@ public class LockAttempt {
 
     void acquireFailed() {
         setTerminalState(LockState.ACQUIRE_FAILED);
-        lockMetrics.acquireFailed(activeAcquireInterval);
+        lockMetrics.acquireFailed(reentry, activeAcquireInterval);
     }
 
     void timedOut() {
         setTerminalState(LockState.TIMED_OUT);
-        lockMetrics.acquireTimedOut(activeAcquireInterval);
+        lockMetrics.acquireTimedOut(reentry, activeAcquireInterval);
     }
 
     void lockAcquired() {
         lockState = LockState.ACQUIRED;
         lockAcquiredInstant = Optional.of(Instant.now());
-        activeLockedInterval = lockMetrics.lockAcquired(activeAcquireInterval);
+        activeLockedInterval = Optional.of(lockMetrics.lockAcquired(reentry, activeAcquireInterval));
     }
 
     void preRelease() {
-        lockMetrics.preRelease(activeLockedInterval);
+        lockMetrics.preRelease(reentry, activeLockedInterval.orElseThrow());
     }
 
     void postRelease() {
@@ -125,7 +128,7 @@ public class LockAttempt {
 
     void releaseFailed() {
         setTerminalState(LockState.RELEASED_WITH_ERROR);
-        lockMetrics.releaseFailed();
+        lockMetrics.releaseFailed(reentry);
     }
 
     void setTerminalState(LockState terminalState) { setTerminalState(terminalState, Instant.now()); }
