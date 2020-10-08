@@ -36,8 +36,8 @@ private:
     bool                      _closed;
 
 public:
-    Dispatcher(Handler<T> &fallback);
-    ~Dispatcher();
+    explicit Dispatcher(Handler<T> &fallback);
+    ~Dispatcher() override;
     bool waitForThreads(size_t threads, size_t pollCnt) const;
     void close() override;
     void handle(std::unique_ptr<T> obj) override;

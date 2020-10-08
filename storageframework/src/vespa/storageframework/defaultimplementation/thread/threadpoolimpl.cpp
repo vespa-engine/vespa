@@ -21,7 +21,7 @@ ThreadPoolImpl::ThreadPoolImpl(Clock& clock)
 ThreadPoolImpl::~ThreadPoolImpl()
 {
     {
-        vespalib::LockGuard lock(_threadVectorLock);
+        std::lock_guard lock(_threadVectorLock);
         _stopping = true;
         for (ThreadImpl * thread : _threads) {
             thread->interrupt();
@@ -32,7 +32,7 @@ ThreadPoolImpl::~ThreadPoolImpl()
     }
     for (uint32_t i=0; true; i+=10) {
         {
-            vespalib::LockGuard lock(_threadVectorLock);
+            std::lock_guard lock(_threadVectorLock);
             if (_threads.empty()) break;
         }
         if (i > 1000) {
@@ -49,7 +49,7 @@ Thread::UP
 ThreadPoolImpl::startThread(Runnable& runnable, vespalib::stringref id, uint64_t waitTimeMs,
                             uint64_t maxProcessTime, int ticksBeforeWait)
 {
-    vespalib::LockGuard lock(_threadVectorLock);
+    std::lock_guard lock(_threadVectorLock);
     if (_stopping) {
         throw IllegalStateException("Threadpool is stopping", VESPA_STRLOC);
     }
@@ -62,7 +62,7 @@ ThreadPoolImpl::startThread(Runnable& runnable, vespalib::stringref id, uint64_t
 void
 ThreadPoolImpl::visitThreads(ThreadVisitor& visitor) const
 {
-    vespalib::LockGuard lock(_threadVectorLock);
+    std::lock_guard lock(_threadVectorLock);
     for (const ThreadImpl * thread : _threads) {
         visitor.visitThread(thread->getId(), thread->getProperties(), thread->getTickData());
     }
@@ -71,7 +71,7 @@ ThreadPoolImpl::visitThreads(ThreadVisitor& visitor) const
 void
 ThreadPoolImpl::unregisterThread(ThreadImpl& t)
 {
-    vespalib::LockGuard lock(_threadVectorLock);
+    std::lock_guard lock(_threadVectorLock);
     std::vector<ThreadImpl*> threads;
     threads.reserve(_threads.size());
     for (ThreadImpl * thread : _threads) {

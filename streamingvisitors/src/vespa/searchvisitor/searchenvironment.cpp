@@ -57,7 +57,7 @@ SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri) :
 
 SearchEnvironment::~SearchEnvironment()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _threadLocals.clear();
 }
 
@@ -68,12 +68,12 @@ SearchEnvironment::getEnv(const vespalib::string & searchCluster)
     if (_localEnvMap == nullptr) {
         EnvMapUP envMap = std::make_unique<EnvMap>();
         _localEnvMap = envMap.get();
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         _threadLocals.emplace_back(std::move(envMap));
     }
     EnvMap::iterator localFound = _localEnvMap->find(searchCluster);
     if (localFound == _localEnvMap->end()) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         EnvMap::iterator found = _envMap.find(searchCluster);
         if (found == _envMap.end()) {
             LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());

@@ -4,7 +4,6 @@
 
 #include <vespa/storageframework/generic/thread/threadpool.h>
 #include <vespa/fastos/thread.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace storage::framework::defaultimplementation {
 
@@ -14,13 +13,13 @@ struct ThreadPoolImpl : public ThreadPool
 {
     FastOS_ThreadPool          _backendThreadPool;
     std::vector<ThreadImpl*>   _threads;
-    vespalib::Lock             _threadVectorLock;
+    mutable std::mutex         _threadVectorLock;
     Clock                    & _clock;
     bool                       _stopping;
 
 public:
     ThreadPoolImpl(Clock&);
-    ~ThreadPoolImpl();
+    ~ThreadPoolImpl() override;
 
     Thread::UP startThread(Runnable&, vespalib::stringref id, uint64_t waitTimeMs,
 						   uint64_t maxProcessTime, int ticksBeforeWait) override;
