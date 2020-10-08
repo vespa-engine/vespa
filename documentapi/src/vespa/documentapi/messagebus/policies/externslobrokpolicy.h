@@ -23,7 +23,7 @@ class ExternSlobrokPolicy : public AsyncInitializationPolicy
 protected:
     bool   _firstTry;
     config::ServerSpec::HostSpecList          _configSources;
-    vespalib::Lock                            _lock;
+    std::mutex                                _lock;
     std::unique_ptr<FastOS_ThreadPool>        _threadPool;
     std::unique_ptr<FNET_Transport>           _transport;
     std::unique_ptr<FRT_Supervisor>           _orb;

@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/config.h>
+#include <vespa/config/common/configcontext.h>
 #include "config-my.h"
 #include "config-foo.h"
 #include "config-bar.h"
@@ -15,13 +16,13 @@ using namespace std::chrono_literals;
 namespace {
     void verifyConfig(const std::string & expected, std::unique_ptr<FooConfig> cfg)
     {
-        ASSERT_TRUE(cfg.get() != NULL);
+        ASSERT_TRUE(cfg);
         ASSERT_EQUAL(expected, cfg->fooValue);
     }
 
     void verifyConfig(const std::string & expected, std::unique_ptr<BarConfig> cfg)
     {
-        ASSERT_TRUE(cfg.get() != NULL);
+        ASSERT_TRUE(cfg);
         ASSERT_EQUAL(expected, cfg->barValue);
     }
 }
@@ -37,7 +38,7 @@ TEST("requireThatUnitTestsCanBeCreated") {
 
 TEST("requireThatConfigCanBeReloaded") {
     ConfigSet set;
-    ConfigContext::SP ctx(new ConfigContext(set));
+    auto ctx = std::make_shared<ConfigContext>(set);
     MyConfigBuilder builder;
     builder.myField = "myfoo";
     set.addBuilder("myid", &builder);
@@ -46,7 +47,7 @@ TEST("requireThatConfigCanBeReloaded") {
     ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>("myid");
     ASSERT_TRUE(subscriber.nextConfigNow());
     std::unique_ptr<MyConfig> cfg(handle->getConfig());
-    ASSERT_TRUE(cfg.get() != NULL);
+    ASSERT_TRUE(cfg);
     ASSERT_EQUAL("myfoo", cfg->myField);
     ctx->reload();
     ASSERT_FALSE(subscriber.nextConfig(1000ms));
@@ -54,13 +55,13 @@ TEST("requireThatConfigCanBeReloaded") {
     ctx->reload();
     ASSERT_TRUE(subscriber.nextConfig(10000ms));
     cfg = handle->getConfig();
-    ASSERT_TRUE(cfg.get() != NULL);
+    ASSERT_TRUE(cfg);
     ASSERT_EQUAL("foobar", cfg->myField);
 }
 
 TEST("requireThatCanSubscribeWithSameIdToDifferentDefs") {
     ConfigSet set;
-    ConfigContext::SP ctx(new ConfigContext(set));
+    auto ctx = std::make_shared<ConfigContext>(set);
     FooConfigBuilder fooBuilder;
     BarConfigBuilder barBuilder;
 

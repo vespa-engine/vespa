@@ -24,6 +24,7 @@
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config-upgrading.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>

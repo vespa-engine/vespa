@@ -5,11 +5,11 @@
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/server/slobrokserver.h>
 #include <vespa/config/config.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/util/host_name.h>
-#include <sstream>
 #include <algorithm>
 #include <iostream>
 
@@ -125,7 +125,7 @@ TEST("configure_test") {
     set.addBuilder("client2", &cli2Builder);
     set.addBuilder("client3", &cli3Builder);
 
-    config::IConfigContext::SP cfgCtx(new config::ConfigContext(set));
+    auto cfgCtx = std::make_shared<config::ConfigContext>(set);
     ConfigShim srvConfig1(18524, "server1", cfgCtx);
     ConfigShim srvConfig2(18525, "server2", cfgCtx);
 

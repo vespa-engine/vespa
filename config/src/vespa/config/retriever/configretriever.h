@@ -7,9 +7,11 @@
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/vespalib/stllike/string.h>
-
+#include <mutex>
 
 namespace config {
+
+class SourceSpec;
 
 /**
  * A ConfigRetriever is a helper class for retrieving a set of dynamically

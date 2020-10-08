@@ -7,6 +7,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/legacy.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
@@ -186,7 +187,7 @@ App::Main()
 
     bool ok = false;
     try {
-        IConfigContext::SP ctx(new ConfigContext(*config::legacyConfigId2Spec(configid)));
+        auto ctx = std::make_shared<ConfigContext>(*config::legacyConfigId2Spec(configid));
         vespalib::string cfgId(config::legacyConfigId2ConfigId(configid));
         ConfigSubscriber subscriber(ctx);
         ConfigHandle<VerifyRanksetupConfig>::UP myHandle = subscriber.subscribe<VerifyRanksetupConfig>(cfgId);

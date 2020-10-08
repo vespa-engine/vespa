@@ -14,6 +14,7 @@
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
@@ -73,7 +74,7 @@ struct ConfigTestFixture {
           bucketspacesBuilder(),
           dbConfig(),
           set(),
-          context(new ConfigContext(set)),
+          context(std::make_shared<ConfigContext>(set)),
           idcounter(-1)
     {
         set.addBuilder(configId, &protonBuilder);

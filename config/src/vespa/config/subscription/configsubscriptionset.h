@@ -2,13 +2,12 @@
 //
 #pragma once
 
-#include <vespa/config/common/iconfigholder.h>
-#include <vespa/config/common/configcontext.h>
 #include "confighandle.h"
 #include "subscriptionid.h"
 #include "configsubscription.h"
 #include "configprovider.h"
-
+#include <vespa/config/common/iconfigcontext.h>
+#include <vespa/config/common/iconfigmanager.h>
 #include <atomic>
 
 namespace config {

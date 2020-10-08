@@ -4,6 +4,8 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/file/filesource.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/sourcefactory.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/util/sync.h>
 #include <fstream>
 #include <config-my.h>
@@ -61,7 +63,7 @@ TEST("requireThatFileSpecGivesCorrectSource") {
 
     SourceFactory::UP factory(spec.createSourceFactory(TimingValues()));
     ASSERT_TRUE(factory);
-    IConfigHolder::SP holder(new ConfigHolder());
+    auto holder = std::make_shared<ConfigHolder>();
     Source::UP src = factory->createSource(holder, ConfigKey("my", "my", "bar", "foo"));
     ASSERT_TRUE(src);
 
@@ -89,7 +91,7 @@ TEST("requireThatFileSubscriptionReturnsCorrectConfig") {
 TEST("requireThatReconfigIsCalledWhenConfigChanges") {
     writeFile("my.cfg", "foo");
     {
-        IConfigContext::SP context(new ConfigContext(FileSpec("my.cfg")));
+        auto context = std::make_shared<ConfigContext>(FileSpec("my.cfg"));
         ConfigSubscriber s(context);
         std::unique_ptr<ConfigHandle<MyConfig> > handle = s.subscribe<MyConfig>("");
         s.nextConfigNow();
