@@ -49,7 +49,7 @@ LocalServicePolicy::getCacheKey(const mbus::RoutingContext &ctx) const
 mbus::Hop
 LocalServicePolicy::getRecipient(mbus::RoutingContext &ctx)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     CacheEntry &entry = update(ctx);
     if (entry._recipients.empty()) {
         mbus::Hop hop = ctx.getRoute().getHop(0);

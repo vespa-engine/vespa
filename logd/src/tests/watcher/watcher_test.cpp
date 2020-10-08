@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <logd/config_subscriber.h>
+#include <vespa/config/common/configcontext.h>
 #include <logd/watcher.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>

@@ -5,7 +5,6 @@
 #include <vespa/document/select/node.h>
 #include <map>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/documentapi/common.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>
@@ -33,7 +32,7 @@ private:
     typedef std::map<string, SelectorPtr> ConfigMap;
 
     const document::DocumentTypeRepo &_repo;
-    vespalib::Lock                    _lock;
+    mutable std::mutex                _lock;
     ConfigMap                         _config;
     string                            _error;
     config::ConfigFetcher             _fetcher;

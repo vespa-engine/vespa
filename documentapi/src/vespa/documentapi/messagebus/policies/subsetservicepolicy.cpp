@@ -64,7 +64,7 @@ SubsetServicePolicy::getRecipient(mbus::RoutingContext &ctx)
 {
     mbus::Hop hop;
     if (_subsetSize > 0) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         CacheEntry &entry = update(ctx);
         if (!entry._recipients.empty()) {
             if (++entry._offset >= entry._recipients.size()) {

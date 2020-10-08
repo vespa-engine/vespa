@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/config/raw/rawsource.h>
+#include <vespa/config/common/configcontext.h>
 #include "config-my.h"
 
 using namespace config;
@@ -16,7 +15,7 @@ struct ConfigFixture {
     ConfigContext::SP context;
     ConfigFixture() : builder(), set(), context() {
         set.addBuilder("cfgid", &builder);
-        context.reset(new ConfigContext(set));
+        context = std::make_shared<ConfigContext>(set);
     }
 };
 
@@ -27,7 +26,7 @@ TEST("requireThatGetConfigReturnsCorrectConfig")
     RawSpec spec("myField \"foo\"\n");
 
     std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("myid", spec);
-    ASSERT_TRUE(cfg.get() != NULL);
+    ASSERT_TRUE(cfg);
     ASSERT_EQUAL("my", cfg->defName());
     ASSERT_EQUAL("foo", cfg->myField);
 }
@@ -37,7 +36,7 @@ TEST("requireThatGetConfigReturnsCorrectConfig")
 {
     FileSpec spec(TEST_PATH("my.cfg"));
     std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("", spec);
-    ASSERT_TRUE(cfg.get() != NULL);
+    ASSERT_TRUE(cfg);
     ASSERT_EQUAL("my", cfg->defName());
     ASSERT_EQUAL("foobar", cfg->myField);
 }

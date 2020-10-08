@@ -7,7 +7,9 @@
 #include <vespa/config/retriever/simpleconfigretriever.h>
 #include <vespa/config/retriever/simpleconfigurer.h>
 #include <vespa/config/common/configholder.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/subscription/configsubscription.h>
+#include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/exceptions.h>
 #include "config-bootstrap.h"
 #include "config-foo.h"
@@ -39,7 +41,7 @@ struct ConfigTestFixture {
           bootstrapBuilder(),
           componentConfig(),
           set(),
-          context(new ConfigContext(set)),
+          context(std::make_shared<ConfigContext>(set)),
           idcounter(-1)
     {
         set.addBuilder(configId, &bootstrapBuilder);

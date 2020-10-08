@@ -4,10 +4,12 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/frt/protocol.h>
 #include <vespa/config/config.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/fnet/frt/frt.h>
 #include "config-my.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("failover");
 
@@ -189,7 +191,7 @@ struct ConfigCheckFixture {
     NetworkFixture & nf;
 
     ConfigCheckFixture(NetworkFixture & f2)
-        : ctx(new ConfigContext(testTimingValues, f2.spec)),
+        : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)),
           nf(f2)
     {
     }
@@ -223,7 +225,7 @@ struct ConfigReloadFixture {
     ConfigHandle<MyConfig>::UP handle;
 
     ConfigReloadFixture(NetworkFixture & f2)
-        : ctx(new ConfigContext(testTimingValues, f2.spec)),
+        : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)),
           nf(f2),
           s(ctx),
           handle(s.subscribe<MyConfig>("myId"))

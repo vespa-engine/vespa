@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/config.h>
 #include <vespa/config/common/configholder.h>
+#include <vespa/config/common/sourcefactory.h>
 #include <vespa/config/raw/rawsource.h>
 #include "config-my.h"
 
@@ -10,7 +11,7 @@ using namespace config;
 TEST("require that raw spec can create source factory")
 {
     RawSpec spec("myField \"foo\"\n");
-    SourceFactory::UP raw = spec.createSourceFactory(TimingValues());
+    auto raw = spec.createSourceFactory(TimingValues());
     ASSERT_TRUE(raw);
     IConfigHolder::SP holder(new ConfigHolder());
     Source::UP src = raw->createSource(holder, ConfigKey("myid", "my", "bar", "foo"));
