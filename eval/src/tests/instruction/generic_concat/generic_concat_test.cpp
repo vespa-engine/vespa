@@ -21,6 +21,8 @@ using vespalib::make_string_short::fmt;
 std::vector<Layout> concat_layouts = {
     {},                                                 {},
     {},                                                 {y(5)},
+    float_cells({y(5)}),                                {},
+    {},                                                 float_cells({y(5)}),
     {y(5)},                                             {},
     {y(2)},                                             {y(3)},
     {y(2)},                                             {x(3)},
@@ -39,6 +41,7 @@ std::vector<Layout> concat_layouts = {
     {y(2),x(5),z(2)},                                   {y(3),x(5),z(2)},
     {y(3),x(5)},                                        {x(5),z(7)},
     float_cells({y(3),x(5)}),                           {x(5),z(7)},
+    float_cells({y(3),x(5)}),                           {},
     {y(3),x(5)},                                        float_cells({x(5),z(7)}),
     float_cells({y(3),x(5)}),                           float_cells({x(5),z(7)}),
     {x({"a","b","c"})},                                 {x({"a","b","c"})},
