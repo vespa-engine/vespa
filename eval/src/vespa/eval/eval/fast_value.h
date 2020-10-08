@@ -8,9 +8,12 @@ namespace vespalib::eval {
 
 /**
  * A fast value is a value that uses a FastValueIndex to store its
- * sparse mappings. A FastValueIndex uses the same implementation as a
- * SimpleValueIndex but adds extra inlined functions that can be
- * called directly from various instruction implementations.
+ * sparse mappings. The FastValueIndex class contains inlined
+ * functions that can be called directly from instruction
+ * implementations to speed up sparse operations. Also, the
+ * FastSparseMap used by the FastValueIndex is a highly optimized
+ * alternative to the map used by SimpleValue, which means that normal
+ * Value API usage will also have improved performance.
  **/
 class FastValueBuilderFactory : public ValueBuilderFactory {
 private:
