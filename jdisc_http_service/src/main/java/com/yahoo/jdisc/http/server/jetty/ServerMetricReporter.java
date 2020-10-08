@@ -8,6 +8,7 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -68,6 +69,8 @@ class ServerMetricReporter {
             for (Connector connector : jetty.getConnectors()) {
                 setConnectorMetrics((JDiscServerConnector)connector);
             }
+
+            setJettyThreadpoolMetrics();
         }
 
         private void setServerMetrics(HttpResponseStatisticsCollector statisticsCollector) {
@@ -85,6 +88,17 @@ class ServerMetricReporter {
                 dimensions.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, metricEntry.requestType);
                 metric.add(metricEntry.name, metricEntry.value, metric.createContext(dimensions));
             }
+        }
+
+        private void setJettyThreadpoolMetrics() {
+            QueuedThreadPool threadpool = (QueuedThreadPool) jetty.getThreadPool();
+            metric.set(MetricDefinitions.JETTY_THREADPOOL_MAX_THREADS, threadpool.getMaxThreads(), null);
+            metric.set(MetricDefinitions.JETTY_THREADPOOL_MIN_THREADS, threadpool.getMinThreads(), null);
+            metric.set(MetricDefinitions.JETTY_THREADPOOL_RESERVED_THREADS, threadpool.getReservedThreads(), null);
+            metric.set(MetricDefinitions.JETTY_THREADPOOL_BUSY_THREADS, threadpool.getBusyThreads(), null);
+            metric.set(MetricDefinitions.JETTY_THREADPOOL_IDLE_THREADS, threadpool.getIdleThreads(), null);
+            metric.set(MetricDefinitions.JETTY_THREADPOOL_TOTAL_THREADS, threadpool.getThreads(), null);
+            metric.set(MetricDefinitions.JETTY_THREADPOOL_QUEUE_SIZE, threadpool.getQueueSize(), null);
         }
 
         private void setConnectorMetrics(JDiscServerConnector connector) {

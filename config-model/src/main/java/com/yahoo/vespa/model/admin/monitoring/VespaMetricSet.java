@@ -199,6 +199,18 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.unknown.rate"));
 
         metrics.add(new Metric("jdisc.http.handler.unhandled_exceptions.rate"));
+
+        {
+            List<String> suffices = List.of("sum", "count", "last", "min", "max");
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.max", suffices);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.min", suffices);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.reserved", suffices);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.busy", suffices);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.idle", suffices);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", suffices);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.queue.size", suffices);
+        }
+
         return metrics;
     }
 

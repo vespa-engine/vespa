@@ -59,5 +59,13 @@ class MetricDefinitions {
     static final String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS = "jdisc.http.ssl.handshake.failure.incompatible_ciphers";
     static final String SSL_HANDSHAKE_FAILURE_UNKNOWN = "jdisc.http.ssl.handshake.failure.unknown";
 
+    static final String JETTY_THREADPOOL_MAX_THREADS = "jdisc.http.jetty.threadpool.thread.max";
+    static final String JETTY_THREADPOOL_MIN_THREADS = "jdisc.http.jetty.threadpool.thread.min";
+    static final String JETTY_THREADPOOL_RESERVED_THREADS = "jdisc.http.jetty.threadpool.thread.reserved";
+    static final String JETTY_THREADPOOL_BUSY_THREADS = "jdisc.http.jetty.threadpool.thread.busy";
+    static final String JETTY_THREADPOOL_IDLE_THREADS = "jdisc.http.jetty.threadpool.thread.idle";
+    static final String JETTY_THREADPOOL_TOTAL_THREADS = "jdisc.http.jetty.threadpool.thread.total";
+    static final String JETTY_THREADPOOL_QUEUE_SIZE = "jdisc.http.jetty.threadpool.queue.size";
+
     private MetricDefinitions() {}
 }
