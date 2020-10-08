@@ -204,14 +204,14 @@ StateManager::getClusterStateBundle() const
 void
 StateManager::addStateListener(StateListener& listener)
 {
-    vespalib::LockGuard lock(_listenerLock);
+    std::lock_guard lock(_listenerLock);
     _stateListeners.push_back(&listener);
 }
 
 void
 StateManager::removeStateListener(StateListener& listener)
 {
-    vespalib::LockGuard lock(_listenerLock);
+    std::lock_guard lock(_listenerLock);
     for (auto it = _stateListeners.begin(); it != _stateListeners.end();) {
         if (*it == &listener) {
             it = _stateListeners.erase(it);
@@ -282,7 +282,7 @@ StateManager::notifyStateListeners()
     if (_notifyingListeners) {
         return;
     }
-    vespalib::LockGuard listenerLock(_listenerLock);
+    std::lock_guard listenerLock(_listenerLock);
     _notifyingListeners = true;
     lib::NodeState::SP newState;
     while (true) {

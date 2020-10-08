@@ -21,7 +21,7 @@ class DistributorComponentRegisterImpl
           public virtual StorageComponentRegisterImpl,
           private StateListener
 {
-    vespalib::Lock _componentLock;
+    std::mutex _componentLock;
     std::vector<DistributorManagedComponent*> _components;
 
     UniqueTimeCalculator* _timeCalculator;

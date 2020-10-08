@@ -20,7 +20,6 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
-#include <vespa/vespalib/util/sync.h>
 #include <queue>
 #include <unordered_map>
 
@@ -301,7 +300,6 @@ private:
     ClientRequestPriorityQueue _client_request_priority_queue;
     MessageQueue _fetchedMessages;
     framework::TickingThreadPool& _threadPool;
-    vespalib::Monitor _statusMonitor;
 
     mutable std::vector<std::shared_ptr<Status>> _statusToDo;
     mutable std::vector<std::shared_ptr<Status>> _fetchedStatusRequests;
@@ -325,7 +323,7 @@ private:
     BucketDBMetricUpdater _bucketDBMetricUpdater;
     std::unique_ptr<BucketGcTimeCalculator::BucketIdHasher> _bucketIdHasher;
     MetricUpdateHook _metricUpdateHook;
-    vespalib::Lock _metricLock;
+    mutable std::mutex _metricLock;
     /**
      * Maintenance stats for last completed database scan iteration.
      * Access must be protected by _metricLock as it is read by metric

@@ -144,7 +144,7 @@ private:
 
 protected:
         // Lock taken while doing configuration of the server.
-    vespalib::Lock _configLock;
+    std::mutex _configLock;
     std::mutex _initial_config_mutex;
     using InitialGuard = std::lock_guard<std::mutex>;
         // Current running config. Kept, such that we can see what has been

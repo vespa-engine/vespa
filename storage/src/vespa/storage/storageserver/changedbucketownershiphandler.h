@@ -4,7 +4,6 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/config/config.h>
 #include <vespa/config-persistence.h>
@@ -110,9 +109,9 @@ public:
 
 private:
     ServiceLayerComponent _component;
-    Metrics _metrics;
+    Metrics               _metrics;
     config::ConfigFetcher _configFetcher;
-    vespalib::Lock _stateLock;
+    mutable std::mutex    _stateLock;
     std::shared_ptr<const lib::ClusterStateBundle> _currentState;
     OwnershipState::CSP _currentOwnership;
 

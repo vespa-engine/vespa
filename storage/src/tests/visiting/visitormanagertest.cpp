@@ -223,7 +223,7 @@ VisitorManagerTest::getSession(uint32_t n)
     framework::MilliSecTime endTime(clock.getTimeInMillis() + framework::MilliSecTime(30 * 1000));
     while (true) {
         {
-            vespalib::LockGuard lock(_messageSessionFactory->_accessLock);
+            std::lock_guard lock(_messageSessionFactory->_accessLock);
             if (sessions.size() > n) {
                 return *sessions[n];
             }

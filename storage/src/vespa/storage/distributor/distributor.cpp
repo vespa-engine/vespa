@@ -465,7 +465,7 @@ BucketSpacesStatsProvider::BucketSpacesStats Distributor::make_invalid_stats_per
 }
 
 void Distributor::invalidate_bucket_spaces_stats() {
-    vespalib::LockGuard guard(_metricLock);
+    std::lock_guard guard(_metricLock);
     _bucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
     auto invalid_space_stats = make_invalid_stats_per_configured_space();
 
@@ -681,21 +681,21 @@ void Distributor::startExternalOperations() {
 std::unordered_map<uint16_t, uint32_t>
 Distributor::getMinReplica() const
 {
-    vespalib::LockGuard guard(_metricLock);
+    std::lock_guard guard(_metricLock);
     return _bucketDbStats._minBucketReplica;
 }
 
 BucketSpacesStatsProvider::PerNodeBucketSpacesStats
 Distributor::getBucketSpacesStats() const
 {
-    vespalib::LockGuard guard(_metricLock);
+    std::lock_guard guard(_metricLock);
     return _bucketSpacesStats;
 }
 
 void
 Distributor::propagateInternalScanMetricsToExternal()
 {
-    vespalib::LockGuard guard(_metricLock);
+    std::lock_guard guard(_metricLock);
 
     // All shared values are written when _metricLock is held, so no races.
     if (_bucketDBMetricUpdater.hasCompletedRound()) {
@@ -755,7 +755,7 @@ bool merge_no_longer_pending_edge(const PerNodeBucketSpacesStats& prev_stats,
 void
 Distributor::updateInternalMetricsForCompletedScan()
 {
-    vespalib::LockGuard guard(_metricLock);
+    std::lock_guard guard(_metricLock);
 
     _bucketDBMetricUpdater.completeRound();
     _bucketDbStats = _bucketDBMetricUpdater.getLastCompleteStats();

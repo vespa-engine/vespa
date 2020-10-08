@@ -75,10 +75,9 @@ private:
                          framework::MicroSecTime> > _recentlyDeletedVisitors;
     framework::MicroSecTime _recentlyDeletedMaxTime;
 
-    mutable vespalib::Lock _statusLock; // Only one can get status at a time
+    mutable std::mutex _statusLock; // Only one can get status at a time
     mutable vespalib::Monitor _statusMonitor; // Notify when done
-    mutable std::vector<std::shared_ptr<RequestStatusPageReply> >
-            _statusRequest;
+    mutable std::vector<std::shared_ptr<RequestStatusPageReply> > _statusRequest;
     bool _enforceQueueUse;
     VisitorFactory::Map _visitorFactories;
 

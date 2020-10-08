@@ -254,11 +254,11 @@ struct StateApp : public FastOS_Application {
         std::unique_ptr<slobrok::api::MirrorAPI> slobrok;
         if (_options._slobrokConnectionSpec == "") {
             config::ConfigUri config(_options._slobrokConfigId);
-            slobrok.reset(new slobrok::api::MirrorAPI(supervisor.supervisor(), config));
+            slobrok = std::make_unique<slobrok::api::MirrorAPI>(supervisor.supervisor(), slobrok::ConfiguratorFactory(config));
         } else {
             std::vector<std::string> specList;
             specList.push_back(_options._slobrokConnectionSpec);
-            slobrok.reset(new slobrok::api::MirrorAPI(supervisor.supervisor(), specList));
+            slobrok = std::make_unique<slobrok::api::MirrorAPI>(supervisor.supervisor(), slobrok::ConfiguratorFactory(specList));
         }
         LOG(debug, "Waiting for slobrok data to be available.");
         uint64_t startTime = getTimeInMillis();
