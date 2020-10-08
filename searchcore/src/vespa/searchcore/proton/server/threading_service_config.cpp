@@ -60,7 +60,7 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
 {
     uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing, concurrency, cpuInfo);
     return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
-                                  (cfg.indexing.semiunboundtasklimit / indexingThreads),
+                                  std::max(uint32_t(cfg.indexing.tasklimit), (cfg.indexing.semiunboundtasklimit / indexingThreads)),
                                   selectOptimization(cfg.indexing.optimize),
                                   cfg.indexing.kindOfWatermark,
                                   vespalib::from_s(cfg.indexing.reactiontime));
