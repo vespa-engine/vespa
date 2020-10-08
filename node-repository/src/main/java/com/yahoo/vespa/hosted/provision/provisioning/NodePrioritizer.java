@@ -123,6 +123,7 @@ public class NodePrioritizer {
                                                    capacity.freeCapacityOf(host, false),
                                                    host,
                                                    spareHosts.contains(host),
+                                                   unusedSwitch(host, clusterSpec.id()),
                                                    allNodes,
                                                    nodeRepository));
         }
@@ -138,7 +139,7 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().get().owner().equals(application))
                 .filter(node -> node.state() == Node.State.active || canStillAllocateToParentOf(node))
                 .map(node -> candidateFrom(node, false))
-                .forEach(candidate -> nodes.add(candidate));
+                .forEach(nodes::add);
     }
 
     /** Add nodes already provisioned, but not allocated to any application */
@@ -148,17 +149,19 @@ public class NodePrioritizer {
                 .filter(node -> node.state() == Node.State.ready)
                 .map(node -> candidateFrom(node, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
-                .forEach(candidate -> nodes.add(candidate));
+                .forEach(nodes::add);
     }
 
     /** Create a candidate from given pre-existing node */
     private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
         Optional<Node> parent = allNodes.parentOf(node);
+        boolean exclusiveSwitch = onExclusiveSwitch(node, parent);
         if (parent.isPresent()) {
             return NodeCandidate.createChild(node,
                                              capacity.freeCapacityOf(parent.get(), false),
                                              parent.get(),
                                              spareHosts.contains(parent.get()),
+                                             exclusiveSwitch,
                                              isSurplus,
                                              false,
                                              !allocateFully
@@ -168,8 +171,32 @@ public class NodePrioritizer {
                                                                          currentClusterSize));
         }
         else {
-            return NodeCandidate.createStandalone(node, isSurplus, false);
+            return NodeCandidate.createStandalone(node, isSurplus, false, exclusiveSwitch);
         }
+    }
+
+    /** Returns whether given node is on an exclusive switch */
+    private boolean onExclusiveSwitch(Node node, Optional<Node> parent) {
+        Node host = parent.orElse(node);
+        return unusedSwitch(host, node.allocation()
+                                      .map(allocation -> allocation.membership().cluster().id())
+                                      .orElseGet(clusterSpec::id));
+    }
+
+    /** Returns whether switch of host is unused by any existing candidates for given cluster */
+    private boolean unusedSwitch(Node host, ClusterSpec.Id cluster) {
+        if (host.switchHostname().isEmpty()) return true;
+        String switchHostname = host.switchHostname().get();
+        for (var candidate : nodes) {
+            ClusterSpec.Id candidateCluster = candidate.toNode().allocation()
+                                                       .map(a -> a.membership().cluster().id())
+                                                       .orElseGet(clusterSpec::id);
+            if (!cluster.equals(candidateCluster)) continue; // Wrong cluster
+            Node node = candidate.parent.orElseGet(candidate::toNode);
+            if (node.switchHostname().isEmpty()) continue;
+            if (node.switchHostname().get().equals(switchHostname)) return false;
+        }
+        return true;
     }
 
     private boolean isReplacement(int nofNodesInCluster, int nodeFailedNodes) {

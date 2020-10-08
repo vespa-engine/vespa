@@ -157,7 +157,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     }
 
     /** Returns the parent nodes of the given child nodes */
-    public NodeList parentsOf(Collection<Node> children) {
+    public NodeList parentsOf(NodeList children) {
         return children.stream()
                        .map(this::parentOf)
                        .filter(Optional::isPresent)

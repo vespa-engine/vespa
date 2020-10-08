@@ -171,9 +171,8 @@ public class ProvisioningTester {
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
         List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, provisionLogger);
-        // prepare twice to ensure idempotence
         List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
-        assertEquals(hosts1, hosts2);
+        assertEquals("Prepare is idempotent", hosts1, hosts2);
         Set<String> newlyActivated = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         newlyActivated.removeAll(reservedBefore);
         newlyActivated.removeAll(inactiveBefore);
@@ -561,6 +560,23 @@ public class ProvisioningTester {
             Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
             assertEquals(node + ": " + explanation, hostFlavor, parent.flavor().name());
         }
+    }
+
+    public void assertSwitches(Set<String> expectedSwitches, ApplicationId application, ClusterSpec.Id cluster) {
+        NodeList allNodes = nodeRepository.list();
+        NodeList activeNodes = allNodes.owner(application).state(Node.State.active).cluster(cluster);
+        assertEquals(expectedSwitches, switchesOf(activeNodes, allNodes));
+    }
+
+    private Set<String> switchesOf(NodeList applicationNodes, NodeList allNodes) {
+        assertTrue("All application nodes are children", applicationNodes.stream().allMatch(node -> node.parentHostname().isPresent()));
+        Set<String> switches = new HashSet<>();
+        for (var parent : allNodes.parentsOf(applicationNodes)) {
+            Optional<String> switchHostname = parent.switchHostname();
+            if (switchHostname.isEmpty()) continue;
+            switches.add(switchHostname.get());
+        }
+        return switches;
     }
 
     public int hostFlavorCount(String hostFlavor, ApplicationId app) {

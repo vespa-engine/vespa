@@ -12,15 +12,12 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -42,11 +39,14 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** The free capacity on the parent of this node, before adding this node to it */
     protected final NodeResources freeParentCapacity;
 
-    /** The parent host (docker or hypervisor) */
+    /** The parent host */
     final Optional<Node> parent;
 
-    /** True if the node is allocated to a host that should be dedicated as a spare */
+    /** True if this node is allocated on a host that should be dedicated as a spare */
     final boolean violatesSpares;
+
+    /** True if this node is allocated on an exclusive network switch in its cluster */
+    final boolean exclusiveSwitch;
 
     /** True if this node belongs to a group which will not be needed after this deployment */
     final boolean isSurplus;
@@ -57,13 +57,14 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** This node can be resized to the new NodeResources */
     final boolean isResizable;
 
-    private NodeCandidate(NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplus, boolean isNew, boolean isResizeable) {
+    private NodeCandidate(NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean exclusiveSwitch, boolean isSurplus, boolean isNew, boolean isResizeable) {
         if (isResizeable && isNew)
             throw new IllegalArgumentException("A new node cannot be resizable");
 
         this.freeParentCapacity = freeParentCapacity;
         this.parent = parent;
         this.violatesSpares = violatesSpares;
+        this.exclusiveSwitch = exclusiveSwitch;
         this.isSurplus = isSurplus;
         this.isNew = isNew;
         this.isResizable = isResizeable;
@@ -91,7 +92,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /**
      * Compare this candidate to another
      *
-     * @return negative if first priority is higher than second node
+     * @return negative if this should be preferred over other
      */
     @Override
     public int compareTo(NodeCandidate other) {
@@ -107,7 +108,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         if (!this.isSurplus && other.isSurplus) return -1;
         if (!other.isSurplus && this.isSurplus) return 1;
 
-        // Choose reserved nodes from a previous allocation attempt (the exist in node repo)
+        // Prefer node on exclusive switch
+        if (this.exclusiveSwitch && !other.exclusiveSwitch) return -1;
+        if (other.exclusiveSwitch && !this.exclusiveSwitch) return 1;
+
+        // Choose reserved nodes from a previous allocation attempt (which exist in node repo)
         if (this.isInNodeRepoAndReserved() && ! other.isInNodeRepoAndReserved()) return -1;
         if (other.isInNodeRepoAndReserved() && ! this.isInNodeRepoAndReserved()) return 1;
 
@@ -172,7 +177,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
     /** Returns a copy of this with node set to given value */
     NodeCandidate withNode(Node node) {
-        return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizable);
+        return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
     }
 
     private boolean lessThanHalfTheHost(NodeCandidate node) {
@@ -200,27 +205,29 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                             NodeResources freeParentCapacity,
                                             Node parent,
                                             boolean violatesSpares,
+                                            boolean exclusiveSwitch,
                                             boolean isSurplus,
                                             boolean isNew,
                                             boolean isResizeable) {
-        return new ConcreteNodeCandidate(node, freeParentCapacity, Optional.of(parent), violatesSpares, isSurplus, isNew, isResizeable);
+        return new ConcreteNodeCandidate(node, freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizeable);
     }
 
     public static NodeCandidate createNewChild(NodeResources resources,
                                                NodeResources freeParentCapacity,
                                                Node parent,
                                                boolean violatesSpares,
+                                               boolean exclusiveSwitch,
                                                LockedNodeList allNodes,
                                                NodeRepository nodeRepository) {
-        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, allNodes, nodeRepository);
+        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, allNodes, nodeRepository);
     }
 
     public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
-        return new ConcreteNodeCandidate(node, node.resources(), Optional.of(parent), false, false, true, false);
+        return new ConcreteNodeCandidate(node, node.resources(), Optional.of(parent), false, true, false, true, false);
     }
 
-    public static NodeCandidate createStandalone(Node node, boolean isSurplus, boolean isNew) {
-        return new ConcreteNodeCandidate(node, node.resources(), Optional.empty(), false, isSurplus, isNew, false);
+    public static NodeCandidate createStandalone(Node node, boolean isSurplus, boolean isNew, boolean exclusiveSwitch) {
+        return new ConcreteNodeCandidate(node, node.resources(), Optional.empty(), false, exclusiveSwitch, isSurplus, isNew, false);
     }
 
     /** A candidate backed by a node */
@@ -229,9 +236,9 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         private final Node node;
 
         ConcreteNodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent,
-                              boolean violatesSpares,
+                              boolean violatesSpares, boolean exclusiveSwitch,
                               boolean isSurplus, boolean isNew, boolean isResizeable) {
-            super(freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizeable);
+            super(freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizeable);
             this.node = Objects.requireNonNull(node, "Node cannot be null");
         }
 
@@ -259,7 +266,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         @Override
         public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
             return new ConcreteNodeCandidate(node.allocate(owner, membership, requestedResources, at),
-                                             freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizable);
+                                             freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
         }
 
         /** Called when the node described by this candidate must be created */
@@ -303,9 +310,10 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                      NodeResources freeParentCapacity,
                                      Node parent,
                                      boolean violatesSpares,
+                                     boolean exclusiveSwitch,
                                      LockedNodeList allNodes,
                                      NodeRepository nodeRepository) {
-            super(freeParentCapacity, Optional.of(parent), violatesSpares, false, true, false);
+            super(freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, false, true, false);
             this.resources = resources;
             this.allNodes = allNodes;
             this.nodeRepository = nodeRepository;
@@ -354,7 +362,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                               resources.with(parent.get().resources().diskSpeed())
                                                        .with(parent.get().resources().storageType()),
                                               NodeType.tenant);
-            return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, isSurplus, isNew, isResizable);
+            return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
 
         }
 
@@ -390,7 +398,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         private final NodeResources resources;
 
         private InvalidNodeCandidate(NodeResources resources, NodeResources freeParentCapacity, Node parent) {
-            super(freeParentCapacity, Optional.of(parent), false, false, true, false);
+            super(freeParentCapacity, Optional.of(parent), false, false, false, true, false);
             this.resources = resources;
         }
 
