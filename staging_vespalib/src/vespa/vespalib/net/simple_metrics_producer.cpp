@@ -11,35 +11,33 @@ SimpleMetricsProducer::SimpleMetricsProducer()
 {
 }
 
-SimpleMetricsProducer::~SimpleMetricsProducer()
-{
-}
+SimpleMetricsProducer::~SimpleMetricsProducer() = default;
 
 void
 SimpleMetricsProducer::setMetrics(const vespalib::string &metrics)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _metrics = metrics;
 }
 
 vespalib::string
 SimpleMetricsProducer::getMetrics(const vespalib::string &)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     return _metrics;
 }
 
 void
 SimpleMetricsProducer::setTotalMetrics(const vespalib::string &metrics)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _totalMetrics = metrics;
 }
 
 vespalib::string
 SimpleMetricsProducer::getTotalMetrics(const vespalib::string &)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     return _totalMetrics;
 }
 

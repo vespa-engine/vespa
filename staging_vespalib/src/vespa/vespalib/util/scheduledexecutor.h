@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/thread.h>
 #include <vector>
@@ -25,8 +24,8 @@ private:
     typedef std::vector<TimerTaskPtr> TaskList;
     FastOS_ThreadPool _threadPool;
     std::unique_ptr<FNET_Transport> _transport;
-    vespalib::Lock _lock;
-    TaskList _taskList;
+    std::mutex _lock;
+    TaskList   _taskList;
 
 public:
     /**

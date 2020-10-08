@@ -5,7 +5,6 @@
 #include "handler.h"
 #include "provider.h"
 #include "closeable.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vector>
 
@@ -31,7 +30,7 @@ private:
     };
 
     Handler<T>               &_fallback;
-    vespalib::Lock            _lock;
+    mutable std::mutex        _lock;
     std::vector<ThreadState*> _threads;
     bool                      _closed;
 

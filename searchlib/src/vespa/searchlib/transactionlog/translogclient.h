@@ -3,10 +3,10 @@
 
 #include "client_common.h"
 #include "client_session.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/fnet/frt/invokable.h>
 #include <map>
 #include <vector>
+#include <mutex>
 
 class FNET_Transport;
 class FRT_Supervisor;
@@ -58,7 +58,7 @@ private:
     vespalib::string                   _rpcTarget;
     SessionMap                         _sessions;
     //Brute force lock for subscriptions. For multithread safety.
-    vespalib::Lock   _lock;
+    std::mutex   _lock;
     std::unique_ptr<FastOS_ThreadPool> _threadPool;
     std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRT_Supervisor>    _supervisor;

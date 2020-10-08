@@ -18,9 +18,6 @@
 #include <vespa/searchcorespi/flush/flushstats.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/util/sync.h>
-#include <memory>
-#include <vector>
 
 namespace document { class Document; }
 
@@ -74,6 +71,7 @@ class IndexMaintainer : public IIndexManager,
     using FlushIds = std::vector<uint32_t>;
     using FrozenMemoryIndexRefs = std::vector<FrozenMemoryIndexRef>;
     using ISourceSelector = search::queryeval::ISourceSelector;
+    using LockGuard = std::lock_guard<std::mutex>;
 
     const vespalib::string _base_dir;
     const WarmupConfig     _warmupConfig;
@@ -129,17 +127,17 @@ class IndexMaintainer : public IIndexManager,
      * and pruning of removed fields, since this will trigger more retries for
      * some of the operations.
      */
-    vespalib::Lock _state_lock;  // Outer lock (SL)
-    vespalib::Lock _index_update_lock;  // Inner lock (IUL)
-    vespalib::Lock _new_search_lock;  // Inner lock   (NSL)
-    vespalib::Lock _remove_lock;  // Lock for removing indexes.
+    std::mutex _state_lock;  // Outer lock (SL)
+    mutable std::mutex _index_update_lock;  // Inner lock (IUL)
+    mutable std::mutex _new_search_lock;  // Inner lock   (NSL)
+    std::mutex _remove_lock;  // Lock for removing indexes.
     // Protected by SL + IUL
-    FusionSpec     _fusion_spec;		// Protected by FL
-    vespalib::Lock _fusion_lock;	// Fusion spec lock (FL)
+    FusionSpec         _fusion_spec;    // Protected by FL
+    mutable std::mutex _fusion_lock;    // Fusion spec lock (FL)
     uint32_t       _maxFlushed;
     uint32_t       _maxFrozen;
     ChangeGens     _changeGens; // Protected by SL + IUL
-    vespalib::Lock _schemaUpdateLock;	// Serialize rewrite of schema
+    std::mutex     _schemaUpdateLock;	// Serialize rewrite of schema
     const search::TuneFileAttributes _tuneFileAttributes;
     const IndexMaintainerContext     _ctx;
     IIndexMaintainerOperations      &_operations;
@@ -179,8 +177,8 @@ class IndexMaintainer : public IIndexManager,
     ISearchableIndexCollection::UP loadDiskIndexes(const FusionSpec &spec, ISearchableIndexCollection::UP sourceList);
     void replaceSource(uint32_t sourceId, const IndexSearchable::SP &source);
     void appendSource(uint32_t sourceId, const IndexSearchable::SP &source);
-    void swapInNewIndex(vespalib::LockGuard & guard, ISearchableIndexCollection::SP indexes, IndexSearchable & source);
-    ISearchableIndexCollection::UP createNewSourceCollection(const vespalib::LockGuard &newSearchLock);
+    void swapInNewIndex(LockGuard & guard, ISearchableIndexCollection::SP indexes, IndexSearchable & source);
+    ISearchableIndexCollection::UP createNewSourceCollection(const LockGuard &newSearchLock);
 
     struct FlushArgs {
         IMemoryIndex::SP old_index;	// Last memory index
@@ -353,17 +351,17 @@ public:
     }
 
     IIndexCollection::SP getSourceCollection() const {
-        vespalib::LockGuard lock(_new_search_lock);
+        LockGuard lock(_new_search_lock);
         return _source_list;
     }
 
     searchcorespi::IndexSearchable::SP getSearchable() const override {
-        vespalib::LockGuard lock(_new_search_lock);
+        LockGuard lock(_new_search_lock);
         return _source_list;
     }
 
     search::SearchableStats getSearchableStats() const override {
-        vespalib::LockGuard lock(_new_search_lock);
+        LockGuard lock(_new_search_lock);
         return _source_list->getSearchableStats();
     }
 

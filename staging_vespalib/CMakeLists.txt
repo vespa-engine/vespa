@@ -23,7 +23,6 @@ vespa_define_module(
     src/tests/floatingpointtype
     src/tests/growablebytebuffer
     src/tests/json
-    src/tests/librarypool
     src/tests/memorydatastore
     src/tests/metrics
     src/tests/objectdump

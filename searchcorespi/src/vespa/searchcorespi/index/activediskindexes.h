@@ -3,11 +3,10 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/sync.h>
 #include <set>
+#include <mutex>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Class used to keep track of the set of active disk indexes in an index maintainer.
@@ -15,16 +14,17 @@ namespace index {
  */
 class ActiveDiskIndexes {
     std::multiset<vespalib::string> _active;
-    vespalib::Lock _lock;
+    mutable std::mutex _lock;
 
 public:
-    typedef std::shared_ptr<ActiveDiskIndexes> SP;
-
+    using SP = std::shared_ptr<ActiveDiskIndexes>;
+    ActiveDiskIndexes();
+    ~ActiveDiskIndexes();
+    ActiveDiskIndexes(const ActiveDiskIndexes &) = delete;
+    ActiveDiskIndexes & operator = (const ActiveDiskIndexes &) = delete;
     void setActive(const vespalib::string & index);
     void notActive(const vespalib::string & index);
     bool isActive(const vespalib::string & index) const;
 };
 
-}  // namespace index
-}  // namespace searchcorespi
-
+}
