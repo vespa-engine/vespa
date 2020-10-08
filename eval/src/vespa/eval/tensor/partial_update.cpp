@@ -65,12 +65,12 @@ struct DenseCoords {
 };
 DenseCoords::~DenseCoords() = default;
 
-struct Addresses {
+struct SparseCoords {
     std::vector<vespalib::stringref> addr;
     std::vector<vespalib::stringref *> next_result_refs;
     std::vector<const vespalib::stringref *> lookup_refs;
     std::vector<size_t> lookup_view_dims;
-    Addresses(size_t sz)
+    SparseCoords(size_t sz)
         : addr(sz), next_result_refs(sz), lookup_refs(sz), lookup_view_dims(sz)
     {
         for (size_t i = 0; i < sz; ++i) {
@@ -79,19 +79,19 @@ struct Addresses {
             lookup_view_dims[i] = i;
         }
     }
-    ~Addresses();
+    ~SparseCoords();
 };
-Addresses::~Addresses() = default;
+SparseCoords::~SparseCoords() = default;
 
 struct AddressHandler {
     std::vector<DimCase> how;
     DenseCoords target_coords;
-    Addresses for_output;
-    Addresses from_modifier;
+    SparseCoords for_output;
+    SparseCoords from_modifier;
     bool valid;
 
     AddressHandler(const ValueType &input_type,
-                const ValueType &modifier_type)
+                   const ValueType &modifier_type)
         : how(), target_coords(),
           for_output(input_type.count_mapped_dimensions()),
           from_modifier(modifier_type.count_mapped_dimensions()),
@@ -116,16 +116,14 @@ struct AddressHandler {
                      input_dims.begin(), input_dims.end(),
                      modifier_dims.begin(), modifier_dims.end(),
                      [](const auto &a, const auto &b){ return (a.name < b.name); });
-        if ((! valid) ||
-            (input_dims.size() != modifier_dims.size()) ||
-            (input_dims.size() != how.size()))
-        {
+        if (! valid) {
             LOG(error, "Value type %s does not match modifier type %s (should have same dimensions)",
                 input_type.to_spec().c_str(),
                 modifier_type.to_spec().c_str());
-            valid = false;
             return;
         }
+        assert(input_dims.size() == modifier_dims.size());
+        assert(input_dims.size() == how.size());
         for (const auto & dim : input_type.dimensions()) {
             if (dim.is_indexed()) {
                 target_coords.add_dim(dim.size);
@@ -155,7 +153,7 @@ AddressHandler::~AddressHandler() = default;
 template <typename CT> void
 copy_tensor_with_filter(const Value &input,
                         size_t dsss,
-                        Addresses &addrs,
+                        SparseCoords &addrs,
                         ValueBuilder<CT> &builder,
                         const std::set<size_t> &skip_subspaces)
 {
@@ -177,7 +175,7 @@ copy_tensor_with_filter(const Value &input,
 
 template <typename CT>
 Value::UP
-copy_tensor(const Value &input, const ValueType &input_type, Addresses &helper, const ValueBuilderFactory &factory)
+copy_tensor(const Value &input, const ValueType &input_type, SparseCoords &helper, const ValueBuilderFactory &factory)
 {
     const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
     const size_t dsss = input_type.dense_subspace_size();
@@ -261,7 +259,7 @@ PerformAdd::invoke(const Value &input, const Value &modifier, const ValueBuilder
     const size_t dsss = input_type.dense_subspace_size();
     const size_t expected_subspaces = input.index().size() + modifier.index().size();
     auto builder = factory.create_value_builder<ICT>(input_type, num_mapped_in_input, dsss, expected_subspaces);
-    Addresses addrs(num_mapped_in_input);
+    SparseCoords addrs(num_mapped_in_input);
     std::set<size_t> overwritten_subspaces;
     auto modifier_view = modifier.index().create_view({});
     auto lookup_view = input.index().create_view(addrs.lookup_view_dims);
@@ -309,7 +307,7 @@ PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuil
     }
     const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
     const size_t dsss = input_type.dense_subspace_size();
-    Addresses addrs(num_mapped_in_input);
+    SparseCoords addrs(num_mapped_in_input);
     std::set<size_t> removed_subspaces;
     auto modifier_view = modifier.index().create_view({});
     auto lookup_view = input.index().create_view(addrs.lookup_view_dims);
