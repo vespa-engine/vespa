@@ -22,7 +22,7 @@ hashValue(const char *str) noexcept
 size_t
 hashValue(const void * buf, size_t sz) noexcept
 {
-    return XXH64(buf, sz, 0);
+    return XXH3_64bits(buf, sz);
 }
 
 }

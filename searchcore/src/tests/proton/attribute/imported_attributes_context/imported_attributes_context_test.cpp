@@ -120,6 +120,10 @@ TEST_F("require that all attributes can be retrieved", Fixture)
     std::vector<const IAttributeVector *> list;
     f.ctx->getAttributeList(list);
     EXPECT_EQUAL(2u, list.size());
+    // Don't depend on internal (unspecified) ordering
+    std::sort(list.begin(), list.end(), [](auto* lhs, auto* rhs){
+        return lhs->getName() < rhs->getName();
+    });
     EXPECT_EQUAL("bar", list[0]->getName());
     EXPECT_EQUAL("foo", list[1]->getName());
 }
