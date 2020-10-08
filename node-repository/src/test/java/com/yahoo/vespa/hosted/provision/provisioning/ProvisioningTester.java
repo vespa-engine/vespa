@@ -17,6 +17,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -203,12 +204,23 @@ public class ProvisioningTester {
     }
 
     public Collection<HostSpec> activate(ApplicationId application, Collection<HostSpec> hosts) {
-        NestedTransaction transaction = new NestedTransaction();
-        transaction.add(new CuratorTransaction(curator));
-        provisioner.activate(transaction, application, hosts);
-        transaction.commit();
+        try (var lock = provisioner.lock(application)) {
+            NestedTransaction transaction = new NestedTransaction();
+            transaction.add(new CuratorTransaction(curator));
+            provisioner.activate(transaction, hosts, lock);
+            transaction.commit();
+        }
         assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
         return hosts;
+    }
+
+    /** Remove all resources allocated to application */
+    public void remove(ApplicationId application) {
+        try (var lock = provisioner.lock(application)) {
+            NestedTransaction transaction = new NestedTransaction();
+            provisioner.remove(transaction, lock);
+            transaction.commit();
+        }
     }
 
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
@@ -223,9 +235,11 @@ public class ProvisioningTester {
     }
 
     public void deactivate(ApplicationId applicationId) {
-        NestedTransaction deactivateTransaction = new NestedTransaction();
-        nodeRepository.deactivate(applicationId, deactivateTransaction);
-        deactivateTransaction.commit();
+        try (var lock = nodeRepository.lock(applicationId)) {
+            NestedTransaction deactivateTransaction = new NestedTransaction();
+            nodeRepository.deactivate(deactivateTransaction, new ProvisionLock(applicationId, lock));
+            deactivateTransaction.commit();
+        }
     }
 
     public Collection<String> toHostNames(Collection<HostSpec> hosts) {

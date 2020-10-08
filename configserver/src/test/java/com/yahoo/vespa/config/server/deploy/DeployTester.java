@@ -22,6 +22,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
@@ -227,13 +228,26 @@ public class DeployTester {
         }
 
         @Override
+        public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) {
+        }
+
+        @Override
         public void remove(NestedTransaction transaction, ApplicationId application) {
             // noop
         }
 
         @Override
+        public void remove(NestedTransaction transaction, ProvisionLock lock) {
+        }
+
+        @Override
         public void restart(ApplicationId application, HostFilter filter) {
             // noop
+        }
+
+        @Override
+        public ProvisionLock lock(ApplicationId application) {
+            return null;
         }
 
     }

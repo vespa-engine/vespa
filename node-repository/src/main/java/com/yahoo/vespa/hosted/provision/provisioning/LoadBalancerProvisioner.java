@@ -5,8 +5,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -82,7 +82,7 @@ public class LoadBalancerProvisioner {
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             List<Node> nodes = nodesOf(clusterId, application);
-            provision(application, clusterId, nodes, false, lock);
+            provision(application, clusterId, nodes, false, new ProvisionLock(application, lock));
         }
     }
 
@@ -96,29 +96,24 @@ public class LoadBalancerProvisioner {
      *
      * Calling this when no load balancer has been prepared for given cluster is a no-op.
      */
-    public void activate(ApplicationId application, Set<ClusterSpec> clusters,
-                         @SuppressWarnings("unused") Mutex applicationLock, NestedTransaction transaction) {
-        try (var lock = db.lock(application)) {
-            for (var cluster : loadBalancedClustersOf(application).entrySet()) {
-                // Provision again to ensure that load balancer instance is re-configured with correct nodes
-                provision(application, cluster.getKey(), cluster.getValue(), true, lock);
-            }
-            // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
-            var surplusLoadBalancers = surplusLoadBalancersOf(application, clusters.stream()
-                                                                                   .map(LoadBalancerProvisioner::effectiveId)
-                                                                                   .collect(Collectors.toSet()));
-            deactivate(surplusLoadBalancers, transaction);
+    public void activate(NestedTransaction transaction, Set<ClusterSpec> clusters, ProvisionLock lock) {
+        for (var cluster : loadBalancedClustersOf(lock.application()).entrySet()) {
+            // Provision again to ensure that load balancer instance is re-configured with correct nodes
+            provision(lock.application(), cluster.getKey(), cluster.getValue(), true, lock);
         }
+        // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
+        var surplusLoadBalancers = surplusLoadBalancersOf(lock.application(), clusters.stream()
+                                                                                      .map(LoadBalancerProvisioner::effectiveId)
+                                                                                      .collect(Collectors.toSet()));
+        deactivate(surplusLoadBalancers, transaction);
     }
 
     /**
      * Deactivate all load balancers assigned to given application. This is a no-op if an application does not have any
      * load balancer(s).
      */
-    public void deactivate(ApplicationId application, NestedTransaction transaction) {
-        try (var lock = nodeRepository.lock(application)) {
-            deactivate(nodeRepository.loadBalancers(application).asList(), transaction);
-        }
+    public void deactivate(NestedTransaction transaction, ProvisionLock lock) {
+        deactivate(nodeRepository.loadBalancers(lock.application()).asList(), transaction);
     }
 
     /** Returns load balancers of given application that are no longer referenced by given clusters */
@@ -156,7 +151,7 @@ public class LoadBalancerProvisioner {
 
     /** Idempotently provision a load balancer for given application and cluster */
     private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate,
-                           @SuppressWarnings("unused") Mutex loadBalancersLock) {
+                           @SuppressWarnings("unused") ProvisionLock lock) {
         var id = new LoadBalancerId(application, clusterId);
         var now = nodeRepository.clock().instant();
         var loadBalancer = db.readLoadBalancer(id);

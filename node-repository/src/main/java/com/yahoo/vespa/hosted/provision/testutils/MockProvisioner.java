@@ -6,12 +6,12 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.transaction.NestedTransaction;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,11 +21,16 @@ public class MockProvisioner implements Provisioner {
 
     @Override
     public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
+
+    }
+
+    @Override
+    public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) {
 
     }
 
@@ -35,8 +40,18 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
+    public void remove(NestedTransaction transaction, ProvisionLock lock) {
+
+    }
+
+    @Override
     public void restart(ApplicationId application, HostFilter filter) {
 
+    }
+
+    @Override
+    public ProvisionLock lock(ApplicationId application) {
+        return null;
     }
 
 }

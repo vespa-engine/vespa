@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -37,12 +38,10 @@ class Activator {
         this.loadBalancerProvisioner = loadBalancerProvisioner;
     }
 
-    /** Activate required resources for given application */
-    public void activate(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction) {
-        try (Mutex lock = nodeRepository.lock(application)) {
-            activateNodes(application, hosts, transaction, lock);
-            activateLoadBalancers(application, hosts, transaction, lock);
-        }
+    /** Activate required resources for application guarded by given lock */
+    public void activate(Collection<HostSpec> hosts, NestedTransaction transaction, ProvisionLock lock) {
+        activateNodes(hosts, transaction, lock);
+        activateLoadBalancers(hosts, transaction, lock);
     }
 
     /**
@@ -55,12 +54,11 @@ class Activator {
      * Nodes in active which are not present in <code>hosts</code> are moved to inactive.
      *
      * @param transaction Transaction with operations to commit together with any operations done within the repository.
-     * @param application the application to allocate nodes for
      * @param hosts the hosts to make the set of active nodes of this
-     * @param applicationLock application lock that must be held when calling this
+     * @param lock provision lock that must be held when calling this
      */
-    private void activateNodes(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction,
-                               @SuppressWarnings("unused") Mutex applicationLock) {
+    private void activateNodes(Collection<HostSpec> hosts, NestedTransaction transaction, ProvisionLock lock) {
+        ApplicationId application = lock.application();
         Set<String> hostnames = hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
         NodeList allNodes = nodeRepository.list();
         NodeList applicationNodes = allNodes.owner(application);
@@ -84,7 +82,7 @@ class Activator {
 
         List<Node> activeToRemove = removeHostsFromList(hostnames, active);
         activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired
-        nodeRepository.deactivate(activeToRemove, transaction);
+        nodeRepository.deactivate(activeToRemove, transaction, lock);
         nodeRepository.activate(updateFrom(hosts, continuedActive), transaction); // update active with any changes
         nodeRepository.activate(updatePortsFrom(hosts, reservedToActivate), transaction);
         unreserveParentsOf(reservedToActivate);
@@ -106,9 +104,8 @@ class Activator {
     }
 
     /** Activate load balancers */
-    private void activateLoadBalancers(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction,
-                                       @SuppressWarnings("unused") Mutex applicationLock) {
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(application, allClustersOf(hosts), applicationLock, transaction));
+    private void activateLoadBalancers(Collection<HostSpec> hosts, NestedTransaction transaction, ProvisionLock lock) {
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, allClustersOf(hosts), lock));
     }
 
     private static Set<ClusterSpec> allClustersOf(Collection<HostSpec> hosts) {

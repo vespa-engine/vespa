@@ -338,9 +338,11 @@ public class FailedExpirerTest {
         public FailureScenario allocate(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity capacity) {
             List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity,
                                                                (level, message) -> System.out.println(level + ": " + message) );
-            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.activate(transaction, applicationId, Set.copyOf(preparedNodes));
-            transaction.commit();
+            try (var lock = provisioner.lock(applicationId)) {
+                NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
+                provisioner.activate(transaction, Set.copyOf(preparedNodes), lock);
+                transaction.commit();
+            }
             return this;
         }
 

@@ -155,10 +155,12 @@ public class MockDeployer implements Deployer {
                 prepare();
             if (failActivate)
                 throw new IllegalStateException("failActivate is true");
-            try (NestedTransaction t = new NestedTransaction()) {
-                provisioner.activate(t, application.id(), preparedHosts);
-                t.commit();
-                lastDeployTimes.put(application.id, clock.instant());
+            try (var lock = provisioner.lock(application.id)) {
+                try (NestedTransaction t = new NestedTransaction()) {
+                    provisioner.activate(t, preparedHosts, lock);
+                    t.commit();
+                    lastDeployTimes.put(application.id, clock.instant());
+                }
             }
             return redeployments++;
         }

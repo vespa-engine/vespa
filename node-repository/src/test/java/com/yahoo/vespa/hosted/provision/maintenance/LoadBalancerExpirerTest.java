@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -55,7 +54,7 @@ public class LoadBalancerExpirerTest {
         assertEquals(3, loadBalancers.get().size());
 
         // Remove one application deactivates load balancers for that application
-        removeApplication(app1);
+        tester.remove(app1);
         assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb1).state());
         assertNotSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb2).state());
 
@@ -144,12 +143,6 @@ public class LoadBalancerExpirerTest {
                                                .filter(node -> node.allocation().get().membership().cluster().id().equals(cluster))
                                                .collect(Collectors.toList()),
                                          Agent.system, this.getClass().getSimpleName());
-    }
-
-    private void removeApplication(ApplicationId application) {
-        NestedTransaction transaction = new NestedTransaction();
-        tester.provisioner().remove(transaction, application);
-        transaction.commit();
     }
 
     private void deployApplication(ApplicationId application, ClusterSpec.Id... clusters) {

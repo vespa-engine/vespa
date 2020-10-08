@@ -6,12 +6,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -22,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -136,9 +133,7 @@ public class LoadBalancerProvisionerTest {
                            .get());
 
         // Application is removed, nodes and load balancer are deactivated
-        NestedTransaction removeTransaction = new NestedTransaction();
-        tester.provisioner().remove(removeTransaction, app1);
-        removeTransaction.commit();
+        tester.remove(app1);
         dirtyNodesOf(app1);
         assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().getNodes(app1, Node.State.reserved, Node.State.active).isEmpty());
         assertEquals(2, lbApp1.get().size());
@@ -170,9 +165,7 @@ public class LoadBalancerProvisionerTest {
         assertFalse("Load balancer is reconfigured with reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
 
         // Application is removed, nodes are deleted and load balancer is deactivated
-        NestedTransaction removeTransaction = new NestedTransaction();
-        tester.provisioner().remove(removeTransaction, app1);
-        removeTransaction.commit();
+        tester.remove(app1);
         tester.nodeRepository().database().removeNodes(tester.nodeRepository().getNodes(NodeType.tenant));
         assertTrue("Nodes are deleted", tester.nodeRepository().getNodes(NodeType.tenant).isEmpty());
         assertSame("Load balancer is deactivated", LoadBalancer.State.inactive, lb.get().state());
@@ -258,21 +251,6 @@ public class LoadBalancerProvisionerTest {
             allNodes.addAll(tester.prepare(application, spec, capacity));
         }
         return allNodes;
-    }
-
-    private void makeDynamicDockerNodes(int n, NodeType nodeType) {
-        tester.makeReadyHosts(n, new NodeResources(1, 4, 10, 0.3));
-        List<Node> nodes = new ArrayList<>(n);
-        for (int i = 1; i <= n; i++) {
-            var node = Node.createDockerNode(Set.of(), "vnode" + i,
-                                             tester.nodeRepository().getNodes(NodeType.host).get(n - 1).hostname(),
-                                             new NodeResources(1, 4, 10, 0.3),
-                                             nodeType);
-            nodes.add(node);
-        }
-        nodes = tester.nodeRepository().database().addNodesInState(nodes, Node.State.reserved, Agent.system);
-        nodes = tester.nodeRepository().setDirty(nodes, Agent.system, getClass().getSimpleName());
-        tester.nodeRepository().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private void assignIps(List<Node> nodes) {
