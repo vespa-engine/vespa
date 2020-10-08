@@ -10,9 +10,8 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import org.w3c.dom.Element;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.OptionalDouble;
 
 /**
  * Component definition for a {@link java.util.concurrent.Executor} using {@link ContainerThreadPool}.
@@ -49,15 +48,11 @@ public class ContainerThreadpool extends SimpleComponent implements ContainerThr
     protected Optional<UserOptions> userOptions() { return Optional.ofNullable(userOptions); }
     protected boolean hasUserOptions() { return userOptions().isPresent(); }
 
-    protected static double vcpu(ContainerCluster<?> cluster) {
-        List<Double> vcpus = cluster.getContainers().stream()
+    protected static OptionalDouble vcpu(ContainerCluster<?> cluster) {
+        return cluster.getContainers().stream()
                 .filter(c -> c.getHostResource() != null && c.getHostResource().realResources() != null)
-                .map(c -> c.getHostResource().realResources().vcpu())
-                .distinct()
-                .collect(Collectors.toList());
-        // We can only use host resource for calculation if all container nodes in the cluster are homogeneous (in terms of vcpu)
-        if (vcpus.size() != 1 || vcpus.get(0) == 0) return 0;
-        return vcpus.get(0);
+                .mapToDouble(c -> c.getHostResource().realResources().vcpu())
+                .max(); // Use highest vcpu as scale factor
     }
 
     public static class UserOptions {
