@@ -21,10 +21,7 @@ using join_fun_t = double (*)(double, double);
 static constexpr size_t npos() { return -1; }
 
 enum class DimCase {
-    SKIP_MAPPED, SKIP_INDEXED,
-    MISSING_MAPPED, MISSING_INDEXED,
-    MAPPED_MATCH, INDEXED_MATCH,
-    CONV_TO_INDEXED, CONV_TO_MAPPED
+    MAPPED_MATCH, CONV_TO_INDEXED
 };
 
 struct DenseCoords {
