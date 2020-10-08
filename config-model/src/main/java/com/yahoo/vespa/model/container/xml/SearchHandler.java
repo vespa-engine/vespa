@@ -64,7 +64,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
                 builder.queueSize(0);
             } else {
                 // Controls max number of concurrent requests per container
-                int workerThreads = Math.max(2, (int)Math.ceil(vcpu * threadPoolSizeFactor));
+                int workerThreads = Math.max(16, (int)Math.ceil(vcpu * threadPoolSizeFactor)); // TODO(bjorncs): reduce minimum size
                 builder.maxThreads(workerThreads);
                 builder.minThreads(workerThreads);
 
