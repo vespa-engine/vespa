@@ -51,12 +51,6 @@ public:
         return MemoryUsage(sz, sz, 0, 0);
     }
 
-    template <typename T> static ConstArrayRef<T> typify_cells(const eval::Value &self) {
-        return self.cells().typify<T>();
-    }
-    template <typename T> static ConstArrayRef<T> unsafe_typify_cells(const eval::Value &self) {
-        return self.cells().unsafe_typify<T>();
-    }
 protected:
     explicit DenseTensorView(const eval::ValueType &type_in)
         : _typeRef(type_in),

@@ -48,8 +48,8 @@ void my_simple_expand_op(State &state, uint64_t param) {
     using OP = typename std::conditional<rhs_inner,SwapArgs2<Fun>,Fun>::type;
     const ExpandParams &params = *(ExpandParams*)param;
     OP my_op(params.function);
-    auto inner_cells = DenseTensorView::typify_cells<ICT>(state.peek(rhs_inner ? 0 : 1));
-    auto outer_cells = DenseTensorView::typify_cells<OCT>(state.peek(rhs_inner ? 1 : 0));
+    auto inner_cells = state.peek(rhs_inner ? 0 : 1).cells().typify<ICT>();
+    auto outer_cells = state.peek(rhs_inner ? 1 : 0).cells().typify<OCT>();
     auto dst_cells = state.stash.create_array<DCT>(params.result_size);
     DCT *dst = dst_cells.begin();
     for (OCT outer_cell: outer_cells) {

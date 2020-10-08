@@ -55,7 +55,7 @@ CT reduce_cells(const CT *src, size_t dim_size, size_t stride, AGGR &aggr) {
 template <typename CT, typename AGGR>
 void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &params = *(const Params *)(param);
-    const CT *src = DenseTensorView::typify_cells<CT>(state.peek(0)).cbegin();
+    const CT *src = state.peek(0).cells().typify<CT>().cbegin();
     auto dst_cells = state.stash.create_array<CT>(params.outer_size * params.inner_size);
     AGGR aggr;
     CT *dst = dst_cells.begin();
