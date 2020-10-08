@@ -135,7 +135,7 @@ indexing.tasklimit int default=1000 restart
 ## nonzero. The number is divided by the number of indexing threads,
 ## i.e.  when indexing.threads is 4 and indexing.semiunboundtasklimit
 ## is 40000 then effective task limit is 10000.
-indexing.semiunboundtasklimit int default = 40000 restart
+indexing.semiunboundtasklimit int default = 1000 restart
 
 ## Kind of watermark for when to activate extra manpower
 ## Utilized if optimize is set to either THROUGHPUT or ADAPTIVE
