@@ -68,8 +68,8 @@ typedef std::vector<LidInfoWithLid> LidInfoWithLidV;
 class ISetLid
 {
 public:
-    using LockGuard = vespalib::LockGuard;
-    virtual ~ISetLid() { }
+    using LockGuard = std::unique_lock<std::mutex>;
+    virtual ~ISetLid() = default;
     virtual void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) = 0;
 };
 
@@ -77,10 +77,11 @@ class IGetLid
 {
 public:
     using Guard = vespalib::GenerationHandler::Guard;
-    virtual ~IGetLid() { }
+    using LockGuard = std::unique_lock<std::mutex>;
+    virtual ~IGetLid() = default;
 
     virtual LidInfo getLid(const Guard & guard, uint32_t lid) const = 0;
-    virtual vespalib::LockGuard getLidGuard(uint32_t lid) const = 0;
+    virtual LockGuard getLidGuard(uint32_t lid) const = 0;
     virtual Guard getLidReadGuard() const = 0;
 };
 

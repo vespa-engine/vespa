@@ -220,7 +220,7 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
         vespalib::hash_map<uint32_t, ChunkInfo> chunksOnFile;
         std::vector<LidAndBuffer> buffers;
         {
-            LockGuard guard(_lock);
+            vespalib::LockGuard guard(_lock);
             for (size_t i(0); i < count; i++) {
                 const LidInfoWithLid & li = *(begin + i);
                 uint32_t chunk = li.getChunkId();
@@ -260,7 +260,7 @@ WriteableFileChunk::read(uint32_t lid, SubChunkId chunkId, vespalib::DataBuffer 
 {
     ChunkInfo chunkInfo;
     if (!frozen()) {
-        LockGuard guard(_lock);
+        vespalib::LockGuard guard(_lock);
         if ((chunkId >= _chunkInfo.size()) || !_chunkInfo[chunkId].valid()) {
             auto found = _chunkMap.find(chunkId);
             if (found != _chunkMap.end()) {
@@ -282,7 +282,7 @@ WriteableFileChunk::internalFlush(uint32_t chunkId, uint64_t serialNum)
 {
     Chunk * active(nullptr);
     {
-        LockGuard guard(_lock);
+        vespalib::LockGuard guard(_lock);
         active = _chunkMap[chunkId].get();
     }
 
@@ -298,7 +298,7 @@ WriteableFileChunk::internalFlush(uint32_t chunkId, uint64_t serialNum)
         tmp->getBuf().moveFreeToData(padAfter);
     }
     {
-        LockGuard innerGuard(_lock);
+        vespalib::LockGuard innerGuard(_lock);
         setDiskFootprint(FileChunk::getDiskFootprint() + tmp->getBuf().getDataLen());
     }
     enque(std::move(tmp));
@@ -396,11 +396,11 @@ WriteableFileChunk::fetchNextChain(ProcessedChunkMap & orderedChunks, const uint
 }
 
 ChunkMeta
-WriteableFileChunk::computeChunkMeta(const LockGuard & guard,
+WriteableFileChunk::computeChunkMeta(const vespalib::LockGuard & guard,
                                      const GenerationHandler::Guard & bucketizerGuard,
                                      size_t offset, const ProcessedChunk & tmp, const Chunk & active)
 {
-    (void) guard;
+    assert(guard.locks(_lock));
     size_t dataLen = tmp.getBuf().getDataLen();
     const ChunkMeta cmeta(offset, tmp.getPayLoad(), active.getLastSerial(), active.count());
     assert((size_t(tmp.getBuf().getData())%_alignment) == 0);
@@ -432,7 +432,7 @@ WriteableFileChunk::computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, 
     cmetaV.reserve(chunks.size());
     uint64_t lastSerial(_lastPersistedSerialNum);
     (void) lastSerial;
-    LockGuard guard(_lock);
+    vespalib::LockGuard guard(_lock);
 
     if (!_pendingChunks.empty()) {
         const PendingChunk & pc = *_pendingChunks.back();
@@ -541,7 +541,7 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
 vespalib::system_time
 WriteableFileChunk::getModificationTime() const
 {
-    LockGuard guard(_lock);
+    vespalib::LockGuard guard(_lock);
     return _modificationTime;
 }
 
@@ -595,7 +595,7 @@ size_t
 WriteableFileChunk::getMemoryFootprint() const
 {
     size_t sz(0);
-    LockGuard guard(_lock);
+    vespalib::LockGuard guard(_lock);
     for (const auto & it : _chunkMap) {
         sz += it.second->size();
     }
@@ -613,7 +613,7 @@ WriteableFileChunk::getMemoryMetaFootprint() const
 vespalib::MemoryUsage
 WriteableFileChunk::getMemoryUsage() const
 {
-    LockGuard guard(_lock);
+    vespalib::LockGuard guard(_lock);
     vespalib::MemoryUsage result;
     for (const auto &chunk : _chunkMap) {
         result.merge(chunk.second->getMemoryUsage());
@@ -843,7 +843,7 @@ WriteableFileChunk::updateCurrentDiskFootprint() {
  */
 void
 WriteableFileChunk::flushPendingChunks(uint64_t serialNum) {
-    LockGuard flushGuard(_flushLock);
+    std::unique_lock flushGuard(_flushLock);
     if (frozen())
         return;
     uint64_t datFileLen = _dataFile.getSize();
@@ -851,15 +851,14 @@ WriteableFileChunk::flushPendingChunks(uint64_t serialNum) {
     if (needFlushPendingChunks(serialNum, datFileLen)) {
         timeStamp = unconditionallyFlushPendingChunks(flushGuard, serialNum, datFileLen);
     }
-    LockGuard guard(_lock);
+    vespalib::LockGuard guard(_lock);
     _modificationTime = std::max(timeStamp, _modificationTime);
 }
 
 vespalib::system_time
-WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard &flushGuard, uint64_t serialNum, uint64_t datFileLen)
+WriteableFileChunk::unconditionallyFlushPendingChunks(const LockGuard &flushGuard, uint64_t serialNum, uint64_t datFileLen)
 {
-    (void) flushGuard;
-    assert(flushGuard.locks(_flushLock));
+    assert((flushGuard.mutex() == &_flushLock) && flushGuard.owns_lock());
     if ( ! _dataFile.Sync()) {
         throw SummaryException("Failed fsync of dat file", _dataFile, VESPA_STRLOC);
     }

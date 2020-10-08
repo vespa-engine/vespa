@@ -21,7 +21,7 @@ using common::FileHeaderContext;
 using vespalib::ThreadStackExecutor;
 
 struct MyFileHeaderContext : public FileHeaderContext {
-    virtual void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override {
+    void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override {
         (void) header;
         (void) name;
     }
@@ -29,7 +29,7 @@ struct MyFileHeaderContext : public FileHeaderContext {
 
 struct SetLidObserver : public ISetLid {
     std::vector<uint32_t> lids;
-    virtual void setLid(const vespalib::LockGuard &guard, uint32_t lid, const LidInfo &lidInfo) override {
+    void setLid(const LockGuard &guard, uint32_t lid, const LidInfo &lidInfo) override {
         (void) guard;
         (void) lidInfo;
         lids.push_back(lid);
@@ -38,12 +38,12 @@ struct SetLidObserver : public ISetLid {
 
 struct BucketizerObserver : public IBucketizer {
     mutable std::vector<uint32_t> lids;
-    virtual document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard &guard, uint32_t lid) const override {
+    document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard &guard, uint32_t lid) const override {
         (void) guard;
         lids.push_back(lid);
         return document::BucketId();
     }
-    virtual vespalib::GenerationHandler::Guard getGuard() const override {
+    vespalib::GenerationHandler::Guard getGuard() const override {
         return vespalib::GenerationHandler::Guard();
     }
 };
@@ -62,7 +62,7 @@ struct FixtureBase {
     uint64_t serialNum;
     TuneFileSummary tuneFile;
     MyFileHeaderContext fileHeaderCtx;
-    vespalib::Lock updateLock;
+    std::mutex updateLock;
     SetLidObserver lidObserver;
     BucketizerObserver bucketizer;
 
@@ -70,8 +70,7 @@ struct FixtureBase {
         return serialNum++;
     };
 
-    FixtureBase(const vespalib::string &baseName,
-                bool dirCleanup = true)
+    explicit FixtureBase(const vespalib::string &baseName, bool dirCleanup = true)
         : dir(baseName),
           executor(1, 0x10000),
           serialNum(1),
@@ -83,20 +82,21 @@ struct FixtureBase {
     {
         dir.cleanup(dirCleanup);
     }
-    ~FixtureBase() {}
-    void assertLidMap(const std::vector<uint32_t> &expLids) {
+    ~FixtureBase();
+    void assertLidMap(const std::vector<uint32_t> &expLids) const {
         EXPECT_EQUAL(expLids, lidObserver.lids);
     }
-    void assertBucketizer(const std::vector<uint32_t> &expLids) {
+    void assertBucketizer(const std::vector<uint32_t> &expLids) const {
         EXPECT_EQUAL(expLids, bucketizer.lids);
     }
 };
 
+FixtureBase::~FixtureBase() = default;
+
 struct ReadFixture : public FixtureBase {
     FileChunk chunk;
 
-    ReadFixture(const vespalib::string &baseName,
-                 bool dirCleanup = true)
+    explicit ReadFixture(const vespalib::string &baseName, bool dirCleanup = true)
         : FixtureBase(baseName, dirCleanup),
           chunk(FileChunk::FileId(0),
                 FileChunk::NameId(1234),
@@ -108,7 +108,7 @@ struct ReadFixture : public FixtureBase {
         dir.cleanup(dirCleanup);
     }
     void updateLidMap(uint32_t docIdLimit) {
-        vespalib::LockGuard guard(updateLock);
+        std::unique_lock guard(updateLock);
         chunk.updateLidMap(guard, lidObserver, serialNum, docIdLimit);
     }
 };
@@ -145,7 +145,7 @@ struct WriteFixture : public FixtureBase {
         return *this;
     }
     void updateLidMap(uint32_t docIdLimit) {
-        vespalib::LockGuard guard(updateLock);
+        std::unique_lock guard(updateLock);
         chunk.updateLidMap(guard, lidObserver, serialNum, docIdLimit);
         serialNum = chunk.getSerialNum();
     }
