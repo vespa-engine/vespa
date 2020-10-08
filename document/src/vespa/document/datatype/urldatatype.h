@@ -7,8 +7,6 @@ namespace document {
 
 class UrlDataType {
 private:
-    static StructDataType::UP _instance;
-
     UrlDataType() { /* hide */ }
     static StructDataType::UP createInstance();
 
