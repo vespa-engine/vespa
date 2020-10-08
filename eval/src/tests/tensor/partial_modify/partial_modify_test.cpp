@@ -24,6 +24,7 @@ std::vector<Layout> modify_layouts = {
     {x(5)},                               {x({"1","2","foo","17"})},
     {x({"a","b","c"}),y({"d","e"})},      {x({"b"}),y({"d"})},             
     {x({"a","b","c"})},                   {x({"b","c","d"})},
+    {x(4),y({"a","b","c","d"}),z(5)},     {x({"1","2"}),y({"b","d"}),z({"1","3"})},
     {x(3),y(2)},                          {x({"0","1"}),y({"0","1"})},
     {x({"a","","b"})},                    {x({""})}
 };
@@ -116,9 +117,6 @@ TEST(PartialModifyTest, partial_modify_works_like_old_modify) {
             auto expect = perform_old_modify(lhs, rhs, fun);
             auto actual = perform_partial_modify(lhs, rhs, fun);
             EXPECT_EQ(actual, expect);
-            if (fun == operation::Max::f) {
-                printf("%s modify(sub) %s -> %s\n", lhs.to_string().c_str(), rhs.to_string().c_str(), actual.to_string().c_str());
-            }
         }
     }
 }
