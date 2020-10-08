@@ -200,7 +200,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
                       _proton.get_search_server(),
                       _proton.get_docsum_server(),
                       _proton.get_monitor_server(), *_orb)),
-      _regAPI(*_orb, params.slobrok_config),
+      _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
       _stateLock(),
       _stateCond(),
       _executor(48, 128 * 1024)

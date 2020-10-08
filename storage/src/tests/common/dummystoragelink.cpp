@@ -37,7 +37,7 @@ DummyStorageLink::~DummyStorageLink()
 bool
 DummyStorageLink::handleInjectedReply()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if (!_injected.empty()) {
         sendUp(*_injected.begin());
         _injected.pop_front();
@@ -65,7 +65,7 @@ bool DummyStorageLink::onDown(const api::StorageMessage::SP& cmd)
     if (isBottom()) {
         vespalib::MonitorGuard lock(_waitMonitor);
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             _commands.push_back(cmd);
         }
         lock.broadcast();
@@ -78,7 +78,7 @@ bool DummyStorageLink::onUp(const api::StorageMessage::SP& reply) {
     if (isTop()) {
         vespalib::MonitorGuard lock(_waitMonitor);
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             _replies.push_back(reply);
         }
         lock.broadcast();
@@ -91,13 +91,13 @@ bool DummyStorageLink::onUp(const api::StorageMessage::SP& reply) {
 void DummyStorageLink::injectReply(api::StorageReply* reply)
 {
     assert(reply);
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _injected.push_back(std::shared_ptr<api::StorageReply>(reply));
 }
 
 void DummyStorageLink::reset() {
     vespalib::MonitorGuard lock(_waitMonitor);
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _commands.clear();
     _replies.clear();
     _injected.clear();

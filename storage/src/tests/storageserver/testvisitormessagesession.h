@@ -45,7 +45,7 @@ public:
 
 struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory
 {
-    vespalib::Lock _accessLock;
+    std::mutex _accessLock;
     std::vector<TestVisitorMessageSession*> _visitorSessions;
     mbus::Error _autoReplyError;
     bool _createAutoReplyVisitorSessions;
@@ -56,11 +56,10 @@ struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory
           _priConverter(configId) {}
 
     VisitorMessageSession::UP createSession(Visitor& v, VisitorThread& vt) override {
-        vespalib::LockGuard lock(_accessLock);
-        TestVisitorMessageSession::UP session(new TestVisitorMessageSession(vt, v, _autoReplyError,
-                                                                            _createAutoReplyVisitorSessions));
+        std::lock_guard lock(_accessLock);
+        auto session = std::make_unique<TestVisitorMessageSession>(vt, v, _autoReplyError, _createAutoReplyVisitorSessions);
         _visitorSessions.push_back(session.get());
-        return VisitorMessageSession::UP(std::move(session));
+        return session;
     }
 
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override {

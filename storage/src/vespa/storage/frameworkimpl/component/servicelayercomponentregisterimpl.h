@@ -18,7 +18,7 @@ class ServiceLayerComponentRegisterImpl
         : public virtual ServiceLayerComponentRegister,
           public virtual StorageComponentRegisterImpl
 {
-    vespalib::Lock _componentLock;
+    std::mutex _componentLock;
     std::vector<ServiceLayerManagedComponent*> _components;
     uint16_t _diskCount;
     ContentBucketSpaceRepo _bucketSpaceRepo;

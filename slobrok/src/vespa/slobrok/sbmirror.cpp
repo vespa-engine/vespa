@@ -55,7 +55,7 @@ MirrorAPI::SpecList
 MirrorAPI::lookup(const std::string & pattern) const
 {
     SpecList ret;
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     SpecList::const_iterator end = _specs.end();
     for (SpecList::const_iterator it = _specs.begin(); it != end; ++it) {
         if (match(it->first.c_str(), pattern.c_str())) {
@@ -104,7 +104,7 @@ void
 MirrorAPI::updateTo(SpecList& newSpecs, uint32_t newGen)
 {
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         std::swap(newSpecs, _specs);
         _updates.add();
     }
@@ -117,7 +117,7 @@ MirrorAPI::updateTo(SpecList& newSpecs, uint32_t newGen)
 bool
 MirrorAPI::ready() const
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     return _updates.getAsInt() != 0;
 }
 

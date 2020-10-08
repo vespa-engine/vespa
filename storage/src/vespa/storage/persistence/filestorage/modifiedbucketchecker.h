@@ -86,7 +86,7 @@ private:
     framework::Thread::UP _thread;
     config::ConfigFetcher _configFetcher;
     vespalib::Monitor _monitor;
-    vespalib::Lock _stateLock;
+    std::mutex _stateLock;
     CyclicBucketSpaceIterator::UP _bucketSpaces;
     BucketIdListResult  _rechecksNotStarted;
     size_t _pendingRequests;

@@ -112,7 +112,7 @@ private:
     std::unique_ptr<mbus::DestinationSession> _messageBusSession;
     std::unique_ptr<mbus::SourceSession> _sourceSession;
 
-    vespalib::Lock _messageBusSentLock;
+    std::mutex _messageBusSentLock;
     std::map<api::StorageMessage::Id, std::shared_ptr<api::StorageCommand> > _messageBusSent;
 
     config::ConfigUri     _configUri;

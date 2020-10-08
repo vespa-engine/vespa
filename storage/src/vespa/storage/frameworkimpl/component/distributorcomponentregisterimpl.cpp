@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributorcomponentregisterimpl.h"
-#include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 
@@ -11,8 +10,7 @@ DistributorComponentRegisterImpl::DistributorComponentRegisterImpl()
 {
 }
 
-DistributorComponentRegisterImpl::~DistributorComponentRegisterImpl() {
-}
+DistributorComponentRegisterImpl::~DistributorComponentRegisterImpl() = default;
 
 void
 DistributorComponentRegisterImpl::handleNewState()
@@ -24,7 +22,7 @@ DistributorComponentRegisterImpl::handleNewState()
 void
 DistributorComponentRegisterImpl::registerDistributorComponent(DistributorManagedComponent& smc)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
     if (_timeCalculator != 0) {
         smc.setTimeCalculator(*_timeCalculator);
@@ -36,7 +34,7 @@ DistributorComponentRegisterImpl::registerDistributorComponent(DistributorManage
 void
 DistributorComponentRegisterImpl::setTimeCalculator(UniqueTimeCalculator& utc)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     if (_timeCalculator != 0) {
         throw vespalib::IllegalStateException(
                 "Time calculator already set. Cannot be updated live",
@@ -51,7 +49,7 @@ DistributorComponentRegisterImpl::setTimeCalculator(UniqueTimeCalculator& utc)
 void
 DistributorComponentRegisterImpl::setDistributorConfig(const DistributorConfig& c)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _distributorConfig = c;
     for (uint32_t i=0; i<_components.size(); ++i) {
         _components[i]->setDistributorConfig(c);
@@ -61,7 +59,7 @@ DistributorComponentRegisterImpl::setDistributorConfig(const DistributorConfig& 
 void
 DistributorComponentRegisterImpl::setVisitorConfig(const VisitorConfig& c)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _visitorConfig = c;
     for (uint32_t i=0; i<_components.size(); ++i) {
         _components[i]->setVisitorConfig(c);

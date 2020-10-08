@@ -24,7 +24,7 @@ class StorageComponentRegisterImpl
     using PriorityConfig = StorageComponent::PriorityConfig;
     using BucketspacesConfig = vespa::config::content::core::internal::InternalBucketspacesType;
 
-    vespalib::Lock _componentLock;
+    std::mutex _componentLock;
     std::vector<StorageComponent*> _components;
     vespalib::string _clusterName;
     const lib::NodeType* _nodeType;

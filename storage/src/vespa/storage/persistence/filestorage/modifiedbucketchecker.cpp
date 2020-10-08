@@ -73,7 +73,7 @@ void
 ModifiedBucketChecker::configure(
     std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig)
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     if (newConfig->bucketRecheckingChunkSize < 1) {
         throw config::InvalidConfigException(
                 "Cannot have bucket rechecking chunk size of less than 1");
@@ -135,7 +135,7 @@ ModifiedBucketChecker::onInternalReply(
         const std::shared_ptr<api::InternalReply>& r)
 {
     if (r->getType() == RecheckBucketInfoReply::ID) {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         assert(_pendingRequests > 0);
         --_pendingRequests;
         if (_pendingRequests == 0 && moreChunksRemaining()) {
@@ -158,7 +158,7 @@ ModifiedBucketChecker::requestModifiedBucketsFromProvider(document::BucketSpace 
         return false;
     }
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         _rechecksNotStarted.reset(bucketSpace, result.getList());
     }
     return true;
@@ -202,7 +202,7 @@ ModifiedBucketChecker::tick()
     // we want getModifiedBuckets() to called outside the lock.
     bool shouldRequestFromProvider = false;
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         if (!currentChunkFinished()) {
             return true;
         }
@@ -216,7 +216,7 @@ ModifiedBucketChecker::tick()
 
     std::vector<RecheckBucketInfoCommand::SP> commandsToSend;
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         if (moreChunksRemaining()) {
             nextRecheckChunk(commandsToSend);
         } 

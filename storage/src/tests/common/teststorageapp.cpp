@@ -257,7 +257,7 @@ TestDistributorApp::~TestDistributorApp() = default;
 api::Timestamp
 TestDistributorApp::getUniqueTimestamp()
 {
-    vespalib::LockGuard guard(_accessLock);
+    std::lock_guard guard(_accessLock);
     uint64_t timeNow(getClock().getTimeInSeconds().getTime());
     if (timeNow == _lastUniqueTimestampRequested) {
         ++_uniqueTimestampCounter;

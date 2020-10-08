@@ -57,7 +57,7 @@ ChangedBucketOwnershipHandler::configure(
 void
 ChangedBucketOwnershipHandler::reloadClusterState()
 {
-    vespalib::LockGuard guard(_stateLock);
+    std::lock_guard guard(_stateLock);
     const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
     setCurrentOwnershipWithStateNoLock(*clusterStateBundle);
 }
@@ -258,7 +258,7 @@ ChangedBucketOwnershipHandler::onSetSystemState(
     // can get through in the off-case that the lower level storage links
     // don't apply the state immediately for some reason.
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         oldOwnership = _currentOwnership;
         setCurrentOwnershipWithStateNoLock(stateCmd->getClusterStateBundle());
         newOwnership = _currentOwnership;
@@ -301,7 +301,7 @@ ChangedBucketOwnershipHandler::onSetSystemState(
 void
 ChangedBucketOwnershipHandler::storageDistributionChanged()
 {
-    vespalib::LockGuard guard(_stateLock);
+    std::lock_guard guard(_stateLock);
     _currentOwnership = std::make_shared<OwnershipState>(
             _component.getBucketSpaceRepo(), _currentState);
 }
@@ -345,7 +345,7 @@ ChangedBucketOwnershipHandler::isMutatingExternalOperation(
 ChangedBucketOwnershipHandler::OwnershipState::CSP
 ChangedBucketOwnershipHandler::getCurrentOwnershipState() const
 {
-    vespalib::LockGuard guard(_stateLock);
+    std::lock_guard guard(_stateLock);
     return _currentOwnership;
 }
 

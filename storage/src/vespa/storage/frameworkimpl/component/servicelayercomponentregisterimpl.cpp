@@ -18,7 +18,7 @@ void
 ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(
         ServiceLayerManagedComponent& smc)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
     smc.setDiskCount(_diskCount);
     smc.setBucketSpaceRepo(_bucketSpaceRepo);
@@ -28,7 +28,7 @@ ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(
 void
 ServiceLayerComponentRegisterImpl::setDiskCount(uint16_t count)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     if (_diskCount != 0) {
         throw IllegalStateException("Disk count already set. Cannot be updated live", VESPA_STRLOC);
     }

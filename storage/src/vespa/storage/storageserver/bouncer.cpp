@@ -72,7 +72,7 @@ Bouncer::configure(std::unique_ptr<vespa::config::content::core::StorBouncerConf
 {
     log_config_received(*config);
     validateConfig(*config);
-    vespalib::LockGuard lock(_lock);
+    std::lock_guard lock(_lock);
     _config = std::move(config);
 }
 
@@ -248,7 +248,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     bool abortLoadWhenClusterDown;
     int feedPriorityLowerBound;
     {
-        vespalib::LockGuard lock(_lock);
+        std::lock_guard lock(_lock);
         state                    = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
         maxClockSkewInSeconds    = _config->maxClockSkewSeconds;
         abortLoadWhenClusterDown = _config->stopExternalLoadWhenClusterDown;
@@ -325,7 +325,7 @@ deriveNodeState(const lib::NodeState &reportedNodeState,
 void
 Bouncer::handleNewState()
 {
-    vespalib::LockGuard lock(_lock);
+    std::lock_guard lock(_lock);
     const auto reportedNodeState = *_component.getStateUpdater().getReportedNodeState();
     const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
     const auto &clusterState = *clusterStateBundle->getBaselineClusterState();

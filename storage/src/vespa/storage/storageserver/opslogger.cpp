@@ -42,7 +42,7 @@ OpsLogger::onClose()
 void
 OpsLogger::configure(std::unique_ptr<vespa::config::content::core::StorOpsloggerConfig> config)
 {
-    vespalib::LockGuard lock(_lock);
+    std::lock_guard lock(_lock);
         // If no change in state, ignore
     if (config->targetfile == _fileName) return;
         // If a change we need to close old handle if open
@@ -79,7 +79,7 @@ OpsLogger::onPutReply(const std::shared_ptr<api::PutReply>& msg)
         << "\tPUT\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {
-        vespalib::LockGuard lock(_lock);
+        std::lock_guard lock(_lock);
         if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);
@@ -96,7 +96,7 @@ OpsLogger::onUpdateReply(const std::shared_ptr<api::UpdateReply>& msg)
         << "\tUPDATE\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {
-        vespalib::LockGuard lock(_lock);
+        std::lock_guard lock(_lock);
         if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);
@@ -113,7 +113,7 @@ OpsLogger::onRemoveReply(const std::shared_ptr<api::RemoveReply>& msg)
         << "\tREMOVE\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {
-        vespalib::LockGuard lock(_lock);
+        std::lock_guard lock(_lock);
         if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);
@@ -130,7 +130,7 @@ OpsLogger::onGetReply(const std::shared_ptr<api::GetReply>& msg)
         << "\tGET\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {
-        vespalib::LockGuard lock(_lock);
+        std::lock_guard lock(_lock);
         if (_targetFile == nullptr) return false;
         fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
         fflush(_targetFile);

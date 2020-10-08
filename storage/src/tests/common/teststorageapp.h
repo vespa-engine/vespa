@@ -141,16 +141,16 @@ class TestDistributorApp : public TestStorageApp,
                            public UniqueTimeCalculator
 {
     DistributorComponentRegisterImpl& _compReg;
-    vespalib::Lock _accessLock;
+    std::mutex _accessLock;
     uint64_t _lastUniqueTimestampRequested;
     uint32_t _uniqueTimestampCounter;
 
     void configure(vespalib::stringref configId);
 
 public:
-    TestDistributorApp(vespalib::stringref configId = "");
-    TestDistributorApp(NodeIndex index, vespalib::stringref configId = "");
-    ~TestDistributorApp();
+    explicit TestDistributorApp(vespalib::stringref configId = "");
+    explicit TestDistributorApp(NodeIndex index, vespalib::stringref configId = "");
+    ~TestDistributorApp() override;
 
     DistributorComponentRegisterImpl& getComponentRegister() {
         return _compReg;

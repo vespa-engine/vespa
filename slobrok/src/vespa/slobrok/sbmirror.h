@@ -88,7 +88,7 @@ private:
     void reSched(double seconds);
 
     FRT_Supervisor          &_orb;
-    mutable vespalib::Lock   _lock;
+    mutable std::mutex       _lock;
     bool                     _reqPending;
     bool                     _scheduled;
     bool                     _reqDone;
