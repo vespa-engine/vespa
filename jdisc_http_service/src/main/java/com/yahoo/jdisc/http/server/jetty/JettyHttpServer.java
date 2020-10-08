@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.common.annotations.Beta;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
@@ -62,7 +61,6 @@ import static java.util.stream.Collectors.toList;
  * @author Simon Thoresen Hult
  * @author bjorncs
  */
-@Beta
 public class JettyHttpServer extends AbstractServerProvider {
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
