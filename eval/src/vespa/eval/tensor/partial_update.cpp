@@ -150,14 +150,14 @@ struct AddressHandler {
 };
 AddressHandler::~AddressHandler() = default;
 
-template <typename CT, typename SkipFun>
+template <typename CT, typename ICT = CT, typename SkipFun>
 void copy_tensor_with_filter(const Value &input,
                              size_t dsss,
                              SparseCoords &addrs,
                              ValueBuilder<CT> &builder,
                              SkipFun && skip_subspaces)
 {
-    const auto input_cells = input.cells().typify<CT>();
+    const auto input_cells = input.cells().typify<ICT>();
     auto input_view = input.index().create_view({});
     input_view->lookup({});
     size_t input_subspace_index;
@@ -254,32 +254,24 @@ PerformAdd::invoke(const Value &input, const Value &modifier, const ValueBuilder
         LOG(error, "when adding cells to a tensor, dimensions must be equal");
         return Value::UP();
     }
-    const auto modifier_cells = modifier.cells().typify<MCT>();
     const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
     const size_t dsss = input_type.dense_subspace_size();
     const size_t expected_subspaces = input.index().size() + modifier.index().size();
     auto builder = factory.create_value_builder<ICT>(input_type, num_mapped_in_input, dsss, expected_subspaces);
     SparseCoords addrs(num_mapped_in_input);
-    std::set<size_t> overwritten_subspaces;
-    auto modifier_view = modifier.index().create_view({});
     auto lookup_view = input.index().create_view(addrs.lookup_view_dims);
-    modifier_view->lookup({});
-    size_t modifier_subspace_index;
-    while (modifier_view->next_result(addrs.next_result_refs, modifier_subspace_index)) {
-        size_t modifier_offset = dsss * modifier_subspace_index;
-        auto src = modifier_cells.begin() + modifier_offset;
-        auto dst = builder->add_subspace(addrs.addr).begin();
-        for (size_t i = 0; i < dsss; ++i) {
-            dst[i] = src[i];
-        }
+    std::vector<bool> overwritten(input.index().size(), false);
+    auto remember_subspaces = [&] (size_t) {
         lookup_view->lookup(addrs.lookup_refs);
         size_t input_subspace_index;
         if (lookup_view->next_result({}, input_subspace_index)) {
-            overwritten_subspaces.insert(input_subspace_index);
+            overwritten[input_subspace_index] = true;
         }
-    }
+        return false;
+    };
+    copy_tensor_with_filter<ICT, MCT>(modifier, dsss, addrs, *builder, remember_subspaces);
     auto filter = [&] (size_t input_subspace) {
-        return overwritten_subspaces.count(input_subspace) != 0;
+        return overwritten[input_subspace];
     };
     copy_tensor_with_filter<ICT>(input, dsss, addrs, *builder, filter);
     return builder->build(std::move(builder));
