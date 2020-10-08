@@ -3,6 +3,7 @@
 #include "generic_concat.h"
 #include "generic_join.h"
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
@@ -44,14 +45,13 @@ struct ConcatParam
     }
 };
 
-template <typename LCT, typename RCT>
+template <typename LCT, typename RCT, typename OCT>
 std::unique_ptr<Value>
 generic_concat(const Value &a, const Value &b,
                const SparseJoinPlan &sparse_plan,
                const DenseConcatPlan &dense_plan,
                const ValueType &res_type, const ValueBuilderFactory &factory)
 {
-    using OCT = typename eval::UnifyCellTypes<LCT, RCT>::type;
     auto a_cells = a.cells().typify<LCT>();
     auto b_cells = b.cells().typify<RCT>();
     SparseJoinState sparse(sparse_plan, a.index(), b.index());
@@ -81,21 +81,50 @@ generic_concat(const Value &a, const Value &b,
     return builder->build(std::move(builder));
 }
 
-template <typename LCT, typename RCT>
+template <typename LCT, typename RCT, typename OCT>
 void my_generic_concat_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<ConcatParam>(param_in);
     const Value &lhs = state.peek(1);
     const Value &rhs = state.peek(0);
-    auto res_value = generic_concat<LCT, RCT>(lhs, rhs, param.sparse_plan, param.dense_plan,
-                                              param.res_type, param.factory);
+    auto res_value = generic_concat<LCT, RCT, OCT>(
+            lhs, rhs,
+            param.sparse_plan, param.dense_plan,
+            param.res_type, param.factory);
     auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(res_value));
     const Value &result_ref = *(result.get());
     state.pop_pop_push(result_ref);
 }
 
+template <typename LCT, typename RCT, typename OCT>
+void my_dense_simple_concat_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<ConcatParam>(param_in);
+    const Value &lhs = state.peek(1);
+    const Value &rhs = state.peek(0);
+    const auto a = lhs.cells().typify<LCT>();
+    const auto b = rhs.cells().typify<RCT>();
+    ArrayRef<OCT> result = state.stash.create_array<OCT>(a.size() + b.size());
+    auto pos = result.begin();
+    for (size_t i = 0; i < a.size(); ++i) {
+        *pos++ = a[i];
+    }
+    for (size_t i = 0; i < b.size(); ++i) {
+        *pos++ = b[i];
+    }
+    Value &ref = state.stash.create<tensor::DenseTensorView>(param.res_type, TypedCells(result));
+    state.pop_pop_push(ref);
+}
+
 struct SelectGenericConcatOp {
-    template <typename LCT, typename RCT> static auto invoke() {
-        return my_generic_concat_op<LCT, RCT>;
+    template <typename LCT, typename RCT, typename OCT> static auto invoke(const ConcatParam &param) {
+        if (param.sparse_plan.sources.empty() && param.res_type.is_dense()) {
+            auto & dp = param.dense_plan;
+            if ((dp.output_size == (dp.left.input_size + dp.right.input_size))
+                && (dp.right_offset == dp.left.input_size))
+            {
+                return my_dense_simple_concat_op<LCT, RCT, OCT>;
+            }
+        }
+        return my_generic_concat_op<LCT, RCT, OCT>;
     }
 };
 
@@ -167,8 +196,9 @@ GenericConcat::make_instruction(const ValueType &lhs_type, const ValueType &rhs_
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
     auto &param = stash.create<ConcatParam>(lhs_type, rhs_type, dimension, factory);
-    auto fun = typify_invoke<2,TypifyCellType,SelectGenericConcatOp>(
-            lhs_type.cell_type(), rhs_type.cell_type());
+    auto fun = typify_invoke<3,TypifyCellType,SelectGenericConcatOp>(
+            lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(),
+            param);
     return Instruction(fun, wrap_param<ConcatParam>(param));
 }
 
