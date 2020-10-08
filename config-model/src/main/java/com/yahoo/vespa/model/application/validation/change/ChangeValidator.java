@@ -12,7 +12,6 @@ import java.util.List;
  * Interface for validating changes between a current active and next config model.
  *
  * @author geirst
- * @since 2014-11-18
  */
 public interface ChangeValidator {
 
