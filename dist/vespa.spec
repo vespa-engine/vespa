@@ -110,7 +110,7 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %endif
-BuildRequires: xxhash-devel >= 0.7.3
+BuildRequires: xxhash-devel >= 0.8.0
 BuildRequires: openblas-devel
 BuildRequires: zlib-devel
 BuildRequires: re2-devel
