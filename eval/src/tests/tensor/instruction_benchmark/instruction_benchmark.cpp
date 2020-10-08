@@ -23,6 +23,7 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
@@ -67,6 +68,7 @@ struct Impl {
     virtual Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const = 0;
     virtual Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
     virtual Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const = 0;
+    virtual Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const = 0;
     virtual const TensorEngine &engine() const { return SimpleTensorEngine::ref(); } // engine used by EvalSingle
     virtual ~Impl() {}
 };
@@ -88,6 +90,9 @@ struct ValueImpl : Impl {
     }
     Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
         return GenericMerge::make_instruction(lhs, rhs, function, my_factory, stash);
+    }
+    Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const override {
+        return GenericConcat::make_instruction(lhs, rhs, dimension, my_factory, stash);
     }
 };
 
@@ -122,6 +127,13 @@ struct EngineImpl : Impl {
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &merge_node = tensor_function::merge(lhs_node, rhs_node, function, stash); 
         return merge_node.compile_self(my_engine, stash);
+    }
+    Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const override {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
+        const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
+        const auto &concat_node = tensor_function::concat(lhs_node, rhs_node, dimension, stash); 
+        return concat_node.compile_self(my_engine, stash);
     }
     const TensorEngine &engine() const override { return my_engine; }
 };
@@ -347,6 +359,27 @@ void benchmark_merge(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
+void benchmark_concat(const vespalib::string &desc, const TensorSpec &lhs,
+                      const TensorSpec &rhs, const std::string &dimension)
+{
+    Stash stash;
+    ValueType lhs_type = ValueType::from_spec(lhs.type());
+    ValueType rhs_type = ValueType::from_spec(rhs.type());
+    ValueType res_type = ValueType::concat(lhs_type, rhs_type, dimension);
+    ASSERT_FALSE(lhs_type.is_error());
+    ASSERT_FALSE(rhs_type.is_error());
+    ASSERT_FALSE(res_type.is_error());
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_concat(lhs_type, rhs_type, dimension, stash);
+        std::vector<CREF<TensorSpec>> stack_spec({lhs, rhs});
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+    }
+    benchmark(desc, list);
+}
+
+//-----------------------------------------------------------------------------
+
 struct D {
     vespalib::string name;
     bool mapped;
@@ -405,6 +438,44 @@ TEST(MakeInputTest, print_some_test_input) {
     fprintf(stderr, "dense vector: %s\n", dense.to_string().c_str());
     fprintf(stderr, "mixed cube: %s\n", mixed.to_string().c_str());
     fprintf(stderr, "--------------------------------------------------------\n");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(DenseConcat, small_vectors) {
+    auto lhs = make_vector(D::idx("x", 10), 1.0);
+    auto rhs = make_vector(D::idx("x", 10), 2.0);
+    benchmark_concat("small dense vector append concat", lhs, rhs, "x");
+}
+
+TEST(DenseConcat, cross_vectors) {
+    auto lhs = make_vector(D::idx("x", 10), 1.0);
+    auto rhs = make_vector(D::idx("x", 10), 2.0);
+    benchmark_concat("small dense vector cross concat", lhs, rhs, "y");
+}
+
+TEST(DenseConcat, cube_and_vector) {
+    auto lhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::idx("c", 16), 1.0);
+    auto rhs = make_vector(D::idx("a", 16), 42.0);
+    benchmark_concat("cube vs vector concat", lhs, rhs, "a");
+}
+
+TEST(SparseConcat, small_vectors) {
+    auto lhs = make_vector(D::map("x", 10, 1), 1.0);
+    auto rhs = make_vector(D::map("x", 10, 2), 2.0);
+    benchmark_concat("small sparse concat", lhs, rhs, "y");
+}
+
+TEST(MixedConcat, large_mixed_a) {
+    auto lhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::map("c", 16, 1), 1.0);
+    auto rhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::map("c", 16, 2), 2.0);
+    benchmark_concat("mixed append concat a", lhs, rhs, "a");
+}
+
+TEST(MixedConcat, large_mixed_b) {
+    auto lhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::map("c", 16, 1), 1.0);
+    auto rhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::map("c", 16, 2), 2.0);
+    benchmark_concat("mixed append concat b", lhs, rhs, "b");
 }
 
 //-----------------------------------------------------------------------------

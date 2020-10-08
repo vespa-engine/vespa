@@ -57,7 +57,7 @@ generic_concat(const Value &a, const Value &b,
     SparseJoinState sparse(sparse_plan, a.index(), b.index());
     auto builder = factory.create_value_builder<OCT>(res_type,
                                                      sparse_plan.sources.size(),
-                                                     dense_plan.right.output_size,
+                                                     dense_plan.output_size,
                                                      sparse.first_index.size());
     auto outer = sparse.first_index.create_view({});
     auto inner = sparse.second_index.create_view(sparse.second_view_dims);
@@ -99,11 +99,12 @@ struct SelectGenericConcatOp {
     }
 };
 
-enum class Case { NONE, OUT, BOTH };
+enum class Case { NONE, OUT, CONCAT, BOTH };
 
 } // namespace <unnamed>
 
-DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
+std::pair<size_t, size_t>
+DenseConcatPlan::InOutLoop::fill_from(const ValueType &in_type,
                                       std::string concat_dimension,
                                       const ValueType &out_type)
 {
@@ -126,19 +127,21 @@ DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
                    {
                        [&](visit_ranges_first, const auto &) { abort(); },
                        [&](visit_ranges_second, const auto &b) {
-                           if (b.name == concat_dimension) { update_plan(Case::OUT,      1, b.size, 0, 1);
+                           if (b.name == concat_dimension) { update_plan(Case::CONCAT,   1, b.size, 0, 1);
                                                     } else { update_plan(Case::OUT, b.size, b.size, 0, 1); }
                        },
-                       [&](visit_ranges_both, const auto &a, const auto &b) { update_plan(Case::BOTH, a.size, b.size, 1, 1); }
+                       [&](visit_ranges_both, const auto &a, const auto &b) {
+                           if (b.name == concat_dimension) { update_plan(Case::CONCAT, a.size, b.size, 1, 1);
+                                                    } else { update_plan(Case::BOTH,   a.size, b.size, 1, 1); }
+                       }
                    };
-
     const auto input_dimensions = in_type.nontrivial_indexed_dimensions();
     const auto output_dimensions = out_type.nontrivial_indexed_dimensions();
     visit_ranges(visitor, input_dimensions.begin(), input_dimensions.end(), output_dimensions.begin(), output_dimensions.end(),
                  [](const auto &a, const auto &b){ return (a.name < b.name); });
-
     input_size = 1;
-    output_size = 1;
+    size_t output_size = 1;
+    size_t offset_for_concat = 0;
     for (size_t i = in_loop_cnt.size(); i-- > 0; ) {
         if (in_stride[i] != 0) {
             in_stride[i] = input_size;
@@ -148,7 +151,14 @@ DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
         assert(out_loop_cnt[i] != 0);
         out_stride[i] = output_size;
         output_size *= out_loop_cnt[i];
+        // loop counts are different if and only if this is the concat dimension 
+        if (in_loop_cnt[i] != out_loop_cnt[i]) {
+            assert(offset_for_concat == 0);
+            offset_for_concat = in_loop_cnt[i] * out_stride[i];
+        }
     }
+    assert(offset_for_concat != 0);
+    return std::make_pair(offset_for_concat, output_size);
 }
 
 InterpretedFunction::Instruction
@@ -166,18 +176,11 @@ DenseConcatPlan::DenseConcatPlan(const ValueType &lhs_type,
                                  const ValueType &rhs_type, 
                                  std::string concat_dimension,
                                  const ValueType &out_type)
-  : right_offset(0),
-    left(lhs_type, concat_dimension, out_type),
-    right(rhs_type, concat_dimension, out_type)
 {
-    const auto output_dimensions = out_type.nontrivial_indexed_dimensions();
-    for (size_t i = 0; i < output_dimensions.size(); ++i) {
-        if (output_dimensions[i].name == concat_dimension) {
-            right_offset = left.in_loop_cnt[i] * left.out_stride[i];
-        }
-    }
-    assert(right_offset > 0);
-    assert(left.output_size  == right.output_size);
+    std::tie(right_offset, output_size) = left.fill_from(lhs_type, concat_dimension, out_type);
+    auto [ other_offset, other_size ] = right.fill_from(rhs_type, concat_dimension, out_type);
+    assert(other_offset > 0);
+    assert(output_size == other_size);
 }
 
 DenseConcatPlan::~DenseConcatPlan() = default;
