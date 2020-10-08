@@ -11,7 +11,6 @@
 namespace search::docstore {
 
 using vespalib::ConstBufferRef;
-using vespalib::LockGuard;
 using vespalib::DataBuffer;
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;

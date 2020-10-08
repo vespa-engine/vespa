@@ -92,7 +92,7 @@ cache<P>::read(const K & key)
         }
     }
 
-    vespalib::LockGuard storeGuard(getLock(key));
+    std::lock_guard storeGuard(getLock(key));
     {
         std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
@@ -118,7 +118,7 @@ void
 cache<P>::write(const K & key, V value)
 {
     size_t newSize = calcSize(key, value);
-    vespalib::LockGuard storeGuard(getLock(key));
+    std::lock_guard storeGuard(getLock(key));
     {
         std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
@@ -140,7 +140,7 @@ template< typename P >
 void
 cache<P>::erase(const K & key)
 {
-    vespalib::LockGuard storeGuard(getLock(key));
+    std::lock_guard storeGuard(getLock(key));
     invalidate(key);
     _store.erase(key);
 }

@@ -2,6 +2,7 @@
 #include "tickingthread.h"
 #include "threadpool.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/sync.h>
 #include <cassert>
 
 namespace storage::framework {

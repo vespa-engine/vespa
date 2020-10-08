@@ -2,7 +2,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 using namespace vespalib;
@@ -26,7 +25,7 @@ struct MyTask : Executor::Task {
     size_t size;
     size_t data;
     MyTask(size_t size_in) : size(size_in), data(0) {}
-    virtual void run() override {
+    void run() override {
         data += do_stuff(size);
         ++tasks_run;
         data += do_stuff(size);

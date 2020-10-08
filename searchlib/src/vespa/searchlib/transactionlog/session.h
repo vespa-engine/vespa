@@ -3,7 +3,6 @@
 
 #include "common.h"
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <chrono>
 #include <deque>
 #include <atomic>

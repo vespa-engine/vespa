@@ -9,35 +9,6 @@
 namespace vespalib {
 
 /**
- * @brief A Lock is a synchronization primitive used to ensure mutual
- * exclusion.
- *
- * Use a LockGuard to hold a lock inside a scope.
- *
- * It is possible to obtain a lock on a const Lock object.
- *
- * @see TryLock
- **/
-class Lock
-{
-protected:
-    friend class LockGuard;
-    friend class TryLock;
-
-    std::unique_ptr<std::mutex> _mutex;
-public:
-    /**
-     * @brief Create a new Lock.
-     *
-     * Creates a Lock that has mutex instrumentation disabled.
-     **/
-    Lock() noexcept;
-    Lock(Lock && rhs) noexcept;
-    ~Lock();
-};
-
-
-/**
  * @brief A Monitor is a synchronization primitive used to protect
  * data access and also facilitate signaling and waiting between
  * threads.
@@ -49,13 +20,14 @@ public:
  *
  * @see TryLock
  **/
-class Monitor : public Lock
+class Monitor
 {
 private:
     friend class LockGuard;
     friend class MonitorGuard;
     friend class TryLock;
 
+    std::unique_ptr<std::mutex> _mutex;
     std::unique_ptr<std::condition_variable> _cond;
 public:
     /**
@@ -106,7 +78,7 @@ public:
      *
      * @param lock take it
      **/
-    LockGuard(const Lock &lock);
+    LockGuard(const Monitor &lock);
 
     LockGuard &operator=(LockGuard &&rhs) noexcept;
 
@@ -129,7 +101,7 @@ public:
      * Allow code to match guard with lock. This allows functions to take a
      * guard ref as input, ensuring that the caller have grabbed a lock.
      */
-    bool locks(const Lock& lock) const;
+    bool locks(const Monitor& lock) const;
 };
 
 

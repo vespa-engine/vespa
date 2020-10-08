@@ -5,15 +5,8 @@
 
 namespace vespalib {
 
-Lock::Lock() noexcept
-    : _mutex(std::make_unique<std::mutex>())
-{}
-Lock::Lock(Lock &&rhs) noexcept = default;
-Lock::~Lock() = default;
-
-
 Monitor::Monitor() noexcept
-    : Lock(),
+    : _mutex(std::make_unique<std::mutex>()),
       _cond(std::make_unique<std::condition_variable>())
 {}
 Monitor::Monitor(Monitor &&rhs) noexcept = default;
@@ -22,7 +15,7 @@ Monitor::~Monitor() = default;
 LockGuard::LockGuard() : _guard() {}
 
 LockGuard::LockGuard(LockGuard &&rhs) noexcept : _guard(std::move(rhs._guard)) { }
-LockGuard::LockGuard(const Lock &lock) : _guard(*lock._mutex) { }
+LockGuard::LockGuard(const Monitor &lock) : _guard(*lock._mutex) { }
 
 LockGuard &
 LockGuard::operator=(LockGuard &&rhs) noexcept{
@@ -41,7 +34,7 @@ LockGuard::unlock() {
 LockGuard::~LockGuard() = default;
 
 bool
-LockGuard::locks(const Lock& lock) const {
+LockGuard::locks(const Monitor & lock) const {
     return (_guard && _guard.mutex() == lock._mutex.get());
 }
 

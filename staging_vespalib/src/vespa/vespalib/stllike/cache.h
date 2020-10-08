@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/lrucache_map.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 namespace vespalib {
@@ -134,7 +133,7 @@ private:
      */
     bool removeOldest(const value_type & v) override;
     size_t calcSize(const K & k, const V & v) const { return sizeof(value_type) + _sizeK(k) + _sizeV(v); }
-    vespalib::Lock & getLock(const K & k) {
+    std::mutex & getLock(const K & k) {
         size_t h(_hasher(k));
         return _addLocks[h%(sizeof(_addLocks)/sizeof(_addLocks[0]))];
     }
@@ -156,7 +155,7 @@ private:
     BackingStore      & _store;
     mutable std::mutex  _hashLock;
     /// Striped locks that can be used for having a locked access to the backing store.
-    vespalib::Lock      _addLocks[113];
+    std::mutex          _addLocks[113];
 };
 
 }

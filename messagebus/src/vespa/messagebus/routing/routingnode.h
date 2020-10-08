@@ -12,7 +12,6 @@
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/network/iserviceaddress.h>
 #include <vespa/messagebus/reply.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vector>
 #include <map>
 

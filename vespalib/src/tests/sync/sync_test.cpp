@@ -14,9 +14,6 @@ private:
     std::condition_variable     *_cond;
 
 public:
-    TryLock(const Lock &lock)
-        : _guard(*lock._mutex, std::try_to_lock), _cond(nullptr)
-    {}
     TryLock(const Monitor &mon)
         : _guard(*mon._mutex, std::try_to_lock),
           _cond(_guard ? mon._cond.get() : nullptr)
@@ -49,10 +46,8 @@ using namespace vespalib;
 class Test : public TestApp
 {
 private:
-    Lock    _lock;
     Monitor _monitor;
 
-    LockGuard    lockLock()      { return LockGuard(_lock); }
     LockGuard    lockMonitor()   { return LockGuard(_monitor); }
     MonitorGuard obtainMonitor() { return MonitorGuard(_monitor); }
 public:
@@ -61,7 +56,8 @@ public:
     int Main() override;
 };
 
-Test::~Test() {}
+Test::~Test() = default;
+
 void
 Test::testCountDownLatch() {
     {
@@ -108,21 +104,6 @@ int
 Test::Main()
 {
     TEST_INIT("sync_test");
-    {
-        Lock lock;
-        {
-            CHECK_UNLOCKED(lock);
-            LockGuard guard(lock);
-            CHECK_LOCKED(lock);
-        }
-        CHECK_UNLOCKED(lock);
-        {
-            LockGuard guard(lock);
-            CHECK_LOCKED(lock);
-            guard.unlock();
-            CHECK_UNLOCKED(lock);
-        }
-    }
     // you can use a LockGuard to lock a Monitor
     {
         Monitor monitor;
@@ -159,12 +140,7 @@ Test::Main()
     }
 
     // you can lock const objects
-    {
-        const Lock lock;
-        CHECK_UNLOCKED(lock);
-        LockGuard guard(lock);
-        CHECK_LOCKED(lock);
-    }
+
     {
         const Monitor lock;
         CHECK_UNLOCKED(lock);
@@ -179,7 +155,7 @@ Test::Main()
     }
     // LockGuard/MonitorGuard have destructive move
     {
-        Lock lock;
+        Monitor lock;
         CHECK_UNLOCKED(lock);
         LockGuard a(lock);
         CHECK_LOCKED(lock);
@@ -204,19 +180,13 @@ Test::Main()
     }
     // Destructive copy also works for return value handover
     {
-        CHECK_UNLOCKED(_lock);
         CHECK_UNLOCKED(_monitor);
         {
-            CHECK_UNLOCKED(_lock);
             CHECK_UNLOCKED(_monitor);
-            LockGuard a(lockLock());
-            CHECK_LOCKED(_lock);
             CHECK_UNLOCKED(_monitor);
             LockGuard b = lockMonitor(); // copy, not assign
-            CHECK_LOCKED(_lock);
             CHECK_LOCKED(_monitor);
         }
-        CHECK_UNLOCKED(_lock);
         CHECK_UNLOCKED(_monitor);
     }
     {
@@ -230,8 +200,8 @@ Test::Main()
     }
     // Test that guards can be matched to locks/monitors
     {
-        Lock lock1;
-        Lock lock2;
+        Monitor lock1;
+        Monitor lock2;
         LockGuard lockGuard1(lock1);
         LockGuard lockGuard2(lock2);
         EXPECT_TRUE(lockGuard1.locks(lock1));

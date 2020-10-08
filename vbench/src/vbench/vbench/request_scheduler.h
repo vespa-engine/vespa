@@ -7,7 +7,6 @@
 #include <vbench/core/time_queue.h>
 #include <vbench/core/dispatcher.h>
 #include <vbench/core/handler_thread.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/active.h>
 
 namespace vbench {
