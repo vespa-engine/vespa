@@ -97,13 +97,13 @@ public:
 
     const DataType &getDataType() const { return *_dataType; }
 
-    int getId() const { return _fieldId; }
+    int getId() const noexcept { return _fieldId; }
 
     vespalib::string toString(bool verbose=false) const;
     bool contains(const FieldSet& fields) const override;
     Type getType() const override { return Type::FIELD; }
     bool valid() const { return _fieldId != 0; }
-    uint32_t hash() const { return getId(); }
+    uint32_t hash() const noexcept { return getId(); }
 private:
     int calculateIdV7();
 
