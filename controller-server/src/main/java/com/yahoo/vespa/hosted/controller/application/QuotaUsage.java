@@ -11,7 +11,7 @@ public class QuotaUsage {
 
     private final double rate;
 
-    public QuotaUsage(double rate) {
+    private QuotaUsage(double rate) {
         this.rate = rate;
     }
 
@@ -24,6 +24,10 @@ public class QuotaUsage {
             return QuotaUsage.none;
         }
         return new QuotaUsage(rate.getAsDouble());
+    }
+
+    public static QuotaUsage create(double rate) {
+        return new QuotaUsage(rate);
     }
 
     @Override

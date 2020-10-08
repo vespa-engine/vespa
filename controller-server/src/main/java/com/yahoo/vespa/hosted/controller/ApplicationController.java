@@ -52,6 +52,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
@@ -357,7 +358,8 @@ public class ApplicationController {
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
                                            instance -> instance.withNewDeployment(zone, revision, platform,
-                                                                                  clock.instant(), warningsFrom(result)))));
+                                                                                  clock.instant(), warningsFrom(result),
+                                                                                  QuotaUsage.create(result.quotaUsageRate())))));
             return result;
         }
     }
@@ -432,7 +434,8 @@ public class ApplicationController {
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(instanceId.instance(),
                                            instance -> instance.withNewDeployment(zone, applicationVersion, platformVersion,
-                                                                                  clock.instant(), warningsFrom(result)))));
+                                                                                  clock.instant(), warningsFrom(result),
+                                                                                  QuotaUsage.create(result.quotaUsageRate())))));
             return result;
         }
     }
@@ -543,8 +546,11 @@ public class ApplicationController {
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
                                                            applicationRoles, quota, internalRestart));
+
+            var quotaUsage = configServer.getQuotaUsage(new DeploymentId(application, zone));
+
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
-                                      applicationPackage.zippedContent().length);
+                                      applicationPackage.zippedContent().length, quotaUsage.rate);
         } finally {
             // Even if prepare fails, a load balancer may have been provisioned. Always refresh routing policies so that
             // any DNS updates can be propagated as early as possible.
@@ -561,7 +567,7 @@ public class ApplicationController {
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = List.of(logEntry);
         prepareResponse.configChangeActions = new ConfigChangeActions(List.of(), List.of());
-        return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
+        return new ActivateResult(new RevisionId("0"), prepareResponse, 0, 0.0);
     }
 
     private LockedApplication withoutDeletedDeployments(LockedApplication application, InstanceName instance) {

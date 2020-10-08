@@ -13,11 +13,13 @@ public class ActivateResult {
     private final RevisionId revisionId;
     private final PrepareResponse prepareResponse;
     private final long applicationZipSizeBytes;
+    private final double quotaUsageRate;
 
-    public ActivateResult(RevisionId revisionId, PrepareResponse prepareResponse, long applicationZipSizeBytes) {
+    public ActivateResult(RevisionId revisionId, PrepareResponse prepareResponse, long applicationZipSizeBytes, double quotaUsageRate) {
         this.revisionId = revisionId;
         this.prepareResponse = prepareResponse;
         this.applicationZipSizeBytes = applicationZipSizeBytes;
+        this.quotaUsageRate = quotaUsageRate;
     }
 
     public long applicationZipSizeBytes() {
@@ -30,6 +32,10 @@ public class ActivateResult {
 
     public PrepareResponse prepareResponse() {
         return prepareResponse;
+    }
+
+    public double quotaUsageRate() {
+        return quotaUsageRate;
     }
 
 }

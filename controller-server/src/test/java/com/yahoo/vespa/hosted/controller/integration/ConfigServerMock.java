@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -530,6 +531,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public List<String> getContentClusters(DeploymentId deployment) {
         return Collections.singletonList("music");
+    }
+
+    @Override
+    public QuotaUsage getQuotaUsage(DeploymentId deploymentId) {
+        var q = new QuotaUsage();
+        q.rate = 42.42;
+        return q;
     }
 
     public static class Application {
