@@ -167,7 +167,7 @@ VisitCache::reconfigure(size_t cacheSize, const CompressionConfig &compression) 
 
 
 VisitCache::Cache::IdSet
-VisitCache::Cache::findSetsContaining(const LockGuard &, const KeySet & keys) const {
+VisitCache::Cache::findSetsContaining(const UniqueLock &, const KeySet & keys) const {
     IdSet found;
     for (uint32_t subKey : keys.getKeys()) {
         const auto foundLid = _lid2Id.find(subKey);
@@ -194,7 +194,7 @@ VisitCache::Cache::readSet(const KeySet & key)
 }
 
 void
-VisitCache::Cache::locateAndInvalidateOtherSubsets(const LockGuard & cacheGuard, const KeySet & keys)
+VisitCache::Cache::locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys)
 {
     // Due to the implementation of insert where the global lock is released and the fact
     // that 2 overlapping keysets kan have different keys and use different ValueLock
