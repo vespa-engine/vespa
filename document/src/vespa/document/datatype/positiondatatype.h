@@ -7,8 +7,6 @@ namespace document {
 
 class PositionDataType {
 private:
-    static StructDataType::UP _instance;
-
     PositionDataType();
     static StructDataType::UP createInstance();
 

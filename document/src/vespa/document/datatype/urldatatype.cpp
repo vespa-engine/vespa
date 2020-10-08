@@ -1,17 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "urldatatype.h"
-#include <mutex>
 
 namespace document {
-
-namespace {
-
-std::mutex   _G_lock;
-
-}
-
-StructDataType::UP UrlDataType::_instance;
 
 const vespalib::string UrlDataType::STRUCT_NAME("url");
 const vespalib::string UrlDataType::FIELD_ALL("all");
@@ -25,7 +16,7 @@ const vespalib::string UrlDataType::FIELD_FRAGMENT("fragment");
 StructDataType::UP
 UrlDataType::createInstance()
 {
-    StructDataType::UP type(new StructDataType(UrlDataType::STRUCT_NAME));
+    auto type = std::make_unique<StructDataType>(UrlDataType::STRUCT_NAME);
     type->addField(Field(UrlDataType::FIELD_ALL,     *DataType::STRING));
     type->addField(Field(UrlDataType::FIELD_SCHEME,  *DataType::STRING));
     type->addField(Field(UrlDataType::FIELD_HOST,    *DataType::STRING));
@@ -39,13 +30,8 @@ UrlDataType::createInstance()
 const StructDataType &
 UrlDataType::getInstance()
 {
-    if ( ! _instance ) {
-        std::lock_guard guard(_G_lock);
-        if ( ! _instance ) {
-            _instance = createInstance();
-        }
-    }
-    return *_instance;
+    static StructDataType::UP instance = createInstance();
+    return *instance;
 }
 
 } // document
