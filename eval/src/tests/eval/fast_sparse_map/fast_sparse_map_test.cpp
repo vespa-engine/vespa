@@ -27,6 +27,17 @@ public:
     ConstArrayRef<vespalib::string> direct_str() const { return _str_list; }
     ConstArrayRef<vespalib::stringref> direct_ref() const { return _ref_list; }
     ConstArrayRef<const vespalib::stringref *> indirect_ref() const { return _ref_ptr_list; }
+    bool is_eq(ConstArrayRef<FastSparseMap::HashedLabel> addr) const {
+        if (addr.size() != _str_list.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < addr.size(); ++i) {
+            if (addr[i].label != _str_list[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 StringList::~StringList() = default;
 using SL = StringList;
@@ -56,11 +67,25 @@ TEST(FastSparseMapTest, fast_sparse_map_basic_usage_works) {
     EXPECT_EQ(map.lookup(a4.indirect_ref()), map.npos());
     EXPECT_EQ(FastSparseMap::npos(), map.npos());
     EXPECT_EQ(map.labels().size(), 9);
-    auto dump = [&](auto addr_tag, auto subspace, auto hash) {
-        auto addr = map.make_addr(addr_tag);
-        fprintf(stderr, "   [%s,%s,%s]: %u (%zu)\n", addr[0].label.c_str(), addr[1].label.c_str(), addr[2].label.c_str(), subspace, hash);
+    using hash_t = FastSparseMap::hash_t;
+    std::set<hash_t> seen_hashes;
+    std::map<uint32_t, uint32_t> addr_map;
+    auto my_fun = [&](uint32_t addr_tag, uint32_t subspace, hash_t hash) {
+        addr_map[addr_tag] = subspace;
+        seen_hashes.insert(hash);
     };
-    map.each_map_entry(dump);
+    map.each_map_entry(my_fun);
+    EXPECT_EQ(seen_hashes.size(), 3);
+    EXPECT_EQ(addr_map.size(), 3);
+    EXPECT_NE(addr_map.find(0), addr_map.end());
+    EXPECT_EQ(addr_map[0], 0);
+    EXPECT_EQ(addr_map[3], 1);
+    EXPECT_EQ(addr_map[6], 2);
+    EXPECT_EQ(addr_map.size(), 3);
+    EXPECT_TRUE(a1.is_eq(map.make_addr(0)));
+    EXPECT_FALSE(a2.is_eq(map.make_addr(0)));
+    EXPECT_TRUE(a2.is_eq(map.make_addr(3)));
+    EXPECT_TRUE(a3.is_eq(map.make_addr(6)));
 }
 
 TEST(FastSparseMapTest, fast_sparse_map_works_with_no_labels) {
