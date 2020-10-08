@@ -35,7 +35,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
             int defaultWorkerThreads = 10;
             builder.maxthreads(defaultWorkerThreads);
             builder.corePoolSize(defaultWorkerThreads);
-            builder.queueSize(0);
+            builder.queueSize(50);
             return;
         }
 

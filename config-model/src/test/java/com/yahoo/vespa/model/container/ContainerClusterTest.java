@@ -175,7 +175,7 @@ public class ContainerClusterTest {
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
         assertEquals(10, threadpoolConfig.maxthreads());
-        assertEquals(0, threadpoolConfig.queueSize());
+        assertEquals(50, threadpoolConfig.queueSize());
     }
 
     @Test
