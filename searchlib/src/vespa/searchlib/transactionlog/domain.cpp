@@ -19,7 +19,6 @@ LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
 using vespalib::make_string_short::fmt;
-using vespalib::LockGuard;
 using vespalib::makeTask;
 using vespalib::makeClosure;
 using vespalib::makeLambdaTask;
@@ -104,7 +103,7 @@ Domain::addPart(SerialNum partId, bool isLastPart) {
         dp->erase(dp->range().to() + 1);
     } else {
         {
-            LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             _parts[partId] = dp;
         }
         if (! isLastPart) {
@@ -123,7 +122,7 @@ Domain::~Domain() {
 DomainInfo
 Domain::getDomainInfo() const
 {
-    LockGuard guard(_lock);
+    UniqueLock guard(_lock);
     DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard), _maxSessionRunTime);
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
@@ -135,14 +134,18 @@ Domain::getDomainInfo() const
 SerialNum
 Domain::begin() const
 {
-    return begin(LockGuard(_lock));
+    return begin(UniqueLock(_lock));
 }
 
+void
+Domain::verifyLock(const UniqueLock & guard) const {
+    assert(guard.mutex() == &_lock);
+    assert(guard.owns_lock());
+}
 SerialNum
-Domain::begin(const LockGuard & guard) const
+Domain::begin(const UniqueLock & guard) const
 {
-    (void) guard;
-    assert(guard.locks(_lock));
+    verifyLock(guard);
     SerialNum s(0);
     if ( ! _parts.empty() ) {
         s = _parts.cbegin()->second->range().from();
@@ -153,14 +156,13 @@ Domain::begin(const LockGuard & guard) const
 SerialNum
 Domain::end() const
 {
-    return end(LockGuard(_lock));
+    return end(UniqueLock(_lock));
 }
 
 SerialNum
-Domain::end(const LockGuard & guard) const
+Domain::end(const UniqueLock & guard) const
 {
-    (void) guard;
-    assert(guard.locks(_lock));
+    verifyLock(guard);
     SerialNum s(0);
     if ( ! _parts.empty() ) {
         s = _parts.crbegin()->second->range().to();
@@ -171,14 +173,13 @@ Domain::end(const LockGuard & guard) const
 size_t
 Domain::byteSize() const
 {
-    return byteSize(LockGuard(_lock));
+    return byteSize(UniqueLock(_lock));
 }
 
 size_t
-Domain::byteSize(const LockGuard & guard) const
+Domain::byteSize(const UniqueLock & guard) const
 {
-    (void) guard;
-    assert(guard.locks(_lock));
+    verifyLock(guard);
     size_t size = 0;
     for (const auto &entry : _parts) {
         const DomainPart &part = *entry.second;
@@ -191,7 +192,7 @@ SerialNum
 Domain::getSynced() const
 {
     SerialNum s(0);
-    LockGuard guard(_lock);
+    UniqueLock guard(_lock);
     if (_parts.empty()) {
         return s;
     }
@@ -228,7 +229,7 @@ Domain::triggerSyncNow()
 DomainPart::SP
 Domain::findPart(SerialNum s)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     DomainPartList::iterator it(_parts.upper_bound(s));
     if (!_parts.empty() && it != _parts.begin()) {
         DomainPartList::iterator prev(it);
@@ -246,14 +247,13 @@ Domain::findPart(SerialNum s)
 uint64_t
 Domain::size() const
 {
-    return size(LockGuard(_lock));
+    return size(UniqueLock(_lock));
 }
 
 uint64_t
-Domain::size(const LockGuard & guard) const
+Domain::size(const UniqueLock & guard) const
 {
-    (void) guard;
-    assert(guard.locks(_lock));
+    verifyLock(guard);
     uint64_t sz(0);
     for (const auto & part : _parts) {
         sz += part.second->size();
@@ -265,7 +265,7 @@ SerialNum
 Domain::findOldestActiveVisit() const
 {
     SerialNum oldestActive(std::numeric_limits<SerialNum>::max());
-    LockGuard guard(_sessionLock);
+    std::lock_guard guard(_sessionLock);
     for (const auto & pair : _sessions) {
         Session * session(pair.second.get());
         if (!session->inSync()) {
@@ -281,7 +281,7 @@ Domain::cleanSessions()
     if ( _sessions.empty()) {
         return;
     }
-    LockGuard guard(_sessionLock);
+    std::lock_guard guard(_sessionLock);
     for (SessionList::iterator it(_sessions.begin()), mt(_sessions.end()); it != mt; ) {
         Session * session(it->second.get());
         if (session->inSync()) {
@@ -318,7 +318,7 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
         dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _config.getEncoding(),
                                           _config.getCompressionlevel(), _fileHeaderContext, false);
         {
-            LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             _parts[serialNum] = dp;
             assert(_parts.rbegin()->first == serialNum);
         }
@@ -409,7 +409,7 @@ Domain::erase(SerialNum to)
     for (DomainPartList::iterator it(_parts.begin()); (_parts.size() > 1) && (it->second.get()->range().to() < to); it = _parts.begin()) {
         DomainPart::SP dp(it->second);
         {
-            LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             _parts.erase(it);
         }
         retval = retval && dp->erase(to);
@@ -429,7 +429,7 @@ Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to, std::uniq
     SerialNumRange range(from, to);
     auto session = std::make_shared<Session>(_sessionId++, range, domain, std::move(dest));
     int id = session->id();
-    LockGuard guard(_sessionLock);
+    std::lock_guard guard(_sessionLock);
     _sessions[id] = std::move(session);
     return id;
 }
@@ -438,7 +438,7 @@ int
 Domain::startSession(int sessionId)
 {
     int retval(-1);
-    LockGuard guard(_sessionLock);
+    std::lock_guard guard(_sessionLock);
     SessionList::iterator found = _sessions.find(sessionId);
     if (found != _sessions.end()) {
         found->second->setStartTime(std::chrono::steady_clock::now());
@@ -458,7 +458,7 @@ Domain::closeSession(int sessionId)
     int retval(-1);
     DurationSeconds sessionRunTime(0);
     {
-        LockGuard guard(_sessionLock);
+        std::lock_guard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             sessionRunTime = (std::chrono::steady_clock::now() - found->second->getStartTime());
@@ -467,7 +467,7 @@ Domain::closeSession(int sessionId)
     }
     while (retval == 1) {
         std::this_thread::sleep_for(10ms);
-        LockGuard guard(_sessionLock);
+        std::lock_guard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             if ( ! found->second->isVisitRunning()) {
@@ -479,7 +479,7 @@ Domain::closeSession(int sessionId)
         }
     }
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (sessionRunTime > _maxSessionRunTime) {
             _maxSessionRunTime = sessionRunTime;
         }

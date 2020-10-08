@@ -4,7 +4,6 @@
 #include <vespa/defaults.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 namespace {
@@ -51,28 +50,26 @@ SimpleHealthProducer::SimpleHealthProducer()
     setOk();
 }
 
-SimpleHealthProducer::~SimpleHealthProducer()
-{
-}
+SimpleHealthProducer::~SimpleHealthProducer() = default;
 
 void
 SimpleHealthProducer::setOk()
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _health = Health(true, "All OK");
 }
 
 void
 SimpleHealthProducer::setFailed(const vespalib::string &msg)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _health = Health(false, msg);
 }
 
 HealthProducer::Health
 SimpleHealthProducer::getHealth() const
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if (_health.ok && diskFailed()) {
         return Health(false, "disk ping failed");
     }

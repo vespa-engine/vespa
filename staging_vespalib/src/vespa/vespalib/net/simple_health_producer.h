@@ -3,19 +3,19 @@
 #pragma once
 
 #include "health_producer.h"
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace vespalib {
 
 class SimpleHealthProducer : public HealthProducer
 {
 private:
-    Lock _lock;
+    mutable std::mutex _lock;
     HealthProducer::Health _health;
 
 public:
     SimpleHealthProducer();
-    ~SimpleHealthProducer();
+    ~SimpleHealthProducer() override;
     void setOk();
     void setFailed(const vespalib::string &msg);
     Health getHealth() const override;

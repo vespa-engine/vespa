@@ -56,16 +56,18 @@ public:
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
+    using UniqueLock = std::unique_lock<std::mutex>;
+    void verifyLock(const UniqueLock & guard) const;
     void commitIfFull(const vespalib::MonitorGuard & guard);
     void commitAndTransferResponses(const vespalib::MonitorGuard & guard);
 
     std::unique_ptr<CommitChunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
     void commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
     void doCommit(std::unique_ptr<CommitChunk> chunk);
-    SerialNum begin(const vespalib::LockGuard & guard) const;
-    SerialNum end(const vespalib::LockGuard & guard) const;
-    size_t byteSize(const vespalib::LockGuard & guard) const;
-    uint64_t size(const vespalib::LockGuard & guard) const;
+    SerialNum begin(const UniqueLock & guard) const;
+    SerialNum end(const UniqueLock & guard) const;
+    size_t byteSize(const UniqueLock & guard) const;
+    uint64_t size(const UniqueLock & guard) const;
     void cleanSessions();
     vespalib::string dir() const { return getDir(_baseDir, _name); }
     void addPart(SerialNum partId, bool isLastPart);
@@ -89,9 +91,9 @@ private:
     bool                         _pendingSync;
     vespalib::string             _name;
     DomainPartList               _parts;
-    vespalib::Lock               _lock;
+    mutable std::mutex           _lock;
     vespalib::Monitor            _currentChunkMonitor;
-    vespalib::Lock               _sessionLock;
+    mutable std::mutex           _sessionLock;
     SessionList                  _sessions;
     DurationSeconds              _maxSessionRunTime;
     vespalib::string             _baseDir;
