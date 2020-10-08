@@ -60,11 +60,8 @@ public class LoadBalancerProvisioner {
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
             try (var lock = db.lock(id.application())) {
-                // TODO(mpolden): Remove inner lock
-                try (var innerLock = db.configLock(id.application())) {
-                    var loadBalancer = db.readLoadBalancer(id);
-                    loadBalancer.ifPresent(db::writeLoadBalancer);
-                }
+                var loadBalancer = db.readLoadBalancer(id);
+                loadBalancer.ifPresent(db::writeLoadBalancer);
             }
         }
     }
@@ -83,12 +80,9 @@ public class LoadBalancerProvisioner {
         if (!canForwardTo(requestedNodes.type(), cluster)) return; // Nothing to provision for this node and cluster type
         if (application.instance().isTester()) return; // Do not provision for tester instances
         try (var lock = db.lock(application)) {
-            // TODO(mpolden): Remove inner lock
-            try (var innerLock = db.configLock(application)) {
-                ClusterSpec.Id clusterId = effectiveId(cluster);
-                List<Node> nodes = nodesOf(clusterId, application);
-                provision(application, clusterId, nodes, false, lock);
-            }
+            ClusterSpec.Id clusterId = effectiveId(cluster);
+            List<Node> nodes = nodesOf(clusterId, application);
+            provision(application, clusterId, nodes, false, lock);
         }
     }
 
@@ -105,18 +99,15 @@ public class LoadBalancerProvisioner {
     public void activate(ApplicationId application, Set<ClusterSpec> clusters,
                          @SuppressWarnings("unused") Mutex applicationLock, NestedTransaction transaction) {
         try (var lock = db.lock(application)) {
-            // TODO(mpolden): Remove inner lock
-            try (var innerLock = db.configLock(application)) {
-                for (var cluster : loadBalancedClustersOf(application).entrySet()) {
-                    // Provision again to ensure that load balancer instance is re-configured with correct nodes
-                    provision(application, cluster.getKey(), cluster.getValue(), true, lock);
-                }
-                // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
-                var surplusLoadBalancers = surplusLoadBalancersOf(application, clusters.stream()
-                                                                                       .map(LoadBalancerProvisioner::effectiveId)
-                                                                                       .collect(Collectors.toSet()));
-                deactivate(surplusLoadBalancers, transaction);
+            for (var cluster : loadBalancedClustersOf(application).entrySet()) {
+                // Provision again to ensure that load balancer instance is re-configured with correct nodes
+                provision(application, cluster.getKey(), cluster.getValue(), true, lock);
             }
+            // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
+            var surplusLoadBalancers = surplusLoadBalancersOf(application, clusters.stream()
+                                                                                   .map(LoadBalancerProvisioner::effectiveId)
+                                                                                   .collect(Collectors.toSet()));
+            deactivate(surplusLoadBalancers, transaction);
         }
     }
 
@@ -126,10 +117,7 @@ public class LoadBalancerProvisioner {
      */
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (var lock = nodeRepository.lock(application)) {
-            // TODO(mpolden): Remove inner lock
-            try (var innerLock = db.configLock(application)) {
-                deactivate(nodeRepository.loadBalancers(application).asList(), transaction);
-            }
+            deactivate(nodeRepository.loadBalancers(application).asList(), transaction);
         }
     }
 

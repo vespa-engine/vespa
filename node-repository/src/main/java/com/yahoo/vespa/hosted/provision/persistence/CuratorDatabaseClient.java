@@ -61,7 +61,6 @@ public class CuratorDatabaseClient {
 
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockPath = root.append("locks");
-    private static final Path configLockPath = Path.fromString("/config/v2/locks/");
     private static final Path loadBalancersPath = root.append("loadBalancers");
     private static final Path applicationsPath = root.append("applications");
     private static final Path inactiveJobsPath = root.append("inactiveJobs");
@@ -328,15 +327,6 @@ public class CuratorDatabaseClient {
         return lockPath;
     }
 
-    /** Creates and returns the config lock path for this application */
-    // TODO(mpolden): Remove
-    private Path configLockPath(ApplicationId application) {
-        // This must match the lock path used by com.yahoo.vespa.config.server.application.TenantApplications
-        Path lockPath = configLockPath.append(application.tenant().value()).append(application.serializedForm());
-        db.create(lockPath);
-        return lockPath;
-    }
-
     private String toDir(Node.State state) {
         switch (state) {
             case active: return "allocated"; // legacy name
@@ -370,20 +360,6 @@ public class CuratorDatabaseClient {
         catch (UncheckedTimeoutException e) {
             throw new ApplicationLockException(e);
         }
-    }
-
-    // TODO(mpolden): Remove
-    private Lock configLock(ApplicationId application, Duration timeout) {
-        try {
-            return db.lock(configLockPath(application), timeout);
-        } catch (UncheckedTimeoutException e) {
-            throw new ApplicationLockException(e);
-        }
-    }
-
-    // TODO(mpolden): Remove
-    public Lock configLock(ApplicationId application) {
-        return configLock(application, defaultLockTimeout);
     }
 
     // Applications -----------------------------------------------------------
