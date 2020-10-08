@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import org.eclipse.jetty.io.ssl.SslHandshakeListener;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -38,36 +37,36 @@ class SslHandshakeFailedListener implements SslHandshakeListener {
         log.log(Level.FINE, throwable, () -> "Ssl handshake failed: " + throwable.getMessage());
         String metricName = SslHandshakeFailure.fromSslHandshakeException((SSLHandshakeException) throwable)
                 .map(SslHandshakeFailure::metricName)
-                .orElse(Metrics.SSL_HANDSHAKE_FAILURE_UNKNOWN);
+                .orElse(MetricDefinitions.SSL_HANDSHAKE_FAILURE_UNKNOWN);
         metric.add(metricName, 1L, metric.createContext(createDimensions(event)));
     }
 
     private Map<String, Object> createDimensions(Event event) {
         Map<String, Object> dimensions = new HashMap<>();
-        dimensions.put(Metrics.NAME_DIMENSION, connectorName);
-        dimensions.put(Metrics.PORT_DIMENSION, listenPort);
+        dimensions.put(MetricDefinitions.NAME_DIMENSION, connectorName);
+        dimensions.put(MetricDefinitions.PORT_DIMENSION, listenPort);
         Optional.ofNullable(event.getSSLEngine().getPeerHost())
-                .ifPresent(clientIp -> dimensions.put(Metrics.CLIENT_IP_DIMENSION, clientIp));
+                .ifPresent(clientIp -> dimensions.put(MetricDefinitions.CLIENT_IP_DIMENSION, clientIp));
         return Map.copyOf(dimensions);
     }
 
     private enum SslHandshakeFailure {
         INCOMPATIBLE_PROTOCOLS(
-                Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS,
+                MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS,
                 "(Client requested protocol \\S+? is not enabled or supported in server context" +
                         "|The client supported protocol versions \\[\\S+?\\] are not accepted by server preferences \\[\\S+?\\])"),
         INCOMPATIBLE_CIPHERS(
-                Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS,
+                MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS,
                 "no cipher suites in common"),
         MISSING_CLIENT_CERT(
-                Metrics.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT,
+                MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT,
                 "Empty server certificate chain"),
         EXPIRED_CLIENT_CERTIFICATE(
-                Metrics.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT,
+                MetricDefinitions.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT,
                 // Note: this pattern will match certificates with too late notBefore as well
                 "PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed"),
         INVALID_CLIENT_CERT(
-                Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, // Includes mismatch of client certificate and private key
+                MetricDefinitions.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, // Includes mismatch of client certificate and private key
                 "(PKIX path (building|validation) failed: .+)|(Invalid CertificateVerify signature)");
 
         private final String metricName;

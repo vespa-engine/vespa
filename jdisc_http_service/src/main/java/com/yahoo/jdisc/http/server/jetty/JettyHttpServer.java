@@ -65,60 +65,6 @@ import static java.util.stream.Collectors.toList;
 @Beta
 public class JettyHttpServer extends AbstractServerProvider {
 
-    public interface Metrics {
-        String NAME_DIMENSION = "serverName";
-        String PORT_DIMENSION = "serverPort";
-        String METHOD_DIMENSION = "httpMethod";
-        String SCHEME_DIMENSION = "scheme";
-        String REQUEST_TYPE_DIMENSION = "requestType";
-        String CLIENT_IP_DIMENSION = "clientIp";
-
-        String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
-        String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
-        String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
-        String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
-        String CONNECTION_DURATION_STD_DEV = "serverConnectionDurationStdDev";
-        String NUM_PREMATURELY_CLOSED_CONNECTIONS = "jdisc.http.request.prematurely_closed";
-
-        String NUM_BYTES_RECEIVED = "serverBytesReceived";
-        String NUM_BYTES_SENT     = "serverBytesSent";
-
-        String NUM_CONNECTIONS = "serverNumConnections";
-
-        /* For historical reasons, these are all aliases for the same metric. 'jdisc.http' should ideally be the only one. */
-        String JDISC_HTTP_REQUESTS = "jdisc.http.requests";
-        String NUM_REQUESTS = "serverNumRequests";
-
-        String NUM_SUCCESSFUL_RESPONSES = "serverNumSuccessfulResponses";
-        String NUM_FAILED_RESPONSES = "serverNumFailedResponses";
-        String NUM_SUCCESSFUL_WRITES = "serverNumSuccessfulResponseWrites";
-        String NUM_FAILED_WRITES = "serverNumFailedResponseWrites";
-
-        String TOTAL_SUCCESSFUL_LATENCY = "serverTotalSuccessfulResponseLatency";
-        String TOTAL_FAILED_LATENCY = "serverTotalFailedResponseLatency";
-        String TIME_TO_FIRST_BYTE = "serverTimeToFirstByte";
-
-        String RESPONSES_1XX = "http.status.1xx";
-        String RESPONSES_2XX = "http.status.2xx";
-        String RESPONSES_3XX = "http.status.3xx";
-        String RESPONSES_4XX = "http.status.4xx";
-        String RESPONSES_5XX = "http.status.5xx";
-        String RESPONSES_401 = "http.status.401";
-        String RESPONSES_403 = "http.status.403";
-
-        String STARTED_MILLIS = "serverStartedMillis";
-
-        String URI_LENGTH = "jdisc.http.request.uri_length";
-        String CONTENT_SIZE = "jdisc.http.request.content_size";
-
-        String SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.missing_client_cert";
-        String SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.expired_client_cert";
-        String SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT = "jdisc.http.ssl.handshake.failure.invalid_client_cert";
-        String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS = "jdisc.http.ssl.handshake.failure.incompatible_protocols";
-        String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS = "jdisc.http.ssl.handshake.failure.incompatible_ciphers";
-        String SSL_HANDSHAKE_FAILURE_UNKNOWN = "jdisc.http.ssl.handshake.failure.unknown";
-    }
-
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
     private final long timeStarted = System.currentTimeMillis();
     private final ExecutorService janitor;
@@ -365,7 +311,7 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private void setServerMetrics(HttpResponseStatisticsCollector statisticsCollector) {
         long timeSinceStarted = System.currentTimeMillis() - timeStarted;
-        metric.set(Metrics.STARTED_MILLIS, timeSinceStarted, null);
+        metric.set(MetricDefinitions.STARTED_MILLIS, timeSinceStarted, null);
 
         addResponseMetrics(statisticsCollector);
     }
@@ -373,21 +319,21 @@ public class JettyHttpServer extends AbstractServerProvider {
     private void addResponseMetrics(HttpResponseStatisticsCollector statisticsCollector) {
         for (var metricEntry : statisticsCollector.takeStatistics()) {
             Map<String, Object> dimensions = new HashMap<>();
-            dimensions.put(Metrics.METHOD_DIMENSION, metricEntry.method);
-            dimensions.put(Metrics.SCHEME_DIMENSION, metricEntry.scheme);
-            dimensions.put(Metrics.REQUEST_TYPE_DIMENSION, metricEntry.requestType);
+            dimensions.put(MetricDefinitions.METHOD_DIMENSION, metricEntry.method);
+            dimensions.put(MetricDefinitions.SCHEME_DIMENSION, metricEntry.scheme);
+            dimensions.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, metricEntry.requestType);
             metric.add(metricEntry.name, metricEntry.value, metric.createContext(dimensions));
         }
     }
 
     private void setConnectorMetrics(JDiscServerConnector connector) {
         ConnectionStatistics statistics = connector.getStatistics();
-        metric.set(Metrics.NUM_CONNECTIONS, statistics.getConnectionsTotal(), connector.getConnectorMetricContext());
-        metric.set(Metrics.NUM_OPEN_CONNECTIONS, statistics.getConnections(), connector.getConnectorMetricContext());
-        metric.set(Metrics.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsMax(), connector.getConnectorMetricContext());
-        metric.set(Metrics.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getConnectorMetricContext());
-        metric.set(Metrics.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getConnectorMetricContext());
-        metric.set(Metrics.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getConnectorMetricContext());
+        metric.set(MetricDefinitions.NUM_CONNECTIONS, statistics.getConnectionsTotal(), connector.getConnectorMetricContext());
+        metric.set(MetricDefinitions.NUM_OPEN_CONNECTIONS, statistics.getConnections(), connector.getConnectorMetricContext());
+        metric.set(MetricDefinitions.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsMax(), connector.getConnectorMetricContext());
+        metric.set(MetricDefinitions.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getConnectorMetricContext());
+        metric.set(MetricDefinitions.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getConnectorMetricContext());
+        metric.set(MetricDefinitions.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getConnectorMetricContext());
     }
 
     private StatisticsHandler newStatisticsHandler() {

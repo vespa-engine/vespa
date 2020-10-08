@@ -87,8 +87,8 @@ class JDiscHttpServlet extends HttpServlet {
         request.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, getConnector(request));
 
         Metric.Context metricContext = getMetricContext(request);
-        context.metric.add(JettyHttpServer.Metrics.NUM_REQUESTS, 1, metricContext);
-        context.metric.add(JettyHttpServer.Metrics.JDISC_HTTP_REQUESTS, 1, metricContext);
+        context.metric.add(MetricDefinitions.NUM_REQUESTS, 1, metricContext);
+        context.metric.add(MetricDefinitions.JDISC_HTTP_REQUESTS, 1, metricContext);
 
         String method = request.getMethod().toUpperCase();
         if (servletSupportedMethods.contains(method)) {

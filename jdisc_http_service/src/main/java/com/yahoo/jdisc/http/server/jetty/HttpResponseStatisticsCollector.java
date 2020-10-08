@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.AsyncContextEvent;
 import org.eclipse.jetty.server.Handler;
@@ -51,13 +50,13 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     }
 
     private static final String[] HTTP_RESPONSE_GROUPS = {
-            Metrics.RESPONSES_1XX,
-            Metrics.RESPONSES_2XX,
-            Metrics.RESPONSES_3XX,
-            Metrics.RESPONSES_4XX,
-            Metrics.RESPONSES_5XX,
-            Metrics.RESPONSES_401,
-            Metrics.RESPONSES_403
+            MetricDefinitions.RESPONSES_1XX,
+            MetricDefinitions.RESPONSES_2XX,
+            MetricDefinitions.RESPONSES_3XX,
+            MetricDefinitions.RESPONSES_4XX,
+            MetricDefinitions.RESPONSES_5XX,
+            MetricDefinitions.RESPONSES_401,
+            MetricDefinitions.RESPONSES_403
     };
 
     private final AtomicLong inFlight = new AtomicLong();
