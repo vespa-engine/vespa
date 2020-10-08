@@ -151,8 +151,22 @@ TEST(GenericConcatTest, dense_concat_plan_can_be_created) {
     EXPECT_EQ(plan.right_offset, 5*2*3*3*4);
     EXPECT_EQ(plan.left.input_size, 2*3*5*2*3);
     EXPECT_EQ(plan.left.output_size, 2*3*12*2*3*3*4);
+    EXPECT_EQ(plan.left.next_offset,  5*2*3*3*4);
+    std::vector<size_t> expect_left_loop  = {    6,  5,  6, 12 };
+    std::vector<size_t> expect_left_in_s  = {   30,  6,  1,  0 };
+    std::vector<size_t> expect_left_out_s = {  864, 72, 12,  1 };
+    EXPECT_EQ(plan.left.in_loop_cnt, expect_left_loop);
+    EXPECT_EQ(plan.left.in_stride, expect_left_in_s);
+    EXPECT_EQ(plan.left.out_stride, expect_left_out_s);
     EXPECT_EQ(plan.right.input_size, 2*3*7*3*4);
     EXPECT_EQ(plan.right.output_size, 2*3*12*2*3*3*4);
+    EXPECT_EQ(plan.right.next_offset,  7*2*3*3*4);
+    std::vector<size_t> expect_right_loop =  {   6,  7,  6, 12 };
+    std::vector<size_t> expect_right_in_s =  {  84, 12,  0,  1 };
+    std::vector<size_t> expect_right_out_s = { 864, 72, 12,  1 };
+    EXPECT_EQ(plan.right.in_loop_cnt, expect_right_loop);
+    EXPECT_EQ(plan.right.in_stride, expect_right_in_s);
+    EXPECT_EQ(plan.right.out_stride, expect_right_out_s);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
