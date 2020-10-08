@@ -175,9 +175,19 @@ copy_tensor(const Value &input, const ValueType &input_type, Addresses &helper, 
     return builder->build(std::move(builder));
 }
 
+//-----------------------------------------------------------------------------
+
+struct PerformModify {
+    template<typename ICT, typename MCT>
+    static Value::UP invoke(const Value &input,
+                            join_fun_t function,
+                            const Value &modifier,
+                            const ValueBuilderFactory &factory);
+};
+
 template <typename ICT, typename MCT>
 Value::UP
-my_modify_value(const Value &input, join_fun_t function, const Value &modifier, const ValueBuilderFactory &factory)
+PerformModify::invoke(const Value &input, join_fun_t function, const Value &modifier, const ValueBuilderFactory &factory)
 {
     const ValueType &input_type = input.type();
     const size_t dsss = input_type.dense_subspace_size();
@@ -213,23 +223,19 @@ my_modify_value(const Value &input, join_fun_t function, const Value &modifier, 
     }
     return out;
 }
-struct PerformModify {
-    template<typename ICT, typename MCT>
-    static Value::UP invoke(const Value &input,
-                            join_fun_t function,
-                            const Value &modifier,
-                            const ValueBuilderFactory &factory)
-    {
-        return my_modify_value<ICT,MCT>(input, function, modifier, factory);
-    }
-};
 
 //-----------------------------------------------------------------------------
 
+struct PerformAdd {
+    template<typename ICT, typename MCT>
+    static Value::UP invoke(const Value &input,
+                            const Value &modifier,
+                            const ValueBuilderFactory &factory);
+};
 
 template <typename ICT, typename MCT>
 Value::UP
-my_add_cells(const Value &input, const Value &modifier, const ValueBuilderFactory &factory)
+PerformAdd::invoke(const Value &input, const Value &modifier, const ValueBuilderFactory &factory)
 {
     const ValueType &input_type = input.type();
     const ValueType &modifier_type = modifier.type();
@@ -278,21 +284,18 @@ my_add_cells(const Value &input, const Value &modifier, const ValueBuilderFactor
     return builder->build(std::move(builder));
 }
 
-struct PerformAdd {
-    template<typename ICT, typename MCT>
+//-----------------------------------------------------------------------------
+
+struct PerformRemove {
+    template<typename ICT>
     static Value::UP invoke(const Value &input,
                             const Value &modifier,
-                            const ValueBuilderFactory &factory)
-    {
-        return my_add_cells<ICT,MCT>(input, modifier, factory);
-    }
+                            const ValueBuilderFactory &factory);
 };
-
-//-----------------------------------------------------------------------------
 
 template <typename ICT>
 Value::UP
-my_remove_cells(const Value &input, const Value &modifier, const ValueBuilderFactory &factory)
+PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuilderFactory &factory)
 {
     const ValueType &input_type = input.type();
     const ValueType &modifier_type = modifier.type();
@@ -337,16 +340,6 @@ my_remove_cells(const Value &input, const Value &modifier, const ValueBuilderFac
     }
     return builder->build(std::move(builder));
 }
-
-struct PerformRemove {
-    template<typename ICT>
-    static Value::UP invoke(const Value &input,
-                            const Value &modifier,
-                            const ValueBuilderFactory &factory)
-    {
-        return my_remove_cells<ICT>(input, modifier, factory);
-    }
-};
 
 } // namespace <unnamed>
 
