@@ -1,10 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,7 +75,6 @@ public class JettyHttpServer extends AbstractServerProvider {
                            Metric metric,
                            ServerConfig serverConfig,
                            ServletPathsConfig servletPathsConfig,
-                           ThreadFactory threadFactory,
                            FilterBindings filterBindings,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            ComponentRegistry<ServletHolder> servletHolders,
@@ -101,7 +99,7 @@ public class JettyHttpServer extends AbstractServerProvider {
             listenedPorts.add(connectorConfig.listenPort());
         }
 
-        janitor = newJanitor(threadFactory);
+        janitor = newJanitor();
 
         JDiscContext jDiscContext = new JDiscContext(filterBindings.getRequestFilters().activate(),
                                                      filterBindings.getResponseFilters().activate(),
@@ -127,11 +125,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         int numMetricReporterThreads = 1;
         metricReporterExecutor =
                 Executors.newScheduledThreadPool(numMetricReporterThreads,
-                                                 new ThreadFactoryBuilder()
-                                                         .setDaemon(true)
-                                                         .setNameFormat(JettyHttpServer.class.getName() + "-MetricReporter-%d")
-                                                         .setThreadFactory(threadFactory)
-                                                         .build());
+                        new DaemonThreadFactory(JettyHttpServer.class.getName() + "-MetricReporter-"));
         metricReporterExecutor.scheduleAtFixedRate(new MetricTask(), 0, 2, TimeUnit.SECONDS);
     }
 
@@ -218,17 +212,12 @@ public class JettyHttpServer extends AbstractServerProvider {
         return ports.stream().map(Object::toString).collect(Collectors.joining(":"));
     }
 
-    private static ExecutorService newJanitor(ThreadFactory factory) {
+    private static ExecutorService newJanitor() {
         int threadPoolSize = Runtime.getRuntime().availableProcessors();
         log.info("Creating janitor executor with " + threadPoolSize + " threads");
         return Executors.newFixedThreadPool(
                 threadPoolSize,
-                new ThreadFactoryBuilder()
-                        .setDaemon(true)
-                        .setNameFormat(JettyHttpServer.class.getName() + "-Janitor-%d")
-                        .setThreadFactory(factory)
-                        .build()
-        );
+                new DaemonThreadFactory(JettyHttpServer.class.getName() + "-Janitor-"));
     }
 
     @Override
