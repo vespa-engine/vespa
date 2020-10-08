@@ -162,7 +162,7 @@ void copy_tensor_with_filter(const Value &input,
     input_view->lookup({});
     size_t input_subspace_index;
     while (input_view->next_result(addrs.next_result_refs, input_subspace_index)) {
-        if (keep_subspace(input_subspace_index, addrs.lookup_refs)) {
+        if (keep_subspace(addrs.lookup_refs, input_subspace_index)) {
             size_t input_offset = dsss * input_subspace_index;
             auto src = input_cells.begin() + input_offset;
             auto dst = builder.add_subspace(addrs.addr).begin();
@@ -181,7 +181,7 @@ copy_tensor(const Value &input, const ValueType &input_type, SparseCoords &helpe
     const size_t dsss = input_type.dense_subspace_size();
     const size_t expected_subspaces = input.index().size();
     auto builder = factory.create_value_builder<CT>(input_type, num_mapped_in_input, dsss, expected_subspaces);
-    auto no_filter = [] (size_t, const auto &) {
+    auto no_filter = [] (const auto &, size_t) {
         return true;
     };
     copy_tensor_with_filter<CT>(input, dsss, helper, *builder, no_filter);
@@ -263,7 +263,7 @@ PerformAdd::invoke(const Value &input, const Value &modifier, const ValueBuilder
     SparseCoords addrs(num_mapped_in_input);
     auto lookup_view = input.index().create_view(addrs.lookup_view_dims);
     std::vector<bool> overwritten(input.index().size(), false);
-    auto remember_subspaces = [&] (size_t, const auto & lookup_refs) {
+    auto remember_subspaces = [&] (const auto & lookup_refs, size_t) {
         lookup_view->lookup(lookup_refs);
         size_t input_subspace_index;
         if (lookup_view->next_result({}, input_subspace_index)) {
@@ -272,7 +272,7 @@ PerformAdd::invoke(const Value &input, const Value &modifier, const ValueBuilder
         return true;
     };
     copy_tensor_with_filter<ICT, MCT>(modifier, dsss, addrs, *builder, remember_subspaces);
-    auto filter = [&] (size_t input_subspace, const auto &) {
+    auto filter = [&] (const auto &, size_t input_subspace) {
         return ! overwritten[input_subspace];
     };
     copy_tensor_with_filter<ICT>(input, dsss, addrs, *builder, filter);
@@ -308,7 +308,7 @@ PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuil
     const size_t expected_subspaces = input.index().size();
     const size_t dsss = input_type.dense_subspace_size();
     auto builder = factory.create_value_builder<ICT>(input_type, num_mapped_in_input, dsss, expected_subspaces);
-    auto filter_by_modifier = [&] (size_t, const auto & lookup_refs) {
+    auto filter_by_modifier = [&] (const auto & lookup_refs, size_t) {
         modifier_view->lookup(lookup_refs);
         size_t modifier_subspace_index;
         return !(modifier_view->next_result({}, modifier_subspace_index));
