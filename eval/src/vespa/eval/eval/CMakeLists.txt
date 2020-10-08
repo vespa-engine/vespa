@@ -8,6 +8,7 @@ vespa_add_library(eval_eval OBJECT
     delete_node.cpp
     double_value_builder.cpp
     fast_forest.cpp
+    fast_value.cpp
     function.cpp
     gbdt.cpp
     interpreted_function.cpp

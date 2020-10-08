@@ -30,14 +30,14 @@ struct CreateSimpleValueBuilderBase {
 // look up a full address in the map directly
 struct LookupView : public Value::Index::View {
 
-    const SimpleSparseMap &index;
+    const SimpleSparseMap &map;
     size_t                 subspace;
 
-    LookupView(const SimpleSparseMap &index_in)
-        : index(index_in), subspace(SimpleSparseMap::npos()) {}
+    LookupView(const SimpleSparseMap &map_in)
+        : map(map_in), subspace(SimpleSparseMap::npos()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
-        subspace = index.lookup(addr);
+        subspace = map.lookup(addr);
     }
 
     bool next_result(ConstArrayRef<vespalib::stringref*>, size_t &idx_out) override {
@@ -55,25 +55,27 @@ struct LookupView : public Value::Index::View {
 // find matching mappings for a partial address with brute force filtering
 struct FilterView : public Value::Index::View {
 
-    size_t                               num_mapped_dims;
-    const std::vector<vespalib::string> &labels;
-    std::vector<size_t>                  match_dims;
-    std::vector<size_t>                  extract_dims;
-    std::vector<vespalib::string>        query;
-    size_t                               pos;
+    using Label = SimpleSparseMap::HashedLabel;
+
+    size_t                    num_mapped_dims;
+    const std::vector<Label> &labels;
+    std::vector<size_t>       match_dims;
+    std::vector<size_t>       extract_dims;
+    std::vector<Label>        query;
+    size_t                    pos;
 
     bool is_match() const {
         for (size_t i = 0; i < query.size(); ++i) {
-            if (query[i] != labels[pos + match_dims[i]]) {
+            if (query[i].hash != labels[pos + match_dims[i]].hash) {
                 return false;
             }
         }
         return true;
     }
 
-    FilterView(const std::vector<vespalib::string> &labels_in, const std::vector<size_t> &match_dims_in, size_t num_mapped_dims_in)
-        : num_mapped_dims(num_mapped_dims_in), labels(labels_in), match_dims(match_dims_in),
-          extract_dims(), query(match_dims.size(), ""), pos(labels.size())
+    FilterView(const SimpleSparseMap &map, const std::vector<size_t> &match_dims_in)
+        : num_mapped_dims(map.num_dims()), labels(map.labels()), match_dims(match_dims_in),
+          extract_dims(), query(match_dims.size(), Label()), pos(labels.size())
     {
         auto my_pos = match_dims.begin();
         for (size_t i = 0; i < num_mapped_dims; ++i) {
@@ -90,7 +92,7 @@ struct FilterView : public Value::Index::View {
     void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
         assert(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
-            query[i] = *addr[i];
+            query[i] = Label(*addr[i]);
         }
         pos = 0;
     }
@@ -100,7 +102,7 @@ struct FilterView : public Value::Index::View {
             if (is_match()) {
                 assert(addr_out.size() == extract_dims.size());
                 for (size_t i = 0; i < extract_dims.size(); ++i) {
-                    *addr_out[i] = labels[pos + extract_dims[i]];
+                    *addr_out[i] = labels[pos + extract_dims[i]].label;
                 }
                 idx_out = (pos / num_mapped_dims); // is this expensive?
                 pos += num_mapped_dims;
@@ -117,12 +119,14 @@ struct FilterView : public Value::Index::View {
 // iterate all mappings
 struct IterateView : public Value::Index::View {
 
-    size_t                               num_mapped_dims;
-    const std::vector<vespalib::string> &labels;
-    size_t                               pos;
+    using Labels = std::vector<SimpleSparseMap::HashedLabel>;
 
-    IterateView(const std::vector<vespalib::string> &labels_in, size_t num_mapped_dims_in)
-        : num_mapped_dims(num_mapped_dims_in), labels(labels_in), pos(labels.size()) {}
+    size_t        num_mapped_dims;
+    const Labels &labels;
+    size_t        pos;
+
+    IterateView(const SimpleSparseMap &map)
+        : num_mapped_dims(map.num_dims()), labels(map.labels()), pos(labels.size()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*>) override {
         pos = 0;
@@ -134,7 +138,7 @@ struct IterateView : public Value::Index::View {
         }
         assert(addr_out.size() == num_mapped_dims);
         for (size_t i = 0; i < num_mapped_dims; ++i) {
-            *addr_out[i] = labels[pos + i];
+            *addr_out[i] = labels[pos + i].label;
         }
         idx_out = (pos / num_mapped_dims); // is this expensive?
         pos += num_mapped_dims;
@@ -148,31 +152,32 @@ struct IterateView : public Value::Index::View {
 
 //-----------------------------------------------------------------------------
 
+std::unique_ptr<Value::Index::View>
+SimpleValueIndex::create_view(const std::vector<size_t> &dims) const
+{
+    if (map.num_dims() == 0) {
+        return TrivialIndex::get().create_view(dims);
+    } else if (dims.empty()) {
+        return std::make_unique<IterateView>(map);
+    } else if (dims.size() == map.num_dims()) {
+        return std::make_unique<LookupView>(map);
+    } else {
+        return std::make_unique<FilterView>(map, dims);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 SimpleValue::SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in)
     : _type(type),
-      _num_mapped_dims(num_mapped_dims_in),
       _subspace_size(subspace_size_in),
       _index(num_mapped_dims_in, expected_subspaces_in)
 {
-    assert(_type.count_mapped_dimensions() == _num_mapped_dims);
+    assert(_type.count_mapped_dimensions() == _index.map.num_dims());
     assert(_type.dense_subspace_size() == _subspace_size);
 }
 
 SimpleValue::~SimpleValue() = default;
-
-std::unique_ptr<Value::Index::View>
-SimpleValue::create_view(const std::vector<size_t> &dims) const
-{
-    if (_num_mapped_dims == 0) {
-        return TrivialIndex::get().create_view(dims);
-    } else if (dims.empty()) {
-        return std::make_unique<IterateView>(_index.labels(), _num_mapped_dims);
-    } else if (dims.size() == _num_mapped_dims) {
-        return std::make_unique<LookupView>(_index);
-    } else {
-        return std::make_unique<FilterView>(_index.labels(), dims, _num_mapped_dims);
-    }
-}
 
 //-----------------------------------------------------------------------------
 

@@ -15,29 +15,37 @@ namespace vespalib::eval {
 class TensorSpec;
 
 /**
+ * Implements the Value::Index API using a SimpleSparseMap.
+ **/
+struct SimpleValueIndex : Value::Index {
+    SimpleSparseMap map;
+    SimpleValueIndex(size_t num_mapped_dims_in, size_t expected_subspaces_in)
+        : map(num_mapped_dims_in, expected_subspaces_in) {}
+    size_t size() const override { return map.size(); }
+    std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;   
+};
+
+/**
  * A simple implementation of a generic value that can also be used to
  * build new values. This class focuses on simplicity and is intended
  * as a reference implementation that can also be used to test the
  * correctness of tensor operations as they are moved away from the
  * implementation of individual tensor classes.
  **/
-class SimpleValue : public Value, public Value::Index
+class SimpleValue : public Value
 {
 private:
     ValueType _type;
-    size_t _num_mapped_dims;
     size_t _subspace_size;
-    SimpleSparseMap _index;
+    SimpleValueIndex _index;
 protected:
     size_t subspace_size() const { return _subspace_size; }
-    void add_mapping(ConstArrayRef<vespalib::stringref> addr) { _index.add_mapping(addr); }
+    void add_mapping(ConstArrayRef<vespalib::stringref> addr) { _index.map.add_mapping(addr); }
 public:
     SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
     ~SimpleValue() override;
     const ValueType &type() const override { return _type; }
-    const Value::Index &index() const override { return *this; }
-    size_t size() const override { return _index.size(); }
-    std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
+    const Value::Index &index() const override { return _index; }
 };
 
 /**

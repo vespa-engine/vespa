@@ -6,24 +6,23 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
-#include <cassert>
+#include <xxhash.h>
+#include <type_traits>
 
 namespace vespalib::eval {
 
 /**
- * A simple wrapper around vespalib::hash_map, using it to map a list
- * of labels (a sparse address) to an integer value (dense subspace
- * index). Labels are stored in a separate vector and the map keys
- * reference a slice of this vector. This is to avoid fragmentation
- * caused by hash keys being vectors of values. In addition, labels
+ * A wrapper around vespalib::hash_map, using it to map a list of
+ * labels (a sparse address) to an integer value (dense subspace
+ * index). Labels are stored in a separate vector to avoid
+ * fragmentation caused by hash keys being vectors of values. Labels
  * can be specified in different ways during lookup and insert in
- * order to reduce the need for data restructuring when using the
- * map. To keep things simple, map iterators are kept away from the
- * api. This will have a minor overhead during lookup since the end
- * iterator needs to be translated to npos. All added mappings are
- * checked for uniqueness with an assert. There is no real need for
- * map entry iteration since you can just iterate the labels vector
- * directly.
+ * order to reduce the need for data restructuring when used to
+ * integrate with the Value api. All labels are stored with a 64-bit
+ * hash. This hash is used as label equality (assuming no
+ * collisions). A order-sensitive 64bit hash constructed from
+ * individual label hashes is used for address equality (also assuming
+ * no collisions). The hash algorithm currently used is XXH3.
  *
  * 'add_mapping' will will bind the given address to an integer value
  * equal to the current (pre-insert) size of the map. The given
@@ -35,167 +34,123 @@ namespace vespalib::eval {
 class SimpleSparseMap
 {
 public:
-    using DirectStr = ConstArrayRef<vespalib::string>;
-    using DirectRef = ConstArrayRef<vespalib::stringref>;
-    using IndirectRef = ConstArrayRef<const vespalib::stringref *>;
+    using hash_t = XXH64_hash_t;
+
+    static hash_t hash_label(const vespalib::string &str) {
+        return XXH3_64bits(str.data(), str.size());
+    }
+    static hash_t hash_label(vespalib::stringref str) {
+        return XXH3_64bits(str.data(), str.size());
+    }
+    static hash_t hash_label(const vespalib::stringref *str) {
+        return XXH3_64bits(str->data(), str->size());
+    }
+
+    struct HashedLabel {
+        vespalib::string label;
+        hash_t hash;
+        HashedLabel() : label(), hash(0) {}
+        HashedLabel(const HashedLabel &rhs) = default;
+        HashedLabel &operator=(const HashedLabel &rhs) = default;
+        HashedLabel(HashedLabel &&rhs) = default;
+        HashedLabel &operator=(HashedLabel &&rhs) = default;
+        HashedLabel(const vespalib::string &str) : label(str), hash(hash_label(str)) {}
+        HashedLabel(vespalib::stringref str) : label(str), hash(hash_label(str)) {}
+        HashedLabel(const vespalib::stringref *str) : label(*str), hash(hash_label(*str)) {}
+    };
+
+    static hash_t hash_label(const HashedLabel &label) {
+        return label.hash;
+    }
 
     struct Key {
         uint32_t start;
-        uint32_t end;
-        Key() : start(0), end(0) {}
-        Key(uint32_t start_in, uint32_t end_in)
-            : start(start_in), end(end_in) {}
+        hash_t hash;
+        Key() : start(0), hash(0) {}
+        Key(uint32_t start_in, hash_t hash_in)
+            : start(start_in), hash(hash_in) {}
     };
 
     struct Hash {
-        const std::vector<vespalib::string> *labels;
-        const vespalib::string &get_label(size_t i) const { return (*labels)[i]; }
-        Hash() : labels(nullptr) {}
-        Hash(const Hash &rhs) = default;
-        Hash &operator=(const Hash &rhs) = default;
-        Hash(const std::vector<vespalib::string> &labels_in) : labels(&labels_in) {}
-        size_t operator()(const Key &key) const {
-            size_t h = 0;
-            for (size_t i = key.start; i < key.end; ++i) {
-                const vespalib::string &str = get_label(i);
-                h = h * 31 + hashValue(str.data(), str.size());
-            }
-            return h;
-        }
-        size_t operator()(const DirectStr &addr) const {
-            size_t h = 0;
-            for (const auto &str: addr) {
-                h = h * 31 + hashValue(str.data(), str.size());
-            }
-            return h;
-        }
-        size_t operator()(const DirectRef &addr) const {
-            size_t h = 0;
-            for (const auto &str: addr) {
-                h = h * 31 + hashValue(str.data(), str.size());
-            }
-            return h;
-        }
-        size_t operator()(const IndirectRef &addr) const {
-            size_t h = 0;
-            for (const auto *str: addr) {
-                h = h * 31 + hashValue(str->data(), str->size());
-            }
-            return h;
-        }
+        hash_t operator()(const Key &key) const { return key.hash; }
+        hash_t operator()(hash_t hash) const { return hash; }
     };
 
     struct Equal {
-        const std::vector<vespalib::string> *labels;
-        const vespalib::string &get_label(size_t i) const { return (*labels)[i]; }
-        Equal() : labels(nullptr) {}
-        Equal(const Equal &rhs) = default;
-        Equal &operator=(const Equal &rhs) = default;
-        Equal(const std::vector<vespalib::string> &labels_in) : labels(&labels_in) {}
-        bool operator()(const Key &a, const Key &b) const {
-            size_t len = (a.end - a.start);
-            if ((b.end - b.start) != len) {
-                return false;
-            }
-            for (size_t i = 0; i < len; ++i) {
-                if (get_label(a.start + i) != get_label(b.start + i)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        bool operator()(const Key &a, const DirectStr &addr) const {
-            if (addr.size() != (a.end - a.start)) {
-                return false;
-            }
-            for (size_t i = 0; i < addr.size(); ++i) {
-                if (get_label(a.start + i) != addr[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        bool operator()(const Key &a, const DirectRef &addr) const {
-            if (addr.size() != (a.end - a.start)) {
-                return false;
-            }
-            for (size_t i = 0; i < addr.size(); ++i) {
-                if (get_label(a.start + i) != addr[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        bool operator()(const Key &a, const IndirectRef &addr) const {
-            if (addr.size() != (a.end - a.start)) {
-                return false;
-            }
-            for (size_t i = 0; i < addr.size(); ++i) {
-                if (get_label(a.start + i) != *addr[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
+        bool operator()(const Key &a, hash_t b) const { return (a.hash == b); }
+        bool operator()(const Key &a, const Key &b) const { return (a.hash == b.hash); }
     };
 
     using MapType = vespalib::hash_map<Key,uint32_t,Hash,Equal>;
 
 private:
-    std::vector<vespalib::string> _labels;
+    size_t _num_dims;
+    std::vector<HashedLabel> _labels;
     MapType _map;
 
 public:
-    SimpleSparseMap(size_t num_mapped_dims, size_t expected_subspaces)
-        : _labels(), _map(expected_subspaces * 2, Hash(_labels), Equal(_labels))
+    SimpleSparseMap(size_t num_dims_in, size_t expected_subspaces)
+        : _num_dims(num_dims_in), _labels(), _map(expected_subspaces * 2)
     {
-        _labels.reserve(num_mapped_dims * expected_subspaces);
+        _labels.reserve(_num_dims * expected_subspaces);
     }
     ~SimpleSparseMap();
     size_t size() const { return _map.size(); }
+    size_t num_dims() const { return _num_dims; }
     static constexpr size_t npos() { return -1; }
-    const std::vector<vespalib::string> &labels() const { return _labels; }
-    void add_mapping(DirectStr addr) {
+    const std::vector<HashedLabel> &labels() const { return _labels; }
+
+    ConstArrayRef<HashedLabel> make_addr(uint32_t start) const {
+        return ConstArrayRef<HashedLabel>(&_labels[start], _num_dims);
+    }
+
+    template <typename T>
+    hash_t hash_addr(ConstArrayRef<T> addr) const {
+        hash_t h = 0;
+        for (const auto &label: addr) {
+            h = 31 * h + hash_label(label);
+        }
+        return h;
+    }
+
+    template <typename T>
+    void add_mapping(ConstArrayRef<T> addr, hash_t hash) {
         uint32_t value = _map.size();
         uint32_t start = _labels.size();
         for (const auto &label: addr) {
             _labels.emplace_back(label);
         }
-        uint32_t end = _labels.size();
-        auto [ignore, was_inserted] = _map.insert(std::make_pair(Key(start, end), value));
-        assert(was_inserted);
+        _map.insert(std::make_pair(Key(start, hash), value));
     }
-    void add_mapping(DirectRef addr) {
+
+    template <typename T>
+    void add_mapping(ConstArrayRef<T> addr) {
+        hash_t h = 0;
         uint32_t value = _map.size();
         uint32_t start = _labels.size();
         for (const auto &label: addr) {
             _labels.emplace_back(label);
+            h = 31 * h + hash_label(_labels.back());
         }
-        uint32_t end = _labels.size();
-        auto [ignore, was_inserted] = _map.insert(std::make_pair(Key(start, end), value));
-        assert(was_inserted);
+        _map.insert(std::make_pair(Key(start, h), value));
     }
-    void add_mapping(IndirectRef addr) {
-        uint32_t value = _map.size();
-        uint32_t start = _labels.size();
-        for (const auto *label: addr) {
-            _labels.emplace_back(*label);
-        }
-        uint32_t end = _labels.size();
-        auto [ignore, was_inserted] = _map.insert(std::make_pair(Key(start, end), value));
-        assert(was_inserted);
-    }
-    size_t lookup(DirectStr addr) const {
-        auto pos = _map.find(addr);
+
+    size_t lookup(hash_t hash) const {
+        auto pos = _map.find(hash);
         return (pos == _map.end()) ? npos() : pos->second;
     }
-    size_t lookup(DirectRef addr) const {
-        auto pos = _map.find(addr);
-        return (pos == _map.end()) ? npos() : pos->second;
+
+    template <typename T>
+    size_t lookup(ConstArrayRef<T> addr) const {
+        return lookup(hash_addr(addr));
     }
-    size_t lookup(IndirectRef addr) const {
-        auto pos = _map.find(addr);
-        return (pos == _map.end()) ? npos() : pos->second;
+
+    template <typename F>
+    void each_map_entry(F &&f) const {
+        _map.for_each([&](const auto &entry)
+                      {
+                          f(entry.first.start, entry.second, entry.first.hash);
+                      });
     }
 };
 
