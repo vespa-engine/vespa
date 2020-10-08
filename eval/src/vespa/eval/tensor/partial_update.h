@@ -26,7 +26,7 @@ struct TensorPartialUpdate {
 
     // make a copy of the input, but remove cells present in remove_spec.
     // cell values in remove_spec are ignored.
-    // requires same set of mapped imensions input and remove_spec.
+    // requires same set of mapped dimensions input and remove_spec.
     // not valid for dense tensors, since removing cells for those are impossible.
     // returns null pointer if these constraints are violated.
     static Value::UP remove(const Value &input, const Value &remove_spec, const ValueBuilderFactory &factory);
