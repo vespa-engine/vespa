@@ -26,7 +26,6 @@ enum class DimCase {
 
 struct DenseCoords {
     std::vector<size_t> dim_sizes;
-    std::vector<const char *> dim_names;
     size_t total_size = 1;
     size_t offset;
     size_t dim;
@@ -39,7 +38,6 @@ struct DenseCoords {
                 offset += coord;
             }
         } else {
-            // "bad label{%s} in modifier tensor, was %zu, must be < %zu", dim_names[dim], coord, cur
             offset = npos();
         }
         ++dim;
@@ -48,18 +46,15 @@ struct DenseCoords {
         uint32_t result = 0;
         for (char c : label) {
             if (c < '0' || c > '9') { // bad char
-                // "bad label{%s} in modifier tensor, was '%s'", dim_names[dim], label.data()
                 offset = npos();
-                ++dim;
-                return;
+                break;
             }
             result = result * 10 + (c - '0');
         }
         with(result);
     }
-    void add_dim(const char *name, size_t sz) {
+    void add_dim(size_t sz) {
         dim_sizes.push_back(sz);
-        dim_names.push_back(name);
         total_size *= sz;
     }
     size_t get() const {
@@ -133,7 +128,7 @@ struct AddressHandler {
         }
         for (const auto & dim : input_type.dimensions()) {
             if (dim.is_indexed()) {
-                target_coords.add_dim(dim.name.c_str(), dim.size);
+                target_coords.add_dim(dim.size);
             }
         }
     }
