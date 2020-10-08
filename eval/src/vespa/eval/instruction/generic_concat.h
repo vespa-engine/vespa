@@ -24,6 +24,7 @@ struct DenseConcatPlan {
     struct InOutLoop {
         size_t input_size;
         size_t output_size;
+        size_t next_offset;
         std::vector<size_t> in_loop_cnt;
         std::vector<size_t> in_stride;
         std::vector<size_t> out_stride;

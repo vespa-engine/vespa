@@ -99,13 +99,16 @@ struct SelectGenericConcatOp {
     }
 };
 
-enum class Case { NONE, OUT, BOTH };
+enum class Case { NONE, OUT, CONCAT, BOTH };
 
 } // namespace <unnamed>
 
 DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
                                       std::string concat_dimension,
                                       const ValueType &out_type)
+    : input_size(0),
+      output_size(0),
+      next_offset(0)
 {
     std::vector<size_t> out_loop_cnt;
     Case prev_case = Case::NONE;
@@ -126,12 +129,14 @@ DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
                    {
                        [&](visit_ranges_first, const auto &) { abort(); },
                        [&](visit_ranges_second, const auto &b) {
-                           if (b.name == concat_dimension) { update_plan(Case::OUT,      1, b.size, 0, 1);
+                           if (b.name == concat_dimension) { update_plan(Case::CONCAT,   1, b.size, 0, 1);
                                                     } else { update_plan(Case::OUT, b.size, b.size, 0, 1); }
                        },
-                       [&](visit_ranges_both, const auto &a, const auto &b) { update_plan(Case::BOTH, a.size, b.size, 1, 1); }
+                       [&](visit_ranges_both, const auto &a, const auto &b) {
+                           if (b.name == concat_dimension) { update_plan(Case::CONCAT, a.size, b.size, 1, 1);
+                                                    } else { update_plan(Case::BOTH,   a.size, b.size, 1, 1); }
+                       }
                    };
-
     const auto input_dimensions = in_type.nontrivial_indexed_dimensions();
     const auto output_dimensions = out_type.nontrivial_indexed_dimensions();
     visit_ranges(visitor, input_dimensions.begin(), input_dimensions.end(), output_dimensions.begin(), output_dimensions.end(),
@@ -148,7 +153,12 @@ DenseConcatPlan::InOutLoop::InOutLoop(const ValueType &in_type,
         assert(out_loop_cnt[i] != 0);
         out_stride[i] = output_size;
         output_size *= out_loop_cnt[i];
+        if (in_loop_cnt[i] != out_loop_cnt[i]) {
+            assert(next_offset == 0);
+            next_offset = in_loop_cnt[i] * out_stride[i];
+        }
     }
+    assert(next_offset != 0);
 }
 
 InterpretedFunction::Instruction
@@ -171,11 +181,7 @@ DenseConcatPlan::DenseConcatPlan(const ValueType &lhs_type,
     right(rhs_type, concat_dimension, out_type)
 {
     const auto output_dimensions = out_type.nontrivial_indexed_dimensions();
-    for (size_t i = 0; i < output_dimensions.size(); ++i) {
-        if (output_dimensions[i].name == concat_dimension) {
-            right_offset = left.in_loop_cnt[i] * left.out_stride[i];
-        }
-    }
+    right_offset = left.next_offset;
     assert(right_offset > 0);
     assert(left.output_size  == right.output_size);
 }
