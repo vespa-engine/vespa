@@ -10,7 +10,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.metrics.PrometheusV1Handler;
@@ -272,10 +271,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         serviceId,
                         ComponentSpecification.fromString(MbusServerProvider.class.getName()),
                         null))));
-    }
-
-    @Override
-    public void getConfig(ThreadpoolConfig.Builder builder) {
     }
 
     public static class MbusParams {

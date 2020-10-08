@@ -17,9 +17,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
-import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
@@ -100,8 +98,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer
+        ConfigserverConfig.Producer
 {
 
     /**
@@ -170,7 +167,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        addSimpleComponent(ThreadPoolProvider.class);
+        addComponent(new DefaultThreadpoolProvider(this, deployState));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent(SecurityFilterInvoker.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
