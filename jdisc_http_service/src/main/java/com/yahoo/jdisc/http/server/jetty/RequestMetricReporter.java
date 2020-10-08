@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Responsible for metric reporting for JDisc http request handler support.
  * @author Tony Vaagenes
  */
-public class MetricReporter {
+class RequestMetricReporter {
     private final Metric metric;
     private final Context context;
 
@@ -21,13 +21,13 @@ public class MetricReporter {
     private final AtomicBoolean firstSetOfTimeToFirstByte = new AtomicBoolean(true);
 
 
-    public MetricReporter(Metric metric, Context context, long requestStartTime) {
+    RequestMetricReporter(Metric metric, Context context, long requestStartTime) {
         this.metric = metric;
         this.context = context;
         this.requestStartTime = requestStartTime;
     }
 
-    public void successfulWrite(int numBytes) {
+    void successfulWrite(int numBytes) {
         setTimeToFirstByteFirstTime();
 
         metric.add(MetricDefinitions.NUM_SUCCESSFUL_WRITES, 1, context);
@@ -42,11 +42,11 @@ public class MetricReporter {
         }
     }
 
-    public void failedWrite() {
+    void failedWrite() {
         metric.add(MetricDefinitions.NUM_FAILED_WRITES, 1, context);
     }
 
-    public void successfulResponse() {
+    void successfulResponse() {
         setTimeToFirstByteFirstTime();
 
         long requestLatency = getRequestLatency();
@@ -56,18 +56,18 @@ public class MetricReporter {
         metric.add(MetricDefinitions.NUM_SUCCESSFUL_RESPONSES, 1, context);
     }
 
-    public void failedResponse() {
+    void failedResponse() {
         setTimeToFirstByteFirstTime();
 
         metric.set(MetricDefinitions.TOTAL_FAILED_LATENCY, getRequestLatency(), context);
         metric.add(MetricDefinitions.NUM_FAILED_RESPONSES, 1, context);
     }
 
-    public void prematurelyClosed() {
+    void prematurelyClosed() {
         metric.add(MetricDefinitions.NUM_PREMATURELY_CLOSED_CONNECTIONS, 1, context);
     }
 
-    public void successfulRead(int bytes_received) {
+    void successfulRead(int bytes_received) {
         metric.set(MetricDefinitions.NUM_BYTES_RECEIVED, bytes_received, context);
     }
 
@@ -75,11 +75,11 @@ public class MetricReporter {
         return System.currentTimeMillis() - requestStartTime;
     }
 
-    public void uriLength(int length) {
+    void uriLength(int length) {
         metric.set(MetricDefinitions.URI_LENGTH, length, context);
     }
 
-    public void contentSize(int size) {
+    void contentSize(int size) {
         metric.set(MetricDefinitions.CONTENT_SIZE, size, context);
     }
 }
