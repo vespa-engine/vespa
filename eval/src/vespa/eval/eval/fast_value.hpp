@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value.h"
-#include "simple_sparse_map.h"
+#include "fast_sparse_map.h"
 #include "inline_operation.h"
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -17,22 +17,22 @@ namespace {
 // look up a full address in the map directly
 struct LookupView : public Value::Index::View {
 
-    const SimpleSparseMap &map;
-    size_t                 subspace;
+    const FastSparseMap &map;
+    size_t               subspace;
 
-    LookupView(const SimpleSparseMap &map_in)
-        : map(map_in), subspace(SimpleSparseMap::npos()) {}
+    LookupView(const FastSparseMap &map_in)
+        : map(map_in), subspace(FastSparseMap::npos()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
         subspace = map.lookup(addr);
     }
 
     bool next_result(ConstArrayRef<vespalib::stringref*>, size_t &idx_out) override {
-        if (subspace == SimpleSparseMap::npos()) {
+        if (subspace == FastSparseMap::npos()) {
             return false;
         }
         idx_out = subspace;
-        subspace = SimpleSparseMap::npos();
+        subspace = FastSparseMap::npos();
         return true;
     }
 };
@@ -42,7 +42,7 @@ struct LookupView : public Value::Index::View {
 // find matching mappings for a partial address with brute force filtering
 struct FilterView : public Value::Index::View {
 
-    using Label = SimpleSparseMap::HashedLabel;
+    using Label = FastSparseMap::HashedLabel;
 
     size_t                    num_mapped_dims;
     const std::vector<Label> &labels;
@@ -60,7 +60,7 @@ struct FilterView : public Value::Index::View {
         return true;
     }
 
-    FilterView(const SimpleSparseMap &map, const std::vector<size_t> &match_dims_in)
+    FilterView(const FastSparseMap &map, const std::vector<size_t> &match_dims_in)
         : num_mapped_dims(map.num_dims()), labels(map.labels()), match_dims(match_dims_in),
           extract_dims(), query(match_dims.size(), Label()), pos(labels.size())
     {
@@ -106,13 +106,13 @@ struct FilterView : public Value::Index::View {
 // iterate all mappings
 struct IterateView : public Value::Index::View {
 
-    using Labels = std::vector<SimpleSparseMap::HashedLabel>;
+    using Labels = std::vector<FastSparseMap::HashedLabel>;
 
     size_t        num_mapped_dims;
     const Labels &labels;
     size_t        pos;
 
-    IterateView(const SimpleSparseMap &map)
+    IterateView(const FastSparseMap &map)
         : num_mapped_dims(map.num_dims()), labels(map.labels()), pos(labels.size()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*>) override {
@@ -143,7 +143,7 @@ struct IterateView : public Value::Index::View {
 // operations by calling inline functions directly.
 
 struct FastValueIndex final : Value::Index {
-    SimpleSparseMap map;
+    FastSparseMap map;
     FastValueIndex(size_t num_mapped_dims_in, size_t expected_subspaces_in)
         : map(num_mapped_dims_in, expected_subspaces_in) {}
 
@@ -202,7 +202,7 @@ FastValueIndex::sparse_full_overlap_join(const ValueType &res_type, const Fun &f
     lhs.map.each_map_entry([&](auto addr_tag, auto lhs_subspace, auto hash)
                            {
                                auto rhs_subspace = rhs.map.lookup(hash);
-                               if (rhs_subspace != SimpleSparseMap::npos()) {
+                               if (rhs_subspace != FastSparseMap::npos()) {
                                    result.my_index.map.add_mapping(lhs.map.make_addr(addr_tag), hash);
                                    result.my_cells.push_back(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
                                }

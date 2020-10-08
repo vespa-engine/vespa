@@ -31,7 +31,7 @@ namespace vespalib::eval {
  * 'lookup' will return the integer value associated with the
  * given address or a special npos value if the value is not found.
  **/
-class SimpleSparseMap
+class FastSparseMap
 {
 public:
     using hash_t = XXH64_hash_t;
@@ -89,12 +89,12 @@ private:
     MapType _map;
 
 public:
-    SimpleSparseMap(size_t num_dims_in, size_t expected_subspaces)
+    FastSparseMap(size_t num_dims_in, size_t expected_subspaces)
         : _num_dims(num_dims_in), _labels(), _map(expected_subspaces * 2)
     {
         _labels.reserve(_num_dims * expected_subspaces);
     }
-    ~SimpleSparseMap();
+    ~FastSparseMap();
     size_t size() const { return _map.size(); }
     size_t num_dims() const { return _num_dims; }
     static constexpr size_t npos() { return -1; }

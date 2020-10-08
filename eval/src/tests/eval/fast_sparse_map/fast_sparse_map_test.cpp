@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/simple_sparse_map.h>
+#include <vespa/eval/eval/fast_sparse_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -31,12 +31,12 @@ public:
 StringList::~StringList() = default;
 using SL = StringList;
 
-TEST(SimpleSparseMapTest, simple_sparse_map_basic_usage_works) {
+TEST(FastSparseMapTest, fast_sparse_map_basic_usage_works) {
     SL a1({"a","a","a"});
     SL a2({"a","a","b"});
     SL a3({"a","b","a"});
     SL a4({"b","a","a"});
-    SimpleSparseMap map(3, 128);
+    FastSparseMap map(3, 128);
     EXPECT_EQ(map.size(), 0);
     map.add_mapping(a1.direct_str());
     map.add_mapping(a2.direct_ref());
@@ -54,7 +54,7 @@ TEST(SimpleSparseMapTest, simple_sparse_map_basic_usage_works) {
     EXPECT_EQ(map.lookup(a4.direct_str()), map.npos());
     EXPECT_EQ(map.lookup(a4.direct_ref()), map.npos());
     EXPECT_EQ(map.lookup(a4.indirect_ref()), map.npos());
-    EXPECT_EQ(SimpleSparseMap::npos(), map.npos());
+    EXPECT_EQ(FastSparseMap::npos(), map.npos());
     EXPECT_EQ(map.labels().size(), 9);
     auto dump = [&](auto addr_tag, auto subspace, auto hash) {
         auto addr = map.make_addr(addr_tag);
@@ -63,11 +63,11 @@ TEST(SimpleSparseMapTest, simple_sparse_map_basic_usage_works) {
     map.each_map_entry(dump);
 }
 
-TEST(SimpleSparseMapTest, simple_sparse_map_works_with_no_labels) {
+TEST(FastSparseMapTest, fast_sparse_map_works_with_no_labels) {
     SL empty({});
-    SimpleSparseMap map1(0, 1);
-    SimpleSparseMap map2(0, 1);
-    SimpleSparseMap map3(0, 1);
+    FastSparseMap map1(0, 1);
+    FastSparseMap map2(0, 1);
+    FastSparseMap map3(0, 1);
     EXPECT_EQ(map1.size(), 0);
     EXPECT_EQ(map2.size(), 0);
     EXPECT_EQ(map3.size(), 0);
@@ -91,8 +91,8 @@ TEST(SimpleSparseMapTest, simple_sparse_map_works_with_no_labels) {
     EXPECT_EQ(map3.labels().size(), 0);
 }
 
-TEST(SimpleSparseMapTest, size_of_internal_types) {
-    fprintf(stderr, "simple sparse map hash node size: %zu\n", sizeof(hash_node<SimpleSparseMap::MapType::value_type>));
+TEST(FastSparseMapTest, size_of_internal_types) {
+    fprintf(stderr, "fast sparse map hash node size: %zu\n", sizeof(hash_node<FastSparseMap::MapType::value_type>));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -14,6 +14,7 @@ vespa_define_module(
     src/tests/eval/aggr
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
+    src/tests/eval/fast_sparse_map
     src/tests/eval/function
     src/tests/eval/function_speed
     src/tests/eval/gbdt
@@ -24,7 +25,6 @@ vespa_define_module(
     src/tests/eval/node_tools
     src/tests/eval/node_types
     src/tests/eval/param_usage
-    src/tests/eval/simple_sparse_map
     src/tests/eval/simple_tensor
     src/tests/eval/simple_value
     src/tests/eval/tensor_function
