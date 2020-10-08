@@ -2049,4 +2049,24 @@ TEST_F(FileStorManagerTest, get_command_size_is_added_to_metric) {
     assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->get[defaultLoadType]);
 }
 
+TEST_F(FileStorManagerTest, test_and_set_condition_mismatch_not_counted_as_failure) {
+    TestFileStorComponents c(*this);
+    auto doc = _node->getTestDocMan().createRandomDocument();
+    document::BucketId bucket(16, document::BucketIdFactory().getBucketId(doc->getId()).getRawId());
+    createBucket(bucket, 0);
+    auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), std::move(doc), api::Timestamp(12345));
+    cmd->setCondition(TestAndSetCondition("not testdoctype1"));
+    cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 3));
+    c.top.sendDown(cmd);
+
+    api::PutReply* reply;
+    ASSERT_SINGLE_REPLY(api::PutReply, reply, c.top, _waitTime);
+    EXPECT_EQ(reply->getResult().getResult(), api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+
+    auto& metrics = thread_metrics_of(*c.manager)->put[defaultLoadType];
+    EXPECT_EQ(metrics.failed.getValue(), 0);
+    EXPECT_EQ(metrics.test_and_set_failed.getValue(), 1);
+    EXPECT_EQ(thread_metrics_of(*c.manager)->failedOperations.getValue(), 0);
+}
+
 } // storage

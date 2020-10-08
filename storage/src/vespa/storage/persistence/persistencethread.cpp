@@ -177,6 +177,9 @@ PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP)
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
     if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
+        // Will also count condition parse failures etc as TaS failures, but
+        // those results _will_ increase the error metrics as well.
+        metrics.test_and_set_failed.inc();
         return trackerUP;
     }
 
@@ -204,6 +207,7 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trac
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
     if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
+        metrics.test_and_set_failed.inc();
         return trackerUP;
     }
 
@@ -243,6 +247,7 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trac
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
     if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context(), cmd.getUpdate()->getCreateIfNonExistent())) {
+        metrics.test_and_set_failed.inc();
         return trackerUP;
     }
 

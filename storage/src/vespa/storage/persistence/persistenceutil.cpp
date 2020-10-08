@@ -68,12 +68,22 @@ MessageTracker::setMetric(FileStorThreadMetrics::Op& metric) {
 
 MessageTracker::~MessageTracker() = default;
 
+bool MessageTracker::count_result_as_failure() const noexcept {
+    // Explicitly don't treat TaS failures as regular failures. These are tracked separately
+    // for operations that support TaS conditions.
+    if (hasReply() && getReply().getResult().failed()) {
+        return (getReply().getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+    }
+    return (getResult().failed()
+            && (getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED));
+}
+
 void
 MessageTracker::sendReply() {
     if ( ! _msg->getType().isReply()) {
         generateReply(static_cast<api::StorageCommand &>(*_msg));
     }
-    if ((hasReply() && getReply().getResult().failed()) || getResult().failed()) {
+    if (count_result_as_failure()) {
         _env._metrics.failedOperations.inc();
     }
     vespalib::duration duration = vespalib::from_s(_timer.getElapsedTimeAsDouble()/1000.0);
@@ -140,7 +150,11 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
     }
 
     if (!_reply->getResult().success()) {
-        _metric->failed.inc();
+        // TaS failures are tracked separately and explicitly in the put/update/remove paths,
+        // so don't double-count them here.
+        if (_reply->getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED) {
+            _metric->failed.inc();
+        }
         LOGBP(debug, "Failed to handle command %s: %s",
               cmd.toString().c_str(),
               _result.toString().c_str());

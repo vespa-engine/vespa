@@ -78,6 +78,9 @@ public:
 private:
     MessageTracker(PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
                    FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
+
+    [[nodiscard]] bool count_result_as_failure() const noexcept;
+
     bool                                     _sendReply;
     bool                                     _updateBucketInfo;
     FileStorHandler::BucketLockInterface::SP _bucketLock;
