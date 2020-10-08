@@ -216,7 +216,7 @@ void waitUntilMergeQueueIs(MergeThrottler& throttler, std::size_t sz, int timeou
     while (true) {
         std::size_t count;
         {
-            vespalib::LockGuard lock(throttler.getStateLock());
+            std::lock_guard lock(throttler.getStateLock());
             count = throttler.getMergeQueue().size();
         }
         if (count == sz) {
