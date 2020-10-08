@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,14 +36,10 @@ public class DocumentProtocol implements Protocol {
     private final RoutableRepository routableRepository;
     private final DocumentTypeManager docMan;
 
-    /**
-     * The name of this protocol.
-     */
+    /** The name of this protocol. */
     public static final Utf8String NAME = new Utf8String("document");
 
-    /**
-     * All message types that are implemented by this protocol.
-     */
+    // All message types that are implemented by this protocol.
     public static final int DOCUMENT_MESSAGE = 100000;
     public static final int MESSAGE_GETDOCUMENT = DOCUMENT_MESSAGE + 3;
     public static final int MESSAGE_PUTDOCUMENT = DOCUMENT_MESSAGE + 4;
@@ -62,9 +59,7 @@ public class DocumentProtocol implements Protocol {
     public static final int MESSAGE_REMOVELOCATION = DOCUMENT_MESSAGE + 24;
     public static final int MESSAGE_QUERYRESULT = DOCUMENT_MESSAGE + 25;
 
-    /**
-     * All reply types that are implemented by this protocol.
-     */
+    // All reply types that are implemented by this protocol.
     public static final int DOCUMENT_REPLY = 200000;
     public static final int REPLY_GETDOCUMENT = DOCUMENT_REPLY + 3;
     public static final int REPLY_PUTDOCUMENT = DOCUMENT_REPLY + 4;
@@ -86,7 +81,7 @@ public class DocumentProtocol implements Protocol {
     public static final int REPLY_WRONGDISTRIBUTION = DOCUMENT_REPLY + 1000;
     public static final int REPLY_DOCUMENTIGNORED = DOCUMENT_REPLY + 1001;
 
-    /**
+    /*
      * Important note on adding new error codes to the Document protocol:
      *
      * Changes to this protocol must be reflected in both the Java and C++ versions
@@ -95,117 +90,94 @@ public class DocumentProtocol implements Protocol {
      * longer be guaranteed.
      */
 
-    /**
-     * Used by policies to  indicate an inappropriate message.
-     */
+    /** Used by policies to  indicate an inappropriate message. */
     public static final int ERROR_MESSAGE_IGNORED = ErrorCode.APP_FATAL_ERROR + 1;
-    /**
-     * Used for error policy when policy creation failed.
-     */
+
+    /** Used for error policy when policy creation failed. */
     public static final int ERROR_POLICY_FAILURE = ErrorCode.APP_FATAL_ERROR + 2;
-    /**
-     * Document in operation cannot be found. (VDS Get and Remove)
-     */
+
+    /** Document in operation cannot be found. (VDS Get and Remove) */
     public static final int ERROR_DOCUMENT_NOT_FOUND = ErrorCode.APP_FATAL_ERROR + 1001;
-    /**
-     * Operation cannot be performed because token already exist. (Create bucket, create visitor)
-     */
+
+    /** Operation cannot be performed because token already exist. (Create bucket, create visitor) */
     public static final int ERROR_DOCUMENT_EXISTS = ErrorCode.APP_FATAL_ERROR + 1002;
-    /**
-     * Node have not implemented support for the given operation.
-     */
+
+    /** Node have not implemented support for the given operation. */
     public static final int ERROR_NOT_IMPLEMENTED = ErrorCode.APP_FATAL_ERROR + 1004;
-    /**
-     * Parameters given in request is illegal.
-     */
+
+    /** Parameters given in request is illegal. */
     public static final int ERROR_ILLEGAL_PARAMETERS = ErrorCode.APP_FATAL_ERROR + 1005;
-    /**
-     * Unknown request received. (New client requesting from old server)
-     */
+
+    /** Unknown request received. (New client requesting from old server) */
     public static final int ERROR_UNKNOWN_COMMAND = ErrorCode.APP_FATAL_ERROR + 1007;
-    /**
-     * Request cannot be decoded.
-     */
+
+    /** Request cannot be decoded. */
     public static final int ERROR_UNPARSEABLE = ErrorCode.APP_FATAL_ERROR + 1008;
-    /**
-     * Not enough free space on disk to perform operation.
-     */
+
+    /** Not enough free space on disk to perform operation. */
     public static final int ERROR_NO_SPACE = ErrorCode.APP_FATAL_ERROR + 1009;
-    /**
-     * Request was not handled correctly.
-     */
+
+    /** Request was not handled correctly. */
     public static final int ERROR_IGNORED = ErrorCode.APP_FATAL_ERROR + 1010;
-    /**
-     * We failed in some way we didn't expect to fail.
-     */
+
+    /** We failed in some way we didn't expect to fail. */
     public static final int ERROR_INTERNAL_FAILURE = ErrorCode.APP_FATAL_ERROR + 1011;
-    /**
-     * Node refuse to perform operation. (Illegally formed message?)
-     */
+
+    /** Node refuse to perform operation. (Illegally formed message?) */
     public static final int ERROR_REJECTED = ErrorCode.APP_FATAL_ERROR + 1012;
-    /**
-     * Test and set condition (selection) failed.
-     */
+
+    /** Test and set condition (selection) failed. */
     public static final int ERROR_TEST_AND_SET_CONDITION_FAILED = ErrorCode.APP_FATAL_ERROR + 1013;
 
-    /**
-     * Failed to process the given request. (Used by docproc)
-     */
+    /** Failed to process the given request. (Used by docproc) */
     public static final int ERROR_PROCESSING_FAILURE = ErrorCode.APP_FATAL_ERROR + 2001;
+
     /** Unique timestamp specified for new operation is already in use. */
     public static final int ERROR_TIMESTAMP_EXIST    = ErrorCode.APP_FATAL_ERROR + 2002;
-    /**
-     * Node not ready to perform operation. (Initializing VDS nodes)
-     */
+
+    /** Node not ready to perform operation. (Initializing VDS nodes) */
     public static final int ERROR_NODE_NOT_READY = ErrorCode.APP_TRANSIENT_ERROR + 1001;
-    /**
-     * Wrong node to talk to in current state. (VDS system state disagreement)
-     */
+
+    /** Wrong node to talk to in current state. (VDS system state disagreement) */
     public static final int ERROR_WRONG_DISTRIBUTION = ErrorCode.APP_TRANSIENT_ERROR + 1002;
-    /**
-     * Operation cut short and aborted. (Destroy visitor, node stopping)
-     */
+
+    /** Operation cut short and aborted. (Destroy visitor, node stopping) */
     public static final int ERROR_ABORTED = ErrorCode.APP_TRANSIENT_ERROR + 1004;
-    /**
-     * Node too busy to process request (Typically full queues)
-     */
+
+    /** Node too busy to process request (Typically full queues) */
     public static final int ERROR_BUSY = ErrorCode.APP_TRANSIENT_ERROR + 1005;
-    /**
-     * Lost connection with the node we requested something from.
-     */
+
+    /** Lost connection with the node we requested something from. */
     public static final int ERROR_NOT_CONNECTED = ErrorCode.APP_TRANSIENT_ERROR + 1006;
-    /**
-     * We failed accessing the disk, which we think is a disk hardware problem.
-     */
+
+    /** We failed accessing the disk, which we think is a disk hardware problem. */
     public static final int ERROR_DISK_FAILURE = ErrorCode.APP_TRANSIENT_ERROR + 1007;
-    /**
-     * We failed during an IO operation, we dont think is a specific disk hardware problem.
-     */
+
+    /** We failed during an IO operation, we dont think is a specific disk hardware problem. */
     public static final int ERROR_IO_FAILURE = ErrorCode.APP_TRANSIENT_ERROR + 1008;
+
     /**
      * Bucket given in operation not found due to bucket database
      * inconsistencies between storage and distributor nodes.
      */
     public static final int ERROR_BUCKET_NOT_FOUND = ErrorCode.APP_TRANSIENT_ERROR + 1009;
+
     /**
      * Bucket recently removed, such that operation cannot be performed.
      * Differs from BUCKET_NOT_FOUND in that there is no db inconsistency.
      */
     public static final int ERROR_BUCKET_DELETED = ErrorCode.APP_TRANSIENT_ERROR + 1012;
-    /**
-     * Storage node received a timestamp that is stale. Likely clock skew.
-     */
+
+    /** Storage node received a timestamp that is stale. Likely clock skew. */
     public static final int ERROR_STALE_TIMESTAMP = ErrorCode.APP_TRANSIENT_ERROR + 1013;
 
-    /**
-     * The given node have gotten a critical error and have suspended itself.
-     */
+    /** The given node have gotten a critical error and have suspended itself. */
     public static final int ERROR_SUSPENDED = ErrorCode.APP_TRANSIENT_ERROR + 2001;
 
     /**
-     * <p>Define the different priorities allowed for document api messages. Most user traffic should be fit into the
+     * Defines the different priorities allowed for document api messages. Most user traffic should be fit into the
      * NORMAL categories. Traffic in the HIGH end will be usually be prioritized over important maintenance operations.
-     * Traffic in the LOW end will be prioritized after these operations.</p>
+     * Traffic in the LOW end will be prioritized after these operations.
      */
     public enum Priority {
         HIGHEST(0),
@@ -239,9 +211,9 @@ public class DocumentProtocol implements Protocol {
     /**
      * Get a priority enum instance by its value.
      *
-     * @param val The value of the priority to return.
-     * @return The priority enum instance.
-     * @throws IllegalArgumentException If priority value is unknown.
+     * @param val the value of the priority to return
+     * @return the priority enum instance
+     * @throws IllegalArgumentException if the priority value is unknown
      */
     public static Priority getPriority(int val) {
         for (Priority pri : Priority.values()) {
@@ -255,9 +227,9 @@ public class DocumentProtocol implements Protocol {
     /**
      * Get priority enum instance by its name.
      *
-     * @param name Name of priority.
-     * @return Priority enum instance, given that <code>name</code> is valid.
-     * @throws IllegalArgumentException If priority name is unknown.
+     * @param name name of priority.
+     * @return priority enum instance, given that <code>name</code> is valid
+     * @throws IllegalArgumentException if priority name is unknown
      */
     public static Priority getPriorityByName(String name) {
         return Priority.valueOf(name);
@@ -344,9 +316,9 @@ public class DocumentProtocol implements Protocol {
      * that is already in use by a message bus instance. Notice that the name you supply for a factory is the
      * case-sensitive name that will be referenced by routes.
      *
-     * @param name    The name of the factory to add.
-     * @param factory The factory to add.
-     * @return This, to allow chaining.
+     * @param name    the name of the factory to add
+     * @param factory the factory to add
+     * @return this, to allow chaining
      */
     public DocumentProtocol putRoutingPolicyFactory(String name, RoutingPolicyFactory factory) {
         routingPolicyRepository.putFactory(name, factory);
@@ -359,10 +331,10 @@ public class DocumentProtocol implements Protocol {
      * supported version. You can always bypass this by passing a default version specification object to this function,
      * because that object will match any version.
      *
-     * @param type    The routable type to assign a factory to.
-     * @param factory The factory to add.
-     * @param version The version for which this factory can be used.
-     * @return This, to allow chaining.
+     * @param type    the routable type to assign a factory to
+     * @param factory the factory to add
+     * @param version the version for which this factory can be used
+     * @return this, to allow chaining
      */
     public DocumentProtocol putRoutableFactory(int type, RoutableFactory factory, VersionSpecification version) {
         routableRepository.putFactory(version, type, factory);
@@ -373,10 +345,10 @@ public class DocumentProtocol implements Protocol {
      * Convenience method to call {@link #putRoutableFactory(int, RoutableFactory, com.yahoo.component.VersionSpecification)}
      * for multiple version specifications.
      *
-     * @param type     The routable type to assign a factory to.
-     * @param factory  The factory to add.
-     * @param versions The versions for which this factory can be used.
-     * @return This, to allow chaining.
+     * @param type     the routable type to assign a factory to
+     * @param factory  the factory to add
+     * @param versions the versions for which this factory can be used
+     * @return this, to allow chaining
      */
     public DocumentProtocol putRoutableFactory(int type, RoutableFactory factory, List<VersionSpecification> versions) {
         for (VersionSpecification version : versions) {
@@ -454,7 +426,7 @@ public class DocumentProtocol implements Protocol {
      * This is a convenient entry to the {@link #merge(RoutingContext,Set)} method by way of a routing context object.
      * The replies of all child contexts are merged and stored in the context.
      *
-     * @param ctx The context whose children to merge.
+     * @param ctx the context whose children to merge
      */
     public static void merge(RoutingContext ctx) {
         merge(ctx, new HashSet<Integer>(0));
@@ -465,8 +437,8 @@ public class DocumentProtocol implements Protocol {
      * in any of the replies, it will prepare an EmptyReply() and add all errors to it. If there are no errors, this
      * method will use the first reply in the list and transfer whatever feed answers might exist in the replies to it.
      *
-     * @param ctx  The context whose children to merge.
-     * @param mask The indexes of the children to skip.
+     * @param ctx  the context whose children to merge
+     * @param mask the indexes of the children to skip
      */
     public static void merge(RoutingContext ctx, Set<Integer> mask) {
         List<Reply> replies = new LinkedList<>();
@@ -499,8 +471,8 @@ public class DocumentProtocol implements Protocol {
      * method will use the first reply in the list and transfer whatever feed answers might exist in the replies to it.
      *
      *
-     * @param replies The replies to merge.
-     * @return The merged Reply.
+     * @param replies the replies to merge
+     * @return the merged Reply
      */
     public static Reply merge(List<Reply> replies) {
         return merge(replies, new HashSet<Integer>(0)).second;
@@ -509,9 +481,9 @@ public class DocumentProtocol implements Protocol {
     /**
      * Returns true if the given reply has at least one error, and all errors are of the given type.
      *
-     * @param reply   The reply to check for error.
-     * @param errCode The error code to check for.
-     * @return Whether or not the reply has only the given error code.
+     * @param reply   the reply to check for error
+     * @param errCode the error code to check for
+     * @return whether or not the reply has only the given error code
      */
     public static boolean hasOnlyErrorsOfType(Reply reply, int errCode) {
         if (!reply.hasErrors()) {
@@ -541,8 +513,7 @@ public class DocumentProtocol implements Protocol {
         try {
             return routableRepository.decode(docMan, version, data);
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            log.warning(e.getMessage());
+            log.log(Level.WARNING, "Failed to decode document data", e);
             return null;
         }
     }
@@ -550,12 +521,13 @@ public class DocumentProtocol implements Protocol {
     /**
      * Returns a list of routable types that support the given version.
      *
-     * @param version The version to return types for.
-     * @return The list of supported types.
+     * @param version the version to return types for
+     * @return the list of supported types
      */
     public List<Integer> getRoutableTypes(Version version) {
         return routableRepository.getRoutableTypes(version);
     }
 
     final public DocumentTypeManager getDocumentTypeManager() { return docMan; }
+
 }
