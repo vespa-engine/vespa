@@ -4,9 +4,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/closuretask.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 template <typename FunctionType>
 void
@@ -20,15 +18,11 @@ runFunction(FunctionType *func)
  */
 template <typename FunctionType>
 void
-runInMaster(searchcorespi::index::IThreadingService &writeService,
-            FunctionType func)
+runInMaster(searchcorespi::index::IThreadingService &writeService, FunctionType func)
 {
     writeService.master().execute(vespalib::makeTask
             (vespalib::makeClosure(&runFunction<FunctionType>, &func)));
     writeService.sync();
 }
 
-} // namespace test
-
-} // namespace proton
-
+}
