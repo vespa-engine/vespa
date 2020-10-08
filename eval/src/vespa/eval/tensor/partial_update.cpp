@@ -301,12 +301,11 @@ PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuil
         LOG(error, "when removing cells from a tensor, mapped dimensions must be equal");
         return Value::UP();
     }
-    if (input_type.mapped_dimensions().size() == 0) {
+    const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
+    if (num_mapped_in_input == 0) {
         LOG(error, "cannot remove cells from a dense tensor");
         return Value::UP();
     }
-    const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
-    const size_t dsss = input_type.dense_subspace_size();
     SparseCoords addrs(num_mapped_in_input);
     std::set<size_t> removed_subspaces;
     auto modifier_view = modifier.index().create_view({});
@@ -321,6 +320,7 @@ PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuil
         }
     }
     const size_t expected_subspaces = input.index().size() - removed_subspaces.size();
+    const size_t dsss = input_type.dense_subspace_size();
     auto builder = factory.create_value_builder<ICT>(input_type, num_mapped_in_input, dsss, expected_subspaces);
     copy_tensor_with_filter<ICT>(input, dsss, addrs, *builder, removed_subspaces);
     return builder->build(std::move(builder));
