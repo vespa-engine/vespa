@@ -17,6 +17,7 @@ import com.yahoo.vespa.model.application.validation.change.ContentTypeRemovalVal
 import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
@@ -91,6 +92,7 @@ public class Validation {
                 new ClusterSizeReductionValidator(),
                 new ResourcesReductionValidator(),
                 new ContainerRestartValidator(),
+                new NodeResourceChangeValidator()
         };
         return Arrays.stream(validators)
                 .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())

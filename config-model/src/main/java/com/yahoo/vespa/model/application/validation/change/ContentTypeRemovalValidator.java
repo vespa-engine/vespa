@@ -9,7 +9,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,7 +35,7 @@ public class ContentTypeRemovalValidator implements ChangeValidator {
                 }
             }
         }
-        return Collections.emptyList();
+        return List.of();
     }
 
 }

@@ -7,11 +7,8 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,7 +30,7 @@ public class ClusterSizeReductionValidator implements ChangeValidator {
                      overrides,
                      now);
         }
-        return Collections.emptyList();
+        return List.of();
     }
 
     private void validate(Capacity current,
