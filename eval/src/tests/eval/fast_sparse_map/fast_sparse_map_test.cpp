@@ -67,10 +67,9 @@ TEST(FastSparseMapTest, fast_sparse_map_basic_usage_works) {
     EXPECT_EQ(map.lookup(a4.indirect_ref()), map.npos());
     EXPECT_EQ(FastSparseMap::npos(), map.npos());
     EXPECT_EQ(map.labels().size(), 9);
-    using hash_t = FastSparseMap::hash_t;
-    std::set<hash_t> seen_hashes;
+    std::set<uint64_t> seen_hashes;
     std::map<uint32_t, uint32_t> addr_map;
-    auto my_fun = [&](uint32_t addr_tag, uint32_t subspace, hash_t hash) {
+    auto my_fun = [&](uint32_t addr_tag, uint32_t subspace, uint64_t hash) {
         addr_map[addr_tag] = subspace;
         seen_hashes.insert(hash);
     };
