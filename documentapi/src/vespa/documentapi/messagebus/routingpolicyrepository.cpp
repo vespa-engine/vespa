@@ -17,14 +17,14 @@ RoutingPolicyRepository::RoutingPolicyRepository() :
 void
 RoutingPolicyRepository::putFactory(const string &name, IRoutingPolicyFactory::SP factory)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _factories[name] = factory;
 }
 
 IRoutingPolicyFactory::SP
 RoutingPolicyRepository::getFactory(const string &name) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     FactoryMap::const_iterator it = _factories.find(name);
     if (it != _factories.end()) {
         return it->second;

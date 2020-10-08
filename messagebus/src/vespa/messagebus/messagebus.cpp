@@ -13,7 +13,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".messagebus");
 
-using vespalib::LockGuard;
 using vespalib::make_string;
 using namespace std::chrono_literals;
 
@@ -201,7 +200,7 @@ MessageBus::createIntermediateSession(const string &name,
 IntermediateSession::UP
 MessageBus::createIntermediateSession(const IntermediateSessionParams &params)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     IntermediateSession::UP ret(new IntermediateSession(*this, params));
     _sessions[params.getName()] = ret.get();
     if (params.getBroadcastName()) {
@@ -224,7 +223,7 @@ MessageBus::createDestinationSession(const string &name,
 DestinationSession::UP
 MessageBus::createDestinationSession(const DestinationSessionParams &params)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     DestinationSession::UP ret(new DestinationSession(*this, params));
     _sessions[params.getName()] = ret.get();
     if (params.getBroadcastName()) {
@@ -236,7 +235,7 @@ MessageBus::createDestinationSession(const DestinationSessionParams &params)
 void
 MessageBus::unregisterSession(const string &sessionName)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _network.unregisterSession(sessionName);
     _sessions.erase(sessionName);
 }
@@ -245,7 +244,7 @@ RoutingTable::SP
 MessageBus::getRoutingTable(const string &protocol)
 {
     typedef std::map<string, RoutingTable::SP>::iterator ITR;
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     ITR itr = _routingTables.find(protocol);
     if (itr == _routingTables.end()) {
         return RoutingTable::SP(); // not found
@@ -293,7 +292,7 @@ MessageBus::setupRouting(const RoutingSpec &spec)
         rtm[cfg.getProtocol()] = std::make_shared<RoutingTable>(cfg);
     }
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         std::swap(_routingTables, rtm);
     }
     _protocolRepository->clearPolicyCache();
@@ -360,7 +359,7 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
 {
     IMessageHandler *msgHandler = nullptr;
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         std::map<string, IMessageHandler*>::iterator it = _sessions.find(session);
         if (it != _sessions.end()) {
             msgHandler = it->second;

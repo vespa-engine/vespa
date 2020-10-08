@@ -17,7 +17,7 @@ using namespace std::chrono_literals;
 class Client : public IReplyHandler
 {
 private:
-    vespalib::Lock    _lock;
+    std::mutex        _lock;
     uint32_t          _okCnt;
     uint32_t          _failCnt;
     SourceSession::UP _session;
@@ -58,7 +58,7 @@ Client::send(uint64_t seq) {
 
 void
 Client::sample(uint32_t &okCnt, uint32_t &failCnt) {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     okCnt = _okCnt;
     failCnt = _failCnt;
 }
@@ -69,7 +69,7 @@ Client::handleReply(Reply::UP reply) {
         && (reply->getType() == SimpleProtocol::REPLY)
         && (static_cast<SimpleReply&>(*reply).getValue() == "OK"))
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         ++_okCnt;
     } else {
         fprintf(stderr, "BAD REPLY\n");
@@ -78,7 +78,7 @@ Client::handleReply(Reply::UP reply) {
                     reply->getError(i).getCode(),
                     reply->getError(i).getMessage().c_str());
         }
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         ++_failCnt;
     }
     send();
