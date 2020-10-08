@@ -68,7 +68,8 @@ public class Instance {
                                                                                       version, instant));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.metrics().with(warnings),
-                                                  previousDeployment.activity());
+                                                  previousDeployment.activity(),
+                                                  previousDeployment.quota());
         return with(newDeployment);
     }
 
