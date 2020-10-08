@@ -594,7 +594,7 @@ struct FixtureBase
     void putAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         PutOperation op(docCtx.bid, docCtx.ts, docCtx.doc);
-        runInMaster([this, ft=std::move(token.ft), &op] () { performPut(std::move(ft), op); });
+        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performPut(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -607,7 +607,7 @@ struct FixtureBase
     void updateAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         UpdateOperation op(docCtx.bid, docCtx.ts, docCtx.upd);
-        runInMaster([this, ft=std::move(token.ft), &op] () { performUpdate(std::move(ft), op); });
+        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performUpdate(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -622,7 +622,7 @@ struct FixtureBase
     void removeAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         RemoveOperationWithDocId op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
-        runInMaster([this, ft=std::move(token.ft), &op] () { performRemove(std::move(ft), op); });
+        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performRemove(std::move(ft), op); });
         token.mt.await();
     }
 
