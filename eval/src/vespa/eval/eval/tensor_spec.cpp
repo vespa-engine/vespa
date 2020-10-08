@@ -49,7 +49,7 @@ TensorSpec &
 TensorSpec::add(Address address, double value) {
     auto [iter, inserted] = _cells.emplace(std::move(address), value);
     if (! inserted) {
-        // to simplify reference concat implementation, allow
+        // to simplify reference implementations, allow
         // adding the same address several times to a Spec, but
         // only with the same value every time:
         assert(iter->second.value == value);
