@@ -2,7 +2,6 @@
 
 #include <vespa/vdslib/thread/taskscheduler.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 
 namespace vdslib {
@@ -10,24 +9,24 @@ namespace vdslib {
 namespace {
 
 struct TestWatch : public TaskScheduler::Watch {
-    vespalib::Lock _lock;
+    mutable std::mutex _lock;
     uint64_t _time;
 
     TestWatch(uint64_t startTime = 0) : _time(startTime) {}
-    ~TestWatch() {}
+    ~TestWatch() = default;
 
     TaskScheduler::Time getTime() const override {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         return _time;
     }
 
     void increment(uint64_t ms) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         _time += ms;
     }
 
     void set(uint64_t ms) {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         _time = ms;
     }
 };

@@ -25,7 +25,7 @@ ComponentRegisterImpl::~ComponentRegisterImpl() = default;
 void
 ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _components.push_back(&mc);
     if (_clock) {
         mc.setClock(*_clock);
@@ -42,7 +42,7 @@ ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
 void
 ComponentRegisterImpl::requestShutdown(vespalib::stringref reason)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     if (_shutdownListener) {
         _shutdownListener->requestShutdown(reason);
     }
@@ -53,7 +53,7 @@ ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm)
 {
     std::vector<ManagedComponent*> components;
     {
-        vespalib::LockGuard lock(_componentLock);
+        std::lock_guard lock(_componentLock);
         assert(_metricManager == nullptr);
         components = _components;
         _metricManager = &mm;
@@ -70,7 +70,7 @@ ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm)
 void
 ComponentRegisterImpl::setClock(Clock& c)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     assert(_clock == nullptr);
     _clock = &c;
     for (auto* component : _components) {
@@ -81,7 +81,7 @@ ComponentRegisterImpl::setClock(Clock& c)
 void
 ComponentRegisterImpl::setThreadPool(ThreadPool& tp)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     assert(_threadPool == nullptr);
     _threadPool = &tp;
     for (auto* component : _components) {
@@ -92,7 +92,7 @@ ComponentRegisterImpl::setThreadPool(ThreadPool& tp)
 void
 ComponentRegisterImpl::setUpgradeFlag(UpgradeFlags flag)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _upgradeFlag = flag;
     for (auto* component : _components) {
         component->setUpgradeFlag(_upgradeFlag);
@@ -102,7 +102,7 @@ ComponentRegisterImpl::setUpgradeFlag(UpgradeFlags flag)
 const StatusReporter*
 ComponentRegisterImpl::getStatusReporter(vespalib::stringref id)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     for (auto* component : _components) {
         if ((component->getStatusReporter() != nullptr)
             && (component->getStatusReporter()->getId() == id))
@@ -117,7 +117,7 @@ std::vector<const StatusReporter*>
 ComponentRegisterImpl::getStatusReporters()
 {
     std::vector<const StatusReporter*> reporters;
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     for (auto* component : _components) {
         if (component->getStatusReporter() != nullptr) {
             reporters.emplace_back(component->getStatusReporter());
@@ -153,7 +153,7 @@ ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
                                           MetricUpdateHook& hook,
                                           SecondTime period)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     auto hookPtr = std::make_unique<MetricHookWrapper>(name, hook);
     _metricManager->addMetricUpdateHook(*hookPtr, period.getTime());
     _hooks.emplace_back(std::move(hookPtr));
@@ -168,7 +168,7 @@ ComponentRegisterImpl::getMetricManagerLock()
 void
 ComponentRegisterImpl::registerShutdownListener(ShutdownListener& listener)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     assert(_shutdownListener == nullptr);
     _shutdownListener = &listener;
 }

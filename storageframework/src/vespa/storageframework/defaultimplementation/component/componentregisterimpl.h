@@ -21,7 +21,6 @@
 #include <vespa/storageframework/generic/component/managedcomponent.h>
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/status/statusreportermap.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/metrics/metricset.h>
 
 namespace metrics {
@@ -43,7 +42,7 @@ class ComponentRegisterImpl : public virtual ComponentRegister,
                               public StatusReporterMap,
                               public MetricRegistrator
 {
-    vespalib::Lock _componentLock;
+    std::mutex _componentLock;
     std::vector<ManagedComponent*> _components;
 
     metrics::MetricSet _topMetricSet;
