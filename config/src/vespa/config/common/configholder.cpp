@@ -5,7 +5,8 @@
 namespace config {
 
 ConfigHolder::ConfigHolder()
-    : _monitor(),
+    : _lock(),
+      _cond(),
       _current()
 {
 }
@@ -15,40 +16,39 @@ ConfigHolder::~ConfigHolder() = default;
 ConfigUpdate::UP
 ConfigHolder::provide()
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     return std::move(_current);
 }
 
 void
 ConfigHolder::handle(ConfigUpdate::UP update)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     if (_current) {
         update->merge(*_current);
     }
     _current = std::move(update);
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 bool
 ConfigHolder::wait(milliseconds timeoutInMillis)
 {
-    vespalib::MonitorGuard guard(_monitor);
-    return static_cast<bool>(_current) || guard.wait(timeoutInMillis);
+    std::unique_lock guard(_lock);
+    return static_cast<bool>(_current) || (_cond.wait_for(guard, timeoutInMillis) == std::cv_status::no_timeout);
 }
 
 bool
 ConfigHolder::poll()
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     return static_cast<bool>(_current);
 }
 
 void
 ConfigHolder::interrupt()
 {
-    vespalib::MonitorGuard guard(_monitor);
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 } // namespace config
