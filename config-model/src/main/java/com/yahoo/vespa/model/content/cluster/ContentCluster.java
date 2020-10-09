@@ -91,7 +91,7 @@ public class ContentCluster extends AbstractConfigProducer implements
     private Redundancy redundancy;
     private ClusterControllerConfig clusterControllerConfig;
     private PersistenceEngine.PersistenceFactory persistenceFactory;
-    private final String clusterName;
+    private final String clusterId;
     private Integer maxNodesPerMerge;
     private final Zone zone;
 
@@ -138,7 +138,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
             c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, redundancyBuilder, c);
-            validateThatGroupSiblingsAreUnique(c.clusterName, c.rootGroup);
+            validateThatGroupSiblingsAreUnique(c.clusterId, c.rootGroup);
             c.search.handleRedundancy(c.redundancy);
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
@@ -163,7 +163,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             if (context.getParentProducer().getRoot() == null) return c;
 
-            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterName, c);
+            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterId, c);
             return c;
         }
 
@@ -492,18 +492,20 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     }
 
-    private ContentCluster(AbstractConfigProducer parent, String clusterName,
+    private ContentCluster(AbstractConfigProducer parent, String clusterId,
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
                            String routingSelection,  Zone zone, boolean isHosted) {
-        super(parent, clusterName);
+        super(parent, clusterId);
         this.isHosted = isHosted;
-        this.clusterName = clusterName;
+        this.clusterId = clusterId;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.documentSelection = routingSelection;
         this.zone = zone;
     }
+
+    public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }
 
     public void prepare(DeployState deployState) {
         search.prepare();
@@ -525,7 +527,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         return clusterId != null ? clusterId : "content";
     }
 
-    public String getName() { return clusterName; }
+    public String getName() { return clusterId; }
 
     public String getRoutingSelector() { return documentSelection; }
 
@@ -740,4 +742,13 @@ public class ContentCluster extends AbstractConfigProducer implements
             builder.documenttype(docTypeBuilder);
         }
     }
+
+    /**
+     * Mark that the config emitted by this cluster currently should be applied by clients already running with
+     * a previous generation of it only by restarting the consuming processes.
+     */
+    public void deferChangesUntilRestart() {
+
+    }
+
 }

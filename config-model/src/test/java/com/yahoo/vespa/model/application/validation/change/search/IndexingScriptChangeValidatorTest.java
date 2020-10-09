@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
@@ -20,8 +21,9 @@ public class IndexingScriptChangeValidatorTest {
 
         public Fixture(String currentSd, String nextSd) throws Exception {
             super(currentSd, nextSd);
-            validator = new IndexingScriptChangeValidator(currentDb().getDerivedConfiguration().getSearch(),
-                    nextDb().getDerivedConfiguration().getSearch());
+            validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
+                                                          currentDb().getDerivedConfiguration().getSearch(),
+                                                          nextDb().getDerivedConfiguration().getSearch());
         }
 
         @Override
@@ -31,6 +33,7 @@ public class IndexingScriptChangeValidatorTest {
     }
 
     private static class ScriptFixture {
+
         private final ScriptExpression currentScript;
         private final ScriptExpression nextScript;
 
@@ -44,15 +47,16 @@ public class IndexingScriptChangeValidatorTest {
         }
     }
 
-    private static String FIELD = "field f1 type string";
-    private static String FIELD_F2 = "field f2 type string";
+    private static final String FIELD = "field f1 type string";
+    private static final String FIELD_F2 = "field f2 type string";
 
     private static VespaConfigChangeAction expectedAction(String changedMsg, String fromScript, String toScript) {
         return expectedAction("f1", changedMsg, fromScript, toScript);
     }
 
     private static VespaConfigChangeAction expectedAction(String field, String changedMsg, String fromScript, String toScript) {
-        return VespaRefeedAction.of("indexing-change",
+        return VespaRefeedAction.of(ClusterSpec.Id.from("test"),
+                                    "indexing-change",
                                     ValidationOverrides.empty,
                                     "Field '" + field + "' changed: " +
                                     (changedMsg.isEmpty() ? "" : changedMsg + ", ") +

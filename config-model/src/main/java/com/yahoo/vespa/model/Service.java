@@ -29,16 +29,11 @@ public interface Service extends ConfigProducer, NetworkPortRequestor {
      */
     Optional<String> getPreShutdownCommand();
 
-    /**
-     * Returns a PortsMeta object, giving access to more information
-     * about the different ports of this service.
-     */
+    /** Returns a PortsMeta object, giving access to more information about the different ports of this service. */
     PortsMeta getPortsMeta();
 
-    /**
-     * @return the physical host on which this service runs.
-     */
-    Host getHost();
+    /** Returns the physical host resource on which this service runs. */
+    HostResource getHost();
 
     /**
      * Get meta information about service.
@@ -46,21 +41,18 @@ public interface Service extends ConfigProducer, NetworkPortRequestor {
      */
     ServiceInfo getServiceInfo();
 
-    /**
-     * @return The hostname on which this service runs.
-     */
+    /** Returns the hostname on which this service runs. */
     String getHostName();
 
     /** Optional JVM execution options for this service */
     String getJvmOptions();
 
     /**
-     * Computes and returns the i'th port for this service, based on
-     * this Service's baseport.
+     * Computes and returns the i'th port for this service, based on this Service's baseport.
      *
-     * @param i The offset from 'basePort' of the port to return
-     * @return the i'th port relative to the base port.
-     * @throws IllegalStateException if i is out of range.
+     * @param i the offset from 'basePort' of the port to return
+     * @return the i'th port relative to the base port
+     * @throws IllegalStateException if i is out of range
      */
     int getRelativePort(int i);
 
@@ -70,23 +62,16 @@ public interface Service extends ConfigProducer, NetworkPortRequestor {
      *
      * @param key    a key used for lookup in the service properties
      * @param defStr default String value returned if no value for key found
-     * @return the associated String value for the given key, or
+     * @return the associated String value for the given key
      */
     String getServicePropertyString(String key, String defStr);
 
     int getHealthPort();
 
-    /**
-     *
-     * @return HashMap of default dimensions for metrics.
-     */
+    /** Returns a HashMap of default dimensions for metrics. */
     HashMap<String,String> getDefaultMetricDimensions();
 
-    /**
-     * Return the Affinity of this service if it has.
-     *
-     * @return The {@link com.yahoo.vespa.model.Affinity} for this service.
-     */
+    /** Returns the Affinity of this service if it has. */
     Optional<Affinity> getAffinity();
 
 }

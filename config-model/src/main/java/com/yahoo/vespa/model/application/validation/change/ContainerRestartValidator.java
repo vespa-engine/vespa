@@ -2,18 +2,24 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.vespa.model.container.ApplicationContainer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
 /**
- * Returns a restart action for each container that has turned on {@link QrConfig#restartOnDeploy}.
+ * Returns a restart action for each container that has turned on {@link QrConfig#restartOnDeploy()}.
  *
  * @author bjorncs
  */
@@ -22,16 +28,19 @@ public class ContainerRestartValidator implements ChangeValidator {
     @Override
     public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, ValidationOverrides ignored, 
                                              Instant now) {
-        return nextModel.getContainerClusters().values().stream()
-                .flatMap(cluster -> cluster.getContainers().stream())
-                .filter(container -> isExistingContainer(container, currentModel))
-                .filter(container -> shouldContainerRestartOnDeploy(container, nextModel))
-                .map(ContainerRestartValidator::createConfigChangeAction)
-                .collect(toList());
+        List<ConfigChangeAction> actions = new ArrayList<>();
+        for (ContainerCluster<ApplicationContainer> cluster : nextModel.getContainerClusters().values()) {
+            actions.addAll(cluster.getContainers().stream()
+                                  .filter(container -> isExistingContainer(container, currentModel))
+                                  .filter(container -> shouldContainerRestartOnDeploy(container, nextModel))
+                                  .map(container -> createConfigChangeAction(cluster.id(), container))
+                                  .collect(Collectors.toList()));
+        }
+        return actions;
     }
 
-    private static ConfigChangeAction createConfigChangeAction(Container container) {
-        return new VespaRestartAction(createMessage(container), container.getServiceInfo(), true);
+    private static ConfigChangeAction createConfigChangeAction(ClusterSpec.Id id, Container container) {
+        return new VespaRestartAction(id, createMessage(container), container.getServiceInfo(), true);
     }
 
     private static String createMessage(Container container) {

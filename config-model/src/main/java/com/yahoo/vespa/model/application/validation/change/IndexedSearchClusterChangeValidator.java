@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
  * Validates the changes between all current and next indexed search clusters in a vespa model.
  *
  * @author geirst
- * @since 2014-11-18
  */
 public class IndexedSearchClusterChangeValidator implements ChangeValidator {
 
@@ -40,9 +39,7 @@ public class IndexedSearchClusterChangeValidator implements ChangeValidator {
                                                                    ContentCluster nextCluster,
                                                                    ValidationOverrides overrides,
                                                                    Instant now) {
-        List<ConfigChangeAction> result = new ArrayList<>();
-        result.addAll(validateDocumentDatabases(currentCluster, nextCluster, overrides, now));
-        return result;
+        return validateDocumentDatabases(currentCluster, nextCluster, overrides, now);
     }
 
     private static List<ConfigChangeAction> validateDocumentDatabases(ContentCluster currentCluster,
@@ -72,7 +69,7 @@ public class IndexedSearchClusterChangeValidator implements ChangeValidator {
         NewDocumentType currentDocType = currentCluster.getDocumentDefinitions().get(docTypeName);
         NewDocumentType nextDocType = nextCluster.getDocumentDefinitions().get(docTypeName);
         List<VespaConfigChangeAction> result =
-                new DocumentDatabaseChangeValidator(currentDb, currentDocType, nextDb, nextDocType).validate(overrides, now);
+                new DocumentDatabaseChangeValidator(currentCluster.id(), currentDb, currentDocType, nextDb, nextDocType).validate(overrides, now);
 
         return modifyActions(result, getSearchNodeServices(nextCluster.getSearch().getIndexed()), docTypeName);
     }
