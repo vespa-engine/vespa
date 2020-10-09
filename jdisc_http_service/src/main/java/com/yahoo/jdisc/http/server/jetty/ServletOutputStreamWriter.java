@@ -59,7 +59,7 @@ public class ServletOutputStreamWriter {
     // GuardedBy("monitor")
     private final Deque<ResponseContentPart> responseContentQueue = new ArrayDeque<>();
 
-    private final MetricReporter metricReporter;
+    private final RequestMetricReporter metricReporter;
 
     /**
      * When this future completes there will be no more calls against the servlet output stream or servlet response.
@@ -70,7 +70,7 @@ public class ServletOutputStreamWriter {
     final CompletableFuture<Void> finishedFuture = new CompletableFuture<>();
 
 
-    public ServletOutputStreamWriter(ServletOutputStream outputStream, Executor executor, MetricReporter metricReporter) {
+    public ServletOutputStreamWriter(ServletOutputStream outputStream, Executor executor, RequestMetricReporter metricReporter) {
         this.outputStream = outputStream;
         this.executor = executor;
         this.metricReporter = metricReporter;

@@ -75,8 +75,8 @@ class JDiscServerConnector extends ServerConnector {
         var requestDimensions = new RequestDimensions(method, scheme);
         return requestMetricContextCache.computeIfAbsent(requestDimensions, ignored -> {
             Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName);
-            dimensions.put(JettyHttpServer.Metrics.METHOD_DIMENSION, method);
-            dimensions.put(JettyHttpServer.Metrics.SCHEME_DIMENSION, scheme);
+            dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
+            dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
             return metric.createContext(dimensions);
         });
     }
@@ -95,8 +95,8 @@ class JDiscServerConnector extends ServerConnector {
 
     private static Map<String, Object> createConnectorDimensions(int listenPort, String connectorName) {
         Map<String, Object> props = new HashMap<>();
-        props.put(JettyHttpServer.Metrics.NAME_DIMENSION, connectorName);
-        props.put(JettyHttpServer.Metrics.PORT_DIMENSION, listenPort);
+        props.put(MetricDefinitions.NAME_DIMENSION, connectorName);
+        props.put(MetricDefinitions.PORT_DIMENSION, listenPort);
         return props;
     }
 

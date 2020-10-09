@@ -58,7 +58,7 @@ public class ServletResponseController {
             HttpServletRequest servletRequest,
             HttpServletResponse servletResponse,
             Executor executor,
-            MetricReporter metricReporter,
+            RequestMetricReporter metricReporter,
             boolean developerMode) throws IOException {
 
         this.servletRequest = servletRequest;
