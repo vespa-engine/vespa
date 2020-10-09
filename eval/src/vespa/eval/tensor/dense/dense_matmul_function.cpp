@@ -36,8 +36,8 @@ template <typename LCT, typename RCT, bool lhs_common_inner, bool rhs_common_inn
 void my_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
     using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
-    auto lhs_cells = DenseTensorView::typify_cells<LCT>(state.peek(1));
-    auto rhs_cells = DenseTensorView::typify_cells<RCT>(state.peek(0));
+    auto lhs_cells = state.peek(1).cells().typify<LCT>();
+    auto rhs_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_array<OCT>(self.lhs_size * self.rhs_size);
     OCT *dst = dst_cells.begin();
     const LCT *lhs = lhs_cells.cbegin();
@@ -55,8 +55,8 @@ void my_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
 template <bool lhs_common_inner, bool rhs_common_inner>
 void my_cblas_double_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
-    auto lhs_cells = DenseTensorView::typify_cells<double>(state.peek(1));
-    auto rhs_cells = DenseTensorView::typify_cells<double>(state.peek(0));
+    auto lhs_cells = state.peek(1).cells().typify<double>();
+    auto rhs_cells = state.peek(0).cells().typify<double>();
     auto dst_cells = state.stash.create_array<double>(self.lhs_size * self.rhs_size);
     cblas_dgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
                 self.lhs_size, self.rhs_size, self.common_size, 1.0,
@@ -69,8 +69,8 @@ void my_cblas_double_matmul_op(eval::InterpretedFunction::State &state, uint64_t
 template <bool lhs_common_inner, bool rhs_common_inner>
 void my_cblas_float_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
-    auto lhs_cells = DenseTensorView::typify_cells<float>(state.peek(1));
-    auto rhs_cells = DenseTensorView::typify_cells<float>(state.peek(0));
+    auto lhs_cells = state.peek(1).cells().typify<float>();
+    auto rhs_cells = state.peek(0).cells().typify<float>();
     auto dst_cells = state.stash.create_array<float>(self.lhs_size * self.rhs_size);
     cblas_sgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
                 self.lhs_size, self.rhs_size, self.common_size, 1.0,

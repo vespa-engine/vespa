@@ -70,8 +70,8 @@ void my_simple_join_op(State &state, uint64_t param) {
     using OP = typename std::conditional<swap,SwapArgs2<Fun>,Fun>::type;
     const JoinParams &params = *(JoinParams*)param;
     OP my_op(params.function);
-    auto pri_cells = DenseTensorView::typify_cells<PCT>(state.peek(swap ? 0 : 1));
-    auto sec_cells = DenseTensorView::typify_cells<SCT>(state.peek(swap ? 1 : 0));
+    auto pri_cells = state.peek(swap ? 0 : 1).cells().typify<PCT>();
+    auto sec_cells = state.peek(swap ? 1 : 0).cells().typify<SCT>();
     auto dst_cells = make_dst_cells<OCT, pri_mut>(pri_cells, state.stash);
     if (overlap == Overlap::FULL) {
         apply_op2_vec_vec(dst_cells.begin(), pri_cells.begin(), sec_cells.begin(), dst_cells.size(), my_op);
