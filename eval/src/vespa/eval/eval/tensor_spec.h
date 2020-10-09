@@ -68,14 +68,7 @@ public:
     TensorSpec(const TensorSpec &);
     TensorSpec & operator = (const TensorSpec &);
     ~TensorSpec();
-    TensorSpec &set(Address address, double value);
-    TensorSpec &add(Address address, double value) {
-        auto res = _cells.emplace(std::move(address), value);
-        if (!res.second) {
-            res.first->second.value += value;
-        }
-        return *this;
-    }
+    TensorSpec &add(Address address, double value);
     const vespalib::string &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     vespalib::string to_string() const;

@@ -65,6 +65,9 @@ vespa_define_module(
     src/tests/tensor/instruction_benchmark
     src/tests/tensor/onnx_wrapper
     src/tests/tensor/packed_mappings
+    src/tests/tensor/partial_add
+    src/tests/tensor/partial_modify
+    src/tests/tensor/partial_remove
     src/tests/tensor/tensor_add_operation
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance

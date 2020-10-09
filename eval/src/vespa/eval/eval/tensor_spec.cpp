@@ -46,9 +46,14 @@ TensorSpec & TensorSpec::operator = (const TensorSpec &) = default;
 TensorSpec::~TensorSpec() { }
 
 TensorSpec &
-TensorSpec::set(Address address, double value) {
-    auto res = _cells.emplace(std::move(address), value);
-    if (!res.second) { assert(res.first->second.value == value); }
+TensorSpec::add(Address address, double value) {
+    auto [iter, inserted] = _cells.emplace(std::move(address), value);
+    if (! inserted) {
+        // to simplify reference implementations, allow
+        // adding the same address several times to a Spec, but
+        // only with the same value every time:
+        assert(iter->second.value == value);
+    }
     return *this;
 }
 

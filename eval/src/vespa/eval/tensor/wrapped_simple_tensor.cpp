@@ -145,7 +145,6 @@ WrappedSimpleTensor::add(const Tensor &arg) const
     if (!rhs || type() != rhs->type()) {
         return Tensor::UP();
     }
-
     TensorSpec oldTensor = toSpec();
     TensorSpec argTensor = rhs->toSpec();
     TensorSpec result(type().to_spec());
