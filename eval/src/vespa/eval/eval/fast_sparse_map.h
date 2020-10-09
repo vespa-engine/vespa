@@ -66,7 +66,7 @@ public:
         Key() : hash(0) {}
         Key(uint64_t hash_in)
             : hash(hash_in) {}
-    } __attribute__((packed));
+    } __attribute__((aligned(4),packed));
 
     struct Hash {
         uint64_t operator()(const Key &key) const { return key.hash; }
@@ -98,8 +98,8 @@ public:
     static constexpr size_t npos() { return -1; }
     const std::vector<HashedLabel> &labels() const { return _labels; }
 
-    ConstArrayRef<HashedLabel> make_addr(uint32_t start) const {
-        return ConstArrayRef<HashedLabel>(&_labels[start], _num_dims);
+    ConstArrayRef<HashedLabel> make_addr(uint32_t index) const {
+        return ConstArrayRef<HashedLabel>(&_labels[index * _num_dims], _num_dims);
     }
 
     template <typename T>
@@ -114,7 +114,6 @@ public:
     template <typename T>
     void add_mapping(ConstArrayRef<T> addr, uint64_t hash) {
         uint32_t value = _map.size();
-        // assert(value * _num_dims == _labels.size());
         for (const auto &label: addr) {
             _labels.emplace_back(label);
         }
@@ -125,7 +124,6 @@ public:
     void add_mapping(ConstArrayRef<T> addr) {
         uint64_t h = 0;
         uint32_t value = _map.size();
-        // assert(value * _num_dims == _labels.size());
         for (const auto &label: addr) {
             _labels.emplace_back(label);
             h = 31 * h + hash_label(_labels.back());
@@ -147,7 +145,7 @@ public:
     void each_map_entry(F &&f) const {
         _map.for_each([&](const auto &entry)
                       {
-                          f(entry.second * _num_dims, entry.second, entry.first.hash);
+                          f(entry.second, entry.first.hash);
                       });
     }
 };

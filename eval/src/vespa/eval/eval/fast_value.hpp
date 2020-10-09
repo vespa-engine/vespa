@@ -199,11 +199,11 @@ FastValueIndex::sparse_full_overlap_join(const ValueType &res_type, const Fun &f
                                          ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash)
 {
     auto &result = stash.create<FastValue<OCT>>(res_type, lhs.map.num_dims(), 1, lhs.map.size());
-    lhs.map.each_map_entry([&](auto addr_tag, auto lhs_subspace, auto hash)
+    lhs.map.each_map_entry([&](auto lhs_subspace, auto hash)
                            {
                                auto rhs_subspace = rhs.map.lookup(hash);
                                if (rhs_subspace != FastSparseMap::npos()) {
-                                   result.my_index.map.add_mapping(lhs.map.make_addr(addr_tag), hash);
+                                   result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
                                    result.my_cells.push_back(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
                                }
                            });
