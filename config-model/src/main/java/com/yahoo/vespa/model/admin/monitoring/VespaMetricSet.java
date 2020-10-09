@@ -200,16 +200,11 @@ public class VespaMetricSet {
 
         metrics.add(new Metric("jdisc.http.handler.unhandled_exceptions.rate"));
 
-        {
-            List<String> suffices = List.of("sum", "count", "last", "min", "max");
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.max", suffices);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.min", suffices);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.reserved", suffices);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.busy", suffices);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.idle", suffices);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", suffices);
-            addMetric(metrics, "jdisc.http.jetty.threadpool.queue.size", suffices);
-        }
+        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.max", List.of("last"));
+        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.reserved", List.of("last"));
+        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.busy", List.of("sum", "count", "min", "max"));
+        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", List.of("sum", "count", "min", "max"));
+        addMetric(metrics, "jdisc.http.jetty.threadpool.queue.size", List.of("sum", "count", "min", "max"));
 
         return metrics;
     }
