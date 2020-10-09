@@ -60,11 +60,8 @@ Value::UP try_partial_remove(const TensorSpec &a, const TensorSpec &b) {
 
 TensorSpec perform_partial_remove(const TensorSpec &a, const TensorSpec &b) {
     auto up = try_partial_remove(a, b);
-    if (up) {
-        return spec_from_value(*up);
-    } else {
-        return TensorSpec(a.type());
-    }
+    EXPECT_TRUE(up);
+    return spec_from_value(*up);
 }
 
 TensorSpec perform_old_remove(const TensorSpec &a, const TensorSpec &b) {
@@ -82,7 +79,7 @@ TensorSpec perform_old_remove(const TensorSpec &a, const TensorSpec &b) {
 }
 
 
-TEST(PartialAddTest, partial_remove_works_for_simple_values) {
+TEST(PartialRemoveTest, partial_remove_works_for_simple_values) {
     ASSERT_TRUE((remove_layouts.size() % 2) == 0);
     for (size_t i = 0; i < remove_layouts.size(); i += 2) {
         TensorSpec lhs = spec(remove_layouts[i], N());
@@ -94,7 +91,7 @@ TEST(PartialAddTest, partial_remove_works_for_simple_values) {
     }
 }
 
-TEST(PartialAddTest, partial_remove_works_like_old_remove) {
+TEST(PartialRemoveTest, partial_remove_works_like_old_remove) {
     ASSERT_TRUE((remove_layouts.size() % 2) == 0);
     for (size_t i = 0; i < remove_layouts.size(); i += 2) {
         TensorSpec lhs = spec(remove_layouts[i], N());
@@ -103,8 +100,6 @@ TEST(PartialAddTest, partial_remove_works_like_old_remove) {
         auto expect = perform_old_remove(lhs, rhs);
         auto actual = perform_partial_remove(lhs, rhs);
         EXPECT_EQ(actual, expect);
-        // printf("%s remove %s -> %s\n", lhs.to_string().c_str(), rhs.to_string().c_str(), actual.to_string().c_str());
-
     }
 }
 

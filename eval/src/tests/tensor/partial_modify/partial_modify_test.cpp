@@ -67,11 +67,8 @@ Value::UP try_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_
 
 TensorSpec perform_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
     auto up = try_partial_modify(a, b, fun);
-    if (up) {
-        return spec_from_value(*up);
-    } else {
-        return TensorSpec(a.type());
-    }
+    EXPECT_TRUE(up);
+    return spec_from_value(*up);
 }
 
 TensorSpec perform_old_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {

@@ -53,11 +53,7 @@ Value::UP try_partial_add(const TensorSpec &a, const TensorSpec &b) {
 TensorSpec perform_partial_add(const TensorSpec &a, const TensorSpec &b) {
     auto up = try_partial_add(a, b);
     EXPECT_TRUE(up);
-    if (up) {
-        return spec_from_value(*up);
-    } else {
-        return TensorSpec(a.type());
-    }
+    return spec_from_value(*up);
 }
 
 TensorSpec perform_old_add(const TensorSpec &a, const TensorSpec &b) {
