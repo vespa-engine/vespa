@@ -908,7 +908,7 @@ FileStorHandlerImpl::Disk::broadcast()
 
 uint64_t FileStorHandlerImpl::Disk::dispersed_bucket_bits(const document::Bucket& bucket) noexcept {
     const uint64_t raw_id = bucket.getBucketId().getId();
-    return XXH64(&raw_id, sizeof(uint64_t), 0);
+    return XXH3_64bits(&raw_id, sizeof(uint64_t));
 }
 
 bool
