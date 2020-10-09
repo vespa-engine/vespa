@@ -111,6 +111,7 @@ public class Validation {
     private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {
         Set<ClusterSpec.Id> clustersToBeRestarted = actions.stream()
                                                            .filter(action -> action.getType() == ConfigChangeAction.Type.RESTART)
+                                                           .filter(action -> action.clusterId() != null) // TODO: Remove this line after October 2020
                                                            .map(action -> action.clusterId())
                                                            .collect(Collectors.toSet());
         for (var clusterToRestart : clustersToBeRestarted) {
