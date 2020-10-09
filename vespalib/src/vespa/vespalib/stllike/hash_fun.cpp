@@ -14,7 +14,7 @@ hashValue(const char *str) noexcept
 /**
  * @brief Calculate hash value.
  *
- * The hash function XXH64 from xxhash library.
+ * The hash function XXH3_64bits from xxhash library.
  * @param buf input buffer
  * @param sz input buffer size
  * @return hash value of input
