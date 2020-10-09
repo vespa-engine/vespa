@@ -30,7 +30,7 @@ import java.util.concurrent.Executor;
  */
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
-    private AccessLog accessLog;
+    private final AccessLog accessLog;
 
     public LoggingRequestHandler(Executor executor, AccessLog accessLog) {
         this(executor, accessLog, null);

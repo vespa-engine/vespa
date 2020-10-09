@@ -159,7 +159,8 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
         Response response = new Response(Response.Status.SERVICE_UNAVAILABLE);
-        getRequestType().ifPresent(type -> response.setRequestType(type));
+        if (getRequestType().isPresent() && response.getRequestType() == null)
+            response.setRequestType(getRequestType().get());
         ResponseDispatch.newInstance(response).dispatch(responseHandler);
     }
 
@@ -203,7 +204,8 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         @Override
         public ContentChannel handleResponse(Response response) {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
-            getRequestType().ifPresent(type -> response.setRequestType(type));
+            if (getRequestType().isPresent() && response.getRequestType() == null)
+                response.setRequestType(getRequestType().get());
             ContentChannel cc = responseHandler.handleResponse(response);
             HandlerMetricContextUtil.onHandled(request, metric, getClass());
             return cc;
