@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 using namespace vespalib;

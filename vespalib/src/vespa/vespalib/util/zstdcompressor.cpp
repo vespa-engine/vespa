@@ -2,9 +2,7 @@
 
 #include "zstdcompressor.h"
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/sync.h>
 #include <zstd.h>
-#include <vector>
 #include <cassert>
 
 using vespalib::alloc::Alloc;

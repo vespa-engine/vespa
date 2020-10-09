@@ -33,7 +33,7 @@ protected:
 
 public:
     ExternSlobrokPolicy(const std::map<string, string>& params);
-    ~ExternSlobrokPolicy();
+    ~ExternSlobrokPolicy() override;
 
     /**
      * @return a pointer to the slobrok mirror owned by this policy, if any.

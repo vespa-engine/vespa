@@ -7,7 +7,6 @@
 #include "connector.h"
 #include "connection.h"
 #include "transport.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <csignal>

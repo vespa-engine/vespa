@@ -4,7 +4,6 @@
 #include <vespa/fnet/fnet.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/crypto_engine.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;

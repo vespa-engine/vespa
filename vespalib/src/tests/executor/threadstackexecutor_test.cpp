@@ -2,7 +2,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <atomic>
 

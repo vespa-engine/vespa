@@ -4,6 +4,7 @@
 
 #include "filechunk.h"
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/sync.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/fastos/file.h>
 #include <map>

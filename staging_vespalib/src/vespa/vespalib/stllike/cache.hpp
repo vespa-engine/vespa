@@ -30,14 +30,14 @@ cache<P>::setCapacityBytes(size_t sz) {
 template< typename P >
 void
 cache<P>::invalidate(const K & key) {
-    vespalib::LockGuard guard(_hashLock);
+    UniqueLock guard(_hashLock);
     invalidate(guard, key);
 }
 
 template< typename P >
 bool
 cache<P>::hasKey(const K & key) const {
-    vespalib::LockGuard guard(_hashLock);
+    UniqueLock guard(_hashLock);
     return hasKey(guard, key);
 }
 
@@ -73,9 +73,9 @@ cache<P>::removeOldest(const value_type & v) {
 }
 
 template< typename P >
-vespalib::LockGuard
+std::unique_lock<std::mutex>
 cache<P>::getGuard() {
-    return vespalib::LockGuard(_hashLock);
+    return UniqueLock(_hashLock);
 }
 
 template< typename P >
@@ -83,7 +83,7 @@ typename P::Value
 cache<P>::read(const K & key)
 {
     {
-        vespalib::LockGuard guard(_hashLock);
+        std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
             _hit++;
             return (*this)[key];
@@ -92,9 +92,9 @@ cache<P>::read(const K & key)
         }
     }
 
-    vespalib::LockGuard storeGuard(getLock(key));
+    std::lock_guard storeGuard(getLock(key));
     {
-        vespalib::LockGuard guard(_hashLock);
+        std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
             // Somebody else just fetched it ahead of me.
             _race++;
@@ -103,7 +103,7 @@ cache<P>::read(const K & key)
     }
     V value;
     if (_store.read(key, value)) {
-        vespalib::LockGuard guard(_hashLock);
+        std::lock_guard guard(_hashLock);
         Lru::insert(key, value);
         _sizeBytes += calcSize(key, value);
         _insert++;
@@ -118,9 +118,9 @@ void
 cache<P>::write(const K & key, V value)
 {
     size_t newSize = calcSize(key, value);
-    vespalib::LockGuard storeGuard(getLock(key));
+    std::lock_guard storeGuard(getLock(key));
     {
-        vespalib::LockGuard guard(_hashLock);
+        std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
             _sizeBytes -= calcSize(key, (*this)[key]);
             _update++;
@@ -129,7 +129,7 @@ cache<P>::write(const K & key, V value)
 
     _store.write(key, value);
     {
-        vespalib::LockGuard guard(_hashLock);
+        std::lock_guard guard(_hashLock);
         (*this)[key] = std::move(value);
         _sizeBytes += newSize;
         _write++;
@@ -140,17 +140,16 @@ template< typename P >
 void
 cache<P>::erase(const K & key)
 {
-    vespalib::LockGuard storeGuard(getLock(key));
+    std::lock_guard storeGuard(getLock(key));
     invalidate(key);
     _store.erase(key);
 }
 
 template< typename P >
 void
-cache<P>::invalidate(const vespalib::LockGuard & guard, const K & key)
+cache<P>::invalidate(const UniqueLock & guard, const K & key)
 {
-    assert(guard.locks(_hashLock));
-    (void) guard;
+    verifyHashLock(guard);
     if (Lru::hasKey(key)) {
         _sizeBytes -= calcSize(key, (*this)[key]);
         _invalidate++;
@@ -160,12 +159,18 @@ cache<P>::invalidate(const vespalib::LockGuard & guard, const K & key)
 
 template< typename P >
 bool
-cache<P>::hasKey(const vespalib::LockGuard & guard, const K & key) const
+cache<P>::hasKey(const UniqueLock & guard, const K & key) const
 {
-    (void) guard;
-    assert(guard.locks(_hashLock));
+    verifyHashLock(guard);
     _lookup++;
     return Lru::hasKey(key);
+}
+
+template< typename P >
+void
+cache<P>::verifyHashLock(const UniqueLock & guard) const {
+    assert(guard.mutex() == & _hashLock);
+    assert(guard.owns_lock());
 }
 
 }

@@ -4,7 +4,6 @@
 #include "rpcserviceaddress.h"
 #include "rpctarget.h"
 #include <vespa/messagebus/itimer.h>
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 
 class FRT_Supervisor;

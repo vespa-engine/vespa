@@ -21,7 +21,6 @@
 #include <memory>
 #include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace storage::framework {
 

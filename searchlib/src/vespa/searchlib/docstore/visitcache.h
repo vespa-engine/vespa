@@ -150,12 +150,12 @@ private:
         CompressedBlobSet readSet(const KeySet & keys);
         void removeKey(uint32_t key);
     private:
-        void locateAndInvalidateOtherSubsets(const vespalib::LockGuard & cacheGuard, const KeySet & keys);
+        void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
         using IdSet = vespalib::hash_set<uint64_t>;
         using Parent = vespalib::cache<CacheParams>;
         using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
         using IdKeySetMap = vespalib::hash_map<uint64_t, KeySet>;
-        IdSet findSetsContaining(const vespalib::LockGuard &, const KeySet & keys) const;
+        IdSet findSetsContaining(const UniqueLock &, const KeySet & keys) const;
         void onInsert(const K & key) override;
         void onRemove(const K & key) override;
         LidUniqueKeySetId _lid2Id;

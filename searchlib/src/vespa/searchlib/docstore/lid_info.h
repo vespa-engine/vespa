@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/vespalib/util/sync.h>
 #include <limits>
 #include <vector>
+#include <mutex>
 
 namespace search {
 

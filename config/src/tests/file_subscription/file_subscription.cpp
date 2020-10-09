@@ -6,7 +6,6 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/sourcefactory.h>
 #include <vespa/config/common/configcontext.h>
-#include <vespa/vespalib/util/sync.h>
 #include <fstream>
 #include <config-my.h>
 #include <config-foo.h>
