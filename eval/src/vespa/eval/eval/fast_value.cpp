@@ -23,6 +23,22 @@ struct CreateFastValueBuilderBase {
 
 //-----------------------------------------------------------------------------
 
+std::unique_ptr<Value::Index::View>
+FastValueIndex::create_view(const std::vector<size_t> &dims) const
+{
+    if (map.num_dims() == 0) {
+        return TrivialIndex::get().create_view(dims);
+    } else if (dims.empty()) {
+        return std::make_unique<IterateView>(map);
+    } else if (dims.size() == map.num_dims()) {
+        return std::make_unique<LookupView>(map);
+    } else {
+        return std::make_unique<FilterView>(map, dims);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 FastValueBuilderFactory::FastValueBuilderFactory() = default;
 FastValueBuilderFactory FastValueBuilderFactory::_factory;
 

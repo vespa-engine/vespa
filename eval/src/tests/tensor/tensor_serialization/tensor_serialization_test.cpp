@@ -11,6 +11,7 @@
 #include <ostream>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/simple_value.h>
 
 using namespace vespalib::tensor;
 using vespalib::eval::TensorSpec;

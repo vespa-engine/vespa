@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "simple_value.h"
+#include "value.h"
+#include "tensor_spec.h"
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib { class nbostream; }

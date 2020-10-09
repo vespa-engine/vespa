@@ -31,24 +31,22 @@ namespace vespalib::eval {
  * 'lookup' will return the integer value associated with the
  * given address or a special npos value if the value is not found.
  **/
-class SimpleSparseMap
+class FastSparseMap
 {
 public:
-    using hash_t = XXH64_hash_t;
-
-    static hash_t hash_label(const vespalib::string &str) {
+    static uint64_t hash_label(const vespalib::string &str) {
         return XXH3_64bits(str.data(), str.size());
     }
-    static hash_t hash_label(vespalib::stringref str) {
+    static uint64_t hash_label(vespalib::stringref str) {
         return XXH3_64bits(str.data(), str.size());
     }
-    static hash_t hash_label(const vespalib::stringref *str) {
+    static uint64_t hash_label(const vespalib::stringref *str) {
         return XXH3_64bits(str->data(), str->size());
     }
 
     struct HashedLabel {
         vespalib::string label;
-        hash_t hash;
+        uint64_t hash;
         HashedLabel() : label(), hash(0) {}
         HashedLabel(const HashedLabel &rhs) = default;
         HashedLabel &operator=(const HashedLabel &rhs) = default;
@@ -59,25 +57,25 @@ public:
         HashedLabel(const vespalib::stringref *str) : label(*str), hash(hash_label(*str)) {}
     };
 
-    static hash_t hash_label(const HashedLabel &label) {
+    static uint64_t hash_label(const HashedLabel &label) {
         return label.hash;
     }
 
     struct Key {
         uint32_t start;
-        hash_t hash;
+        uint64_t hash;
         Key() : start(0), hash(0) {}
-        Key(uint32_t start_in, hash_t hash_in)
+        Key(uint32_t start_in, uint64_t hash_in)
             : start(start_in), hash(hash_in) {}
     };
 
     struct Hash {
-        hash_t operator()(const Key &key) const { return key.hash; }
-        hash_t operator()(hash_t hash) const { return hash; }
+        uint64_t operator()(const Key &key) const { return key.hash; }
+        uint64_t operator()(uint64_t hash) const { return hash; }
     };
 
     struct Equal {
-        bool operator()(const Key &a, hash_t b) const { return (a.hash == b); }
+        bool operator()(const Key &a, uint64_t b) const { return (a.hash == b); }
         bool operator()(const Key &a, const Key &b) const { return (a.hash == b.hash); }
     };
 
@@ -89,12 +87,13 @@ private:
     MapType _map;
 
 public:
-    SimpleSparseMap(size_t num_dims_in, size_t expected_subspaces)
+    FastSparseMap(size_t num_dims_in, size_t expected_subspaces)
         : _num_dims(num_dims_in), _labels(), _map(expected_subspaces * 2)
     {
+        static_assert(std::is_same_v<XXH64_hash_t, uint64_t>);
         _labels.reserve(_num_dims * expected_subspaces);
     }
-    ~SimpleSparseMap();
+    ~FastSparseMap();
     size_t size() const { return _map.size(); }
     size_t num_dims() const { return _num_dims; }
     static constexpr size_t npos() { return -1; }
@@ -105,8 +104,8 @@ public:
     }
 
     template <typename T>
-    hash_t hash_addr(ConstArrayRef<T> addr) const {
-        hash_t h = 0;
+    uint64_t hash_addr(ConstArrayRef<T> addr) const {
+        uint64_t h = 0;
         for (const auto &label: addr) {
             h = 31 * h + hash_label(label);
         }
@@ -114,7 +113,7 @@ public:
     }
 
     template <typename T>
-    void add_mapping(ConstArrayRef<T> addr, hash_t hash) {
+    void add_mapping(ConstArrayRef<T> addr, uint64_t hash) {
         uint32_t value = _map.size();
         uint32_t start = _labels.size();
         for (const auto &label: addr) {
@@ -125,7 +124,7 @@ public:
 
     template <typename T>
     void add_mapping(ConstArrayRef<T> addr) {
-        hash_t h = 0;
+        uint64_t h = 0;
         uint32_t value = _map.size();
         uint32_t start = _labels.size();
         for (const auto &label: addr) {
@@ -135,7 +134,7 @@ public:
         _map.insert(std::make_pair(Key(start, h), value));
     }
 
-    size_t lookup(hash_t hash) const {
+    size_t lookup(uint64_t hash) const {
         auto pos = _map.find(hash);
         return (pos == _map.end()) ? npos() : pos->second;
     }

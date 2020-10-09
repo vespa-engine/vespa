@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/simple_sparse_map.h>
+#include <vespa/eval/eval/fast_sparse_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -27,16 +27,27 @@ public:
     ConstArrayRef<vespalib::string> direct_str() const { return _str_list; }
     ConstArrayRef<vespalib::stringref> direct_ref() const { return _ref_list; }
     ConstArrayRef<const vespalib::stringref *> indirect_ref() const { return _ref_ptr_list; }
+    bool is_eq(ConstArrayRef<FastSparseMap::HashedLabel> addr) const {
+        if (addr.size() != _str_list.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < addr.size(); ++i) {
+            if (addr[i].label != _str_list[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 StringList::~StringList() = default;
 using SL = StringList;
 
-TEST(SimpleSparseMapTest, simple_sparse_map_basic_usage_works) {
+TEST(FastSparseMapTest, fast_sparse_map_basic_usage_works) {
     SL a1({"a","a","a"});
     SL a2({"a","a","b"});
     SL a3({"a","b","a"});
     SL a4({"b","a","a"});
-    SimpleSparseMap map(3, 128);
+    FastSparseMap map(3, 128);
     EXPECT_EQ(map.size(), 0);
     map.add_mapping(a1.direct_str());
     map.add_mapping(a2.direct_ref());
@@ -54,20 +65,33 @@ TEST(SimpleSparseMapTest, simple_sparse_map_basic_usage_works) {
     EXPECT_EQ(map.lookup(a4.direct_str()), map.npos());
     EXPECT_EQ(map.lookup(a4.direct_ref()), map.npos());
     EXPECT_EQ(map.lookup(a4.indirect_ref()), map.npos());
-    EXPECT_EQ(SimpleSparseMap::npos(), map.npos());
+    EXPECT_EQ(FastSparseMap::npos(), map.npos());
     EXPECT_EQ(map.labels().size(), 9);
-    auto dump = [&](auto addr_tag, auto subspace, auto hash) {
-        auto addr = map.make_addr(addr_tag);
-        fprintf(stderr, "   [%s,%s,%s]: %u (%zu)\n", addr[0].label.c_str(), addr[1].label.c_str(), addr[2].label.c_str(), subspace, hash);
+    std::set<uint64_t> seen_hashes;
+    std::map<uint32_t, uint32_t> addr_map;
+    auto my_fun = [&](uint32_t addr_tag, uint32_t subspace, uint64_t hash) {
+        addr_map[addr_tag] = subspace;
+        seen_hashes.insert(hash);
     };
-    map.each_map_entry(dump);
+    map.each_map_entry(my_fun);
+    EXPECT_EQ(seen_hashes.size(), 3);
+    EXPECT_EQ(addr_map.size(), 3);
+    EXPECT_NE(addr_map.find(0), addr_map.end());
+    EXPECT_EQ(addr_map[0], 0);
+    EXPECT_EQ(addr_map[3], 1);
+    EXPECT_EQ(addr_map[6], 2);
+    EXPECT_EQ(addr_map.size(), 3);
+    EXPECT_TRUE(a1.is_eq(map.make_addr(0)));
+    EXPECT_FALSE(a2.is_eq(map.make_addr(0)));
+    EXPECT_TRUE(a2.is_eq(map.make_addr(3)));
+    EXPECT_TRUE(a3.is_eq(map.make_addr(6)));
 }
 
-TEST(SimpleSparseMapTest, simple_sparse_map_works_with_no_labels) {
+TEST(FastSparseMapTest, fast_sparse_map_works_with_no_labels) {
     SL empty({});
-    SimpleSparseMap map1(0, 1);
-    SimpleSparseMap map2(0, 1);
-    SimpleSparseMap map3(0, 1);
+    FastSparseMap map1(0, 1);
+    FastSparseMap map2(0, 1);
+    FastSparseMap map3(0, 1);
     EXPECT_EQ(map1.size(), 0);
     EXPECT_EQ(map2.size(), 0);
     EXPECT_EQ(map3.size(), 0);
@@ -91,8 +115,8 @@ TEST(SimpleSparseMapTest, simple_sparse_map_works_with_no_labels) {
     EXPECT_EQ(map3.labels().size(), 0);
 }
 
-TEST(SimpleSparseMapTest, size_of_internal_types) {
-    fprintf(stderr, "simple sparse map hash node size: %zu\n", sizeof(hash_node<SimpleSparseMap::MapType::value_type>));
+TEST(FastSparseMapTest, size_of_internal_types) {
+    fprintf(stderr, "fast sparse map hash node size: %zu\n", sizeof(hash_node<FastSparseMap::MapType::value_type>));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
