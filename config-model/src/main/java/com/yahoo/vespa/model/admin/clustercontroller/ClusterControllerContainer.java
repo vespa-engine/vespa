@@ -34,7 +34,7 @@ public class ClusterControllerContainer extends Container implements
     private final Set<String> bundles = new TreeSet<>();
 
     public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper, boolean isHosted) {
-        super(parent, "" + index, index);
+        super(parent, "" + index, index, isHosted);
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*");

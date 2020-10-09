@@ -147,7 +147,7 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         server = new Server();
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
-        server.setRequestLog(new AccessLogRequestLog(accessLog));
+        server.setRequestLog(new AccessLogRequestLog(accessLog, serverConfig.accessLog()));
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 

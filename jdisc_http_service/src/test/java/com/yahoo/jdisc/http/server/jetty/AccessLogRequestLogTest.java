@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
+import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.http.MetaData;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.HttpConnection;
@@ -11,6 +12,7 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -33,7 +35,7 @@ public class AccessLogRequestLogTest {
         when(jettyRequest.getRequestURI()).thenReturn("/search/");
         when(jettyRequest.getQueryString()).thenReturn("query=year:>2010");
 
-        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
+        doAccessLoggingOfRequest(jettyRequest);
 
         assertThat(accessLogEntry.getRawPath(), is(not(nullValue())));
         assertTrue(accessLogEntry.getRawQuery().isPresent());
@@ -48,7 +50,7 @@ public class AccessLogRequestLogTest {
         final String query = "query=year%252010+%3B&customParameter=something";
         when(jettyRequest.getQueryString()).thenReturn(query);
 
-        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
+        doAccessLoggingOfRequest(jettyRequest);
 
         assertThat(accessLogEntry.getRawPath(), is(path));
         assertThat(accessLogEntry.getRawQuery().get(), is(query));
@@ -64,7 +66,7 @@ public class AccessLogRequestLogTest {
         String rawQuery = "q=%%2";
         when(jettyRequest.getQueryString()).thenReturn(rawQuery);
 
-        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
+        doAccessLoggingOfRequest(jettyRequest);
         assertThat(accessLogEntry.getRawPath(), is(rawPath));
         Optional<String> actualRawQuery = accessLogEntry.getRawQuery();
         assertThat(actualRawQuery.isPresent(), is(true));
@@ -80,7 +82,7 @@ public class AccessLogRequestLogTest {
         when(jettyRequest.getHeader("x-forwarded-for")).thenReturn("1.2.3.4");
         when(jettyRequest.getHeader("y-ra")).thenReturn("2.3.4.5");
 
-        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
+        doAccessLoggingOfRequest(jettyRequest);
         assertThat(accessLogEntry.getRemoteAddress(), is("1.2.3.4"));
     }
 
@@ -93,7 +95,7 @@ public class AccessLogRequestLogTest {
         when(jettyRequest.getHeader("X-Forwarded-Port")).thenReturn("80");
         when(jettyRequest.getHeader("y-rp")).thenReturn("8080");
 
-        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
+        doAccessLoggingOfRequest(jettyRequest);
         assertThat(accessLogEntry.getRemotePort(), is(80));
     }
 
@@ -105,9 +107,17 @@ public class AccessLogRequestLogTest {
         when(jettyRequest.getHeader("X-Forwarded-Port")).thenReturn("8o8o");
         when(jettyRequest.getRemotePort()).thenReturn(80);
 
-        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
+        doAccessLoggingOfRequest(jettyRequest);
         assertThat(accessLogEntry.getRemotePort(), is(0));
         assertThat(accessLogEntry.getPeerPort(), is(80));
+    }
+
+    private void doAccessLoggingOfRequest(Request jettyRequest) {
+        ServerConfig.AccessLog config = new ServerConfig.AccessLog(
+                new ServerConfig.AccessLog.Builder()
+                        .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra"))
+                        .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
+        new AccessLogRequestLog(mock(AccessLog.class), config).log(jettyRequest, createResponseMock());
     }
 
     private static Request createRequestMock(AccessLogEntry entry) {

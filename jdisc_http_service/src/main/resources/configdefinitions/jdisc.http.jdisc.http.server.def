@@ -44,3 +44,9 @@ metric.monitoringHandlerPaths[]       string
 
 # Paths that should be reported with search dimensions where applicable
 metric.searchHandlerPaths[]           string
+
+# HTTP request headers that contain remote address
+accessLog.remoteAddressHeaders[]      string
+
+# HTTP request headers that contain remote port
+accessLog.remotePortHeaders[]         string
