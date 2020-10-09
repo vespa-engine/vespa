@@ -66,7 +66,7 @@ public:
         Key() : hash(0) {}
         Key(uint64_t hash_in)
             : hash(hash_in) {}
-    } __attribute__((aligned(4),packed));
+    } __attribute__((packed,aligned(4)));
 
     struct Hash {
         uint64_t operator()(const Key &key) const { return key.hash; }
