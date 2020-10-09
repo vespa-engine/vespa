@@ -26,42 +26,45 @@ enum class DimCase {
 
 struct DenseCoords {
     std::vector<size_t> dim_sizes;
-    size_t total_size = 1;
+    size_t total_size;
     size_t offset;
-    size_t dim;
-    void clear() { offset = 0; dim = 0; }
-    void with(size_t coord) {
-        size_t cur = dim_sizes[dim];
-        if (coord < cur) {
-            if (offset != npos()) {
-                offset *= cur;
-                offset += coord;
+    size_t current;
+    DenseCoords(const ValueType &output_type)
+        : total_size(1), offset(0), current(0)
+    {
+        for (const auto & dim : output_type.dimensions()) {
+            if (dim.is_indexed()) {
+                dim_sizes.push_back(dim.size);
+                total_size *= dim.size;
             }
-        } else {
-            offset = npos();
         }
-        ++dim;
     }
-    void with(vespalib::stringref label) {
-        uint32_t result = 0;
+    ~DenseCoords();
+    void clear() { offset = 0; current = 0; }
+    void convert_label(vespalib::stringref label) {
+        uint32_t coord = 0;
         for (char c : label) {
             if (c < '0' || c > '9') { // bad char
                 offset = npos();
                 break;
             }
-            result = result * 10 + (c - '0');
+            coord = coord * 10 + (c - '0');
         }
-        with(result);
+        size_t cur_dim_size = dim_sizes[current];
+        if (coord < cur_dim_size) {
+            if (offset != npos()) {
+                offset *= cur_dim_size;
+                offset += coord;
+            }
+        } else {
+            offset = npos();
+        }
+        ++current;
     }
-    void add_dim(size_t sz) {
-        dim_sizes.push_back(sz);
-        total_size *= sz;
-    }
-    size_t get() const {
-        assert(dim == dim_sizes.size());
+    size_t get_dense_index() const {
+        assert(current == dim_sizes.size());
         return offset;
     }
-    ~DenseCoords();
 };
 DenseCoords::~DenseCoords() = default;
 
@@ -83,17 +86,22 @@ struct SparseCoords {
 };
 SparseCoords::~SparseCoords() = default;
 
+/**
+ * Helper class that converts a fully-sparse address from the modifier
+ * tensor into a subset sparse address for the output and an offset
+ * in the dense subspace.
+ **/
 struct AddressHandler {
-    std::vector<DimCase> how;
-    DenseCoords target_coords;
+    std::vector<DimCase> dimension_plan;
+    DenseCoords dense_converter;
     SparseCoords for_output;
     SparseCoords from_modifier;
     bool valid;
 
-    AddressHandler(const ValueType &input_type,
+    AddressHandler(const ValueType &output_type,
                    const ValueType &modifier_type)
-        : how(), target_coords(),
-          for_output(input_type.count_mapped_dimensions()),
+        : dimension_plan(), dense_converter(output_type),
+          for_output(output_type.count_mapped_dimensions()),
           from_modifier(modifier_type.count_mapped_dimensions()),
           valid(true)
     {
@@ -107,10 +115,10 @@ struct AddressHandler {
         auto visitor = overload {
             [&](visit_ranges_either, const auto &) { valid = false; },
             [&](visit_ranges_both, const auto &a, const auto &) {
-                how.push_back(a.is_mapped() ? DimCase::MAPPED_MATCH : DimCase::CONV_TO_INDEXED);
+                dimension_plan.push_back(a.is_mapped() ? DimCase::MAPPED_MATCH : DimCase::CONV_TO_INDEXED);
             }
         };
-        const auto & input_dims = input_type.dimensions();
+        const auto & input_dims = output_type.dimensions();
         const auto & modifier_dims = modifier_type.dimensions();
         visit_ranges(visitor,
                      input_dims.begin(), input_dims.end(),
@@ -118,32 +126,28 @@ struct AddressHandler {
                      [](const auto &a, const auto &b){ return (a.name < b.name); });
         if (! valid) {
             LOG(error, "Value type %s does not match modifier type %s (should have same dimensions)",
-                input_type.to_spec().c_str(),
-                modifier_type.to_spec().c_str());
+                output_type.to_spec().c_str(), modifier_type.to_spec().c_str());
             return;
         }
+        // implicitly checked above, must hold:
         assert(input_dims.size() == modifier_dims.size());
-        assert(input_dims.size() == how.size());
-        for (const auto & dim : input_type.dimensions()) {
-            if (dim.is_indexed()) {
-                target_coords.add_dim(dim.size);
-            }
-        }
+        // the plan should now be fully built:
+        assert(input_dims.size() == dimension_plan.size());
     }
 
     void handle_address()
     {
-        target_coords.clear();
+        dense_converter.clear();
         auto out = for_output.addr.begin();
-        for (size_t i = 0; i < how.size(); ++i) {
-            if (how[i] == DimCase::CONV_TO_INDEXED) {
-                target_coords.with(from_modifier.addr[i]);
+        for (size_t i = 0; i < dimension_plan.size(); ++i) {
+            if (dimension_plan[i] == DimCase::CONV_TO_INDEXED) {
+                dense_converter.convert_label(from_modifier.addr[i]);
             } else {
                 *out++ = from_modifier.addr[i];
             }
         }
         assert(out == for_output.addr.end());
-        assert(target_coords.dim == target_coords.dim_sizes.size());
+        assert(dense_converter.current == dense_converter.dim_sizes.size());
     }
 
     ~AddressHandler();
@@ -220,7 +224,7 @@ PerformModify::invoke(const Value &input, join_fun_t function, const Value &modi
     size_t modifier_subspace_index;
     while (modifier_view->next_result(handler.from_modifier.next_result_refs, modifier_subspace_index)) {
         handler.handle_address();
-        size_t dense_idx = handler.target_coords.get();
+        size_t dense_idx = handler.dense_converter.get_dense_index();
         if (dense_idx == npos()) {
             continue;
         }
@@ -253,7 +257,9 @@ PerformAdd::invoke(const Value &input, const Value &modifier, const ValueBuilder
     const ValueType &input_type = input.type();
     const ValueType &modifier_type = modifier.type();
     if (input_type.dimensions() != modifier_type.dimensions()) {
-        LOG(error, "when adding cells to a tensor, dimensions must be equal");
+        LOG(error, "when adding cells to a tensor, dimensions must be equal. "
+            "Got input type %s != modifier type %s",
+            input_type.to_spec().c_str(), modifier_type.to_spec().c_str());
         return Value::UP();
     }
     const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
@@ -295,12 +301,15 @@ PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuil
     const ValueType &input_type = input.type();
     const ValueType &modifier_type = modifier.type();
     if (input_type.mapped_dimensions() != modifier_type.dimensions()) {
-        LOG(error, "when removing cells from a tensor, mapped dimensions must be equal");
+        LOG(error, "when removing cells from a tensor, mapped dimensions must be equal. "
+            "Got input type %s versus modifier type %s",
+            input_type.to_spec().c_str(), modifier_type.to_spec().c_str());
         return Value::UP();
     }
     const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
     if (num_mapped_in_input == 0) {
-        LOG(error, "cannot remove cells from a dense tensor");
+        LOG(error, "cannot remove cells from a dense tensor of type %s",
+            input_type.to_spec().c_str());
         return Value::UP();
     }
     SparseCoords addrs(num_mapped_in_input);
