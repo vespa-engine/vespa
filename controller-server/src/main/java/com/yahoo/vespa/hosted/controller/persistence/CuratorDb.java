@@ -500,6 +500,10 @@ public class CuratorDb {
         curator.set(endpointCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
     }
 
+    public void deleteEndpointCertificateMetadata(ApplicationId applicationId) {
+        curator.delete(endpointCertificatePath(applicationId));
+    }
+
     public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
         return curator.getData(endpointCertificatePath(applicationId)).map(String::new).map(EndpointCertificateMetadataSerializer::fromJsonString);
     }

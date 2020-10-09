@@ -12,6 +12,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.log.LogLevel;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,13 +35,12 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -64,9 +65,8 @@ public class EndpointCertificateManager {
     private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
     private final Clock clock;
-    private final BooleanFlag useRefreshedEndpointCertificate;
     private final BooleanFlag validateEndpointCertificates;
-    private final StringFlag endpointCertificateBackfill;
+    private final StringFlag deleteUnusedEndpointCertificates;
     private final BooleanFlag endpointCertInSharedRouting;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
@@ -79,15 +79,14 @@ public class EndpointCertificateManager {
         this.secretStore = secretStore;
         this.endpointCertificateProvider = endpointCertificateProvider;
         this.clock = clock;
-        this.useRefreshedEndpointCertificate = Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.bindTo(flagSource);
         this.validateEndpointCertificates = Flags.VALIDATE_ENDPOINT_CERTIFICATES.bindTo(flagSource);
-        this.endpointCertificateBackfill = Flags.ENDPOINT_CERTIFICATE_BACKFILL.bindTo(flagSource);
+        this.deleteUnusedEndpointCertificates = Flags.DELETE_UNUSED_ENDPOINT_CERTIFICATES.bindTo(flagSource);
         this.endpointCertInSharedRouting = Flags.ENDPOINT_CERT_IN_SHARED_ROUTING.bindTo(flagSource);
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             try {
-                this.backfillCertificateMetadata();
+                this.deleteUnusedCertificates();
             } catch (Throwable t) {
-                log.log(Level.INFO, "Unexpected Throwable caught while backfilling certificate metadata", t);
+                log.log(Level.INFO, "Unexpected Throwable caught while deleting unused endpoint certificates", t);
             }
         }, 1, 10, TimeUnit.MINUTES);
     }
@@ -97,7 +96,8 @@ public class EndpointCertificateManager {
         Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone, instanceSpec);
         metadata.ifPresent(m -> curator.writeEndpointCertificateMetadata(instance.id(), m.withLastRequested(clock.instant().getEpochSecond())));
         Duration duration = Duration.between(t0, Instant.now());
-        if (duration.toSeconds() > 30) log.log(Level.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
+        if (duration.toSeconds() > 30)
+            log.log(Level.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
         return metadata;
     }
 
@@ -129,74 +129,50 @@ public class EndpointCertificateManager {
             return Optional.of(reprovisionedCertificateMetadata);
         }
 
-        // If feature flag set for application, look for and use refreshed certificate
-        if (useRefreshedEndpointCertificate.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value()) {
-            var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
-
-            if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
-                var refreshedCertificateMetadata = currentCertificateMetadata.get().withVersion(latestAvailableVersion.getAsInt());
-                validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
-                curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
-                return Optional.of(refreshedCertificateMetadata);
-            }
+        // Look for and use refreshed certificate
+        var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
+        if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
+            var refreshedCertificateMetadata = currentCertificateMetadata.get().withVersion(latestAvailableVersion.getAsInt());
+            validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
+            curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
+            return Optional.of(refreshedCertificateMetadata);
         }
 
         validateEndpointCertificate(currentCertificateMetadata.get(), instance, zone);
         return currentCertificateMetadata;
     }
 
-    enum BackfillMode {
+    enum CleanupMode {
         DISABLE,
         DRYRUN,
         ENABLE
     }
 
-    private void backfillCertificateMetadata() {
-        BackfillMode mode = BackfillMode.valueOf(endpointCertificateBackfill.value());
-        if (mode == BackfillMode.DISABLE) return;
+    private void deleteUnusedCertificates() {
+        CleanupMode mode = CleanupMode.valueOf(deleteUnusedEndpointCertificates.value());
+        if (mode == CleanupMode.DISABLE) return;
 
-        List<EndpointCertificateMetadata> allProviderCertificateMetadata = endpointCertificateProvider.listCertificates();
-        Map<String, EndpointCertificateMetadata> sanToEndpointCertificate = new HashMap<>();
-
-        allProviderCertificateMetadata.forEach((providerMetadata -> {
-            if (providerMetadata.request_id().isEmpty())
-                throw new RuntimeException("Backfill failed - provider metadata missing request_id");
-            if (providerMetadata.requestedDnsSans().isEmpty())
-                throw new RuntimeException("Backfill failed - provider metadata missing DNS SANs for " + providerMetadata.request_id().get());
-            providerMetadata.requestedDnsSans().get().forEach(san -> sanToEndpointCertificate.put(san, providerMetadata)
-            );
-        }));
-
-        Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = curator.readAllEndpointCertificateMetadata();
-
-        allEndpointCertificateMetadata.forEach((applicationId, storedMetaData) -> {
-            if (storedMetaData.requestedDnsSans().isPresent() && storedMetaData.request_id().isPresent() && storedMetaData.issuer().isPresent())
-                return;
-
-            var hashedCn = commonNameHashOf(applicationId, zoneRegistry.system()); // use as join key
-            EndpointCertificateMetadata providerMetadata = sanToEndpointCertificate.get(hashedCn);
-
-            if (providerMetadata == null) {
-                log.log(Level.INFO, "No matching certificate provider metadata found for application " + applicationId.serializedForm());
-                return;
-            }
-
-            EndpointCertificateMetadata backfilledMetadata =
-                    new EndpointCertificateMetadata(
-                            storedMetaData.keyName(),
-                            storedMetaData.certName(),
-                            storedMetaData.version(),
-                            Instant.now().getEpochSecond(),
-                            providerMetadata.request_id(),
-                            providerMetadata.requestedDnsSans(),
-                            providerMetadata.issuer());
-
-            if (mode == BackfillMode.DRYRUN) {
-                log.log(Level.INFO, "Would update stored metadata " + storedMetaData + " with data from provider: " + backfilledMetadata);
-            } else if (mode == BackfillMode.ENABLE) {
-                curator.writeEndpointCertificateMetadata(applicationId, backfilledMetadata);
+        var oneMonthAgo = clock.instant().minus(1, ChronoUnit.MONTHS);
+        curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
+            var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
+            if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
+                log.log(LogLevel.INFO, "Cert for app " + applicationId.serializedForm()
+                        + " has not been requested in a month and app has no deployments"
+                        + (mode == CleanupMode.ENABLE ? ", deleting from provider and ZK" : ""));
+                if (mode == CleanupMode.ENABLE) {
+                    endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
+                    curator.deleteEndpointCertificateMetadata(applicationId);
+                }
             }
         });
+    }
+
+    private boolean hasNoDeployments(ApplicationId applicationId) {
+        var deployments = curator.readApplication(TenantAndApplicationId.from(applicationId))
+                .flatMap(app -> app.get(applicationId.instance()))
+                .map(Instance::deployments);
+
+        return deployments.isEmpty() || deployments.get().size() == 0;
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
