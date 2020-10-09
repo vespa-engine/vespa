@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
@@ -17,16 +18,18 @@ import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTe
 public class StructFieldAttributeChangeValidatorTestCase {
 
     private static class Fixture extends ContentClusterFixture {
-        private StructFieldAttributeChangeValidator structFieldAttributeValidator;
-        private DocumentTypeChangeValidator docTypeValidator;
+
+        private final StructFieldAttributeChangeValidator structFieldAttributeValidator;
+        private final DocumentTypeChangeValidator docTypeValidator;
 
         public Fixture(String currentSd, String nextSd) throws Exception {
             super(currentSd, nextSd);
-            structFieldAttributeValidator = new StructFieldAttributeChangeValidator(currentDocType(),
-                    currentDb().getDerivedConfiguration().getAttributeFields(),
-                    nextDocType(),
-                    nextDb().getDerivedConfiguration().getAttributeFields());
-            docTypeValidator = new DocumentTypeChangeValidator(currentDocType(), nextDocType());
+            structFieldAttributeValidator = new StructFieldAttributeChangeValidator(ClusterSpec.Id.from("test"),
+                                                                                    currentDocType(),
+                                                                                    currentDb().getDerivedConfiguration().getAttributeFields(),
+                                                                                    nextDocType(),
+                                                                                    nextDb().getDerivedConfiguration().getAttributeFields());
+            docTypeValidator = new DocumentTypeChangeValidator(ClusterSpec.Id.from("test"), currentDocType(), nextDocType());
         }
 
         @Override
@@ -49,34 +52,34 @@ public class StructFieldAttributeChangeValidatorTestCase {
     @Test
     public void adding_attribute_aspect_to_struct_field_requires_restart() throws Exception {
         validate(arrayOfStruct(oneFieldStruct(), ""),
-                arrayOfStruct(oneFieldStruct(), structAttribute("s1")),
-                newRestartAction("Field 'f1.s1' changed: add attribute aspect"));
+                 arrayOfStruct(oneFieldStruct(), structAttribute("s1")),
+                 newRestartAction(ClusterSpec.Id.from("test"), "Field 'f1.s1' changed: add attribute aspect"));
 
         validate(mapOfStruct(oneFieldStruct(), ""),
-                mapOfStruct(oneFieldStruct(), structAttribute("key")),
-                newRestartAction("Field 'f1.key' changed: add attribute aspect"));
+                 mapOfStruct(oneFieldStruct(), structAttribute("key")),
+                 newRestartAction(ClusterSpec.Id.from("test"), "Field 'f1.key' changed: add attribute aspect"));
 
         validate(mapOfStruct(oneFieldStruct(), ""),
-                mapOfStruct(oneFieldStruct(), structAttribute("value.s1")),
-                newRestartAction("Field 'f1.value.s1' changed: add attribute aspect"));
+                 mapOfStruct(oneFieldStruct(), structAttribute("value.s1")),
+                 newRestartAction(ClusterSpec.Id.from("test"), "Field 'f1.value.s1' changed: add attribute aspect"));
 
         validate(mapOfPrimitive(""), mapOfPrimitive(structAttribute("key")),
-                newRestartAction("Field 'f1.key' changed: add attribute aspect"));
+                 newRestartAction(ClusterSpec.Id.from("test"), "Field 'f1.key' changed: add attribute aspect"));
 
         validate(mapOfPrimitive(""), mapOfPrimitive(structAttribute("value")),
-                newRestartAction("Field 'f1.value' changed: add attribute aspect"));
+                 newRestartAction(ClusterSpec.Id.from("test"), "Field 'f1.value' changed: add attribute aspect"));
     }
 
     @Test
     public void removing_attribute_aspect_from_struct_field_is_ok() throws Exception {
         validate(arrayOfStruct(oneFieldStruct(), structAttribute("s1")),
-                arrayOfStruct(oneFieldStruct(), ""));
+                 arrayOfStruct(oneFieldStruct(), ""));
 
         validate(mapOfStruct(oneFieldStruct(), structAttribute("key")),
-                mapOfStruct(oneFieldStruct(), ""));
+                 mapOfStruct(oneFieldStruct(), ""));
 
         validate(mapOfStruct(oneFieldStruct(), structAttribute("value.s1")),
-                mapOfStruct(oneFieldStruct(), ""));
+                 mapOfStruct(oneFieldStruct(), ""));
 
         validate(mapOfPrimitive(structAttribute("key")), mapOfPrimitive(""));
 
@@ -89,34 +92,34 @@ public class StructFieldAttributeChangeValidatorTestCase {
                 arrayOfStruct(twoFieldStruct(), structAttribute("s2")));
 
         validate(mapOfStruct(oneFieldStruct(), ""),
-                mapOfStruct(twoFieldStruct(), structAttribute("value.s2")));
+                 mapOfStruct(twoFieldStruct(), structAttribute("value.s2")));
     }
 
     @Test
     public void removing_struct_field_with_attribute_aspect_is_ok() throws Exception {
         validate(arrayOfStruct(twoFieldStruct(), structAttribute("s2")),
-                arrayOfStruct(oneFieldStruct(), ""));
+                 arrayOfStruct(oneFieldStruct(), ""));
 
         validate(mapOfStruct(twoFieldStruct(), structAttribute("value.s2")),
-                mapOfStruct(oneFieldStruct(), ""));
+                 mapOfStruct(oneFieldStruct(), ""));
     }
 
     @Test
     public void adding_struct_field_without_attribute_aspect_is_ok() throws Exception {
         validate(arrayOfStruct(oneFieldStruct(), ""),
-                arrayOfStruct(twoFieldStruct(), ""));
+                 arrayOfStruct(twoFieldStruct(), ""));
 
         validate(mapOfStruct(oneFieldStruct(), ""),
-                mapOfStruct(twoFieldStruct(), ""));
+                 mapOfStruct(twoFieldStruct(), ""));
     }
 
     @Test
     public void removing_struct_field_without_attribute_aspect_is_ok() throws Exception {
         validate(arrayOfStruct(twoFieldStruct(), ""),
-                arrayOfStruct(oneFieldStruct(), ""));
+                 arrayOfStruct(oneFieldStruct(), ""));
 
         validate(mapOfStruct(twoFieldStruct(), ""),
-                mapOfStruct(oneFieldStruct(), ""));
+                 mapOfStruct(oneFieldStruct(), ""));
     }
 
     private static String oneFieldStruct() {

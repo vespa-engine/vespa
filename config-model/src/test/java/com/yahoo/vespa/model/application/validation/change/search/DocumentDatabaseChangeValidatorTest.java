@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
@@ -19,7 +20,11 @@ public class DocumentDatabaseChangeValidatorTest {
 
         public Fixture(String currentSd, String nextSd) throws Exception {
             super(currentSd, nextSd);
-            validator = new DocumentDatabaseChangeValidator(currentDb(), currentDocType(), nextDb(), nextDocType());
+            validator = new DocumentDatabaseChangeValidator(ClusterSpec.Id.from("test"),
+                                                            currentDb(),
+                                                            currentDocType(),
+                                                            nextDb(),
+                                                            nextDocType());
         }
 
         @Override
@@ -42,13 +47,17 @@ public class DocumentDatabaseChangeValidatorTest {
                 "field f3 type string { indexing: summary } " +
                 "field f4 type array<s> { struct-field s1 { indexing: attribute } }");
         f.assertValidation(Arrays.asList(
-                newRestartAction("Field 'f1' changed: add attribute aspect"),
-                newRestartAction("Field 'f4.s1' changed: add attribute aspect"),
-                newRefeedAction("indexing-change",
+                newRestartAction(ClusterSpec.Id.from("test"),
+                                 "Field 'f1' changed: add attribute aspect"),
+                newRestartAction(ClusterSpec.Id.from("test"),
+                                 "Field 'f4.s1' changed: add attribute aspect"),
+                newRefeedAction(ClusterSpec.Id.from("test"),
+                                "indexing-change",
                                 ValidationOverrides.empty,
                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +
                                 "'{ input f2 | tokenize normalize stem:\"BEST\" | index f2 | summary f2; }'", Instant.now()),
-                newRefeedAction("field-type-change",
+                newRefeedAction(ClusterSpec.Id.from("test"),
+                                "field-type-change",
                                 ValidationOverrides.empty,
                                 "Field 'f3' changed: data type: 'int' -> 'string'", Instant.now())));
     }
@@ -56,7 +65,7 @@ public class DocumentDatabaseChangeValidatorTest {
     @Test
     public void requireThatRemovingAttributeAspectFromIndexFieldIsOk() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: index | attribute }",
-                "field f1 type string { indexing: index }");
+                                "field f1 type string { indexing: index }");
         f.assertValidation();
     }
 

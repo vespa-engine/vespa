@@ -63,7 +63,8 @@ public class NodeResourceChangeValidator implements ChangeValidator {
 
     private List<ConfigChangeAction> createRestartActionsFor(ApplicationContainerCluster cluster) {
         return cluster.getContainers().stream()
-                                      .map(container -> new VespaRestartAction("Node resource change",
+                                      .map(container -> new VespaRestartAction(cluster.id(),
+                                                                               "Node resource change",
                                                                                container.getServiceInfo(),
                                                                                false))
                                      .collect(Collectors.toList());
@@ -71,7 +72,8 @@ public class NodeResourceChangeValidator implements ChangeValidator {
 
     private List<ConfigChangeAction> createRestartActionsFor(ContentCluster cluster) {
         return cluster.getSearch().getSearchNodes().stream()
-                                                   .map(node -> new VespaRestartAction("Node resource change",
+                                                   .map(node -> new VespaRestartAction(cluster.id(),
+                                                                                       "Node resource change",
                                                                                        node.getServiceInfo(),
                                                                                       false))
                                                    .collect(Collectors.toList());

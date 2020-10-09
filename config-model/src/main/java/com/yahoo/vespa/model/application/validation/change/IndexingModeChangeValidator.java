@@ -42,7 +42,8 @@ public class IndexingModeChangeValidator implements ChangeValidator {
 
         if (currentClusterIsIndexed == nextClusterIsIndexed) return Optional.empty();
 
-        return Optional.of(VespaRefeedAction.of(ValidationId.indexModeChange.value(),
+        return Optional.of(VespaRefeedAction.of(currentCluster.id(),
+                                                ValidationId.indexModeChange.value(),
                                                 overrides,
                                                 "Cluster '" + currentCluster.getName() + "' changed indexing mode from '" +
                                                 indexingMode(currentClusterIsIndexed) + "' to '" + indexingMode(nextClusterIsIndexed) + "'", 

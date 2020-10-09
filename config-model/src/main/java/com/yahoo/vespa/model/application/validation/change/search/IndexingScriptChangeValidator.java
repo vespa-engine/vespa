@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
@@ -21,14 +22,15 @@ import java.util.Optional;
  * Validates the indexing script changes in all fields in the current and next search model.
  *
  * @author geirst
- * @since 2014-12-08
  */
 public class IndexingScriptChangeValidator {
 
+    private final ClusterSpec.Id id;
     private final Search currentSearch;
     private final Search nextSearch;
 
-    public IndexingScriptChangeValidator(Search currentSearch, Search nextSearch) {
+    public IndexingScriptChangeValidator(ClusterSpec.Id id, Search currentSearch, Search nextSearch) {
+        this.id = id;
         this.currentSearch = currentSearch;
         this.nextSearch = nextSearch;
     }
@@ -53,7 +55,7 @@ public class IndexingScriptChangeValidator {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
             new IndexingScriptChangeMessageBuilder(currentSearch, currentField, nextSearch, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
-            return Optional.of(VespaRefeedAction.of(ValidationId.indexingChange.value(), overrides, messageBuilder.build(), now));
+            return Optional.of(VespaRefeedAction.of(id, ValidationId.indexingChange.value(), overrides, messageBuilder.build(), now));
         }
         return Optional.empty();
     }
@@ -68,8 +70,7 @@ public class IndexingScriptChangeValidator {
     }
 
     private static ScriptExpression removeOutputExpressions(ScriptExpression script) {
-        ScriptExpression retval = (ScriptExpression) new OutputExpressionRemover().convert(script);
-        return retval;
+        return (ScriptExpression) new OutputExpressionRemover().convert(script);
     }
 
     private static class OutputExpressionRemover extends ExpressionConverter {

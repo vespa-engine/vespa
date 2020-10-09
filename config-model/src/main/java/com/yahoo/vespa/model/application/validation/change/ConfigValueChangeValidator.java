@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -44,32 +45,32 @@ public class ConfigValueChangeValidator implements ChangeValidator {
         return findConfigChangesFromModels(currentModel, nextModel).collect(Collectors.toList());
     }
 
-    public Stream<ConfigChangeAction> findConfigChangesFromModels(
-            AbstractConfigProducerRoot currentModel,
-            AbstractConfigProducerRoot nextModel) {
+    public Stream<ConfigChangeAction> findConfigChangesFromModels(AbstractConfigProducerRoot currentModel,
+                                                                  AbstractConfigProducerRoot nextModel) {
         return nextModel.getDescendantServices().stream()
                 .map(service -> findConfigChangeActionForService(service, currentModel, nextModel))
                 .filter(Optional::isPresent)
                 .map(Optional::get);
     }
 
-    private Optional<ConfigChangeAction> findConfigChangeActionForService(
-            Service service,
-            AbstractConfigProducerRoot currentModel,
-            AbstractConfigProducerRoot nextModel) {
+    private Optional<ConfigChangeAction> findConfigChangeActionForService(Service service,
+                                                                          AbstractConfigProducerRoot currentModel,
+                                                                          AbstractConfigProducerRoot nextModel) {
         List<ChangesRequiringRestart> changes = findConfigChangesForService(service, currentModel, nextModel)
             .collect(Collectors.toList());
         if (changes.isEmpty()) {
             return Optional.empty();
         }
         String description = createDescriptionOfConfigChanges(changes.stream());
-        return Optional.of(new VespaRestartAction(description, service.getServiceInfo()));
+        ClusterSpec.Id id = service.getHost().spec().membership().isPresent() ?
+                            service.getHost().spec().membership().get().cluster().id() :
+                            ClusterSpec.Id.from(service.getConfigId());
+        return Optional.of(new VespaRestartAction(id, description, service.getServiceInfo()));
     }
 
-    private Stream<ChangesRequiringRestart> findConfigChangesForService(
-            Service service,
-            AbstractConfigProducerRoot currentModel,
-            AbstractConfigProducerRoot nextModel) {
+    private Stream<ChangesRequiringRestart> findConfigChangesForService(Service service,
+                                                                        AbstractConfigProducerRoot currentModel,
+                                                                        AbstractConfigProducerRoot nextModel) {
         Class<? extends Service> serviceClass = service.getClass();
         if (!currentModel.getService(service.getConfigId()).isPresent()) {
             // Service does not exist in the current model.

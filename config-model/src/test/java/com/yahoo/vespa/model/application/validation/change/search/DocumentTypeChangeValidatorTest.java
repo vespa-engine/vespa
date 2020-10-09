@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
@@ -34,7 +35,9 @@ public class DocumentTypeChangeValidatorTest {
 
         public Fixture(String currentSd, String nextSd) throws Exception {
             super(currentSd, nextSd);
-            validator = new DocumentTypeChangeValidator(currentDocType(), nextDocType());
+            validator = new DocumentTypeChangeValidator(ClusterSpec.Id.from("test"),
+                                                        currentDocType(),
+                                                        nextDocType());
         }
 
         @Override
@@ -62,7 +65,8 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatDataTypeChangeIsNotOK() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: summary }",
                                 "field f1 type int { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f1' changed: data type: 'string' -> 'int'",
                                            Instant.now()));
@@ -72,7 +76,8 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatAddingCollectionTypeIsNotOK() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: summary }",
                                 "field f1 type array<string> { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f1' changed: data type: 'string' -> 'Array<string>'", Instant.now()));
     }
@@ -89,7 +94,8 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatNestedDataTypeChangeIsNotOK() throws Exception {
         Fixture f = new Fixture("field f1 type array<string> { indexing: summary }",
                                 "field f1 type array<int> { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f1' changed: data type: 'Array<string>' -> 'Array<int>'", Instant.now()));
     }
@@ -98,7 +104,8 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatChangedCollectionTypeIsNotOK() throws Exception {
         Fixture f = new Fixture("field f1 type array<string> { indexing: summary }",
                                 "field f1 type weightedset<string> { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f1' changed: data type: 'Array<string>' -> 'WeightedSet<string>'", Instant.now()));
     }
@@ -107,10 +114,12 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatMultipleDataTypeChangesIsNotOK() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: summary } field f2 type int { indexing: summary }" ,
                                 "field f2 type string { indexing: summary } field f1 type int { indexing: summary }");
-        f.assertValidation(Arrays.asList(newRefeedAction("field-type-change",
+        f.assertValidation(Arrays.asList(newRefeedAction(ClusterSpec.Id.from("test"),
+                                                         "field-type-change",
                                                          ValidationOverrides.empty,
                                                          "Field 'f1' changed: data type: 'string' -> 'int'", Instant.now()),
-                                         newRefeedAction("field-type-change",
+                                         newRefeedAction(ClusterSpec.Id.from("test"),
+                                                         "field-type-change",
                                                          ValidationOverrides.empty,
                                                          "Field 'f2' changed: data type: 'int' -> 'string'", Instant.now())));
     }
@@ -147,7 +156,8 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatDataTypeChangeInStructFieldIsNotOK() throws Exception {
         Fixture f = new Fixture("struct s1 { field f1 type string {} } field f2 type s1 { indexing: summary }",
                                 "struct s1 { field f1 type int {} } field f2 type s1 { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f2' changed: data type: 's1:{f1:string}' -> 's1:{f1:int}'", Instant.now()));
     }
@@ -156,7 +166,8 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatNestedDataTypeChangeInStructFieldIsNotOK() throws Exception {
         Fixture f = new Fixture("struct s1 { field f1 type array<string> {} } field f2 type s1 { indexing: summary }",
                                 "struct s1 { field f1 type array<int> {} } field f2 type s1 { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f2' changed: data type: 's1:{f1:Array<string>}' -> 's1:{f1:Array<int>}'", Instant.now()));
     }
@@ -165,7 +176,8 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatDataTypeChangeInNestedStructFieldIsNotOK() throws Exception {
         Fixture f = new Fixture("struct s1 { field f1 type string {} } struct s2 { field f2 type s1 {} } field f3 type s2 { indexing: summary }",
                                 "struct s1 { field f1 type int {} }    struct s2 { field f2 type s1 {} } field f3 type s2 { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f3' changed: data type: 's2:{s1:{f1:string}}' -> 's2:{s1:{f1:int}}'", Instant.now()));
     }
@@ -174,16 +186,17 @@ public class DocumentTypeChangeValidatorTest {
     public void requireThatMultipleDataTypeChangesInStructFieldIsNotOK() throws Exception {
         Fixture f = new Fixture("struct s1 { field f1 type string {} field f2 type int {} } field f3 type s1 { indexing: summary }",
                                 "struct s1 { field f1 type int {} field f2 type string {} } field f3 type s1 { indexing: summary }");
-        f.assertValidation(newRefeedAction("field-type-change",
+        f.assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                                           "field-type-change",
                                            ValidationOverrides.empty,
                                            "Field 'f3' changed: data type: 's1:{f1:string,f2:int}' -> 's1:{f1:int,f2:string}'", Instant.now()));
     }
 
     @Test
     public void requireThatChangingTargetTypeOfReferenceFieldIsNotOK() {
-        DocumentTypeChangeValidator validator = new DocumentTypeChangeValidator(
-                createDocumentTypeWithReferenceField("oldDoc"),
-                createDocumentTypeWithReferenceField("newDoc"));
+        var validator = new DocumentTypeChangeValidator(ClusterSpec.Id.from("test"),
+                                                        createDocumentTypeWithReferenceField("oldDoc"),
+                                                        createDocumentTypeWithReferenceField("newDoc"));
         List<VespaConfigChangeAction> result = validator.validate(ValidationOverrides.empty, Instant.now());
         assertEquals(1, result.size());
         VespaConfigChangeAction action = result.get(0);

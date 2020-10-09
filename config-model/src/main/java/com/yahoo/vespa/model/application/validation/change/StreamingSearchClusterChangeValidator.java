@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.Attribute;
@@ -59,45 +60,51 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
                                                                      Instant now) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
 
-        result.addAll(validateDocumentTypeChanges(getDocumentType(currentCluster, currentStreamingCluster),
-                getDocumentType(nextCluster, nextStreamingCluster), overrides, now));
-        result.addAll(validateAttributeFastAccessAdded(currentStreamingCluster.getSdConfig().getAttributeFields(),
-                nextStreamingCluster.getSdConfig().getAttributeFields()));
-        result.addAll(validateAttributeFastAccessRemoved(currentStreamingCluster.getSdConfig().getAttributeFields(),
-                nextStreamingCluster.getSdConfig().getAttributeFields()));
+        result.addAll(validateDocumentTypeChanges(currentCluster.id(),
+                                                  getDocumentType(currentCluster, currentStreamingCluster),
+                                                  getDocumentType(nextCluster, nextStreamingCluster), overrides, now));
+        result.addAll(validateAttributeFastAccessAdded(currentCluster.id(),
+                                                       currentStreamingCluster.getSdConfig().getAttributeFields(),
+                                                       nextStreamingCluster.getSdConfig().getAttributeFields()));
+        result.addAll(validateAttributeFastAccessRemoved(currentCluster.id(),
+                                                         currentStreamingCluster.getSdConfig().getAttributeFields(),
+                                                         nextStreamingCluster.getSdConfig().getAttributeFields()));
 
         return modifyActions(result, getSearchNodeServices(nextCluster), nextStreamingCluster.getDocTypeName());
     }
 
-    private static List<VespaConfigChangeAction> validateDocumentTypeChanges(NewDocumentType currentDocType,
+    private static List<VespaConfigChangeAction> validateDocumentTypeChanges(ClusterSpec.Id id,
+                                                                             NewDocumentType currentDocType,
                                                                              NewDocumentType nextDocType,
                                                                              ValidationOverrides overrides,
                                                                              Instant now) {
-        return new DocumentTypeChangeValidator(currentDocType, nextDocType).validate(overrides, now);
+        return new DocumentTypeChangeValidator(id, currentDocType, nextDocType).validate(overrides, now);
     }
 
     private static NewDocumentType getDocumentType(ContentCluster cluster, StreamingSearchCluster streamingCluster) {
         return cluster.getDocumentDefinitions().get(streamingCluster.getDocTypeName());
     }
 
-    private static List<VespaConfigChangeAction> validateAttributeFastAccessAdded(AttributeFields currentAttributes,
+    private static List<VespaConfigChangeAction> validateAttributeFastAccessAdded(ClusterSpec.Id id,
+                                                                                  AttributeFields currentAttributes,
                                                                                   AttributeFields nextAttributes) {
-        return validateAttributeFastAccessChanged(nextAttributes, currentAttributes, "add");
+        return validateAttributeFastAccessChanged(id, nextAttributes, currentAttributes, "add");
     }
 
-    private static List<VespaConfigChangeAction> validateAttributeFastAccessRemoved(AttributeFields currentAttributes,
+    private static List<VespaConfigChangeAction> validateAttributeFastAccessRemoved(ClusterSpec.Id id,
+                                                                                    AttributeFields currentAttributes,
                                                                                     AttributeFields nextAttributes) {
-        return validateAttributeFastAccessChanged(currentAttributes, nextAttributes, "remove");
+        return validateAttributeFastAccessChanged(id, currentAttributes, nextAttributes, "remove");
     }
 
-    private static List<VespaConfigChangeAction> validateAttributeFastAccessChanged(AttributeFields lhsAttributes,
+    private static List<VespaConfigChangeAction> validateAttributeFastAccessChanged(ClusterSpec.Id id,
+                                                                                    AttributeFields lhsAttributes,
                                                                                     AttributeFields rhsAttributes,
                                                                                     String change) {
         return lhsAttributes.attributes().stream()
                 .filter(attr -> attr.isFastAccess() &&
                         !hasFastAccessAttribute(attr.getName(), rhsAttributes))
-                .map(attr -> new VespaRestartAction(new ChangeMessageBuilder(attr.getName())
-                        .addChange(change + " fast-access attribute").build()))
+                .map(attr -> new VespaRestartAction(id, new ChangeMessageBuilder(attr.getName()).addChange(change + " fast-access attribute").build()))
                 .collect(Collectors.toList());
     }
 
@@ -117,7 +124,7 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
                                                           String docTypeName) {
         return result.stream()
                 .map(action -> action.modifyAction("Document type '" + docTypeName + "': " + action.getMessage(),
-                        services, docTypeName))
+                                                   services, docTypeName))
                 .collect(Collectors.toList());
     }
 

@@ -444,12 +444,14 @@ public class ModelProvisioningTest {
 
         // Check container cluster
         assertEquals(1, model.getContainerClusters().size());
-        Set<com.yahoo.vespa.model.Host> containerHosts = model.getContainerClusters().get("foo").getContainers().stream().map(Container::getHost).collect(Collectors.toSet());
+        Set<HostResource> containerHosts = model.getContainerClusters().get("foo").getContainers().stream()
+                                                .map(Container::getHost)
+                                                .collect(Collectors.toSet());
         assertEquals(10, containerHosts.size());
 
         // Check admin clusters
         Admin admin = model.getAdmin();
-        Set<com.yahoo.vespa.model.Host> slobrokHosts = admin.getSlobroks().stream().map(Slobrok::getHost).collect(Collectors.toSet());
+        Set<HostResource> slobrokHosts = admin.getSlobroks().stream().map(Slobrok::getHost).collect(Collectors.toSet());
         assertEquals(3, slobrokHosts.size());
         assertTrue("Slobroks are assigned from container nodes", containerHosts.containsAll(slobrokHosts));
         assertTrue("Logserver is assigned from container nodes", containerHosts.contains(admin.getLogserver().getHost()));

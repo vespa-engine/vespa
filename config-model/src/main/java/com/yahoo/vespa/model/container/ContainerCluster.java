@@ -11,6 +11,7 @@ import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrSearchersConfig;
@@ -157,9 +158,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
     private String environmentVars = null;
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
-        super(parent, subId);
-        this.name = name;
+    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
+        super(parent, configSubId);
+        this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
 
@@ -182,6 +183,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
     }
+
+    public ClusterSpec.Id id() { return ClusterSpec.Id.from(getName()); }
 
     public void setZone(Zone zone) {
         this.zone = zone;
@@ -613,5 +616,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     protected abstract boolean messageBusEnabled();
+
+    /**
+     * Mark that the config emitted by this cluster currently should be applied by clients already running with
+     * a previous generation of it only by restarting the consuming processes.
+     */
+    public void deferChangesUntilRestart() {
+
+    }
 
 }
