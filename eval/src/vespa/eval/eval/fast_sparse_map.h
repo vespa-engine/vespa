@@ -62,12 +62,11 @@ public:
     }
 
     struct Key {
-        uint32_t start;
         uint64_t hash;
-        Key() : start(0), hash(0) {}
-        Key(uint32_t start_in, uint64_t hash_in)
-            : start(start_in), hash(hash_in) {}
-    };
+        Key() : hash(0) {}
+        Key(uint64_t hash_in)
+            : hash(hash_in) {}
+    } __attribute__((packed));
 
     struct Hash {
         uint64_t operator()(const Key &key) const { return key.hash; }
@@ -115,23 +114,23 @@ public:
     template <typename T>
     void add_mapping(ConstArrayRef<T> addr, uint64_t hash) {
         uint32_t value = _map.size();
-        uint32_t start = _labels.size();
+        // assert(value * _num_dims == _labels.size());
         for (const auto &label: addr) {
             _labels.emplace_back(label);
         }
-        _map.insert(std::make_pair(Key(start, hash), value));
+        _map.insert(std::make_pair(Key(hash), value));
     }
 
     template <typename T>
     void add_mapping(ConstArrayRef<T> addr) {
         uint64_t h = 0;
         uint32_t value = _map.size();
-        uint32_t start = _labels.size();
+        // assert(value * _num_dims == _labels.size());
         for (const auto &label: addr) {
             _labels.emplace_back(label);
             h = 31 * h + hash_label(_labels.back());
         }
-        _map.insert(std::make_pair(Key(start, h), value));
+        _map.insert(std::make_pair(Key(h), value));
     }
 
     size_t lookup(uint64_t hash) const {
@@ -148,7 +147,7 @@ public:
     void each_map_entry(F &&f) const {
         _map.for_each([&](const auto &entry)
                       {
-                          f(entry.first.start, entry.second, entry.first.hash);
+                          f(entry.second * _num_dims, entry.second, entry.first.hash);
                       });
     }
 };
