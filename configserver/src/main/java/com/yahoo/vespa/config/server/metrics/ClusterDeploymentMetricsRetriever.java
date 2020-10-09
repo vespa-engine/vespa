@@ -13,6 +13,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +50,9 @@ public class ClusterDeploymentMetricsRetriever {
                                                             .create(PoolingHttpClientConnectionManager::new)
                                                             .setDefaultRequestConfig(
                                                                     RequestConfig.custom()
-                                                                            .setConnectTimeout(10 * 1000)
-                                                                            .setSocketTimeout(10 * 1000)
+                                                                            .setConnectionRequestTimeout((int)Duration.ofSeconds(60).toMillis())
+                                                                            .setConnectTimeout((int)Duration.ofSeconds(10).toMillis())
+                                                                            .setSocketTimeout((int)Duration.ofSeconds(10).toMillis())
                                                                             .build())
                                                             .build();
 
