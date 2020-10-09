@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.metrics;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
-import java.util.logging.Level;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -16,10 +16,14 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 
 /**
@@ -39,6 +43,7 @@ public class ClusterDeploymentMetricsRetriever {
     private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
 
 
+    private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
 
     private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
                                                             .create(PoolingHttpClientConnectionManager::new)
@@ -57,19 +62,20 @@ public class ClusterDeploymentMetricsRetriever {
         Map<ClusterInfo, DeploymentMetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
 
         long startTime = System.currentTimeMillis();
-        Runnable retrieveMetricsJob = () ->
-                hosts.parallelStream().forEach(host ->
-                    getHostMetrics(host, clusterMetricsMap)
-                );
-
-        ForkJoinPool threadPool = new ForkJoinPool(10);
-        threadPool.submit(retrieveMetricsJob);
-        threadPool.shutdown();
-
+        List<Callable<Void>> jobs = hosts.stream()
+                .map(hostUri -> (Callable<Void>) () -> {
+                    try {
+                        getHostMetrics(hostUri, clusterMetricsMap);
+                    } catch (Exception e) {
+                        log.log(Level.FINE, e, () -> "Failed to download metrics: " + e.getMessage());
+                    }
+                    return null;
+                })
+                .collect(Collectors.toList());
         try {
-            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+            executor.invokeAll(jobs, 1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to retrieve metrics in time: " + e.getMessage(), e);
         }
 
         log.log(Level.FINE, () ->
