@@ -199,7 +199,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
             // Lock and update status
             ApplicationId owner = node.get().allocation().get().owner();
-            try (var lock = nodeRepository().lock(owner, Duration.ofSeconds(1))) {
+            try (var lock = nodeRepository().lock(owner)) {
                 node = getNode(hostname.toString(), owner, lock); // Re-get inside lock
                 if (node.isEmpty()) return; // Node disappeared or changed allocation
                 if (badNode) {
