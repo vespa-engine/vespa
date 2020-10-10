@@ -17,7 +17,6 @@ import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.PACKET_SEPAR
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_CODE_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_MSG_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.TIMESTAMP_KEY;
-import static com.yahoo.container.jdisc.state.StateHandlerTestBase.SNAPSHOT_INTERVAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -123,7 +122,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     }
     
     private List<JsonNode> incrementTimeAndGetJsonPackets() throws Exception {
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         String response = requestAsString("http://localhost/metrics-packets");
 
         return toJsonPackets(response);

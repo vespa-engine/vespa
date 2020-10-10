@@ -110,9 +110,9 @@ public class StateHandlerTestBase {
         return mapper.readTree(mapper.getFactory().createParser(requestAsString(requestUri)));
     }
 
-    void incrementCurrentTimeAndAssertSnapshot(long val) {
-        currentTimeMillis.addAndGet(val);
-        assertTrue("Expected a new snapshot to be generated", monitor.checkTime());
+    void advanceToNextSnapshot() {
+        currentTimeMillis.addAndGet(SNAPSHOT_INTERVAL);
+        monitor.updateSnapshot();
     }
 
 }
