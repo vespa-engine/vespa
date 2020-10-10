@@ -40,6 +40,7 @@ public:
     virtual std::vector<ValueT> find_parents_and_self(const document::BucketId& bucket) const = 0;
     virtual std::vector<ValueT> find_parents_self_and_children(const document::BucketId& bucket) const = 0;
     virtual void for_each(std::function<void(uint64_t, const ValueT&)> func) const = 0;
+    virtual bool hasKey(uint64_t key) const = 0;
     // If the underlying guard represents a snapshot, returns its monotonically
     // increasing generation. Otherwise returns 0.
     [[nodiscard]] virtual uint64_t generation() const noexcept = 0;

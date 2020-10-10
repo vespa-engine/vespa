@@ -204,6 +204,7 @@ public:
     std::vector<Entry> find_parents_and_self(const document::BucketId& bucket) const override;
     std::vector<Entry> find_parents_self_and_children(const document::BucketId& bucket) const override;
     void for_each(std::function<void(uint64_t, const Entry&)> func) const override;
+    bool hasKey(uint64_t key) const override;
     [[nodiscard]] uint64_t generation() const noexcept override;
 };
 
@@ -237,6 +238,11 @@ void BTreeBucketDatabase::ReadGuardImpl::for_each(std::function<void(uint64_t, c
 
 uint64_t BTreeBucketDatabase::ReadGuardImpl::generation() const noexcept {
     return _snapshot.generation();
+}
+
+bool
+BTreeBucketDatabase::ReadGuardImpl::hasKey(uint64_t key) const {
+    return _snapshot.hasKey(key);
 }
 
 std::unique_ptr<bucketdb::ReadGuard<Entry>> BTreeBucketDatabase::acquire_read_guard() const {

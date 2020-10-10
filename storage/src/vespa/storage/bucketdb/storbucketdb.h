@@ -34,6 +34,8 @@ public:
 
     WrappedEntry get(const document::BucketId& bucket, const char* clientId, Flag flags = NONE);
 
+    bool hasBucket(const document::BucketId& bucket) const;
+
     size_t size() const;
 
     /**

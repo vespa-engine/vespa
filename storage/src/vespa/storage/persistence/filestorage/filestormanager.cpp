@@ -180,6 +180,14 @@ FileStorManager::mapOperationToDisk(api::StorageMessage& msg, const document::Bu
     return entry;
 }
 
+bool
+FileStorManager::checkOrCreateBucket(api::BucketCommand& cmd, const document::DocumentId* docId) {
+    StorBucketDatabase &database = _component.getBucketDatabase(cmd.getBucket().getBucketSpace());
+    if (!database.hasBucket(cmd.getBucketId())) {
+        return mapOperationToBucketAndDisk(cmd, docId).exist();
+    }
+    return true;
+}
 StorBucketDatabase::WrappedEntry
 FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd, const document::DocumentId* docId)
 {
@@ -281,9 +289,8 @@ FileStorManager::onPut(const shared_ptr<api::PutCommand>& cmd)
         sendUp(reply);
         return true;
     }
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, &cmd->getDocumentId()));
-    if (entry.exist()) {
-        handlePersistenceMessage(cmd, entry->disk);
+    if (checkOrCreateBucket(*cmd, &cmd->getDocumentId())) {
+        handlePersistenceMessage(cmd, 0);
     }
     return true;
 }
@@ -300,9 +307,8 @@ FileStorManager::onUpdate(const shared_ptr<api::UpdateCommand>& cmd)
         sendUp(reply);
         return true;
     }
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, &cmd->getDocumentId()));
-    if (entry.exist()) {
-        handlePersistenceMessage(cmd, entry->disk);
+    if (checkOrCreateBucket(*cmd, &cmd->getDocumentId())) {
+        handlePersistenceMessage(cmd, 0);
     }
     return true;
 }
@@ -310,9 +316,8 @@ FileStorManager::onUpdate(const shared_ptr<api::UpdateCommand>& cmd)
 bool
 FileStorManager::onGet(const shared_ptr<api::GetCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, &cmd->getDocumentId()));
-    if (entry.exist()) {
-        handlePersistenceMessage(cmd, entry->disk);
+    if (checkOrCreateBucket(*cmd, &cmd->getDocumentId())) {
+        handlePersistenceMessage(cmd, 0);
     }
     return true;
 }
@@ -329,9 +334,8 @@ FileStorManager::onRemove(const shared_ptr<api::RemoveCommand>& cmd)
         sendUp(reply);
         return true;
     }
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, &cmd->getDocumentId()));
-    if (entry.exist()) {
-        handlePersistenceMessage(cmd, entry->disk);
+    if (checkOrCreateBucket(*cmd, &cmd->getDocumentId())) {
+        handlePersistenceMessage(cmd, 0);
     }
     return true;
 }
@@ -339,9 +343,8 @@ FileStorManager::onRemove(const shared_ptr<api::RemoveCommand>& cmd)
 bool
 FileStorManager::onRevert(const shared_ptr<api::RevertCommand>& cmd)
 {
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, 0));
-    if (entry.exist()) {
-        handlePersistenceMessage(cmd, entry->disk);
+    if (checkOrCreateBucket(*cmd, nullptr)) {
+        handlePersistenceMessage(cmd, 0);
     }
     return true;
 }

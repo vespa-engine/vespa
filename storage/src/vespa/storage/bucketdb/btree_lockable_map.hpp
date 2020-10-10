@@ -366,6 +366,7 @@ public:
     std::vector<T> find_parents_self_and_children(const document::BucketId& bucket) const override;
     void for_each(std::function<void(uint64_t, const T&)> func) const override;
     [[nodiscard]] uint64_t generation() const noexcept override;
+    bool hasKey(uint64_t key) const override;
 };
 
 template <typename T>
@@ -408,6 +409,11 @@ void BTreeLockableMap<T>::ReadGuardImpl::for_each(std::function<void(uint64_t, c
 template <typename T>
 uint64_t BTreeLockableMap<T>::ReadGuardImpl::generation() const noexcept {
     return _snapshot.generation();
+}
+
+template <typename T>
+bool BTreeLockableMap<T>::ReadGuardImpl::hasKey(uint64_t key) const {
+    return _snapshot.hasKey(key);
 }
 
 template <typename T>
