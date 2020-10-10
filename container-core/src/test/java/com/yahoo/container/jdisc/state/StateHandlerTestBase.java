@@ -22,14 +22,12 @@ import org.junit.Before;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Simon Thoresen Hult
@@ -59,8 +57,7 @@ public class StateHandlerTestBase {
                         new HealthMonitorConfig.Builder()
                                 .snapshot_interval(TimeUnit.MILLISECONDS.toSeconds(SNAPSHOT_INTERVAL))
                                 .initialStatus("up"));
-        ThreadFactory threadFactory = ignored -> mock(Thread.class);
-        this.monitor = new StateMonitor(healthMonitorConfig, timer, threadFactory);
+        this.monitor = new StateMonitor(healthMonitorConfig, timer, null);
         builder.guiceModules().install(new AbstractModule() {
 
             @Override

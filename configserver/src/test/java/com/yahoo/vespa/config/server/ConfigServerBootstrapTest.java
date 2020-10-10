@@ -2,21 +2,19 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
-import com.yahoo.jdisc.core.SystemTimer;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
@@ -24,7 +22,6 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -74,7 +71,7 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
-        StateMonitor stateMonitor = new StateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
                                                                     versionState, stateMonitor,
@@ -105,7 +102,7 @@ public class ConfigServerBootstrapTest {
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = new StateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
                                                                     versionState, stateMonitor,
@@ -136,7 +133,7 @@ public class ConfigServerBootstrapTest {
                                            .resolve("sessions/2/services.xml"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = new StateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
                                                                     stateMonitor,
@@ -180,7 +177,7 @@ public class ConfigServerBootstrapTest {
         curator.set(Path.fromString("/config/v2/tenants/" + applicationId.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = createStateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
                                                                     stateMonitor, vipStatus,
@@ -203,11 +200,6 @@ public class ConfigServerBootstrapTest {
 
     private MockRpcServer createRpcServer(ConfigserverConfig configserverConfig) throws IOException {
         return new MockRpcServer(configserverConfig.rpcport(), temporaryFolder.newFolder());
-    }
-
-    private StateMonitor createStateMonitor() {
-        return new StateMonitor(new HealthMonitorConfig(new HealthMonitorConfig.Builder().initialStatus("initializing")),
-                                new SystemTimer());
     }
 
     private static ConfigserverConfig createConfigserverConfig(TemporaryFolder temporaryFolder) throws IOException {

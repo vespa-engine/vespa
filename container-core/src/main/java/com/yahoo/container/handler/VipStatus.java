@@ -50,7 +50,7 @@ public class VipStatus {
 
     /** For testing */
     public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
-        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, new StateMonitor());
+        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, StateMonitor.createForTesting());
     }
 
     @Inject

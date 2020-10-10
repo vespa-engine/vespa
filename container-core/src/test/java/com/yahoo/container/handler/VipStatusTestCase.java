@@ -4,7 +4,6 @@ package com.yahoo.container.handler;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
-import com.yahoo.jdisc.core.SystemTimer;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -140,11 +139,9 @@ public class VipStatusTestCase {
     }
 
     private static StateMonitor createStateMonitor(StateMonitor.Status startState) {
-        return new StateMonitor(1000, startState, new SystemTimer(), runnable -> {
-            Thread thread = new Thread(runnable, "StateMonitor");
-            thread.setDaemon(true);
-            return thread;
-        }, true);
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
+        stateMonitor.status(startState);
+        return stateMonitor;
     }
 
     private static void removeFromRotation(String[] clusters, VipStatus v) {
