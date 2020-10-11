@@ -59,12 +59,12 @@ EvalFixture::ParamRepo make_params() {
         .add_vector("x", 5)
         .add_dense({{"c", 5}, {"d", 1}})
         .add_dense({{"b", 1}, {"c", 5}})
-        .add_matrix("x", 3, "y", 5, [](size_t idx){ return double((idx * 2) + 3); })
-        .add_matrix("x", 3, "y", 5, [](size_t idx){ return double((idx * 3) + 2); })
-        .add_vector("y", 5, [](size_t idx){ return double((idx * 2) + 3); })
-        .add_vector("y", 5, [](size_t idx){ return double((idx * 3) + 2); })
-        .add_matrix("y", 5, "z", 3, [](size_t idx){ return double((idx * 2) + 3); })
-        .add_matrix("y", 5, "z", 3, [](size_t idx){ return double((idx * 3) + 2); });
+        .add_matrix("x", 3, "y", 5, [](size_t idx) noexcept { return double((idx * 2) + 3); })
+        .add_matrix("x", 3, "y", 5, [](size_t idx) noexcept { return double((idx * 3) + 2); })
+        .add_vector("y", 5, [](size_t idx) noexcept { return double((idx * 2) + 3); })
+        .add_vector("y", 5, [](size_t idx) noexcept { return double((idx * 3) + 2); })
+        .add_matrix("y", 5, "z", 3, [](size_t idx) noexcept { return double((idx * 2) + 3); })
+        .add_matrix("y", 5, "z", 3, [](size_t idx) noexcept { return double((idx * 3) + 2); });
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

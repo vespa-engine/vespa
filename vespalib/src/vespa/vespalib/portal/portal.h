@@ -53,7 +53,7 @@ public:
         GetRequest(const GetRequest &rhs) = delete;
         GetRequest &operator=(const GetRequest &rhs) = delete;
         GetRequest &operator=(GetRequest &&rhs) = delete;
-        GetRequest(GetRequest &&rhs) : _conn(rhs._conn) {
+        GetRequest(GetRequest &&rhs) noexcept : _conn(rhs._conn) {
             rhs._conn = nullptr;
         }
         bool active() const { return (_conn != nullptr); }

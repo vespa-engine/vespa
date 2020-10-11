@@ -265,7 +265,7 @@ struct StorageApiRpcServiceTest : Test {
         return recv_as_put;
     }
     [[nodiscard]] std::shared_ptr<api::PutCommand> send_and_receive_put_command_at_node_1() {
-        return send_and_receive_put_command_at_node_1([]([[maybe_unused]] auto& cmd){});
+        return send_and_receive_put_command_at_node_1([]([[maybe_unused]] auto& cmd) noexcept {});
     }
 
     [[nodiscard]] std::shared_ptr<api::PutReply> respond_and_receive_put_reply_at_node_0(
@@ -283,7 +283,7 @@ struct StorageApiRpcServiceTest : Test {
 
     [[nodiscard]] std::shared_ptr<api::PutReply> respond_and_receive_put_reply_at_node_0(
             const std::shared_ptr<api::PutCommand>& cmd) {
-        return respond_and_receive_put_reply_at_node_0(cmd, []([[maybe_unused]] auto& reply){});
+        return respond_and_receive_put_reply_at_node_0(cmd, []([[maybe_unused]] auto& reply) noexcept {});
     }
 };
 

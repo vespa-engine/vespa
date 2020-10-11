@@ -57,7 +57,7 @@ struct CheckType {
 };
 
 struct Nop {
-    void operator()() const {}
+    void operator()() const noexcept {}
 };
 
 //-----------------------------------------------------------------------------
