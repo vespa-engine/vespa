@@ -32,12 +32,6 @@ public class LockAttempt {
     private volatile Optional<Instant> terminalStateInstant = Optional.empty();
     private volatile Optional<String> stackTrace = Optional.empty();
 
-    public static LockAttempt invokingAcquire(ThreadLockStats threadLockStats, String lockPath,
-                                              Duration timeout, LockMetrics lockMetrics,
-                                              boolean reentry) {
-        return new LockAttempt(threadLockStats, lockPath, timeout, Instant.now(), lockMetrics, reentry);
-    }
-
     public enum LockState {
         ACQUIRING(false), ACQUIRE_FAILED(true), TIMED_OUT(true), ACQUIRED(false), RELEASED(true),
         RELEASED_WITH_ERROR(true);
@@ -50,6 +44,12 @@ public class LockAttempt {
     }
 
     private volatile LockState lockState = LockState.ACQUIRING;
+
+    public static LockAttempt invokingAcquire(ThreadLockStats threadLockStats, String lockPath,
+                                              Duration timeout, LockMetrics lockMetrics,
+                                              boolean reentry) {
+        return new LockAttempt(threadLockStats, lockPath, timeout, Instant.now(), lockMetrics, reentry);
+    }
 
     private LockAttempt(ThreadLockStats threadLockStats, String lockPath, Duration timeout,
                         Instant callAcquireInstant, LockMetrics lockMetrics, boolean reentry) {
@@ -66,8 +66,10 @@ public class LockAttempt {
     public String getLockPath() { return lockPath; }
     public Instant getTimeAcquiredWasInvoked() { return callAcquireInstant; }
     public Duration getAcquireTimeout() { return timeout; }
+    public boolean getReentry() { return reentry; }
     public LockState getLockState() { return lockState; }
     public Optional<Instant> getTimeLockWasAcquired() { return lockAcquiredInstant; }
+    public boolean isAcquiring() { return lockAcquiredInstant.isEmpty(); }
     public Instant getTimeAcquireEndedOrNow() {
         return lockAcquiredInstant.orElseGet(() -> getTimeTerminalStateWasReached().orElseGet(Instant::now));
     }
