@@ -9,14 +9,14 @@ using vespalib::BenchmarkTimer;
 TEST("steady clock speed") {
     using clock = std::chrono::steady_clock;
     clock::time_point t;
-    double min_time_us = BenchmarkTimer::benchmark([&t](){t = clock::now();}, 1.0) * 1000000.0;
+    double min_time_us = BenchmarkTimer::benchmark([&t]() noexcept {t = clock::now();}, 1.0) * 1000000.0;
     fprintf(stderr, "approx overhead per sample (steady clock): %f us\n", min_time_us);
 }
 
 TEST("system clock speed") {
     using clock = std::chrono::system_clock;
     clock::time_point t;
-    double min_time_us = BenchmarkTimer::benchmark([&t](){t = clock::now();}, 1.0) * 1000000.0;
+    double min_time_us = BenchmarkTimer::benchmark([&t]() noexcept {t = clock::now();}, 1.0) * 1000000.0;
     fprintf(stderr, "approx overhead per sample (system clock): %f us\n", min_time_us);
 }
 

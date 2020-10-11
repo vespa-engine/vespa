@@ -278,8 +278,8 @@ void compare_test(const Inspector &expect_in, const Inspector &actual_in) {
 void compare(Input &expect, Input &actual) {
     TestList expect_tests;
     TestList actual_tests;
-    for_each_test(expect, std::bind(&TestList::add_test, &expect_tests, _1), [](Slime &){});
-    for_each_test(actual, std::bind(&TestList::add_test, &actual_tests, _1), [](Slime &){});
+    for_each_test(expect, std::bind(&TestList::add_test, &expect_tests, _1), [](Slime &) noexcept {});
+    for_each_test(actual, std::bind(&TestList::add_test, &actual_tests, _1), [](Slime &) noexcept {});
     ASSERT_TRUE(!expect_tests.list.empty());
     ASSERT_TRUE(!actual_tests.list.empty());
     ASSERT_EQUAL(expect_tests.list.size(), actual_tests.list.size());

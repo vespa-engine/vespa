@@ -40,7 +40,7 @@ struct DictionaryReadTest : public ::testing::Test {
     {
     }
     DictionaryReadTest& add(uint32_t value) {
-        auto result = dict.add(Comparator(value), [=]() { return EntryRef(value); });
+        auto result = dict.add(Comparator(value), [=]() noexcept { return EntryRef(value); });
         assert(result.inserted());
         return *this;
     }
