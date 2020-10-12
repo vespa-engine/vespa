@@ -48,7 +48,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -968,6 +967,16 @@ public class ControllerTest {
                 .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
                 .build()).deploy();
         assertEquals(Set.of(RoutingMethod.sharedLayer4), routingMethods.get());
+
+        // Global endpoint is added and includes directly routed endpoint name
+        applicationPackageBuilder = applicationPackageBuilder.endpoint("default", "default");
+        context.submit(applicationPackageBuilder.build()).deploy();
+        for (var zone : List.of(zone1, zone2)) {
+            assertEquals(Set.of("rotation-id-01",
+                    "application.tenant.global.vespa.oath.cloud"),
+                    tester.configServer().rotationNames().get(context.deploymentIdIn(zone)));
+        }
+
     }
 
     @Test
