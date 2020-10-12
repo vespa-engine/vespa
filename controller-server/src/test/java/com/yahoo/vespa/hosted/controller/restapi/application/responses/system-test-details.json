@@ -11,11 +11,6 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "No services requiring restart."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -91,11 +86,6 @@
         "at": "(ignore)",
         "type": "info",
         "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
-        "message": "No services requiring restart."
       },
       {
         "at": "(ignore)",
@@ -274,7 +264,7 @@
       }
     ]
   },
-  "lastId": 50,
+  "lastId": 48,
   "steps": {
     "deployTester": {
       "status": "succeeded",

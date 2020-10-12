@@ -37,7 +37,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -237,18 +236,6 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.of(deploymentFailed);
             }
 
-            if (prepareResponse.configChangeActions.restartActions.isEmpty())
-                logger.log("No services requiring restart.");
-            else
-                prepareResponse.configChangeActions.restartActions.stream()
-                                                                  .flatMap(action -> action.services.stream())
-                                                                  .map(service -> service.hostName)
-                                                                  .sorted().distinct()
-                                                                  .map(HostName::from)
-                                                                  .forEach(hostname -> {
-                                                                      controller.applications().restart(new DeploymentId(id, type.zone(controller.system())), new RestartFilter().withHostName(Optional.of(hostname)));
-                                                                      logger.log("Schedule service restart on host " + hostname.value() + ".");
-                                                                  });
             logger.log("Deployment successful.");
             if (prepareResponse.message != null)
                 logger.log(prepareResponse.message);

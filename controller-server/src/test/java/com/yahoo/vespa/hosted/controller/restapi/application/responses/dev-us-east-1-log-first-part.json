@@ -11,11 +11,6 @@
       {
         "at": 0,
         "type": "info",
-        "message": "No services requiring restart."
-      },
-      {
-        "at": 0,
-        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -54,7 +49,7 @@
       }
     ]
   },
-  "lastId": 8,
+  "lastId": 7,
   "steps": {
     "deployReal": {
       "status": "succeeded",

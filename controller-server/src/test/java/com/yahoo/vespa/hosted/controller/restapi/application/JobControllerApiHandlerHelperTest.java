@@ -161,7 +161,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.runner().run();
 
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
-        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), "9"), "dev-us-east-1-log-second-part.json");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), "8"), "dev-us-east-1-log-second-part.json");
     }
 
     @Test

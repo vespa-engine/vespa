@@ -355,12 +355,6 @@ public class Flags {
             "Takes effect at next run of maintainer",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DEPLOY_WITH_INTERNAL_RESTART = defineFeatureFlag(
-            "deploy-with-internal-restart", false,
-            "Whether controller should deploy application with internal restart parameter set",
-            "Takes effect on next deploy from controller",
-            APPLICATION_ID, ZONE_ID);
-
     public static final UnboundBooleanFlag USE_NEW_RESTAPI_HANDLER = defineFeatureFlag(
             "use-new-restapi-handler",
             false,
