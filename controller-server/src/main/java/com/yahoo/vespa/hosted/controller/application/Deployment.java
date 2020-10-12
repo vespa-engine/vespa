@@ -22,19 +22,21 @@ public class Deployment {
     private final Instant deployTime;
     private final DeploymentMetrics metrics;
     private final DeploymentActivity activity;
+    private final QuotaUsage quota;
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
-        this(zone, applicationVersion, version, deployTime, DeploymentMetrics.none, DeploymentActivity.none);
+        this(zone, applicationVersion, version, deployTime, DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none);
     }
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
-                      DeploymentMetrics metrics,  DeploymentActivity activity) {
+                      DeploymentMetrics metrics,  DeploymentActivity activity, QuotaUsage quota) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
         this.deployTime = Objects.requireNonNull(deployTime, "deployTime cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
+        this.quota = Objects.requireNonNull(quota, "usage cannot be null");
     }
 
     /** Returns the zone this was deployed to */
@@ -57,13 +59,20 @@ public class Deployment {
     /** Returns activity for this */
     public DeploymentActivity activity() { return activity; }
 
+    /** Returns quota usage for this */
+    public QuotaUsage quota() { return quota; }
+
     public Deployment recordActivityAt(Instant instant) {
         return new Deployment(zone, applicationVersion, version, deployTime, metrics,
-                              activity.recordAt(instant, metrics));
+                              activity.recordAt(instant, metrics), quota);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity);
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota);
+    }
+
+    public Deployment withQuota(QuotaUsage quota) {
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota);
     }
 
     @Override

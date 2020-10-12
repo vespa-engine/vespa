@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -143,6 +144,9 @@ public class ApplicationSerializer {
     private static final String rotationStateField = "state";
     private static final String statusField = "status";
 
+    // Quota usage fields
+    private static final String quotaUsageRateField = "quotaUsageRate";
+
     // A cache of deserialized applications.
     //
     // Deserializing an application from slime is expensive, particularly XML fields, such as DeploymentSpec and
@@ -203,6 +207,7 @@ public class ApplicationSerializer {
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
         deployment.activity().lastQueriesPerSecond().ifPresent(value -> object.setDouble(lastQueriesPerSecondField, value));
         deployment.activity().lastWritesPerSecond().ifPresent(value -> object.setDouble(lastWritesPerSecondField, value));
+        object.setDouble(quotaUsageRateField, deployment.quota().rate());
     }
 
     private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
@@ -368,7 +373,8 @@ public class ApplicationSerializer {
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
                                                         Serializers.optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
-                                                        Serializers.optionalDouble(deploymentObject.field(lastWritesPerSecondField))));
+                                                        Serializers.optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
+                              QuotaUsage.create(Serializers.optionalDouble(deploymentObject.field(quotaUsageRateField))));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {

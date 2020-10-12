@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -100,7 +101,8 @@ public class ApplicationSerializerTest {
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
-                                                                 OptionalDouble.of(200), OptionalDouble.of(10))));
+                                                                 OptionalDouble.of(200), OptionalDouble.of(10)),
+                                       QuotaUsage.create(OptionalDouble.of(23.5))));
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                                                         new RotationStatus.Targets(
@@ -193,6 +195,9 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).deployments().get(zone2).metrics().writeLatencyMillis(), serialized.require(id1.instance()).deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
         assertEquals(original.require(id1.instance()).deployments().get(zone2).metrics().instant(), serialized.require(id1.instance()).deployments().get(zone2).metrics().instant());
         assertEquals(original.require(id1.instance()).deployments().get(zone2).metrics().warnings(), serialized.require(id1.instance()).deployments().get(zone2).metrics().warnings());
+
+        // Test quota
+        assertEquals(original.require(id1.instance()).deployments().get(zone2).quota().rate(), serialized.require(id1.instance()).deployments().get(zone2).quota().rate(), 0.001);
     }
 
     @Test

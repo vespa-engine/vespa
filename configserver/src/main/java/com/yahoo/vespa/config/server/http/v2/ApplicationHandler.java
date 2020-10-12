@@ -52,6 +52,7 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/quota",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
             "http://*/application/v2/tenant/*/application/*")
             .map(UriPattern::new)
@@ -155,6 +156,11 @@ public class ApplicationHandler extends HttpHandler {
                 default:
                     throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
             }
+        }
+
+        if (isQuotaUsageRequest(request)) {
+            var quotaUsageRate = applicationRepository.getQuotaUsageRate(applicationId);
+            return new QuotaUsageResponse(quotaUsageRate);
         }
 
         return getApplicationResponse(applicationId);
@@ -267,6 +273,11 @@ public class ApplicationHandler extends HttpHandler {
                request.getUri().getPath().contains("/tester/run/");
     }
 
+    private static boolean isQuotaUsageRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() > 7 &&
+                request.getUri().getPath().contains("/quota");
+    }
+
     private static String getHostNameFromRequest(HttpRequest req) {
         BindingMatch<?> bm = getBindingMatch(req);
         return bm.group(7);
@@ -343,4 +354,10 @@ public class ApplicationHandler extends HttpHandler {
         }
     }
 
+    private static class QuotaUsageResponse extends JSONResponse {
+        QuotaUsageResponse(double usageRate) {
+            super(Response.Status.OK);
+            object.setDouble("rate", usageRate);
+        }
+    }
 }

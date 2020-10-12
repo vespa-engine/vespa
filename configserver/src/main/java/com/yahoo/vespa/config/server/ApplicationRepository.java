@@ -11,6 +11,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InfraDeployer;
@@ -979,6 +980,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return tenant.getSessionRepository().getLocalSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
+    }
+
+    public double getQuotaUsageRate(ApplicationId applicationId) {
+        var application = getApplication(applicationId);
+        return application.getModel().provisioned().all().values().stream()
+                .map(Capacity::maxResources)
+                .mapToDouble(resources -> resources.nodes() * resources.nodeResources().cost())
+                .sum();
     }
 
     private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {

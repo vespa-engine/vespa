@@ -237,7 +237,8 @@ public class DeploymentStatus {
                                                                             change.platform().orElse(existing.version()),
                                                                             existing.at(),
                                                                             existing.metrics(),
-                                                                            existing.activity())
+                                                                            existing.activity(),
+                                                                            existing.quota())
                                                            : existing);
             if (   job.application().instance().equals(instance)
                 && job.type().isProduction()

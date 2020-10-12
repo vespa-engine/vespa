@@ -133,4 +133,7 @@ public interface ConfigServer {
     boolean isTesterReady(DeploymentId deployment);
 
     Optional<TestReport> getTestReport(DeploymentId deployment);
+
+    /** Get maximum resources consumed */
+    QuotaUsage getQuotaUsage(DeploymentId deploymentId);
 }
