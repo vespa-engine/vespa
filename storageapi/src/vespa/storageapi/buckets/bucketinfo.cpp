@@ -2,8 +2,11 @@
 #include "bucketinfo.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 namespace storage::api {
+
+static_assert(sizeof(BucketInfo) == 32, "BucketInfo should be 32 bytes");
 
 BucketInfo::BucketInfo() noexcept
     : _lastModified(0),
@@ -69,10 +72,6 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
       _active(active)
 {}
 
-BucketInfo::BucketInfo(const BucketInfo &) noexcept = default;
-BucketInfo & BucketInfo::operator = (const BucketInfo &) noexcept = default;
-BucketInfo::~BucketInfo() = default;
-
 bool
 BucketInfo::operator==(const BucketInfo& info) const
 {
@@ -86,9 +85,10 @@ BucketInfo::operator==(const BucketInfo& info) const
 }
 
 // TODO: add ready/active to printing
-void
-BucketInfo::print(vespalib::asciistream& out, const PrintProperties&) const
+vespalib::string
+BucketInfo::toString() const
 {
+    vespalib::asciistream out;
     out << "BucketInfo(";
     if (valid()) {
         out << "crc 0x" << vespalib::hex << _checksum << vespalib::dec
@@ -108,6 +108,7 @@ BucketInfo::print(vespalib::asciistream& out, const PrintProperties&) const
         out << "invalid";
     }
     out << ")";
+    return out.str();
 }
 
 void
@@ -122,6 +123,11 @@ BucketInfo::printXml(vespalib::XmlOutputStream& xos) const
         << XmlAttribute("ready", _ready)
         << XmlAttribute("active", _active)
         << XmlAttribute("lastmodified", _lastModified);
+}
+
+std::ostream &
+operator << (std::ostream & os, const BucketInfo & bucketInfo) {
+    return os << bucketInfo.toString();
 }
 
 }

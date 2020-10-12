@@ -3,8 +3,7 @@
 #include "bucketinforeply.h"
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 BucketInfoReply::BucketInfoReply(const BucketInfoCommand& cmd,
                                  const ReturnCode& code)
@@ -24,5 +23,4 @@ BucketInfoReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
+}

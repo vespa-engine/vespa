@@ -19,7 +19,7 @@
 
 namespace storage::api {
 
-class BucketInfo : public vespalib::AsciiPrintable
+class BucketInfo
 {
     Timestamp _lastModified;
     uint32_t _checksum;
@@ -41,9 +41,6 @@ public:
     BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
                uint32_t metaCount, uint32_t usedFileSize,
                bool ready, bool active, Timestamp lastModified) noexcept;
-    BucketInfo(const BucketInfo &) noexcept;
-    BucketInfo & operator = (const BucketInfo &) noexcept;
-    ~BucketInfo();
 
     Timestamp getLastModified() const { return _lastModified; }
     uint32_t getChecksum() const { return _checksum; }
@@ -78,12 +75,10 @@ public:
     bool empty() const {
         return _metaCount == 0 && _usedFileSize == 0 && _checksum == 0;
     }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override {
-        vespalib::AsciiPrintable::print(out, verbose, indent);
-    }
-    void print(vespalib::asciistream&, const PrintProperties&) const override;
-
+    vespalib::string toString() const;
     void printXml(vespalib::XmlOutputStream&) const;
 };
+
+std::ostream & operator << (std::ostream & os, const BucketInfo & bucketInfo);
 
 }
