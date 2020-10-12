@@ -27,7 +27,7 @@ namespace {
 
 void my_cblas_double_multi_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     using CT = double;
-    const DenseMultiMatMulFunction &self = *((const DenseMultiMatMulFunction *)(param));
+    const DenseMultiMatMulFunction &self = unwrap_param<DenseMultiMatMulFunction>(param);
     size_t lhs_block_size = self.lhs_size() * self.common_size();
     size_t rhs_block_size = self.rhs_size() * self.common_size();
     size_t dst_block_size = self.lhs_size() * self.rhs_size();
@@ -48,7 +48,7 @@ void my_cblas_double_multi_matmul_op(InterpretedFunction::State &state, uint64_t
 
 void my_cblas_float_multi_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     using CT = float;
-    const DenseMultiMatMulFunction &self = *((const DenseMultiMatMulFunction *)(param));
+    const DenseMultiMatMulFunction &self = unwrap_param<DenseMultiMatMulFunction>(param);
     size_t lhs_block_size = self.lhs_size() * self.common_size();
     size_t rhs_block_size = self.rhs_size() * self.common_size();
     size_t dst_block_size = self.lhs_size() * self.rhs_size();

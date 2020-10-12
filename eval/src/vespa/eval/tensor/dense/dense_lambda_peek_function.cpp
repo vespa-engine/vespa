@@ -32,15 +32,15 @@ struct Self {
 
 template <typename DST_CT, typename SRC_CT>
 void my_lambda_peek_op(InterpretedFunction::State &state, uint64_t param) {
-    const auto *self = (const Self *)(param);
-    const std::vector<uint32_t> &lookup_table = self->table_token->get();
+    const auto &self = unwrap_param<Self>(param);
+    const std::vector<uint32_t> &lookup_table = self.table_token->get();
     auto src_cells = state.peek(0).cells().typify<SRC_CT>();
     ArrayRef<DST_CT> dst_cells = state.stash.create_array<DST_CT>(lookup_table.size());
     DST_CT *dst = &dst_cells[0];
     for (uint32_t idx: lookup_table) {
         *dst++ = src_cells[idx];
     }
-    state.pop_push(state.stash.create<DenseTensorView>(self->result_type, TypedCells(dst_cells)));
+    state.pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 struct MyLambdaPeekOp {

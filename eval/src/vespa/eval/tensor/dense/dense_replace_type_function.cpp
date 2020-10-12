@@ -16,9 +16,9 @@ using namespace eval::tensor_function;
 namespace {
 
 void my_replace_type_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const ValueType *type = (const ValueType *)(param);
+    const ValueType &type = unwrap_param<ValueType>(param);
     TypedCells cells = state.peek(0).cells();
-    state.pop_push(state.stash.create<DenseTensorView>(*type, cells));
+    state.pop_push(state.stash.create<DenseTensorView>(type, cells));
 }
 
 } // namespace vespalib::tensor::<unnamed>

@@ -17,10 +17,10 @@ namespace {
 
 template <typename CT>
 void my_cell_range_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const auto *self = (const DenseCellRangeFunction *)(param);
+    const auto &self = unwrap_param<DenseCellRangeFunction>(param);
     auto old_cells = state.peek(0).cells().typify<CT>();
-    ConstArrayRef<CT> new_cells(&old_cells[self->offset()], self->length());
-    state.pop_push(state.stash.create<DenseTensorView>(self->result_type(), TypedCells(new_cells)));
+    ConstArrayRef<CT> new_cells(&old_cells[self.offset()], self.length());
+    state.pop_push(state.stash.create<DenseTensorView>(self.result_type(), TypedCells(new_cells)));
 }
 
 struct MyCellRangeOp {

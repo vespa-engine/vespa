@@ -21,11 +21,12 @@ namespace {
 
 template <typename CT>
 void my_tensor_peek_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const auto *spec = (const std::vector<std::pair<int64_t,size_t>> *)(param);
+    using SpecVector = std::vector<std::pair<int64_t,size_t>>;
+    const SpecVector &spec = unwrap_param<SpecVector>(param);
     size_t idx = 0;
     size_t factor = 1;
     bool valid = true;
-    for (const auto &dim: *spec) {
+    for (const auto &dim: spec) {
         if (dim.first >= 0) {
             idx += (dim.first * factor);
         } else {

@@ -78,7 +78,7 @@ struct CompiledParams {
 
 template <typename CT>
 void my_compiled_lambda_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const CompiledParams &params = *(const CompiledParams*)param;
+    const CompiledParams &params = unwrap_param<CompiledParams>(param);
     std::vector<double> args(params.result_type.dimensions().size() + params.bindings.size(), 0.0);
     double *bind_next = &args[params.result_type.dimensions().size()];
     for (size_t binding: params.bindings) {
@@ -117,7 +117,7 @@ struct InterpretedParams {
 
 template <typename CT>
 void my_interpreted_lambda_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const InterpretedParams &params = *(const InterpretedParams*)param;
+    const InterpretedParams &params = unwrap_param<InterpretedParams>(param);
     std::vector<double> labels(params.result_type.dimensions().size(), 0.0);
     ParamProxy param_proxy(labels, *state.params, params.bindings);
     InterpretedFunction::Context ctx(params.fun);

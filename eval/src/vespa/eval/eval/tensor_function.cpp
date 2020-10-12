@@ -52,17 +52,6 @@ using Instruction = InterpretedFunction::Instruction;
 
 //-----------------------------------------------------------------------------
 
-template <typename T, typename IN>
-uint64_t wrap_param(const IN &value_in) {
-    const T &value = value_in;
-    return (uint64_t)&value;
-}
-
-template <typename T>
-const T &unwrap_param(uint64_t param) { return *((const T *)param); }
-
-//-----------------------------------------------------------------------------
-
 uint64_t to_param(map_fun_t value) { return (uint64_t)value; }
 uint64_t to_param(join_fun_t value) { return (uint64_t)value; }
 map_fun_t to_map_fun(uint64_t param) { return (map_fun_t)param; }

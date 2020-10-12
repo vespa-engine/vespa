@@ -21,14 +21,14 @@ namespace {
 
 template <typename CT>
 void my_tensor_create_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const auto *self = (const DenseTensorCreateFunction::Self *)(param);
-    size_t pending_cells = self->result_size;
+    const auto &self = unwrap_param<DenseTensorCreateFunction::Self>(param);
+    size_t pending_cells = self.result_size;
     ArrayRef<CT> cells = state.stash.create_array<CT>(pending_cells);
     while (pending_cells-- > 0) {
         cells[pending_cells] = (CT) state.peek(0).as_double();
         state.stack.pop_back();
     }
-    const Value &result = state.stash.create<DenseTensorView>(self->result_type, TypedCells(cells)); 
+    const Value &result = state.stash.create<DenseTensorView>(self.result_type, TypedCells(cells)); 
     state.stack.emplace_back(result);
 }
 
