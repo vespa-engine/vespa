@@ -7,5 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class QuotaUsage {
+    public static final QuotaUsage zero = new QuotaUsage() {{ this.rate = 0; }};
+
     public double rate;
 }
