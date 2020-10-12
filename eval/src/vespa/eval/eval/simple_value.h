@@ -28,6 +28,7 @@ private:
     size_t _subspace_size;
     std::map<Labels,size_t> _index;
 protected:
+    size_t num_mapped_dims() const { return _num_mapped_dims; }
     size_t subspace_size() const { return _subspace_size; }
     void add_mapping(ConstArrayRef<vespalib::stringref> addr);
 public:
@@ -53,6 +54,10 @@ public:
     TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override;
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
+        if (num_mapped_dims() == 0) {
+            assert(size() == 1);
+        }
+        assert(_cells.size() == (size() * subspace_size()));
         ValueBuilder<T>* me = this;
         assert(me == self.get());
         self.release();

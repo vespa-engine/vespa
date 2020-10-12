@@ -142,7 +142,7 @@ DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &result_typ
 }
 
 eval::InterpretedFunction::Instruction
-DenseXWProductFunction::compile_self(const TensorEngine &, Stash &stash) const
+DenseXWProductFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
     using MyTypify = TypifyValue<eval::TypifyCellType,vespalib::TypifyBool>;

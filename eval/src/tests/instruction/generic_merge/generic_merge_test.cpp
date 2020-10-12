@@ -61,7 +61,7 @@ TensorSpec perform_generic_merge(const TensorSpec &a, const TensorSpec &b, join_
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
     auto my_op = GenericMerge::make_instruction(lhs->type(), rhs->type(), fun, factory, stash);
-    InterpretedFunction::EvalSingle single(my_op);
+    InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs, *rhs})));
 }
 

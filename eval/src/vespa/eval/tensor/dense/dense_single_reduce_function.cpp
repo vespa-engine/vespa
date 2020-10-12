@@ -95,7 +95,7 @@ DenseSingleReduceFunction::DenseSingleReduceFunction(const ValueType &result_typ
 DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 
 InterpretedFunction::Instruction
-DenseSingleReduceFunction::compile_self(const TensorEngine &, Stash &stash) const
+DenseSingleReduceFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
 {
     auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_type(), _aggr);
     auto &params = stash.create<Params>(result_type(), child().result_type(), _dim_idx);

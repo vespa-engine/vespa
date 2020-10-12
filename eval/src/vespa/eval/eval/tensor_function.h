@@ -107,7 +107,7 @@ struct TensorFunction
      * @param engine the tensor engine used for evaluation
      * @param stash heterogeneous object store
      **/
-    virtual InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const = 0;
+    virtual InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const = 0;
 
     // for debug dumping
     vespalib::string as_string() const;
@@ -188,7 +188,7 @@ public:
     ConstValue(const Value &value_in) : Super(value_in.type()), _value(value_in) {}
     const Value &value() const { return _value; }
     bool result_is_mutable() const override { return false; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -204,7 +204,7 @@ public:
         : Super(result_type_in), _param_idx(param_idx_in) {}
     size_t param_idx() const { return _param_idx; }
     bool result_is_mutable() const override { return false; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -225,7 +225,7 @@ public:
     Aggr aggr() const { return _aggr; }
     const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -243,7 +243,7 @@ public:
         : Super(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -262,7 +262,7 @@ public:
         : Super(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -281,7 +281,7 @@ public:
         : Super(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -300,7 +300,7 @@ public:
         : Super(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
     const vespalib::string &dimension() const { return _dimension; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -321,7 +321,7 @@ public:
     }
     const std::map<TensorSpec::Address, Child> &spec() const { return _spec; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
@@ -346,7 +346,7 @@ public:
         return create_spec_impl(result_type(), params, _bindings, fun);
     }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -380,7 +380,7 @@ public:
     const std::map<vespalib::string, MyLabel> &spec() const { return _spec; }
     const ValueType &param_type() const { return _param.get().result_type(); }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
@@ -402,7 +402,7 @@ public:
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
     bool result_is_mutable() const override { return true; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
@@ -428,7 +428,7 @@ public:
         return (true_child().result_is_mutable() &&
                 false_child().result_is_mutable());
     }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &engine, Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
 

@@ -72,7 +72,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         }
     }
 
-    void verify_result(const TensorEngine &engine,
+    void verify_result(EngineOrFactory engine,
                        const Function &function,
                        bool typed,
                        const vespalib::string &description,

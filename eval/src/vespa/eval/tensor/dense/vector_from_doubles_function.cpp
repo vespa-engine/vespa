@@ -92,7 +92,7 @@ VectorFromDoublesFunction::push_children(std::vector<Child::CREF> &target) const
 }
 
 eval::InterpretedFunction::Instruction
-VectorFromDoublesFunction::compile_self(const TensorEngine &, Stash &) const
+VectorFromDoublesFunction::compile_self(eval::EngineOrFactory, Stash &) const
 {
     return eval::InterpretedFunction::Instruction(my_vector_from_doubles_op, wrap_param<VectorFromDoublesFunction::Self>(_self));
 }

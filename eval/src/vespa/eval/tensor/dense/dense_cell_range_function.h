@@ -24,7 +24,7 @@ public:
     ~DenseCellRangeFunction() override;
     size_t offset() const { return _offset; }
     size_t length() const { return _length; }
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
 };
 

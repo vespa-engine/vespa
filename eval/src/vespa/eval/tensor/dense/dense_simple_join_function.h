@@ -32,7 +32,7 @@ public:
     Overlap overlap() const { return _overlap; }
     bool primary_is_mutable() const;
     size_t factor() const;
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

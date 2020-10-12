@@ -73,7 +73,7 @@ DenseDotProductFunction::DenseDotProductFunction(const eval::TensorFunction &lhs
 }
 
 eval::InterpretedFunction::Instruction
-DenseDotProductFunction::compile_self(const TensorEngine &, Stash &) const
+DenseDotProductFunction::compile_self(eval::EngineOrFactory, Stash &) const
 {
     auto op = my_select(lhs().result_type().cell_type(), rhs().result_type().cell_type());
     return eval::InterpretedFunction::Instruction(op);

@@ -23,7 +23,7 @@ public:
                             const eval::TensorFunction &child,
                             std::shared_ptr<eval::Function const> idx_fun);
     ~DenseLambdaPeekFunction() override;
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     vespalib::string idx_fun_dump() const;
     bool result_is_mutable() const override { return true; }
 };

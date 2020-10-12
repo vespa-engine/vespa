@@ -182,6 +182,10 @@ struct FastValue final : Value, ValueBuilder<T> {
         return ArrayRef<T>(&my_cells[old_size], my_subspace_size);
     }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
+        if (my_index.map.num_dims() == 0) {
+            assert(my_index.map.size() == 1);
+        }
+        assert(my_cells.size() == (my_index.map.size() * my_subspace_size));
         ValueBuilder<T>* me = this;
         assert(me == self.get());
         self.release();

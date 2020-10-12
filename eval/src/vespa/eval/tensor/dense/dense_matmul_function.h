@@ -50,7 +50,7 @@ public:
     bool lhs_common_inner() const { return _lhs_common_inner; }
     bool rhs_common_inner() const { return _rhs_common_inner; }
 
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };

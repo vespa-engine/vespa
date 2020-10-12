@@ -23,7 +23,7 @@ struct ChildMock : Leaf {
     bool is_mutable;
     ChildMock(const ValueType &type) : Leaf(type), is_mutable(true) {}
     bool result_is_mutable() const override { return is_mutable; }
-    InterpretedFunction::Instruction compile_self(const TensorEngine &, Stash &) const override { abort(); }
+    InterpretedFunction::Instruction compile_self(EngineOrFactory, Stash &) const override { abort(); }
 };
 
 struct Fixture {

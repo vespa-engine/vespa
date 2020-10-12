@@ -95,7 +95,7 @@ DenseNumberJoinFunction::inplace() const
 }
 
 Instruction
-DenseNumberJoinFunction::compile_self(const TensorEngine &, Stash &) const
+DenseNumberJoinFunction::compile_self(eval::EngineOrFactory, Stash &) const
 {
     auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_type(), function(),
                                                  inplace(), (_primary == Primary::RHS));

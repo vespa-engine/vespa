@@ -20,11 +20,11 @@ using namespace nodes;
 
 struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     Stash              &stash;
-    const TensorEngine &tensor_engine;
+    EngineOrFactory     tensor_engine;
     const NodeTypes    &types;
     std::vector<TensorFunction::CREF> stack;
 
-    TensorFunctionBuilder(Stash &stash_in, const TensorEngine &tensor_engine_in, const NodeTypes &types_in)
+    TensorFunctionBuilder(Stash &stash_in, EngineOrFactory tensor_engine_in, const NodeTypes &types_in)
         : stash(stash_in), tensor_engine(tensor_engine_in), types(types_in), stack() {}
 
     //-------------------------------------------------------------------------
@@ -356,7 +356,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
 } // namespace vespalib::eval::<unnamed>
 
-const TensorFunction &make_tensor_function(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types, Stash &stash) {
+const TensorFunction &make_tensor_function(EngineOrFactory engine, const nodes::Node &root, const NodeTypes &types, Stash &stash) {
     TensorFunctionBuilder builder(stash, engine, types);
     root.traverse(builder);
     assert(builder.stack.size() == 1);

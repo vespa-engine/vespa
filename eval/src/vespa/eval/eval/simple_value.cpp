@@ -214,7 +214,6 @@ SimpleValueT<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr)
     size_t old_size = _cells.size();
     add_mapping(addr);
     _cells.resize(old_size + subspace_size());
-    assert(_cells.size() == (size() * subspace_size()));
     return ArrayRef<T>(&_cells[old_size], subspace_size());
 }
 
