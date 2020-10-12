@@ -36,7 +36,7 @@ DenseReplaceTypeFunction::~DenseReplaceTypeFunction()
 eval::InterpretedFunction::Instruction
 DenseReplaceTypeFunction::compile_self(const TensorEngine &, Stash &) const
 {
-    return eval::InterpretedFunction::Instruction(my_replace_type_op, (uint64_t)&(result_type()));
+    return eval::InterpretedFunction::Instruction(my_replace_type_op, wrap_param<ValueType>(result_type()));
 }
 
 const DenseReplaceTypeFunction &

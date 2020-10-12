@@ -44,12 +44,11 @@ DenseCellRangeFunction::~DenseCellRangeFunction() = default;
 eval::InterpretedFunction::Instruction
 DenseCellRangeFunction::compile_self(const TensorEngine &, Stash &) const
 {
-    static_assert(sizeof(uint64_t) == sizeof(this));
     assert(result_type().cell_type() == child().result_type().cell_type());
 
     using MyTypify = eval::TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyCellRangeOp>(result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)this);
+    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseCellRangeFunction>(*this));
 }
 
 } // namespace vespalib::tensor

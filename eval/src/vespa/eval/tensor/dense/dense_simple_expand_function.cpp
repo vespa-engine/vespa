@@ -109,8 +109,7 @@ DenseSimpleExpandFunction::compile_self(const TensorEngine &, Stash &stash) cons
     auto op = typify_invoke<4,MyTypify,MyGetFun>(lhs().result_type().cell_type(),
                                                  rhs().result_type().cell_type(),
                                                  function(), (_inner == Inner::RHS));
-    static_assert(sizeof(uint64_t) == sizeof(&params));
-    return Instruction(op, (uint64_t)(&params));
+    return Instruction(op, wrap_param<ExpandParams>(params));
 }
 
 const TensorFunction &

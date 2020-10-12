@@ -197,8 +197,7 @@ DenseSimpleJoinFunction::compile_self(const TensorEngine &, Stash &stash) const
                                                  rhs().result_type().cell_type(),
                                                  function(), (_primary == Primary::RHS),
                                                  _overlap, primary_is_mutable());
-    static_assert(sizeof(uint64_t) == sizeof(&params));
-    return Instruction(op, (uint64_t)(&params));
+    return Instruction(op, wrap_param<JoinParams>(params));
 }
 
 const TensorFunction &

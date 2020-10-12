@@ -99,8 +99,7 @@ DenseSingleReduceFunction::compile_self(const TensorEngine &, Stash &stash) cons
 {
     auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_type(), _aggr);
     auto &params = stash.create<Params>(result_type(), child().result_type(), _dim_idx);
-    static_assert(sizeof(uint64_t) == sizeof(&params));
-    return InterpretedFunction::Instruction(op, (uint64_t)&params);
+    return InterpretedFunction::Instruction(op, wrap_param<Params>(params));
 }
 
 const TensorFunction &

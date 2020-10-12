@@ -167,14 +167,12 @@ DenseLambdaFunction::compile_self(const TensorEngine &engine, Stash &stash) cons
     if (mode == EvalMode::COMPILED) {
         CompiledParams &params = stash.create<CompiledParams>(_lambda);
         auto op = typify_invoke<1,MyTypify,MyCompiledLambdaOp>(result_type().cell_type());
-        static_assert(sizeof(&params) == sizeof(uint64_t));
-        return Instruction(op, (uint64_t)(&params));
+        return Instruction(op, wrap_param<CompiledParams>(params));
     } else {
         assert(mode == EvalMode::INTERPRETED);
         InterpretedParams &params = stash.create<InterpretedParams>(_lambda);
         auto op = typify_invoke<1,MyTypify,MyInterpretedLambdaOp>(result_type().cell_type());
-        static_assert(sizeof(&params) == sizeof(uint64_t));
-        return Instruction(op, (uint64_t)(&params));
+        return Instruction(op, wrap_param<InterpretedParams>(params));
     }
 }
 

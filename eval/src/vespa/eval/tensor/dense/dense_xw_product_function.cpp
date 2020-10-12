@@ -149,7 +149,7 @@ DenseXWProductFunction::compile_self(const TensorEngine &, Stash &stash) const
     auto op = typify_invoke<3,MyTypify,MyXWProductOp>(lhs().result_type().cell_type(),
                                                       rhs().result_type().cell_type(),
                                                       _common_inner);
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
+    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseXWProductFunction::Self>(self));
 }
 
 void

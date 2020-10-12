@@ -71,11 +71,9 @@ DenseTensorCreateFunction::push_children(std::vector<Child::CREF> &target) const
 eval::InterpretedFunction::Instruction
 DenseTensorCreateFunction::compile_self(const TensorEngine &, Stash &) const
 {
-    static_assert(sizeof(uint64_t) == sizeof(&_self));
-
     using MyTypify = eval::TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorCreateOp>(result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)&_self);
+    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseTensorCreateFunction::Self>(_self));
 }
 
 const TensorFunction &

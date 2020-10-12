@@ -66,9 +66,8 @@ DenseLambdaPeekFunction::compile_self(const TensorEngine &, Stash &stash) const
     const Self &self = stash.create<Self>(result_type(), *_idx_fun);
     using MyTypify = eval::TypifyCellType;
     auto op = typify_invoke<2,MyTypify,MyLambdaPeekOp>(result_type().cell_type(), child().result_type().cell_type());
-    static_assert(sizeof(uint64_t) == sizeof(&self));
     assert(child().result_type().is_dense());
-    return InterpretedFunction::Instruction(op, (uint64_t)&self);
+    return InterpretedFunction::Instruction(op, wrap_param<Self>(self));
 }
 
 vespalib::string
