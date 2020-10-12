@@ -198,7 +198,6 @@ public:
      * Returns the next event from the event queue
      * @param   msg             The next event
      * @param   timeout         Millisecs to wait if the queue is empty
-     * (0 = don't wait, -1 = forever)
      * @return  true or false if the queue was empty.
      */
     bool getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration timeout);
