@@ -138,7 +138,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                 : data.map(bytes -> Long.parseLong(Utf8.toString(bytes)));
     }
 
-    public boolean hasLocalSession(long sessionId) {
+    public boolean sessionExistsInFileSystem(long sessionId) {
         return Files.exists(Paths.get(tenantFileSystemDirs.sessionsPath().getAbsolutePath(), String.valueOf(sessionId)));
     }
 
