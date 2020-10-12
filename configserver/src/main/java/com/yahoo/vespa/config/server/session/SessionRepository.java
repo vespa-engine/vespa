@@ -168,19 +168,6 @@ public class SessionRepository {
         return actions;
     }
 
-    private LocalSession createSessionFromApplication(ApplicationPackage applicationPackage,
-                                                      long sessionId,
-                                                      TimeoutBudget timeoutBudget,
-                                                      Clock clock) {
-        log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        sessionZKClient.createNewSession(clock.instant());
-        Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
-        waiter.awaitCompletion(timeoutBudget.timeLeft());
-        return session;
-    }
-
     /**
      * Creates a new deployment session from an already existing session.
      *
@@ -199,7 +186,7 @@ public class SessionRepository {
 
         Optional<Long> activeSessionId = getActiveSessionId(existingApplicationId);
         logger.log(Level.FINE, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
-        LocalSession session = create(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
+        LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
         // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
         if (existingSession.getApplicationPackageReference() != null) {
@@ -222,7 +209,7 @@ public class SessionRepository {
     public LocalSession createSessionFromApplicationPackage(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
         applicationRepo.createApplication(applicationId);
         Optional<Long> activeSessionId = applicationRepo.activeSessionOf(applicationId);
-        return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
+        return createSessionFromApplication(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
     }
 
     /**
@@ -547,14 +534,23 @@ public class SessionRepository {
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 
-    private LocalSession create(File applicationFile, ApplicationId applicationId, Optional<Long> currentlyActiveSessionId,
-                                boolean internalRedeploy, TimeoutBudget timeoutBudget) {
+    private LocalSession createSessionFromApplication(File applicationFile,
+                                                      ApplicationId applicationId,
+                                                      Optional<Long> currentlyActiveSessionId,
+                                                      boolean internalRedeploy,
+                                                      TimeoutBudget timeoutBudget) {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
             ApplicationPackage app = createApplicationPackage(applicationFile, applicationId,
                                                               sessionId, currentlyActiveSessionId, internalRedeploy);
-            return createSessionFromApplication(app, sessionId, timeoutBudget, clock);
+            log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
+            SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+            sessionZKClient.createNewSession(clock.instant());
+            Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
+            LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
+            waiter.awaitCompletion(timeoutBudget.timeLeft());
+            return session;
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
