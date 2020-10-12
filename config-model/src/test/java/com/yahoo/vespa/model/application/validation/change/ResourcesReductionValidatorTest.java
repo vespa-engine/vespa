@@ -19,7 +19,7 @@ import static org.junit.Assert.fail;
  */
 public class ResourcesReductionValidatorTest {
 
-    private final InMemoryProvisioner provisioner = new InMemoryProvisioner(30, new NodeResources(64, 128, 1000, 10));
+    private final InMemoryProvisioner provisioner = new InMemoryProvisioner(30, new NodeResources(64, 128, 1000, 10), false);
     private final ValidationTester tester = new ValidationTester(provisioner);
 
     @Test

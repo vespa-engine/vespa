@@ -147,7 +147,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;
 
-    private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
+    private final Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
 
     private ApplicationMetaData applicationMetaData = null;
 
@@ -157,6 +157,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String hostClusterId = null;
     private String jvmGCOptions = null;
     private String environmentVars = null;
+
+    private boolean deferChangesUntilRestart = false;
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId);
@@ -288,6 +290,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addContainer(CONTAINER container) {
+        container.setOwner(this);
         container.setClusterName(name);
         container.setProp("clustername", name)
                  .setProp("index", this.containers.size());
@@ -618,11 +621,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     protected abstract boolean messageBusEnabled();
 
     /**
-     * Mark that the config emitted by this cluster currently should be applied by clients already running with
+     * Mark whether the config emitted by this cluster currently should be applied by clients already running with
      * a previous generation of it only by restarting the consuming processes.
      */
-    public void deferChangesUntilRestart() {
-
+    public void setDeferChangesUntilRestart(boolean deferChangesUntilRestart) {
+        this.deferChangesUntilRestart = deferChangesUntilRestart;
     }
+
+    public boolean getDeferChangesUntilRestart() { return deferChangesUntilRestart; }
 
 }

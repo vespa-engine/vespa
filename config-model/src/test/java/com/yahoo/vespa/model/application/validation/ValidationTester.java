@@ -40,8 +40,8 @@ public class ValidationTester {
     }
 
     /** Creates a validation tester with number of nodes available and the given test properties */
-    public ValidationTester(int nodeCount, TestProperties properties) {
-        this(new InMemoryProvisioner(nodeCount), properties);
+    public ValidationTester(int nodeCount, boolean sharedHosts, TestProperties properties) {
+        this(new InMemoryProvisioner(nodeCount, sharedHosts), properties);
     }
 
     /** Creates a validation tester with a given host provisioner */
@@ -51,7 +51,7 @@ public class ValidationTester {
 
     /** Creates a validation tester with a number of nodes available */
     public ValidationTester(int nodeCount) {
-        this(new InMemoryProvisioner(nodeCount), new TestProperties().setHostedVespa(true));
+        this(new InMemoryProvisioner(nodeCount, false), new TestProperties().setHostedVespa(true));
     }
 
     /** Creates a validation tester with a given host provisioner */

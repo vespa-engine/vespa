@@ -428,7 +428,7 @@ public class HostedDeployTest {
                 .configserverConfig(createConfigserverConfig(prodZone))
                 .clock(clock)
                 .zone(prodZone)
-                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true)).build();
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false)).build();
     }
 
     private static class ConfigChangeActionsModelFactory extends TestModelFactory {

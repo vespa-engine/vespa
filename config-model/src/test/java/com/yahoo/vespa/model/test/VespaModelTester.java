@@ -138,6 +138,7 @@ public class VespaModelTester {
 
         HostProvisioner provisioner = hosted ?
                                       new InMemoryProvisioner(hostsByResources, failOnOutOfCapacity, useMaxResources,
+                                                              false,
                                                               startIndexForClusters, retiredHostNames) :
                                       new SingleNodeProvisioner();
 

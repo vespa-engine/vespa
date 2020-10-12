@@ -43,16 +43,6 @@ public class ClusterSizeReductionValidatorTest {
         tester.deploy(previous, getServices(2), Environment.prod, null);
     }
 
-    /*
-    @Test
-    public void testSizeReductionTo50PercentIsAllowed() throws IOException, SAXException {
-        ValidationTester tester = new ValidationTester(30);
-
-        VespaModel previous = tester.deploy(null, getServices(30), null).getFirst();
-        tester.deploy(previous, getServices(15), null);
-    }
-    */
-
     @Test
     public void testOverridingSizereductionValidation() {
         ValidationTester tester = new ValidationTester(30);

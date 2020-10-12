@@ -117,11 +117,11 @@ public class Validation {
         for (var clusterToRestart : clustersToBeRestarted) {
             var containerCluster = model.getContainerClusters().get(clusterToRestart.value());
             if (containerCluster != null)
-                containerCluster.deferChangesUntilRestart();
+                containerCluster.setDeferChangesUntilRestart(true);
 
             var contentCluster = model.getContentClusters().get(clusterToRestart.value());
             if (contentCluster != null)
-                contentCluster.deferChangesUntilRestart();
+                contentCluster.setDeferChangesUntilRestart(true);
         }
     }
 

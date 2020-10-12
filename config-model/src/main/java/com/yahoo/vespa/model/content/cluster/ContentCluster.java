@@ -744,11 +744,10 @@ public class ContentCluster extends AbstractConfigProducer implements
     }
 
     /**
-     * Mark that the config emitted by this cluster currently should be applied by clients already running with
+     * Mark whether the config emitted by this cluster currently should be applied by clients already running with
      * a previous generation of it only by restarting the consuming processes.
      */
-    public void deferChangesUntilRestart() {
-
+    public void setDeferChangesUntilRestart(boolean deferChangesUntilRestart) {
     }
 
 }

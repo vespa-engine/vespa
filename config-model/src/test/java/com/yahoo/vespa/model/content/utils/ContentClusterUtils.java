@@ -46,7 +46,7 @@ public class ContentClusterUtils {
     }
 
     public static MockRoot createMockRoot(String[] hosts, List<String> schemas) {
-        return createMockRoot(new InMemoryProvisioner(true, hosts), schemas);
+        return createMockRoot(new InMemoryProvisioner(true, false, hosts), schemas);
     }
 
     public static MockRoot createMockRoot(List<String> schemas) {

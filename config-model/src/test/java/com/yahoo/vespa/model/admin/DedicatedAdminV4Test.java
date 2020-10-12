@@ -236,7 +236,7 @@ public class DedicatedAdminV4Test {
                 .build();
         return new VespaModel(new NullConfigModelRegistry(), deployStateBuilder
                 .applicationPackage(app)
-                .modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true))
+                .modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true, false))
                 .build());
     }
 

@@ -186,7 +186,7 @@ public class DeployTester {
     }
 
     private static HostProvisioner createProvisioner() {
-        return new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4", "host5");
+        return new InMemoryProvisioner(true, false, "host0", "host1", "host2", "host3", "host4", "host5");
     }
 
     private TestComponentRegistry createComponentRegistry(Curator curator, Metrics metrics,

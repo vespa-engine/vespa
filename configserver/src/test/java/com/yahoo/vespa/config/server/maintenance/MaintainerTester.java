@@ -40,7 +40,7 @@ class MaintainerTester {
 
     MaintainerTester(Clock clock, TemporaryFolder temporaryFolder) throws IOException {
         this.curator = new MockCurator();
-        InMemoryProvisioner hostProvisioner = new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4");
+        InMemoryProvisioner hostProvisioner = new InMemoryProvisioner(true, false, "host0", "host1", "host2", "host3", "host4");
         ProvisionerAdapter provisioner = new ProvisionerAdapter(hostProvisioner);
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .hostedVespa(true)
