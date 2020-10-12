@@ -3,6 +3,41 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/sync.h>
 
+namespace vespalib {
+class TryLock
+{
+private:
+    friend class LockGuard;
+    friend class MonitorGuard;
+
+    std::unique_lock<std::mutex> _guard;
+    std::condition_variable     *_cond;
+
+public:
+    TryLock(const Monitor &mon)
+        : _guard(*mon._mutex, std::try_to_lock),
+          _cond(_guard ? mon._cond.get() : nullptr)
+    {}
+    ~TryLock() = default;
+
+    TryLock(const TryLock &) = delete;
+    TryLock &operator=(const TryLock &) = delete;
+
+    /**
+     * @brief Check whether this object holds a lock
+     *
+     * @return true if this object holds a lock
+     **/
+    bool hasLock() const { return static_cast<bool>(_guard); }
+    void unlock() {
+        if (_guard) {
+            _guard.unlock();
+            _cond = nullptr;
+        }
+    }
+};
+
+}
 using namespace vespalib;
 
 #define CHECK_LOCKED(m) { TryLock tl(m); EXPECT_TRUE(!tl.hasLock()); }
@@ -11,19 +46,18 @@ using namespace vespalib;
 class Test : public TestApp
 {
 private:
-    Lock    _lock;
     Monitor _monitor;
 
-    LockGuard    lockLock()      { return LockGuard(_lock); }
     LockGuard    lockMonitor()   { return LockGuard(_monitor); }
     MonitorGuard obtainMonitor() { return MonitorGuard(_monitor); }
 public:
-    ~Test();
+    ~Test() override;
     void testCountDownLatch();
     int Main() override;
 };
 
-Test::~Test() {}
+Test::~Test() = default;
+
 void
 Test::testCountDownLatch() {
     {
@@ -70,21 +104,6 @@ int
 Test::Main()
 {
     TEST_INIT("sync_test");
-    {
-        Lock lock;
-        {
-            CHECK_UNLOCKED(lock);
-            LockGuard guard(lock);
-            CHECK_LOCKED(lock);
-        }
-        CHECK_UNLOCKED(lock);
-        {
-            LockGuard guard(lock);
-            CHECK_LOCKED(lock);
-            guard.unlock();
-            CHECK_UNLOCKED(lock);
-        }
-    }
     // you can use a LockGuard to lock a Monitor
     {
         Monitor monitor;
@@ -119,24 +138,9 @@ Test::Main()
             CHECK_UNLOCKED(monitor);
         }
     }
-    // copy/assign is nop, but legal
-    {
-        Lock a;
-        Lock b(a);
-        b = a;
-    }
-    {
-        Monitor a;
-        Monitor b(a);
-        b = a;
-    }
+
     // you can lock const objects
-    {
-        const Lock lock;
-        CHECK_UNLOCKED(lock);
-        LockGuard guard(lock);
-        CHECK_LOCKED(lock);
-    }
+
     {
         const Monitor lock;
         CHECK_UNLOCKED(lock);
@@ -149,100 +153,9 @@ Test::Main()
         MonitorGuard guard(monitor);
         CHECK_LOCKED(monitor);
     }
-    // TryLock hands the lock over to a LockGuard/MonitorGuard
-    {
-        Lock    lock;
-        CHECK_UNLOCKED(lock);
-        TryLock a(lock);
-        CHECK_LOCKED(lock);
-        if (a.hasLock()) {
-            LockGuard guard(std::move(a));
-            CHECK_LOCKED(lock);
-        }
-        CHECK_UNLOCKED(lock);
-    }
-    {
-        Monitor mon;
-        CHECK_UNLOCKED(mon);
-        TryLock a(mon);
-        CHECK_LOCKED(mon);
-        if (a.hasLock()) {
-            LockGuard guard(std::move(a));
-            CHECK_LOCKED(mon);
-        }
-        CHECK_UNLOCKED(mon);
-    }
-    {
-        Monitor mon;
-        CHECK_UNLOCKED(mon);
-        TryLock a(mon);
-        CHECK_LOCKED(mon);
-        if (a.hasLock()) {
-            MonitorGuard guard(std::move(a));
-            CHECK_LOCKED(mon);
-        }
-        CHECK_UNLOCKED(mon);
-    }
-    {
-        Lock lock;
-
-        CHECK_UNLOCKED(lock);
-        TryLock a(lock);
-        CHECK_LOCKED(lock);
-        TryLock b(lock);
-        CHECK_LOCKED(lock);
-
-        EXPECT_TRUE(a.hasLock());
-        EXPECT_TRUE(!b.hasLock());
-        {
-            CHECK_LOCKED(lock);
-            EXPECT_TRUE(a.hasLock());
-            LockGuard guard(std::move(a));
-            EXPECT_TRUE(!a.hasLock());
-            CHECK_LOCKED(lock);
-        }
-        CHECK_UNLOCKED(lock);
-    }
-    // TryLock will unlock when exiting scope if lock was not passed on
-    {
-        Lock    lock;
-        Monitor mon;
-        CHECK_UNLOCKED(lock);
-        CHECK_UNLOCKED(mon);
-        {
-            TryLock a(lock);
-            EXPECT_TRUE(a.hasLock());
-            TryLock b(mon);
-            EXPECT_TRUE(b.hasLock());
-            CHECK_LOCKED(lock);
-            CHECK_LOCKED(mon);
-        }
-        CHECK_UNLOCKED(lock);
-        CHECK_UNLOCKED(mon);
-    }
-    // TryLock explicitt unlock of lock
-    {
-        Lock    lock;
-        TryLock tl(lock);
-        EXPECT_TRUE(tl.hasLock());
-        tl.unlock();
-        EXPECT_FALSE(tl.hasLock());
-        tl.unlock();
-        EXPECT_FALSE(tl.hasLock());
-    }
-    // TryLock explicitt unlock of monitor
-    {
-        Monitor    lock;
-        TryLock tl(lock);
-        EXPECT_TRUE(tl.hasLock());
-        tl.unlock();
-        EXPECT_FALSE(tl.hasLock());
-        tl.unlock();
-        EXPECT_FALSE(tl.hasLock());
-    }
     // LockGuard/MonitorGuard have destructive move
     {
-        Lock lock;
+        Monitor lock;
         CHECK_UNLOCKED(lock);
         LockGuard a(lock);
         CHECK_LOCKED(lock);
@@ -267,19 +180,13 @@ Test::Main()
     }
     // Destructive copy also works for return value handover
     {
-        CHECK_UNLOCKED(_lock);
         CHECK_UNLOCKED(_monitor);
         {
-            CHECK_UNLOCKED(_lock);
             CHECK_UNLOCKED(_monitor);
-            LockGuard a(lockLock());
-            CHECK_LOCKED(_lock);
             CHECK_UNLOCKED(_monitor);
             LockGuard b = lockMonitor(); // copy, not assign
-            CHECK_LOCKED(_lock);
             CHECK_LOCKED(_monitor);
         }
-        CHECK_UNLOCKED(_lock);
         CHECK_UNLOCKED(_monitor);
     }
     {
@@ -293,8 +200,8 @@ Test::Main()
     }
     // Test that guards can be matched to locks/monitors
     {
-        Lock lock1;
-        Lock lock2;
+        Monitor lock1;
+        Monitor lock2;
         LockGuard lockGuard1(lock1);
         LockGuard lockGuard2(lock2);
         EXPECT_TRUE(lockGuard1.locks(lock1));

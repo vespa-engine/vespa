@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "sync.h"
 #include "count_down_latch.h"
 #include "thread.h"
 #include "runnable.h"
@@ -48,7 +47,7 @@ struct Signal {
     bool valid;
     size_t generation;
     Monitor monitor;
-    Signal() : valid(true), generation(0), monitor() {}
+    Signal() noexcept : valid(true), generation(0), monitor() {}
     size_t wait(size_t &localGen) {
         MonitorGuard guard(monitor);
         while (localGen == generation) {
@@ -94,8 +93,8 @@ public:
     class Pool
     {
     private:
-        Lock _lock;
-        size_t _bundleSize;
+        std::mutex _lock;
+        size_t     _bundleSize;
         std::vector<SimpleThreadBundle*> _bundles;
 
     public:

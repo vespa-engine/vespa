@@ -464,8 +464,7 @@ bool LogDataStore::shouldCompactToActiveFile(size_t compactedSize) const {
 
 void LogDataStore::setNewFileChunk(const LockGuard & guard, FileChunk::UP file)
 {
-    (void) guard;
-    assert(guard.locks(_updateLock));
+    assert(hasUpdateLock(guard));
     size_t fileId = file->getFileId().getId();
     assert( ! _fileChunks[fileId]);
     _fileChunks[fileId] = std::move(file);
@@ -854,7 +853,7 @@ LogDataStore::findIncompleteCompactedFiles(const NameIdSet & partList) {
 LogDataStore::NameIdSet
 LogDataStore::getAllActiveFiles() const {
     NameIdSet files;
-    vespalib::LockGuard guard(_updateLock);
+    LockGuard guard(_updateLock);
     for (const auto & fc : _fileChunks) {
         if (fc) {
             files.insert(fc->getNameId());
@@ -1219,7 +1218,7 @@ LogDataStore::canShrinkLidSpace() const
 }
 
 bool
-LogDataStore::canShrinkLidSpace(const vespalib::LockGuard &) const
+LogDataStore::canShrinkLidSpace(const LockGuard &) const
 {
     return getDocIdLimit() < _lidInfo.size() &&
            _compactLidSpaceGeneration < _genHandler.getFirstUsedGeneration();

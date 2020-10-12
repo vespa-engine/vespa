@@ -284,7 +284,7 @@ struct MyWorld {
     struct MySearchHandler : ISearchHandler {
         Matcher::SP _matcher;
 
-        MySearchHandler(Matcher::SP matcher) : _matcher(matcher) {}
+        MySearchHandler(Matcher::SP matcher) noexcept : _matcher(std::move(matcher)) {}
 
         DocsumReply::UP getDocsums(const DocsumRequest &) override {
             return DocsumReply::UP();

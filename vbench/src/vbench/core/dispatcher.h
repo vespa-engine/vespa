@@ -5,7 +5,6 @@
 #include "handler.h"
 #include "provider.h"
 #include "closeable.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vector>
 
@@ -31,13 +30,13 @@ private:
     };
 
     Handler<T>               &_fallback;
-    vespalib::Lock            _lock;
+    mutable std::mutex        _lock;
     std::vector<ThreadState*> _threads;
     bool                      _closed;
 
 public:
-    Dispatcher(Handler<T> &fallback);
-    ~Dispatcher();
+    explicit Dispatcher(Handler<T> &fallback);
+    ~Dispatcher() override;
     bool waitForThreads(size_t threads, size_t pollCnt) const;
     void close() override;
     void handle(std::unique_ptr<T> obj) override;

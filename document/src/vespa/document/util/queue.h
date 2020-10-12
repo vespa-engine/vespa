@@ -5,8 +5,7 @@
 #include <vespa/vespalib/util/sync.h>
 
 #define UNUSED_PARAM(p)
-namespace document
-{
+namespace document {
 
 // XXX move to vespalib (or remove)
 /**
@@ -202,79 +201,7 @@ public:
 	}
         return retval;
     }
-#if 0
-// XXX unused?
-    size_t max() const          { return _max; }
-    size_t lowWaterMark() const { return _lowWaterMark; }
-    void max(size_t v)
-    {
-        vespalib::MonitorGuard guard(this->_cond);
-        _max = v; _lowWaterMark = _max/2;
-    }
-    void lowWaterMark(size_t v)
-    {
-        vespalib::MonitorGuard guard(this->_cond);
-        _lowWaterMark = v;
-    }
-#endif
 };
-
-template <typename T, typename Q=std::queue<T> >
-class QueueWithMaxSerialized : public QueueWithMax<T, Q>
-{
-public:
-    QueueWithMaxSerialized(size_t max_=1000000, size_t lowWaterMark_=500000) : QueueWithMax<T, Q>(max_, lowWaterMark_) { }
-    virtual void add(const T& msg)
-    {
-        if (msg != NULL) {
-            this->_size += msg->getSerializedSize();
-        }
-    }
-    virtual void sub(const T& msg)
-    {
-        if (msg != NULL) {
-            this->_size -= msg->getSerializedSize();
-        }
-    }
-};
-
-#if 0
-
-/**
-  This is an fast Q that reduces lock/unlock to a minimum and ditto with
-  context swithes on notify/wait. enque/deque have no atomic operations
-  unless it is empty/full. This limits the use to situations where there are
-  both single consumers and single producers.
-*/
-template <typename T>
-class QueueSingleProducerConsumer {
-private:
-    typedef std::vector<T> Q;
-public:
-    typedef typename Q::iterator iterator;
-    enum { end=-1 };
-    QueueSingleProducerConsumer(size_t max=1000,
-                                size_t highWaterMark=999,
-                                size_t lowWaterMark=1);
-    T * wait(int timeOut=-1)
-    {
-        T * retval(NULL);
-        if (empty()) {
-            _cond.Wait(timeOut);
-        }
-        return retval;
-    }
-    const T & head() const { return _q[_readPos]; }
-    void removeHead()      { ~_q[_readPos](); _readPos++; }
-    bool deque();
-private:
-    std::vector<T>   _q;
-    size_t           _readPos;
-    size_t           _writePos;
-    FastOS_Condition _cond;
-};
-
-#endif
 
 } // namespace document
 

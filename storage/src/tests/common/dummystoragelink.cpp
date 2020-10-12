@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dummystoragelink.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <sys/time.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 namespace storage {
 
-DummyStorageLink* DummyStorageLink::_last(0);
+DummyStorageLink* DummyStorageLink::_last(nullptr);
 
 DummyStorageLink::DummyStorageLink()
     : StorageLink("Dummy storage link"),
@@ -37,7 +37,7 @@ DummyStorageLink::~DummyStorageLink()
 bool
 DummyStorageLink::handleInjectedReply()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if (!_injected.empty()) {
         sendUp(*_injected.begin());
         _injected.pop_front();
@@ -65,7 +65,7 @@ bool DummyStorageLink::onDown(const api::StorageMessage::SP& cmd)
     if (isBottom()) {
         vespalib::MonitorGuard lock(_waitMonitor);
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             _commands.push_back(cmd);
         }
         lock.broadcast();
@@ -78,7 +78,7 @@ bool DummyStorageLink::onUp(const api::StorageMessage::SP& reply) {
     if (isTop()) {
         vespalib::MonitorGuard lock(_waitMonitor);
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             _replies.push_back(reply);
         }
         lock.broadcast();
@@ -91,13 +91,13 @@ bool DummyStorageLink::onUp(const api::StorageMessage::SP& reply) {
 void DummyStorageLink::injectReply(api::StorageReply* reply)
 {
     assert(reply);
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _injected.push_back(std::shared_ptr<api::StorageReply>(reply));
 }
 
 void DummyStorageLink::reset() {
     vespalib::MonitorGuard lock(_waitMonitor);
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _commands.clear();
     _replies.clear();
     _injected.clear();

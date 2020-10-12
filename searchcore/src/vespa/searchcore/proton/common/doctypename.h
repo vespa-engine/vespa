@@ -13,9 +13,9 @@ class DocTypeName
     vespalib::string _name;
 
 public:
-    explicit DocTypeName(const vespalib::string &name) : _name(name) { }
-    explicit DocTypeName(const search::engine::Request &request);
-    explicit DocTypeName(const document::DocumentType &docType);
+    explicit DocTypeName(const vespalib::string &name) noexcept : _name(name) { }
+    explicit DocTypeName(const search::engine::Request &request) noexcept;
+    explicit DocTypeName(const document::DocumentType &docType) noexcept;
 
     const vespalib::string & getName() const { return _name; }
 

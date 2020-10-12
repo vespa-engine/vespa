@@ -52,8 +52,10 @@ public class RpcConnector extends AbstractComponent {
     }
 
     public void stop() {
-        acceptor.shutdown().join();
-        supervisor.transport().shutdown().join();
+        if (acceptor != null)
+            acceptor.shutdown().join();
+        if (supervisor != null)
+            supervisor.transport().shutdown().join();
     }
 
     @Override

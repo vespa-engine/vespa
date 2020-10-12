@@ -739,24 +739,31 @@ assertPutDone(AttributeVector &attr, int32_t expVal)
 void
 putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
 {
+    // Since executor distribution depends on the unspecified hash function in vespalib,
+    // decouple attribute names from their usage to allow for picking names that hash
+    // more evenly for a particular implementation.
+    vespalib::string a1_name = "a1";
+    vespalib::string a2_name = "a2x";
+    vespalib::string a3_name = "a3y";
+
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a3", schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField(a1_name, schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField(a2_name, schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField(a3_name, schema::DataType::INT32, CollectionType::SINGLE));
 
     DocBuilder idb(s);
 
-    auto a1 = t.addAttribute("a1");
-    auto a2 = t.addAttribute("a2");
-    auto a3 = t.addAttribute("a3");
+    auto a1 = t.addAttribute(a1_name);
+    auto a2 = t.addAttribute(a2_name);
+    auto a3 = t.addAttribute(a3_name);
 
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(1u, a2->getNumDocs());
     EXPECT_EQ(1u, a3->getNumDocs());
     t.put(1, *idb.startDocument("id:ns:searchdocument::1").
-          startAttributeField("a1").addInt(10).endField().
-          startAttributeField("a2").addInt(15).endField().
-          startAttributeField("a3").addInt(20).endField().
+          startAttributeField(a1_name).addInt(10).endField().
+          startAttributeField(a2_name).addInt(15).endField().
+          startAttributeField(a3_name).addInt(20).endField().
           endDocument(), 1);
     assertPutDone(*a1, 10);
     assertPutDone(*a2, 15);
@@ -780,7 +787,7 @@ TEST_F(AttributeWriterTest, spreads_write_over_2_write_contexts)
 TEST_F(AttributeWriterTest, spreads_write_over_3_write_contexts)
 {
     setup(8);
-    putAttributes(*this, {0, 1, 3});
+    putAttributes(*this, {4, 5, 6});
 }
 
 struct MockPrepareResult : public PrepareResult {

@@ -259,7 +259,7 @@ public class SearchNode extends AbstractService implements
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
         if (fileDistribution != null) {
-            FileDistributionConfigProvider configProducer = fileDistribution.getConfigProducer(getHost());
+            FileDistributionConfigProvider configProducer = fileDistribution.getConfigProducer(getHost().getHost());
             configProducer.getConfig(builder);
         }
     }

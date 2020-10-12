@@ -320,7 +320,7 @@ appendChunks(FixedParams * args, Chunk::UP chunk)
     for (const Chunk::Entry & e : ll) {
         LidInfo lidInfo(args->fileId, chunk->getId(), e.netSize());
         if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
-            vespalib::LockGuard guard(args->db.getLidGuard(e.getLid()));
+            auto guard(args->db.getLidGuard(e.getLid()));
             if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
                 // I am still in use so I need to taken care of.
                 vespalib::ConstBufferRef data(chunk->getLid(e.getLid()));

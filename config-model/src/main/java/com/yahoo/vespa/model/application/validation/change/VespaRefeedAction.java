@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ClusterSpec;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,7 +14,6 @@ import java.util.List;
  *
  * @author geirst
  * @author bratseth
- * @since 5.43
  */
 public class VespaRefeedAction extends VespaConfigChangeAction implements ConfigChangeRefeedAction {
 
@@ -27,8 +27,8 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
     private final String documentType;
     private final boolean allowed;
 
-    private VespaRefeedAction(String name, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
-        super(message, services);
+    private VespaRefeedAction(ClusterSpec.Id id, String name, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
+        super(id, message, services);
         this.name = name;
         this.documentType = documentType;
         this.allowed = allowed;
@@ -36,19 +36,19 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
 
     /** Creates a refeed action with some missing information */
     // TODO: We should require document type or model its absence properly
-    public static VespaRefeedAction of(String name, ValidationOverrides overrides, String message, Instant now) {
-        return new VespaRefeedAction(name, message, List.of(), "", overrides.allows(name, now));
+    public static VespaRefeedAction of(ClusterSpec.Id id, String name, ValidationOverrides overrides, String message, Instant now) {
+        return new VespaRefeedAction(id, name, message, List.of(), "", overrides.allows(name, now));
     }
 
     /** Creates a refeed action */
-    public static VespaRefeedAction of(String name, ValidationOverrides overrides, String message,
+    public static VespaRefeedAction of(ClusterSpec.Id id, String name, ValidationOverrides overrides, String message,
                                        List<ServiceInfo> services, String documentType, Instant now) {
-        return new VespaRefeedAction(name, message, services, documentType, overrides.allows(name, now));
+        return new VespaRefeedAction(id, name, message, services, documentType, overrides.allows(name, now));
     }
 
     @Override
     public VespaConfigChangeAction modifyAction(String newMessage, List<ServiceInfo> newServices, String documentType) {
-        return new VespaRefeedAction(name, newMessage, newServices, documentType, allowed);
+        return new VespaRefeedAction(clusterId(), name, newMessage, newServices, documentType, allowed);
     }
 
     @Override

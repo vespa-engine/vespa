@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocolrepository.h"
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".protocolrepository");
@@ -12,7 +13,7 @@ ProtocolRepository::~ProtocolRepository() = default;
 void
 ProtocolRepository::clearPolicyCache()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _routingPolicyCache.clear();
 }
 
@@ -66,7 +67,7 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
 {
     string cacheKey = protocolName;
     cacheKey.append('.').append(policyName).append(".").append(policyParam);
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     RoutingPolicyCache::iterator cit = _routingPolicyCache.find(cacheKey);
     if (cit != _routingPolicyCache.end()) {
         return cit->second;

@@ -6,7 +6,7 @@
 namespace vespalib {
 
 size_t
-hashValue(const char *str)
+hashValue(const char *str) noexcept
 {
     return hashValue(str, strlen(str));
 }
@@ -14,15 +14,15 @@ hashValue(const char *str)
 /**
  * @brief Calculate hash value.
  *
- * The hash function XXH64 from xxhash library.
+ * The hash function XXH3_64bits from xxhash library.
  * @param buf input buffer
  * @param sz input buffer size
  * @return hash value of input
  **/
 size_t
-hashValue(const void * buf, size_t sz)
+hashValue(const void * buf, size_t sz) noexcept
 {
-    return XXH64(buf, sz, 0);
+    return XXH3_64bits(buf, sz);
 }
 
 }

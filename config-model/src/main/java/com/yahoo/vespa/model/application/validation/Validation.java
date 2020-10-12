@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionValidator;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.model.application.validation.change.ContentTypeRemovalVal
 import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
@@ -27,6 +29,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -69,9 +73,11 @@ public class Validation {
             validateFirstTimeDeployment(model, deployState);
         } else {
             Optional<Model> currentActiveModel = deployState.getPreviousModel();
-            if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel))
+            if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel)) {
                 result = validateChanges((VespaModel) currentActiveModel.get(), model,
                                          deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
+                deferConfigChangesForClustersToBeRestarted(result, model);
+            }
         }
         return result;
     }
@@ -91,6 +97,7 @@ public class Validation {
                 new ClusterSizeReductionValidator(),
                 new ResourcesReductionValidator(),
                 new ContainerRestartValidator(),
+                new NodeResourceChangeValidator()
         };
         return Arrays.stream(validators)
                 .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
@@ -99,6 +106,23 @@ public class Validation {
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
         new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
+    }
+
+    private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {
+        Set<ClusterSpec.Id> clustersToBeRestarted = actions.stream()
+                                                           .filter(action -> action.getType() == ConfigChangeAction.Type.RESTART)
+                                                           .filter(action -> action.clusterId() != null) // TODO: Remove this line after October 2020
+                                                           .map(action -> action.clusterId())
+                                                           .collect(Collectors.toSet());
+        for (var clusterToRestart : clustersToBeRestarted) {
+            var containerCluster = model.getContainerClusters().get(clusterToRestart.value());
+            if (containerCluster != null)
+                containerCluster.deferChangesUntilRestart();
+
+            var contentCluster = model.getContentClusters().get(clusterToRestart.value());
+            if (contentCluster != null)
+                contentCluster.deferChangesUntilRestart();
+        }
     }
 
 }

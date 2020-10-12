@@ -3,6 +3,7 @@
 #include "frtconfigresponse.h"
 #include "frtsource.h"
 #include <vespa/vespalib/util/closuretask.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtsource");
@@ -73,7 +74,7 @@ FRTSource::RequestDone(FRT_RPCRequest * request)
         LOG(debug, "request aborted, stopping");
         return;
     }
-    assert(_currentRequest.get() != NULL);
+    assert(_currentRequest);
     // If this was error from FRT side and nothing to do with config, notify
     // connection about the error.
     if (request->IsError()) {
@@ -88,7 +89,7 @@ void
 FRTSource::close()
 {
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (_closed)
             return;
         LOG(spam, "Killing task");
@@ -106,7 +107,7 @@ FRTSource::close()
 void
 FRTSource::scheduleNextGetConfig()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if (_closed)
         return;
     double sec = _agent->getWaitTime() / 1000.0;

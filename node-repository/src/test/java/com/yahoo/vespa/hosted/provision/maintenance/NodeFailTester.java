@@ -265,9 +265,11 @@ public class NodeFailTester {
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
         List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, null);
-        NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-        provisioner.activate(transaction, applicationId, hosts);
-        transaction.commit();
+        try (var lock = provisioner.lock(applicationId)) {
+            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
+            provisioner.activate(transaction, hosts, lock);
+            transaction.commit();
+        }
     }
 
     /** Returns the node with the highest membership index from the given set of allocated nodes */

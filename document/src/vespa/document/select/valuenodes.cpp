@@ -2,7 +2,6 @@
 #include "valuenodes.h"
 #include "visitor.h"
 #include "parser.h"
-#include <vespa/document/bucket/bucketdistribution.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>

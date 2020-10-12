@@ -325,13 +325,6 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBooleanFlag WEIGHTED_DNS_PER_REGION = defineFeatureFlag(
-            "weighted-dns-per-region", true,
-            "Whether to create weighted DNS records per region in global endpoints",
-            "Takes effect on next deployment through controller",
-            APPLICATION_ID
-    );
-
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
             "enable-public-only", false,
             "Only access public hosts from container",
@@ -390,6 +383,12 @@ public class Flags {
             false,
             "Whether application containers should use the new restapi handler implementation",
             "Takes effect on next internal redeployment");
+
+    public static final UnboundBooleanFlag ALWAYS_ACQUIRE_PROVISION_LOCK = defineFeatureFlag(
+            "always-acquire-provision-lock",
+            false,
+            "Whether provision lock should always be taken when writing nodes",
+            "Takes effect on config server restart");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

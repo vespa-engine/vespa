@@ -8,26 +8,26 @@ namespace config {
 ConfigContext::ConfigContext(const SourceSpec & spec)
     : _timingValues(),
       _generation(1),
-      _manager(spec.createSourceFactory(_timingValues), _generation)
+      _manager(std::make_unique<ConfigManager>(spec.createSourceFactory(_timingValues), _generation))
 { }
 
 ConfigContext::ConfigContext(const TimingValues & timingValues, const SourceSpec & spec)
     : _timingValues(timingValues),
       _generation(1),
-      _manager(spec.createSourceFactory(_timingValues), _generation)
+      _manager(std::make_unique<ConfigManager>(spec.createSourceFactory(_timingValues), _generation))
 { }
 
 IConfigManager &
 ConfigContext::getManagerInstance()
 {
-    return _manager;
+    return *_manager;
 }
 
 void
 ConfigContext::reload()
 {
     _generation++;
-    _manager.reload(_generation);
+    _manager->reload(_generation);
 }
 
 } // namespace config

@@ -11,7 +11,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
-import java.util.logging.Level;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -21,6 +20,7 @@ import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -97,7 +97,7 @@ public class InfraDeployerImpl implements InfraDeployer {
 
         @Override
         public long activate() {
-            try (Mutex lock = nodeRepository.lock(application.getApplicationId())) {
+            try (var lock = provisioner.lock(application.getApplicationId())) {
                 prepare();
 
                 if (hostSpecs.isEmpty()) {
@@ -105,7 +105,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                     removeApplication(application.getApplicationId());
                 } else {
                     NestedTransaction nestedTransaction = new NestedTransaction();
-                    provisioner.activate(nestedTransaction, application.getApplicationId(), hostSpecs);
+                    provisioner.activate(nestedTransaction, hostSpecs, lock);
                     nestedTransaction.commit();
 
                     duperModel.infraApplicationActivated(
@@ -128,10 +128,12 @@ public class InfraDeployerImpl implements InfraDeployer {
     private void removeApplication(ApplicationId applicationId) {
         // Use the DuperModel as source-of-truth on whether it has also been activated (to avoid periodic removals)
         if (duperModel.infraApplicationIsActive(applicationId)) {
-            NestedTransaction nestedTransaction = new NestedTransaction();
-            provisioner.remove(nestedTransaction, applicationId);
-            nestedTransaction.commit();
-            duperModel.infraApplicationRemoved(applicationId);
+            try (var lock = provisioner.lock(applicationId)) {
+                NestedTransaction nestedTransaction = new NestedTransaction();
+                provisioner.remove(nestedTransaction, lock);
+                nestedTransaction.commit();
+                duperModel.infraApplicationRemoved(applicationId);
+            }
         }
     }
 

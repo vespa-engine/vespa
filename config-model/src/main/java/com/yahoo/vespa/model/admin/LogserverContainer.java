@@ -12,8 +12,8 @@ import com.yahoo.vespa.model.container.component.AccessLogComponent;
  */
 public class LogserverContainer extends Container {
 
-    public LogserverContainer(AbstractConfigProducer parent) {
-        super(parent, "" + 0, 0);
+    public LogserverContainer(AbstractConfigProducer parent, boolean isHostedVespa) {
+        super(parent, "" + 0, 0, isHostedVespa);
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, ((LogserverContainerCluster) parent).getName(), true));
     }
 

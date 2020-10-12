@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.server.jetty.HttpResponseStatisticsCollector.StatisticsEntry;
-import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.http.HttpVersion;
@@ -48,8 +47,8 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_3XX, 2L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_3XX, 2L);
     }
 
     @Test
@@ -66,12 +65,12 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("https", 200, "POST");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_4XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "PUT", Metrics.RESPONSES_2XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "POST", Metrics.RESPONSES_2XX, 2L);
-        assertStatisticsEntryPresent(stats, "https", "GET", Metrics.RESPONSES_4XX, 1L);
-        assertStatisticsEntryPresent(stats, "https", "POST", Metrics.RESPONSES_2XX, 4L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "PUT", MetricDefinitions.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, 2L);
+        assertStatisticsEntryPresent(stats, "https", "GET", MetricDefinitions.RESPONSES_4XX, 1L);
+        assertStatisticsEntryPresent(stats, "https", "POST", MetricDefinitions.RESPONSES_2XX, 4L);
     }
 
     @Test
@@ -81,9 +80,9 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 403, "GET");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_4XX, 3L);
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_401, 1L);
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_403, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, 3L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_401, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_403, 1L);
 
     }
 
@@ -93,12 +92,12 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 2L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 2L);
 
         testRequest("http", 200, "GET");
 
         stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
     }
 
     @Test
@@ -109,15 +108,15 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET", "/status.html?foo=bar");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "monitoring", 1L);
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "read", 1L);
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", Metrics.RESPONSES_2XX, "read", 1L);
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", Metrics.RESPONSES_2XX, "write", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "monitoring", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, "write", 1L);
 
         testRequest("http", 200, "GET");
 
         stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
     }
 
     @Test
@@ -125,7 +124,7 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET", "/search", com.yahoo.jdisc.Request.RequestType.WRITE);
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", Metrics.RESPONSES_2XX, "write", 1L);
+        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "write", 1L);
     }
 
     @Before

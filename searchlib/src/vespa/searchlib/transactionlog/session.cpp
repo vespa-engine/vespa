@@ -3,8 +3,9 @@
 #include "domain.h"
 #include "domainpart.h"
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/log/log.h>
+#include <cassert>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.session");
 
 using vespalib::LockGuard;

@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -259,7 +257,7 @@ VisitorTest::getSession(uint32_t n)
             clock.getTimeInMillis() + framework::MilliSecTime(30 * 1000));
     while (true) {
         {
-            vespalib::LockGuard lock(_messageSessionFactory->_accessLock);
+            std::lock_guard lock(_messageSessionFactory->_accessLock);
             if (sessions.size() > n) {
                 return *sessions[n];
             }

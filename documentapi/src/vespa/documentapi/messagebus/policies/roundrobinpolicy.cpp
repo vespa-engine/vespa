@@ -56,7 +56,7 @@ RoundRobinPolicy::getCacheKey(const mbus::RoutingContext &ctx) const
 mbus::Hop
 RoundRobinPolicy::getRecipient(mbus::RoutingContext &ctx)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     CacheEntry &entry = update(ctx);
     if (entry._recipients.empty()) {
         return mbus::Hop();

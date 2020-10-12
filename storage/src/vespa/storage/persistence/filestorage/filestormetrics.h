@@ -44,6 +44,17 @@ struct FileStorThreadMetrics : public metrics::MetricSet
                           MetricSet* owner, bool includeUnused) const override;
     };
 
+    template <typename BaseOp>
+    struct OpWithTestAndSetFailed : BaseOp {
+        metrics::LongCountMetric test_and_set_failed;
+
+        OpWithTestAndSetFailed(const std::string& id, const std::string& name, MetricSet* owner = nullptr);
+        ~OpWithTestAndSetFailed() override;
+
+        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
+                          MetricSet* owner, bool includeUnused) const override;
+    };
+
     struct OpWithNotFound : Op {
         metrics::LongCountMetric notFound;
 
@@ -53,7 +64,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
                          MetricSet* owner, bool includeUnused) const override;
     };
 
-    struct Update : OpWithRequestSize<OpWithNotFound> {
+    struct Update : OpWithTestAndSetFailed<OpWithRequestSize<OpWithNotFound>> {
         metrics::LongAverageMetric latencyRead;
 
         explicit Update(MetricSet* owner = nullptr);
@@ -73,11 +84,16 @@ struct FileStorThreadMetrics : public metrics::MetricSet
                          MetricSet* owner, bool includeUnused) const override;
     };
 
+    // FIXME this daisy-chaining approach to metric set variants is not the prettiest...
+    using PutMetricType    = OpWithTestAndSetFailed<OpWithRequestSize<Op>>;
+    using GetMetricType    = OpWithRequestSize<OpWithNotFound>;
+    using RemoveMetricType = OpWithTestAndSetFailed<OpWithRequestSize<OpWithNotFound>>;
+
     metrics::LongCountMetric operations;
     metrics::LongCountMetric failedOperations;
-    metrics::LoadMetric<OpWithRequestSize<Op>> put;
-    metrics::LoadMetric<OpWithRequestSize<OpWithNotFound>> get;
-    metrics::LoadMetric<OpWithRequestSize<OpWithNotFound>> remove;
+    metrics::LoadMetric<PutMetricType> put;
+    metrics::LoadMetric<GetMetricType> get;
+    metrics::LoadMetric<RemoveMetricType> remove;
     metrics::LoadMetric<Op> removeLocation;
     metrics::LoadMetric<Op> statBucket;
     metrics::LoadMetric<Update> update;

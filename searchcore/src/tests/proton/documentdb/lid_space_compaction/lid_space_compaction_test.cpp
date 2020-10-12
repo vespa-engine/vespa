@@ -212,11 +212,10 @@ MyDocumentStore::~MyDocumentStore() = default;
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     std::shared_ptr<const DocumentTypeRepo> repo;
     const MyDocumentStore& store;
-    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in)
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept
         : repo(std::move(repo_in)),
           store(store_in)
-    {
-    }
+    {}
     const document::DocumentTypeRepo& getDocumentTypeRepo() const override { return *repo; }
     void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const override { abort(); }
     DocumentMetaData getDocumentMetaData(const DocumentId&) const override { abort(); }

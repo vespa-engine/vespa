@@ -109,7 +109,7 @@ void
 RoutableRepository::putFactory(const vespalib::VersionSpecification &version,
                                uint32_t type, IRoutableFactory::SP factory)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if (_factoryTypes[type].putFactory(version, factory)) {
         _cache.clear();
     }
@@ -118,7 +118,7 @@ RoutableRepository::putFactory(const vespalib::VersionSpecification &version,
 IRoutableFactory::SP
 RoutableRepository::getFactory(const vespalib::Version &version, uint32_t type) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     CacheKey cacheKey(version, type);
     FactoryCache::const_iterator cit = _cache.find(cacheKey);
     if (cit != _cache.end()) {
@@ -139,7 +139,7 @@ RoutableRepository::getFactory(const vespalib::Version &version, uint32_t type) 
 uint32_t
 RoutableRepository::getRoutableTypes(const vespalib::Version &version, std::vector<uint32_t> &out) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     for (const auto & type :  _factoryTypes) {
         if (type.second.getFactory(version)) {
             out.push_back(type.first);

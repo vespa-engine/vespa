@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/config.h>
+#include <vespa/config/common/configcontext.h>
 #include <config-my.h>
 
 using namespace config;
 
 TEST("require that can subscribe with empty config id") {
     ConfigSet set;
-    ConfigContext::SP ctx(new ConfigContext(set));
+    auto ctx = std::make_shared<ConfigContext>(set);
     MyConfigBuilder builder;
     builder.myField = "myfoo";
     set.addBuilder("", &builder);

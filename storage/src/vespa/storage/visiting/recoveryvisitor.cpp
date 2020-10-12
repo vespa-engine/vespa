@@ -34,7 +34,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
                                  std::vector<spi::DocEntry::UP>& entries,
                                  HitCounter& hitCounter)
 {
-    vespalib::LockGuard guard(_mutex);
+    std::lock_guard guard(_mutex);
 
     LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), entries.size());
 
@@ -87,7 +87,7 @@ void RecoveryVisitor::completedBucket(const document::BucketId& bid, HitCounter&
     LOG(debug, "Finished bucket %s", bid.toString().c_str());
 
     {
-        vespalib::LockGuard guard(_mutex);
+        std::lock_guard guard(_mutex);
 
         CommandMap::iterator iter = _activeCommands.find(bid);
 

@@ -9,7 +9,7 @@ namespace search::streaming {
 class Hit
 {
 public:
-    Hit(uint32_t pos_, uint32_t context_, uint32_t elemId_, int32_t weight_)
+    Hit(uint32_t pos_, uint32_t context_, uint32_t elemId_, int32_t weight_) noexcept
         : _position(pos_ | (context_<<24)),
           _elemId(elemId_),
           _weight(weight_)

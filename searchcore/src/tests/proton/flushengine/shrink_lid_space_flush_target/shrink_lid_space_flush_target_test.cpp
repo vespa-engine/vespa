@@ -18,26 +18,26 @@ class MyLidSpace : public search::common::ICompactableLidSpace
     bool _canShrink;
     size_t _canFree;
 public:
-    MyLidSpace()
+    MyLidSpace() noexcept
         : _canShrink(true),
           _canFree(16)
     {
     }
-    virtual ~MyLidSpace() override {}
+    ~MyLidSpace() override = default;
 
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override {
+    void compactLidSpace(uint32_t wantedDocLidLimit) override {
         (void) wantedDocLidLimit;
     }
 
-    virtual bool canShrinkLidSpace() const override {
+    bool canShrinkLidSpace() const override {
         return _canShrink;
     }
 
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override {
+    size_t getEstimatedShrinkLidSpaceGain() const override {
         return _canShrink ? _canFree : 0;
     }
 
-    virtual void shrinkLidSpace() override {
+    void shrinkLidSpace() override {
         if (_canShrink) {
             _canFree = 0;
             _canShrink = false;
@@ -62,8 +62,10 @@ struct Fixture
     {
     }
 
-    ~Fixture() { }
+    ~Fixture();
 };
+
+Fixture::~Fixture() = default;
 
 TEST_F("require that flush target returns estimated memory gain", Fixture)
 {

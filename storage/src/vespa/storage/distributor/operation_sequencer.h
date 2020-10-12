@@ -24,7 +24,7 @@ class SequencingHandle {
     OperationSequencer* _sequencer;
     document::GlobalId _gid;
 public:
-    SequencingHandle() : _sequencer(nullptr) {}
+    SequencingHandle() noexcept : _sequencer(nullptr) {}
     SequencingHandle(OperationSequencer& sequencer, const document::GlobalId& gid)
             : _sequencer(&sequencer),
               _gid(gid)

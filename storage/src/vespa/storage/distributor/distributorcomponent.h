@@ -186,7 +186,6 @@ protected:
 
     DistributorBucketSpaceRepo& _bucketSpaceRepo;
     DistributorBucketSpaceRepo& _readOnlyBucketSpaceRepo;
-    vespalib::Lock _sync;
 };
 
 }

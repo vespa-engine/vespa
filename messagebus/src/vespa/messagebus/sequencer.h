@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <map>
-#include <vespa/vespalib/util/sync.h>
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
 #include "message.h"
 #include "reply.h"
 #include "queue.h"
+#include <mutex>
+#include <map>
 
 namespace mbus {
 
@@ -21,7 +21,7 @@ class Sequencer : public IMessageHandler,
                   public IReplyHandler
 {
 private:
-    vespalib::Lock   _lock;
+    std::mutex      _lock;
     IMessageHandler &_sender;
 
     typedef Queue<Message*> MessageQueue;

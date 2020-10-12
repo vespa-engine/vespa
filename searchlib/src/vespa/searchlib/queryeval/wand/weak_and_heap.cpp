@@ -12,7 +12,7 @@ SharedWeakAndPriorityQueue::SharedWeakAndPriorityQueue(uint32_t scoresToTrack) :
     _bestScores.reserve(scoresToTrack);
 }
 
-SharedWeakAndPriorityQueue::~SharedWeakAndPriorityQueue() { }
+SharedWeakAndPriorityQueue::~SharedWeakAndPriorityQueue() = default;
 
 void
 SharedWeakAndPriorityQueue::adjust(score_t *begin, score_t *end)
@@ -20,7 +20,7 @@ SharedWeakAndPriorityQueue::adjust(score_t *begin, score_t *end)
     if (getScoresToTrack() == 0) {
         return;
     }
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     for (score_t *itr = begin; itr != end; ++itr) {
         score_t score = *itr;
         if (!is_full()) {

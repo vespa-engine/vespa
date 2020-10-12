@@ -38,7 +38,7 @@ const uint32_t x_aspect = 0;
 const Location location(position, max_distance, x_aspect);
 
 PredicateQueryTerm::UP getPredicateQueryTerm() {
-    PredicateQueryTerm::UP pqt(new PredicateQueryTerm);
+    auto pqt = std::make_unique<PredicateQueryTerm>();
     pqt->addFeature("key", "value");
     pqt->addRangeFeature("key2", 42, 0xfff);
     return pqt;
@@ -242,7 +242,7 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_TRUE(checkTerm(string_term, str[5], view[5], id[5], weight[5]));
 
     auto* predicateQuery = as_node<PredicateQuery>(and_node->getChildren()[5]);
-    PredicateQueryTerm::UP pqt(new PredicateQueryTerm);
+    auto pqt = std::make_unique<PredicateQueryTerm>();
     EXPECT_TRUE(checkTerm(predicateQuery, getPredicateQueryTerm(), view[3], id[3], weight[3]));
 
     auto* dotProduct = as_node<DotProduct>(and_node->getChildren()[6]);

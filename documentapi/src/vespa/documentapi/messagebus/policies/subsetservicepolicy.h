@@ -4,9 +4,8 @@
 #include <vespa/documentapi/common.h>
 #include <vespa/messagebus/routing/hop.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/vespalib/util/sync.h>
-#include <vector>
 #include <map>
+#include <mutex>
 
 namespace documentapi {
 
@@ -26,8 +25,8 @@ private:
         CacheEntry();
     };
 
-    vespalib::Lock                    _lock;
-    uint32_t                          _subsetSize;
+    std::mutex                   _lock;
+    uint32_t                     _subsetSize;
     std::map<string, CacheEntry> _cache;
 
     /**

@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -28,11 +29,11 @@ public class StartupCommandChangeValidator implements ChangeValidator {
         return findServicesWithChangedStartupCommmand(currentModel, nextModel).collect(Collectors.toList());
     }
 
-    public Stream<ConfigChangeAction> findServicesWithChangedStartupCommmand(
-            AbstractConfigProducerRoot currentModel, AbstractConfigProducerRoot nextModel) {
+    public Stream<ConfigChangeAction> findServicesWithChangedStartupCommmand(AbstractConfigProducerRoot currentModel,
+                                                                             AbstractConfigProducerRoot nextModel) {
         return nextModel.getDescendantServices().stream()
                 .map(nextService -> currentModel.getService(nextService.getConfigId())
-                        .flatMap(currentService -> compareStartupCommand(currentService, nextService)))
+                                                .flatMap(currentService -> compareStartupCommand(currentService, nextService)))
                 .filter(Optional::isPresent)
                 .map(Optional::get);
     }
@@ -41,13 +42,13 @@ public class StartupCommandChangeValidator implements ChangeValidator {
         String currentCommand = currentService.getStartupCommand();
         String nextCommand = nextService.getStartupCommand();
 
-        // Objects.equals is null-aware
-        if (Objects.equals(currentCommand, nextCommand)) {
-            return Optional.empty();
-        }
+        if (Objects.equals(currentCommand, nextCommand)) return Optional.empty();
+
         String message = String.format("Startup command for '%s' has changed.\nNew command: %s.\nOld command: %s.",
                                        currentService.getServiceName(), nextCommand, currentCommand);
-        return Optional.of(new VespaRestartAction(message, currentService.getServiceInfo()));
+        return Optional.of(new VespaRestartAction(ClusterSpec.Id.from(currentService.getConfigId()),
+                                                  message,
+                                                  currentService.getServiceInfo()));
     }
 
 }

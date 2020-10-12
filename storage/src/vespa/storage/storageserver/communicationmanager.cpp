@@ -187,7 +187,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
         if (protocolName == documentapi::DocumentProtocol::NAME) {
             std::shared_ptr<api::StorageCommand> originalCommand;
             {
-                vespalib::LockGuard lock(_messageBusSentLock);
+                std::lock_guard lock(_messageBusSentLock);
                 typedef std::map<api::StorageMessage::Id, api::StorageCommand::SP> MessageMap;
                 MessageMap::iterator iter(_messageBusSent.find(reply->getContext().value.UINT64));
                 if (iter != _messageBusSent.end()) {
@@ -601,7 +601,7 @@ CommunicationManager::sendCommand(
             mbusMsg->setRetryEnabled(false);
 
             {
-                vespalib::LockGuard lock(_messageBusSentLock);
+                std::lock_guard lock(_messageBusSentLock);
                 _messageBusSent[msg->getMsgId()] = msg;
             }
             sendMessageBusMessage(msg, std::move(mbusMsg), address.getRoute());

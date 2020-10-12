@@ -11,17 +11,17 @@ using search::attribute::PostingListMerger;
 struct Posting {
     uint32_t lid;
     int32_t weight;
-    Posting(uint32_t lid_, int32_t weight_)
+    Posting(uint32_t lid_, int32_t weight_) noexcept
         : lid(lid_),
           weight(weight_)
     {
     }
 
-    bool operator==(const Posting &rhs) const {
+    bool operator==(const Posting &rhs) const noexcept {
         return ((lid == rhs.lid) && (weight == rhs.weight));
     }
 
-    bool operator<(const Posting &rhs) const { return lid < rhs.lid; }
+    bool operator<(const Posting &rhs) const noexcept  { return lid < rhs.lid; }
 };
 
 std::ostream &operator<<(std::ostream &os, const Posting &posting)
@@ -35,11 +35,11 @@ class WeightedPostingList
 {
     std::vector<Posting> _entries;
 public:
-    WeightedPostingList(std::vector<Posting> entries)
+    WeightedPostingList(std::vector<Posting> entries) noexcept
         : _entries(std::move(entries))
     {
     }
-    ~WeightedPostingList() { }
+    ~WeightedPostingList() = default;
 
     template <typename Func>
     void foreach(Func func) const {
@@ -67,7 +67,7 @@ struct WeightedFixture
     {
     }
 
-    ~WeightedFixture() { }
+    ~WeightedFixture() = default;
 
     void reserveArray(uint32_t postingsCount, size_t postingsSize) { _merger.reserveArray(postingsCount, postingsSize); }
 

@@ -3,7 +3,7 @@
 
 #include "iconfigcontext.h"
 #include "timingvalues.h"
-#include "configmanager.h"
+#include "iconfigmanager.h"
 #include <vespa/config/subscription/sourcespec.h>
 
 namespace config {
@@ -19,7 +19,7 @@ public:
 private:
     TimingValues  _timingValues;
     int64_t       _generation;
-    ConfigManager _manager;
+    std::unique_ptr<IConfigManager> _manager;
 };
 
 

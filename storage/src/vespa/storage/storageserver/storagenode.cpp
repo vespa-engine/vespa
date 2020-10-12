@@ -129,7 +129,7 @@ StorageNode::subscribeToConfigs()
 
     _configFetcher->start();
 
-    vespalib::LockGuard configLockGuard(_configLock);
+    std::lock_guard configLockGuard(_configLock);
     _serverConfig = std::move(_newServerConfig);
     _clusterConfig = std::move(_newClusterConfig);
     _distributionConfig = std::move(_newDistributionConfig);
@@ -252,7 +252,7 @@ StorageNode::initializeStatusWebServer()
 void
 StorageNode::setNewDocumentRepo(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
 {
-    vespalib::LockGuard configLockGuard(_configLock);
+    std::lock_guard configLockGuard(_configLock);
     _context.getComponentRegister().setDocumentTypeRepo(repo);
     if (_communicationManager != nullptr) {
         _communicationManager->updateMessagebusProtocol(repo);
@@ -280,7 +280,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 {
     // Make sure we don't conflict with initialize or shutdown threads.
     (void) initGuard;
-    vespalib::LockGuard configLockGuard(_configLock);
+    std::lock_guard configLockGuard(_configLock);
 
     assert(_chain);
     // If we get here, initialize is done running. We have to handle changes
@@ -476,7 +476,7 @@ void StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
     // to a variable where we can find it later when processing config
     // updates
     {
-        vespalib::LockGuard configLockGuard(_configLock);
+        std::lock_guard configLockGuard(_configLock);
         _newServerConfig = std::move(config);
     }
     if (_serverConfig) {
@@ -488,7 +488,7 @@ void StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
 void StorageNode::configure(std::unique_ptr<UpgradingConfig> config) {
     log_config_received(*config);
     {
-        vespalib::LockGuard configLockGuard(_configLock);
+        std::lock_guard configLockGuard(_configLock);
         _newClusterConfig = std::move(config);
     }
     if (_clusterConfig) {
@@ -500,7 +500,7 @@ void StorageNode::configure(std::unique_ptr<UpgradingConfig> config) {
 void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
     log_config_received(*config);
     {
-        vespalib::LockGuard configLockGuard(_configLock);
+        std::lock_guard configLockGuard(_configLock);
         _newDistributionConfig = std::move(config);
     }
     if (_distributionConfig) {
@@ -512,7 +512,7 @@ void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
 void StorageNode::configure(std::unique_ptr<StorPrioritymappingConfig> config) {
     log_config_received(*config);
     {
-        vespalib::LockGuard configLockGuard(_configLock);
+        std::lock_guard configLockGuard(_configLock);
         _newPriorityConfig = std::move(config);
     }
     if (_priorityConfig) {
@@ -530,7 +530,7 @@ StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
     if (!hasChanged)
         return;
     {
-        vespalib::LockGuard configLockGuard(_configLock);
+        std::lock_guard configLockGuard(_configLock);
         _newDoctypesConfig = std::move(config);
     }
     if (_doctypesConfig) {
@@ -542,7 +542,7 @@ StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
 void StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
     log_config_received(*config);
     {
-        vespalib::LockGuard configLockGuard(_configLock);
+        std::lock_guard configLockGuard(_configLock);
         _newBucketSpacesConfig = std::move(config);
     }
     if (_bucketSpacesConfig) {

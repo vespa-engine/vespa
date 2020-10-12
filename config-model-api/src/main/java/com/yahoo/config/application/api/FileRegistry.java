@@ -11,7 +11,6 @@ import com.yahoo.config.FileReference;
  */
 public interface FileRegistry {
 
-
     FileReference addFile(String relativePath);
     FileReference addUri(String uri);
     default FileReference addApplicationPackage() { return addFile(""); }

@@ -18,7 +18,7 @@ namespace storage {
 
 class DummyStorageLink : public StorageLink {
 
-    mutable vespalib::Lock _lock; // to protect below containers:
+    mutable std::mutex _lock; // to protect below containers:
     std::vector<api::StorageMessage::SP> _commands;
     std::vector<api::StorageMessage::SP> _replies;
     std::list<api::StorageMessage::SP> _injected;
@@ -31,7 +31,7 @@ class DummyStorageLink : public StorageLink {
 
 public:
     DummyStorageLink();
-    ~DummyStorageLink();
+    ~DummyStorageLink() override;
 
     bool onDown(const api::StorageMessage::SP&) override;
     bool onUp(const api::StorageMessage::SP&) override;
@@ -63,21 +63,21 @@ public:
     void waitForMessage(const api::MessageType&, int timeout = -1);
 
     api::StorageMessage::SP getCommand(size_t i) const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         api::StorageMessage::SP ret = _commands[i];
         return ret;
     }
     api::StorageMessage::SP getReply(size_t i) const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         api::StorageMessage::SP ret = _replies[i];
         return ret;
     }
     size_t getNumCommands() const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         return _commands.size();
     }
     size_t getNumReplies() const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         return _replies.size();
     }
 
@@ -90,7 +90,7 @@ public:
         vespalib::MonitorGuard lock(_waitMonitor);
         std::vector<api::StorageMessage::SP> retval;
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             retval.swap(_commands);
         }
         return retval;
@@ -100,7 +100,7 @@ public:
         vespalib::MonitorGuard lock(_waitMonitor);
         std::vector<api::StorageMessage::SP> retval;
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             retval.swap(_replies);
         }
         return retval;

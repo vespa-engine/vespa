@@ -29,12 +29,12 @@ public:
     struct Neighbor {
         uint32_t docid;
         double distance;
-        Neighbor(uint32_t id, double dist)
+        Neighbor(uint32_t id, double dist) noexcept
           : docid(id), distance(dist)
         {}
-        Neighbor() : docid(0), distance(0.0) {}
+        Neighbor() noexcept : docid(0), distance(0.0) {}
     };
-    virtual ~NearestNeighborIndex() {}
+    virtual ~NearestNeighborIndex() = default;
     virtual void add_document(uint32_t docid) = 0;
 
     /**

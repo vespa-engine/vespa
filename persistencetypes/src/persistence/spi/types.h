@@ -29,10 +29,10 @@ namespace document {
       typedef type Type; \
       name() noexcept : _value() {} \
       explicit name(type v) noexcept : _value(v) {} \
-      operator type() const { return _value; } \
-      operator type&() { return _value; } \
-      type getValue() const { return _value; } \
-      name& operator=(type val) { _value = val; return *this; } \
+      operator type() const noexcept { return _value; } \
+      operator type&() noexcept { return _value; } \
+      type getValue() const noexcept { return _value; } \
+      name& operator=(type val) noexcept { _value = val; return *this; } \
       friend vespalib::nbostream & \
       operator<<(vespalib::nbostream &os, const name &wrapped); \
       friend vespalib::nbostream & \

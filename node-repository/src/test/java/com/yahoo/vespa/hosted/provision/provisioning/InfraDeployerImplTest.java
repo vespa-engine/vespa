@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -24,7 +25,9 @@ import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.ArgumentMatcher;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -98,10 +101,14 @@ public class InfraDeployerImplTest {
         verify(duperModelInfraApi, never()).infraApplicationActivated(any(), any());
         if (applicationIsActive) {
             verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-            verify(provisioner).remove(any(), eq(application.getApplicationId()));
+            ArgumentMatcher<ProvisionLock> lockMatcher = lock -> {
+                assertEquals(application.getApplicationId(), lock.application());
+                return true;
+            };
+            verify(provisioner).remove(any(), argThat(lockMatcher));
             verify(duperModelInfraApi).infraApplicationRemoved(eq(application.getApplicationId()));
         } else {
-            verify(provisioner, never()).remove(any(), any());
+            verify(provisioner, never()).remove(any(), any(ProvisionLock.class));
             verify(duperModelInfraApi, never()).infraApplicationRemoved(any());
         }
     }
@@ -129,10 +136,15 @@ public class InfraDeployerImplTest {
     private void verifyActivated(String... hostnames) {
         verify(duperModelInfraApi).infraApplicationActivated(
                 eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::from).collect(Collectors.toList())));
-        verify(provisioner).activate(any(), eq(application.getApplicationId()), argThat(hostSpecs -> {
+        ArgumentMatcher<ProvisionLock> lockMatcher = lock -> {
+            assertEquals(application.getApplicationId(), lock.application());
+            return true;
+        };
+        ArgumentMatcher<Collection<HostSpec>> hostsMatcher = hostSpecs -> {
             assertEquals(Set.of(hostnames), hostSpecs.stream().map(HostSpec::hostname).collect(Collectors.toSet()));
             return true;
-        }));
+        };
+        verify(provisioner).activate(any(), argThat(hostsMatcher), argThat(lockMatcher));
     }
 
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {

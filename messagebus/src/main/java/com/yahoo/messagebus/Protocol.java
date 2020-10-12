@@ -12,37 +12,34 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
  */
 public interface Protocol {
 
-    /**
-     * Returns a global unique name for this protocol.
-     *
-     * @return The name.
-     */
-    public String getName();
+    /** Returns a global unique name for this protocol. */
+    String getName();
 
     /**
      * Encodes the protocol specific data of a routable into a byte array.
      *
-     * @param version  The version to encode for.
-     * @param routable The routable to encode.
-     * @return The encoded data.
+     * @param version  the version to encode for
+     * @param routable the routable to encode
+     * @return the encoded data
      */
-    public byte[] encode(Version version, Routable routable);
+    byte[] encode(Version version, Routable routable);
 
     /**
      * Decodes the protocol specific data into a routable of the correct type.
      *
-     * @param version The version of the serialized routable.
-     * @param payload The payload to decode from.
-     * @return The decoded routable.
+     * @param version the version of the serialized routable
+     * @param payload the payload to decode from
+     * @return the decoded routable, or null if it could not be decoded
      */
-    public Routable decode(Version version, byte[] payload);
+    Routable decode(Version version, byte[] payload);
 
     /**
      * Create a policy of the named type with the named param passed to the constructor of that policy.
      *
-     * @param name  The name of the policy to create.
-     * @param param The parameter to that policy's constructor.
-     * @return The created policy.
+     * @param name  the name of the policy to create
+     * @param param the parameter to that policy's constructor
+     * @return the created policy
      */
-    public RoutingPolicy createPolicy(String name, String param);
+    RoutingPolicy createPolicy(String name, String param);
+
 }

@@ -8,13 +8,11 @@
 
 #include <cstdint>
 
-namespace storage {
-namespace api {
+namespace storage:: api {
 
 typedef uint64_t Timestamp;
 typedef uint32_t VisitorId;
 
 const Timestamp MAX_TIMESTAMP = (Timestamp)-1ll;
 
-}
 }

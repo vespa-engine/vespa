@@ -2,6 +2,7 @@
 
 #include "externslobrokpolicy.h"
 #include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/fnet/frt/frt.h>
@@ -61,8 +62,8 @@ string ExternSlobrokPolicy::init() {
     } else if (_configSources.size() != 0) {
         slobrok::ConfiguratorFactory config(
             config::ConfigUri(_slobrokConfigId,
-                             std::make_unique<config::ConfigContext>(config::ServerSpec(_configSources))));
-        _mirror.reset(new MirrorAPI(*_orb, config));
+                             std::make_shared<config::ConfigContext>(config::ServerSpec(_configSources))));
+        _mirror = std::make_unique<MirrorAPI>(*_orb, config);
     }
 
     if (_mirror.get()) {
@@ -74,7 +75,7 @@ string ExternSlobrokPolicy::init() {
 
 IMirrorAPI::SpecList
 ExternSlobrokPolicy::lookup(mbus::RoutingContext& context, const string& pattern) {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
 
     const IMirrorAPI& mirror(_mirror.get()? *_mirror : context.getMirror());
 

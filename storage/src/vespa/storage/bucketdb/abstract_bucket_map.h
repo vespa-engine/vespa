@@ -36,7 +36,7 @@ public:
         key_type _key;
         bool _locked;
 
-        LockKeeper(AbstractBucketMap& map, key_type key)
+        LockKeeper(AbstractBucketMap& map, key_type key) noexcept
             : _map(map), _key(key), _locked(true) {}
         void unlock() { _map.unlock(_key); _locked = false; }
     public:
@@ -44,7 +44,7 @@ public:
     };
 
     struct WrappedEntry {
-        WrappedEntry()
+        WrappedEntry() noexcept
             : _exists(false),
               _preExisted(false),
               _lockKeeper(),
@@ -103,16 +103,16 @@ public:
         key_type _key;
         const char* _owner;
 
-        LockId() : _key(0), _owner("none - empty token") {}
-        LockId(key_type key, const char* owner)
+        LockId() noexcept : _key(0), _owner("none - empty token") {}
+        LockId(key_type key, const char* owner) noexcept
             : _key(key), _owner(owner)
         {
             assert(_owner);
         }
 
-        size_t hash() const { return _key; }
-        size_t operator%(size_t val) const { return _key % val; }
-        bool operator==(const LockId& id) const { return (_key == id._key); }
+        size_t hash() const noexcept { return _key; }
+        size_t operator%(size_t val) const noexcept { return _key % val; }
+        bool operator==(const LockId& id) const noexcept { return (_key == id._key); }
         operator key_type() const { return _key; }
     };
 

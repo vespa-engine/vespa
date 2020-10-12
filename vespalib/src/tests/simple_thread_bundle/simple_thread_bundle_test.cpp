@@ -3,7 +3,6 @@
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/box.h>
-#include <vespa/vespalib/util/sync.h>
 
 using namespace vespalib;
 using namespace vespalib::fixed_thread_bundle;

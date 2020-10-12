@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vector>
+#include <cassert>
 
 namespace proton::matching {
 
@@ -28,7 +29,7 @@ private:
 
 public:
     PartialResult(size_t maxSize_in, bool hasSortData_in);
-    ~PartialResult();
+    ~PartialResult() override;
     size_t size() const { return _hits.size(); }
     size_t maxSize() const { return _maxSize; }
     size_t totalHits() const { return _totalHits; }

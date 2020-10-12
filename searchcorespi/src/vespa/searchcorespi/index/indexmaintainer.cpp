@@ -41,7 +41,6 @@ using vespalib::makeTask;
 using vespalib::string;
 using vespalib::Closure0;
 using vespalib::Executor;
-using vespalib::LockGuard;
 using vespalib::Runnable;
 
 namespace searchcorespi::index {
@@ -349,10 +348,12 @@ IndexMaintainer::loadDiskIndexes(const FusionSpec &spec, ISearchableIndexCollect
 
 namespace {
 
+    using LockGuard = std::lock_guard<std::mutex>;
+
 ISearchableIndexCollection::SP
 getLeaf(const LockGuard &newSearchLock, const ISearchableIndexCollection::SP & is, bool warn=false)
 {
-    if (dynamic_cast<const WarmupIndexCollection *>(is.get()) != NULL) {
+    if (dynamic_cast<const WarmupIndexCollection *>(is.get()) != nullptr) {
         if (warn) {
             LOG(info, "Already warming up an index '%s'. Start using it immediately."
                       " This is an indication that you have configured your warmup interval too long.",

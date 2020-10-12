@@ -162,7 +162,7 @@ TEST(OnnxTest, simple_onnx_model_can_be_evaluated)
     ctx.bind_param(1, attribute);
     ctx.bind_param(2, bias);
     ctx.eval();
-    auto cells = static_cast<const DenseTensorView&>(output).cellsRef();
+    auto cells = output.cells();
     EXPECT_EQ(cells.type, ValueType::CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
     EXPECT_EQ(GetCell::from(cells, 0), 79.0);
@@ -208,7 +208,7 @@ TEST(OnnxTest, dynamic_onnx_model_can_be_evaluated)
     ctx.bind_param(1, attribute);
     ctx.bind_param(2, bias);
     ctx.eval();
-    auto cells = static_cast<const DenseTensorView&>(output).cellsRef();
+    auto cells = output.cells();
     EXPECT_EQ(cells.type, ValueType::CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
     EXPECT_EQ(GetCell::from(cells, 0), 79.0);
@@ -254,7 +254,7 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
     ctx.bind_param(1, attribute);
     ctx.bind_param(2, bias);
     ctx.eval();
-    auto cells = static_cast<const DenseTensorView&>(output).cellsRef();
+    auto cells = output.cells();
     EXPECT_EQ(cells.type, ValueType::CellType::DOUBLE);
     EXPECT_EQ(cells.size, 1);
     EXPECT_EQ(GetCell::from(cells, 0), 79.0);

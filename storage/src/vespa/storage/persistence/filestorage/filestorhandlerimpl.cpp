@@ -75,8 +75,8 @@ FileStorHandlerImpl::~FileStorHandlerImpl() = default;
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP status)
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
-    if (_mergeStates.find(bucket) != _mergeStates.end()) {;
+    std::lock_guard mlock(_mergeStatesLock);
+    if (_mergeStates.find(bucket) != _mergeStates.end()) {
         LOG(warning, "A merge status already existed for %s. Overwriting it.", bucket.toString().c_str());
     }
     _mergeStates[bucket] = status;
@@ -85,7 +85,7 @@ FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus:
 MergeStatus&
 FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     MergeStatus::SP status = _mergeStates[bucket];
     if (status.get() == 0) {
         throw vespalib::IllegalStateException("No merge state exist for " + bucket.toString(), VESPA_STRLOC);
@@ -96,21 +96,21 @@ FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 bool
 FileStorHandlerImpl::isMerging(const document::Bucket& bucket) const
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     return (_mergeStates.find(bucket) != _mergeStates.end());
 }
 
 uint32_t
 FileStorHandlerImpl::getNumActiveMerges() const
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     return _mergeStates.size();
 }
 
 void
 FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api::ReturnCode* code)
 {
-    vespalib::LockGuard mlock(_mergeStatesLock);
+    std::lock_guard mlock(_mergeStatesLock);
     auto it = _mergeStates.find(bucket);
     if (it == _mergeStates.end()) {
         if (code != 0) {
@@ -301,7 +301,7 @@ void
 FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
 {
     for (Disk & disk : _diskInfo) {
-        vespalib::MonitorGuard lockGuard(_mergeStatesLock);
+        std::lock_guard lockGuard(_mergeStatesLock);
         disk.metrics->pendingMerges.addValue(_mergeStates.size());
         disk.metrics->queueSize.addValue(disk.getQueueSize());
 
@@ -802,7 +802,7 @@ FileStorHandlerImpl::Stripe::failOperations(const document::Bucket &bucket, cons
 {
     vespalib::MonitorGuard guard(_lock);
 
-    BucketIdx& idx(bmi::get<2>(_queue));
+    BucketIdx& idx(bmi::get<2>(*_queue));
     std::pair<BucketIdx::iterator, BucketIdx::iterator> range(idx.equal_range(bucket));
 
     for (auto iter = range.first; iter != range.second;) {
@@ -869,9 +869,13 @@ FileStorHandlerImpl::MessageEntry::~MessageEntry() = default;
 FileStorHandlerImpl::Disk::Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numStripes)
     : metrics(0),
       _nextStripeId(0),
-      _stripes(numStripes, Stripe(owner, messageSender)),
+      _stripes(),
       state(FileStorHandler::AVAILABLE)
 {
+    _stripes.reserve(numStripes);
+    for (size_t i(0); i < numStripes; i++) {
+        _stripes.emplace_back(owner, messageSender);
+    }
     assert(numStripes > 0);
 }
 
@@ -884,6 +888,7 @@ FileStorHandlerImpl::Disk::Disk(Disk && rhs) noexcept
 
 FileStorHandlerImpl::Disk::~Disk() = default;
 FileStorHandlerImpl::Stripe::~Stripe() = default;
+FileStorHandlerImpl::Stripe::Stripe(Stripe &&) noexcept = default;
 
 void
 FileStorHandlerImpl::Disk::flush()
@@ -903,7 +908,7 @@ FileStorHandlerImpl::Disk::broadcast()
 
 uint64_t FileStorHandlerImpl::Disk::dispersed_bucket_bits(const document::Bucket& bucket) noexcept {
     const uint64_t raw_id = bucket.getBucketId().getId();
-    return XXH64(&raw_id, sizeof(uint64_t), 0);
+    return XXH3_64bits(&raw_id, sizeof(uint64_t));
 }
 
 bool
@@ -921,6 +926,10 @@ FileStorHandlerImpl::Disk::schedule(const std::shared_ptr<api::StorageMessage>& 
 FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender)
     : _owner(owner),
       _messageSender(messageSender),
+      _metrics(nullptr),
+      _lock(),
+      _queue(std::make_unique<PriorityQueue>()),
+      _lockedBuckets(),
       _active_merges(0)
 {}
 
@@ -933,7 +942,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
     // second attempt. This is key to allowing the run loop to register
     // ticks at regular intervals while not busy-waiting.
     for (int attempt = 0; (attempt < 2) && ! disk.isClosed() && !_owner.isPaused(); ++attempt) {
-        PriorityIdx& idx(bmi::get<1>(_queue));
+        PriorityIdx& idx(bmi::get<1>(*_queue));
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
         while (iter != end && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
@@ -1032,11 +1041,11 @@ void FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::Storage
                                         const AbortBucketOperationsCommand& cmd)
 {
     vespalib::MonitorGuard lockGuard(_lock);
-    for (auto it(_queue.begin()); it != _queue.end();) {
+    for (auto it(_queue->begin()); it != _queue->end();) {
         api::StorageMessage& msg(*it->_command);
         if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket)) {
             aborted.emplace_back(static_cast<api::StorageCommand&>(msg).makeReply());
-            it = _queue.erase(it);
+            it = _queue->erase(it);
         } else {
             ++it;
         }
@@ -1046,7 +1055,7 @@ void FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::Storage
 bool FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
 {
     vespalib::MonitorGuard lockGuard(_lock);
-    _queue.emplace_back(std::move(messageEntry));
+    _queue->emplace_back(std::move(messageEntry));
     lockGuard.broadcast();
     return true;
 }
@@ -1055,8 +1064,8 @@ void
 FileStorHandlerImpl::Stripe::flush()
 {
     vespalib::MonitorGuard lockGuard(_lock);
-    while (!(_queue.empty() && _lockedBuckets.empty())) {
-        LOG(debug, "Still %ld in queue and %ld locked buckets", _queue.size(), _lockedBuckets.size());
+    while (!(_queue->empty() && _lockedBuckets.empty())) {
+        LOG(debug, "Still %ld in queue and %ld locked buckets", _queue->size(), _lockedBuckets.size());
         lockGuard.wait(100);
     }
 }
@@ -1229,7 +1238,7 @@ FileStorHandlerImpl::Stripe::dumpQueueHtml(std::ostream & os) const
 {
     vespalib::MonitorGuard guard(_lock);
 
-    const PriorityIdx& idx = bmi::get<1>(_queue);
+    const PriorityIdx& idx = bmi::get<1>(*_queue);
     for (const auto & entry : idx) {
         os << "<li>" << entry._command->toString() << " (priority: "
            << (int)entry._command->getPriority() << ")</li>\n";
@@ -1238,8 +1247,9 @@ FileStorHandlerImpl::Stripe::dumpQueueHtml(std::ostream & os) const
 
 namespace {
 
-void dump_lock_entry(const document::BucketId& bucketId, const FileStorHandlerImpl::Stripe::LockEntry& entry,
-                     api::LockingRequirements lock_mode, FileStorHandlerImpl::Clock::time_point now_ts, std::ostream& os) {
+void
+dump_lock_entry(const document::BucketId& bucketId, const FileStorHandlerImpl::Stripe::LockEntry& entry,
+                api::LockingRequirements lock_mode, FileStorHandlerImpl::Clock::time_point now_ts, std::ostream& os) {
     os << api::MessageType::get(entry.msgType).getName() << ":" << entry.msgId << " ("
        << bucketId << ", " << api::to_string(lock_mode)
        << " lock) Running for " << std::chrono::duration_cast<std::chrono::seconds>(now_ts - entry.timestamp).count() << " secs<br/>\n";
@@ -1269,7 +1279,7 @@ FileStorHandlerImpl::Stripe::dumpQueue(std::ostream & os) const
 {
     vespalib::MonitorGuard guard(_lock);
 
-    const PriorityIdx& idx = bmi::get<1>(_queue);
+    const PriorityIdx& idx = bmi::get<1>(*_queue);
     for (const auto & entry : idx) {
         os << entry._bucket.getBucketId() << ": " << entry._command->toString() << " (priority: "
            << (int)entry._command->getPriority() << ")\n";
@@ -1300,7 +1310,7 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
         out << "</ul>\n";
     }
 
-    vespalib::LockGuard mergeGuard(_mergeStatesLock);
+    std::lock_guard mergeGuard(_mergeStatesLock);
     out << "<tr><td>Active merge operations</td><td>" << _mergeStates.size() << "</td></tr>\n";
     if (verbose) {
         out << "<h4>Active merges</h4>\n";

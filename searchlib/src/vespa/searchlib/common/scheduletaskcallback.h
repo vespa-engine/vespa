@@ -4,8 +4,7 @@
 #include "idestructorcallback.h"
 #include <vespa/vespalib/util/executor.h>
 
-namespace search
-{
+namespace search {
 
 /**
  * Class that schedules a task when instance is destroyed. Typically a
@@ -20,12 +19,11 @@ class ScheduleTaskCallback : public IDestructorCallback
     vespalib::Executor::Task::UP _task;
 public:
     ScheduleTaskCallback(vespalib::Executor &executor,
-                         vespalib::Executor::Task::UP task)
+                         vespalib::Executor::Task::UP task) noexcept
         : _executor(executor),
           _task(std::move(task))
-    {
-    }
-    virtual ~ScheduleTaskCallback() {
+    {}
+    ~ScheduleTaskCallback() override {
         _executor.execute(std::move(_task));
     }
 };

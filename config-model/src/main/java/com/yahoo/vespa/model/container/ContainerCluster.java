@@ -11,15 +11,14 @@ import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
-import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
@@ -100,8 +99,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer
+        ConfigserverConfig.Producer
 {
 
     /**
@@ -160,9 +158,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
     private String environmentVars = null;
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
-        super(parent, subId);
-        this.name = name;
+    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
+        super(parent, configSubId);
+        this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
 
@@ -170,7 +168,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        addSimpleComponent(ThreadPoolProvider.class);
+        addComponent(new DefaultThreadpoolProvider(this, deployState));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent(SecurityFilterInvoker.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
@@ -185,6 +183,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
     }
+
+    public ClusterSpec.Id id() { return ClusterSpec.Id.from(getName()); }
 
     public void setZone(Zone zone) {
         this.zone = zone;
@@ -616,5 +616,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     protected abstract boolean messageBusEnabled();
+
+    /**
+     * Mark that the config emitted by this cluster currently should be applied by clients already running with
+     * a previous generation of it only by restarting the consuming processes.
+     */
+    public void deferChangesUntilRestart() {
+
+    }
 
 }

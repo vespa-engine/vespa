@@ -31,18 +31,18 @@ class BucketInfo : public vespalib::AsciiPrintable
     bool _active;
 
 public:
-    BucketInfo();
-    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize);
+    BucketInfo() noexcept;
+    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize) noexcept;
     BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
-               uint32_t metaCount, uint32_t usedFileSize);
-    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
-               uint32_t metaCount, uint32_t usedFileSize,
-               bool ready, bool active);
+               uint32_t metaCount, uint32_t usedFileSize) noexcept;
     BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
                uint32_t metaCount, uint32_t usedFileSize,
-               bool ready, bool active, Timestamp lastModified);
-    BucketInfo(const BucketInfo &);
-    BucketInfo & operator = (const BucketInfo &);
+               bool ready, bool active) noexcept;
+    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
+               uint32_t metaCount, uint32_t usedFileSize,
+               bool ready, bool active, Timestamp lastModified) noexcept;
+    BucketInfo(const BucketInfo &) noexcept;
+    BucketInfo & operator = (const BucketInfo &) noexcept;
     ~BucketInfo();
 
     Timestamp getLastModified() const { return _lastModified; }

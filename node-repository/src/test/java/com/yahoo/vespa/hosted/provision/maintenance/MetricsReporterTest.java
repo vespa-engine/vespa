@@ -159,6 +159,7 @@ public class MetricsReporterTest {
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.locked", 3);
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.release", 3);
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.releaseFailed", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.reentry", 0);
         metric.remove("lockAttempt.acquireLatency");
         metric.remove("lockAttempt.acquireMaxActiveLatency");
         metric.remove("lockAttempt.acquireHz");

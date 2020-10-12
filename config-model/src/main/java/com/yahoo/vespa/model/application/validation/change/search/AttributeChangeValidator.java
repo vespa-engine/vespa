@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.IndexSchema;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  */
 public class AttributeChangeValidator {
 
+    private final ClusterSpec.Id id;
     private final AttributeFields currentFields;
     private final IndexSchema currentIndexSchema;
     private final NewDocumentType currentDocType;
@@ -33,12 +35,14 @@ public class AttributeChangeValidator {
     private final IndexSchema nextIndexSchema;
     private final NewDocumentType nextDocType;
 
-    public AttributeChangeValidator(AttributeFields currentFields,
+    public AttributeChangeValidator(ClusterSpec.Id id,
+                                    AttributeFields currentFields,
                                     IndexSchema currentIndexSchema,
                                     NewDocumentType currentDocType,
                                     AttributeFields nextFields,
                                     IndexSchema nextIndexSchema,
                                     NewDocumentType nextDocType) {
+        this.id = id;
         this.currentFields = currentFields;
         this.currentIndexSchema = currentIndexSchema;
         this.currentDocType = currentDocType;
@@ -60,9 +64,8 @@ public class AttributeChangeValidator {
         return nextFields.attributes().stream().
                 map(attr -> attr.getName()).
                 filter(attrName -> !currentFields.containsAttribute(attrName) &&
-                        currentDocType.containsField(attrName)).
-                map(attrName -> new VespaRestartAction(new ChangeMessageBuilder(attrName).
-                        addChange("add attribute aspect").build())).
+                                   currentDocType.containsField(attrName)).
+                map(attrName -> new VespaRestartAction(id, new ChangeMessageBuilder(attrName).addChange("add attribute aspect").build())).
                 collect(Collectors.toList());
     }
 
@@ -70,10 +73,9 @@ public class AttributeChangeValidator {
         return currentFields.attributes().stream().
                 map(attr -> attr.getName()).
                 filter(attrName -> !nextFields.containsAttribute(attrName) &&
-                        nextDocType.containsField(attrName) &&
-                        !isIndexField(attrName)).
-                map(attrName -> new VespaRestartAction(new ChangeMessageBuilder(attrName).
-                        addChange("remove attribute aspect").build())).
+                                   nextDocType.containsField(attrName) &&
+                                   !isIndexField(attrName)).
+                map(attrName -> new VespaRestartAction(id, new ChangeMessageBuilder(attrName).addChange("remove attribute aspect").build())).
                 collect(Collectors.toList());
     }
 
@@ -90,60 +92,63 @@ public class AttributeChangeValidator {
         for (Attribute nextAttr : nextFields.attributes()) {
             Attribute currAttr = currentFields.getAttribute(nextAttr.getName());
             if (currAttr != null) {
-                validateAttributeSetting(currAttr, nextAttr, Attribute::isFastSearch, "fast-search", result);
-                validateAttributeSetting(currAttr, nextAttr, Attribute::isFastAccess, "fast-access", result);
-                validateAttributeSetting(currAttr, nextAttr, Attribute::isHuge, "huge", result);
-                validateAttributeSetting(currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
-                validateAttributeSetting(currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
-                validateAttributeSetting(currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
-                validateAttributeSetting(currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastSearch, "fast-search", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastAccess, "fast-access", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::isHuge, "huge", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
+                validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);
                 if (hasHnswIndex(currAttr) && hasHnswIndex(nextAttr)) {
-                    validateAttributeHnswIndexSetting(currAttr, nextAttr, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
-                    validateAttributeHnswIndexSetting(currAttr, nextAttr, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
+                    validateAttributeHnswIndexSetting(id, currAttr, nextAttr, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
+                    validateAttributeHnswIndexSetting(id, currAttr, nextAttr, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
                 }
             }
         }
         return result;
     }
 
-    private static void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,
+    private static void validateAttributeSetting(ClusterSpec.Id id,
+                                                 Attribute currentAttr, Attribute nextAttr,
                                                  Predicate<Attribute> predicate, String setting,
                                                  List<VespaConfigChangeAction> result) {
-        final boolean nextValue = predicate.test(nextAttr);
+        boolean nextValue = predicate.test(nextAttr);
         if (predicate.test(currentAttr) != nextValue) {
             String change = nextValue ? "add" : "remove";
-            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).
-                    addChange(change + " attribute '" + setting + "'").build()));
+            result.add(new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange(change + " attribute '" + setting + "'").build()));
         }
     }
 
-    private static <T> void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,
+    private static <T> void validateAttributeSetting(ClusterSpec.Id id,
+                                                     Attribute currentAttr, Attribute nextAttr,
                                                      Function<Attribute, T> settingValueProvider, String setting,
                                                      List<VespaConfigChangeAction> result) {
         T currentValue = settingValueProvider.apply(currentAttr);
         T nextValue = settingValueProvider.apply(nextAttr);
         if ( ! Objects.equals(currentValue, nextValue)) {
             String message = String.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
-            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
+            result.add(new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }
     }
 
-    private static <T> void validateAttributeHnswIndexSetting(Attribute currentAttr, Attribute nextAttr,
-                                                              Function<HnswIndexParams, T> settingValueProvider, String setting,
+    private static <T> void validateAttributeHnswIndexSetting(ClusterSpec.Id id,
+                                                              Attribute currentAttr, Attribute nextAttr,
+                                                              Function<HnswIndexParams, T> settingValueProvider,
+                                                              String setting,
                                                               List<VespaConfigChangeAction> result) {
         T currentValue = settingValueProvider.apply(currentAttr.hnswIndexParams().get());
         T nextValue = settingValueProvider.apply(nextAttr.hnswIndexParams().get());
         if (!Objects.equals(currentValue, nextValue)) {
             String message = String.format("change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
-            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
+            result.add(new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }
     }
 
-    private List<VespaConfigChangeAction> validateTensorTypes(final ValidationOverrides overrides, Instant now) {
-        final List<VespaConfigChangeAction> result = new ArrayList<>();
+    private List<VespaConfigChangeAction> validateTensorTypes(ValidationOverrides overrides, Instant now) {
+        List<VespaConfigChangeAction> result = new ArrayList<>();
 
-        for (final Attribute nextAttr : nextFields.attributes()) {
-            final Attribute currentAttr = currentFields.getAttribute(nextAttr.getName());
+        for (Attribute nextAttr : nextFields.attributes()) {
+            Attribute currentAttr = currentFields.getAttribute(nextAttr.getName());
 
             if (currentAttr != null && currentAttr.tensorType().isPresent()) {
                 // If the tensor attribute is not present on the new attribute, it means that the data type of the attribute
@@ -154,7 +159,7 @@ public class AttributeChangeValidator {
 
                 // Tensor attribute has changed type
                 if (!nextAttr.tensorType().get().equals(currentAttr.tensorType().get())) {
-                    result.add(createTensorTypeChangedRefeedAction(currentAttr, nextAttr, overrides, now));
+                    result.add(createTensorTypeChangedRefeedAction(id, currentAttr, nextAttr, overrides, now));
                 }
             }
         }
@@ -162,15 +167,13 @@ public class AttributeChangeValidator {
         return result;
     }
 
-    private static VespaRefeedAction createTensorTypeChangedRefeedAction(Attribute currentAttr, Attribute nextAttr, ValidationOverrides overrides, Instant now) {
-        return VespaRefeedAction.of(
-                "tensor-type-change",
-                overrides,
-                new ChangeMessageBuilder(nextAttr.getName())
-                        .addChange(
-                                "tensor type",
-                                currentAttr.tensorType().get().toString(),
-                                nextAttr.tensorType().get().toString()).build(), now);
+    private static VespaRefeedAction createTensorTypeChangedRefeedAction(ClusterSpec.Id id, Attribute currentAttr, Attribute nextAttr, ValidationOverrides overrides, Instant now) {
+        return VespaRefeedAction.of(id,
+                                    "tensor-type-change",
+                                    overrides,
+                                    new ChangeMessageBuilder(nextAttr.getName()).addChange("tensor type",
+                                                                                           currentAttr.tensorType().get().toString(),
+                                                                                           nextAttr.tensorType().get().toString()).build(), now);
     }
 
 }

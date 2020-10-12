@@ -2,6 +2,7 @@
 #include "sequencer.h"
 #include "tracelevel.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 using vespalib::make_string;
 
@@ -37,7 +38,7 @@ Sequencer::filter(Message::UP msg)
     uint64_t seqId = msg->getSequenceId();
     msg->setContext(Context(seqId));
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         QueueMap::iterator it = _seqMap.find(seqId);
         if (it != _seqMap.end()) {
             if (it->second == nullptr) {
@@ -85,7 +86,7 @@ Sequencer::handleReply(Reply::UP reply)
                             make_string("Sequencer received reply with sequence id '%" PRIu64 "'.", seq));
     Message::UP msg;
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         QueueMap::iterator it = _seqMap.find(seq);
         MessageQueue *que = it->second;
         assert(it != _seqMap.end());
@@ -99,7 +100,7 @@ Sequencer::handleReply(Reply::UP reply)
             que->pop();
         }
     }
-    if (msg.get() != nullptr) {
+    if (msg) {
         sequencedSend(std::move(msg));
     }
     IReplyHandler &handler = reply->getCallStack().pop(*reply);

@@ -20,7 +20,7 @@ private:
     uint32_t _highestUsedLid;
 
 public:
-    LidUsageStats()
+    LidUsageStats() noexcept
         : _lidLimit(0),
           _usedLids(0),
           _lowestFreeLid(0),
@@ -30,7 +30,7 @@ public:
     LidUsageStats(uint32_t lidLimit,
                   uint32_t usedLids,
                   uint32_t lowestFreeLid,
-                  uint32_t highestUsedLid)
+                  uint32_t highestUsedLid) noexcept
         : _lidLimit(lidLimit),
           _usedLids(usedLids),
           _lowestFreeLid(lowestFreeLid),

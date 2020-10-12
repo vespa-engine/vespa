@@ -21,7 +21,6 @@ vespa_define_module(
 
     TESTS
     src/tests
-    src/tests/bucketdistribution
     src/tests/container
     src/tests/distribution
     src/tests/state

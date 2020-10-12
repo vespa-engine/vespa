@@ -9,6 +9,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>

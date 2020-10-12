@@ -18,7 +18,7 @@ public:
     class Hit
     {
     public:
-        Hit() : gid(), metric(0), path(0), _distributionKey(0) {}
+        Hit() noexcept : gid(), metric(0), path(0), _distributionKey(0) {}
         void setDistributionKey(uint32_t key) { _distributionKey = key; }
         uint32_t getDistributionKey() const { return _distributionKey; }
         document::GlobalId gid;
@@ -30,9 +30,9 @@ public:
 
     class Coverage {
     public:
-        Coverage() : Coverage(0) { }
-        Coverage(uint64_t active) : Coverage(active, active) { }
-        Coverage(uint64_t active, uint64_t covered)
+        Coverage() noexcept : Coverage(0) { }
+        Coverage(uint64_t active) noexcept : Coverage(active, active) { }
+        Coverage(uint64_t active, uint64_t covered) noexcept
             : _covered(covered), _active(active), _soonActive(active),
               _degradeReason(0), _nodesQueried(1), _nodesReplied(1)
         { }

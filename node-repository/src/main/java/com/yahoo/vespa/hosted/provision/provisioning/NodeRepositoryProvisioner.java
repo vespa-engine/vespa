@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
@@ -118,9 +119,17 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     @Override
+    // TODO(mpolden): Remove
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
+        try (var lock = lock(application)) {
+            activate(transaction, hosts, lock);
+        }
+    }
+
+    @Override
+    public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) {
         validate(hosts);
-        activator.activate(application, hosts, transaction);
+        activator.activate(hosts, transaction, lock);
     }
 
     @Override
@@ -129,9 +138,22 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     @Override
+    // TODO(mpolden): Remove
     public void remove(NestedTransaction transaction, ApplicationId application) {
-        nodeRepository.deactivate(application, transaction);
-        loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
+        try (var lock = lock(application)) {
+            remove(transaction, lock);
+        }
+    }
+
+    @Override
+    public void remove(NestedTransaction transaction, ProvisionLock lock) {
+        nodeRepository.deactivate(transaction, lock);
+        loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(transaction, lock));
+    }
+
+    @Override
+    public ProvisionLock lock(ApplicationId application) {
+        return new ProvisionLock(application, nodeRepository.lock(application));
     }
 
     /**

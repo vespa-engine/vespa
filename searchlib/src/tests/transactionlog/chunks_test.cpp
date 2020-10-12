@@ -79,7 +79,7 @@ TEST("test empty commitchunk") {
 
 struct Counter : public search::IDestructorCallback {
     std::atomic<uint32_t> & _counter;
-    Counter(std::atomic<uint32_t> & counter) : _counter(counter) { _counter++; }
+    Counter(std::atomic<uint32_t> & counter) noexcept : _counter(counter) { _counter++; }
     ~Counter() override { _counter--; }
 };
 

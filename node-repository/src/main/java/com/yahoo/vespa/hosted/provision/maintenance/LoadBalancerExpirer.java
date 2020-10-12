@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
- * Periodically expire load balancers.
+ * Periodically expire load balancers and de-provision inactive ones.
  *
  * Load balancers expire from the following states:
  *
@@ -123,14 +123,11 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     /** Apply operation to all load balancers that exist in given state, while holding lock */
     private void withLoadBalancersIn(LoadBalancer.State state, Consumer<LoadBalancer> operation) {
         for (var id : db.readLoadBalancerIds()) {
-            try (var lock = db.lock(id.application())) {
-                // TODO(mpolden): Remove inner lock
-                try (var innerLock = db.configLock(id.application())) {
-                    var loadBalancer = db.readLoadBalancer(id);
-                    if (loadBalancer.isEmpty()) continue;              // Load balancer was removed during loop
-                    if (loadBalancer.get().state() != state) continue; // Wrong state
-                    operation.accept(loadBalancer.get());
-                }
+            try (var lock = db.lock(id.application(), Duration.ofSeconds(1))) {
+                var loadBalancer = db.readLoadBalancer(id);
+                if (loadBalancer.isEmpty()) continue;              // Load balancer was removed during loop
+                if (loadBalancer.get().state() != state) continue; // Wrong state
+                operation.accept(loadBalancer.get());
             }
         }
     }

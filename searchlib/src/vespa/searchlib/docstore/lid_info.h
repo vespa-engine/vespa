@@ -3,16 +3,16 @@
 #pragma once
 
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/vespalib/util/sync.h>
 #include <limits>
 #include <vector>
+#include <mutex>
 
 namespace search {
 
 class LidInfo {
 public:
-    LidInfo() : _value() { }
-    LidInfo(uint64_t rep) { _value.r = rep; }
+    LidInfo() noexcept : _value() { }
+    LidInfo(uint64_t rep) noexcept { _value.r = rep; }
     LidInfo(uint32_t fileId, uint32_t chunkId, uint32_t size);
     uint32_t getFileId()  const { return _value.v.fileId; }
     uint32_t getChunkId() const { return _value.v.chunkId; }
@@ -57,7 +57,7 @@ private:
 
 class LidInfoWithLid : public LidInfo {
 public:
-    LidInfoWithLid(LidInfo lidInfo, uint32_t lid) : LidInfo(lidInfo), _lid(lid) { }
+    LidInfoWithLid(LidInfo lidInfo, uint32_t lid) noexcept : LidInfo(lidInfo), _lid(lid) { }
     uint32_t getLid() const { return _lid; }
 private:
     uint32_t _lid;
@@ -68,8 +68,8 @@ typedef std::vector<LidInfoWithLid> LidInfoWithLidV;
 class ISetLid
 {
 public:
-    using LockGuard = vespalib::LockGuard;
-    virtual ~ISetLid() { }
+    using LockGuard = std::unique_lock<std::mutex>;
+    virtual ~ISetLid() = default;
     virtual void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) = 0;
 };
 
@@ -77,10 +77,11 @@ class IGetLid
 {
 public:
     using Guard = vespalib::GenerationHandler::Guard;
-    virtual ~IGetLid() { }
+    using LockGuard = std::unique_lock<std::mutex>;
+    virtual ~IGetLid() = default;
 
     virtual LidInfo getLid(const Guard & guard, uint32_t lid) const = 0;
-    virtual vespalib::LockGuard getLidGuard(uint32_t lid) const = 0;
+    virtual LockGuard getLidGuard(uint32_t lid) const = 0;
     virtual Guard getLidReadGuard() const = 0;
 };
 

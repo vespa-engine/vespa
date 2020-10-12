@@ -91,7 +91,7 @@ ServiceLayerNode::subscribeToConfigs()
     StorageNode::subscribeToConfigs();
     _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
 
-    vespalib::LockGuard configLockGuard(_configLock);
+    std::lock_guard configLockGuard(_configLock);
         // Verify and set disk count
     if (_serverConfig->diskCount != 0
         && _serverConfig->diskCount != _partitions.size())

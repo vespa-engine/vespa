@@ -2,15 +2,11 @@
 #pragma once
 
 #include <vespa/document/datatype/structdatatype.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace document {
 
 class UrlDataType {
 private:
-    static StructDataType::UP _instance;
-    static vespalib::Lock     _lock;
-
     UrlDataType() { /* hide */ }
     static StructDataType::UP createInstance();
 

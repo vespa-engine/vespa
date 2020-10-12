@@ -40,7 +40,7 @@ public class MetricsProxyContainer extends Container implements
     final boolean isHostedVespa;
 
     public MetricsProxyContainer(AbstractConfigProducer parent, String hostname, int index, boolean isHostedVespa) {
-        super(parent, hostname, index);
+        super(parent, hostname, index, isHostedVespa);
         this.isHostedVespa = isHostedVespa;
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
@@ -132,7 +132,7 @@ public class MetricsProxyContainer extends Container implements
     }
 
     private String getNodeRole() {
-        String hostConfigId = getHost().getConfigId();
+        String hostConfigId = getHost().getHost().getConfigId();
         if (! isHostedVespa) return hostConfigId;
         return getHostResource().spec().membership()
                     .map(ClusterMembership::stringValue)

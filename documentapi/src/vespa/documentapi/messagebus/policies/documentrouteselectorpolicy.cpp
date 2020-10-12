@@ -60,7 +60,7 @@ DocumentRouteSelectorPolicy::configure(std::unique_ptr<messagebus::protocol::Doc
         }
         config[string(route.name)] = selector;
     }
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _config.swap(config);
     _error.swap(error);
 }
@@ -68,7 +68,7 @@ DocumentRouteSelectorPolicy::configure(std::unique_ptr<messagebus::protocol::Doc
 const string &
 DocumentRouteSelectorPolicy::getError() const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     return _error;
 }
 
@@ -84,7 +84,7 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context)
 
     // Invoke private select method for each candidate recipient.
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (!_error.empty()) {
             context.setError(DocumentProtocol::ERROR_POLICY_FAILURE, _error);
             return;

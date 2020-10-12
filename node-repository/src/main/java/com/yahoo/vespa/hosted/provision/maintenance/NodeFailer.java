@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
@@ -199,7 +199,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
             // Lock and update status
             ApplicationId owner = node.get().allocation().get().owner();
-            try (var lock = nodeRepository().lock(owner, Duration.ofSeconds(1))) {
+            try (var lock = nodeRepository().lock(owner)) {
                 node = getNode(hostname.toString(), owner, lock); // Re-get inside lock
                 if (node.isEmpty()) return; // Node disappeared or changed allocation
                 if (badNode) {
@@ -207,8 +207,9 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 } else {
                     clearDownRecord(node.get(), lock);
                 }
-            } catch (UncheckedTimeoutException ignored) {
-                // Fine, we'll try updating this node in the next run
+            } catch (ApplicationLockException e) {
+                // Fine, carry on with other nodes. We'll try updating this one in the next run
+                log.log(Level.WARNING, "Could not lock " + owner + ": " + Exceptions.toMessageString(e));
             }
         });
     }

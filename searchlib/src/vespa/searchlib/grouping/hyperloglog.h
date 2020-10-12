@@ -28,7 +28,7 @@ template <int BucketBits = 10, typename HashT = uint32_t>
 class ExchangerSketch : public SparseSketch<BucketBits, HashT> {
     typename Sketch<BucketBits, HashT>::UP &_sketch_ptr;
 
-    virtual int aggregate(HashT hash) override {
+    int aggregate(HashT hash) override {
         if (this->getSize() > SPARSE_SKETCH_LIMIT) {
             NormalSketch<BucketBits, HashT> *normal_sketch =
                 new NormalSketch<BucketBits, HashT>;

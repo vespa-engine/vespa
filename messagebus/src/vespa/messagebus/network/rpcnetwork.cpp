@@ -96,7 +96,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
 {
     bool shouldSend = false;
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (version == nullptr) {
             _hasError = true;
         } else if (*version < _version) {

@@ -20,29 +20,40 @@ using vespalib::make_string_short::fmt;
 
 std::vector<Layout> concat_layouts = {
     {},                                                 {},
-    {},                                                 {x(5)},
-    {x(5)},                                             {},
-    {x(2)},                                             {x(3)},
-    {x(2)},                                             {y(3)},
-    {y(2)},                                             {z(3)},
-    {x(5)},                                             {x(2),y(5)},
-    {y(3)},                                             {x(2),z(3)},
-    {x(2)},                                             {x(3),y(5),z(2)},
-    {x(2),y(5),z(2)},                                   {x(3),y(5),z(2)},
-    {x(3),y(5)},                                        {y(5),z(7)},
-    float_cells({x(3),y(5)}),                           {y(5),z(7)},
-    {x(3),y(5)},                                        float_cells({y(5),z(7)}),
-    float_cells({x(3),y(5)}),                           float_cells({y(5),z(7)}),
-    {y({"a","b","c"})},                                 {y({"a","b","c"})},
-    {y({"a","b","c"})},                                 {y({"a","b"})},
-    {y({"a","b","c"})},                                 {y({"b","c","d"})},
-    float_cells({y({"a","b","c"})}),                    {y({"b","c","d"})},
-    {y({"a","b","c"})},                                 float_cells({y({"b","c","d"})}),
-    float_cells({y({"a","b","c"})}),                    float_cells({z({"foo","bar","baz"})}),
-    {y({"a","b","c"})},                                 {y({"a","b","c"}),z({"foo","bar","baz"})},
-    {y({"a","b"}),z({"foo","bar","baz"})},              {y({"a","b","c"}),z({"foo","bar"})},
-    {x(2),y({"a","b","c"})},                            {x(3),y({"b","c","d"})},
-    {x(2),y({"a","b"})},                                {x(3),z({"c","d"})}
+    {},                                                 {y(5)},
+    float_cells({y(5)}),                                {},
+    {},                                                 float_cells({y(5)}),
+    {y(5)},                                             {},
+    {y(2)},                                             {y(3)},
+    {y(2)},                                             {x(3)},
+    {x(2)},                                             {z(3)},
+    {x(2),y(3)},                                        {x(2),y(3)},
+    {x(2),y(3)},                                        {x(2),y(4)},
+    {y(3),z(5)},                                        {y(3),z(5)},
+    {y(3),z(5)},                                        {y(4),z(5)},
+    {x(2),y(3),z(5)},                                   {x(2),y(3),z(5)},
+    {x(2),y(3),z(5)},                                   {x(2),y(4),z(5)},
+    {x(2),y(3),z({"a","b"})},                           {x(2),y(3),z({"b","c"})},
+    {x(2),y(3),z({"a","b"})},                           {x(2),y(4),z({"b","c"})},
+    {y(5)},                                             {y(2),x(5)},
+    {x(3)},                                             {y(2),z(3)},
+    {y(2)},                                             {y(3),x(5),z(2)},
+    {y(2),x(5),z(2)},                                   {y(3),x(5),z(2)},
+    {y(3),x(5)},                                        {x(5),z(7)},
+    float_cells({y(3),x(5)}),                           {x(5),z(7)},
+    float_cells({y(3),x(5)}),                           {},
+    {y(3),x(5)},                                        float_cells({x(5),z(7)}),
+    float_cells({y(3),x(5)}),                           float_cells({x(5),z(7)}),
+    {x({"a","b","c"})},                                 {x({"a","b","c"})},
+    {x({"a","b","c"})},                                 {x({"a","b"})},
+    {x({"a","b","c"})},                                 {x({"b","c","d"})},
+    float_cells({x({"a","b","c"})}),                    {x({"b","c","d"})},
+    {x({"a","b","c"})},                                 float_cells({x({"b","c","d"})}),
+    float_cells({x({"a","b","c"})}),                    float_cells({z({"foo","bar","baz"})}),
+    {x({"a","b","c"})},                                 {x({"a","b","c"}),z({"foo","bar","baz"})},
+    {x({"a","b"}),z({"foo","bar","baz"})},              {x({"a","b","c"}),z({"foo","bar"})},
+    {y(2),x({"a","b","c"})},                            {y(3),x({"b","c","d"})},
+    {y(2),x({"a","b"})},                                {y(3),z({"c","d"})}
 };
 
 TensorSpec perform_simpletensor_concat(const TensorSpec &a, const TensorSpec &b, const std::string &dimension) {
@@ -101,8 +112,8 @@ TensorSpec reference_concat(const TensorSpec &a, const TensorSpec &b, const std:
             TensorSpec::Address addr_a;
             TensorSpec::Address addr_b;
             if (concat_addresses(cell_a.first, cell_b.first, concat_dim, b_offset, addr_a, addr_b)) {
-                result.set(addr_a, cell_a.second);
-                result.set(addr_b, cell_b.second);
+                result.add(addr_a, cell_a.second);
+                result.add(addr_b, cell_b.second);
             }
         }
     }
@@ -125,8 +136,8 @@ TEST(GenericConcatTest, generic_reference_concat_works) {
         const TensorSpec lhs = spec(concat_layouts[i], N());
         const TensorSpec rhs = spec(concat_layouts[i + 1], Div16(N()));
         SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        auto actual = reference_concat(lhs, rhs, "x");
-        auto expect = perform_simpletensor_concat(lhs, rhs, "x");
+        auto actual = reference_concat(lhs, rhs, "y");
+        auto expect = perform_simpletensor_concat(lhs, rhs, "y");
         EXPECT_EQ(actual, expect);
     }
 }
@@ -137,10 +148,33 @@ TEST(GenericConcatTest, generic_concat_works_for_simple_values) {
         const TensorSpec lhs = spec(concat_layouts[i], N());
         const TensorSpec rhs = spec(concat_layouts[i + 1], Div16(N()));
         SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        auto actual = perform_generic_concat(lhs, rhs, "x");
-        auto expect = reference_concat(lhs, rhs, "x");
+        auto actual = perform_generic_concat(lhs, rhs, "y");
+        auto expect = reference_concat(lhs, rhs, "y");
         EXPECT_EQ(actual, expect);
     }
+}
+
+TEST(GenericConcatTest, dense_concat_plan_can_be_created) {
+    auto lhs = ValueType::from_spec("tensor(a[2],b[3],c[5],d{},f[2],g[3])");
+    auto rhs = ValueType::from_spec("tensor(a[2],b[3],c[7],e{},h[3],i[4])");
+    auto res_type = ValueType::concat(lhs, rhs, "c");
+    auto plan = DenseConcatPlan(lhs, rhs, "c", res_type);
+    EXPECT_EQ(plan.right_offset, 5*2*3*3*4);
+    EXPECT_EQ(plan.output_size, 2*3*12*2*3*3*4);
+    EXPECT_EQ(plan.left.input_size, 2*3*5*2*3);
+    std::vector<size_t> expect_left_loop  = {    6,  5,  6, 12 };
+    std::vector<size_t> expect_left_in_s  = {   30,  6,  1,  0 };
+    std::vector<size_t> expect_left_out_s = {  864, 72, 12,  1 };
+    EXPECT_EQ(plan.left.in_loop_cnt, expect_left_loop);
+    EXPECT_EQ(plan.left.in_stride, expect_left_in_s);
+    EXPECT_EQ(plan.left.out_stride, expect_left_out_s);
+    EXPECT_EQ(plan.right.input_size, 2*3*7*3*4);
+    std::vector<size_t> expect_right_loop =  {   6,  7,  6, 12 };
+    std::vector<size_t> expect_right_in_s =  {  84, 12,  0,  1 };
+    std::vector<size_t> expect_right_out_s = { 864, 72, 12,  1 };
+    EXPECT_EQ(plan.right.in_loop_cnt, expect_right_loop);
+    EXPECT_EQ(plan.right.in_stride, expect_right_in_s);
+    EXPECT_EQ(plan.right.out_stride, expect_right_out_s);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

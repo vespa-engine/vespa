@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 public class DockerEngine implements ContainerEngine {
+
     private static final Logger logger = Logger.getLogger(DockerEngine.class.getName());
 
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";

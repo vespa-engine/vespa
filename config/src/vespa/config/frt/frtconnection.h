@@ -2,7 +2,6 @@
 #pragma once
 
 #include "connection.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/config/common/timingvalues.h>
 #include <atomic>
 

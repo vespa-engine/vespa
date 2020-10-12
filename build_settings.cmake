@@ -53,7 +53,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
     endif()
   endif()
 else()
-  set(CXX_SPECIFIC_WARN_OPTS "-Wsuggest-override -Wnon-virtual-dtor -Wformat-security")
+  set(CXX_SPECIFIC_WARN_OPTS "-Wnoexcept -Wsuggest-override -Wnon-virtual-dtor -Wformat-security")
   if(VESPA_OS_DISTRO_COMBINED STREQUAL "centos 8" OR
       (VESPA_OS_DISTRO STREQUAL "rhel" AND
 	VESPA_OS_DISTRO_VERSION VERSION_GREATER_EQUAL "8" AND

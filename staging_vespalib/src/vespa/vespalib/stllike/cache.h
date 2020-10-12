@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/lrucache_map.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 namespace vespalib {
@@ -42,7 +41,7 @@ struct CacheParam : public P
 template< typename P >
 class cache : private lrucache_map<P>
 {
-    typedef lrucache_map<P>   Lru;
+    using Lru = lrucache_map<P>;
 protected:
     typedef typename P::BackingStore   BackingStore;
     typedef typename P::Hash  Hash;
@@ -120,11 +119,12 @@ public:
     size_t       getlookup() const { return _lookup; }
 
 protected:
-    vespalib::LockGuard getGuard();
-    void invalidate(const vespalib::LockGuard & guard, const K & key);
-    bool hasKey(const vespalib::LockGuard & guard, const K & key) const;
-    bool hasLock() const;
+    using UniqueLock = std::unique_lock<std::mutex>;
+    UniqueLock getGuard();
+    void invalidate(const UniqueLock & guard, const K & key);
+    bool hasKey(const UniqueLock & guard, const K & key) const;
 private:
+    void verifyHashLock(const UniqueLock & guard) const;
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
      * Default is to obey the maxsize given in constructor.
@@ -133,7 +133,7 @@ private:
      */
     bool removeOldest(const value_type & v) override;
     size_t calcSize(const K & k, const V & v) const { return sizeof(value_type) + _sizeK(k) + _sizeV(v); }
-    vespalib::Lock & getLock(const K & k) {
+    std::mutex & getLock(const K & k) {
         size_t h(_hasher(k));
         return _addLocks[h%(sizeof(_addLocks)/sizeof(_addLocks[0]))];
     }
@@ -153,9 +153,9 @@ private:
     mutable size_t      _invalidate;
     mutable size_t      _lookup;
     BackingStore      & _store;
-    vespalib::Lock      _hashLock;
+    mutable std::mutex  _hashLock;
     /// Striped locks that can be used for having a locked access to the backing store.
-    vespalib::Lock      _addLocks[113];
+    std::mutex          _addLocks[113];
 };
 
 }

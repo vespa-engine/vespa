@@ -36,7 +36,7 @@ void my_tensor_peek_op(eval::InterpretedFunction::State &state, uint64_t param) 
         }
         factor *= dim.second;
     }
-    auto cells = DenseTensorView::typify_cells<CT>(state.peek(0));
+    auto cells = state.peek(0).cells().typify<CT>();
     state.stack.pop_back();
     const Value &result = state.stash.create<DoubleValue>(valid ? cells[idx] : 0.0);
     state.stack.emplace_back(result);

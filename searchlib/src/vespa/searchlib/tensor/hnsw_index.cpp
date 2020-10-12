@@ -40,7 +40,7 @@ struct PairDist {
     uint32_t id_first;
     uint32_t id_second;
     double distance;
-    PairDist(uint32_t i1, uint32_t i2, double d)
+    PairDist(uint32_t i1, uint32_t i2, double d) noexcept
       : id_first(i1), id_second(i2), distance(d)
     {}
 };

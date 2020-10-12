@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domainpart");
@@ -14,7 +15,6 @@ using vespalib::FileHeader;
 using vespalib::string;
 using vespalib::getLastErrorString;
 using vespalib::IllegalHeaderException;
-using vespalib::LockGuard;
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::alloc::Alloc;
@@ -238,7 +238,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
             _range.to(packet.range().to());
             _packets.insert(std::make_pair(firstSerial, std::move(packet)));
             {
-                LockGuard guard(_lock);
+                std::lock_guard guard(_lock);
                 _skipList.push_back(SkipInfo(firstSerial, firstPos));
             }
         } else {
@@ -329,7 +329,7 @@ DomainPart::close()
 {
     bool retval(false);
     {
-        LockGuard guard(_fileLock);
+        std::lock_guard guard(_fileLock);
         /*
          * Sync old domainpart before starting writing new, to avoid
          * hole.  XXX: Feed latency spike due to lack of delayed open
@@ -338,7 +338,7 @@ DomainPart::close()
         handleSync(*_transLog);
         _transLog->dropFromCache();
         retval = _transLog->Close();
-        LockGuard wguard(_writeLock);
+        std::lock_guard wguard(_writeLock);
         _syncedSerial = _writtenSerial;
     }
     if ( ! retval ) {
@@ -346,7 +346,7 @@ DomainPart::close()
                                 _transLog->GetFileName(), _transLog->GetSize()));
     }
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         _packets.clear();
     }
     return retval;
@@ -363,7 +363,7 @@ DomainPart::openAndFind(FastOS_FileInterface &file, const SerialNum &from)
     bool retval(file.OpenReadOnly(_transLog->GetFileName()));
     if (retval) {
         int64_t pos(_headerLen);
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         for(SkipList::const_iterator it(_skipList.begin()), mt(_skipList.end());
             (it < mt) && (it->id() <= from);
             it++)
@@ -421,7 +421,7 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
     }
 
     bool merged(false);
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if ( ! _packets.empty() ) {
         Packet & lastPacket = _packets.rbegin()->second;
         if (lastPacket.sizeBytes() < 0xf000) {
@@ -440,12 +440,12 @@ DomainPart::sync()
 {
     SerialNum syncSerial(0);
     {
-        LockGuard guard(_writeLock);
+        std::lock_guard guard(_writeLock);
         syncSerial = _writtenSerial;
     }
-    LockGuard guard(_fileLock);
+    std::lock_guard guard(_fileLock);
     handleSync(*_transLog);
-    LockGuard wguard(_writeLock);
+    std::lock_guard wguard(_writeLock);
     if (_syncedSerial < syncSerial) {
         _syncedSerial = syncSerial;
     }
@@ -455,7 +455,7 @@ bool
 DomainPart::visit(SerialNumRange &r, Packet &packet)
 {
     bool retval(false);
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     LOG(spam, "Visit r(%" PRIu64 ", %" PRIu64 "] Checking %" PRIu64 " packets",
                r.from(), r.to(), uint64_t(_packets.size()));
     if ( ! isClosed() ) {
@@ -549,7 +549,7 @@ DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
     os << realEncoding.getRaw();  //Patching real encoding
     os << uint32_t(end - (begin + sizeof(uint32_t) + sizeof(uint8_t))); // Patching actual size.
     os.wp(end);
-    LockGuard guard(_writeLock);
+    std::lock_guard guard(_writeLock);
     if ( ! file.CheckedWrite(os.data(), os.size()) ) {
         throw runtime_error(handleWriteError("Failed writing the entry.", file, byteSize(), chunk.range(), os.size()));
     }

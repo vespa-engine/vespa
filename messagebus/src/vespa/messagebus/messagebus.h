@@ -10,7 +10,6 @@
 #include "sourcesession.h"
 #include <vespa/messagebus/network/inetworkowner.h>
 #include <vespa/messagebus/routing/routingspec.h>
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 #include <string>
 #include <atomic>
@@ -38,7 +37,7 @@ class MessageBus : public IMessageHandler,
 private:
     using RoutingTableSP = std::shared_ptr<RoutingTable>;
     INetwork                            &_network;
-    vespalib::Lock                       _lock;
+    std::mutex                           _lock;
     std::map<string, RoutingTableSP>     _routingTables;
     std::map<string, IMessageHandler*>   _sessions;
     std::unique_ptr<ProtocolRepository>  _protocolRepository;

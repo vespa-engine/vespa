@@ -17,7 +17,7 @@ class MessageTracker {
 public:
     class ToSend {
     public:
-        ToSend(std::shared_ptr<api::BucketCommand> msg, uint16_t target) :
+        ToSend(std::shared_ptr<api::BucketCommand> msg, uint16_t target) noexcept :
             _msg(std::move(msg)), _target(target) {};
 
         std::shared_ptr<api::BucketCommand> _msg;

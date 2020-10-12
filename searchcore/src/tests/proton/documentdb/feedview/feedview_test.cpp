@@ -176,7 +176,7 @@ struct MyGidToLidChangeHandler : public MockGidToLidChangeHandler
     uint32_t _changes;
     std::map<document::GlobalId, uint32_t> _gidToLid;
 public:
-    MyGidToLidChangeHandler()
+    MyGidToLidChangeHandler() noexcept
         : MockGidToLidChangeHandler(),
           _changeGid(),
           _changeLid(std::numeric_limits<uint32_t>::max()),
@@ -594,7 +594,8 @@ struct FixtureBase
     void putAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         PutOperation op(docCtx.bid, docCtx.ts, docCtx.doc);
-        runInMaster([&] () { performPut(token.ft, op); });
+        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performPut(std::move(ft), op); });
+        token.mt.await();
     }
 
     void performUpdate(FeedToken token, UpdateOperation &op) {
@@ -606,7 +607,8 @@ struct FixtureBase
     void updateAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         UpdateOperation op(docCtx.bid, docCtx.ts, docCtx.upd);
-        runInMaster([&] () { performUpdate(token.ft, op); });
+        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performUpdate(std::move(ft), op); });
+        token.mt.await();
     }
 
     void performRemove(FeedToken token, RemoveOperation &op) {
@@ -620,7 +622,8 @@ struct FixtureBase
     void removeAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         RemoveOperationWithDocId op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
-        runInMaster([&] () { performRemove(token.ft, op); });
+        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performRemove(std::move(ft), op); });
+        token.mt.await();
     }
 
     void removeAndWait(const DocumentContext::List &docs) {
@@ -647,7 +650,9 @@ struct FixtureBase
     }
 
     void performForceCommit() { getFeedView().forceCommit(serial); }
-    void forceCommitAndWait() { runInMaster([&]() { performForceCommit(); }); }
+    void forceCommitAndWait() {
+        runInMaster([&]() { performForceCommit(); });
+    }
 
     bool assertTrace(const vespalib::string &exp) {
         return EXPECT_EQUAL(exp, _tracer._os.str());

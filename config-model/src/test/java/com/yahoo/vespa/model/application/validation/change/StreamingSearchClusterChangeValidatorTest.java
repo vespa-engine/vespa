@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
@@ -162,18 +163,23 @@ public class StreamingSearchClusterChangeValidatorTest {
     }
 
     private static VespaConfigChangeAction createFieldTypeChangeRefeedAction(String docType, List<ServiceInfo> service) {
-        return ConfigChangeTestUtils.newRefeedAction("field-type-change",
-                ValidationOverrides.empty,
+        return ConfigChangeTestUtils.newRefeedAction(ClusterSpec.Id.from("test"),
+                                                     "field-type-change",
+                                                     ValidationOverrides.empty,
                 "Document type '" + docType + "': Field 'f1' changed: data type: 'string' -> 'int'",
-                service, docType, Instant.now());
+                                                     service, docType, Instant.now());
     }
 
     private static VespaConfigChangeAction createAddFastAccessRestartAction() {
-        return ConfigChangeTestUtils.newRestartAction("Document type 'd1': Field 'f1' changed: add fast-access attribute", FOO_SERVICE);
+        return ConfigChangeTestUtils.newRestartAction(ClusterSpec.Id.from("test"),
+                                                      "Document type 'd1': Field 'f1' changed: add fast-access attribute",
+                                                      FOO_SERVICE);
     }
 
     private static VespaConfigChangeAction createRemoveFastAccessRestartAction() {
-        return ConfigChangeTestUtils.newRestartAction("Document type 'd1': Field 'f1' changed: remove fast-access attribute", FOO_SERVICE);
+        return ConfigChangeTestUtils.newRestartAction(ClusterSpec.Id.from("test"),
+                                                      "Document type 'd1': Field 'f1' changed: remove fast-access attribute",
+                                                      FOO_SERVICE);
     }
 
 }

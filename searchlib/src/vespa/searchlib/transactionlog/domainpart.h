@@ -3,11 +3,11 @@
 
 #include "common.h"
 #include "ichunk.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/memory.h>
 #include <map>
 #include <vector>
 #include <atomic>
+#include <mutex>
 
 class FastOS_FileInterface;
 
@@ -34,7 +34,7 @@ public:
     SerialNumRange range() const { return _range; }
 
     SerialNum getSynced() const {
-        vespalib::LockGuard guard(_writeLock);
+        std::lock_guard guard(_writeLock);
         return _syncedSerial; 
     }
     
@@ -74,8 +74,8 @@ private:
     typedef std::map<SerialNum, Packet> PacketList;
     const Encoding        _encoding;
     const uint8_t         _compressionLevel;
-    vespalib::Lock        _lock;
-    vespalib::Lock        _fileLock;
+    std::mutex            _lock;
+    std::mutex            _fileLock;
     SerialNumRange        _range;
     size_t                _sz;
     std::atomic<uint64_t> _byteSize;
@@ -84,7 +84,7 @@ private:
     std::unique_ptr<FastOS_FileInterface> _transLog;
     SkipList              _skipList;
     uint32_t              _headerLen;
-    vespalib::Lock        _writeLock;
+    mutable std::mutex    _writeLock;
     // Protected by _writeLock
     SerialNum             _writtenSerial;
     SerialNum             _syncedSerial;

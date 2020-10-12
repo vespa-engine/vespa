@@ -40,7 +40,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     reusable_set_pool.cpp
     runnable.cpp
     runnable_pair.cpp
-    rwlock.cpp
     sequence.cpp
     sha1.cpp
     sig_catch.cpp
@@ -50,6 +49,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     stash.cpp
     string_hash.cpp
     stringfmt.cpp
+    sync.cpp
     thread.cpp
     thread_bundle.cpp
     threadstackexecutor.cpp

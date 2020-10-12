@@ -200,7 +200,7 @@ public:
      * with default sz=0 you get an empty container
      * @param sz the number of bytes to allocate
      **/
-    MallocPtr(const size_t sz=0) : _sz(sz), _p(_sz ? malloc(sz) : nullptr) {
+    MallocPtr(const size_t sz=0) noexcept : _sz(sz), _p(_sz ? malloc(sz) : nullptr) {
         if (_p == nullptr) {
             _sz = 0;
         }
@@ -208,7 +208,7 @@ public:
     /** @brief destructor doing free() if needed */
     ~MallocPtr() { cleanup(); }
 
-    MallocPtr(MallocPtr && rhs) :
+    MallocPtr(MallocPtr && rhs) noexcept :
         _sz(rhs.size()), _p(rhs._p)
     {
         rhs._sz = 0;
@@ -221,7 +221,7 @@ public:
      * Does deep copy of contents (using memcpy).
      * @param rhs container to copy
      **/
-    MallocPtr(const MallocPtr & rhs)
+    MallocPtr(const MallocPtr & rhs) noexcept
         : _sz(rhs.size()), _p(_sz ? malloc(_sz) : nullptr)
     {
         if (_p == nullptr) {
@@ -238,14 +238,14 @@ public:
      * works like destruct + copy construct.
      * @param rhs container to copy
      **/
-    MallocPtr & operator = (const MallocPtr & rhs) {
+    MallocPtr & operator = (const MallocPtr & rhs) noexcept {
         if (this != &rhs) {
             MallocPtr tmp(rhs);
             swap(tmp);
         }
         return *this;
     }
-    MallocPtr & operator = (MallocPtr && rhs) {
+    MallocPtr & operator = (MallocPtr && rhs) noexcept {
         if (this != &rhs) {
             cleanup();
             _sz = rhs._sz;
@@ -261,7 +261,7 @@ public:
      *
      * does not copy anything, just swaps pointers.
      **/
-    void swap(MallocPtr & rhs) {
+    void swap(MallocPtr & rhs) noexcept {
         std::swap(_sz, rhs._sz); std::swap(_p, rhs._p);
     }
 
@@ -307,7 +307,7 @@ public:
         }
     }
 private:
-    void cleanup() {
+    void cleanup() noexcept {
         if (_p) {
             free(_p);
             _p = nullptr;
@@ -350,7 +350,7 @@ public:
     }
 
     /** @brief move constructor, takes over ownership */
-    CloneablePtr(std::unique_ptr<T> &&rhs)
+    CloneablePtr(std::unique_ptr<T> &&rhs) noexcept
         : _p(rhs.release())
     {
     }
@@ -373,7 +373,7 @@ public:
     }
 
     /** @brief swap contents */
-    void swap(CloneablePtr & rhs)  { std::swap(_p, rhs._p); }
+    void swap(CloneablePtr & rhs)  noexcept { std::swap(_p, rhs._p); }
 
     /** @brief value access */
     const T * get()          const { return _p; }

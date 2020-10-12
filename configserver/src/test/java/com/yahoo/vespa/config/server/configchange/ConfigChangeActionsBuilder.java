@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.configchange;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
 import java.util.ArrayList;
@@ -27,9 +28,10 @@ public class ConfigChangeActionsBuilder {
     }
 
     public ConfigChangeActionsBuilder restart(String message, String clusterName, String clusterType, String serviceType, String serviceName, boolean ignoreForInternalRedeploy) {
-        actions.add(new VespaRestartAction(message,
-                createService(clusterName, clusterType, serviceType, serviceName),
-                ignoreForInternalRedeploy));
+        actions.add(new VespaRestartAction(ClusterSpec.Id.from(clusterName),
+                                           message,
+                                           createService(clusterName, clusterType, serviceType, serviceName),
+                                           ignoreForInternalRedeploy));
         return this;
     }
 

@@ -44,7 +44,7 @@ void my_number_join_op(State &state, uint64_t param) {
     OP my_op((join_fun_t)param);
     const Value &tensor = state.peek(swap ? 0 : 1);
     CT number = state.peek(swap ? 1 : 0).as_double();
-    auto src_cells = DenseTensorView::typify_cells<CT>(tensor);
+    auto src_cells = tensor.cells().typify<CT>();
     auto dst_cells = make_dst_cells<CT, inplace>(src_cells, state.stash);
     apply_op2_vec_num(dst_cells.begin(), src_cells.begin(), number, dst_cells.size(), my_op);
     if (inplace) {

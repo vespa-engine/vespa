@@ -54,7 +54,7 @@ class HttpRequestDispatch {
 
     private final ServletResponseController servletResponseController;
     private final RequestHandler requestHandler;
-    private final MetricReporter metricReporter;
+    private final RequestMetricReporter metricReporter;
 
     public HttpRequestDispatch(JDiscContext jDiscContext,
                                AccessLogEntry accessLogEntry,
@@ -66,7 +66,7 @@ class HttpRequestDispatch {
         requestHandler = newRequestHandler(jDiscContext, accessLogEntry, servletRequest);
 
         this.jettyRequest = (Request) servletRequest;
-        this.metricReporter = new MetricReporter(jDiscContext.metric, metricContext, jettyRequest.getTimeStamp());
+        this.metricReporter = new RequestMetricReporter(jDiscContext.metric, metricContext, jettyRequest.getTimeStamp());
         this.servletResponseController = new ServletResponseController(servletRequest,
                                                                        servletResponse,
                                                                        jDiscContext.janitor,

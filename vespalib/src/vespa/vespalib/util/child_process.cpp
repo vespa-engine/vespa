@@ -56,9 +56,6 @@ public:
 
 } // namespace child_process
 
-using child_process::Timer;
-
-//-----------------------------------------------------------------------------
 
 void
 ChildProcess::Reader::OnReceiveData(const void *data, size_t length)
@@ -88,7 +85,7 @@ ChildProcess::Reader::hasData()
 
 
 bool
-ChildProcess::Reader::waitForData(Timer &timer, MonitorGuard &lock)
+ChildProcess::Reader::waitForData(child_process::Timer &timer, MonitorGuard &lock)
 {
     // NB: caller has lock on _cond
     CounterGuard count(_waitCnt);
@@ -131,7 +128,7 @@ ChildProcess::Reader::read(char *buf, uint32_t len, int msTimeout)
     if (eof()) {
         return 0;
     }
-    Timer timer(msTimeout);
+    child_process::Timer timer(msTimeout);
     MonitorGuard lock(_cond);
     waitForData(timer, lock);
     uint32_t bytes = 0;
@@ -162,7 +159,7 @@ ChildProcess::Reader::readLine(std::string &line, int msTimeout)
     if (eof()) {
         return false;
     }
-    Timer timer(msTimeout);
+    child_process::Timer timer(msTimeout);
     MonitorGuard lock(_cond);
     while (waitForData(timer, lock)) {
         while (hasData()) {
@@ -299,7 +296,7 @@ ChildProcess::run(const std::string &input, const char *cmd,
                std::string &output, int msTimeout)
 {
     ChildProcess proc(cmd);
-    Timer timer(msTimeout);
+    child_process::Timer timer(msTimeout);
     char buf[4096];
     proc.write(input.data(), input.length());
     proc.close(); // close stdin

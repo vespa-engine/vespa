@@ -2,7 +2,6 @@
 vespa_add_library(document_bucket OBJECT
     SOURCES
     bucket.cpp
-    bucketdistribution.cpp
     bucketid.cpp
     bucketidfactory.cpp
     bucketidlist.cpp

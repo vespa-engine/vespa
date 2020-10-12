@@ -14,7 +14,7 @@ class IGidCompare
 public:
     typedef std::shared_ptr<IGidCompare> SP;
 
-    virtual ~IGidCompare() {}
+    virtual ~IGidCompare() = default;
 
     virtual bool operator()(const document::GlobalId &lhs,
                             const document::GlobalId &rhs) const = 0;
@@ -30,14 +30,13 @@ private:
     document::GlobalId::BucketOrderCmp _comp;
 
 public:
-    DefaultGidCompare()
+    DefaultGidCompare() noexcept
         : IGidCompare(),
           _comp()
     {
     }
 
-    virtual bool operator()(const document::GlobalId &lhs,
-                            const document::GlobalId &rhs) const override {
+    bool operator()(const document::GlobalId &lhs, const document::GlobalId &rhs) const override {
         return _comp(lhs, rhs);
     }
 };

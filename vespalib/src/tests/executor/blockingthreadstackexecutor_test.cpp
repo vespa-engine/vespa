@@ -3,7 +3,6 @@
 
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <thread>
 

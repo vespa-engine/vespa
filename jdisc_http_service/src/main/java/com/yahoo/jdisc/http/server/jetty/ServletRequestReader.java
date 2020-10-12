@@ -43,7 +43,7 @@ class ServletRequestReader implements ReadListener {
     private final ContentChannel requestContentChannel;
 
     private final Executor executor;
-    private final MetricReporter metricReporter;
+    private final RequestMetricReporter metricReporter;
 
     private int bytesRead;
 
@@ -94,7 +94,7 @@ class ServletRequestReader implements ReadListener {
             ServletInputStream servletInputStream,
             ContentChannel requestContentChannel,
             Executor executor,
-            MetricReporter metricReporter) {
+            RequestMetricReporter metricReporter) {
 
         Preconditions.checkNotNull(servletInputStream);
         Preconditions.checkNotNull(requestContentChannel);

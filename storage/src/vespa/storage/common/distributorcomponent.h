@@ -60,8 +60,7 @@ struct DistributorManagedComponent
 
 struct DistributorComponentRegister : public virtual StorageComponentRegister
 {
-    virtual void registerDistributorComponent(
-                    DistributorManagedComponent&) = 0;
+    virtual void registerDistributorComponent(DistributorManagedComponent&) = 0;
 };
 
 class DistributorComponent : public StorageComponent,
@@ -86,10 +85,10 @@ public:
     typedef std::unique_ptr<DistributorComponent> UP;
 
     DistributorComponent(DistributorComponentRegister& compReg, vespalib::stringref name);
-    ~DistributorComponent();
+    ~DistributorComponent() override;
 
     api::Timestamp getUniqueTimestamp() const {
-        assert(_timeCalculator); return _timeCalculator->getUniqueTimestamp();
+        return _timeCalculator->getUniqueTimestamp();
     }
     const DistributorConfig& getDistributorConfig() const {
         return _distributorConfig;

@@ -45,7 +45,7 @@ class StateManager : public NodeStateUpdater,
     StorageComponent _component;
     metrics::MetricManager& _metricManager;
     vespalib::Monitor _stateLock;
-    vespalib::Lock _listenerLock;
+    std::mutex _listenerLock;
     std::shared_ptr<lib::NodeState> _nodeState;
     std::shared_ptr<lib::NodeState> _nextNodeState;
     using ClusterStateBundle = lib::ClusterStateBundle;

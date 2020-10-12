@@ -23,7 +23,6 @@ import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers.TlsClientAuth;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.security.KeyUtils;
@@ -657,7 +656,7 @@ public class HttpServerTest {
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, null, "Received fatal alert: bad_certificate");
         verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
+                .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
     }
 
@@ -677,7 +676,7 @@ public class HttpServerTest {
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, "TLSv1.3", null, "Received fatal alert: protocol_version");
         verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
+                .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
     }
 
@@ -697,7 +696,7 @@ public class HttpServerTest {
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "Received fatal alert: handshake_failure");
         verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS, 1L, MetricConsumerMock.STATIC_CONTEXT);
+                .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
     }
 
@@ -721,7 +720,7 @@ public class HttpServerTest {
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
         verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
+                .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
     }
 
@@ -744,7 +743,7 @@ public class HttpServerTest {
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
         verify(metricConsumer.mockitoMock())
-                .add(Metrics.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
+                .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
     }
 

@@ -123,7 +123,7 @@ void
 Session::clear()
 {
     if (_sessionId > 0) {
-        LockGuard guard(_tlc._lock);
+        std::lock_guard guard(_tlc._lock);
         _tlc._sessions.erase(SessionKey(_domain, _sessionId));
     }
     _sessionId = 0;
@@ -145,7 +145,7 @@ Session::init(FRT_RPCRequest *req)
         _sessionId = retval;
         SessionKey key(_domain, _sessionId);
         {
-            LockGuard guard(_tlc._lock);
+            std::lock_guard guard(_tlc._lock);
             _tlc._sessions[key] = this;
         }
         retval = run();

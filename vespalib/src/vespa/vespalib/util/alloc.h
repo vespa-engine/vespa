@@ -81,18 +81,18 @@ public:
         }
         return *this;
     }
-    Alloc() : _alloc(nullptr, 0), _allocator(nullptr) { }
+    Alloc() noexcept : _alloc(nullptr, 0), _allocator(nullptr) { }
     ~Alloc() { 
         if (_alloc.first != nullptr) {
             _allocator->free(_alloc);
             _alloc.first = nullptr;
         }
     }
-    void swap(Alloc & rhs) {
+    void swap(Alloc & rhs) noexcept {
         std::swap(_alloc, rhs._alloc);
         std::swap(_allocator, rhs._allocator);
     }
-    Alloc create(size_t sz) const {
+    Alloc create(size_t sz) const noexcept {
         return (sz == 0) ? Alloc(_allocator) : Alloc(_allocator, sz);
     }
 
@@ -103,11 +103,11 @@ public:
      * Optional alignment is assumed to be <= system page size, since mmap
      * is always used when size is above limit.
      */
-    static Alloc alloc(size_t sz, size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
-    static Alloc alloc();
+    static Alloc alloc(size_t sz, size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0) noexcept;
+    static Alloc alloc() noexcept;
 private:
-    Alloc(const MemoryAllocator * allocator, size_t sz) : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
-    Alloc(const MemoryAllocator * allocator) : _alloc(nullptr, 0), _allocator(allocator) { }
+    Alloc(const MemoryAllocator * allocator, size_t sz) noexcept : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
+    Alloc(const MemoryAllocator * allocator) noexcept : _alloc(nullptr, 0), _allocator(allocator) { }
     void clear() {
         _alloc.first = nullptr;
         _alloc.second = 0;

@@ -57,7 +57,7 @@ private:
          * @param fid the field id of the attribute field.
          * @param attr a guard to the attribute vector.
          **/
-        AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) :
+        AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) noexcept :
             _field(fid),
             _ascending(true),
             _converter(nullptr),
@@ -71,7 +71,7 @@ private:
          * @param ascending whether this attribute should be sorted ascending or not.
          * @param converter is a converter to apply to the attribute before sorting.
          **/
-        AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr, bool ascending, const search::common::BlobConverter * converter) :
+        AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr, bool ascending, const search::common::BlobConverter * converter) noexcept :
             _field(fid),
             _ascending(ascending),
             _converter(converter),

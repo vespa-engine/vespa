@@ -311,7 +311,7 @@ using Counter = std::atomic<size_t>;
 
 class CountDone : public IDestructorCallback {
 public:
-    explicit CountDone(Counter & inFlight) : _inFlight(inFlight) { ++_inFlight; }
+    explicit CountDone(Counter & inFlight) noexcept : _inFlight(inFlight) { ++_inFlight; }
     ~CountDone() override { --_inFlight; }
 private:
     Counter & _inFlight;

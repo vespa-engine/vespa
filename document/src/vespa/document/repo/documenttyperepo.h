@@ -34,8 +34,8 @@ public:
     explicit DocumentTypeRepo(const DocumenttypesConfig & config);
     ~DocumentTypeRepo();
 
-    const DocumentType *getDocumentType(int32_t doc_type_id) const;
-    const DocumentType *getDocumentType(vespalib::stringref name) const;
+    const DocumentType *getDocumentType(int32_t doc_type_id) const noexcept;
+    const DocumentType *getDocumentType(vespalib::stringref name) const noexcept;
     const DataType *getDataType(const DocumentType &doc_type, int32_t id) const;
     const DataType *getDataType(const DocumentType &doc_type, vespalib::stringref name) const;
     const AnnotationType *getAnnotationType(const DocumentType &doc_type, int32_t id) const;

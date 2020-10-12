@@ -1,20 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.HostProvisionerWithCustomRealResource;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
@@ -23,9 +15,7 @@ import org.w3c.dom.Element;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -156,28 +146,6 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertEquals(50, feedThreadpoolConfig.maxThreads());
         assertEquals(25, feedThreadpoolConfig.minThreads());
         assertEquals(1000, feedThreadpoolConfig.queueSize());
-    }
-
-    private static class HostProvisionerWithCustomRealResource implements HostProvisioner {
-
-        @Override
-        public HostSpec allocateHost(String alias) {
-            Host host = new Host(HostName.getLocalhost());
-            ClusterMembership membership = ClusterMembership.from(
-                    ClusterSpec
-                            .specification(
-                                    ClusterSpec.Type.container,
-                                    ClusterSpec.Id.from("id"))
-                            .vespaVersion("")
-                            .group(ClusterSpec.Group.from(0))
-                            .build(),
-                    0);
-            return new HostSpec(
-                    host.hostname(), new NodeResources(4, 0, 0, 0), NodeResources.unspecified(), NodeResources.unspecified(),
-                    membership, Optional.empty(), Optional.empty(), Optional.empty());
-        }
-
-        @Override public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) { return List.of(); }
     }
 
 }

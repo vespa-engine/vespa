@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/subscription/configuri.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storagepolicy");

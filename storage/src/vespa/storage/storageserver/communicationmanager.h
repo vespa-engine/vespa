@@ -112,7 +112,7 @@ private:
     std::unique_ptr<mbus::DestinationSession> _messageBusSession;
     std::unique_ptr<mbus::SourceSession> _sourceSession;
 
-    vespalib::Lock _messageBusSentLock;
+    std::mutex _messageBusSentLock;
     std::map<api::StorageMessage::Id, std::shared_ptr<api::StorageCommand> > _messageBusSent;
 
     config::ConfigUri     _configUri;
@@ -137,7 +137,7 @@ public:
     void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override;
     void dispatch_async(std::shared_ptr<api::StorageMessage> msg) override;
 
-    mbus::RPCMessageBus& getMessageBus() { assert(_mbus.get()); return *_mbus; }
+    mbus::RPCMessageBus& getMessageBus() { return *_mbus; }
     const PriorityConverter& getPriorityConverter() const { return _docApiConverter.getPriorityConverter(); }
 
     /**

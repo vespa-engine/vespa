@@ -29,9 +29,8 @@ void assertTensor(const vespalib::string &type_spec,
                   const std::vector<double> &expCells,
                   const Tensor &tensor)
 {
-    const DenseTensorView &realTensor = dynamic_cast<const DenseTensorView &>(tensor);
-    EXPECT_EQUAL(ValueType::from_spec(type_spec), realTensor.type());
-    EXPECT_EQUAL(expCells, dispatch_1<CallMakeVector>(realTensor.cellsRef()));
+    EXPECT_EQUAL(ValueType::from_spec(type_spec), tensor.type());
+    EXPECT_EQUAL(expCells, dispatch_1<CallMakeVector>(tensor.cells()));
 }
 
 void assertTensorSpec(const TensorSpec &expSpec, const Tensor &tensor) {

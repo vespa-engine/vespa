@@ -21,8 +21,8 @@ namespace {
 
 template <typename LCT, typename RCT>
 void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
-    auto lhs_cells = DenseTensorView::typify_cells<LCT>(state.peek(1));
-    auto rhs_cells = DenseTensorView::typify_cells<RCT>(state.peek(0));
+    auto lhs_cells = state.peek(1).cells().typify<LCT>();
+    auto rhs_cells = state.peek(0).cells().typify<RCT>();
     double result = 0.0;
     const LCT *lhs = lhs_cells.cbegin();
     const RCT *rhs = rhs_cells.cbegin();
@@ -33,15 +33,15 @@ void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
 }
 
 void my_cblas_double_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
-    auto lhs_cells = DenseTensorView::typify_cells<double>(state.peek(1));
-    auto rhs_cells = DenseTensorView::typify_cells<double>(state.peek(0));
+    auto lhs_cells = state.peek(1).cells().typify<double>();
+    auto rhs_cells = state.peek(0).cells().typify<double>();
     double result = cblas_ddot(lhs_cells.size(), lhs_cells.cbegin(), 1, rhs_cells.cbegin(), 1);
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }
 
 void my_cblas_float_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
-    auto lhs_cells = DenseTensorView::typify_cells<float>(state.peek(1));
-    auto rhs_cells = DenseTensorView::typify_cells<float>(state.peek(0));
+    auto lhs_cells = state.peek(1).cells().typify<float>();
+    auto rhs_cells = state.peek(0).cells().typify<float>();
     double result = cblas_sdot(lhs_cells.size(), lhs_cells.cbegin(), 1, rhs_cells.cbegin(), 1);
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }

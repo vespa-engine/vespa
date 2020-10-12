@@ -7,7 +7,7 @@ using namespace vespalib;
 
 class A {
 public:
-    virtual ~A() { }
+    virtual ~A() = default;
     virtual void assign(const A & rhs) { (void) rhs; assert(false); }  // Required by the primitive array.
     virtual A * clone() const { assert(false); return nullptr; }       // Required for the complex array.
 
@@ -19,7 +19,7 @@ public:
 class Primitive : public A
 {
 public:
-    Primitive(size_t v=11) : _v(v) { }
+    Primitive(size_t v=11) noexcept : _v(v) { }
     size_t value() const { return _v; }
     bool operator == (const A & rhs) const override {
        return dynamic_cast<const Primitive &>(rhs).value() == value();
@@ -38,7 +38,7 @@ private:
 class Complex : public A
 {
 public:
-    Complex(size_t v=11) : _v(v) { }
+    Complex(size_t v=11) noexcept : _v(v) { }
     size_t value() const { return _v; }
     bool operator == (const A & rhs) const override {
        return dynamic_cast<const Complex &>(rhs).value() == value();

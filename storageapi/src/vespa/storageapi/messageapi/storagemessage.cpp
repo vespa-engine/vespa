@@ -4,7 +4,6 @@
 
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <sstream>

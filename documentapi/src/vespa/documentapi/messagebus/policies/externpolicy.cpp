@@ -118,7 +118,7 @@ ExternPolicy::merge(mbus::RoutingContext &ctx)
 mbus::Hop
 ExternPolicy::getRecipient()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     update();
     if (_recipients.empty()) {
         return mbus::Hop();

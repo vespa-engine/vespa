@@ -110,7 +110,6 @@ class Component : private ManagedComponent
     void setClock(Clock& c) override { _clock = &c; }
     void setThreadPool(ThreadPool& tp) override { _threadPool = &tp; }
     void setUpgradeFlag(UpgradeFlags flag) override {
-        assert(_upgradeFlag.is_lock_free());
         _upgradeFlag.store(flag, std::memory_order_relaxed);
     }
     void open() override;

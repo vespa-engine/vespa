@@ -38,7 +38,7 @@ public:
           _hash(rhs._hash)
     {}
 
-    uint32_t hash() const { return _hash; }
+    uint32_t hash() const noexcept { return _hash; }
 
     uint32_t calcHash() const noexcept;
 

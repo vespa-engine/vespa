@@ -2,6 +2,7 @@
 
 #include "simple_thread_bundle.h"
 #include "exceptions.h"
+#include <cassert>
 
 using namespace vespalib::fixed_thread_bundle;
 
@@ -68,20 +69,20 @@ SimpleThreadBundle::UP
 SimpleThreadBundle::Pool::obtain()
 {
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (!_bundles.empty()) {
             SimpleThreadBundle::UP ret(_bundles.back());
             _bundles.pop_back();
             return ret;
         }
     }
-    return SimpleThreadBundle::UP(new SimpleThreadBundle(_bundleSize));
+    return std::make_unique<SimpleThreadBundle>(_bundleSize);
 }
 
 void
 SimpleThreadBundle::Pool::release(SimpleThreadBundle::UP bundle)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _bundles.push_back(bundle.get());
     bundle.release();
 }

@@ -93,7 +93,7 @@ struct WeightedRef {
     EntryRef revMapIdx;
     int32_t  weight;
 
-    WeightedRef(EntryRef revMapIdx_, int32_t weight_)
+    WeightedRef(EntryRef revMapIdx_, int32_t weight_) noexcept
         : revMapIdx(revMapIdx_),
           weight(weight_)
     {
@@ -118,11 +118,11 @@ class ReverseMappingBitVector
     const ReverseMapping &_reverseMapping;
     EntryRef _revMapIdx;
 public:
-    ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx)
+    ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx) noexcept
         : _reverseMapping(reverseMapping),
           _revMapIdx(revMapIdx)
     {}
-    ~ReverseMappingBitVector() { }
+    ~ReverseMappingBitVector() = default;
 
     template <typename Func>
     void foreach_key(Func func) const {

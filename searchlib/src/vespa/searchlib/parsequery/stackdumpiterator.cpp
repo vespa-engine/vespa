@@ -225,7 +225,7 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_PREDICATE_QUERY:
         try {
             _curr_index_name = read_stringref(p);
-            _predicate_query_term.reset(new PredicateQueryTerm);
+            _predicate_query_term = std::make_unique<PredicateQueryTerm>();
 
             size_t count = readCompressedPositiveInt(p);
             for (size_t i = 0; i < count; ++i) {

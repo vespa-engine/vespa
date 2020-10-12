@@ -8,6 +8,8 @@ vespa_add_library(eval_eval OBJECT
     delete_node.cpp
     double_value_builder.cpp
     fast_forest.cpp
+    fast_sparse_map.cpp
+    fast_value.cpp
     function.cpp
     gbdt.cpp
     interpreted_function.cpp
@@ -19,7 +21,6 @@ vespa_add_library(eval_eval OBJECT
     operation.cpp
     operator_nodes.cpp
     param_usage.cpp
-    simple_sparse_map.cpp
     simple_tensor.cpp
     simple_tensor_engine.cpp
     simple_value.cpp

@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 /**
@@ -16,11 +15,6 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     public ClusterControllerContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
         addDefaultHandlersWithVip();
-    }
-
-    @Override
-    public void getConfig(ThreadpoolConfig.Builder builder) {
-        builder.maxthreads(10);
     }
 
     @Override

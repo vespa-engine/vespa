@@ -29,7 +29,7 @@ public:
         SearchIterator *search;
         uint32_t    sourceId;
         Child() : search(nullptr), sourceId(0) { }
-        Child(SearchIterator *s, uint32_t id) : search(s), sourceId(id) {}
+        Child(SearchIterator *s, uint32_t id) noexcept : search(s), sourceId(id) {}
     };
     typedef std::vector<Child> Children;
 

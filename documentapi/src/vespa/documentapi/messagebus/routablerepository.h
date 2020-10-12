@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <map>
-#include <vespa/messagebus/blobref.h>
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/component/versionspecification.h>
 #include "iroutablefactory.h"
+#include <vespa/messagebus/blobref.h>
+#include <vespa/vespalib/component/versionspecification.h>
+#include <mutex>
+#include <map>
 
 namespace documentapi {
 
@@ -37,7 +37,7 @@ private:
     typedef std::map<CacheKey, IRoutableFactory::SP> FactoryCache;
     typedef std::map<uint32_t, VersionMap>           TypeMap;
 
-    vespalib::Lock       _lock;
+    mutable std::mutex   _lock;
     TypeMap              _factoryTypes;
     mutable FactoryCache _cache;
     const LoadTypeSet&   _loadTypes;
@@ -48,7 +48,7 @@ public:
     /**
      * Constructs a new routable repository.
      */
-    RoutableRepository(const LoadTypeSet& loadTypes);
+    explicit RoutableRepository(const LoadTypeSet& loadTypes);
 
     /**
      * Decodes a {@link Routable} from the given byte array. This uses the content of the byte array to

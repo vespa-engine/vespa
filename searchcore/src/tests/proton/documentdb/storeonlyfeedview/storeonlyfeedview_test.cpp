@@ -171,7 +171,7 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
 
 struct MoveOperationCallback : public IDestructorCallback {
     int &outstandingMoveOps;
-    MoveOperationCallback(int &outstandingMoveOps_) : outstandingMoveOps(outstandingMoveOps_) {
+    explicit MoveOperationCallback(int &outstandingMoveOps_) noexcept : outstandingMoveOps(outstandingMoveOps_) {
         ++outstandingMoveOps;
     }
     ~MoveOperationCallback() override {
@@ -194,7 +194,7 @@ struct FixtureBase {
     documentmetastore::LidReuseDelayerConfig lidReuseDelayerConfig;
     typename FeedViewType::UP feedview;
  
-    FixtureBase(SubDbType subDbType = SubDbType::READY)
+    explicit FixtureBase(SubDbType subDbType = SubDbType::READY)
         : removeCount(0),
           putCount(0),
           heartbeatCount(0),

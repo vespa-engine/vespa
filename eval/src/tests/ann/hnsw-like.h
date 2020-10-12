@@ -86,7 +86,7 @@ struct VisitedSetPool
 struct HnswHit {
     double dist;
     uint32_t docid;
-    HnswHit(uint32_t di, SqDist sq) : dist(sq.distance), docid(di) {}
+    HnswHit(uint32_t di, SqDist sq) noexcept : dist(sq.distance), docid(di) {}
 };
 
 struct GreaterDist {

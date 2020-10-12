@@ -18,8 +18,7 @@ ConfigManager::ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGen
       _sourceFactory(std::move(sourceFactory)),
       _generation(initialGeneration),
       _subscriptionMap(),
-      _lock(),
-      _firstLock()
+      _lock()
 { }
 
 ConfigManager::~ConfigManager() = default;
@@ -50,7 +49,7 @@ ConfigManager::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
         throw ConfigTimeoutException(oss.str());
     }
     LOG(debug, "done subscribing");
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _subscriptionMap[id] = subscription;
     return subscription;
 }
@@ -58,7 +57,7 @@ ConfigManager::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
 void
 ConfigManager::unsubscribe(const ConfigSubscription::SP & subscription)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     const SubscriptionId id(subscription->getSubscriptionId());
     if (_subscriptionMap.find(id) != _subscriptionMap.end())
         _subscriptionMap.erase(id);
@@ -68,9 +67,9 @@ void
 ConfigManager::reload(int64_t generation)
 {
     _generation = generation;
-    vespalib::LockGuard guard(_lock);
-    for (SubscriptionMap::iterator it(_subscriptionMap.begin()), mt(_subscriptionMap.end()); it != mt; it++) {
-        it->second->reload(_generation);
+    std::lock_guard guard(_lock);
+    for (auto & entry : _subscriptionMap) {
+        entry.second->reload(_generation);
     }
 }
 

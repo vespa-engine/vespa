@@ -57,14 +57,14 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
             if (hasUserOptions()) return;
 
             double threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
-            double vcpu = vcpu(cluster);
+            double vcpu = vcpu(cluster).orElse(0);
             if (threadPoolSizeFactor <= 0 || vcpu == 0) {
                 builder.maxThreads(500);
                 builder.minThreads(500);
                 builder.queueSize(0);
             } else {
                 // Controls max number of concurrent requests per container
-                int workerThreads = Math.max(2, (int)Math.ceil(vcpu * threadPoolSizeFactor));
+                int workerThreads = Math.max(16, (int)Math.ceil(vcpu * threadPoolSizeFactor)); // TODO(bjorncs): reduce minimum size
                 builder.maxThreads(workerThreads);
                 builder.minThreads(workerThreads);
 

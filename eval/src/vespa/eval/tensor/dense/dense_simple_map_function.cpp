@@ -40,7 +40,7 @@ template <typename CT, typename Fun, bool inplace>
 void my_simple_map_op(State &state, uint64_t param) {
     Fun my_fun((map_fun_t)param);
     auto const &child = state.peek(0);
-    auto src_cells = DenseTensorView::typify_cells<CT>(child);
+    auto src_cells = child.cells().typify<CT>();
     auto dst_cells = make_dst_cells<CT, inplace>(src_cells, state.stash);
     apply_op1_vec(dst_cells.begin(), src_cells.begin(), dst_cells.size(), my_fun);
     if (!inplace) {

@@ -15,6 +15,7 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -377,8 +378,10 @@ public class HostedDeployTest {
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
 
         List<ModelFactory> modelFactories = List.of(
-                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"), new VespaRestartAction("change", services)),
-                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"), new VespaRestartAction("other change", services)));
+                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
+                                                    new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)),
+                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"),
+                                                    new VespaRestartAction(ClusterSpec.Id.from("test"), "other change", services)));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0");

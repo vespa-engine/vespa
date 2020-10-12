@@ -39,7 +39,7 @@ public:
         static constexpr uint32_t _elemRemoved =
             std::numeric_limits<uint32_t>::max();
 
-        PosInfo()
+        PosInfo() noexcept
             : _wordNum(0),
               _docId(0),
               _elemId(0),
@@ -51,7 +51,7 @@ public:
         PosInfo(uint32_t wordRef,
                 uint32_t docId,
                 uint32_t elemId,
-                uint32_t wordPos, uint32_t elemRef)
+                uint32_t wordPos, uint32_t elemRef) noexcept
             : _wordNum(wordRef),
               _docId(docId),
               _elemId(elemId),
@@ -60,8 +60,7 @@ public:
         {
         }
 
-        PosInfo(uint32_t wordRef,
-                uint32_t docId)
+        PosInfo(uint32_t wordRef, uint32_t docId) noexcept
             : _wordNum(wordRef),
               _docId(docId),
               _elemId(_elemRemoved),

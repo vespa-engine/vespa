@@ -73,19 +73,19 @@ public abstract class Container extends AbstractService implements
     private final ComponentGroup<Handler<?>> handlers = new ComponentGroup<>(this, "handler");
     private final ComponentGroup<Component<?, ?>> components = new ComponentGroup<>(this, "components");
 
-    private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
+    private final JettyHttpServer defaultHttpServer;
 
-    protected Container(AbstractConfigProducer parent, String name, int index) {
-        this(parent, name, false, index);
+    protected Container(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
+        this(parent, name, false, index, isHostedVespa);
     }
 
-    protected Container(AbstractConfigProducer parent, String name, boolean retired, int index) {
+    protected Container(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-
+        this.defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), isHostedVespa);
         if (getHttp() == null) {
             addChild(defaultHttpServer);
         }
@@ -321,7 +321,7 @@ public abstract class Container extends AbstractService implements
 
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
         if (fileDistribution != null) {
-            builder.configid(fileDistribution.getConfigProducer(getHost()).getConfigId());
+            builder.configid(fileDistribution.getConfigProducer(getHost().getHost()).getConfigId());
         }
         return builder;
     }

@@ -15,19 +15,21 @@ import java.util.List;
 import static com.yahoo.component.ComponentSpecification.fromString;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.16.0
+ * @author Einar M R Rosenvinge
+ * @author bjorncs
  */
 public class JettyHttpServer extends SimpleComponent implements ServerConfig.Producer {
 
-    private List<ConnectorFactory> connectorFactories = new ArrayList<>();
+    private final boolean isHostedVespa;
+    private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
 
-    public JettyHttpServer(ComponentId id) {
+    public JettyHttpServer(ComponentId id, boolean isHostedVespa) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(id,
                                                      fromString("com.yahoo.jdisc.http.server.jetty.JettyHttpServer"),
                                                      fromString("jdisc_http_service"))
         ));
+        this.isHostedVespa = isHostedVespa;
         final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(id);
         addChild(filterBindingsProviderComponent);
         inject(filterBindingsProviderComponent);
@@ -56,6 +58,17 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
                 .monitoringHandlerPaths(List.of("/state/v1", "/status.html"))
                 .searchHandlerPaths(List.of("/search"))
         );
+        if (isHostedVespa) {
+            // Proxy-protocol v1/v2 is used in hosted Vespa for remote address/port
+            builder.accessLog(new ServerConfig.AccessLog.Builder()
+                    .remoteAddressHeaders(List.of())
+                    .remotePortHeaders(List.of()));
+        } else {
+            // TODO Vespa 8: Remove legacy Yahoo headers
+            builder.accessLog(new ServerConfig.AccessLog.Builder()
+                    .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra", "yahooremoteip", "client-ip"))
+                    .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
+        }
     }
 
     static ComponentModel providerComponentModel(final ComponentId parentId, String className) {

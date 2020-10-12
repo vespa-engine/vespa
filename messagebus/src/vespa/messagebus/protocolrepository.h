@@ -2,9 +2,9 @@
 #pragma once
 
 #include "iprotocol.h"
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 #include <atomic>
+#include <mutex>
 
 namespace mbus {
 
@@ -19,7 +19,7 @@ private:
     using ProtocolMap = std::map<string, IProtocol::SP>;
     using RoutingPolicyCache = std::map<string, IRoutingPolicy::SP>;
 
-    vespalib::Lock     _lock; // Only guards the cache,
+    std::mutex     _lock; // Only guards the cache,
                               // not the protocols as they are set up during messagebus construction.
     static constexpr size_t MAX_PROTOCOLS = 16;
     std::pair<string, std::atomic<IProtocol *>> _protocols[MAX_PROTOCOLS];

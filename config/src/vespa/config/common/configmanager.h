@@ -4,8 +4,8 @@
 #include <vespa/config/subscription/configsubscription.h>
 #include "iconfigmanager.h"
 #include "sourcefactory.h"
-#include <vespa/vespalib/util/sync.h>
 #include <map>
+#include <mutex>
 
 namespace config {
 
@@ -22,7 +22,7 @@ class ConfigManager : public IConfigManager
 {
 public:
     ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGeneration);
-    ~ConfigManager();
+    ~ConfigManager() override;
 
     // Implements IConfigManager
     ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis) override;
@@ -40,8 +40,7 @@ private:
 
     typedef std::map<SubscriptionId, ConfigSubscription::SP> SubscriptionMap;
     SubscriptionMap _subscriptionMap;
-    vespalib::Lock _lock;
-    vespalib::Lock _firstLock;
+    std::mutex _lock;
 };
 
 } // namespace config

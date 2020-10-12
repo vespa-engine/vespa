@@ -17,7 +17,7 @@ public class JettyHttpServerBuilder extends VespaDomBuilder.DomConfigProducerBui
 
     @Override
     protected JettyHttpServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element http) {
-        JettyHttpServer jettyHttpServer = new JettyHttpServer(new ComponentId("jdisc-jetty"));
+        JettyHttpServer jettyHttpServer = new JettyHttpServer(new ComponentId("jdisc-jetty"), deployState.isHosted());
         for (Element serverSpec: XML.getChildren(http, "server")) {
             ConnectorFactory connectorFactory = new JettyConnectorBuilder().build(deployState, ancestor, serverSpec);
             jettyHttpServer.addConnector(connectorFactory);

@@ -180,7 +180,7 @@ public:
     small_string(const char * s) noexcept : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
     small_string(const void * s, size_type sz) noexcept : _buf(_stack), _sz(sz) { init(s); }
     small_string(stringref s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
-    small_string(const std::string & s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
+    small_string(const std::string & s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(small_string && rhs) noexcept
         : _sz(rhs.size()), _bufferSize(rhs._bufferSize)
     {

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "value.h"
-#include "simple_sparse_map.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
@@ -12,27 +11,27 @@ namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
-class TensorSpec;
-
 /**
  * A simple implementation of a generic value that can also be used to
- * build new values. This class focuses on simplicity and is intended
- * as a reference implementation that can also be used to test the
- * correctness of tensor operations as they are moved away from the
- * implementation of individual tensor classes.
+ * build new values. This class focuses on simplicity over speed and
+ * is intended as a reference implementation that can also be used to
+ * test the correctness of tensor operations as they are moved away
+ * from the implementation of individual tensor classes.
  **/
 class SimpleValue : public Value, public Value::Index
 {
 private:
+    using Labels = std::vector<vespalib::string>;
+
     ValueType _type;
     size_t _num_mapped_dims;
     size_t _subspace_size;
-    SimpleSparseMap _index;
+    std::map<Labels,size_t> _index;
 protected:
     size_t subspace_size() const { return _subspace_size; }
-    void add_mapping(ConstArrayRef<vespalib::stringref> addr) { _index.add_mapping(addr); }
+    void add_mapping(ConstArrayRef<vespalib::stringref> addr);
 public:
-    SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
+    SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValue() override;
     const ValueType &type() const override { return _type; }
     const Value::Index &index() const override { return *this; }

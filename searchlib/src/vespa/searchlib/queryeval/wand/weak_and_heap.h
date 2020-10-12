@@ -3,7 +3,7 @@
 
 #include "wand_parts.h"
 #include <vespa/vespalib/util/priority_queue.h>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace search::queryeval {
     
@@ -51,7 +51,7 @@ class SharedWeakAndPriorityQueue : public WeakAndHeap
 private:
     typedef vespalib::PriorityQueue<score_t> Scores;
     Scores         _bestScores;
-    vespalib::Lock _lock;
+    std::mutex     _lock;
 
     bool is_full() const { return (_bestScores.size() >= getScoresToTrack()); }
 

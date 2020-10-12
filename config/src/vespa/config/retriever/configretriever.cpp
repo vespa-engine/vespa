@@ -2,6 +2,8 @@
 
 #include "configretriever.h"
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/subscription/sourcespec.h>
+#include <cassert>
 
 using std::chrono::milliseconds;
 
@@ -51,7 +53,7 @@ ConfigRetriever::getConfigs(const ConfigKeySet & keySet, milliseconds timeoutInM
     if (keySet != _lastKeySet) {
         _lastKeySet = keySet;
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             if (_closed)
                 return ConfigSnapshot();
             _configSubscriber = std::make_unique<GenericConfigSubscriber>(_context);
@@ -82,7 +84,7 @@ ConfigRetriever::getConfigs(const ConfigKeySet & keySet, milliseconds timeoutInM
 void
 ConfigRetriever::close()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _closed = true;
     _bootstrapSubscriber.close();
     if (_configSubscriber)

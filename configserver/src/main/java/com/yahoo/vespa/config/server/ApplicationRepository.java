@@ -132,6 +132,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final TesterClient testerClient;
     private final Metric metric;
     private final BooleanFlag deployWithInternalRestart;
+    private final BooleanFlag acquireProvisionLock;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -182,6 +183,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
         this.deployWithInternalRestart = Flags.DEPLOY_WITH_INTERNAL_RESTART.bindTo(flagSource);
+        this.acquireProvisionLock = Flags.ALWAYS_ACQUIRE_PROVISION_LOCK.bindTo(flagSource);
     }
 
     public static class Builder {
@@ -508,7 +510,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             // and allocated hosts in model and handlers in RPC server
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
 
-            hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
+            hostProvisioner.ifPresent(provisioner -> {
+                if (acquireProvisionLock.value()) {
+                    try (var provisionLock = provisioner.lock(applicationId)) {
+                        provisioner.remove(transaction, provisionLock);
+                    }
+                } else {
+                    provisioner.remove(transaction, applicationId);
+                }
+            });
             transaction.onCommitted(() -> log.log(Level.INFO, "Deleted " + applicationId));
             transaction.commit();
             return true;
@@ -722,13 +732,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-
-
     public CompletionWaiter activate(LocalSession session, Session previousActiveSession, ApplicationId applicationId, boolean force) {
         CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, force));
-        hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
+        hostProvisioner.ifPresent(provisioner -> {
+            if (acquireProvisionLock.value()) {
+                try (var lock = provisioner.lock(applicationId)) {
+                    provisioner.activate(transaction, session.getAllocatedHosts().getHosts(), lock);
+                }
+            } else {
+                provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts());
+            }
+        });
         transaction.commit();
         return waiter;
     }

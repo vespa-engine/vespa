@@ -140,7 +140,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<NamedReader> getFiles(Path dir,String fileSuffix,boolean recurse) {
+    public List<NamedReader> getFiles(Path dir, String fileSuffix, boolean recurse) {
         return new ArrayList<>();
     }
 

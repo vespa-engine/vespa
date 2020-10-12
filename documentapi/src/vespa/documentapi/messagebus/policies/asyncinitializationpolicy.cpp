@@ -41,9 +41,7 @@ AsyncInitializationPolicy::AsyncInitializationPolicy(
 {
 }
 
-AsyncInitializationPolicy::~AsyncInitializationPolicy()
-{
-}
+AsyncInitializationPolicy::~AsyncInitializationPolicy() = default;
 
 void
 AsyncInitializationPolicy::initSynchronous()
@@ -74,7 +72,7 @@ AsyncInitializationPolicy::select(mbus::RoutingContext& context)
     }
 
     {
-        vespalib::MonitorGuard lock(_lock);
+        std::lock_guard lock(_lock);
 
         if (_state == State::NOT_STARTED || _state == State::FAILED) {
             // Only 1 task may be queued to the executor at any point in time.
@@ -88,7 +86,7 @@ AsyncInitializationPolicy::select(mbus::RoutingContext& context)
         }
 
         if (_state != State::DONE) {
-            mbus::Reply::UP reply(new mbus::EmptyReply());
+            auto reply = std::make_unique<mbus::EmptyReply>();
             reply->addError(currentPolicyInitError());
             context.setReply(std::move(reply));
             return;
@@ -117,7 +115,7 @@ AsyncInitializationPolicy::Task::run()
 
     using State = AsyncInitializationPolicy::State;
 
-    vespalib::MonitorGuard lock(_owner._lock);
+    std::lock_guard lock(_owner._lock);
     _owner._error = error;
     _owner._state = error.empty() ? State::DONE : State::FAILED;
 }

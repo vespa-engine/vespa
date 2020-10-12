@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 using namespace vespalib;
@@ -11,7 +10,7 @@ using namespace vespalib;
 struct ResultSetter : public AsyncResolver::ResultHandler {
     SocketAddress &addr;
     std::atomic<bool> done;
-    ResultSetter(SocketAddress &addr_out) : addr(addr_out), done(false) {}
+    ResultSetter(SocketAddress &addr_out) noexcept : addr(addr_out), done(false) {}
     void handle_result(SocketAddress result) override {
         addr = result;
         done = true;
@@ -31,7 +30,7 @@ struct MyClock : public AsyncResolver::Clock {
 struct BlockingHostResolver : public AsyncResolver::HostResolver {
     CountDownLatch callers;
     Gate barrier;
-    BlockingHostResolver(size_t num_callers)
+    BlockingHostResolver(size_t num_callers) noexcept
         : callers(num_callers), barrier() {}
     vespalib::string ip_address(const vespalib::string &) override {
         callers.countDown();

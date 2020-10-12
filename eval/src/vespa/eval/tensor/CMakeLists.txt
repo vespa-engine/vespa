@@ -3,6 +3,7 @@ vespa_add_library(eval_tensor OBJECT
     SOURCES
     default_tensor_engine.cpp
     default_value_builder_factory.cpp
+    partial_update.cpp
     tensor.cpp
     tensor_address.cpp
     wrapped_simple_tensor.cpp

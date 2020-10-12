@@ -104,10 +104,10 @@ public:
         uint16_t index;
         bool sourceOnly;
 
-        Node(uint16_t index_, bool sourceOnly_ = false)
+        Node(uint16_t index_, bool sourceOnly_ = false) noexcept
             : index(index_), sourceOnly(sourceOnly_) {}
 
-        bool operator==(const Node& n) const
+        bool operator==(const Node& n) const noexcept
             { return (index == n.index && sourceOnly == n.sourceOnly); }
     };
 
@@ -123,7 +123,7 @@ public:
                        Timestamp maxTimestamp,
                        uint32_t clusterStateVersion = 0,
                        const std::vector<uint16_t>& chain = std::vector<uint16_t>());
-    ~MergeBucketCommand();
+    ~MergeBucketCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }

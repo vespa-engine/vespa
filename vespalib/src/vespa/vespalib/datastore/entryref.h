@@ -13,13 +13,13 @@ class EntryRef {
 protected:
     uint32_t _ref;
 public:
-    EntryRef() : _ref(0u) { }
-    explicit EntryRef(uint32_t ref_) : _ref(ref_) { }
-    uint32_t ref() const { return _ref; }
-    bool valid() const { return _ref != 0u; }
-    bool operator==(const EntryRef &rhs) const { return _ref == rhs._ref; }
-    bool operator!=(const EntryRef &rhs) const { return _ref != rhs._ref; }
-    bool operator <(const EntryRef &rhs) const { return _ref < rhs._ref; }
+    EntryRef() noexcept : _ref(0u) { }
+    explicit EntryRef(uint32_t ref_) noexcept : _ref(ref_) { }
+    uint32_t ref() const noexcept { return _ref; }
+    bool valid() const noexcept { return _ref != 0u; }
+    bool operator==(const EntryRef &rhs) const noexcept { return _ref == rhs._ref; }
+    bool operator!=(const EntryRef &rhs) const noexcept { return _ref != rhs._ref; }
+    bool operator <(const EntryRef &rhs) const noexcept { return _ref < rhs._ref; }
 };
 
 /**
@@ -29,9 +29,9 @@ public:
 template <uint32_t OffsetBits, uint32_t BufferBits = 32u - OffsetBits>
 class EntryRefT : public EntryRef {
 public:
-    EntryRefT() : EntryRef() {}
-    EntryRefT(size_t offset_, uint32_t bufferId_);
-    EntryRefT(const EntryRef & ref_) : EntryRef(ref_.ref()) {}
+    EntryRefT() noexcept : EntryRef() {}
+    EntryRefT(size_t offset_, uint32_t bufferId_) noexcept;
+    EntryRefT(const EntryRef & ref_) noexcept : EntryRef(ref_.ref()) {}
     size_t offset() const { return _ref & (offsetSize() - 1); }
     uint32_t bufferId() const { return _ref >> OffsetBits; }
     static size_t offsetSize() { return 1ul << OffsetBits; }
@@ -55,10 +55,10 @@ private:
     typedef EntryRefT<OffsetBits> ParentType;
     static const uint32_t PadConstant = ((1 << OffsetAlign) - 1);
 public:
-    AlignedEntryRefT() : ParentType() {}
-    AlignedEntryRefT(size_t offset_, uint32_t bufferId_) :
+    AlignedEntryRefT() noexcept : ParentType() {}
+    AlignedEntryRefT(size_t offset_, uint32_t bufferId_) noexcept :
         ParentType(align(offset_) >> OffsetAlign, bufferId_) {}
-    AlignedEntryRefT(const EntryRef & ref_) : ParentType(ref_) {}
+    AlignedEntryRefT(const EntryRef & ref_) noexcept : ParentType(ref_) {}
     size_t offset() const { return ParentType::offset() << OffsetAlign; }
     static size_t offsetSize() { return ParentType::offsetSize() << OffsetAlign; }
     static size_t align(size_t val) { return val + pad(val); }

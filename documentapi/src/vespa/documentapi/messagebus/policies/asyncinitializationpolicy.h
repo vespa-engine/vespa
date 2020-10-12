@@ -5,15 +5,15 @@
 #include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/documentapi/common.h>
-#include <vespa/vespalib/util/sync.h>
 #include <map>
+#include <mutex>
 
 namespace documentapi {
 
 class AsyncInitializationPolicy : public mbus::IRoutingPolicy {
 public:
     AsyncInitializationPolicy(const std::map<string, string>& parameters);
-    virtual ~AsyncInitializationPolicy();
+    ~AsyncInitializationPolicy() override;
 
     static std::map<string, string> parse(string parameters);
 
@@ -64,7 +64,7 @@ private:
     friend class Task;
 
     std::unique_ptr<vespalib::Executor> _executor;
-    vespalib::Monitor _lock;
+    std::mutex _lock;
 
     enum class State {
         NOT_STARTED,

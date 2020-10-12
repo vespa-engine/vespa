@@ -445,8 +445,7 @@ struct CallAppendVector {
 template <typename OCT>
 void append_vector(OCT *&pos, const Value &value) {
     if (auto tensor = value.as_tensor()) {
-        const DenseTensorView *view = static_cast<const DenseTensorView *>(tensor);
-        dispatch_1<CallAppendVector<OCT> >(view->cellsRef(), pos);
+        dispatch_1<CallAppendVector<OCT> >(tensor->cells(), pos);
     } else {
         *pos++ = value.as_double();
     }

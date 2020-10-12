@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/barrier.h>
 #include <string>
 #include <vector>
+#include <cassert>
 #include "test_master.h"
 
 namespace vespalib {

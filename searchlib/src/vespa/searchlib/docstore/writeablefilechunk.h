@@ -4,6 +4,7 @@
 
 #include "filechunk.h"
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/sync.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/fastos/file.h>
 #include <map>
@@ -90,7 +91,7 @@ private:
     void writeDataHeader(const common::FileHeaderContext &fileHeaderContext);
     bool needFlushPendingChunks(uint64_t serialNum, uint64_t datFileLen);
     bool needFlushPendingChunks(const vespalib::MonitorGuard & guard, uint64_t serialNum, uint64_t datFileLen);
-    vespalib::system_time unconditionallyFlushPendingChunks(const vespalib::LockGuard & flushGuard, uint64_t serialNum, uint64_t datFileLen);
+    vespalib::system_time unconditionallyFlushPendingChunks(const LockGuard & flushGuard, uint64_t serialNum, uint64_t datFileLen);
     static void insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChunkQ & newChunks, const uint32_t nextChunkId);
     static ProcessedChunkQ fetchNextChain(ProcessedChunkMap & orderedChunks, const uint32_t firstChunkId);
     ChunkMeta computeChunkMeta(const vespalib::LockGuard & guard,
@@ -108,8 +109,8 @@ private:
     bool              _frozen;
     // Lock order is _writeLock, _flushLock, _lock
     vespalib::Monitor _lock;
-    vespalib::Lock    _writeLock;
-    vespalib::Lock    _flushLock;
+    std::mutex        _writeLock;
+    std::mutex        _flushLock;
     FastOS_File       _dataFile;
     using ChunkMap = std::map<uint32_t, Chunk::UP>;
     ChunkMap          _chunkMap;

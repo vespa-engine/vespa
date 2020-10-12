@@ -24,9 +24,12 @@ class StoreByBucket
     using ConstBufferRef = vespalib::ConstBufferRef;
     using CompressionConfig = vespalib::compression::CompressionConfig;
 public:
-    StoreByBucket(vespalib::MemoryDataStore & backingMemory, const CompressionConfig & compression);
-    StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression);
-    StoreByBucket(StoreByBucket &&) = default;
+    StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression) noexcept;
+    //TODO Putting the below move constructor into cpp file fails for some unknown reason. Needs to be resolved.
+    StoreByBucket(StoreByBucket &&) noexcept = default;
+    StoreByBucket(const StoreByBucket &) = delete;
+    StoreByBucket & operator=(StoreByBucket &&) noexcept = delete;
+    StoreByBucket & operator = (const StoreByBucket &) = delete;
     ~StoreByBucket();
     class IWrite {
     public:
@@ -52,10 +55,10 @@ private:
     void closeChunk(Chunk::UP chunk);
     struct Index {
         using BucketId=document::BucketId;
-        Index(BucketId bucketId, uint32_t id, uint32_t chunkId, uint32_t entry) :
+        Index(BucketId bucketId, uint32_t id, uint32_t chunkId, uint32_t entry) noexcept :
             _bucketId(bucketId), _id(id), _chunkId(chunkId), _lid(entry)
         { }
-        bool operator < (const Index & b) const {
+        bool operator < (const Index & b) const noexcept {
             return BucketId::bucketIdToKey(_bucketId.getRawId()) < BucketId::bucketIdToKey(b._bucketId.getRawId());
         }
         BucketId _bucketId;

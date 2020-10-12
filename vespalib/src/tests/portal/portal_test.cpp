@@ -202,7 +202,7 @@ TEST("require that get requests dropped on the floor returns HTTP error") {
     vespalib::string path = "/test";
     auto portal = Portal::create(null_crypto(), 0);
     auto expect = make_expected_error(500, "Internal Server Error");
-    MyGetHandler handler([](Portal::GetRequest){});
+    MyGetHandler handler([](Portal::GetRequest) noexcept {});
     auto bound = portal->bind(path, handler);
     auto result = fetch(portal->listen_port(), null_crypto(), path);
     EXPECT_EQUAL(result, expect);

@@ -46,7 +46,6 @@ vespa_define_module(
     src/tests/datastore/unique_store
     src/tests/datastore/unique_store_dictionary
     src/tests/datastore/unique_store_string_allocator
-    src/tests/delegatelist
     src/tests/detect_type_benchmark
     src/tests/dotproduct
     src/tests/drop-file-from-cache
@@ -94,7 +93,6 @@ vespa_define_module(
     src/tests/regex
     src/tests/rendezvous
     src/tests/runnable_pair
-    src/tests/rwlock
     src/tests/sha1
     src/tests/sharedptr
     src/tests/signalhandler

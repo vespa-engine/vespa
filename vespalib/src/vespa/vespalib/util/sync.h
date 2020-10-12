@@ -2,43 +2,11 @@
 
 #pragma once
 
-#include <cassert>
+#include "time.h"
 #include <mutex>
 #include <condition_variable>
-#include <chrono>
 
 namespace vespalib {
-
-/**
- * @brief A Lock is a synchronization primitive used to ensure mutual
- * exclusion.
- *
- * Use a LockGuard to hold a lock inside a scope.
- *
- * It is possible to obtain a lock on a const Lock object.
- *
- * @see TryLock
- **/
-class Lock
-{
-protected:
-    friend class LockGuard;
-    friend class TryLock;
-
-    mutable std::mutex _mutex;
-public:
-    /**
-     * @brief Create a new Lock.
-     *
-     * Creates a Lock that has mutex instrumentation disabled.
-     **/
-    Lock() : _mutex() {}
-    Lock(const Lock &) : Lock() { }
-    Lock(Lock &&) : Lock() { }
-    Lock &operator=(const Lock &) { return *this; }
-    Lock &operator=(Lock &&) { return *this; }
-};
-
 
 /**
  * @brief A Monitor is a synchronization primitive used to protect
@@ -52,133 +20,24 @@ public:
  *
  * @see TryLock
  **/
-class Monitor : public Lock
+class Monitor
 {
 private:
     friend class LockGuard;
     friend class MonitorGuard;
     friend class TryLock;
 
-    mutable std::condition_variable _cond;
+    std::unique_ptr<std::mutex> _mutex;
+    std::unique_ptr<std::condition_variable> _cond;
 public:
     /**
      * @brief Create a new Monitor.
      *
      * Creates a Monitor that has mutex instrumentation disabled.
      **/
-    Monitor() : Lock(), _cond() {}
-    Monitor(const Monitor &) : Monitor() { }
-    Monitor(Monitor &&) : Monitor() { }
-    Monitor &operator=(const Monitor &) { return *this; }
-    Monitor &operator=(Monitor &&) { return *this; }
-};
-
-
-/**
- * @brief A TryLock object is used to try to obtain the lock on a Lock
- * or a Monitor without blocking.
- *
- * A TryLock will typically fail to obatin the lock if someone else
- * already has it. In that case, the TryLock object has no further
- * use.
- *
- * If the TryLock managed to acquire the lock, it can be passed over
- * to a LockGuard or MonitorGuard object. If the lock is not passed
- * on, the TryLock object will release it when it goes out of scope.
- *
- * Note that passing the lock obtained from a Lock to a MonitorGuard
- * is illegal. Also note that if the TryLock fails to aquire the lock,
- * it cannot be passed on. Trying to do so will result in an assert.
- *
- * copy/assignment of a TryLock is illegal.
- *
- * <pre>
- * Example:
- *
- * Lock lock;
- * TryLock tl(lock);
- * if (tl.hasLock()) {
- *   LockGuard guard(tl)
- *   ... do stuff
- * } // the lock is released as 'guard' goes out of scope
- * </pre>
- **/
-class TryLock
-{
-private:
-    friend class LockGuard;
-    friend class MonitorGuard;
-
-    std::unique_lock<std::mutex> _guard;
-    std::condition_variable     *_cond;
-
-    TryLock(const TryLock &) = delete;
-    TryLock &operator=(const TryLock &) = delete;
-
-public:
-    /**
-     * @brief Try to obtain the lock represented by the given Lock object
-     *
-     * @param lock the lock to obtain
-     **/
-    TryLock(const Lock &lock)
-        : _guard(lock._mutex, std::try_to_lock),
-          _cond(nullptr)
-    {
-    }
-
-    /**
-     * @brief Try to lock the given Monitor
-     *
-     * @param mon the monitor to lock
-     **/
-    TryLock(const Monitor &mon)
-        : _guard(mon._mutex, std::try_to_lock),
-          _cond(_guard ? &mon._cond : nullptr)
-    {
-    }
-
-    TryLock(TryLock &&rhs)
-        : _guard(std::move(rhs._guard)),
-          _cond(rhs._cond)
-    {
-        rhs._cond = nullptr;
-    }
-
-    /**
-     * @brief Release the lock held by this object, if any
-     **/
-    ~TryLock() = default;
-
-    TryLock &operator=(TryLock &&rhs) {
-        if (this != &rhs) {
-            _guard = std::move(rhs._guard);
-            _cond = rhs._cond;
-            rhs._cond = nullptr;
-        }
-        return *this;
-    }
-
-    /**
-     * @brief Check whether this object holds a lock
-     *
-     * @return true if this object holds a lock
-     **/
-    bool hasLock() { return static_cast<bool>(_guard); }
-    /**
-     * @brief Release the lock held by this object.
-     *
-     * No methods may be invoked after invoking unlock (except the
-     * destructor). Note that this method should only be used if you
-     * need to release the lock before the object is destructed, as
-     * the destructor will release the lock.
-     **/
-    void unlock() {
-        if (_guard) {
-            _guard.unlock();
-            _cond = nullptr;
-        }
-    }
+    Monitor() noexcept;
+    Monitor(Monitor && rhs) noexcept;
+    ~Monitor();
 };
 
 
@@ -198,19 +57,20 @@ class LockGuard
 {
 private:
     std::unique_lock<std::mutex> _guard;
-    LockGuard &operator=(const LockGuard &) = delete;
 public:
     /**
      * @brief A noop guard without any mutex.
      **/
-    LockGuard() : _guard() {}
+    LockGuard();
     LockGuard(const LockGuard &rhs) = delete;
+    LockGuard &operator=(const LockGuard &) = delete;
+
     /**
      * @brief Steal the lock from the given LockGuard
      *
      * @param rhs steal the lock from this one
      **/
-    LockGuard(LockGuard &&rhs) : _guard(std::move(rhs._guard)) { }
+    LockGuard(LockGuard &&rhs) noexcept;
     /**
      * @brief Obtain the lock represented by the given Lock object.
      *
@@ -218,28 +78,9 @@ public:
      *
      * @param lock take it
      **/
-    LockGuard(const Lock &lock) : _guard(lock._mutex) { }
+    LockGuard(const Monitor &lock);
 
-    /**
-     * @brief Create a LockGuard from a TryLock.
-     *
-     * The TryLock may have been created from either a Lock or a
-     * Monitor, but it must have managed to acquire the lock. The lock
-     * will be handed over from the TryLock to the new object.
-     *
-     * @param tlock take the lock from this one
-     **/
-    LockGuard(TryLock &&tlock) : _guard(std::move(tlock._guard))
-    {
-        tlock._cond = nullptr;
-    }
-
-    LockGuard &operator=(LockGuard &&rhs) {
-        if (this != &rhs) {
-            _guard = std::move(rhs._guard);
-        }
-        return *this;
-    }
+    LockGuard &operator=(LockGuard &&rhs) noexcept;
 
     /**
      * @brief Release the lock held by this object.
@@ -249,24 +90,18 @@ public:
      * need to release the lock before the object is destructed, as
      * the destructor will release the lock.
      **/
-    void unlock() {
-        if (_guard) {
-            _guard.unlock();
-        }
-    }
+    void unlock();
     /**
      * @brief Release the lock held by this object if unlock has not
      * been called.
      **/
-    ~LockGuard() = default;
+    ~LockGuard();
 
     /**
      * Allow code to match guard with lock. This allows functions to take a
      * guard ref as input, ensuring that the caller have grabbed a lock.
      */
-    bool locks(const Lock& lock) const {
-        return (_guard && _guard.mutex() == &lock._mutex);
-    }
+    bool locks(const Monitor& lock) const;
 };
 
 
@@ -294,19 +129,14 @@ public:
     /**
      * @brief A noop guard without any condition.
      **/
-    MonitorGuard() : _guard(), _cond(nullptr) {}
+    MonitorGuard();
     MonitorGuard(const MonitorGuard &rhs) = delete;
     /**
      * @brief Steal the lock from the given MonitorGuard
      *
      * @param rhs steal the lock from this one
      **/
-    MonitorGuard(MonitorGuard &&rhs)
-        : _guard(std::move(rhs._guard)),
-          _cond(rhs._cond)
-    {
-        rhs._cond = nullptr;
-    }
+    MonitorGuard(MonitorGuard &&rhs) noexcept;
     /**
      * @brief Obtain the lock on the given Monitor object.
      *
@@ -314,39 +144,9 @@ public:
      *
      * @param monitor take the lock on it
      **/
-    MonitorGuard(const Monitor &monitor)
-        : _guard(monitor._mutex),
-          _cond(&monitor._cond)
-    {
-    }
-    /**
-     * @brief Create a MonitorGuard from a TryLock.
-     *
-     * The TryLock must have been created from a Monitor, and it must
-     * have managed to acquire the lock. The lock will be handed over
-     * from the TryLock to the new object.
-     *
-     * @param tlock take the lock from this one
-     **/
-    MonitorGuard(TryLock &&tlock)
-        : _guard(),
-          _cond(nullptr)
-    {
-        if (tlock._guard && tlock._cond != nullptr) {
-            _guard = std::move(tlock._guard);
-            _cond = tlock._cond;
-            tlock._cond = nullptr;
-        }
-    }
+    MonitorGuard(const Monitor &monitor);
 
-    MonitorGuard &operator=(MonitorGuard &&rhs) {
-        if (this != &rhs) {
-            _guard = std::move(rhs._guard);
-            _cond = rhs._cond;
-            rhs._cond = nullptr;
-        }
-        return *this;
-    }
+    MonitorGuard &operator=(MonitorGuard &&rhs) noexcept;
 
 
     /**
@@ -357,17 +157,11 @@ public:
      * need to release the lock before this object is destructed, as
      * the destructor will release the lock.
      **/
-    void unlock() {
-        assert(_guard);
-        _guard.unlock();
-        _cond = nullptr;
-    }
+    void unlock();
     /**
      * @brief Wait for a signal on the underlying Monitor.
      **/
-    void wait() {
-        _cond->wait(_guard);
-    }
+    void wait();
     /**
      * @brief Wait for a signal on the underlying Monitor with the
      * given timeout.
@@ -375,25 +169,17 @@ public:
      * @param msTimeout timeout in milliseconds
      * @return true if a signal was received, false if the wait timed out.
      **/
-    bool wait(int msTimeout) {
-        return wait(std::chrono::milliseconds(msTimeout));
-    }
-    bool wait(std::chrono::nanoseconds timeout) {
-        return _cond->wait_for(_guard, timeout) == std::cv_status::no_timeout;
-    }
+    bool wait(int msTimeout);
+    bool wait(duration timeout);
     /**
      * @brief Send a signal to a single waiter on the underlying
      * Monitor.
      **/
-    void signal() {
-        _cond->notify_one();
-    }
+    void signal();
     /**
      * @brief Send a signal to all waiters on the underlying Monitor.
      **/
-    void broadcast() {
-        _cond->notify_all();
-    }
+    void broadcast();
     /**
      * @brief Send a signal to a single waiter on the underlying
      * Monitor, but unlock the monitor right before doing so.
@@ -402,24 +188,20 @@ public:
      * synchronization to ensure that the underlying Monitor object
      * will live long enough to be signaled.
      **/
-    void unsafeSignalUnlock() {
-        _guard.unlock();
-        _cond->notify_one();
-        _cond = nullptr;
-    }
+    void unsafeSignalUnlock();
 
     /**
      * @brief Release the lock held by this object if unlock has not
      * been called.
      **/
-    ~MonitorGuard() = default;
+    ~MonitorGuard();
 
     /**
      * Allow code to match guard with lock. This allows functions to take a
      * guard ref as input, ensuring that the caller have grabbed a lock.
      */
     bool monitors(const Monitor& m) const {
-        return (_cond != nullptr && _cond == &m._cond);
+        return (_cond != nullptr && _cond == m._cond.get());
     }
 };
 

@@ -363,8 +363,6 @@ public class NodeAgentImpl implements NodeAgent {
         context.log(logger, "Container should be running with different CPU allocation, wanted: %s, current: %s",
                 wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
 
-        orchestratorSuspendNode(context);
-
         // Only update CPU resources
         containerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
         return containerOperations.getContainer(context).orElseThrow(() ->

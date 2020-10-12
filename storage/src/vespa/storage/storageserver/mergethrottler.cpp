@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".mergethrottler");
@@ -214,7 +215,7 @@ MergeThrottler::MergeThrottler(
 void
 MergeThrottler::configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig)
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
 
     if (newConfig->maxMergesPerNode < 1) {
         throw config::InvalidConfigException("Cannot have a max merge count of less than 1");
@@ -277,7 +278,7 @@ MergeThrottler::onClose()
         _closing = true;
     }
     if (LOG_WOULD_LOG(debug)) {
-        vespalib::LockGuard lock(_stateLock);
+        std::lock_guard lock(_stateLock);
         LOG(debug, "onClose; active: %zu, queued: %zu",
             _merges.size(), _queue.size());
     }
@@ -700,7 +701,7 @@ void MergeThrottler::backpressure_bounce_all_queued_merges(MessageGuard& guard) 
 }
 
 bool MergeThrottler::backpressure_mode_active() const {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     return backpressure_mode_active_no_lock();
 }
 
@@ -1072,7 +1073,7 @@ MergeThrottler::onDown(const std::shared_ptr<api::StorageMessage>& msg)
         lock.broadcast();
         return true;
     } else if (isDiffCommand(*msg)) {
-        vespalib::LockGuard lock(_stateLock);
+        std::lock_guard lock(_stateLock);
         auto& cmd = static_cast<api::StorageCommand&>(*msg);
         if (bucketIsUnknownOrAborted(cmd.getBucket())) {
             sendUp(makeAbortReply(cmd, "no state recorded for bucket in merge "
@@ -1264,7 +1265,7 @@ void
 MergeThrottler::reportHtmlStatus(std::ostream& out,
                                  const framework::HttpUrlPath&) const
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     {
         out << "<p>Max pending: "
             << _throttlePolicy->getMaxPendingCount()

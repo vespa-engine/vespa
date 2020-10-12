@@ -41,11 +41,12 @@ struct Term {
     uint32_t                 estHits;
     fef::TermFieldMatchData *matchData;
     score_t                  maxScore = 0.0; // <- only used by rise wand test
-    Term(SearchIterator *s, int32_t w, uint32_t e, fef::TermFieldMatchData *tfmd)
-        : search(s), weight(w), estHits(e), matchData(tfmd) {}
-    Term() : Term(nullptr, 0, 0, nullptr){}
-    Term(SearchIterator *s, int32_t w, uint32_t e) : Term(s, w, e, nullptr) {}
-    Term(SearchIterator::UP s, int32_t w, uint32_t e) : Term(s.release(), w, e, nullptr) {}
+    Term(SearchIterator *s, int32_t w, uint32_t e, fef::TermFieldMatchData *tfmd) noexcept
+        : search(s), weight(w), estHits(e), matchData(tfmd)
+    {}
+    Term() noexcept : Term(nullptr, 0, 0, nullptr){}
+    Term(SearchIterator *s, int32_t w, uint32_t e) noexcept : Term(s, w, e, nullptr) {}
+    Term(SearchIterator::UP s, int32_t w, uint32_t e) noexcept : Term(s.release(), w, e, nullptr) {}
 };
 
 //-----------------------------------------------------------------------------

@@ -10,6 +10,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.manager");
@@ -660,7 +661,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
     }
         // Only one can access status at a time as _statusRequest only holds
         // answers from one request at a time
-    vespalib::LockGuard sync(_statusLock);
+    std::lock_guard sync(_statusLock);
     vespalib::MonitorGuard waiter(_statusMonitor);
         // Send all subrequests
     uint32_t parts = _visitorThread.size();

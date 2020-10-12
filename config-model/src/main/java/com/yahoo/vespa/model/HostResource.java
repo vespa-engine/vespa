@@ -47,7 +47,7 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     /**
-     * Return the currently bounded {@link com.yahoo.vespa.model.Host}.
+     * Return the currently bound {@link com.yahoo.vespa.model.Host}.
      *
      * @return the {@link com.yahoo.vespa.model.Host} if bound, null if not.
      */
