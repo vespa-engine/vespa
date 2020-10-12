@@ -17,8 +17,8 @@ namespace eval {
 namespace test {
 
 using CellType = ValueType::CellType;
-using map_fun_t = TensorEngine::map_fun_t;
-using join_fun_t = TensorEngine::join_fun_t;
+using map_fun_t = vespalib::eval::operation::op1_t;
+using join_fun_t = vespalib::eval::operation::op2_t;
 
 // Random access sequence of numbers
 struct Sequence {

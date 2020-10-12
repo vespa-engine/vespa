@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "partial_update.h"
+#include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
@@ -16,7 +17,7 @@ namespace vespalib::tensor {
 
 namespace {
 
-using join_fun_t = double (*)(double, double);
+using join_fun_t = vespalib::eval::operation::op2_t;
 
 static constexpr size_t npos() { return -1; }
 

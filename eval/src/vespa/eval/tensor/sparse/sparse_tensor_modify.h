@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/tensor/tensor_visitor.h>
 #include "sparse_tensor.h"
 #include "sparse_tensor_t.h"
@@ -17,7 +18,7 @@ namespace vespalib::tensor {
 template<typename T>
 class SparseTensorModify : public TensorVisitor
 {
-    using join_fun_t = Tensor::join_fun_t;
+    using join_fun_t = vespalib::eval::operation::op2_t;
     join_fun_t             _op;
     eval::ValueType        _type;
     SparseTensorIndex      _index;

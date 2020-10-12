@@ -51,8 +51,8 @@ using CellType = eval::ValueType::CellType;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
-using map_fun_t = eval::TensorEngine::map_fun_t;
-using join_fun_t = eval::TensorEngine::join_fun_t;
+using map_fun_t = vespalib::eval::operation::op1_t;
+using join_fun_t = vespalib::eval::operation::op2_t;
 
 namespace {
 

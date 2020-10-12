@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tensor_spec.h"
+#include "operation.h"
 #include "lazy_params.h"
 #include "value_type.h"
 #include "value.h"
@@ -126,8 +127,8 @@ const T *as(const TensorFunction &node) { return dynamic_cast<const T *>(&node);
 
 namespace tensor_function {
 
-using map_fun_t = double (*)(double);
-using join_fun_t = double (*)(double, double);
+using map_fun_t = vespalib::eval::operation::op1_t;
+using join_fun_t = vespalib::eval::operation::op2_t;
 
 class Node : public TensorFunction
 {
