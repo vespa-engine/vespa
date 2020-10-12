@@ -73,6 +73,7 @@ public:
     using PriorityIdx = bmi::nth_index<PriorityQueue, 1>::type;
     using BucketIdx = bmi::nth_index<PriorityQueue, 2>::type;
     using Clock = std::chrono::steady_clock;
+    using monitor_guard = std::unique_lock<std::mutex>;
 
     struct Disk;
 
@@ -109,47 +110,47 @@ public:
         void waitInactive(const AbortBucketOperationsCommand& cmd) const;
 
         void broadcast() {
-            vespalib::MonitorGuard guard(_lock);
-            guard.broadcast();
+            _cond->notify_all();
         }
         size_t getQueueSize() const {
-            vespalib::MonitorGuard guard(_lock);
+            std::lock_guard guard(*_lock);
             return _queue->size();
         }
         void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
                      api::StorageMessage::Id lockMsgId);
 
         // Subsumes isLocked
-        bool operationIsInhibited(const vespalib::MonitorGuard&, const document::Bucket&,
+        bool operationIsInhibited(const monitor_guard &, const document::Bucket&,
                                   const api::StorageMessage&) const noexcept;
-        bool isLocked(const vespalib::MonitorGuard &, const document::Bucket&,
+        bool isLocked(const monitor_guard &, const document::Bucket&,
                       api::LockingRequirements lockReq) const noexcept;
 
-        void lock(const vespalib::MonitorGuard &, const document::Bucket & bucket,
+        void lock(const monitor_guard &, const document::Bucket & bucket,
                   api::LockingRequirements lockReq, const LockEntry & lockEntry);
 
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
 
-        FileStorHandler::LockedMessage getNextMessage(uint32_t timeout, Disk & disk);
+        FileStorHandler::LockedMessage getNextMessage(vespalib::duration timeout, Disk & disk);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
-        vespalib::Monitor & exposeLock() { return _lock; }
+        std::mutex & exposeLock() { return *_lock; }
         PriorityQueue & exposeQueue() { return *_queue; }
         BucketIdx & exposeBucketIdx() { return bmi::get<2>(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
     private:
-        bool hasActive(vespalib::MonitorGuard & monitor, const AbortBucketOperationsCommand& cmd) const;
+        bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
         // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
         // with its locking requirements.
-        FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, PriorityIdx & idx,
+        FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdx & idx,
                                                   PriorityIdx::iterator iter);
         using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
         const FileStorHandlerImpl      &_owner;
         MessageSender                  &_messageSender;
         FileStorStripeMetrics          *_metrics;
-        vespalib::Monitor               _lock;
+        std::unique_ptr<std::mutex>                _lock;
+        std::unique_ptr<std::condition_variable>   _cond;
         std::unique_ptr<PriorityQueue>  _queue;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_merges;
@@ -184,7 +185,7 @@ public:
         void waitUntilNoLocks() const;
         std::vector<std::shared_ptr<api::StorageReply>> abort(const AbortBucketOperationsCommand& cmd);
         void waitInactive(const AbortBucketOperationsCommand& cmd) const;
-        FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, uint32_t timeout) {
+        FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, vespalib::duration timeout) {
             return _stripes[stripeId].getNextMessage(timeout, *this);
         }
         std::shared_ptr<FileStorHandler::BucketLockInterface>
@@ -218,7 +219,7 @@ public:
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
         // TODO refactor, too many params
-        BucketLock(const vespalib::MonitorGuard & guard, Stripe& disk, const document::Bucket &bucket,
+        BucketLock(const monitor_guard & guard, Stripe& disk, const document::Bucket &bucket,
                    uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id,
                    api::LockingRequirements lockReq);
         ~BucketLock() override;
@@ -237,7 +238,7 @@ public:
                         const spi::PartitionStateList&, ServiceLayerComponentRegister&);
 
     ~FileStorHandlerImpl();
-    void setGetNextMessageTimeout(uint32_t timeout) { _getNextMessageTimeout = timeout; }
+    void setGetNextMessageTimeout(vespalib::duration timeout) { _getNextMessageTimeout = timeout; }
 
     void flush(bool killPendingMerges);
     void setDiskState(uint16_t disk, DiskState state);
@@ -290,7 +291,7 @@ private:
     const document::BucketIdFactory& _bucketIdFactory;
     mutable std::mutex    _mergeStatesLock;
     std::map<document::Bucket, MergeStatus::SP> _mergeStates;
-    uint32_t              _getNextMessageTimeout;
+    vespalib::duration    _getNextMessageTimeout;
     const uint32_t        _max_active_merges_per_stripe; // Read concurrently by stripes.
     vespalib::Monitor     _pauseMonitor;
     std::atomic<bool>     _paused;

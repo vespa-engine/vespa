@@ -176,7 +176,7 @@ FileStorHandler::abortQueuedOperations(const AbortBucketOperationsCommand& cmd)
 }
 
 void
-FileStorHandler::setGetNextMessageTimeout(uint32_t timeout)
+FileStorHandler::setGetNextMessageTimeout(vespalib::duration timeout)
 {
     _impl->setGetNextMessageTimeout(timeout);
 }

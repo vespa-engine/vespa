@@ -398,7 +398,7 @@ TEST_F(FileStorManagerTest, handler_priority) {
     metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50);
+    filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId(0);
     ASSERT_EQ(0u, stripeId);
 
@@ -506,7 +506,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
     metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50);
+    filestorHandler.setGetNextMessageTimeout(50ms);
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -552,7 +552,7 @@ TEST_F(FileStorManagerTest, handler_pause) {
     metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50);
+    filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
     std::string content("Here is some content which is in all documents");
@@ -598,7 +598,7 @@ TEST_F(FileStorManagerTest, remap_split) {
     metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50);
+    filestorHandler.setGetNextMessageTimeout(50ms);
 
     std::string content("Here is some content which is in all documents");
 
@@ -656,7 +656,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
     metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(),1,  1);
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50);
+    filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
     std::string content("Here is some content which is in all documents");

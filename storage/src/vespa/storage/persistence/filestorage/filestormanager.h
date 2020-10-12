@@ -11,7 +11,6 @@
 #include "filestorhandler.h"
 #include "filestormetrics.h"
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
@@ -69,8 +68,6 @@ class FileStorManager : public StorageLinkQueued,
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
-
-    mutable vespalib::Monitor _threadMonitor; // Notify to stop sleeping
     bool                      _closed;
 
     friend struct FileStorManagerTest;
