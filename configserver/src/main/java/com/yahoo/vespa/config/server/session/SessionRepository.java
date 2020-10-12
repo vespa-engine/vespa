@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.FlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -93,7 +92,6 @@ public class SessionRepository {
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
                              TenantApplications applicationRepo,
-                             FlagSource flagSource,
                              SessionPreparer sessionPreparer) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
@@ -114,7 +112,7 @@ public class SessionRepository {
 
     private void loadSessions() {
         loadLocalSessions();
-        initializeRemoteSessions();
+        loadRemoteSessions();
     }
 
     // ---------------- Local sessions ----------------------------------------------------------------
@@ -291,7 +289,7 @@ public class SessionRepository {
         return children.stream().map(Long::parseLong).collect(Collectors.toList());
     }
 
-    private void initializeRemoteSessions() throws NumberFormatException {
+    private void loadRemoteSessions() throws NumberFormatException {
         getRemoteSessions().forEach(this::sessionAdded);
     }
 
@@ -655,7 +653,7 @@ public class SessionRepository {
      * Will also add the session to the local session cache if necessary
      */
     public void createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
-        if (applicationRepo.hasLocalSession(sessionId)) {
+        if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
             log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
             createSessionFromId(sessionId);
             return;
