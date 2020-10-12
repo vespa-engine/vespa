@@ -60,9 +60,6 @@ public class SessionStateWatcher {
             case DEACTIVATE:
                 sessionRepository.deactivate(session);
                 break;
-            case DELETE:
-                sessionRepository.delete(session);
-                break;
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
         }
