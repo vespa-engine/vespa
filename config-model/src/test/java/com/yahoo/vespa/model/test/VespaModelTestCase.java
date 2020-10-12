@@ -276,7 +276,7 @@ public class VespaModelTestCase {
                 .build();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
-                .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com"))
+                .modelHostProvisioner(new InMemoryProvisioner(true, false, "host1.yahoo.com"))
                 .properties(new TestProperties()
                         .setConfigServerSpecs(Arrays.asList(new TestProperties.Spec("cfghost", 1234, 1236)))
                         .setMultitenant(true))

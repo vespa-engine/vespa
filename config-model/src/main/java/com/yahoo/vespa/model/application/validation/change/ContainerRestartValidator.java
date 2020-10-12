@@ -7,7 +7,6 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.container.ApplicationContainer;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
@@ -15,8 +14,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Returns a restart action for each container that has turned on {@link QrConfig#restartOnDeploy()}.

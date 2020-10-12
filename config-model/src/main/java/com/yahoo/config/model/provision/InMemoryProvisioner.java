@@ -48,6 +48,9 @@ public class InMemoryProvisioner implements HostProvisioner {
     /** Hosts which should be returned as retired */
     private final Set<String> retiredHostNames;
 
+    /** If false, nodes returned will have the resources of the host, if true node resources will be as requested */
+    private final boolean sharedHosts;
+
     /** Free hosts of each resource size */
     private final ListMap<NodeResources, Host> freeNodes = new ListMap<>();
     private final Map<ClusterSpec, List<HostSpec>> allocations = new LinkedHashMap<>();
@@ -63,33 +66,34 @@ public class InMemoryProvisioner implements HostProvisioner {
     private Provisioned provisioned = new Provisioned();
 
     /** Creates this with a number of nodes with resources 1, 3, 9, 1 */
-    public InMemoryProvisioner(int nodeCount) {
-        this(nodeCount, defaultResources);
+    public InMemoryProvisioner(int nodeCount, boolean sharedHosts) {
+        this(nodeCount, defaultResources, sharedHosts);
     }
 
     /** Creates this with a number of nodes with given resources */
-    public InMemoryProvisioner(int nodeCount, NodeResources resources) {
-        this(Map.of(resources, createHostInstances(nodeCount)), true, false, 0);
+    public InMemoryProvisioner(int nodeCount, NodeResources resources, boolean sharedHosts) {
+        this(Map.of(resources, createHostInstances(nodeCount)), true, false, sharedHosts, 0);
     }
 
     /** Creates this with a set of host names of the flavor 'default' */
-    public InMemoryProvisioner(boolean failOnOutOfCapacity, String... hosts) {
-        this(Map.of(defaultResources, toHostInstances(hosts)), failOnOutOfCapacity, false, 0);
+    public InMemoryProvisioner(boolean failOnOutOfCapacity, boolean sharedHosts, String... hosts) {
+        this(Map.of(defaultResources, toHostInstances(hosts)), failOnOutOfCapacity, false, sharedHosts, 0);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
-    public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, 0, retiredHostNames);
+    public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, boolean sharedHosts, String ... retiredHostNames) {
+        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, sharedHosts, 0, retiredHostNames);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
-    public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, startIndexForClusters, retiredHostNames);
+    public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, boolean sharedHosts, int startIndexForClusters, String ... retiredHostNames) {
+        this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, sharedHosts, startIndexForClusters, retiredHostNames);
     }
 
     public InMemoryProvisioner(Map<NodeResources, Collection<Host>> hosts,
                                boolean failOnOutOfCapacity,
                                boolean useMaxResources,
+                               boolean sharedHosts,
                                int startIndexForClusters,
                                String ... retiredHostNames) {
         this.failOnOutOfCapacity = failOnOutOfCapacity;
@@ -97,8 +101,9 @@ public class InMemoryProvisioner implements HostProvisioner {
         for (Map.Entry<NodeResources, Collection<Host>> hostsWithResources : hosts.entrySet())
             for (Host host : hostsWithResources.getValue())
                 freeNodes.put(hostsWithResources.getKey(), host);
-        this.retiredHostNames = Set.of(retiredHostNames);
+        this.sharedHosts = sharedHosts;
         this.startIndexForClusters = startIndexForClusters;
+        this.retiredHostNames = Set.of(retiredHostNames);
     }
 
     private static Collection<Host> toHostInstances(String[] hostnames) {
@@ -160,6 +165,7 @@ public class InMemoryProvisioner implements HostProvisioner {
             if (retiredHostNames.contains(host.hostname()))
                 i.set(retire(host));
         }
+
         return allocation;
     }
 
@@ -212,8 +218,9 @@ public class InMemoryProvisioner implements HostProvisioner {
             Host newHost = freeNodes.removeValue(hostResources.get(), 0);
             if (freeNodes.get(hostResources.get()).isEmpty()) freeNodes.removeAll(hostResources.get());
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
+            NodeResources resources = sharedHosts ? requestedResources : hostResources.get();
             allocation.add(new HostSpec(newHost.hostname(),
-                                        hostResources.get(), hostResources.get(), requestedResources,
+                                        resources, resources, requestedResources,
                                         membership,
                                         newHost.version(), Optional.empty(),
                                         Optional.empty()));

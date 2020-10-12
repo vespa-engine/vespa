@@ -618,7 +618,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         String servicesXml = "<container id='default' version='1.0' />";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com", "host2.yahoo.com"))
+                .modelHostProvisioner(new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com"))
                 .applicationPackage(applicationPackage)
                 .properties(new TestProperties()
                         .setMultitenant(true)

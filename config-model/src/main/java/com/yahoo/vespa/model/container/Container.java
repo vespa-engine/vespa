@@ -58,6 +58,9 @@ public abstract class Container extends AbstractService implements
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
 
+    /** The cluster this contasiner belongs to, or null if it is not added to any cluster */
+    private ContainerCluster owner = null;
+
     protected final AbstractConfigProducer parent;
     private final String name;
     private boolean requireSpecificPorts = true;
@@ -93,6 +96,8 @@ public abstract class Container extends AbstractService implements
 
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
     }
+
+    void setOwner(ContainerCluster<?> owner) { this.owner = owner; }
 
     /** True if this container is retired (slated for removal) */
     public boolean isRetired() { return retired; }
@@ -296,17 +301,14 @@ public abstract class Container extends AbstractService implements
 
     @Override
     public void getConfig(QrConfig.Builder builder) {
-        builder.
-                rpc(new Rpc.Builder()
+        builder.rpc(new Rpc.Builder()
                         .enabled(rpcServerEnabled())
                         .port(getRpcPort())
-                        .slobrokId(serviceSlobrokId())).
-                filedistributor(filedistributorConfig());
-        if (clusterName != null) {
-            builder.discriminator(clusterName + "." + name);
-        } else {
-            builder.discriminator(name);
-        }
+                        .slobrokId(serviceSlobrokId()))
+                .filedistributor(filedistributorConfig())
+                .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
+                .restartOnDeploy(owner != null && owner.getDeferChangesUntilRestart());
+
     }
 
     /** Returns the jvm args set explicitly for this node */
