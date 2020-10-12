@@ -36,6 +36,7 @@ vespa_define_module(
     src/tests/gp/ponder_nov2017
     src/tests/instruction/generic_concat
     src/tests/instruction/generic_join
+    src/tests/instruction/generic_map
     src/tests/instruction/generic_merge
     src/tests/instruction/generic_reduce
     src/tests/instruction/generic_rename
