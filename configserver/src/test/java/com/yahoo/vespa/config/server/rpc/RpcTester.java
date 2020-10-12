@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -15,6 +15,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MemoryGenerationCounter;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.PortRangeAllocator;
 import com.yahoo.vespa.config.server.SuperModelManager;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
@@ -24,7 +25,6 @@ import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -93,7 +93,7 @@ public class RpcTester implements AutoCloseable {
         tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .build();
         generationCounter = new MemoryGenerationCounter();

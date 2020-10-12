@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -11,6 +11,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
@@ -64,7 +65,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
 
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .withConfigserverConfig(configserverConfig)
                 .build();
@@ -188,7 +189,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 SessionContentHandler.testOnlyContext(),
                 new ApplicationRepository.Builder()
                         .withTenantRepository(tenantRepository)
-                        .withProvisioner(new SessionHandlerTest.MockProvisioner())
+                        .withProvisioner(new MockProvisioner())
                         .withOrchestrator(new OrchestratorMock())
                         .withClock(componentRegistry.getClock())
                         .build()

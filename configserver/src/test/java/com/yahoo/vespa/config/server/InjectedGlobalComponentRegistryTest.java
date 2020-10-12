@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -9,7 +9,6 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -74,7 +73,7 @@ public class InjectedGlobalComponentRegistryTest {
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         hostRegistries = new HostRegistries();
-        HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner());
+        HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -18,17 +18,11 @@ import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ProvisionLock;
-import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
@@ -53,7 +47,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -189,69 +182,6 @@ public class DeployTester {
         return new InMemoryProvisioner(true, false, "host0", "host1", "host2", "host3", "host4", "host5");
     }
 
-    private TestComponentRegistry createComponentRegistry(Curator curator, Metrics metrics,
-                                                          List<ModelFactory> modelFactories,
-                                                          ConfigserverConfig configserverConfig,
-                                                          Clock clock,
-                                                          Zone zone,
-                                                          HostProvisioner provisioner) {
-        TestComponentRegistry.Builder builder = new TestComponentRegistry.Builder();
-
-        if (configserverConfig.hostedVespa())
-            builder.provisioner(new ProvisionerAdapter(provisioner));
-
-        builder.configServerConfig(configserverConfig)
-               .curator(curator)
-               .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-               .metrics(metrics)
-               .zone(zone)
-               .clock(clock);
-        return builder.build();
-    }
-
-    private static class ProvisionerAdapter implements Provisioner {
-
-        private final HostProvisioner hostProvisioner;
-
-        public ProvisionerAdapter(HostProvisioner hostProvisioner) {
-            this.hostProvisioner = hostProvisioner;
-        }
-
-        @Override
-        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
-            return hostProvisioner.prepare(cluster, capacity, logger);
-        }
-
-        @Override
-        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-            // noop
-        }
-
-        @Override
-        public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) {
-        }
-
-        @Override
-        public void remove(NestedTransaction transaction, ApplicationId application) {
-            // noop
-        }
-
-        @Override
-        public void remove(NestedTransaction transaction, ProvisionLock lock) {
-        }
-
-        @Override
-        public void restart(ApplicationId application, HostFilter filter) {
-            // noop
-        }
-
-        @Override
-        public ProvisionLock lock(ApplicationId application) {
-            return null;
-        }
-
-    }
-
     private static class FailingModelFactory implements ModelFactory {
 
         private final Version version;
@@ -347,7 +277,7 @@ public class DeployTester {
                             .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
                             .fileReferencesDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())));
             Provisioner provisioner = Optional.ofNullable(this.provisioner)
-                    .orElseGet(() -> new ProvisionerAdapter(createProvisioner()));
+                    .orElseGet(() -> new MockProvisioner().hostProvisioner(createProvisioner()));
             List<ModelFactory> modelFactories = Optional.ofNullable(this.modelFactories)
                     .orElseGet(() -> List.of(createModelFactory(clock)));
 
@@ -385,7 +315,7 @@ public class DeployTester {
         }
 
         public Builder hostProvisioner(HostProvisioner hostProvisioner) {
-            return provisioner(new ProvisionerAdapter(hostProvisioner));
+            return provisioner(new MockProvisioner().hostProvisioner(hostProvisioner));
         }
 
         public Builder configserverConfig(ConfigserverConfig configserverConfig) {
