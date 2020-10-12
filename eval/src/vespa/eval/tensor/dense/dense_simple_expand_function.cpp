@@ -46,7 +46,7 @@ void my_simple_expand_op(State &state, uint64_t param) {
     using OCT = typename std::conditional<rhs_inner,LCT,RCT>::type;
     using DCT = typename eval::UnifyCellTypes<ICT,OCT>::type;
     using OP = typename std::conditional<rhs_inner,SwapArgs2<Fun>,Fun>::type;
-    const ExpandParams &params = *(ExpandParams*)param;
+    const ExpandParams &params = unwrap_param<ExpandParams>(param);
     OP my_op(params.function);
     auto inner_cells = state.peek(rhs_inner ? 0 : 1).cells().typify<ICT>();
     auto outer_cells = state.peek(rhs_inner ? 1 : 0).cells().typify<OCT>();
@@ -109,8 +109,7 @@ DenseSimpleExpandFunction::compile_self(const TensorEngine &, Stash &stash) cons
     auto op = typify_invoke<4,MyTypify,MyGetFun>(lhs().result_type().cell_type(),
                                                  rhs().result_type().cell_type(),
                                                  function(), (_inner == Inner::RHS));
-    static_assert(sizeof(uint64_t) == sizeof(&params));
-    return Instruction(op, (uint64_t)(&params));
+    return Instruction(op, wrap_param<ExpandParams>(params));
 }
 
 const TensorFunction &

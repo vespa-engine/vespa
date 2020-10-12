@@ -8,6 +8,7 @@
 #include "value.h"
 #include "aggr.h"
 #include "interpreted_function.h"
+#include "wrap_param.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>

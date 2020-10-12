@@ -68,7 +68,7 @@ void my_simple_join_op(State &state, uint64_t param) {
     using SCT = typename std::conditional<swap,LCT,RCT>::type;
     using OCT = typename eval::UnifyCellTypes<PCT,SCT>::type;
     using OP = typename std::conditional<swap,SwapArgs2<Fun>,Fun>::type;
-    const JoinParams &params = *(JoinParams*)param;
+    const JoinParams &params = unwrap_param<JoinParams>(param);
     OP my_op(params.function);
     auto pri_cells = state.peek(swap ? 0 : 1).cells().typify<PCT>();
     auto sec_cells = state.peek(swap ? 1 : 0).cells().typify<SCT>();
@@ -197,8 +197,7 @@ DenseSimpleJoinFunction::compile_self(const TensorEngine &, Stash &stash) const
                                                  rhs().result_type().cell_type(),
                                                  function(), (_primary == Primary::RHS),
                                                  _overlap, primary_is_mutable());
-    static_assert(sizeof(uint64_t) == sizeof(&params));
-    return Instruction(op, (uint64_t)(&params));
+    return Instruction(op, wrap_param<JoinParams>(params));
 }
 
 const TensorFunction &

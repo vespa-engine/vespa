@@ -34,7 +34,7 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t co
 
 template <typename LCT, typename RCT, bool lhs_common_inner, bool rhs_common_inner>
 void my_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
+    const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
     using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
@@ -54,7 +54,7 @@ void my_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
 
 template <bool lhs_common_inner, bool rhs_common_inner>
 void my_cblas_double_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
+    const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
     auto lhs_cells = state.peek(1).cells().typify<double>();
     auto rhs_cells = state.peek(0).cells().typify<double>();
     auto dst_cells = state.stash.create_array<double>(self.lhs_size * self.rhs_size);
@@ -68,7 +68,7 @@ void my_cblas_double_matmul_op(eval::InterpretedFunction::State &state, uint64_t
 
 template <bool lhs_common_inner, bool rhs_common_inner>
 void my_cblas_float_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const DenseMatMulFunction::Self &self = *((const DenseMatMulFunction::Self *)(param));
+    const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
     auto lhs_cells = state.peek(1).cells().typify<float>();
     auto rhs_cells = state.peek(0).cells().typify<float>();
     auto dst_cells = state.stash.create_array<float>(self.lhs_size * self.rhs_size);
@@ -173,7 +173,7 @@ DenseMatMulFunction::compile_self(const TensorEngine &, Stash &stash) const
     auto op = typify_invoke<4,MyTypify,MyGetFun>(
             lhs().result_type().cell_type(), rhs().result_type().cell_type(),
             _lhs_common_inner, _rhs_common_inner);
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
+    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseMatMulFunction::Self>(self));
 }
 
 void

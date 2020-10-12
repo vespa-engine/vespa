@@ -17,10 +17,10 @@ namespace {
 
 template <typename CT>
 void my_cell_range_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const auto *self = (const DenseCellRangeFunction *)(param);
+    const auto &self = unwrap_param<DenseCellRangeFunction>(param);
     auto old_cells = state.peek(0).cells().typify<CT>();
-    ConstArrayRef<CT> new_cells(&old_cells[self->offset()], self->length());
-    state.pop_push(state.stash.create<DenseTensorView>(self->result_type(), TypedCells(new_cells)));
+    ConstArrayRef<CT> new_cells(&old_cells[self.offset()], self.length());
+    state.pop_push(state.stash.create<DenseTensorView>(self.result_type(), TypedCells(new_cells)));
 }
 
 struct MyCellRangeOp {
@@ -44,12 +44,11 @@ DenseCellRangeFunction::~DenseCellRangeFunction() = default;
 eval::InterpretedFunction::Instruction
 DenseCellRangeFunction::compile_self(const TensorEngine &, Stash &) const
 {
-    static_assert(sizeof(uint64_t) == sizeof(this));
     assert(result_type().cell_type() == child().result_type().cell_type());
 
     using MyTypify = eval::TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyCellRangeOp>(result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)this);
+    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseCellRangeFunction>(*this));
 }
 
 } // namespace vespalib::tensor

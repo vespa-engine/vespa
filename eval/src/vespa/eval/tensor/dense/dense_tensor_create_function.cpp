@@ -21,14 +21,14 @@ namespace {
 
 template <typename CT>
 void my_tensor_create_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const auto *self = (const DenseTensorCreateFunction::Self *)(param);
-    size_t pending_cells = self->result_size;
+    const auto &self = unwrap_param<DenseTensorCreateFunction::Self>(param);
+    size_t pending_cells = self.result_size;
     ArrayRef<CT> cells = state.stash.create_array<CT>(pending_cells);
     while (pending_cells-- > 0) {
         cells[pending_cells] = (CT) state.peek(0).as_double();
         state.stack.pop_back();
     }
-    const Value &result = state.stash.create<DenseTensorView>(self->result_type, TypedCells(cells)); 
+    const Value &result = state.stash.create<DenseTensorView>(self.result_type, TypedCells(cells)); 
     state.stack.emplace_back(result);
 }
 
@@ -71,11 +71,9 @@ DenseTensorCreateFunction::push_children(std::vector<Child::CREF> &target) const
 eval::InterpretedFunction::Instruction
 DenseTensorCreateFunction::compile_self(const TensorEngine &, Stash &) const
 {
-    static_assert(sizeof(uint64_t) == sizeof(&_self));
-
     using MyTypify = eval::TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorCreateOp>(result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)&_self);
+    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseTensorCreateFunction::Self>(_self));
 }
 
 const TensorFunction &

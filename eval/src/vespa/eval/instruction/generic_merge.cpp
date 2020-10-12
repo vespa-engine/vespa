@@ -2,9 +2,12 @@
 
 #include "generic_merge.h"
 #include <vespa/eval/eval/inline_operation.h>
+#include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <cassert>
+
+using namespace vespalib::eval::tensor_function;
 
 namespace vespalib::eval::instruction {
 
@@ -14,16 +17,6 @@ using Instruction = InterpretedFunction::Instruction;
 namespace {
 
 //-----------------------------------------------------------------------------
-
-template <typename T, typename IN> uint64_t wrap_param(const IN &value_in) {
-    const T &value = value_in;
-    static_assert(sizeof(uint64_t) == sizeof(&value));
-    return (uint64_t)&value;
-}
-
-template <typename T> const T &unwrap_param(uint64_t param) {
-    return *((const T *)param);
-}
 
 struct MergeParam {
     const ValueType res_type;

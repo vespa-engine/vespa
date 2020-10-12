@@ -14,18 +14,20 @@ using eval::TensorSpec;
 using eval::TensorFunction;
 using eval::TensorEngine;
 using Child = eval::TensorFunction::Child;
+using SpecVector = std::vector<std::pair<int64_t,size_t>>;
 using eval::as;
 using namespace eval::tensor_function;
 
 namespace {
 
+
 template <typename CT>
 void my_tensor_peek_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const auto *spec = (const std::vector<std::pair<int64_t,size_t>> *)(param);
+    const SpecVector &spec = unwrap_param<SpecVector>(param);
     size_t idx = 0;
     size_t factor = 1;
     bool valid = true;
-    for (const auto &dim: *spec) {
+    for (const auto &dim: spec) {
         if (dim.first >= 0) {
             idx += (dim.first * factor);
         } else {
@@ -70,10 +72,9 @@ DenseTensorPeekFunction::push_children(std::vector<Child::CREF> &target) const
 eval::InterpretedFunction::Instruction
 DenseTensorPeekFunction::compile_self(const TensorEngine &, Stash &) const
 {
-    static_assert(sizeof(uint64_t) == sizeof(&_spec));
     using MyTypify = eval::TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorPeekOp>(_children[0].get().result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)&_spec);
+    return eval::InterpretedFunction::Instruction(op, wrap_param<SpecVector>(_spec));
 }
 
 const TensorFunction &

@@ -34,7 +34,7 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t vector_size, size_t
 
 template <typename LCT, typename RCT, bool common_inner>
 void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const DenseXWProductFunction::Self &self = *((const DenseXWProductFunction::Self *)(param));
+    const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
     using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
     auto vector_cells = state.peek(1).cells().typify<LCT>();
     auto matrix_cells = state.peek(0).cells().typify<RCT>();
@@ -50,7 +50,7 @@ void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
 
 template <bool common_inner>
 void my_cblas_double_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const DenseXWProductFunction::Self &self = *((const DenseXWProductFunction::Self *)(param));
+    const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
     auto vector_cells = state.peek(1).cells().typify<double>();
     auto matrix_cells = state.peek(0).cells().typify<double>();
     auto dst_cells = state.stash.create_array<double>(self.result_size);
@@ -64,7 +64,7 @@ void my_cblas_double_xw_product_op(eval::InterpretedFunction::State &state, uint
 
 template <bool common_inner>
 void my_cblas_float_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    const DenseXWProductFunction::Self &self = *((const DenseXWProductFunction::Self *)(param));
+    const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
     auto vector_cells = state.peek(1).cells().typify<float>();
     auto matrix_cells = state.peek(0).cells().typify<float>();
     auto dst_cells = state.stash.create_array<float>(self.result_size);
@@ -149,7 +149,7 @@ DenseXWProductFunction::compile_self(const TensorEngine &, Stash &stash) const
     auto op = typify_invoke<3,MyTypify,MyXWProductOp>(lhs().result_type().cell_type(),
                                                       rhs().result_type().cell_type(),
                                                       _common_inner);
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
+    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseXWProductFunction::Self>(self));
 }
 
 void
