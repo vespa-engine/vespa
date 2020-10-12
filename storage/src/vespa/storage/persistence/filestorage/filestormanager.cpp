@@ -44,7 +44,6 @@ FileStorManager(const config::ConfigUri & configUri, const spi::PartitionStateLi
       _threadLockCheckInterval(60),
       _failDiskOnError(false),
       _metrics(std::make_unique<FileStorMetrics>(_component.getLoadTypes()->getMetricLoadTypes())),
-      _threadMonitor(),
       _closed(false)
 {
     _configFetcher.subscribe(_configUri.getConfigId(), this);

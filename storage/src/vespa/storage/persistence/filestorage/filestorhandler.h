@@ -249,7 +249,7 @@ public:
     uint32_t getQueueSize(uint16_t disk) const;
 
     // Commands used by testing
-    void setGetNextMessageTimeout(uint32_t timeout);
+    void setGetNextMessageTimeout(vespalib::duration timeout);
 
     std::string dumpQueue(uint16_t disk) const;
 

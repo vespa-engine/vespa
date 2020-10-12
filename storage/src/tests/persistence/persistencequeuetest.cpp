@@ -56,7 +56,7 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
     // getNextMessage will time out if no unlocked buckets are present. Choose a timeout
     // that is large enough to fail tests with high probability if this is not the case,
     // and small enough to not slow down testing too much.
-    filestorHandler->setGetNextMessageTimeout(20);
+    filestorHandler->setGetNextMessageTimeout(20ms);
 
     stripeId = filestorHandler->getNextStripeId(0);
 }
