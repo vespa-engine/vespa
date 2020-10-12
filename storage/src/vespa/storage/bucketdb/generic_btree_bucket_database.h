@@ -133,6 +133,7 @@ public:
         void find_parents_self_and_children(const document::BucketId& bucket, Func func) const;
         template <typename IterValueExtractor, typename Func>
         void for_each(Func func) const;
+        bool hasKey(uint64_t key) const;
         [[nodiscard]] uint64_t generation() const noexcept;
     };
 private:

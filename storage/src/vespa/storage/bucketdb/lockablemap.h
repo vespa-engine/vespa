@@ -133,6 +133,7 @@ private:
     LockIdSet               _lockedKeys;
     LockWaiters             _lockWaiters;
 
+    bool hasKey(uint64_t key) const;
     void unlock(const key_type& key) override;
     bool findNextKey(key_type& key, mapped_type& val, const char* clientId,
                      std::unique_lock<std::mutex> &guard);

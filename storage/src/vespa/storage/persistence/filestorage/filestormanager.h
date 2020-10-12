@@ -118,6 +118,7 @@ private:
 
     StorBucketDatabase::WrappedEntry mapOperationToDisk(api::StorageMessage&, const document::Bucket&);
     StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(api::BucketCommand&, const document::DocumentId*);
+    bool checkOrCreateBucket(api::BucketCommand&, const document::DocumentId*);
     bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
 
     // Document operations

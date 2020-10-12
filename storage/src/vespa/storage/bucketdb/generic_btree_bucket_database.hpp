@@ -565,6 +565,11 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::for_each(Func f
 }
 
 template <typename DataStoreTraitsT>
+bool GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::hasKey(uint64_t key) const {
+    return _frozen_view.find(key).valid();
+}
+
+template <typename DataStoreTraitsT>
 uint64_t GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::generation() const noexcept {
     return _guard.getGeneration();
 }

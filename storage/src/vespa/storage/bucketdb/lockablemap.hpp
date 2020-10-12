@@ -155,6 +155,13 @@ LockableMap<Map>::erase(const key_type& key, const char* client_id, bool has_loc
 }
 
 template<typename Map>
+bool
+LockableMap<Map>::hasKey(uint64_t key) const {
+    std::unique_lock<std::mutex> guard(_lock);
+    return _map.find(key) != _map.end();
+}
+
+template<typename Map>
 void
 LockableMap<Map>::insert(const key_type& key, const mapped_type& value,
                          const char* client_id, bool has_lock, bool& preExisted)
@@ -332,6 +339,10 @@ public:
         };
         auto& mutable_map = const_cast<LockableMap<Map>&>(_map); // _map is thread safe.
         mutable_map.for_each_chunked(std::move(decision_wrapper), "ReadGuardImpl::for_each");
+    }
+
+    bool hasKey(uint64_t key) const override {
+        return _map.hasKey(key);
     }
 
     [[nodiscard]] uint64_t generation() const noexcept override {

@@ -74,6 +74,11 @@ StorBucketDatabase::erase(const document::BucketId& bucket,
     return _impl->erase(bucket.stripUnused().toKey(), clientId, false);
 }
 
+bool
+StorBucketDatabase::hasBucket(const document::BucketId& bucket) const {
+    return acquire_read_guard()->hasKey(bucket.stripUnused().toKey());
+}
+
 StorBucketDatabase::WrappedEntry
 StorBucketDatabase::get(const document::BucketId& bucket,
                         const char* clientId,
