@@ -289,11 +289,18 @@ public class RoutingController {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var zones = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
-        for (var method : routingMethodsOfAll(deployments, application)) {
+        var availableRoutingMethods = routingMethodsOfAll(deployments, application);
+
+        // Hide global shared endpoints if at least one direct method is supported
+        // and instances referenced by the global endpoint is configured to be hidden
+        var hideSharedEndpoints = availableRoutingMethods.stream().anyMatch(RoutingMethod::isDirect)
+                && hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, routingId.application().serializedForm()).value();
+        for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
                                                    "direct methods");
             }
+            if (hideSharedEndpoints && !method.isDirect()) continue;
             endpoints.add(Endpoint.of(routingId.application())
                                   .target(routingId.endpointId(), cluster, zones)
                                   .on(Port.fromRoutingMethod(method))
