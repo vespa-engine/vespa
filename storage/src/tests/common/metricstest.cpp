@@ -13,7 +13,6 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/time.h>
 #include <gmock/gmock.h>
 #include <thread>
 

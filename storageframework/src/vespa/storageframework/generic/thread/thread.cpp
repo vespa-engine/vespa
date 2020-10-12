@@ -3,14 +3,13 @@
 #include "thread.h"
 #include <vespa/vespalib/util/sync.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 void
 Thread::interruptAndJoin(vespalib::Monitor* m)
 {
     interrupt();
-    if (m != 0) {
+    if (m != nullptr) {
         vespalib::MonitorGuard monitorGuard(*m);
         monitorGuard.broadcast();
     }
@@ -18,15 +17,11 @@ Thread::interruptAndJoin(vespalib::Monitor* m)
 }
 
 void
-Thread::interruptAndJoin(std::mutex &m, std::condition_variable &cv)
+Thread::interruptAndJoin(std::condition_variable &cv)
 {
     interrupt();
-    {
-        std::lock_guard<std::mutex> guard(m);
-        cv.notify_all();
-    }
+    cv.notify_all();
     join();
 }
 
-} // framework
-} // storage
+}

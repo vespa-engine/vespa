@@ -187,9 +187,9 @@ StorageBucketDBInitializer::onOpen()
 void
 StorageBucketDBInitializer::onClose()
 {
-    if (_system._thread.get() != 0) {
-        _system._thread->interruptAndJoin(_state._workerLock, _state._workerCond);
-        _system._thread.reset(0);
+    if (_system._thread) {
+        _system._thread->interruptAndJoin(_state._workerCond);
+        _system._thread.reset();
     }
 }
 

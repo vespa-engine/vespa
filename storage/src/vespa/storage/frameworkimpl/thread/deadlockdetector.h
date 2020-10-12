@@ -17,7 +17,6 @@
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/thread/threadpool.h>
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 #include <atomic>
 
@@ -78,7 +77,8 @@ struct DeadLockDetector : private framework::Runnable,
 private:
     AppKiller::UP _killer;
     mutable std::map<vespalib::string, State> _states;
-    vespalib::Monitor _waiter;
+    mutable std::mutex      _lock;
+    std::condition_variable _cond;
     bool _enableWarning;
     bool _enableShutdown;
     std::atomic<uint64_t> _processSlackMs;
