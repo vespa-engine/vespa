@@ -108,6 +108,11 @@ StorageApiRpcBmFeedHandler::remove(const document::Bucket& bucket, const Documen
     send_rpc(std::move(cmd), tracker);
 }
 
+void
+StorageApiRpcBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
+{
+}
+
 uint32_t
 StorageApiRpcBmFeedHandler::get_error_count() const
 {

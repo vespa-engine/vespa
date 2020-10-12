@@ -55,6 +55,11 @@ DocumentApiMessageBusBmFeedHandler::remove(const document::Bucket&, const Docume
     send_msg(std::move(msg), tracker);
 }
 
+void
+DocumentApiMessageBusBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
+{
+}
+
 uint32_t
 DocumentApiMessageBusBmFeedHandler::get_error_count() const
 {

@@ -75,6 +75,11 @@ StorageApiChainBmFeedHandler::remove(const document::Bucket& bucket, const Docum
     send_msg(std::move(cmd), tracker);
 }
 
+void
+StorageApiChainBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
+{
+}
+
 uint32_t
 StorageApiChainBmFeedHandler::get_error_count() const
 {
