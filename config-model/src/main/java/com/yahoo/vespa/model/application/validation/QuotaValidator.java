@@ -8,6 +8,8 @@ import com.yahoo.vespa.model.VespaModel;
 
 import java.math.BigDecimal;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -24,11 +26,11 @@ public class QuotaValidator extends Validator {
     }
 
     private void validateBudget(BigDecimal budget, VespaModel model) {
-        var spend = model.allClusters().stream()
-                .map(clusterId -> model.provisioned().all().get(clusterId))
+        var spend = model.provisioned().all().values().stream()
+                .filter(Objects::nonNull)
                 .map(Capacity::maxResources)
-                .map(clusterCapacity -> clusterCapacity.nodeResources().cost() * clusterCapacity.nodes())
-                .reduce(0.0, Double::sum);
+                .mapToDouble(clusterCapacity -> clusterCapacity.nodeResources().cost() * clusterCapacity.nodes())
+                .sum();
 
         if (budget.doubleValue() < spend) {
             throwBudgetExceeded(spend, budget);
@@ -37,12 +39,14 @@ public class QuotaValidator extends Validator {
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */
     private void validateMaxClusterSize(int maxClusterSize, VespaModel model) {
-        var invalidClusters = model.allClusters().stream()
-                .filter(clusterId -> {
-                    var cluster = model.provisioned().all().get(clusterId);
+        var invalidClusters = model.provisioned().all().entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .filter(entry -> {
+                    var cluster = entry.getValue();
                     var clusterSize = cluster.maxResources().nodes();
                     return clusterSize > maxClusterSize;
                 })
+                .map(Map.Entry::getKey)
                 .map(ClusterSpec.Id::value)
                 .collect(Collectors.toList());
 
