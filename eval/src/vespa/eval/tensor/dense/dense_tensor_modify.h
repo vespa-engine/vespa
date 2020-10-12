@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/tensor/tensor_visitor.h>
 #include "dense_tensor_view.h"
 
@@ -15,7 +16,7 @@ namespace vespalib::tensor {
 template <class CT>
 class DenseTensorModify : public TensorVisitor
 {
-    using join_fun_t = Tensor::join_fun_t;
+    using join_fun_t = vespalib::eval::operation::op2_t;
     join_fun_t             _op;
     const eval::ValueType &_type;
     std::vector<CT>        _cells;

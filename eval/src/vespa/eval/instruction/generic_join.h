@@ -4,6 +4,7 @@
 
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/interpreted_function.h>
 
 namespace vespalib { class Stash; }
@@ -11,7 +12,7 @@ namespace vespalib::eval { struct ValueBuilderFactory; }
 
 namespace vespalib::eval::instruction {
 
-using join_fun_t = double (*)(double, double);
+using join_fun_t = vespalib::eval::operation::op2_t;
 
 //-----------------------------------------------------------------------------
 

@@ -315,7 +315,7 @@ DenseTensorView::reduce(join_fun_t op, const std::vector<vespalib::string> &dime
 
 struct CallModify
 {
-    using join_fun_t = DenseTensorView::join_fun_t;
+    using join_fun_t = vespalib::eval::operation::op2_t;
 
     template <typename CT>
     static std::unique_ptr<Tensor>

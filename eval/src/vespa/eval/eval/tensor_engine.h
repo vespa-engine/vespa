@@ -3,6 +3,7 @@
 #pragma once
 
 #include "aggr.h"
+#include "operation.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 #include <vector>
@@ -36,8 +37,8 @@ struct TensorEngine
     using TensorSpec = eval::TensorSpec;
     using Value = eval::Value;
     using ValueType = eval::ValueType;
-    using join_fun_t = double (*)(double, double);
-    using map_fun_t = double (*)(double);
+    using map_fun_t = vespalib::eval::operation::op1_t;
+    using join_fun_t = vespalib::eval::operation::op2_t;
 
     virtual TensorSpec to_spec(const Value &value) const = 0;
     virtual std::unique_ptr<Value> from_spec(const TensorSpec &spec) const = 0;

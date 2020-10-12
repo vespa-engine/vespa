@@ -6,6 +6,7 @@
 #include "tensor.h"
 #include "tensor_spec.h"
 #include "aggr.h"
+#include "operation.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stash.h>
 #include <memory>
@@ -75,8 +76,8 @@ private:
     Cells _cells;
 
 public:
-    using map_fun_t = double (*)(double);
-    using join_fun_t = double (*)(double, double);
+    using map_fun_t = vespalib::eval::operation::op1_t;
+    using join_fun_t = vespalib::eval::operation::op2_t;
 
     SimpleTensor();
     TypedCells cells() const override { abort(); }

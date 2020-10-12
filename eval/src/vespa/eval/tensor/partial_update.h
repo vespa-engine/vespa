@@ -3,11 +3,12 @@
 #pragma once
 
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/operation.h>
 
 namespace vespalib::tensor {
 
 struct TensorPartialUpdate {
-    using join_fun_t = double (*)(double, double);
+    using join_fun_t = vespalib::eval::operation::op2_t;
     using Value = vespalib::eval::Value;
     using ValueBuilderFactory = vespalib::eval::ValueBuilderFactory;
 

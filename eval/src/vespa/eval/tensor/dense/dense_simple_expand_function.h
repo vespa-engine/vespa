@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/eval/operation.h>
 
 namespace vespalib::tensor {
 
@@ -20,7 +21,7 @@ class DenseSimpleExpandFunction : public eval::tensor_function::Join
     using Super = eval::tensor_function::Join;
 public:
     enum class Inner : uint8_t { LHS, RHS };
-    using join_fun_t = ::vespalib::eval::tensor_function::join_fun_t;
+    using join_fun_t = vespalib::eval::operation::op2_t;
 private:
     Inner _inner;
 public:

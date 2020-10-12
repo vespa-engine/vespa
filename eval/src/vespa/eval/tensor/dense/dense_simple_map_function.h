@@ -12,7 +12,7 @@ namespace vespalib::tensor {
 class DenseSimpleMapFunction : public eval::tensor_function::Map
 {
 public:
-    using map_fun_t = ::vespalib::eval::tensor_function::map_fun_t;
+    using map_fun_t = vespalib::eval::operation::op1_t;
     DenseSimpleMapFunction(const eval::ValueType &result_type,
                            const TensorFunction &child,
                            map_fun_t function_in);
