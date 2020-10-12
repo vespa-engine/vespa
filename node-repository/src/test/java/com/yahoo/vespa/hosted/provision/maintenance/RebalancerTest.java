@@ -151,7 +151,7 @@ public class RebalancerTest {
                     cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
                     memoryApp, new MockDeployer.ApplicationContext(memoryApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources))));
             deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
-            rebalancer = new Rebalancer(deployer, tester.nodeRepository(), metric, tester.clock(), Duration.ofMinutes(1));
+            rebalancer = new Rebalancer(deployer, tester.nodeRepository(), metric, Duration.ofMinutes(1));
             tester.makeReadyNodes(3, "flat", NodeType.host, 8);
             tester.activateTenantHosts();
         }

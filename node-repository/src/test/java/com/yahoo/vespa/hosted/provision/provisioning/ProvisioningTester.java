@@ -568,7 +568,7 @@ public class ProvisioningTester {
         assertEquals(expectedSwitches, switchesOf(activeNodes, allNodes));
     }
 
-    private Set<String> switchesOf(NodeList applicationNodes, NodeList allNodes) {
+    public Set<String> switchesOf(NodeList applicationNodes, NodeList allNodes) {
         assertTrue("All application nodes are children", applicationNodes.stream().allMatch(node -> node.parentHostname().isPresent()));
         Set<String> switches = new HashSet<>();
         for (var parent : allNodes.parentsOf(applicationNodes)) {
