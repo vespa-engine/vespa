@@ -247,6 +247,7 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
           _immediateCommit(immediateCommit),
           _onWriteDone()
     { }
+    ~BatchUpdateTask() override;
 
     void run() override {
         if (_immediateCommit) {
@@ -266,6 +267,8 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
     AttrUpdates                      _updates;
     search::IDestructorCallback::SP  _onWriteDone;
 };
+
+BatchUpdateTask::~BatchUpdateTask() = default;
 
 class FieldContext
 {
@@ -507,7 +510,7 @@ public:
           _immediateCommit(immediateCommit),
           _onWriteDone(onWriteDone)
     {}
-    ~BatchRemoveTask() override = default;
+    ~BatchRemoveTask() override;
     void run() override {
         for (auto field : _writeCtx.getFields()) {
             auto &attr = field.getAttribute();
@@ -522,6 +525,8 @@ public:
         }
     }
 };
+
+BatchRemoveTask::~BatchRemoveTask() = default;
 
 class CommitTask : public vespalib::Executor::Task
 {
