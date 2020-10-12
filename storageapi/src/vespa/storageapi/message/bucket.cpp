@@ -548,7 +548,7 @@ NotifyBucketChangeCommand::print(std::ostream& out, bool verbose,
                                  const std::string& indent) const
 {
     out << "NotifyBucketChangeCommand(" << getBucketId() << ", ";
-    out << _info.toString();
+    out << _info;
     out << ")";
     if (verbose) {
         out << " : ";
