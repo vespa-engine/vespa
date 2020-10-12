@@ -219,7 +219,7 @@ public class SessionRepository {
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+    public LocalSession createSessionFromApplicationPackage(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
         applicationRepo.createApplication(applicationId);
         Optional<Long> activeSessionId = applicationRepo.activeSessionOf(applicationId);
         return create(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
@@ -336,7 +336,7 @@ public class SessionRepository {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
         }
-        createLocalSessionUsingDistributedApplicationPackage(sessionId);
+        createLocalSessionFromDistributedApplicationPackage(sessionId);
     }
 
     void activate(RemoteSession session) {
@@ -622,7 +622,7 @@ public class SessionRepository {
      * Returns a new local session for the given session id if it does not already exist.
      * Will also add the session to the local session cache if necessary
      */
-    public void createLocalSessionUsingDistributedApplicationPackage(long sessionId) {
+    public void createLocalSessionFromDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
             log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
             createSessionFromId(sessionId);
