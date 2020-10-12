@@ -13,29 +13,26 @@ using document::BucketSpace;
 
 namespace storage {
 
-DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg,
-                                   AppKiller::UP killer)
+DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller::UP killer)
     : framework::HtmlStatusReporter("deadlockdetector", "Dead lock detector"),
       _killer(std::move(killer)),
       _states(),
-      _waiter(),
+      _lock(),
+      _cond(),
       _enableWarning(true),
       _enableShutdown(false),
       _processSlackMs(30 * 1000),
       _waitSlackMs(5 * 1000),
       _reportedBucketDBLocksAtState(OK)
 {
-    DistributorComponentRegister* dComp(
-            dynamic_cast<DistributorComponentRegister*>(&compReg));
+    auto* dComp(dynamic_cast<DistributorComponentRegister*>(&compReg));
     if (dComp) {
-        _dComponent.reset(new DistributorComponent(*dComp, "deadlockdetector"));
+        _dComponent = std::make_unique<DistributorComponent>(*dComp, "deadlockdetector");
         _component = _dComponent.get();
     } else {
-        ServiceLayerComponentRegister* slComp(
-                dynamic_cast<ServiceLayerComponentRegister*>(&compReg));
+        auto* slComp(dynamic_cast<ServiceLayerComponentRegister*>(&compReg));
         assert(slComp != 0);
-        _slComponent.reset(new ServiceLayerComponent(
-                *slComp, "deadlockdetector"));
+        _slComponent = std::make_unique<ServiceLayerComponent>(*slComp, "deadlockdetector");
         _component = _slComponent.get();
     }
     _component->registerStatusPage(*this);
@@ -44,8 +41,8 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg,
 
 DeadLockDetector::~DeadLockDetector()
 {
-    if (_thread.get() != 0) {
-        _thread->interruptAndJoin(&_waiter);
+    if (_thread) {
+        _thread->interruptAndJoin(_cond);
     }
 }
 
@@ -229,12 +226,12 @@ DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
 void
 DeadLockDetector::run(framework::ThreadHandle& thread)
 {
-    vespalib::MonitorGuard sync(_waiter);
+    std::unique_lock sync(_lock);
     while (!thread.interrupted()) {
         framework::MilliSecTime time(_component->getClock().getTimeInMillis());
         ThreadChecker checker(*this, time);
         visitThreads(checker);
-        sync.wait(1000);
+        _cond.wait_for(sync, 1s);
         thread.registerTick(framework::WAIT_CYCLE);
     }
 }
@@ -263,8 +260,7 @@ namespace {
         ~ThreadTable();
     };
 
-    ThreadTable::~ThreadTable() {
-    }
+    ThreadTable::~ThreadTable() = default;
 
     struct ThreadStatusWriter : public DeadLockDetector::ThreadVisitor {
         ThreadTable& _table;
@@ -309,7 +305,7 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
     vespalib::asciistream out;
     out << "<h2>Overview of latest thread ticks</h2>\n";
     ThreadTable threads;
-    vespalib::MonitorGuard monitor(_waiter);
+    std::lock_guard guard(_lock);
     framework::MilliSecTime time(_component->getClock().getTimeInMillis());
     ThreadStatusWriter writer(threads, time, getProcessSlack(), getWaitSlack());
     visitThreads(writer);

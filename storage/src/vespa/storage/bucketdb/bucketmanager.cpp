@@ -82,7 +82,7 @@ void BucketManager::onClose()
 {
     // Stop internal thread such that we don't send any more messages down.
     if (_thread) {
-        _thread->interruptAndJoin(_workerLock, _workerCond);
+        _thread->interruptAndJoin(_workerCond);
         _thread.reset();
     }
 }

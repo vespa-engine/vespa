@@ -241,7 +241,8 @@ StorageLink::stateToString(State state)
     }
 }
 
-std::ostream& operator<<(std::ostream& out, StorageLink& link) {
+std::ostream&
+operator<<(std::ostream& out, StorageLink& link) {
     link.printChain(out);
     return out;
 }
@@ -249,8 +250,9 @@ std::ostream& operator<<(std::ostream& out, StorageLink& link) {
 Queue::Queue() = default;
 Queue::~Queue() = default;
 
-bool Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout) {
-    vespalib::MonitorGuard sync(_queueMonitor);
+bool
+Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration timeout) {
+    std::unique_lock sync(_lock);
     bool first = true;
     while (true) { // Max twice
         if (!_queue.empty()) {
@@ -259,29 +261,33 @@ bool Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout) {
             _queue.pop();
             return true;
         }
-        if (timeout == 0 || !first) {
+        if ((timeout == vespalib::duration::zero()) || !first) {
             return false;
         }
-        sync.wait(timeout);
+        _cond.wait_for(sync, timeout);
         first = false;
     }
 
     return false;
 }
 
-void Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
-    vespalib::MonitorGuard sync(_queueMonitor);
-    _queue.emplace(std::move(msg));
-    sync.unsafeSignalUnlock();
+void
+Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
+    {
+        std::lock_guard sync(_lock);
+        _queue.emplace(std::move(msg));
+    }
+    _cond.notify_one();
 }
 
-void Queue::signal() {
-    vespalib::MonitorGuard sync(_queueMonitor);
-    sync.unsafeSignalUnlock();
+void
+Queue::signal() {
+    _cond.notify_one();
 }
 
-size_t Queue::size() const {
-    vespalib::MonitorGuard sync(_queueMonitor);
+size_t
+Queue::size() const {
+    std::lock_guard guard(_lock);
     return _queue.size();
 }
 

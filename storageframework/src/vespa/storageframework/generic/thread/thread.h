@@ -14,7 +14,6 @@
 
 #include "runnable.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <mutex>
 #include <condition_variable>
 
 namespace vespalib {
@@ -61,7 +60,7 @@ public:
      */
     void interruptAndJoin(vespalib::Monitor* m);
 
-    void interruptAndJoin(std::mutex &m, std::condition_variable &cv);
+    void interruptAndJoin(std::condition_variable &cv);
 };
 
 }

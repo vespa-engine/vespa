@@ -123,7 +123,7 @@ public:
             return tracker->getResult();
         }
         std::shared_ptr<api::StorageMessage> msg;
-        _replySender.queue.getNext(msg, 60000);
+        _replySender.queue.getNext(msg, 60s);
         return dynamic_cast<api::StorageReply &>(*msg).getResult();
     }
 

@@ -352,7 +352,7 @@ void CommunicationManager::onClose()
     std::shared_ptr<api::StorageMessage> msg;
     api::ReturnCode code(api::ReturnCode::ABORTED, "Node shutting down");
     while (_eventQueue.size() > 0) {
-        assert(_eventQueue.getNext(msg, 0));
+        assert(_eventQueue.getNext(msg, 0ms));
         if (!msg->getType().isReply()) {
             std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(*msg).makeReply());
             reply->setResult(code);
@@ -763,7 +763,7 @@ CommunicationManager::run(framework::ThreadHandle& thread)
     while (!thread.interrupted()) {
         thread.registerTick();
         std::shared_ptr<api::StorageMessage> msg;
-        if (_eventQueue.getNext(msg, 100)) {
+        if (_eventQueue.getNext(msg, 100ms)) {
             process(msg);
         }
         std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
