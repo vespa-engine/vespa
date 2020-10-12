@@ -277,7 +277,7 @@ public class SessionRepository {
         return deleted;
     }
 
-    public void deactivate(RemoteSession remoteSession) {
+    public void deactivateAndUpdateCache(RemoteSession remoteSession) {
         RemoteSession session = remoteSession.deactivated();
         remoteSessionCache.put(session.getSessionId(), session);
     }
@@ -338,7 +338,6 @@ public class SessionRepository {
         long sessionId = remoteSession.getSessionId();
         // TODO: Change log level to FINE when debugging is finished
         log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
-        deactivate(remoteSession);
         deleteRemoteSessionFromZooKeeper(remoteSession);
         remoteSessionCache.remove(sessionId);
         LocalSession localSession = getLocalSession(sessionId);
@@ -352,10 +351,7 @@ public class SessionRepository {
     private void sessionRemoved(long sessionId) {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
-        RemoteSession session = remoteSessionCache.remove(sessionId);
-        if (session != null) {
-            deactivate(session);
-        }
+        remoteSessionCache.remove(sessionId);
         metrics.incRemovedSessions();
     }
 
