@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -11,12 +11,12 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -57,7 +57,7 @@ public class SessionActiveHandlerTest {
     private static final String activatedMessage = " for tenant '" + tenantName + "' activated.";
     private static final String pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
 
-    private SessionHandlerTest.MockProvisioner hostProvisioner;
+    private MockProvisioner provisioner;
     private TestComponentRegistry componentRegistry;
     private ApplicationRepository applicationRepository;
     private SessionActiveHandler handler;
@@ -68,7 +68,7 @@ public class SessionActiveHandlerTest {
     @Before
     public void setup() throws IOException {
         VespaModelFactory modelFactory = new TestModelFactory(Version.fromString("7.222.2"));
-        hostProvisioner = new SessionHandlerTest.MockProvisioner();
+        provisioner = new MockProvisioner();
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
@@ -83,7 +83,7 @@ public class SessionActiveHandlerTest {
         tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(hostProvisioner)
+                .withProvisioner(provisioner)
                 .withOrchestrator(new OrchestratorMock())
                 .withClock(componentRegistry.getClock())
                 .withConfigserverConfig(configserverConfig)
@@ -165,8 +165,8 @@ public class SessionActiveHandlerTest {
                 "/environment/" + "prod" +
                 "/region/" + "default" +
                 "/instance/" + "default"));
-        assertTrue(hostProvisioner.activated);
-        assertThat(hostProvisioner.lastHosts.size(), is(1));
+        assertTrue(provisioner.activated());
+        assertThat(provisioner.lastHosts().size(), is(1));
     }
 
     private SessionActiveHandler createHandler() {

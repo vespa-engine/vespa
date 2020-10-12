@@ -15,6 +15,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -73,7 +74,7 @@ public class ApplicationHandlerTest {
 
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
-    private SessionHandlerTest.MockProvisioner provisioner;
+    private MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
 
     @Rule
@@ -94,7 +95,7 @@ public class ApplicationHandlerTest {
                 .build();
         tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenantName);
-        provisioner = new SessionHandlerTest.MockProvisioner();
+        provisioner = new MockProvisioner();
         orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -179,10 +180,10 @@ public class ApplicationHandlerTest {
     @Test
     public void testRestart() throws Exception {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
-        assertFalse(provisioner.restarted);
+        assertFalse(provisioner.restarted());
         restart(applicationId, Zone.defaultZone());
-        assertTrue(provisioner.restarted);
-        assertEquals(applicationId, provisioner.lastApplicationId);
+        assertTrue(provisioner.restarted());
+        assertEquals(applicationId, provisioner.lastApplicationId());
     }
 
     @Test

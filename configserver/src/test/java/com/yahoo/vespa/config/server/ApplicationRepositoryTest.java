@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -100,7 +99,7 @@ public class ApplicationRepositoryTest {
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
-    private SessionHandlerTest.MockProvisioner provisioner;
+    private MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
     private Curator curator;
@@ -135,7 +134,7 @@ public class ApplicationRepositoryTest {
         tenantRepository.addTenant(tenant2);
         tenantRepository.addTenant(tenant3);
         orchestrator = new OrchestratorMock();
-        provisioner = new SessionHandlerTest.MockProvisioner();
+        provisioner = new MockProvisioner();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(provisioner)
@@ -318,9 +317,9 @@ public class ApplicationRepositoryTest {
             assertNull(applicationRepository.getActiveSession(applicationId()));
             assertNull(sessionRepository.getLocalSession(sessionId));
             assertNull(sessionRepository.getLocalSession(sessionId));
-            assertTrue(provisioner.removed);
-            assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
-            assertEquals(applicationId(), provisioner.lastApplicationId);
+            assertTrue(provisioner.removed());
+            assertEquals(tenant.getName(), provisioner.lastApplicationId().tenant());
+            assertEquals(applicationId(), provisioner.lastApplicationId());
             assertFalse(configCurator.exists(sessionNode));
             assertFalse(sessionFile.exists());
 
@@ -340,7 +339,7 @@ public class ApplicationRepositoryTest {
 
             // Delete app with id fooId, should not affect original app
             assertTrue(applicationRepository.delete(fooId));
-            assertEquals(fooId, provisioner.lastApplicationId);
+            assertEquals(fooId, provisioner.lastApplicationId());
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
