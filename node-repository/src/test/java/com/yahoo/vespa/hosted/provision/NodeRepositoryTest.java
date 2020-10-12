@@ -187,7 +187,9 @@ public class NodeRepositoryTest {
         host1 = host1.withFirmwareVerifiedAt(tester.clock().instant());
         host1 = host1.with(host1.status().withIncreasedFailCount());
         host1 = host1.with(host1.reports().withReport(Report.basicReport("id", Report.Type.HARD_FAIL, tester.clock().instant(), "Test report")));
-        tester.nodeRepository().write(host1, tester.nodeRepository().lock(host1));
+        try (var lock = tester.nodeRepository().lock(host1)) {
+            tester.nodeRepository().write(host1, lock);
+        }
         tester.nodeRepository().removeRecursively("host1");
 
         // Host 1 is deprovisioned and unwanted properties are cleared

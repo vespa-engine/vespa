@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
 import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
@@ -40,7 +39,6 @@ public class NodesV2ApiTest {
 
     @Before
     public void createTester() {
-        LockStats.clearForTesting();
         tester = new RestApiTester();
     }
 
