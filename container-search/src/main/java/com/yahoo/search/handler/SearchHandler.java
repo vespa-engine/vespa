@@ -72,6 +72,8 @@ import java.util.logging.Logger;
  */
 public class SearchHandler extends LoggingRequestHandler {
 
+    private static final Logger log = Logger.getLogger(SearchHandler.class.getName());
+
     private final AtomicInteger requestsInFlight = new AtomicInteger(0);
 
     // max number of threads for the executor for this handler
@@ -80,15 +82,12 @@ public class SearchHandler extends LoggingRequestHandler {
     private static final CompoundName DETAILED_TIMING_LOGGING = new CompoundName("trace.timingDetails");
     private static final CompoundName FORCE_TIMESTAMPS = new CompoundName("trace.timestamps");
 
-
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    private static Logger log = Logger.getLogger(SearchHandler.class.getName());
-
-    private Value searchConnections;
+    private final Value searchConnections;
 
     public static final String defaultSearchChainName = "default";
     private static final String fallbackSearchChain = "vespa";
@@ -329,6 +328,7 @@ public class SearchHandler extends LoggingRequestHandler {
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer,
                                                              extractTraceNode(query));
+        response.setRequestType(Request.RequestType.READ);
         hostResponseHeaderKey.ifPresent(key -> response.headers().add(key, selfHostname));
 
         if (benchmarking)

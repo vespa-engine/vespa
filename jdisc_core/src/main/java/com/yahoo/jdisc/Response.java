@@ -208,7 +208,9 @@ public class Response {
     }
 
     /** Sets the type classification of this request for metric collection purposes */
-    public void setRequestType(Request.RequestType requestType) { this.requestType = requestType; }
+    public void setRequestType(Request.RequestType requestType) {
+        this.requestType = requestType;
+    }
 
     /** Returns the type classification of this request for metric collection purposes, or null if not set */
     public Request.RequestType getRequestType() { return requestType; }
