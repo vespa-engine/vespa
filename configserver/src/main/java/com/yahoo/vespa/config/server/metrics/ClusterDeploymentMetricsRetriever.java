@@ -47,7 +47,8 @@ public class ClusterDeploymentMetricsRetriever {
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
 
     private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
-                                                            .create(PoolingHttpClientConnectionManager::new)
+                                                            .create(registry ->
+                                                                    new PoolingHttpClientConnectionManager(registry, null, null, null, 1, TimeUnit.MINUTES))
                                                             .setDefaultRequestConfig(
                                                                     RequestConfig.custom()
                                                                             .setConnectionRequestTimeout((int)Duration.ofSeconds(60).toMillis())
