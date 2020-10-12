@@ -58,7 +58,7 @@ public class SessionStateWatcher {
                 sessionRepository.activate(session);
                 break;
             case DEACTIVATE:
-                sessionRepository.deactivate(session);
+                sessionRepository.deactivateAndUpdateCache(session);
                 break;
             case DELETE:
                 sessionRepository.delete(session);
