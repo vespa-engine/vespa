@@ -509,18 +509,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             // This call will remove application in zookeeper. Watches in TenantApplications will remove the application
             // and allocated hosts in model and handlers in RPC server
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
-
-            hostProvisioner.ifPresent(provisioner -> {
-                if (acquireProvisionLock.value()) {
-                    try (var provisionLock = provisioner.lock(applicationId)) {
-                        provisioner.remove(transaction, provisionLock);
-                    }
-                } else {
-                    provisioner.remove(transaction, applicationId);
-                }
-            });
             transaction.onCommitted(() -> log.log(Level.INFO, "Deleted " + applicationId));
-            transaction.commit();
+
+            if (hostProvisioner.isPresent()) {
+                if (acquireProvisionLock.value()) {
+                    try (var provisionLock = hostProvisioner.get().lock(applicationId)) {
+                        hostProvisioner.get().remove(transaction, provisionLock);
+                        transaction.commit();
+                    }
+                } else { // TODO(mpolden): Remove when feature flag is removed
+                    hostProvisioner.get().remove(transaction, applicationId);
+                    transaction.commit();
+                }
+            } else {
+                transaction.commit();
+            }
             return true;
         }
     }
@@ -736,16 +739,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, force));
-        hostProvisioner.ifPresent(provisioner -> {
-            if (acquireProvisionLock.value()) {
-                try (var lock = provisioner.lock(applicationId)) {
-                    provisioner.activate(transaction, session.getAllocatedHosts().getHosts(), lock);
-                }
-            } else {
-                provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts());
-            }
-        });
-        transaction.commit();
+        if (hostProvisioner.isPresent()) {
+           if (acquireProvisionLock.value()) {
+               try (var lock = hostProvisioner.get().lock(applicationId)) {
+                   hostProvisioner.get().activate(transaction, session.getAllocatedHosts().getHosts(), lock);
+                   transaction.commit();
+               }
+           } else { // TODO(mpolden): Remove when feature flag is removed
+               hostProvisioner.get().activate(transaction, applicationId, session.getAllocatedHosts().getHosts());
+               transaction.commit();
+           }
+        } else {
+            transaction.commit();
+        }
         return waiter;
     }
 
