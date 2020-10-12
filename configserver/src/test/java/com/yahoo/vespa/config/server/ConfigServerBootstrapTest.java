@@ -63,7 +63,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host0", "host1", "host3", "host4");
         DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
@@ -96,7 +96,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host0", "host1", "host3", "host4");
         DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
@@ -163,7 +163,7 @@ public class ConfigServerBootstrapTest {
         Curator curator = new MockCurator();
         DeployTester tester = new DeployTester.Builder()
                 .modelFactory(DeployTester.createModelFactory(Version.fromString(vespaVersion)))
-                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true))
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
                 .configserverConfig(configserverConfig)
                 .zone(new Zone(Environment.dev, RegionName.defaultName()))
                 .curator(curator)
