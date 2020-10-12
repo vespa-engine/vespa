@@ -26,6 +26,7 @@ public class MockProvisioner implements Provisioner {
     private boolean restarted = false;
     private ApplicationId lastApplicationId;
     private Collection<HostSpec> lastHosts;
+    private HostFilter lastRestartFilter;
 
     private boolean transientFailureOnPrepare = false;
     private HostProvisioner hostProvisioner = null;
@@ -78,6 +79,7 @@ public class MockProvisioner implements Provisioner {
     public void restart(ApplicationId application, HostFilter filter) {
         restarted = true;
         lastApplicationId = application;
+        lastRestartFilter = filter;
     }
 
     @Override
@@ -105,4 +107,7 @@ public class MockProvisioner implements Provisioner {
         return lastApplicationId;
     }
 
+    public HostFilter lastRestartFilter() {
+        return lastRestartFilter;
+    }
 }

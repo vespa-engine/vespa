@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -21,7 +20,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
@@ -45,11 +43,8 @@ import java.util.stream.IntStream;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -387,9 +382,7 @@ public class HostedDeployTest {
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0");
 
         assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
-        List<RestartActions.Entry> actions = prepareResult.configChangeActions().getRestartActions().getEntries();
-        assertThat(actions.size(), is(1));
-        assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
+        assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty());
     }
 
     private ConfigserverConfig createConfigserverConfig() throws IOException {
