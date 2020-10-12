@@ -88,12 +88,6 @@ public class ProxyRequest {
         return "[targets: " + targets + " request: " + targetPath + "]";
     }
 
-    /** Create a proxy request that tries all given targets in order */
-    public static ProxyRequest tryAll(List<URI> targets, String path, HttpRequest request) {
-        return new ProxyRequest(request.getMethod(), request.getUri(), request.getJDiscRequest().headers(),
-                                request.getData(), targets, path);
-    }
-
     /** Create a proxy request that repeatedly tries a single target */
     public static ProxyRequest tryOne(URI target, String path, HttpRequest request) {
         return new ProxyRequest(request.getMethod(), request.getUri(), request.getJDiscRequest().headers(),

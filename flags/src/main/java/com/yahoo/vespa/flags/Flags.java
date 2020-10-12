@@ -348,14 +348,6 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBooleanFlag USE_CONFIG_SERVER_VIP = defineFeatureFlag(
-            "use-config-server-vip",
-            true,
-            "Whether the controller should use a config server VIP or not",
-            "Takes effect immediately",
-            ZONE_ID
-    );
-
     public static final UnboundBooleanFlag SKIP_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
             "node-repository-skip-maintenance-deployment",
             false,
