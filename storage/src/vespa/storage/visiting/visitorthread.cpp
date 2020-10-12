@@ -77,7 +77,8 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
     : _visitors(),
       _recentlyCompleted(),
       _queue(),
-      _queueMonitor(),
+      _lock(),
+      _cond(),
       _currentlyRunningVisitor(_visitors.end()),
       _messageSender(sender),
       _metrics(metrics),
@@ -104,13 +105,13 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
 VisitorThread::~VisitorThread()
 {
     if (_thread.get() != 0) {
-        _thread->interruptAndJoin(&_queueMonitor);
+        _thread->interruptAndJoin(_cond);
     }
 }
 
 void
 VisitorThread::updateMetrics(const MetricLockGuard &) {
-    vespalib::MonitorGuard sync(_queueMonitor);
+    std::lock_guard sync(_lock);
     _metrics.queueSize.addValue(_queue.size());
 }
 
@@ -118,27 +119,24 @@ void
 VisitorThread::shutdown()
 {
         // Stop event thread
-    if (_thread.get() != 0) {
-        _thread->interruptAndJoin(&_queueMonitor);
-        _thread.reset(0);
+    if (_thread) {
+        _thread->interruptAndJoin(_cond);
+        _thread.reset();
     }
 
     // Answer all queued up commands and clear queue
     {
-        vespalib::MonitorGuard sync(_queueMonitor);
-        for (std::deque<Event>::iterator it = _queue.begin();
-             it != _queue.end(); ++it)
+        std::lock_guard sync(_lock);
+        for (const Event & event : _queue)
         {
-            if (it->_message.get()) {
-                if (!it->_message->getType().isReply()
-                && (it->_message->getType() != api::MessageType::INTERNAL
-                    || static_cast<const api::InternalCommand&>(*it->_message)
-                            .getType() != PropagateVisitorConfig::ID))
+            if (event._message.get()) {
+                if (!event._message->getType().isReply()
+                && (event._message->getType() != api::MessageType::INTERNAL
+                    || static_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
                 {
                     std::shared_ptr<api::StorageReply> reply(
-                            static_cast<api::StorageCommand&>(*it->_message).makeReply());
-                    reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED,
-                                                "Shutting down storage node."));
+                            static_cast<api::StorageCommand&>(*event._message).makeReply());
+                    reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
                     _messageSender.send(reply);
                 }
             }
@@ -161,16 +159,18 @@ void
 VisitorThread::processMessage(api::VisitorId id,
                               const std::shared_ptr<api::StorageMessage>& msg)
 {
-    Event m(id, msg);
-    vespalib::MonitorGuard sync(_queueMonitor);
-    _queue.push_back(Event(id, msg));
-    sync.signal();
+    {
+        Event m(id, msg);
+        std::unique_lock sync(_lock);
+        _queue.push_back(Event(id, msg));
+    }
+    _cond.notify_one();
 }
 
 VisitorThread::Event
 VisitorThread::popNextQueuedEventIfAvailable()
 {
-    vespalib::MonitorGuard guard(_queueMonitor);
+    std::lock_guard guard(_lock);
     if (!_queue.empty()) {
         Event e(std::move(_queue.front()));
         _queue.pop_front();
@@ -194,9 +194,9 @@ VisitorThread::run(framework::ThreadHandle& thread)
         if (entry.empty()) {
             // If none, give visitors something to trigger of.
             tick();
-            vespalib::MonitorGuard guard(_queueMonitor);
+            std::unique_lock guard(_lock);
             if (_queue.empty()) {
-                guard.wait(_timeBetweenTicks.load(std::memory_order_relaxed));
+                _cond.wait_for(guard, std::chrono::milliseconds(_timeBetweenTicks.load(std::memory_order_relaxed)));
                 thread.registerTick(framework::WAIT_CYCLE);
             }
             continue;
@@ -545,12 +545,13 @@ VisitorThread::onCreateVisitor(
 }
 
 void
-VisitorThread::handleMessageBusReply(mbus::Reply::UP reply,
-                                     Visitor& visitor)
+VisitorThread::handleMessageBusReply(mbus::Reply::UP reply, Visitor& visitor)
 {
-    vespalib::MonitorGuard sync(_queueMonitor);
-    _queue.emplace_back(visitor.getVisitorId(), std::move(reply));
-    sync.broadcast();
+    {
+        std::lock_guard sync(_lock);
+        _queue.emplace_back(visitor.getVisitorId(), std::move(reply));
+    }
+    _cond.notify_all();
 }
 
 bool

@@ -778,7 +778,7 @@ TEST_F(VisitorManagerTest, visitor_queue_timeout) {
     _manager->enforceQueueUsage();
 
     {
-        vespalib::MonitorGuard guard(_manager->getThread(0).getQueueMonitor());
+        std::lock_guard guard(_manager->getThread(0).getQueueMonitor());
 
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));

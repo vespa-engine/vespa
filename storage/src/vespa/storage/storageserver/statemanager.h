@@ -55,7 +55,8 @@ class StateManager : public NodeStateUpdater,
     typedef std::pair<framework::MilliSecTime,
                       api::GetNodeStateCommand::SP> TimeStatePair;
     std::list<TimeStatePair> _queuedStateRequests;
-    mutable vespalib::Monitor _threadMonitor;
+    mutable std::mutex _threadLock;
+    std::condition_variable _threadCond;
     framework::MilliSecTime _lastProgressUpdateCausingSend;
     vespalib::Double _progressLastInitStateSend;
     using TimeSysStatePair = std::pair<framework::MilliSecTime, std::shared_ptr<const ClusterStateBundle>>;
@@ -73,7 +74,7 @@ class StateManager : public NodeStateUpdater,
 public:
     explicit StateManager(StorageComponentRegister&, metrics::MetricManager&,
                           std::unique_ptr<HostInfo>, bool testMode = false);
-    ~StateManager();
+    ~StateManager() override;
 
     void onOpen() override;
     void onClose() override;

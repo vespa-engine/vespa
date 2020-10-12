@@ -271,7 +271,7 @@ MergeThrottler::onClose()
     // Avoid getting config on shutdown
     _configFetcher.close();
     {
-        vespalib::MonitorGuard guard(_messageLock);
+        std::lock_guard guard(_messageLock);
         // Note: used to prevent taking locks in different order if onFlush
         // and abortOutdatedMerges are called concurrently, as these need to
         // take both locks in differing orders.
@@ -283,7 +283,7 @@ MergeThrottler::onClose()
             _merges.size(), _queue.size());
     }
     if (_thread) {
-        _thread->interruptAndJoin(&_messageLock);
+        _thread->interruptAndJoin(_messageCond);
         _thread.reset();
     }
 }
@@ -294,7 +294,7 @@ MergeThrottler::onFlush(bool /*downwards*/)
     // Lock state before messages since the latter must be unlocked
     // before the guard starts hauling messages up the chain.
     MessageGuard msgGuard(_stateLock, *this);
-    vespalib::MonitorGuard lock(_messageLock);
+    std::lock_guard lock(_messageLock);
 
     // Abort active merges, queued and up/down pending
     std::vector<api::StorageMessage::SP> flushable;
@@ -593,19 +593,19 @@ MergeThrottler::processQueuedMerges(MessageGuard& msgGuard)
 }
 
 void
-MergeThrottler::handleRendezvous(vespalib::MonitorGuard& guard)
+MergeThrottler::handleRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond)
 {
     if (_rendezvous != RENDEZVOUS_NONE) {
         LOG(spam, "rendezvous requested by external thread; establishing");
         assert(_rendezvous == RENDEZVOUS_REQUESTED);
         _rendezvous = RENDEZVOUS_ESTABLISHED;
-        guard.broadcast();
+        cond.notify_all();
         while (_rendezvous != RENDEZVOUS_RELEASED) {
-            guard.wait();
+            cond.wait(guard);
         }
         LOG(spam, "external thread rendezvous released");
         _rendezvous = RENDEZVOUS_NONE;
-        guard.broadcast();
+        cond.notify_all();
     }
 }
 
@@ -617,7 +617,7 @@ MergeThrottler::run(framework::ThreadHandle& thread)
         std::vector<api::StorageMessage::SP> up;
         std::vector<api::StorageMessage::SP> down;
         {
-            vespalib::MonitorGuard msgLock(_messageLock);
+            std::unique_lock msgLock(_messageLock);
             // If a rendezvous is requested, we must do this here _before_ we
             // swap the message queues. This is so the caller can remove aborted
             // messages from the queues when it knows exactly where this thread
@@ -628,10 +628,10 @@ MergeThrottler::run(framework::ThreadHandle& thread)
                    && !thread.interrupted()
                    && _rendezvous == RENDEZVOUS_NONE)
             {
-                msgLock.wait(1000);
+               _messageCond.wait_for(msgLock, 1000ms);
                 thread.registerTick(framework::WAIT_CYCLE);
             }
-            handleRendezvous(msgLock);
+            handleRendezvous(msgLock, _messageCond);
             down.swap(_messagesDown);
             up.swap(_messagesUp);
         }
@@ -1068,9 +1068,11 @@ bool
 MergeThrottler::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (isMergeCommand(*msg) || isMergeReply(*msg)) {
-        vespalib::MonitorGuard lock(_messageLock);
-        _messagesDown.push_back(msg);
-        lock.broadcast();
+        {
+            std::lock_guard lock(_messageLock);
+            _messagesDown.push_back(msg);
+        }
+        _messageCond.notify_all();
         return true;
     } else if (isDiffCommand(*msg)) {
         std::lock_guard lock(_stateLock);
@@ -1133,51 +1135,54 @@ MergeThrottler::onUp(const std::shared_ptr<api::StorageMessage>& msg)
         LOG(spam, "Received %s from persistence layer",
             mergeReply.toString().c_str());
 
-        vespalib::MonitorGuard lock(_messageLock);
-        _messagesUp.push_back(msg);
-        lock.broadcast();
+        {
+            std::lock_guard lock(_messageLock);
+            _messagesUp.push_back(msg);
+        }
+        _messageCond.notify_all();
         return true;
     }
     return false;
 }
 
 void
-MergeThrottler::rendezvousWithWorkerThread(vespalib::MonitorGuard& guard)
+MergeThrottler::rendezvousWithWorkerThread(std::unique_lock<std::mutex> & guard, std::condition_variable & cond)
 {
     LOG(spam, "establishing rendezvous with worker thread");
     assert(_rendezvous == RENDEZVOUS_NONE);
     _rendezvous = RENDEZVOUS_REQUESTED;
-    guard.broadcast();
+    cond.notify_all();
     while (_rendezvous != RENDEZVOUS_ESTABLISHED) {
-        guard.wait();
+        cond.wait(guard);
     }
     LOG(spam, "rendezvous established with worker thread");
 }
 
 void
-MergeThrottler::releaseWorkerThreadRendezvous(vespalib::MonitorGuard& guard)
+MergeThrottler::releaseWorkerThreadRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond)
 {
     _rendezvous = RENDEZVOUS_RELEASED;
-    guard.broadcast();
+    cond.notify_all();
     while (_rendezvous != RENDEZVOUS_NONE) {
-        guard.wait();
+        cond.wait(guard);
     }
 }
 
 class ThreadRendezvousGuard {
     MergeThrottler& _throttler;
-    vespalib::MonitorGuard& _guard;
+    std::unique_lock<std::mutex> & _guard;
+    std::condition_variable & _cond;
 public:
-    ThreadRendezvousGuard(MergeThrottler& throttler,
-                          vespalib::MonitorGuard& guard)
+    ThreadRendezvousGuard(MergeThrottler& throttler, std::unique_lock<std::mutex> & guard, std::condition_variable & cond)
         : _throttler(throttler),
-          _guard(guard)
+          _guard(guard),
+          _cond(cond)
     {
-        _throttler.rendezvousWithWorkerThread(_guard);
+        _throttler.rendezvousWithWorkerThread(_guard, _cond);
     }
 
     ~ThreadRendezvousGuard() {
-        _throttler.releaseWorkerThreadRendezvous(_guard);
+        _throttler.releaseWorkerThreadRendezvous(_guard, _cond);
     }
 };
 
@@ -1193,8 +1198,8 @@ MergeThrottler::handleOutdatedMerges(const api::SetSystemStateCommand& cmd)
     // receiving merges, but this uses the _server_ object's cluster state,
     // which isn't set yet at the time we get the new state command, so
     // there exists a time window where outdated merges can be accepted. Blarg!
-    vespalib::MonitorGuard guard(_messageLock);
-    ThreadRendezvousGuard rzGuard(*this, guard);
+    std::unique_lock guard(_messageLock);
+    ThreadRendezvousGuard rzGuard(*this, guard, _messageCond);
 
     if (_closing) return; // Shutting down anyway.
 
