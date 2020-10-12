@@ -1,57 +1,60 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
- * Quota information transmitted to the configserver on deploy.
+ * Quota information transmitted to the configserver on deploy.  All limits are represented
+ * with an Optional type where the empty optional means unlimited resource use.
  *
  * @author andreer
  * @author ogronnesby
  */
 public class Quota {
-    private static final Quota UNLIMITED = new Quota(Optional.empty(), Optional.empty());
-    private static final Quota ZERO = new Quota(0, 0);
+    private static final Quota UNLIMITED = new Quota(OptionalInt.empty(), Optional.empty());
+    private static final Quota ZERO = new Quota(OptionalInt.of(0), Optional.of(BigDecimal.ZERO));
 
-    private final Optional<Integer> maxClusterSize;
-    private final Optional<Integer> budget; // in USD/hr, as calculated by NodeResources
+    private final OptionalInt maxClusterSize;
+    private final Optional<BigDecimal> budget; // in USD/hr, as calculated by NodeResources
 
-    public Quota(int maxClusterSize) {
-        this(Optional.of(maxClusterSize), Optional.empty());
-    }
-
-    public Quota(int maxClusterSize, int dollarsPerHour) {
-        this(Optional.of(maxClusterSize), Optional.of(dollarsPerHour));
-    }
-
-    public Quota(Optional<Integer> maxClusterSize, Optional<Integer> budget) {
+    private Quota(OptionalInt maxClusterSize, Optional<BigDecimal> budget) {
         this.maxClusterSize = Objects.requireNonNull(maxClusterSize);
         this.budget = Objects.requireNonNull(budget);
     }
 
-    public Optional<Integer> maxClusterSize() {
-        return maxClusterSize;
-    }
-
-    public Optional<Integer> budget() {
-        return budget;
-    }
-
     public Quota withMaxClusterSize(int clusterSize) {
-        return new Quota(Optional.of(clusterSize), budget);
+        return new Quota(OptionalInt.of(clusterSize), budget);
     }
 
-    public Quota withBudget(int budget) {
-        return new Quota(maxClusterSize, Optional.of(budget));
-    }
-
+    /** Construct a Quota that allows zero resource usage */
     public static Quota zero() {
         return ZERO;
     }
 
+    /** Construct a Quota that allows unlimited resource usage */
     public static Quota unlimited() {
         return UNLIMITED;
+    }
+
+    public Quota withBudget(BigDecimal budget) {
+        return new Quota(maxClusterSize, Optional.ofNullable(budget));
+    }
+
+    public Quota withBudget(int budget) {
+        return withBudget(BigDecimal.valueOf(budget));
+    }
+
+    /** Maximum number of nodes in a cluster in a Vespa deployment */
+    public OptionalInt maxClusterSize() {
+        return maxClusterSize;
+    }
+
+    /** Maximum $/hour run-rate for the Vespa deployment */
+    public Optional<BigDecimal> budget() {
+        return budget;
     }
 
     @Override
