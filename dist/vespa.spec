@@ -164,6 +164,7 @@ Requires: libicu
 %endif
 Requires: perf
 Requires: gdb
+Requires: nc
 Requires: net-tools
 %if 0%{?el7}
 Requires: llvm7.0
