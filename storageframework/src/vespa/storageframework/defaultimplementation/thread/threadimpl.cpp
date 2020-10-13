@@ -12,20 +12,20 @@ namespace storage::framework::defaultimplementation {
 ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
                        Runnable& runnable,
                        vespalib::stringref id,
-                       vespalib::duration waitTimeMs,
-                       vespalib::duration maxProcessTimeMs,
+                       vespalib::duration waitTime,
+                       vespalib::duration maxProcessTime,
                        int ticksBeforeWait)
     : Thread(id),
       _pool(pool),
       _runnable(runnable),
-      _properties(waitTimeMs, maxProcessTimeMs, ticksBeforeWait),
+      _properties(waitTime, maxProcessTime, ticksBeforeWait),
       _tickData(),
       _tickDataPtr(0),
       _interrupted(false),
       _joined(false),
       _thread(*this)
 {
-    _tickData[_tickDataPtr]._lastTickMs = pool.getClock().getMonotonicTime();
+    _tickData[_tickDataPtr]._lastTick = pool.getClock().getMonotonicTime();
     _thread.start(_pool.getThreadPool());
 }
 
@@ -87,11 +87,11 @@ ThreadImpl::registerTick(CycleType cycleType, vespalib::steady_time now)
 	      vespalib::count_ms(now.time_since_epoch()), vespalib::count_ms(previousTick.time_since_epoch()));
         return;
     }
-    vespalib::duration cycleTimeMs = now - previousTick;
+    vespalib::duration cycleTime = now - previousTick;
     if (cycleType == WAIT_CYCLE) {
-        data._maxWaitTimeSeen = std::max(data._maxWaitTimeSeen, cycleTimeMs);
+        data._maxWaitTimeSeen = std::max(data._maxWaitTimeSeen, cycleTime);
     } else {
-        data._maxProcessingTimeSeen = std::max(data._maxProcessingTimeSeen, cycleTimeMs);
+        data._maxProcessingTimeSeen = std::max(data._maxProcessingTimeSeen, cycleTime);
     }
 }
 
@@ -110,11 +110,11 @@ ThreadImpl::setTickData(const ThreadTickData& tickData)
 }
 
 void
-ThreadImpl::updateParameters(vespalib::duration waitTimeMs,
-                             vespalib::duration maxProcessTimeMs,
+ThreadImpl::updateParameters(vespalib::duration waitTime,
+                             vespalib::duration maxProcessTime,
                              int ticksBeforeWait) {
-  _properties.setWaitTime(waitTimeMs);
-  _properties.setMaxProcessTime(maxProcessTimeMs);
+  _properties.setWaitTime(waitTime);
+  _properties.setMaxProcessTime(maxProcessTime);
   _properties.setTicksBeforeWait(ticksBeforeWait);
 }
 
@@ -124,21 +124,20 @@ ThreadImpl::AtomicThreadTickData::loadRelaxed() const noexcept
     ThreadTickData result;
     constexpr auto relaxed = std::memory_order_relaxed;
     result._lastTickType = _lastTickType.load(relaxed);
-    result._lastTick = _lastTickMs.load(relaxed);
-    result._maxProcessingTimeSeen = _maxProcessingTimeSeenMs.load(relaxed);
-    result._maxWaitTimeSeen = _maxWaitTimeSeenMs.load(relaxed);
+    result._lastTick = _lastTick.load(relaxed);
+    result._maxProcessingTimeSeen = _maxProcessingTimeSeen.load(relaxed);
+    result._maxWaitTimeSeen = _maxWaitTimeSeen.load(relaxed);
     return result;
 }
 
 void
-ThreadImpl::AtomicThreadTickData::storeRelaxed(
-        const ThreadTickData& newState) noexcept
+ThreadImpl::AtomicThreadTickData::storeRelaxed(const ThreadTickData& newState) noexcept
 {
     constexpr auto relaxed = std::memory_order_relaxed;
     _lastTickType.store(newState._lastTickType, relaxed);
-    _lastTickMs.store(newState._lastTick, relaxed);
-    _maxProcessingTimeSeenMs.store(newState._maxProcessingTimeSeen, relaxed);
-    _maxWaitTimeSeenMs.store(newState._maxWaitTimeSeen, relaxed);
+    _lastTick.store(newState._lastTick, relaxed);
+    _maxProcessingTimeSeen.store(newState._maxProcessingTimeSeen, relaxed);
+    _maxWaitTimeSeen.store(newState._maxWaitTimeSeen, relaxed);
 }
 
 }

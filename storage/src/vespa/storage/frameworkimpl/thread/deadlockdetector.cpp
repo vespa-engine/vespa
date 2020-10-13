@@ -21,8 +21,8 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
       _cond(),
       _enableWarning(true),
       _enableShutdown(false),
-      _processSlackMs(30s),
-      _waitSlackMs(5s),
+      _processSlack(30s),
+      _waitSlack(5s),
       _reportedBucketDBLocksAtState(OK)
 {
     auto* dComp(dynamic_cast<DistributorComponentRegister*>(&compReg));

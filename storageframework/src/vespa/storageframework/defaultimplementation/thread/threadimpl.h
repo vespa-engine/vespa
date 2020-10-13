@@ -28,14 +28,14 @@ class ThreadImpl : public Thread
     struct AtomicThreadTickData {
         AtomicThreadTickData() noexcept
             : _lastTickType(),
-              _lastTickMs(vespalib::steady_time(vespalib::duration::zero())),
-              _maxProcessingTimeSeenMs(),
-              _maxWaitTimeSeenMs()
+              _lastTick(vespalib::steady_time(vespalib::duration::zero())),
+              _maxProcessingTimeSeen(),
+              _maxWaitTimeSeen()
         {}
         std::atomic<CycleType> _lastTickType;
-        std::atomic<vespalib::steady_time> _lastTickMs;
-        std::atomic<vespalib::duration> _maxProcessingTimeSeenMs;
-        std::atomic<vespalib::duration> _maxWaitTimeSeenMs;
+        std::atomic<vespalib::steady_time> _lastTick;
+        std::atomic<vespalib::duration> _maxProcessingTimeSeen;
+        std::atomic<vespalib::duration> _maxWaitTimeSeen;
         // struct stores and loads are both data race free with relaxed
         // memory semantics. This means it's possible to observe stale/partial
         // state in a case with concurrent readers/writers.
@@ -55,8 +55,8 @@ class ThreadImpl : public Thread
     void run();
 
 public:
-    ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, vespalib::duration waitTimeMs,
-               vespalib::duration maxProcessTimeMs, int ticksBeforeWait);
+    ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, vespalib::duration waitTime,
+               vespalib::duration maxProcessTime, int ticksBeforeWait);
     ~ThreadImpl();
 
     bool interrupted() const override;

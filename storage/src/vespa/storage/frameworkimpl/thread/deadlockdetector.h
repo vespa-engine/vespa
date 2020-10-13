@@ -34,19 +34,19 @@ struct DeadLockDetector : private framework::Runnable,
 
     void enableWarning(bool enable);
     void enableShutdown(bool enable);
-    // There are no data read/write dependencies on neither _processSlackMs
-    // nor _waitSlackMs so relaxed ops suffice.
+    // There are no data read/write dependencies on neither _processSlack
+    // nor _waitSlack so relaxed ops suffice.
     void setProcessSlack(vespalib::duration slack) {
-        _processSlackMs.store(slack, std::memory_order_relaxed);
+        _processSlack.store(slack, std::memory_order_relaxed);
     }
     vespalib::duration getProcessSlack() const {
-        return _processSlackMs.load(std::memory_order_relaxed);
+        return _processSlack.load(std::memory_order_relaxed);
     }
     void setWaitSlack(vespalib::duration slack) {
-        _waitSlackMs.store(slack, std::memory_order_relaxed);
+        _waitSlack.store(slack, std::memory_order_relaxed);
     }
     vespalib::duration getWaitSlack() const {
-        return _waitSlackMs.load(std::memory_order_relaxed);
+        return _waitSlack.load(std::memory_order_relaxed);
     }
 
         // These utility functions are public as internal anonymous classes are
@@ -79,8 +79,8 @@ private:
     std::condition_variable _cond;
     bool _enableWarning;
     bool _enableShutdown;
-    std::atomic<vespalib::duration> _processSlackMs;
-    std::atomic<vespalib::duration> _waitSlackMs;
+    std::atomic<vespalib::duration> _processSlack;
+    std::atomic<vespalib::duration> _waitSlack;
     State _reportedBucketDBLocksAtState;
     DistributorComponent::UP _dComponent;
     ServiceLayerComponent::UP _slComponent;

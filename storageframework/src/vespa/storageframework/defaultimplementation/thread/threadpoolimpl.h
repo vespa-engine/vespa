@@ -21,7 +21,7 @@ public:
     ThreadPoolImpl(Clock&);
     ~ThreadPoolImpl() override;
 
-    Thread::UP startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTimeMs,
+    Thread::UP startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTime,
                            vespalib::duration maxProcessTime, int ticksBeforeWait) override;
     void visitThreads(ThreadVisitor&) const override;
 

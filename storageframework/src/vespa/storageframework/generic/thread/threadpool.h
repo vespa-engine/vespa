@@ -32,7 +32,7 @@ private:
      * Time this thread should maximum use to process before a tick is
      * registered. (Including wait time if wait time is not set)
      */
-    std::atomic<vespalib::duration> _maxProcessTimeMs;
+    std::atomic<vespalib::duration> _maxProcessTime;
     /**
      * Time this thread will wait in a non-interrupted wait cycle.
      * Used in cases where a wait cycle is registered. As long as no other
@@ -40,7 +40,7 @@ private:
      * wait time here. The deadlock detector should add a configurable
      * global time period before flagging deadlock anyways.
      */
-    std::atomic<vespalib::duration> _waitTimeMs;
+    std::atomic<vespalib::duration> _waitTime;
     /**
      * Number of ticks to be done before a wait.
      */
@@ -48,7 +48,7 @@ private:
 
  public:
     ThreadProperties(vespalib::duration waitTime,
-                     vespalib::duration maxProcessTimeMs,
+                     vespalib::duration maxProcessTime,
                      int ticksBeforeWait);
 
     void setMaxProcessTime(vespalib::duration);
@@ -60,8 +60,8 @@ private:
     int getTicksBeforeWait() const;
 
     vespalib::duration getMaxCycleTime() const {
-      return std::max(_maxProcessTimeMs.load(std::memory_order_relaxed),
-                      _waitTimeMs.load(std::memory_order_relaxed));
+      return std::max(_maxProcessTime.load(std::memory_order_relaxed),
+                      _waitTime.load(std::memory_order_relaxed));
     }
 };
 
@@ -86,7 +86,7 @@ struct ThreadPool {
 
     virtual Thread::UP startThread(Runnable&,
                                    vespalib::stringref id,
-                                   vespalib::duration waitTimeMs,
+                                   vespalib::duration waitTime,
                                    vespalib::duration maxProcessTime,
                                    int ticksBeforeWait) = 0;
 
