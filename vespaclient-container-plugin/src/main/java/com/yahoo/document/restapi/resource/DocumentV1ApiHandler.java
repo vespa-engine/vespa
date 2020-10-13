@@ -162,13 +162,26 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 ClusterListConfig clusterListConfig,
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
-        this(Clock.systemUTC(),
-             new DocumentOperationParser(documentManagerConfig),
-             metric,
-             metricReceiver,
-             executorConfig.maxThrottled(),
-             documentAccess,
-             parseClusters(clusterListConfig, bucketSpacesConfig));
+        this(Clock.systemUTC(), metric, metricReceiver, documentAccess,
+             documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig);
+    }
+
+    DocumentV1ApiHandler(Clock clock, Metric metric, MetricReceiver metricReceiver, DocumentAccess access,
+                         DocumentmanagerConfig documentmanagerConfig, DocumentOperationExecutorConfig executorConfig,
+                         ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig bucketSpacesConfig) {
+        this.clock = clock;
+        this.parser = new DocumentOperationParser(documentmanagerConfig);
+        this.metric = metric;
+        this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
+        this.maxThrottled = executorConfig.maxThrottled();
+        this.access = access;
+        this.asyncSession = access.createAsyncSession(new AsyncParameters());
+        this.clusters = parseClusters(clusterListConfig, bucketSpacesConfig);
+        this.operations = new ConcurrentLinkedDeque<>();
+        this.executor.scheduleWithFixedDelay(this::dispatchEnqueued,
+                                             executorConfig.resendDelayMillis(),
+                                             executorConfig.resendDelayMillis(),
+                                             TimeUnit.MILLISECONDS);
     }
 
     DocumentV1ApiHandler(Clock clock, DocumentOperationParser parser, Metric metric, MetricReceiver metricReceiver,
@@ -243,21 +256,26 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
+    @FunctionalInterface
+    interface Handler {
+        ContentChannel handle(HttpRequest request, DocumentPath path, ResponseHandler handler);
+    }
+
     /** Defines all paths/methods handled by this handler. */
     private Map<String, Map<Method, Handler>> defineApi() {
         Map<String, Map<Method, Handler>> handlers = new LinkedHashMap<>();
 
         handlers.put("/document/v1/",
-                     Map.of(GET, this::getRoot));
+                     Map.of(GET, this::getDocuments));
 
         handlers.put("/document/v1/{namespace}/{documentType}/docid/",
-                     Map.of(GET, this::getDocumentType));
+                     Map.of(GET, this::getDocuments));
 
         handlers.put("/document/v1/{namespace}/{documentType}/group/{group}/",
-                     Map.of(GET, this::getDocumentType));
+                     Map.of(GET, this::getDocuments));
 
         handlers.put("/document/v1/{namespace}/{documentType}/number/{number}/",
-                     Map.of(GET, this::getDocumentType));
+                     Map.of(GET, this::getDocuments));
 
         handlers.put("/document/v1/{namespace}/{documentType}/docid/{docid}",
                      Map.of(GET, this::getDocument,
@@ -280,26 +298,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         return Collections.unmodifiableMap(handlers);
     }
 
-    private ContentChannel getRoot(HttpRequest request, DocumentPath path, ResponseHandler handler) {
+    private ContentChannel getDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            VisitorOptions options = parseOptions(request, path).build();
+            VisitorParameters parameters = parseParameters(request, path);
             return () -> {
-                visit(request, options, handler);
-                return true; // VisitorSession has its own throttle handling.
-            };
-        });
-        return ignoredContent;
-    }
-
-    private ContentChannel getDocumentType(HttpRequest request, DocumentPath path, ResponseHandler handler) {
-        enqueueAndDispatch(request, handler, () -> {
-            VisitorOptions.Builder optionsBuilder = parseOptions(request, path);
-            optionsBuilder = optionsBuilder.documentType(path.documentType());
-            optionsBuilder = optionsBuilder.namespace(path.namespace());
-            optionsBuilder = path.group().map(optionsBuilder::group).orElse(optionsBuilder);
-            VisitorOptions options = optionsBuilder.build();
-            return () -> {
-                visit(request, options, handler);
+                visit(request, parameters, handler);
                 return true; // VisitorSession has its own throttle handling.
             };
         });
@@ -372,7 +375,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     /** Dispatches enqueued requests until one is blocked. */
-    private void dispatchEnqueued() {
+    void dispatchEnqueued() {
         try {
             while (dispatchFirst());
         }
@@ -406,7 +409,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return;
         }
         Operation operation = Operation.lazilyParsed(request, handler, operationParser);
-        if (enqueued.get() == 0 && operation.dispatch()) // Bypass queue if it is empty.
+        if (enqueued.get() == 1 && operation.dispatch()) // Bypass queue if it is empty.
             enqueued.decrementAndGet();
         else {
             operations.offer(operation);
@@ -414,10 +417,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    @FunctionalInterface
-    interface Handler {
-        ContentChannel handle(HttpRequest request, DocumentPath path, ResponseHandler handler);
-    }
 
     // ------------------------------------------------ Responses ------------------------------------------------
 
@@ -612,7 +611,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             AtomicReference<Operation> operation = new AtomicReference<>();
             return () -> {
                 try {
-                    operation.updateAndGet(value -> value != null ? value : parser.get()).dispatch();
+                    return operation.updateAndGet(value -> value != null ? value : parser.get()).dispatch();
                 }
                 catch (IllegalArgumentException e) {
                     badRequest(request, e, handler);
@@ -742,62 +741,51 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     // ------------------------------------------------- Visits ------------------------------------------------
 
-    private VisitorOptions.Builder parseOptions(HttpRequest request, DocumentPath path) {
-        VisitorOptions.Builder options = VisitorOptions.builder();
+    private VisitorParameters parseParameters(HttpRequest request, DocumentPath path) {
+        int wantedDocumentCount = Math.min(1 << 10, getProperty(request, WANTED_DOCUMENT_COUNT, numberParser).orElse(1 << 10));
+        if (wantedDocumentCount <= 0)
+             throw new IllegalArgumentException("wantedDocumentCount must be positive");
 
-        getProperty(request, SELECTION).ifPresent(options::selection);
-        getProperty(request, CONTINUATION).ifPresent(options::continuation);
-        getProperty(request, FIELD_SET).ifPresent(options::fieldSet);
-        getProperty(request, CLUSTER).ifPresent(options::cluster);
-        getProperty(request, BUCKET_SPACE).ifPresent(options::bucketSpace);
-        getProperty(request, WANTED_DOCUMENT_COUNT, numberParser)
-                .ifPresent(count -> options.wantedDocumentCount(Math.min(1 << 10, count)));
-        getProperty(request, CONCURRENCY, numberParser)
-                .ifPresent(concurrency -> options.concurrency(Math.min(100, concurrency)));
+        int concurrency = Math.min(100, getProperty(request, CONCURRENCY, numberParser).orElse(1));
+        if (concurrency <= 0)
+            throw new IllegalArgumentException("concurrency must be positive");
 
-        return options;
-    }
-
-    private static VisitorParameters asParameters(VisitorOptions options, Map<String, StorageCluster> clusters, Duration visitTimeout) {
-        if (options.cluster.isEmpty() && options.documentType.isEmpty())
+        Optional<String> cluster = getProperty(request, CLUSTER);
+        if (cluster.isEmpty() && path.documentType().isEmpty())
             throw new IllegalArgumentException("Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level");
 
-        VisitorParameters parameters = new VisitorParameters(Stream.of(options.selection,
-                                                                       options.documentType,
-                                                                       options.namespace.map(value -> "id.namespace=='" + value + "'"),
-                                                                       options.group.map(Group::selection))
+        VisitorParameters parameters = new VisitorParameters(Stream.of(getProperty(request, SELECTION),
+                                                                       path.documentType(),
+                                                                       path.namespace().map(value -> "id.namespace=='" + value + "'"),
+                                                                       path.group().map(Group::selection))
                                                                    .flatMap(Optional::stream)
                                                                    .reduce(new StringJoiner(") and (", "(", ")").setEmptyValue(""), // don't mind the lonely chicken to the right
                                                                            StringJoiner::add,
                                                                            StringJoiner::merge)
                                                                    .toString());
 
-        options.continuation.map(ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
-        parameters.setFieldSet(options.fieldSet.orElse(options.documentType.map(type -> type + ":[document]").orElse(AllFields.NAME)));
-        options.wantedDocumentCount.ifPresent(count -> { if (count <= 0) throw new IllegalArgumentException("wantedDocumentCount must be positive"); });
-        parameters.setMaxTotalHits(options.wantedDocumentCount.orElse(1 << 10));
-        options.concurrency.ifPresent(value -> { if (value <= 0) throw new IllegalArgumentException("concurrency must be positive"); });
-        parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(options.concurrency.orElse(1)));
+        getProperty(request, CONTINUATION).map(ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
+        parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
+        parameters.setMaxTotalHits(wantedDocumentCount);
+        parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(concurrency));
         parameters.setTimeoutMs(visitTimeout.toMillis());
         parameters.visitInconsistentBuckets(true);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
-        StorageCluster storageCluster = resolveCluster(options.cluster, clusters);
+        StorageCluster storageCluster = resolveCluster(cluster, clusters);
         parameters.setRoute(storageCluster.route());
         parameters.setBucketSpace(resolveBucket(storageCluster,
-                                                options.documentType,
+                                                path.documentType(),
                                                 List.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace()),
-                                                options.bucketSpace));
-
+                                                getProperty(request, BUCKET_SPACE)));
         return parameters;
     }
 
-    private void visit(HttpRequest request, VisitorOptions options, ResponseHandler handler) {
+    private void visit(HttpRequest request, VisitorParameters parameters, ResponseHandler handler) {
         try {
             JsonResponse response = JsonResponse.create(request, handler);
             response.writeDocumentsArrayStart();
             CountDownLatch latch = new CountDownLatch(1);
-            VisitorParameters parameters = asParameters(options, clusters, visitTimeout);
             parameters.setLocalDataHandler(new DumpVisitorDataHandler() {
                 @Override public void onDocument(Document doc, long timeStamp) {
                     loggingException(() -> {
@@ -815,7 +803,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                             case TIMEOUT:
                                 if ( ! hasVisitedAnyBuckets()) {
                                     response.writeMessage("No buckets visited within timeout of " + visitTimeout);
-                                    response.commit(Response.Status.GATEWAY_TIMEOUT);
+                                    response.respond(Response.Status.GATEWAY_TIMEOUT);
                                     break;
                                 }
                             case SUCCESS: // Intentional fallthrough.
@@ -823,11 +811,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 if (getProgress() != null && ! getProgress().isFinished())
                                     response.writeContinuation(getProgress().serializeToString());
 
-                                response.commit(Response.Status.OK);
+                                response.respond(Response.Status.OK);
                                 break;
                             default:
                                 response.writeMessage(message != null ? message : "Visiting failed");
-                                response.commit(Response.Status.INTERNAL_SERVER_ERROR);
+                                response.respond(Response.Status.INTERNAL_SERVER_ERROR);
                         }
                         executor.execute(() -> {
                             try {
@@ -1103,8 +1091,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         });
     }
 
-    private static String resolveBucket(StorageCluster cluster, Optional<String> documentType,
-                                        List<String> bucketSpaces, Optional<String> bucketSpace) {
+    static String resolveBucket(StorageCluster cluster, Optional<String> documentType,
+                                List<String> bucketSpaces, Optional<String> bucketSpace) {
         return documentType.map(type -> cluster.bucketOf(type)
                                                .orElseThrow(() -> new IllegalArgumentException("Document type '" + type + "' in cluster '" + cluster.name() +
                                                                                                "' is not mapped to a known bucket space")))
@@ -1136,8 +1124,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         String rawPath() { return path.asString(); }
-        String documentType() { return requireNonNull(path.get("documentType")); }
-        String namespace() { return requireNonNull(path.get("namespace")); }
+        Optional<String> documentType() { return Optional.ofNullable(path.get("documentType")); }
+        Optional<String> namespace() { return Optional.ofNullable(path.get("namespace")); }
         Optional<Group> group() { return group; }
 
     }
@@ -1157,7 +1145,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         public static Group of(long value) { return new Group(Long.toString(value), "n=" + value, "id.user==" + value); }
-        public static Group of(String value) { return new Group(value, "g=" + value, "id.group=='" + value.replaceAll("'", "\\'") + "'"); }
+        public static Group of(String value) { return new Group(value, "g=" + value, "id.group=='" + value.replaceAll("'", "\\\\'") + "'"); }
 
         public String value() { return value; }
         public String docIdPart() { return docIdPart; }
