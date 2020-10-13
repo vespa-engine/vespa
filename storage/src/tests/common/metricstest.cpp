@@ -284,7 +284,6 @@ TEST_F(MetricsTest, html_metrics_report) {
     createFakeLoad();
     _clock->addSecondsToTime(6 * 60);
     _metricManager->timeChangedNotification();
-    _metricsConsumer->waitUntilTimeProcessed(_clock->getTimeInSeconds());
     createFakeLoad();
     std::ostringstream ost;
     framework::HttpUrlPath path("metrics?interval=300&format=html");

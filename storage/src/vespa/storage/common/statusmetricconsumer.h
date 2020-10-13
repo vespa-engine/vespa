@@ -37,11 +37,7 @@ public:
 
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream& out, const framework::HttpUrlPath&) const override;
-
-    void waitUntilTimeProcessed(framework::SecondTime t) const;
-
     void updateMetrics(const MetricLockGuard & guard) override;
-
 private:
     typedef metrics::Metric Metric;
     typedef metrics::Metric::String String;

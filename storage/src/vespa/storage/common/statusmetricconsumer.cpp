@@ -337,12 +337,6 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
 }
 
 void
-StatusMetricConsumer::waitUntilTimeProcessed(framework::SecondTime ) const
-{
-    return;
-}
-
-void
 StatusMetricConsumer::writeXmlTags(std::ostream& out,
                                    const vespalib::StringTokenizer& name,
                                    std::vector<std::string>& xmlTags) const
