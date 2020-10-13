@@ -26,7 +26,7 @@ public:
     ~DenseTensorPeekFunction();
     const eval::ValueType &result_type() const override { return eval::DoubleValue::double_type(); }
     void push_children(std::vector<Child::CREF> &children) const override;
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };

@@ -45,7 +45,7 @@ public:
     };
 
 private:
-    const TensorEngine             &_engine;
+    EngineOrFactory                 _engine;
     Stash                           _stash;
     std::shared_ptr<Function const> _function;
     NodeTypes                       _node_types;
@@ -74,7 +74,7 @@ private:
     void detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const;
 
 public:
-    EvalFixture(const TensorEngine &engine, const vespalib::string &expr, const ParamRepo &param_repo,
+    EvalFixture(EngineOrFactory engine, const vespalib::string &expr, const ParamRepo &param_repo,
                 bool optimized = true, bool allow_mutable = false);
     ~EvalFixture() {}
     template <typename T>

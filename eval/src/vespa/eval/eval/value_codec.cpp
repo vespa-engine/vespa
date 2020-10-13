@@ -111,6 +111,9 @@ ValueType decode_type(nbostream &input, const Format &format) {
             dim_list.emplace_back(name, input.getInt1_4Bytes());
         }
     }
+    if (dim_list.empty()) {
+        assert(cell_type == ValueType::CellType::DOUBLE);
+    }
     return ValueType::tensor_type(std::move(dim_list), cell_type);
 }
 
@@ -138,10 +141,9 @@ void decode_mapped_labels(nbostream &input, size_t num_mapped_dims, std::vector<
 template<typename T>
 void decode_cells(nbostream &input, size_t num_cells, ArrayRef<T> dst)
 {
-    T value;
+    assert(num_cells == dst.size());
     for (size_t i = 0; i < num_cells; ++i) {
-        input >> value;
-        dst[i] = value;
+        dst[i] = input.readValue<T>();
     }
 }
 
@@ -166,6 +168,10 @@ struct ContentDecoder {
             decode_mapped_labels(input, state.num_mapped_dims, address);
             auto block_cells = builder->add_subspace(address);
             decode_cells(input, state.subspace_size, block_cells);
+        }
+        // add implicit empty subspace
+        if ((state.num_mapped_dims == 0) && (state.num_blocks == 0)) {
+            builder->add_subspace({});
         }
         return builder->build(std::move(builder));
     }

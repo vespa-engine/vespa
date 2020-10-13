@@ -79,7 +79,7 @@ const TensorFunction &maybe_patch(bool allow_mutable, const TensorFunction &plai
     return root.get();
 }
 
-std::vector<Value::UP> make_params(const TensorEngine &engine, const Function &function,
+std::vector<Value::UP> make_params(EngineOrFactory engine, const Function &function,
                                    const ParamRepo &param_repo)
 {
     std::vector<Value::UP> result;
@@ -191,7 +191,7 @@ EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_muta
     }
 }
 
-EvalFixture::EvalFixture(const TensorEngine &engine,
+EvalFixture::EvalFixture(EngineOrFactory engine,
                          const vespalib::string &expr,
                          const ParamRepo &param_repo,
                          bool optimized,

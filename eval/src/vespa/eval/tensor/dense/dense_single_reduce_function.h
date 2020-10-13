@@ -24,7 +24,7 @@ public:
     size_t dim_idx() const { return _dim_idx; }
     eval::Aggr aggr() const { return _aggr; }
     bool result_is_mutable() const override { return true; }
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

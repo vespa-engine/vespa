@@ -102,7 +102,7 @@ DenseSimpleExpandFunction::DenseSimpleExpandFunction(const ValueType &result_typ
 DenseSimpleExpandFunction::~DenseSimpleExpandFunction() = default;
 
 Instruction
-DenseSimpleExpandFunction::compile_self(const TensorEngine &, Stash &stash) const
+DenseSimpleExpandFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
 {
     size_t result_size = result_type().dense_subspace_size();
     const ExpandParams &params = stash.create<ExpandParams>(result_type(), result_size, function());

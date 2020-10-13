@@ -60,93 +60,55 @@ struct Impl {
     size_t order;
     vespalib::string name;
     vespalib::string short_name;
-    Impl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in)
-        : order(order_in), name(name_in), short_name(short_name_in) {}
-    virtual Value::UP create_value(const TensorSpec &spec) const = 0;
-    virtual TensorSpec create_spec(const Value &value) const = 0;
-    virtual Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const = 0;
-    virtual Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const = 0;
-    virtual Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
-    virtual Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const = 0;
-    virtual Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const = 0;
-    virtual const TensorEngine &engine() const { return SimpleTensorEngine::ref(); } // engine used by EvalSingle
-    virtual ~Impl() {}
-};
-
-struct ValueImpl : Impl {
-    const ValueBuilderFactory &my_factory;
-    ValueImpl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, const ValueBuilderFactory &factory)
-        : Impl(order_in, name_in, short_name_in), my_factory(factory) {}
-    Value::UP create_value(const TensorSpec &spec) const override { return value_from_spec(spec, my_factory); }
-    TensorSpec create_spec(const Value &value) const override { return spec_from_value(value); }
-    Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
-        return GenericJoin::make_instruction(lhs, rhs, function, my_factory, stash);
-    }
-    Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const override {
-        return GenericReduce::make_instruction(lhs, aggr, dims, my_factory, stash);
-    }
-    Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const override {
-        return GenericRename::make_instruction(lhs, from, to, my_factory, stash);
-    }
-    Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
-        return GenericMerge::make_instruction(lhs, rhs, function, my_factory, stash);
-    }
-    Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const override {
-        return GenericConcat::make_instruction(lhs, rhs, dimension, my_factory, stash);
-    }
-};
-
-struct EngineImpl : Impl {
-    const TensorEngine &my_engine;
-    EngineImpl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, const TensorEngine &engine_in)
-        : Impl(order_in, name_in, short_name_in), my_engine(engine_in) {}
-    Value::UP create_value(const TensorSpec &spec) const override { return my_engine.from_spec(spec); }
-    TensorSpec create_spec(const Value &value) const override { return my_engine.to_spec(value); }
-    Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
+    EngineOrFactory engine;
+    Impl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, EngineOrFactory engine_in)
+        : order(order_in), name(name_in), short_name(short_name_in), engine(engine_in) {}
+    Value::UP create_value(const TensorSpec &spec) const { return engine.from_spec(spec); }
+    TensorSpec create_spec(const Value &value) const { return engine.to_spec(value); }
+    Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &join_node = tensor_function::join(lhs_node, rhs_node, function, stash); 
-        return join_node.compile_self(my_engine, stash);
+        return join_node.compile_self(engine, stash);
     }
-    Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const override {
+    Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &reduce_node = tensor_function::reduce(lhs_node, aggr, dims, stash); 
-        return reduce_node.compile_self(my_engine, stash);
+        return reduce_node.compile_self(engine, stash);
     }
-    Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const override {
+    Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rename_node = tensor_function::rename(lhs_node, from, to, stash);
-        return rename_node.compile_self(my_engine, stash);
+        return rename_node.compile_self(engine, stash);
     }
-    Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const override {
+    Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &merge_node = tensor_function::merge(lhs_node, rhs_node, function, stash); 
-        return merge_node.compile_self(my_engine, stash);
+        return merge_node.compile_self(engine, stash);
     }
-    Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const override {
+    Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &concat_node = tensor_function::concat(lhs_node, rhs_node, dimension, stash); 
-        return concat_node.compile_self(my_engine, stash);
+        return concat_node.compile_self(engine, stash);
     }
-    const TensorEngine &engine() const override { return my_engine; }
 };
 
 //-----------------------------------------------------------------------------
 
-EngineImpl  simple_tensor_engine_impl(5, " SimpleTensorEngine", " SimpleT", SimpleTensorEngine::ref());
-EngineImpl default_tensor_engine_impl(1, "DefaultTensorEngine", "OLD PROD", DefaultTensorEngine::ref());
-ValueImpl           simple_value_impl(2, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get());
-ValueImpl             fast_value_impl(0, "          FastValue", "NEW PROD", FastValueBuilderFactory::get());
-ValueImpl    packed_mixed_tensor_impl(4, "  PackedMixedTensor", "  Packed", PackedMixedTensorBuilderFactory::get());
-ValueImpl   default_tensor_value_impl(3, "       DefaultValue", "DefaultV", DefaultValueBuilderFactory::get());
-vespalib::string                                   short_header("--------");
+Impl   simple_tensor_engine_impl(5, " SimpleTensorEngine", " SimpleT", SimpleTensorEngine::ref());
+Impl  default_tensor_engine_impl(1, "DefaultTensorEngine", "OLD PROD", DefaultTensorEngine::ref());
+Impl           simple_value_impl(2, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get());
+Impl             fast_value_impl(0, "          FastValue", "NEW PROD", FastValueBuilderFactory::get());
+Impl    packed_mixed_tensor_impl(4, "  PackedMixedTensor", "  Packed", PackedMixedTensorBuilderFactory::get());
+Impl   default_tensor_value_impl(3, "       DefaultValue", "DefaultV", DefaultValueBuilderFactory::get());
+vespalib::string                              short_header("--------");
 
 constexpr double budget = 5.0;
 constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
@@ -236,7 +198,7 @@ struct EvalOp {
     EvalOp(const EvalOp &) = delete;
     EvalOp &operator=(const EvalOp &) = delete;
     EvalOp(Instruction op, const std::vector<CREF<TensorSpec>> &stack_spec, const Impl &impl_in)
-        : impl(impl_in), values(), stack(), single(impl.engine(), op)
+        : impl(impl_in), values(), stack(), single(impl.engine, op)
     {
         for (const TensorSpec &spec: stack_spec) {
             values.push_back(impl.create_value(spec));

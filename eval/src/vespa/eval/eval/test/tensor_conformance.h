@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
@@ -14,7 +14,7 @@ namespace test {
  * implementations of the TensorEngine interface.
  **/
 struct TensorConformance {
-    static void run_tests(const vespalib::string &module_path, const TensorEngine &engine);
+    static void run_tests(const vespalib::string &module_path, EngineOrFactory engine);
 };
 
 } // namespace vespalib::eval::test

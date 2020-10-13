@@ -88,7 +88,7 @@ std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
     return param_types;
 }
 
-TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typed) {
+TensorSpec eval_expr(const Inspector &test, EngineOrFactory engine, bool typed) {
     auto fun = Function::parse(test["expression"].asString().make_string());
     std::vector<Value::UP> param_values;
     std::vector<Value::CREF> param_refs;

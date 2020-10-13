@@ -44,7 +44,7 @@ public:
     size_t result_size() const { return _result_size; }
     bool common_inner() const { return _common_inner; }
 
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };

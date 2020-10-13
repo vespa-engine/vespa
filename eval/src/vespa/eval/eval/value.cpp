@@ -2,6 +2,7 @@
 
 #include "value.h"
 #include "tensor_engine.h"
+#include <vespa/vespalib/util/typify.h>
 
 namespace vespalib {
 namespace eval {
@@ -22,6 +23,16 @@ struct TrivialView : Value::Index::View {
     }
 };
 
+struct MySum {
+    template <typename CT> static double invoke(TypedCells cells) {
+        double res = 0.0;
+        for (CT cell: cells.typify<CT>()) {
+            res += cell;
+        }
+        return res;
+    }
+};
+
 } // <unnamed>
 
 
@@ -38,6 +49,12 @@ std::unique_ptr<Value::Index::View>
 TrivialIndex::create_view(const std::vector<size_t> &) const
 {
     return std::make_unique<TrivialView>();
+}
+
+double
+Value::as_double() const
+{
+    return typify_invoke<1,TypifyCellType,MySum>(type().cell_type(), cells());
 }
 
 ValueType DoubleValue::_type = ValueType::double_type();

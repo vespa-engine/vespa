@@ -76,7 +76,7 @@ TensorSpec perform_generic_join(const TensorSpec &a, const TensorSpec &b, join_f
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
     auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
-    InterpretedFunction::EvalSingle single(my_op);
+    InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
 
@@ -86,7 +86,7 @@ TensorSpec perform_generic_join_fast(const TensorSpec &a, const TensorSpec &b, j
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
     auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
-    InterpretedFunction::EvalSingle single(my_op);
+    InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
 

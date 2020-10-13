@@ -63,7 +63,7 @@ TensorSpec perform_generic_reduce(const TensorSpec &a, const std::vector<vespali
     const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto my_op = GenericReduce::make_instruction(lhs->type(), aggr, dims, factory, stash);
-    InterpretedFunction::EvalSingle single(my_op);
+    InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }
 

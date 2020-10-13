@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "engine_or_factory.h"
 #include "function.h"
 #include "node_types.h"
 #include "lazy_params.h"
@@ -10,7 +11,6 @@
 namespace vespalib::eval {
 
 namespace nodes { struct Node; }
-struct TensorEngine;
 struct TensorFunction;
 class TensorSpec;
 
@@ -28,14 +28,14 @@ class InterpretedFunction
 {
 public:
     struct State {
-        const TensorEngine      &engine;
+        EngineOrFactory          engine;
         const LazyParams        *params;
         Stash                    stash;
         std::vector<Value::CREF> stack;
         uint32_t                 program_offset;
         uint32_t                 if_cnt;
 
-        State(const TensorEngine &engine_in);
+        State(EngineOrFactory engine_in);
         ~State();
 
         void init(const LazyParams &params_in);
@@ -87,14 +87,14 @@ public:
 private:
     std::vector<Instruction> _program;
     Stash                    _stash;
-    const TensorEngine      &_tensor_engine;
+    EngineOrFactory          _tensor_engine;
 
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
     // for testing; use with care; the tensor function must be kept alive
-    InterpretedFunction(const TensorEngine &engine, const TensorFunction &function);
-    InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types);
-    InterpretedFunction(const TensorEngine &engine, const Function &function, const NodeTypes &types)
+    InterpretedFunction(EngineOrFactory engine, const TensorFunction &function);
+    InterpretedFunction(EngineOrFactory engine, const nodes::Node &root, const NodeTypes &types);
+    InterpretedFunction(EngineOrFactory engine, const Function &function, const NodeTypes &types)
         : InterpretedFunction(engine, function.root(), types) {}
     InterpretedFunction(InterpretedFunction &&rhs) = default;
     ~InterpretedFunction();
@@ -109,16 +109,14 @@ public:
      * instructions manipulating the program counter or resolving
      * parameters may not be run in this way. Also note that the stack
      * must contain exactly one value after the instruction is
-     * executed. If no tensor engine is specified, SimpleTensorEngine
-     * is used (typically for instructions ignoring the engine).
+     * executed.
      **/
     class EvalSingle {
     private:
         State _state;
         Instruction _op;
     public:
-        EvalSingle(Instruction op);
-        EvalSingle(const TensorEngine &engine, Instruction op);
+        EvalSingle(EngineOrFactory engine, Instruction op);
         const Value &eval(const std::vector<Value::CREF> &stack);
     };
 };

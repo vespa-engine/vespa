@@ -2,9 +2,13 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/test/tensor_conformance.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::eval::SimpleValueBuilderFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::SimpleTensorEngine;
 using vespalib::eval::test::TensorConformance;
 using vespalib::tensor::DefaultTensorEngine;
@@ -19,6 +23,14 @@ TEST("require that reference tensor implementation passes all conformance tests"
 
 TEST("require that production tensor implementation passes all conformance tests") {
     TEST_DO(TensorConformance::run_tests(module_src_path, DefaultTensorEngine::ref()));
+}
+
+TEST("require that SimpleValue implementation passes all conformance tests (except ImmediateAPI tests)") {
+    TEST_DO(TensorConformance::run_tests(module_src_path, SimpleValueBuilderFactory::get()));
+}
+
+TEST("require that FastValue implementation passes all conformance tests (except ImmediateAPI tests)") {
+    TEST_DO(TensorConformance::run_tests(module_src_path, FastValueBuilderFactory::get()));
 }
 
 TEST("require that tensor serialization test spec can be generated") {

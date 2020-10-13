@@ -16,7 +16,7 @@ private:
 public:
     DenseDotProductFunction(const eval::TensorFunction &lhs_in,
                             const eval::TensorFunction &rhs_in);
-    eval::InterpretedFunction::Instruction compile_self(const eval::TensorEngine &engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     static bool compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs);
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);

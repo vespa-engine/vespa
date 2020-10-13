@@ -42,7 +42,7 @@ DenseCellRangeFunction::DenseCellRangeFunction(const eval::ValueType &result_typ
 DenseCellRangeFunction::~DenseCellRangeFunction() = default;
 
 eval::InterpretedFunction::Instruction
-DenseCellRangeFunction::compile_self(const TensorEngine &, Stash &) const
+DenseCellRangeFunction::compile_self(eval::EngineOrFactory, Stash &) const
 {
     assert(result_type().cell_type() == child().result_type().cell_type());
 

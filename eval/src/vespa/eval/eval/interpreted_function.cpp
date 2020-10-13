@@ -33,7 +33,7 @@ const Function *get_lambda(const nodes::Node &node) {
 } // namespace vespalib::<unnamed>
 
 
-InterpretedFunction::State::State(const TensorEngine &engine_in)
+InterpretedFunction::State::State(EngineOrFactory engine_in)
     : engine(engine_in),
       params(nullptr),
       stash(),
@@ -59,7 +59,7 @@ InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
 {
 }
 
-InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const TensorFunction &function)
+InterpretedFunction::InterpretedFunction(EngineOrFactory engine, const TensorFunction &function)
     : _program(),
       _stash(),
       _tensor_engine(engine)
@@ -67,7 +67,7 @@ InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const Tenso
     _program = compile_tensor_function(engine, function, _stash);
 }
 
-InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types)
+InterpretedFunction::InterpretedFunction(EngineOrFactory engine, const nodes::Node &root, const NodeTypes &types)
     : _program(),
       _stash(),
       _tensor_engine(engine)
@@ -118,13 +118,7 @@ InterpretedFunction::detect_issues(const Function &function)
     return Function::Issues(std::move(checker.issues));
 }
 
-InterpretedFunction::EvalSingle::EvalSingle(Instruction op)
-    : _state(SimpleTensorEngine::ref()),
-      _op(op)
-{
-}
-
-InterpretedFunction::EvalSingle::EvalSingle(const TensorEngine &engine, Instruction op)
+InterpretedFunction::EvalSingle::EvalSingle(EngineOrFactory engine, Instruction op)
     : _state(engine),
       _op(op)
 {

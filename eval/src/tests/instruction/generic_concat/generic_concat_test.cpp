@@ -126,7 +126,7 @@ TensorSpec perform_generic_concat(const TensorSpec &a, const TensorSpec &b, cons
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
     auto my_op = GenericConcat::make_instruction(lhs->type(), rhs->type(), concat_dim, factory, stash);
-    InterpretedFunction::EvalSingle single(my_op);
+    InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
 

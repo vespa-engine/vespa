@@ -62,9 +62,9 @@ struct Value {
 // --- end of new interface
 
 // --- old interface that may be (partially) removed in the future
-    virtual bool is_double() const { return false; }
-    virtual bool is_tensor() const { return false; }
-    virtual double as_double() const { return 0.0; }
+    virtual bool is_double() const { return type().is_double(); }
+    virtual bool is_tensor() const { return type().is_tensor(); }
+    virtual double as_double() const;
     bool as_bool() const { return (as_double() != 0.0); }
     virtual const Tensor *as_tensor() const { return nullptr; }
 // --- end of old interface
