@@ -124,9 +124,10 @@ class TickingThreadPoolImpl final : public TickingThreadPool {
         void broadcast() override {}
     };
     struct CriticalGuard final : public TickingLockGuard::Impl {
+        std::unique_lock<std::mutex> _guard;
         std::condition_variable &_cond;
 
-        explicit CriticalGuard(std::condition_variable & cond) : _cond(cond) {}
+        explicit CriticalGuard(std::mutex & lock, std::condition_variable & cond) : _guard(lock), _cond(cond) {}
 
         void broadcast() override { _cond.notify_all(); }
     };
@@ -179,7 +180,7 @@ public:
     }
 
     TickingLockGuard freezeCriticalTicks() override {
-        return TickingLockGuard(std::make_unique<CriticalGuard>(_cond));
+        return TickingLockGuard(std::make_unique<CriticalGuard>(_lock, _cond));
     }
 
     void stop() override {
