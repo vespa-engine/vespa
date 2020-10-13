@@ -32,6 +32,8 @@ private:
     using engine_t = const TensorEngine *;
     using factory_t = const ValueBuilderFactory *;
     std::variant<engine_t,factory_t> _value;
+    static EngineOrFactory _default;
+    static EngineOrFactory get_shared(EngineOrFactory hint);
 public:
     EngineOrFactory(const TensorEngine &engine_in) : _value(&engine_in) {}
     EngineOrFactory(const ValueBuilderFactory &factory_in) : _value(&factory_in) {}
@@ -52,6 +54,11 @@ public:
     const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const;
     const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const;
     const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const;
+    // global switch with default; call set before get to override the default
+    static void set(EngineOrFactory wanted);
+    static EngineOrFactory get();
+    // try to describe the value held by this object as a human-readable string
+    vespalib::string to_string() const;
 };
 
 }
