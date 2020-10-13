@@ -580,12 +580,14 @@ public class VespaMetricSet {
         
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.failed.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.test_and_set_failed.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.latency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.latency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.latency.count"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.failed.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.test_and_set_failed.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.latency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.latency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.latency.count"));
@@ -598,6 +600,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.failed.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.test_and_set_failed.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.latency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.latency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.latency.count"));
