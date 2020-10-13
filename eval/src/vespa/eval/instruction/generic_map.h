@@ -14,7 +14,7 @@ using map_fun_t = vespalib::eval::operation::op1_t;
 
 struct GenericMap {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &input_type, map_fun_t function, Stash &stash);
+    make_instruction(const ValueType &input_type, map_fun_t function);
 };
 
 } // namespace

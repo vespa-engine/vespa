@@ -41,9 +41,8 @@ TensorSpec reference_map(const TensorSpec &a, map_fun_t func) {
 
 TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueBuilderFactory &factory)
 {
-    Stash stash;
     auto lhs = value_from_spec(a, factory);
-    auto my_op = GenericMap::make_instruction(lhs->type(), func, stash);
+    auto my_op = GenericMap::make_instruction(lhs->type(), func);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }

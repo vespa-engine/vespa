@@ -43,7 +43,7 @@ struct SelectGenericMapOp {
 using MapTypify = TypifyValue<TypifyCellType,operation::TypifyOp1>;
  
 InterpretedFunction::Instruction
-GenericMap::make_instruction(const ValueType &lhs_type, map_fun_t function, Stash &)
+GenericMap::make_instruction(const ValueType &lhs_type, map_fun_t function)
 {
     auto op = typify_invoke<2,MapTypify,SelectGenericMapOp>(lhs_type.cell_type(), function);
     return Instruction(op, to_param(function));
