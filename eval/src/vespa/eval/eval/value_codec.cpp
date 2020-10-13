@@ -171,7 +171,9 @@ struct ContentDecoder {
         }
         // add implicit empty subspace
         if ((state.num_mapped_dims == 0) && (state.num_blocks == 0)) {
-            builder->add_subspace({});
+            for (T &cell: builder->add_subspace({})) {
+                cell = T{};
+            }
         }
         return builder->build(std::move(builder));
     }
@@ -204,6 +206,9 @@ struct CreateValueFromTensorSpec {
         auto builder = factory.create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), map.size());
         for (const auto &entry: map) {
             auto subspace = builder->add_subspace(entry.first);
+            for (T &cell: subspace) {
+                cell = T{};
+            }
             for (const auto &cell: entry.second) {
                 subspace[cell.first] = cell.second;
             }

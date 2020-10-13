@@ -27,15 +27,10 @@ public class HostFilter {
                        Set<String> flavors,
                        Set<ClusterSpec.Type> clusterTypes,
                        Set<ClusterSpec.Id> clusterIds) {
-        Objects.requireNonNull(hostnames, "Hostnames cannot be null, use an empty list");
-        Objects.requireNonNull(flavors, "Flavors cannot be null, use an empty list");
-        Objects.requireNonNull(clusterTypes, "clusterTypes cannot be null, use an empty list");
-        Objects.requireNonNull(clusterIds, "clusterIds cannot be null, use an empty list");
-
-        this.hostnames = hostnames;
-        this.flavors = flavors;
-        this.clusterTypes = clusterTypes;
-        this.clusterIds = clusterIds;
+        this.hostnames = Objects.requireNonNull(hostnames, "Hostnames cannot be null, use an empty list");
+        this.flavors = Objects.requireNonNull(flavors, "Flavors cannot be null, use an empty list");
+        this.clusterTypes = Objects.requireNonNull(clusterTypes, "clusterTypes cannot be null, use an empty list");
+        this.clusterIds = Objects.requireNonNull(clusterIds, "clusterIds cannot be null, use an empty list");
     }
 
     /** Returns true if this filter matches the given host properties */
@@ -92,4 +87,25 @@ public class HostFilter {
                 StringUtilities.split(clusterIds).stream().map(ClusterSpec.Id::from).collect(Collectors.toSet()));
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HostFilter that = (HostFilter) o;
+
+        if (!hostnames.equals(that.hostnames)) return false;
+        if (!flavors.equals(that.flavors)) return false;
+        if (!clusterTypes.equals(that.clusterTypes)) return false;
+        return clusterIds.equals(that.clusterIds);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = hostnames.hashCode();
+        result = 31 * result + flavors.hashCode();
+        result = 31 * result + clusterTypes.hashCode();
+        result = 31 * result + clusterIds.hashCode();
+        return result;
+    }
 }
