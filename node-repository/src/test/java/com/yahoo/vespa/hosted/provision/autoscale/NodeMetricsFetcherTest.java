@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
@@ -62,8 +63,10 @@ public class NodeMetricsFetcherTest {
         }
 
         {
-            tester.nodeRepository().write(tester.nodeRepository().getNodes(application1, Node.State.active).get(0).retire(tester.clock().instant()),
-                                          tester.nodeRepository().lock(application1));
+            try (Mutex lock = tester.nodeRepository().lock(application1)) {
+                tester.nodeRepository().write(tester.nodeRepository().getNodes(application1, Node.State.active)
+                        .get(0).retire(tester.clock().instant()), lock);
+            }
             assertTrue("No metrics fetching while unstable", fetcher.fetchMetrics(application1).isEmpty());
         }
     }

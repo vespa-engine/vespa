@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -205,12 +206,16 @@ public class MetricsReporterTest {
         Node container1 = Node.createDockerNode(Set.of("::2"), "container1",
                                                 "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1"), container1).get());
-        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockUnallocated()));
+        try (Mutex lock = nodeRepository.lockUnallocated()) {
+            nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), lock));
+        }
 
         Node container2 = Node.createDockerNode(Set.of("::3"), "container2",
                                                 "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2"), container2).get());
-        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockUnallocated()));
+        try (Mutex lock = nodeRepository.lockUnallocated()) {
+            nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), lock));
+        }
 
         NestedTransaction transaction = new NestedTransaction();
         nodeRepository.activate(nodeRepository.getNodes(NodeType.host), transaction);
