@@ -270,6 +270,7 @@ class BMParams {
     uint32_t _max_pending;
     bool     _enable_distributor;
     bool     _enable_service_layer;
+    bool     _skip_get_spi_bucket_info;
     bool     _use_document_api;
     bool     _use_message_bus;
     bool     _use_storage_chain;
@@ -291,6 +292,7 @@ public:
           _max_pending(1000),
           _enable_distributor(false),
           _enable_service_layer(false),
+          _skip_get_spi_bucket_info(false),
           _use_document_api(false),
           _use_message_bus(false),
           _use_storage_chain(false),
@@ -311,6 +313,7 @@ public:
     uint32_t get_rpc_targets_per_node() const { return _rpc_targets_per_node; }
     uint32_t get_response_threads() const { return _response_threads; }
     bool get_enable_distributor() const { return _enable_distributor; }
+    bool get_skip_get_spi_bucket_info() const { return _skip_get_spi_bucket_info; }
     bool get_use_document_api() const { return _use_document_api; }
     bool get_use_message_bus() const { return _use_message_bus; }
     bool get_use_storage_chain() const { return _use_storage_chain; }
@@ -327,6 +330,7 @@ public:
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_enable_distributor(bool enable_distributor_in) { _enable_distributor = enable_distributor_in; }
     void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
+    void set_skip_get_spi_bucket_info(bool skip_get_spi_bucket_info_in) { _skip_get_spi_bucket_info = skip_get_spi_bucket_info_in; }
     void set_use_document_api(bool use_document_api_in) { _use_document_api = use_document_api_in; }
     void set_use_message_bus(bool use_message_bus_in) { _use_message_bus = use_message_bus_in; }
     void set_use_storage_chain(bool use_storage_chain_in) { _use_storage_chain = use_storage_chain_in; }
@@ -729,7 +733,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
     _distributor_config.add_builders(_config_set);
     _rpc_client_config.add_builders(_config_set);
     _message_bus_config.add_builders(_config_set);
-    _feed_handler = std::make_unique<SpiBmFeedHandler>(*_persistence_engine);
+    _feed_handler = std::make_unique<SpiBmFeedHandler>(*_persistence_engine, params.get_skip_get_spi_bucket_info());
 }
 
 PersistenceProviderFixture::~PersistenceProviderFixture()
@@ -821,7 +825,7 @@ PersistenceProviderFixture::make_document_update(uint32_t n, uint32_t i) const
 void
 PersistenceProviderFixture::create_buckets()
 {
-    SpiBmFeedHandler feed_handler(*_persistence_engine);
+    SpiBmFeedHandler feed_handler(*_persistence_engine, false);
     for (unsigned int i = 0; i < num_buckets(); ++i) {
         feed_handler.create_bucket(make_bucket(i));
     }
@@ -1017,6 +1021,7 @@ put_async_task(PersistenceProviderFixture &f, uint32_t max_pending, BMRange rang
 {
     LOG(debug, "put_async_task([%u..%u))", range.get_start(), range.get_end());
     feedbm::PendingTracker pending_tracker(max_pending);
+    f._feed_handler->attach_bucket_info_queue(pending_tracker);
     auto &repo = *f._repo;
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
     BucketId bucket_id;
@@ -1086,6 +1091,7 @@ update_async_task(PersistenceProviderFixture &f, uint32_t max_pending, BMRange r
 {
     LOG(debug, "update_async_task([%u..%u))", range.get_start(), range.get_end());
     feedbm::PendingTracker pending_tracker(max_pending);
+    f._feed_handler->attach_bucket_info_queue(pending_tracker);
     auto &repo = *f._repo;
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
     BucketId bucket_id;
@@ -1142,6 +1148,7 @@ remove_async_task(PersistenceProviderFixture &f, uint32_t max_pending, BMRange r
 {
     LOG(debug, "remove_async_task([%u..%u))", range.get_start(), range.get_end());
     feedbm::PendingTracker pending_tracker(max_pending);
+    f._feed_handler->attach_bucket_info_queue(pending_tracker);
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
     BucketId bucket_id;
     auto bucket_space = f._bucket_space;
@@ -1299,6 +1306,7 @@ App::usage()
         "[--response-threads threads]\n"
         "[--enable-distributor]\n"
         "[--enable-service-layer]\n"
+        "[--skip-get-spi-bucket-info]\n"
         "[--use-document-api]\n"
         "[--use-message-bus\n"
         "[--use-storage-chain]\n"
@@ -1324,6 +1332,7 @@ App::get_options()
         { "response-threads", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
         { "rpc-targets-per-node", 1, nullptr, 0 },
+        { "skip-get-spi-bucket-info", 0, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
         { "use-legacy-bucket-db", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
@@ -1342,6 +1351,7 @@ App::get_options()
         LONGOPT_RESPONSE_THREADS,
         LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_RPC_TARGETS_PER_NODE,
+        LONGOPT_SKIP_GET_SPI_BUCKET_INFO,
         LONGOPT_USE_DOCUMENT_API,
         LONGOPT_USE_LEGACY_BUCKET_DB,
         LONGOPT_USE_MESSAGE_BUS,
@@ -1388,6 +1398,9 @@ App::get_options()
                 break;
             case LONGOPT_RPC_TARGETS_PER_NODE:
                 _bm_params.set_rpc_targets_per_node(atoi(opt_argument));
+                break;
+            case LONGOPT_SKIP_GET_SPI_BUCKET_INFO:
+                _bm_params.set_skip_get_spi_bucket_info(true);
                 break;
             case LONGOPT_USE_DOCUMENT_API:
                 _bm_params.set_use_document_api(true);

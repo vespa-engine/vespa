@@ -6,7 +6,9 @@ vespa_add_executable(searchcore_vespa_feed_bm_app
     bm_message_bus.cpp
     bm_storage_chain_builder.cpp
     bm_storage_link.cpp
+    bucket_info_queue.cpp
     document_api_message_bus_bm_feed_handler.cpp
+    pending_tracker.cpp
     pending_tracker_hash.cpp
     spi_bm_feed_handler.cpp
     storage_api_chain_bm_feed_handler.cpp

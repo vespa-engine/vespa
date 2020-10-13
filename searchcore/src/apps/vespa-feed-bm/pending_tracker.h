@@ -4,8 +4,14 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
+#include <memory>
+
+namespace storage::spi { class PersistenceProvider; }
 
 namespace feedbm {
+
+class BucketInfoQueue;
 
 /*
  * Class to track number of pending operations, used as backpressure during
@@ -16,20 +22,11 @@ class PendingTracker {
     uint32_t                _limit;
     std::mutex              _mutex;
     std::condition_variable _cond;
+    std::unique_ptr<BucketInfoQueue> _bucket_info_queue;
 
 public:
-    PendingTracker(uint32_t limit)
-        : _pending(0u),
-          _limit(limit),
-          _mutex(),
-          _cond()
-    {
-    }
-
-    ~PendingTracker()
-    {
-        drain();
-    }
+    PendingTracker(uint32_t limit);
+    ~PendingTracker();
 
     void release() {
         std::unique_lock<std::mutex> guard(_mutex);
@@ -46,12 +43,10 @@ public:
         ++_pending;
     }
 
-    void drain() {
-        std::unique_lock<std::mutex> guard(_mutex);
-        while (_pending > 0) {
-            _cond.wait(guard);
-        }
-    }
+    void drain();
+
+    void attach_bucket_info_queue(storage::spi::PersistenceProvider& provider, std::atomic<uint32_t>& errors);
+    BucketInfoQueue *get_bucket_info_queue() { return _bucket_info_queue.get(); }
 };
 
 }

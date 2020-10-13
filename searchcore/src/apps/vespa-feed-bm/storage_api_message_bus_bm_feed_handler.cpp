@@ -57,6 +57,11 @@ StorageApiMessageBusBmFeedHandler::remove(const document::Bucket& bucket, const 
     send_msg(std::move(cmd), tracker);
 }
 
+void
+StorageApiMessageBusBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
+{
+}
+
 uint32_t
 StorageApiMessageBusBmFeedHandler::get_error_count() const
 {
