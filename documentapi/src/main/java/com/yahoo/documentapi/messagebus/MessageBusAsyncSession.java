@@ -4,6 +4,7 @@ package com.yahoo.documentapi.messagebus;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.AsyncParameters;
@@ -104,11 +105,6 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     @Override
-    public Result put(DocumentPut documentPut, DocumentProtocol.Priority pri) {
-        return put(documentPut, parameters().withPriority(pri));
-    }
-
-    @Override
     public Result put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
         msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_3));
@@ -127,11 +123,6 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     @Override
-    public Result get(DocumentId id, DocumentProtocol.Priority pri) {
-        return get(id, parameters().withPriority(pri));
-    }
-
-    @Override
     public Result get(DocumentId id, DocumentOperationParameters parameters) {
         GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
         msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_1));
@@ -140,17 +131,12 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result remove(DocumentId id) {
-        return remove(id, parameters());
+        return remove(new DocumentRemove(id), parameters());
     }
 
     @Override
-    public Result remove(DocumentId id, DocumentProtocol.Priority pri) {
-        return remove(id, parameters().withPriority(pri));
-    }
-
-    @Override
-    public Result remove(DocumentId id, DocumentOperationParameters parameters) {
-        RemoveDocumentMessage msg = new RemoveDocumentMessage(id);
+    public Result remove(DocumentRemove remove, DocumentOperationParameters parameters) {
+        RemoveDocumentMessage msg = new RemoveDocumentMessage(remove);
         msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
         return send(msg, parameters);
     }
@@ -158,11 +144,6 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     @Override
     public Result update(DocumentUpdate update) {
         return update(update, parameters());
-    }
-
-    @Override
-    public Result update(DocumentUpdate update, DocumentProtocol.Priority pri) {
-        return update(update, parameters().withPriority(pri));
     }
 
     @Override

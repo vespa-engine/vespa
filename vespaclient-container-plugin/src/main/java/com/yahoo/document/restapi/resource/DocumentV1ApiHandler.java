@@ -13,6 +13,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.FixedBucketSpaces;
@@ -360,10 +361,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private ContentChannel deleteDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
         ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.REMOVE, clock.instant());
         enqueueAndDispatch(request, handler, () -> {
+            DocumentRemove remove = new DocumentRemove(path.id());
+            getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(remove::setCondition);
             DocumentOperationParameters rawParameters = getProperty(request, ROUTE).map(parameters()::withRoute)
                                                                                    .orElse(parameters());
             DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> handle(path, handler, response));
-            return () -> dispatchOperation(request, handler, () -> asyncSession.remove(path.id(), parameters));
+            return () -> dispatchOperation(request, handler, () -> asyncSession.remove(remove, parameters));
         });
         return ignoredContent;
     }
