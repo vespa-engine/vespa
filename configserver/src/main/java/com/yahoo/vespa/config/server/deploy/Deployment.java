@@ -77,15 +77,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
-                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap, boolean internalRestart) {
-        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false, internalRestart);
+                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true, false);
     }
 
     public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
-        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force, false);
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false, true);
     }
 
@@ -94,9 +94,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     public void prepare() {
         if (prepared) return;
         PrepareParams params = this.params.get();
-        if (params.internalRestart() && provisioner.isEmpty())
-            throw new IllegalArgumentException("Internal restart not supported without Provisioner");
-
         ApplicationId applicationId = params.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
             this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(
@@ -138,7 +135,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 (previousActiveSession != null ? ". Based on session " + previousActiveSession.getSessionId() : "") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
 
-            if (params.internalRestart()) {
+            if (configChangeActions != null && provisioner.isPresent()) {
                 RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
 
                 if (!restartActions.isEmpty()) {
@@ -200,7 +197,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
      */
     private static Supplier<PrepareParams> createPrepareParams(
             Clock clock, Duration timeout, LocalSession session,
-            boolean isBootstrap, boolean ignoreValidationErrors, boolean force, boolean internalRestart) {
+            boolean isBootstrap, boolean ignoreValidationErrors, boolean force) {
 
         // Supplier because shouldn't/cant create this before validateSessionStatus() for prepared deployments
         // memoized because we want to create this once for unprepared deployments
@@ -213,8 +210,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .timeoutBudget(timeoutBudget)
                     .ignoreValidationErrors(ignoreValidationErrors)
                     .isBootstrap(isBootstrap)
-                    .force(force)
-                    .internalRestart(internalRestart);
+                    .force(force);
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
 

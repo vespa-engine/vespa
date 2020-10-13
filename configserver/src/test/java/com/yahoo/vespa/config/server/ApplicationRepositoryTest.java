@@ -14,6 +14,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
@@ -188,6 +189,21 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void prepareAndActivateWithRestart() {
+        prepareAndActivate(testAppJdiscOnly);
+        PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
+        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+        assertEquals(HostFilter.hostname("mytesthost"), provisioner.lastRestartFilter());
+    }
+
+    @Test
+    public void prepareAndActivateWithRestartWithoutProvisioner() {
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withOrchestrator(orchestrator)
+                .withProvisioner(null)
+                .build();
+
         prepareAndActivate(testAppJdiscOnly);
         PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());

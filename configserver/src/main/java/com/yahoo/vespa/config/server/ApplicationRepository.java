@@ -68,7 +68,6 @@ import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -132,7 +131,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
-    private final BooleanFlag deployWithInternalRestart;
     private final BooleanFlag acquireProvisionLock;
 
     @Inject
@@ -183,7 +181,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = Objects.requireNonNull(clock);
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
-        this.deployWithInternalRestart = Flags.DEPLOY_WITH_INTERNAL_RESTART.bindTo(flagSource);
         this.acquireProvisionLock = Flags.ALWAYS_ACQUIRE_PROVISION_LOCK.bindTo(flagSource);
     }
 
@@ -394,10 +391,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         DeployLogger logger = new SilentDeployLogger();
         LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         sessionRepository.addLocalSession(newSession);
-        boolean internalRestart = deployWithInternalRestart.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, bootstrap, internalRestart));
+                                                 false /* don't validate as this is already deployed */, bootstrap));
     }
 
     @Override
