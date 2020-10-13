@@ -546,6 +546,7 @@ public class SessionRepository {
             Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
             LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
             waiter.awaitCompletion(timeoutBudget.timeLeft());
+            addLocalSession(session);
             return session;
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
