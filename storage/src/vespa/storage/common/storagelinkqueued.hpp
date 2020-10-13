@@ -15,14 +15,14 @@ namespace storage {
 template<typename Message>
 void
 StorageLinkQueued::Dispatcher<Message>::terminate() {
-    if (_thread.get()) {
+    if (_thread) {
         _thread->interrupt();
         {
             std::lock_guard<std::mutex> guard(_sync);
             _syncCond.notify_one();
         }
         _thread->join();
-        _thread.reset(0);
+        _thread.reset();
     }
 }
 
@@ -38,9 +38,7 @@ StorageLinkQueued::Dispatcher<Message>::Dispatcher(StorageLinkQueued& parent, un
     std::ostringstream name;
     name << "Queued storage " << (_replyDispatcher ? "up" : "down")
          << "link - " << _parent.getName();
-    _component.reset(new framework::Component(
-            parent.getComponentRegister(),
-            name.str()));
+    _component = std::make_unique<framework::Component>(parent.getComponentRegister(), name.str());
 }
 
 template<typename Message>
@@ -51,20 +49,16 @@ StorageLinkQueued::Dispatcher<Message>::~Dispatcher() {
 template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::start()
 {
-    assert(_thread.get() == 0);
-    framework::MilliSecTime maxProcessTime(5 * 1000);
-    framework::MilliSecTime waitTime(100);
-    _thread = _component->startThread(*this, maxProcessTime, waitTime);
+    assert( ! _thread);
+    _thread = _component->startThread(*this, 5s, 100ms);
 }
 
 template<typename Message>
-void StorageLinkQueued::Dispatcher<Message>::add(
-        const std::shared_ptr<Message>& m)
+void StorageLinkQueued::Dispatcher<Message>::add(const std::shared_ptr<Message>& m)
 {
-    using namespace std::chrono_literals;
     std::unique_lock<std::mutex> guard(_sync);
 
-    if (_thread.get() == 0) start();
+    if ( ! _thread) start();
     while ((_messages.size() > _maxQueueSize) && !_thread->interrupted()) {
         _syncCond.wait_for(guard, 100ms);
     }
@@ -75,7 +69,6 @@ void StorageLinkQueued::Dispatcher<Message>::add(
 template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::run(framework::ThreadHandle& h)
 {
-    using namespace std::chrono_literals;
     while (!h.interrupted()) {
         h.registerTick(framework::PROCESS_CYCLE);
         std::shared_ptr<Message> message;

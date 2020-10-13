@@ -74,12 +74,9 @@ DistributorNode::handleConfigChange(vespa::config::content::core::StorDistributo
 {
     framework::TickingLockGuard guard(_threadPool->freezeAllTicks());
     _context.getComponentRegister().setDistributorConfig(c);
-    framework::MilliSecTime ticksWaitTime(c.ticksWaitTimeMs);
-    framework::MilliSecTime maxProcessTime(c.maxProcessTimeMs);
-    _threadPool->updateParametersAllThreads(
-        ticksWaitTime,
-        maxProcessTime,
-        c.ticksBeforeWait);
+    _threadPool->updateParametersAllThreads(std::chrono::milliseconds(c.ticksWaitTimeMs),
+                                            std::chrono::milliseconds(c.maxProcessTimeMs),
+                                            c.ticksBeforeWait);
 }
 
 void

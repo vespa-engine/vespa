@@ -159,12 +159,6 @@ ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
     _hooks.emplace_back(std::move(hookPtr));
 }
 
-metrics::MetricLockGuard
-ComponentRegisterImpl::getMetricManagerLock()
-{
-    return _metricManager->getMetricLock();
-}
-
 void
 ComponentRegisterImpl::registerShutdownListener(ShutdownListener& listener)
 {

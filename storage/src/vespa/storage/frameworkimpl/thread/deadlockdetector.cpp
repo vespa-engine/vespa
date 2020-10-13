@@ -21,8 +21,8 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
       _cond(),
       _enableWarning(true),
       _enableShutdown(false),
-      _processSlackMs(30 * 1000),
-      _waitSlackMs(5 * 1000),
+      _processSlackMs(30s),
+      _waitSlackMs(5s),
       _reportedBucketDBLocksAtState(OK)
 {
     auto* dComp(dynamic_cast<DistributorComponentRegister*>(&compReg));
@@ -31,7 +31,7 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
         _component = _dComponent.get();
     } else {
         auto* slComp(dynamic_cast<ServiceLayerComponentRegister*>(&compReg));
-        assert(slComp != 0);
+        assert(slComp != nullptr);
         _slComponent = std::make_unique<ServiceLayerComponent>(*slComp, "deadlockdetector");
         _component = _slComponent.get();
     }
@@ -96,29 +96,27 @@ DeadLockDetector::visitThreads(ThreadVisitor& visitor) const
 }
 
 bool
-DeadLockDetector::isAboveFailThreshold(
-        const framework::MilliSecTime& time,
-        const framework::ThreadProperties& tp,
-        const framework::ThreadTickData& tick) const
+DeadLockDetector::isAboveFailThreshold(vespalib::steady_time time,
+                                       const framework::ThreadProperties& tp,
+                                       const framework::ThreadTickData& tick) const
 {
-    if (tp.getMaxCycleTime() == 0) {
+    if (tp.getMaxCycleTime() == vespalib::duration::zero()) {
         return false;
     }
-    uint64_t slack(tick._lastTickType == framework::WAIT_CYCLE
-            ? getWaitSlack().getTime() : getProcessSlack().getTime());
-    return (tick._lastTickMs + tp.getMaxCycleTime() + slack < time.getTime());
+    vespalib::duration slack(tick._lastTickType == framework::WAIT_CYCLE
+            ? getWaitSlack() : getProcessSlack());
+    return (tick._lastTick + tp.getMaxCycleTime() + slack < time);
 }
 
 bool
-DeadLockDetector::isAboveWarnThreshold(
-        const framework::MilliSecTime& time,
-        const framework::ThreadProperties& tp,
-        const framework::ThreadTickData& tick) const
+DeadLockDetector::isAboveWarnThreshold(vespalib::steady_time time,
+                                       const framework::ThreadProperties& tp,
+                                       const framework::ThreadTickData& tick) const
 {
-    if (tp.getMaxCycleTime() == 0) return false;
-    uint64_t slack(tick._lastTickType == framework::WAIT_CYCLE
-            ? getWaitSlack().getTime() : getProcessSlack().getTime());
-    return (tick._lastTickMs + tp.getMaxCycleTime() + slack / 4 < time.getTime());
+    if (tp.getMaxCycleTime() == vespalib::duration::zero()) return false;
+    vespalib::duration slack = tick._lastTickType == framework::WAIT_CYCLE
+            ? getWaitSlack() : getProcessSlack();
+    return (tick._lastTick + tp.getMaxCycleTime() + slack / 4 < time);
 }
 
 vespalib::string
@@ -142,9 +140,9 @@ namespace {
     struct ThreadChecker : public DeadLockDetector::ThreadVisitor
     {
         DeadLockDetector& _detector;
-        framework::MilliSecTime _currentTime;
+        vespalib::steady_time _currentTime;
 
-        ThreadChecker(DeadLockDetector& d, const framework::MilliSecTime& time)
+        ThreadChecker(DeadLockDetector& d, vespalib::steady_time time)
             : _detector(d), _currentTime(time) {}
 
         void visitThread(const vespalib::string& id,
@@ -153,7 +151,7 @@ namespace {
                          DeadLockDetector::State& state) override
         {
                 // In case we just got a new tick, ignore the thread
-            if (tick._lastTickMs > _currentTime.getTime()) return;
+            if (tick._lastTick > _currentTime) return;
                 // If thread is already in halted state, ignore it.
             if (state == DeadLockDetector::HALTED) return;
 
@@ -174,7 +172,7 @@ namespace {
 }
 
 void
-DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
+DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
                                  const vespalib::string& id,
                                  const framework::ThreadProperties&,
                                  const framework::ThreadTickData& tick,
@@ -182,7 +180,7 @@ DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
 {
     vespalib::asciistream error;
     error << "Thread " << id << " has gone "
-          << (currentTime.getTime() - tick._lastTickMs)
+          << vespalib::count_ms(currentTime - tick._lastTick)
           << " milliseconds without registering a tick.";
     if (!warnOnly) {
         if (_enableShutdown && !warnOnly) {
@@ -200,8 +198,7 @@ DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
                   error.str().data());
             if (_reportedBucketDBLocksAtState != WARNED) {
                 _reportedBucketDBLocksAtState = WARNED;
-                LOG(info, "Locks in bucket database at deadlock time:"
-                          "\n%s",
+                LOG(info, "Locks in bucket database at deadlock time:\n%s",
                     getBucketLockInfo().c_str());
             }
         }
@@ -228,8 +225,7 @@ DeadLockDetector::run(framework::ThreadHandle& thread)
 {
     std::unique_lock sync(_lock);
     while (!thread.interrupted()) {
-        framework::MilliSecTime time(_component->getClock().getTimeInMillis());
-        ThreadChecker checker(*this, time);
+        ThreadChecker checker(*this, _component->getClock().getMonotonicTime());
         visitThreads(checker);
         _cond.wait_for(sync, 1s);
         thread.registerTick(framework::WAIT_CYCLE);
@@ -264,14 +260,14 @@ namespace {
 
     struct ThreadStatusWriter : public DeadLockDetector::ThreadVisitor {
         ThreadTable& _table;
-        framework::MilliSecTime _time;
-        framework::MilliSecTime _processSlack;
-        framework::MilliSecTime _waitSlack;
+        vespalib::steady_time _time;
+        vespalib::duration _processSlack;
+        vespalib::duration _waitSlack;
 
         ThreadStatusWriter(ThreadTable& table,
-                           const framework::MilliSecTime& time,
-                           framework::MilliSecTime processSlack,
-                           framework::MilliSecTime waitSlack)
+                           vespalib::steady_time time,
+                           vespalib::duration processSlack,
+                           vespalib::duration waitSlack)
             : _table(table), _time(time),
               _processSlack(processSlack), _waitSlack(waitSlack) {}
 
@@ -289,11 +285,11 @@ namespace {
         {
             _table._table.addRow(id);
             uint32_t i = _table._table.getRowCount() - 1;
-            _table._msSinceLastTick[i] = _time.getTime() - tick._lastTickMs;
-            _table._maxProcTickTime[i] = tp.getMaxProcessTime();
-            _table._maxWaitTickTime[i] = tp.getWaitTime();
-            _table._maxProcTickTimeSeen[i] = tick._maxProcessingTimeSeenMs;
-            _table._maxWaitTickTimeSeen[i] = tick._maxWaitTimeSeenMs;
+            _table._msSinceLastTick[i] = vespalib::count_ms(_time - tick._lastTick);
+            _table._maxProcTickTime[i] = vespalib::count_ms(tp.getMaxProcessTime());
+            _table._maxWaitTickTime[i] = vespalib::count_ms(tp.getWaitTime());
+            _table._maxProcTickTimeSeen[i] = vespalib::count_ms(tick._maxProcessingTimeSeen);
+            _table._maxWaitTickTimeSeen[i] = vespalib::count_ms(tick._maxWaitTimeSeen);
         }
     };
 }
@@ -307,14 +303,15 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
     ThreadTable threads;
     std::lock_guard guard(_lock);
     framework::MilliSecTime time(_component->getClock().getTimeInMillis());
-    ThreadStatusWriter writer(threads, time, getProcessSlack(), getWaitSlack());
+    ThreadStatusWriter writer(threads, _component->getClock().getMonotonicTime(),
+                              getProcessSlack(), getWaitSlack());
     visitThreads(writer);
     std::ostringstream ost;
     threads._table.print(ost);
     out << ost.str();
     out << "<p>\n"
-        << "Note that there is a global slack period of " << getProcessSlack()
-        << " ms for processing ticks and " << getWaitSlack()
+        << "Note that there is a global slack period of " << vespalib::count_ms(getProcessSlack())
+        << " ms for processing ticks and " << vespalib::count_ms(getWaitSlack())
         << " ms for wait ticks. Actual shutdown or warning logs will not"
         << " appear before this slack time is expendede on top of the per"
         << " thread value.\n"

@@ -96,9 +96,7 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
       _messageSessionFactory(messageSessionFac),
       _visitorFactories(visitorFactories)
 {
-    framework::MilliSecTime maxProcessingTime(30 * 1000);
-    framework::MilliSecTime waitTime(1000);
-    _thread = _component.startThread(*this, maxProcessingTime, waitTime);
+    _thread = _component.startThread(*this, 30s, 1s);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
 }
 

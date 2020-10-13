@@ -50,8 +50,8 @@ public:
      */
     virtual void join() = 0;
 
-    virtual void updateParameters(uint64_t waitTime,
-                                  uint64_t maxProcessTime,
+    virtual void updateParameters(vespalib::duration waitTime,
+                                  vespalib::duration maxProcessTime,
                                   int ticksBeforeWait) = 0;
 
     /**

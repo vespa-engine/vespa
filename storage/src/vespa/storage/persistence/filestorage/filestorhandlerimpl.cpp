@@ -326,8 +326,8 @@ FileStorHandlerImpl::tryHandlePause(uint16_t disk) const
     if (isPaused()) {
         // Wait a single time to see if filestor gets unpaused.
         if (!_diskInfo[disk].isClosed()) {
-            vespalib::MonitorGuard g(_pauseMonitor);
-            g.wait(100);
+            std::unique_lock g(_pauseMonitor);
+            _pauseCond.wait_for(g, 100ms);
         }
         return !isPaused();
     }
@@ -1347,9 +1347,8 @@ FileStorHandlerImpl::pause()
 void
 FileStorHandlerImpl::resume()
 {
-    vespalib::MonitorGuard g(_pauseMonitor);
     _paused.store(false, std::memory_order_relaxed);
-    g.broadcast();
+    _pauseCond.notify_all();
 }
 
 } // storage

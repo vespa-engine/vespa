@@ -71,9 +71,8 @@ StateManager::~StateManager()
 void
 StateManager::onOpen()
 {
-    framework::MilliSecTime maxProcessingTime(30 * 1000);
     if (!_noThreadTestMode) {
-        _thread = _component.startThread(*this, maxProcessingTime);
+        _thread = _component.startThread(*this, 30s);
     }
 }
 
@@ -608,12 +607,10 @@ StateManager::getNodeInfo() const
         stream << "metrics";
         try {
             metrics::MetricLockGuard lock(_metricManager.getMetricLock());
-            std::vector<uint32_t> periods(
-                    _metricManager.getSnapshotPeriods(lock));
+            std::vector<uint32_t> periods(_metricManager.getSnapshotPeriods(lock));
             if (!periods.empty()) {
                 uint32_t period = periods[0];
-                const metrics::MetricSnapshot& snapshot(
-                        _metricManager.getMetricSnapshot(lock, period));
+                const metrics::MetricSnapshot& snapshot(_metricManager.getMetricSnapshot(lock, period));
                 metrics::JsonWriter metricJsonWriter(stream);
                 _metricManager.visit(lock,  snapshot, metricJsonWriter, "fleetcontroller");
             } else {

@@ -23,12 +23,12 @@ Component::close()
 Component::Component(ComponentRegister& cr, vespalib::stringref name)
     : _componentRegister(&cr),
       _name(name),
-      _status(0),
-      _metric(0),
-      _threadPool(0),
-      _metricReg(0),
-      _clock(0),
-      _listener(0)
+      _status(nullptr),
+      _metric(nullptr),
+      _threadPool(nullptr),
+      _metricReg(nullptr),
+      _clock(nullptr),
+      _listener(nullptr)
 {
     cr.registerComponent(*this);
 }
@@ -38,23 +38,23 @@ Component::~Component() = default;
 void
 Component::registerComponentStateListener(ComponentStateListener& l)
 {
-    assert(_listener == 0);
+    assert(_listener == nullptr);
     _listener = &l;
 }
 
 void
 Component::registerStatusPage(const StatusReporter& sr)
 {
-    assert(_status == 0);
+    assert(_status == nullptr);
     _status = &sr;
 }
 
 void
 Component::registerMetric(metrics::Metric& m)
 {
-    assert(_metric == 0);
+    assert(_metric == nullptr);
     _metric = &m;
-    if (_metricReg != 0) {
+    if (_metricReg != nullptr) {
         _metricReg->registerMetric(m);
     }
 }
@@ -64,18 +64,8 @@ Component::registerMetricUpdateHook(MetricUpdateHook& hook, SecondTime period)
 {
     assert(_metricUpdateHook.first == 0);
     _metricUpdateHook = std::make_pair(&hook, period);
-    if (_metricReg != 0) {
+    if (_metricReg != nullptr) {
         _metricReg->registerUpdateHook(_name, *_metricUpdateHook.first, _metricUpdateHook.second);
-    }
-}
-
-vespalib::MonitorGuard
-Component::getMetricManagerLock()
-{
-    if (_metricReg != 0) {
-        return _metricReg->getMetricManagerLock();
-    } else {
-        return vespalib::MonitorGuard();
     }
 }
 
@@ -85,7 +75,7 @@ Component::setMetricRegistrator(MetricRegistrator& mr) {
     if (_metricUpdateHook.first != 0) {
         _metricReg->registerUpdateHook(_name, *_metricUpdateHook.first, _metricUpdateHook.second);
     }
-    if (_metric != 0) {
+    if (_metric != nullptr) {
         _metricReg->registerMetric(*_metric);
     }
 }
@@ -93,16 +83,16 @@ Component::setMetricRegistrator(MetricRegistrator& mr) {
 ThreadPool&
 Component::getThreadPool() const
 {
-    assert(_threadPool != 0);
+    assert(_threadPool != nullptr);
     return *_threadPool;
 }
 
 // Helper functions for components wanting to start a single thread.
 Thread::UP
-Component::startThread(Runnable& runnable, MilliSecTime waitTime, MilliSecTime maxProcessTime, int ticksBeforeWait)
+Component::startThread(Runnable& runnable, vespalib::duration waitTime, vespalib::duration maxProcessTime, int ticksBeforeWait)
 {
-    return getThreadPool().startThread(runnable, getName(), waitTime.getTime(),
-                                       maxProcessTime.getTime(), ticksBeforeWait);
+    return getThreadPool().startThread(runnable, getName(), waitTime,
+                                       maxProcessTime, ticksBeforeWait);
 }
 
 void

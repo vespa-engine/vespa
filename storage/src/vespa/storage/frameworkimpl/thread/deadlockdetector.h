@@ -29,32 +29,30 @@ struct DeadLockDetector : private framework::Runnable,
     enum State { OK, WARNED, HALTED };
 
     DeadLockDetector(StorageComponentRegister&,
-                     AppKiller::UP killer = AppKiller::UP(new RealAppKiller));
-    ~DeadLockDetector();
+                     AppKiller::UP killer = std::make_unique<RealAppKiller>());
+    ~DeadLockDetector() override;
 
     void enableWarning(bool enable);
     void enableShutdown(bool enable);
     // There are no data read/write dependencies on neither _processSlackMs
     // nor _waitSlackMs so relaxed ops suffice.
-    void setProcessSlack(framework::MilliSecTime slack) {
-        _processSlackMs.store(slack.getTime(), std::memory_order_relaxed);
+    void setProcessSlack(vespalib::duration slack) {
+        _processSlackMs.store(slack, std::memory_order_relaxed);
     }
-    framework::MilliSecTime getProcessSlack() const {
-        return framework::MilliSecTime(
-                _processSlackMs.load(std::memory_order_relaxed));
+    vespalib::duration getProcessSlack() const {
+        return _processSlackMs.load(std::memory_order_relaxed);
     }
-    void setWaitSlack(framework::MilliSecTime slack) {
-        _waitSlackMs.store(slack.getTime(), std::memory_order_relaxed);
+    void setWaitSlack(vespalib::duration slack) {
+        _waitSlackMs.store(slack, std::memory_order_relaxed);
     }
-    framework::MilliSecTime getWaitSlack() const {
-        return framework::MilliSecTime(
-                _waitSlackMs.load(std::memory_order_relaxed));
+    vespalib::duration getWaitSlack() const {
+        return _waitSlackMs.load(std::memory_order_relaxed);
     }
 
         // These utility functions are public as internal anonymous classes are
         // using them. Can also be useful for whitebox testing.
     struct ThreadVisitor {
-        virtual ~ThreadVisitor() {}
+        virtual ~ThreadVisitor() = default;
         virtual void visitThread(const vespalib::string& id,
                                  const framework::ThreadProperties&,
                                  const framework::ThreadTickData&,
@@ -62,13 +60,13 @@ struct DeadLockDetector : private framework::Runnable,
     };
     void visitThreads(ThreadVisitor&) const;
 
-    bool isAboveFailThreshold(const framework::MilliSecTime& time,
+    bool isAboveFailThreshold(vespalib::steady_time time,
                               const framework::ThreadProperties& tp,
                               const framework::ThreadTickData& tick) const;
-    bool isAboveWarnThreshold(const framework::MilliSecTime& time,
+    bool isAboveWarnThreshold(vespalib::steady_time ,
                               const framework::ThreadProperties& tp,
                               const framework::ThreadTickData& tick) const;
-    void handleDeadlock(const framework::MilliSecTime& currentTime,
+    void handleDeadlock(vespalib::steady_time currentTime,
                         const vespalib::string& id,
                         const framework::ThreadProperties& tp,
                         const framework::ThreadTickData& tick,
@@ -81,8 +79,8 @@ private:
     std::condition_variable _cond;
     bool _enableWarning;
     bool _enableShutdown;
-    std::atomic<uint64_t> _processSlackMs;
-    std::atomic<uint64_t> _waitSlackMs;
+    std::atomic<vespalib::duration> _processSlackMs;
+    std::atomic<vespalib::duration> _waitSlackMs;
     State _reportedBucketDBLocksAtState;
     DistributorComponent::UP _dComponent;
     ServiceLayerComponent::UP _slComponent;

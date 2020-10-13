@@ -178,10 +178,7 @@ StorageBucketDBInitializer::onOpen()
             sendDown(msg);
         }
     }
-    framework::MilliSecTime maxProcessingTime(10);
-    framework::MilliSecTime sleepTime(1000);
-    _system._thread = _system._component.startThread(
-            *this, maxProcessingTime, sleepTime);
+    _system._thread = _system._component.startThread(*this, 10ms, 1s);
 }
 
 void
@@ -203,19 +200,14 @@ StorageBucketDBInitializer::run(framework::ThreadHandle& thread)
             std::lock_guard<std::mutex> replyGuard(_state._replyLock);
             _state._replies.swap(replies);
         }
-        for (std::list<api::StorageMessage::SP>::iterator it = replies.begin();
-             it != replies.end(); ++it)
-        {
-            api::InternalReply& reply(static_cast<api::InternalReply&>(**it));
+        for (api::StorageMessage::SP & msg : replies) {
+            api::InternalReply& reply(static_cast<api::InternalReply&>(*msg));
             if (reply.getType() == ReadBucketListReply::ID) {
-                handleReadBucketListReply(
-                        static_cast<ReadBucketListReply&>(reply));
+                handleReadBucketListReply(static_cast<ReadBucketListReply&>(reply));
             } else if (reply.getType() == ReadBucketInfoReply::ID) {
-                handleReadBucketInfoReply(
-                        static_cast<ReadBucketInfoReply&>(reply));
+                handleReadBucketInfoReply(static_cast<ReadBucketInfoReply&>(reply));
             } else if (reply.getType() == InternalBucketJoinReply::ID) {
-                handleInternalBucketJoinReply(
-                        static_cast<InternalBucketJoinReply&>(reply));
+                handleInternalBucketJoinReply(static_cast<InternalBucketJoinReply&>(reply));
             }
         }
         if (_state._gottenInitProgress) {

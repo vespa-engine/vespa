@@ -414,9 +414,7 @@ void BucketManager::onOpen()
 
 void BucketManager::startWorkerThread()
 {
-    framework::MilliSecTime maxProcessingTime(30 * 1000);
-    framework::MilliSecTime waitTime(1000);
-    _thread = _component.startThread(*this, maxProcessingTime, waitTime);
+    _thread = _component.startThread(*this, 30s, 1s);
 }
 
 // --------- Commands --------- //

@@ -3,7 +3,7 @@
 
 #include <boost/operators.hpp>
 #include <vespa/vespalib/stllike/string.h>
-#include <chrono>
+#include <vespa/vespalib/util/time.h>
 
 namespace vespalib {
     class asciistream;

@@ -14,6 +14,7 @@
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/util/sync.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");

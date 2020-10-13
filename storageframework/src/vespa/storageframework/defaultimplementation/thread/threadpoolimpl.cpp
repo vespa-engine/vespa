@@ -46,17 +46,16 @@ ThreadPoolImpl::~ThreadPoolImpl()
 }
 
 Thread::UP
-ThreadPoolImpl::startThread(Runnable& runnable, vespalib::stringref id, uint64_t waitTimeMs,
-                            uint64_t maxProcessTime, int ticksBeforeWait)
+ThreadPoolImpl::startThread(Runnable& runnable, vespalib::stringref id, vespalib::duration waitTimeMs,
+                            vespalib::duration maxProcessTime, int ticksBeforeWait)
 {
     std::lock_guard lock(_threadVectorLock);
     if (_stopping) {
         throw IllegalStateException("Threadpool is stopping", VESPA_STRLOC);
     }
-    ThreadImpl* ti;
-    Thread::UP t(ti = new ThreadImpl(*this, runnable, id, waitTimeMs, maxProcessTime, ticksBeforeWait));
-    _threads.push_back(ti);
-    return t;
+    auto thread = std::make_unique<ThreadImpl>(*this, runnable, id, waitTimeMs, maxProcessTime, ticksBeforeWait);
+    _threads.push_back(thread.get());
+    return thread;
 }
 
 void

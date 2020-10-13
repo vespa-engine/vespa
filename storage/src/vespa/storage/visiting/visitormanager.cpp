@@ -48,15 +48,13 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     _configFetcher.subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
     _configFetcher.start();
     _component.registerMetric(*_metrics);
-    framework::MilliSecTime maxProcessTime(30 * 1000);
-    framework::MilliSecTime waitTime(1000);
-    _thread = _component.startThread(*this, maxProcessTime, waitTime);
+    _thread = _component.startThread(*this, 30s, 1s);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
-    _visitorFactories["dumpvisitor"].reset(new DumpVisitorSingleFactory);
-    _visitorFactories["dumpvisitorsingle"].reset(new DumpVisitorSingleFactory);
-    _visitorFactories["testvisitor"].reset(new TestVisitorFactory);
-    _visitorFactories["countvisitor"].reset(new CountVisitorFactory);
-    _visitorFactories["recoveryvisitor"].reset(new RecoveryVisitorFactory);
+    _visitorFactories["dumpvisitor"] = std::make_shared<DumpVisitorSingleFactory>();
+    _visitorFactories["dumpvisitorsingle"] = std::make_shared<DumpVisitorSingleFactory>();
+    _visitorFactories["testvisitor"] = std::make_shared<TestVisitorFactory>();
+    _visitorFactories["countvisitor"] = std::make_shared<CountVisitorFactory>();
+    _visitorFactories["recoveryvisitor"] = std::make_shared<RecoveryVisitorFactory>();
     _component.registerStatusPage(*this);
 }
 
