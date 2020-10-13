@@ -6,8 +6,7 @@
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/rankresult.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 
@@ -108,9 +107,9 @@ struct ArrayFixture : FixtureBase {
     }
 
     template <typename ExpectedType>
-    void check_prepare_state_output(const vespalib::tensor::Tensor & tensor, const ExpectedType & expected) {
+    void check_prepare_state_output(const vespalib::eval::Value & tensor, const ExpectedType & expected) {
         vespalib::nbostream os;
-        vespalib::tensor::TypedBinaryFormat::serialize(os, tensor);
+        vespalib::eval::EngineOrFactory::get().encode(tensor, os);
         vespalib::string input_vector(os.data(), os.size());
         check_prepare_state_output(".tensor", input_vector, expected);
     }

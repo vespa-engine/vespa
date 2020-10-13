@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "direct_tensor_store.h"
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
 using vespalib::datastore::EntryRef;
@@ -44,7 +44,7 @@ DirectTensorStore::DirectTensorStore()
 
 DirectTensorStore::~DirectTensorStore() = default;
 
-const vespalib::tensor::Tensor*
+const vespalib::eval::Value *
 DirectTensorStore::get_tensor(EntryRef ref) const
 {
     if (!ref.valid()) {
@@ -56,7 +56,7 @@ DirectTensorStore::get_tensor(EntryRef ref) const
 }
 
 EntryRef
-DirectTensorStore::store_tensor(std::unique_ptr<Tensor> tensor)
+DirectTensorStore::store_tensor(std::unique_ptr<vespalib::eval::Value> tensor)
 {
     assert(tensor);
     return add_entry(TensorSP(std::move(tensor)));

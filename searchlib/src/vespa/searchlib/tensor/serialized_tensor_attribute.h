@@ -15,8 +15,8 @@ class SerializedTensorAttribute : public TensorAttribute {
 public:
     SerializedTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~SerializedTensorAttribute();
-    virtual void setTensor(DocId docId, const Tensor &tensor) override;
-    virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
+    virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
+    virtual std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
     virtual bool onLoad() override;
     virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual void compactWorst() override;

@@ -6,18 +6,23 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/tensor/partial_update.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
+#include <cassert>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
-using vespalib::tensor::Tensor;
 using vespalib::make_string;
 using vespalib::eval::ValueType;
+using vespalib::eval::EngineOrFactory;
+using vespalib::tensor::TensorPartialUpdate;
 
 namespace document {
 
@@ -33,6 +38,16 @@ convertToCompatibleType(const TensorDataType &tensorType)
         }
     }
     return std::make_unique<const TensorDataType>(ValueType::tensor_type(std::move(list), tensorType.getTensorType().cell_type()));
+}
+
+std::unique_ptr<vespalib::eval::Value>
+old_remove(const vespalib::eval::Value *input,
+           const vespalib::eval::Value *remove_spec)
+{
+    auto a = dynamic_cast<const vespalib::tensor::Tensor *>(input);
+    auto b = dynamic_cast<const vespalib::tensor::SparseTensor *>(remove_spec);
+    vespalib::tensor::CellValues cellAddresses(*b);
+    return a->remove(cellAddresses);
 }
 
 }
@@ -102,16 +117,19 @@ TensorRemoveUpdate::checkCompatibility(const Field &field) const
     }
 }
 
-std::unique_ptr<Tensor>
-TensorRemoveUpdate::applyTo(const Tensor &tensor) const
+std::unique_ptr<vespalib::eval::Value>
+TensorRemoveUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto addressTensor = _tensor->getAsTensorPtr();
     if (addressTensor) {
-        // Address tensor being sparse was validated during deserialize().
-        vespalib::tensor::CellValues cellAddresses(static_cast<const vespalib::tensor::SparseTensor &>(*addressTensor));
-        return tensor.remove(cellAddresses);
+        auto engine = EngineOrFactory::get();
+        if (engine.is_factory()) {
+            return TensorPartialUpdate::remove(tensor, *addressTensor, engine.factory());
+        } else {
+            return old_remove(&tensor, addressTensor);
+        }
     }
-    return std::unique_ptr<Tensor>();
+    return std::unique_ptr<vespalib::eval::Value>();
 }
 
 bool
@@ -153,14 +171,26 @@ TensorRemoveUpdate::print(std::ostream &out, bool verbose, const std::string &in
 namespace {
 
 void
-verifyAddressTensorIsSparse(const Tensor *addressTensor)
+verifyAddressTensorIsSparse(const vespalib::eval::Value *addressTensor)
 {
-    if (addressTensor && !dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor)) {
-        vespalib::string err = make_string("Expected address tensor to be sparse, but has type '%s'",
-                                           addressTensor->type().to_spec().c_str());
-        throw IllegalStateException(err, VESPA_STRLOC);
+    if (addressTensor == nullptr) {
+        return;
     }
+    auto engine = EngineOrFactory::get();
+    if (engine.is_factory()) {
+        if (addressTensor->type().is_sparse()) {
+            return;
+        }
+    } else {
+        if (dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor)) {
+            return;
+        }
+    }
+    vespalib::string err = make_string("Expected address tensor to be sparse, but has type '%s'",
+                                       addressTensor->type().to_spec().c_str());
+    throw IllegalStateException(err, VESPA_STRLOC);
 }
+
 
 }
 

@@ -6,16 +6,14 @@
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <ostream>
 #include <cassert>
 
-using vespalib::tensor::Tensor;
 using vespalib::eval::EngineOrFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using Engine = vespalib::tensor::DefaultTensorEngine;
 using namespace vespalib::xml;
 
 namespace document {
@@ -53,7 +51,7 @@ TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
       _altered(true)
 {
     if (rhs._tensor) {
-        _tensor = rhs._tensor->clone();
+        _tensor = EngineOrFactory::get().copy(*rhs._tensor);
     }
 }
 
@@ -80,7 +78,7 @@ TensorFieldValue::operator=(const TensorFieldValue &rhs)
         if (&_dataType == &rhs._dataType || !rhs._tensor ||
             _dataType.isAssignableType(rhs._tensor->type())) {
             if (rhs._tensor) {
-                _tensor = rhs._tensor->clone();
+                _tensor = EngineOrFactory::get().copy(*rhs._tensor);
             } else {
                 _tensor.reset();
             }
@@ -94,7 +92,7 @@ TensorFieldValue::operator=(const TensorFieldValue &rhs)
 
 
 TensorFieldValue &
-TensorFieldValue::operator=(std::unique_ptr<Tensor> rhs)
+TensorFieldValue::operator=(std::unique_ptr<vespalib::eval::Value> rhs)
 {
     if (!rhs || _dataType.isAssignableType(rhs->type())) {
         _tensor = std::move(rhs);
@@ -111,11 +109,7 @@ TensorFieldValue::make_empty_if_not_existing()
 {
     if (!_tensor) {
         TensorSpec empty_spec(_dataType.getTensorType().to_spec());
-        auto empty_value = Engine::ref().from_spec(empty_spec);
-        auto tensor_ptr = dynamic_cast<Tensor*>(empty_value.get());
-        assert(tensor_ptr != nullptr);
-        _tensor.reset(tensor_ptr);
-        empty_value.release();
+        _tensor = EngineOrFactory::get().from_spec(empty_spec);
     }
 }
 
@@ -163,7 +157,7 @@ TensorFieldValue::print(std::ostream& out, bool verbose,
     (void) indent;
     out << "{TensorFieldValue: ";
     if (_tensor) {
-        out << Engine::ref().to_spec(*_tensor).to_string();
+        out << EngineOrFactory::get().to_spec(*_tensor).to_string();
     } else {
         out << "null";
     }
@@ -192,7 +186,7 @@ TensorFieldValue::assign(const FieldValue &value)
 
 
 void
-TensorFieldValue::assignDeserialized(std::unique_ptr<Tensor> rhs)
+TensorFieldValue::assignDeserialized(std::unique_ptr<vespalib::eval::Value> rhs)
 {
     if (!rhs || _dataType.isAssignableType(rhs->type())) {
         _tensor = std::move(rhs);

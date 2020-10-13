@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "requestcontext.h"
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -9,6 +10,8 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.requestcontext");
+
+using vespalib::eval::EngineOrFactory;
 
 namespace proton {
 
@@ -50,7 +53,7 @@ RequestContext::get_query_tensor(const vespalib::string& tensor_name) const
         const vespalib::string& value = property.get();
         vespalib::nbostream stream(value.data(), value.size());
         try {
-            return vespalib::tensor::DefaultTensorEngine::ref().decode(stream);
+            return EngineOrFactory::get().decode(stream);
         } catch (vespalib::IllegalArgumentException& ex) {
             LOG(warning, "Query tensor '%s' could not be deserialized", tensor_name.c_str());
             return vespalib::eval::Value::UP();

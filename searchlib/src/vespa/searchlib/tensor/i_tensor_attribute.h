@@ -6,9 +6,8 @@
 
 namespace vespalib::tensor {
 class MutableDenseTensorView;
-class Tensor;
 }
-namespace vespalib::eval { class ValueType; }
+namespace vespalib::eval { class ValueType; class Value; }
 namespace vespalib::slime { struct Inserter; }
 
 namespace search::tensor {
@@ -19,13 +18,11 @@ namespace search::tensor {
 class ITensorAttribute
 {
 public:
-    using Tensor = vespalib::tensor::Tensor;
-
     virtual ~ITensorAttribute() {}
-    virtual std::unique_ptr<Tensor> getTensor(uint32_t docId) const = 0;
-    virtual std::unique_ptr<Tensor> getEmptyTensor() const = 0;
+    virtual std::unique_ptr<vespalib::eval::Value> getTensor(uint32_t docId) const = 0;
+    virtual std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const = 0;
     virtual void extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const = 0;
-    virtual const Tensor& get_tensor_ref(uint32_t docid) const = 0;
+    virtual const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const = 0;
     virtual bool supports_extract_dense_view() const = 0;
     virtual bool supports_get_tensor_ref() const = 0;
 

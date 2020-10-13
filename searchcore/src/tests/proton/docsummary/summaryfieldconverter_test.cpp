@@ -45,9 +45,10 @@
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using document::Annotation;
@@ -93,13 +94,13 @@ using search::linguistics::TERM;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;
 using vespalib::Slime;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
+using vespalib::eval::EngineOrFactory;
 using vespalib::geo::ZCurve;
 using vespalib::slime::Cursor;
 using vespalib::string;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DefaultTensorEngine;
 
 using namespace search::docsummary;
 
@@ -165,7 +166,7 @@ class Test : public vespalib::TestApp {
     void checkString(const string &str, const FieldValue *value);
     void checkStringForAllConversions(const string& expected, const FieldValue* fv);
     void checkData(const search::RawBuf &data, const FieldValue *value);
-    void checkTensor(const Tensor::UP &tensor, const FieldValue *value);
+    void checkTensor(const Value::UP &tensor, const FieldValue *value);
     template <unsigned int N>
     void checkArray(const char *(&str)[N], const FieldValue *value);
     void setSummaryField(const string &name);
@@ -464,7 +465,7 @@ void Test::checkData(const search::RawBuf &buf, const FieldValue *value) {
     EXPECT_TRUE(memcmp(buf.GetDrainPos(), got.first, got.second) == 0);
 }
 
-void Test::checkTensor(const Tensor::UP &tensor, const FieldValue *value) {
+void Test::checkTensor(const Value::UP &tensor, const FieldValue *value) {
     ASSERT_TRUE(value);
     const TensorFieldValue *s = dynamic_cast<const TensorFieldValue *>(value);
     ASSERT_TRUE(s);
@@ -675,9 +676,9 @@ Test::requireThatPredicateIsPrinted()
                 SFC::convertSummaryField(false, *doc.getValue("predicate")).get());
 }
 
-Tensor::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
-    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+Value::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = EngineOrFactory::get().from_spec(spec);
+    return tensor;
 }
 
 void
@@ -697,7 +698,7 @@ Test::requireThatTensorIsNotConverted()
                                                    *doc.getValue("tensor")).get()));
     doc.setValue("tensor", TensorFieldValue());
 
-    TEST_CALL(checkTensor(Tensor::UP(),
+    TEST_CALL(checkTensor(Value::UP(),
                           SFC::convertSummaryField(false,
                                                    *doc.getValue("tensor")).get()));
 }

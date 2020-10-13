@@ -22,8 +22,8 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/backtrace.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -41,6 +41,7 @@ using vespalib::nbostream;
 using vespalib::Memory;
 using vespalib::stringref;
 using vespalib::compression::CompressionConfig;
+using vespalib::eval::EngineOrFactory;
 
 namespace document {
 
@@ -363,10 +364,10 @@ VespaDocumentDeserializer::read(TensorFieldValue &value)
         throw DeserializeException(vespalib::make_string("Stream failed size(%zu), needed(%zu) to deserialize tensor field value", _stream.size(), length),
                                    VESPA_STRLOC);
     }
-    std::unique_ptr<vespalib::tensor::Tensor> tensor;
+    std::unique_ptr<vespalib::eval::Value> tensor;
     if (length != 0) {
         nbostream wrapStream(_stream.peek(), length);
-        tensor = vespalib::tensor::TypedBinaryFormat::deserialize(wrapStream);
+        tensor = EngineOrFactory::get().decode(wrapStream);
         if (wrapStream.size() != 0) {
             throw DeserializeException("Leftover bytes deserializing tensor field value.", VESPA_STRLOC);
         }

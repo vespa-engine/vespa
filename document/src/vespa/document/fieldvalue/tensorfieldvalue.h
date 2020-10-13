@@ -5,6 +5,7 @@
 #include "fieldvalue.h"
 
 namespace vespalib { namespace tensor { class Tensor; } }
+namespace vespalib::eval { class Value; }
 
 namespace document {
 
@@ -16,7 +17,7 @@ class TensorDataType;
 class TensorFieldValue : public FieldValue {
 private:
     const TensorDataType &_dataType;
-    std::unique_ptr<vespalib::tensor::Tensor> _tensor;
+    std::unique_ptr<vespalib::eval::Value> _tensor;
     bool _altered;
 public:
     TensorFieldValue();
@@ -26,7 +27,7 @@ public:
     ~TensorFieldValue();
 
     TensorFieldValue &operator=(const TensorFieldValue &rhs);
-    TensorFieldValue &operator=(std::unique_ptr<vespalib::tensor::Tensor> rhs);
+    TensorFieldValue &operator=(std::unique_ptr<vespalib::eval::Value> rhs);
 
     void make_empty_if_not_existing();
 
@@ -39,10 +40,10 @@ public:
                        const std::string& indent) const override;
     virtual void printXml(XmlOutputStream& out) const override;
     virtual FieldValue &assign(const FieldValue &value) override;
-    const vespalib::tensor::Tensor *getAsTensorPtr() const {
+    const vespalib::eval::Value *getAsTensorPtr() const {
         return _tensor.get();
     }
-    void assignDeserialized(std::unique_ptr<vespalib::tensor::Tensor> rhs);
+    void assignDeserialized(std::unique_ptr<vespalib::eval::Value> rhs);
     virtual int compare(const FieldValue& other) const override;
 
     DECLARE_IDENTIFIABLE(TensorFieldValue);

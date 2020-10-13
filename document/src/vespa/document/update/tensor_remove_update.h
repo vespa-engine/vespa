@@ -2,7 +2,7 @@
 
 #include "valueupdate.h"
 
-namespace vespalib::tensor { class Tensor; }
+namespace vespalib::eval { class Value; }
 
 namespace document {
 
@@ -30,7 +30,7 @@ public:
     TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs);
     TensorRemoveUpdate &operator=(TensorRemoveUpdate &&rhs);
     const TensorFieldValue &getTensor() const { return *_tensor; }
-    std::unique_ptr<vespalib::tensor::Tensor> applyTo(const vespalib::tensor::Tensor &tensor) const;
+    std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value &tensor) const;
 
     bool operator==(const ValueUpdate &other) const override;
     void checkCompatibility(const Field &field) const override;

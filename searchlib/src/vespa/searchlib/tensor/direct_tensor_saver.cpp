@@ -3,15 +3,13 @@
 #include "direct_tensor_saver.h"
 #include "direct_tensor_store.h"
 
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::GenerationHandler;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::TypedBinaryFormat;
-
 
 namespace search::tensor {
 
@@ -38,10 +36,10 @@ DirectTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     const uint32_t docIdLimit(_refs.size());
     vespalib::nbostream stream;
     for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
-        const Tensor *tensor = _tensorStore.get_tensor(_refs[lid]);
+        const vespalib::eval::Value *tensor = _tensorStore.get_tensor(_refs[lid]);
         if (tensor) {
             stream.clear();
-            TypedBinaryFormat::serialize(stream, *tensor);
+            vespalib::eval::EngineOrFactory::get().encode(*tensor, stream);
             uint32_t sz = stream.size();
             datWriter->write(&sz, sizeof(sz));
             datWriter->write(stream.peek(), stream.size());

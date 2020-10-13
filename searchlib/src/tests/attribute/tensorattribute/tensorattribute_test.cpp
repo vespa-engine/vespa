@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/exceptions.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -50,36 +50,19 @@ using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::DenseTensor;
-using vespalib::tensor::DenseTensorView;
-using vespalib::tensor::Tensor;
+using vespalib::eval::Value;
+using vespalib::eval::EngineOrFactory;
 
 using DoubleVector = std::vector<double>;
 using generation_t = vespalib::GenerationHandler::generation_t;
-
-namespace vespalib::tensor {
-
-static bool operator==(const Tensor &lhs, const Tensor &rhs)
-{
-    return lhs.equals(rhs);
-}
-
-}
 
 vespalib::string sparseSpec("tensor(x{},y{})");
 vespalib::string denseSpec("tensor(x[2],y[3])");
 vespalib::string vec_2d_spec("tensor(x[2])");
 
-Tensor::UP createTensor(const TensorSpec &spec) {
-    auto value = DefaultTensorEngine::ref().from_spec(spec);
-    if (value->is_double()) {
-        return Tensor::UP(new DenseTensor<double>(ValueType::double_type(), {value->as_double()}));
-    }
-    Tensor *tensor = dynamic_cast<Tensor*>(value.get());
-    ASSERT_TRUE(tensor != nullptr);
-    value.release();
-    return Tensor::UP(tensor);
+Value::UP createTensor(const TensorSpec &spec) {
+    auto value = EngineOrFactory::get().from_spec(spec);
+    return value;
 }
 
 TensorSpec
@@ -418,7 +401,7 @@ struct Fixture {
         set_tensor_internal(docid, *_tensorAttr->getEmptyTensor());
     }
 
-    void set_tensor_internal(uint32_t docId, const Tensor &tensor) {
+    void set_tensor_internal(uint32_t docId, const Value &tensor) {
         ensureSpace(docId);
         _tensorAttr->setTensor(docId, tensor);
         _attr->commit();
@@ -435,14 +418,14 @@ struct Fixture {
 
     void assertGetNoTensor(uint32_t docId) {
         AttributeGuard guard(_attr);
-        Tensor::UP actTensor = _tensorAttr->getTensor(docId);
+        Value::UP actTensor = _tensorAttr->getTensor(docId);
         EXPECT_FALSE(actTensor);
     }
 
     void assertGetTensor(const TensorSpec &expSpec, uint32_t docId) {
-        Tensor::UP expTensor = createTensor(expSpec);
+        Value::UP expTensor = createTensor(expSpec);
         AttributeGuard guard(_attr);
-        Tensor::UP actTensor = _tensorAttr->getTensor(docId);
+        Value::UP actTensor = _tensorAttr->getTensor(docId);
         EXPECT_TRUE(static_cast<bool>(actTensor));
         EXPECT_EQUAL(*expTensor, *actTensor);
     }
@@ -655,7 +638,7 @@ void
 Fixture::testEmptyTensor()
 {
     const TensorAttribute &tensorAttr = *_tensorAttr;
-    Tensor::UP emptyTensor = tensorAttr.getEmptyTensor();
+    Value::UP emptyTensor = tensorAttr.getEmptyTensor();
     if (_denseTensors) {
         vespalib::string expSpec = expEmptyDenseTensorSpec();
         EXPECT_EQUAL(emptyTensor->type(), ValueType::from_spec(expSpec));
@@ -907,8 +890,6 @@ TEST_F("Nearest neighbor index type is added to attribute file header", DenseTen
 
 class NearestNeighborBlueprintFixture : public DenseTensorAttributeMockIndex {
 public:
-    using QueryTensor = DenseTensor<double>;
-
     NearestNeighborBlueprintFixture() {
         set_tensor(1, vec_2d(1, 1));
         set_tensor(2, vec_2d(2, 2));
@@ -922,12 +903,9 @@ public:
         set_tensor(10, vec_2d(0, 0));
     }
 
-    std::unique_ptr<QueryTensor> createDenseTensor(const TensorSpec &spec) {
-        auto value = DefaultTensorEngine::ref().from_spec(spec);
-        QueryTensor *tensor = dynamic_cast<QueryTensor *>(value.get());
-        ASSERT_TRUE(tensor != nullptr);
-        value.release();
-        return std::unique_ptr<QueryTensor>(tensor);
+    std::unique_ptr<Value> createDenseTensor(const TensorSpec &spec) {
+        auto value = EngineOrFactory::get().from_spec(spec);
+        return value;
     }
 
     std::unique_ptr<NearestNeighborBlueprint> make_blueprint(double brute_force_limit = 0.05) {

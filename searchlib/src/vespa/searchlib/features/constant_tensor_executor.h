@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -27,11 +28,11 @@ public:
     void execute(uint32_t) override {
         outputs().set_object(0, *_tensor);
     }
-    static fef::FeatureExecutor &create(std::unique_ptr<vespalib::eval::Tensor> tensor, vespalib::Stash &stash) {
+    static fef::FeatureExecutor &create(std::unique_ptr<vespalib::eval::Value> tensor, vespalib::Stash &stash) {
         return stash.create<ConstantTensorExecutor>(std::move(tensor));
     }
     static fef::FeatureExecutor &createEmpty(const vespalib::eval::ValueType &valueType, vespalib::Stash &stash) {
-        const auto &engine = vespalib::tensor::DefaultTensorEngine::ref();
+        const auto engine = vespalib::eval::EngineOrFactory::get();
         auto spec = vespalib::eval::TensorSpec(valueType.to_spec());
         return stash.create<ConstantTensorExecutor>(engine.from_spec(spec));
     }

@@ -11,6 +11,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
@@ -39,12 +40,13 @@ using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::core::RankingConstantsConfig;
 using vespa::config::search::core::OnnxModelsConfig;
 using vespa::config::search::core::VerifyRanksetupConfig;
-using vespalib::eval::ConstantValue;
-using vespalib::eval::TensorSpec;
-using vespalib::eval::ValueType;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::eval::SimpleConstantValue;
 using vespalib::eval::BadConstantValue;
+using vespalib::eval::ConstantValue;
+using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleConstantValue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 
 std::optional<vespalib::string> get_file(const vespalib::string &ref, const VerifyRanksetupConfig &myCfg) {
     for (const auto &entry: myCfg.file) {
@@ -94,9 +96,8 @@ struct DummyConstantValueRepo : IConstantValueRepo {
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override {
         for (const auto &entry: cfg.constant) {
             if (entry.name == name) {
-                const auto &engine = DefaultTensorEngine::ref();
                 try {
-                    auto tensor = engine.from_spec(TensorSpec(entry.type));
+                    auto tensor = EngineOrFactory::get().from_spec(TensorSpec(entry.type));
                     return std::make_unique<SimpleConstantValue>(std::move(tensor));
                 } catch (std::exception &) {
                     return std::make_unique<BadConstantValue>();

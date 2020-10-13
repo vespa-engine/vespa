@@ -8,6 +8,7 @@
 #include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -17,11 +18,10 @@ using namespace vespalib;
 using namespace vdslib;
 using namespace vsm;
 using vespalib::nbostream;
+using vespalib::eval::EngineOrFactory;
 using vespalib::eval::Value;
 using vespalib::eval::DoubleValue;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-
 
 namespace streaming {
 
@@ -253,7 +253,7 @@ public:
     ~MyRankProgram();
     virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
         _boxed_double = std::make_unique<DoubleValue>(docid + 30);
-        _tensor = DefaultTensorEngine::ref().from_spec(TensorSpec("tensor(x{})").add({{"x", "a"}}, docid + 20));
+        _tensor = EngineOrFactory::get().from_spec(TensorSpec("tensor(x{})").add({{"x", "a"}}, docid + 20));
         _fooValue.as_number = docid + 10;
         _barValue.as_object = *_boxed_double;
         _bazValue.as_object = *_tensor;
@@ -308,7 +308,7 @@ HitCollectorTest::testFeatureSet()
         EXPECT_TRUE(!f[2].is_double());
         EXPECT_TRUE(f[2].is_data());
         {
-            auto &engine = DefaultTensorEngine::ref();
+            auto engine = EngineOrFactory::get();
             nbostream buf(f[2].as_data().data, f[2].as_data().size);
             auto actual = engine.to_spec(*engine.decode(buf));
             auto expect = TensorSpec("tensor(x{})").add({{"x", "a"}}, 23);

@@ -8,6 +8,9 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/tensor/partial_update.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -17,8 +20,9 @@
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
-using vespalib::tensor::Tensor;
 using vespalib::make_string;
+using vespalib::eval::EngineOrFactory;
+using vespalib::tensor::TensorPartialUpdate;
 
 namespace document {
 
@@ -78,14 +82,34 @@ TensorAddUpdate::checkCompatibility(const Field& field) const
     }
 }
 
-std::unique_ptr<Tensor>
-TensorAddUpdate::applyTo(const Tensor &tensor) const
+namespace {
+
+std::unique_ptr<vespalib::eval::Value>
+old_add(const vespalib::eval::Value *input,
+        const vespalib::eval::Value *add_cells)
+{
+    auto a = dynamic_cast<const vespalib::tensor::Tensor *>(input);
+    assert(a);
+    auto b = dynamic_cast<const vespalib::tensor::Tensor *>(add_cells);
+    assert(b);
+    return a->add(*b);
+}
+
+} // namespace
+
+std::unique_ptr<vespalib::eval::Value>
+TensorAddUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto addTensor = _tensor->getAsTensorPtr();
     if (addTensor) {
-        return tensor.add(*addTensor);
+        auto engine = EngineOrFactory::get();
+        if (engine.is_factory()) {
+            return TensorPartialUpdate::add(tensor, *addTensor, engine.factory());
+        } else {
+            return old_add(&tensor, addTensor);
+        }
     }
-    return std::unique_ptr<Tensor>();
+    return std::unique_ptr<vespalib::eval::Value>();
 }
 
 bool

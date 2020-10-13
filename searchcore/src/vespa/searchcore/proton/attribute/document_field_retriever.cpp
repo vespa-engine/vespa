@@ -6,7 +6,7 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>

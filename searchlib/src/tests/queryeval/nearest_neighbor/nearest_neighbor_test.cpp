@@ -3,9 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/matchdata.h>
@@ -25,12 +23,11 @@ using search::feature_t;
 using search::tensor::DenseTensorAttribute;
 using search::AttributeVector;
 using search::BitVector;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using CellType = vespalib::eval::ValueType::CellType;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DenseTensorView;
-using vespalib::tensor::DefaultTensorEngine;
+using vespalib::eval::EngineOrFactory;
 using search::tensor::DistanceFunction;
 using search::attribute::DistanceMetric;
 
@@ -43,15 +40,13 @@ vespalib::string denseSpecFloat("tensor<float>(x[2])");
 DistanceFunction::UP euclid_d = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::DOUBLE);
 DistanceFunction::UP euclid_f = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::FLOAT);
 
-std::unique_ptr<DenseTensorView> createTensor(const TensorSpec &spec) {
-    auto value = DefaultTensorEngine::ref().from_spec(spec);
-    DenseTensorView *tensor = dynamic_cast<DenseTensorView*>(value.get());
-    ASSERT_TRUE(tensor != nullptr);
-    value.release();
-    return std::unique_ptr<DenseTensorView>(tensor);
+std::unique_ptr<Value> createTensor(const TensorSpec &spec) {
+    auto value = EngineOrFactory::get().from_spec(spec);
+    ASSERT_TRUE(value->is_tensor());
+    return value;
 }
 
-std::unique_ptr<DenseTensorView> createTensor(const vespalib::string& type_spec, double v1, double v2) {
+std::unique_ptr<Value> createTensor(const vespalib::string& type_spec, double v1, double v2) {
     return createTensor(TensorSpec(type_spec).add({{"x", 0}}, v1)
                                              .add({{"x", 1}}, v2));
 }
@@ -106,7 +101,7 @@ struct Fixture
         }
     }
 
-    void setTensor(uint32_t docId, const Tensor &tensor) {
+    void setTensor(uint32_t docId, const Value &tensor) {
         ensureSpace(docId);
         _tensorAttr->setTensor(docId, tensor);
         _attr->commit();
@@ -127,7 +122,7 @@ struct Fixture
 };
 
 template <bool strict>
-SimpleResult find_matches(Fixture &env, const DenseTensorView &qtv) {
+SimpleResult find_matches(Fixture &env, const Value &qtv) {
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._tensorAttr);
@@ -205,7 +200,7 @@ TEST("require that NearestNeighborIterator returns filtered results") {
 }
 
 template <bool strict>
-std::vector<feature_t> get_rawscores(Fixture &env, const DenseTensorView &qtv) {
+std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._tensorAttr);

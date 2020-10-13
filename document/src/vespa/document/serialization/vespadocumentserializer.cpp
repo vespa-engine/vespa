@@ -26,7 +26,8 @@
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -370,7 +371,7 @@ VespaDocumentSerializer::write(const TensorFieldValue &value) {
     vespalib::nbostream tmpStream;
     auto tensor = value.getAsTensorPtr();
     if (tensor) {
-        vespalib::tensor::TypedBinaryFormat::serialize(tmpStream, *tensor);
+        vespalib::eval::EngineOrFactory::get().encode(*tensor, tmpStream);
         assert( ! tmpStream.empty());
         _stream.putInt1_4Bytes(tmpStream.size());
         _stream.write(tmpStream.peek(), tmpStream.size());

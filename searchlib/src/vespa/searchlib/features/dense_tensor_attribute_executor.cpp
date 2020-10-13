@@ -4,7 +4,6 @@
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 
 using search::tensor::ITensorAttribute;
-using vespalib::eval::Tensor;
 using vespalib::tensor::MutableDenseTensorView;
 
 namespace search::features {

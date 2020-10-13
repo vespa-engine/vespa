@@ -2,16 +2,15 @@
 
 #include "serialized_tensor_store.h"
 #include "tensor_deserialize.h"
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/macro.h>
 
 using vespalib::datastore::Handle;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::TypedBinaryFormat;
+using vespalib::eval::Value;
 
 namespace search::tensor {
 
@@ -87,21 +86,21 @@ SerializedTensorStore::move(EntryRef ref)
     return newraw.ref;
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<Value>
 SerializedTensorStore::getTensor(EntryRef ref) const
 {
     auto raw = getRawBuffer(ref);
     if (raw.second == 0u) {
-        return std::unique_ptr<Tensor>();
+        return std::unique_ptr<Value>();
     }
     return deserialize_tensor(raw.first, raw.second);
 }
 
 TensorStore::EntryRef
-SerializedTensorStore::setTensor(const Tensor &tensor)
+SerializedTensorStore::setTensor(const vespalib::eval::Value &tensor)
 {
     vespalib::nbostream stream;
-    TypedBinaryFormat::serialize(stream, tensor);
+    vespalib::eval::EngineOrFactory::get().encode(tensor, stream);
     auto raw = allocRawBuffer(stream.size());
     memcpy(raw.data, stream.peek(), stream.size());
     return raw.ref;

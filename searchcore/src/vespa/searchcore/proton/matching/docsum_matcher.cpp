@@ -5,6 +5,7 @@
 #include "search_session.h"
 #include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -71,9 +72,9 @@ get_feature_set(const MatchToolsFactory &mtf,
             for (uint32_t j = 0; j < featureNames.size(); ++j) {
                 if (resolver.is_object(j)) {
                     auto obj = resolver.resolve(j).as_object(docId);
-                    if (const auto *tensor = obj.get().as_tensor()) {
+                    if (! obj.get().is_double()) {
                         vespalib::nbostream buf;
-                        tensor->engine().encode(*tensor, buf);
+                        vespalib::eval::EngineOrFactory::get().encode(obj.get(), buf);
                         f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));
                     } else {
                         f[j].set_double(obj.get().as_double());
