@@ -58,7 +58,7 @@ public:
      * Utility function to interrupt and join a thread, possibly broadcasting
      * through a monitor after the signalling face.
      */
-    void interruptAndJoin(vespalib::Monitor* m);
+    void interruptAndJoin();
 
     void interruptAndJoin(std::condition_variable &cv);
 };

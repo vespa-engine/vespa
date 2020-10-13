@@ -22,7 +22,6 @@
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 #include <deque>
 
@@ -70,8 +69,9 @@ class VisitorThread : public framework::Runnable,
         }
     };
 
-    std::deque<Event> _queue;
-    vespalib::Monitor _queueMonitor;
+    std::deque<Event>       _queue;
+    std::mutex              _lock;
+    std::condition_variable _cond;
 
     VisitorMap::iterator _currentlyRunningVisitor;
     VisitorMessageHandler& _messageSender;
@@ -99,7 +99,7 @@ public:
                   VisitorFactory::Map&,
                   VisitorThreadMetrics& metrics,
                   VisitorMessageHandler& sender);
-    ~VisitorThread();
+    ~VisitorThread() override;
 
     void processMessage(api::VisitorId visitorId, const std::shared_ptr<api::StorageMessage>& msg);
     void shutdown();
@@ -107,7 +107,7 @@ public:
     void handleMessageBusReply(std::unique_ptr<mbus::Reply> reply, Visitor& visitor);
 
     /** For unit tests needing to pause thread. */
-    vespalib::Monitor& getQueueMonitor() { return _queueMonitor; }
+    std::mutex & getQueueMonitor() { return _lock; }
 
     const VisitorThreadMetrics& getMetrics() const noexcept {
         return _metrics;

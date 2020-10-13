@@ -414,7 +414,7 @@ TEST_F(DistributorTest, tick_processes_status_requests) {
     }
     ASSERT_TRUE(tick());
 
-    tp->interruptAndJoin(nullptr);
+    tp->interruptAndJoin();
 
     EXPECT_THAT(thread.getResult(), HasSubstr("BucketId(0x4000000000000001)"));
 }

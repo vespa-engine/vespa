@@ -154,7 +154,8 @@ private:
     std::size_t _maxQueueSize;
     mbus::StaticThrottlePolicy::UP _throttlePolicy;
     uint64_t _queueSequence; // TODO: move into a stable priority queue class
-    vespalib::Monitor _messageLock;
+    mutable std::mutex _messageLock;
+    std::condition_variable _messageCond;
     mutable std::mutex _stateLock;
     config::ConfigFetcher _configFetcher;
     // Messages pending to be processed by the worker thread
@@ -204,7 +205,7 @@ public:
     const mbus::StaticThrottlePolicy& getThrottlePolicy() const { return *_throttlePolicy; }
     mbus::StaticThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
     // For unit testing only
-    vespalib::Monitor& getMonitor() { return _messageLock; }
+    std::mutex & getMonitor() { return _messageLock; }
     std::mutex & getStateLock() { return _stateLock; }
 
     Metrics& getMetrics() { return *_metrics; }
@@ -365,9 +366,9 @@ private:
     void rejectOutdatedQueuedMerges(MessageGuard& msgGuard, uint32_t rejectLessThanVersion);
     bool attemptProcessNextQueuedMerge(MessageGuard& msgGuard);
     bool processQueuedMerges(MessageGuard& msgGuard);
-    void handleRendezvous(vespalib::MonitorGuard& guard);
-    void rendezvousWithWorkerThread(vespalib::MonitorGuard&);
-    void releaseWorkerThreadRendezvous(vespalib::MonitorGuard&);
+    void handleRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond);
+    void rendezvousWithWorkerThread(std::unique_lock<std::mutex> & guard, std::condition_variable & cond);
+    void releaseWorkerThreadRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond);
     bool isDiffCommand(const api::StorageMessage& msg) const;
     bool isMergeCommand(const api::StorageMessage& msg) const;
     bool isMergeReply(const api::StorageMessage& msg) const;

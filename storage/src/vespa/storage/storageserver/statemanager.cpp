@@ -42,7 +42,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _nextSystemState(),
       _stateListeners(),
       _queuedStateRequests(),
-      _threadMonitor(),
+      _threadLock(),
       _lastProgressUpdateCausingSend(0),
       _progressLastInitStateSend(-1),
       _systemStateHistory(),
@@ -54,8 +54,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _notifyingListeners(false)
 {
     _nodeState->setMinUsedBits(58);
-    _nodeState->setStartTimestamp(
-            _component.getClock().getTimeInSeconds().getTime());
+    _nodeState->setStartTimestamp(_component.getClock().getTimeInSeconds().getTime());
     _component.registerStatusPage(*this);
 }
 
@@ -65,7 +64,7 @@ StateManager::~StateManager()
     LOG(debug, "Deleting link %s.", toString().c_str());
     if (_thread) {
         LOG(debug, "onClose() not called before destructor");
-        _thread->interruptAndJoin(&_threadMonitor);
+        _thread->interruptAndJoin(_threadCond);
     }
 }
 
@@ -82,7 +81,7 @@ void
 StateManager::onClose()
 {
     if (_thread) {
-        _thread->interruptAndJoin(&_threadMonitor);
+        _thread->interruptAndJoin(_threadCond);
         _thread.reset();
     }
     sendGetNodeStateReplies();
@@ -532,14 +531,14 @@ StateManager::run(framework::ThreadHandle& thread)
 {
     while (true) {
         thread.registerTick();
-        vespalib::MonitorGuard guard(_threadMonitor);
+        std::unique_lock guard(_threadLock);
             // Take lock before doing stuff, to be sure we don't wait after
             // destructor have grabbed lock to stop() us.
         if (thread.interrupted()) {
             break;
         }
         tick();
-        guard.wait(1000);
+        _threadCond.wait_for(guard, 1000ms);
     }
 
 }
@@ -551,8 +550,7 @@ StateManager::tick() {
 }
 
 bool
-StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime,
-                                      uint16_t node)
+StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime, uint16_t node)
 {
     std::vector<std::shared_ptr<api::GetNodeStateReply>> replies;
     {
