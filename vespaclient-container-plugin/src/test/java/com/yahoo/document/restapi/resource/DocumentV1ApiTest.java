@@ -170,7 +170,6 @@ public class DocumentV1ApiTest {
 
     @Test
     public void testResponses() {
-        Executor visitCompleter = Executors.newSingleThreadExecutor();
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         // GET at non-existent path returns 404 with available paths
         var response = driver.sendRequest("http://localhost/document/v1/not-found");
@@ -200,7 +199,7 @@ public class DocumentV1ApiTest {
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc1, 0);
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc2, 0);
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc3, 0);
-            visitCompleter.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "message"));
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "message");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
                                       "&selection=all%20the%20things&fieldSet=[id]");
@@ -242,7 +241,7 @@ public class DocumentV1ApiTest {
         // GET with namespace, document type and group is a restricted visit.
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space') and (id.group=='best\\'')", parameters.getDocumentSelection());
-            visitCompleter.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "error"));
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "error");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/group/best%27");
         assertSameJson("{" +
@@ -255,7 +254,7 @@ public class DocumentV1ApiTest {
         // GET with namespace, document type and number is a restricted visit.
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space') and (id.user==123)", parameters.getDocumentSelection());
-            visitCompleter.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "aborted"));
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "aborted");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/123");
         assertSameJson("{" +
