@@ -166,6 +166,7 @@ Requires: perf
 Requires: gdb
 Requires: nc
 Requires: net-tools
+Requires: unzip
 %if 0%{?el7}
 Requires: llvm7.0
 Requires: vespa-icu >= 65.1.0-1
