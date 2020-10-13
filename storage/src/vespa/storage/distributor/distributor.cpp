@@ -14,7 +14,6 @@
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <vespa/vespalib/util/sync.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
@@ -25,13 +24,15 @@ namespace storage::distributor {
 
 class Distributor::Status {
     const DelegatedStatusRequest& _request;
-    vespalib::Monitor _monitor;
-    bool _done;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    bool                    _done;
 
 public:
     Status(const DelegatedStatusRequest& request) noexcept
         : _request(request),
-          _monitor(),
+          _lock(),
+          _cond(),
           _done(false)
     {}
 
@@ -46,14 +47,16 @@ public:
     }
 
     void notifyCompleted() {
-        vespalib::MonitorGuard guard(_monitor);
-        _done = true;
-        guard.broadcast();
+        {
+            std::lock_guard guard(_lock);
+            _done = true;
+        }
+        _cond.notify_all();
     }
     void waitForCompletion() {
-        vespalib::MonitorGuard guard(_monitor);
+        std::unique_lock guard(_lock);
         while (!_done) {
-            guard.wait();
+            _cond.wait(guard);
         }
     }
 };

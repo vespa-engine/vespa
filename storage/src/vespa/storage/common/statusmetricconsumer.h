@@ -13,7 +13,6 @@
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/metrics/metrics.h>
 #include <map>
 
@@ -34,7 +33,7 @@ public:
             StorageComponentRegister&,
             metrics::MetricManager&,
             const std::string& name = "status");
-    ~StatusMetricConsumer();
+    ~StatusMetricConsumer() override;
 
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream& out, const framework::HttpUrlPath&) const override;
@@ -48,11 +47,11 @@ private:
     typedef metrics::Metric::String String;
 
     metrics::MetricManager& _manager;
-    StorageComponent _component;
-    std::string _name;
-    vespalib::Monitor _waiter;
-    framework::SecondTime _startTime;
-    framework::SecondTime _processedTime;
+    StorageComponent        _component;
+    std::string             _name;
+    mutable std::mutex      _lock;
+    framework::SecondTime   _startTime;
+    framework::SecondTime   _processedTime;
 
     void writeXmlTags(std::ostream& out,
                       const vespalib::StringTokenizer& name,
