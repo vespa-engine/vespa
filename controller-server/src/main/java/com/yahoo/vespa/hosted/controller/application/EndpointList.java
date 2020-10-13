@@ -64,6 +64,11 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         return matching(endpoint -> endpoint.scope() == scope);
     }
 
+    /** Returns the subset of endpoints that use direct routing */
+    public EndpointList direct() {
+        return matching(endpoint -> endpoint.routingMethod().isDirect());
+    }
+
     public static EndpointList copyOf(Collection<Endpoint> endpoints) {
         return new EndpointList(endpoints, false);
     }
