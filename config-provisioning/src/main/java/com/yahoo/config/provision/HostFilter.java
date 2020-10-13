@@ -31,7 +31,6 @@ public class HostFilter {
         this.flavors = Objects.requireNonNull(flavors, "Flavors cannot be null, use an empty list");
         this.clusterTypes = Objects.requireNonNull(clusterTypes, "clusterTypes cannot be null, use an empty list");
         this.clusterIds = Objects.requireNonNull(clusterIds, "clusterIds cannot be null, use an empty list");
-        System.out.println(hostnames);
     }
 
     /** Returns true if this filter matches the given host properties */
