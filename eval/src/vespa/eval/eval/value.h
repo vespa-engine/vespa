@@ -118,14 +118,14 @@ public:
 /**
  * A generic value referencing its components without owning anything.
  **/
-class MixedValueView final : public Value
+class ValueView final : public Value
 {
 private:
     const ValueType &_type;
     const Index &_index;
     TypedCells _cells;
 public:
-    MixedValueView(const ValueType &type_in, const Index &index_in, TypedCells cells_in)
+    ValueView(const ValueType &type_in, const Index &index_in, TypedCells cells_in)
         : _type(type_in), _index(index_in), _cells(cells_in) {}
     const ValueType &type() const final override { return _type; }
     TypedCells cells() const final override { return _cells; }
@@ -196,4 +196,4 @@ protected:
 
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DenseValueView);
-VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::MixedValueView);
+VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::ValueView);

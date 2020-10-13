@@ -28,7 +28,7 @@ void my_generic_map_op(State &state, uint64_t param_in) {
         *pos++ = (CT) function(value);
     }
     assert(pos == output_cells.end());
-    Value &result_ref = state.stash.create<MixedValueView>(a.type(), a.index(), TypedCells(output_cells));
+    Value &result_ref = state.stash.create<ValueView>(a.type(), a.index(), TypedCells(output_cells));
     state.pop_push(result_ref);
 }
 
