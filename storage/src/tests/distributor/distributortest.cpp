@@ -15,7 +15,6 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -446,8 +445,8 @@ TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) 
     }
 
     // Force trigger update hook
-    vespalib::Monitor l;
-    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
+    std::mutex l;
+    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
     // Metrics should now be updated to the last complete working state
     {
         const IdealStateMetricSet& metrics(getIdealStateManager().getMetrics());
@@ -475,8 +474,8 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a,1=2/2/2");
     tickDistributorNTimes(10);
 
-    vespalib::Monitor l;
-    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
+    std::mutex l;
+    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
     auto* m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
     ASSERT_TRUE(m != nullptr);
     auto last_used = m->getLongValue("last");
@@ -490,7 +489,7 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
     const auto sample_interval_sec = db_sample_interval_sec(getDistributor());
     getClock().setAbsoluteTimeInSeconds(1000 + sample_interval_sec - 1); // Not there yet.
     tickDistributorNTimes(50);
-    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
+    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
 
     m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
     auto now_used = m->getLongValue("last");
@@ -498,7 +497,7 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
 
     getClock().setAbsoluteTimeInSeconds(1000 + sample_interval_sec + 1);
     tickDistributorNTimes(10);
-    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
+    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
 
     m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
     now_used = m->getLongValue("last");

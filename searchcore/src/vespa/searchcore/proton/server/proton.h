@@ -66,7 +66,7 @@ private:
         MetricsUpdateHook(Proton &s)
             : metrics::UpdateHook("proton-hook"),
               self(s) {}
-        void updateMetrics(const vespalib::MonitorGuard &guard) override { self.updateMetrics(guard); }
+        void updateMetrics(const MetricLockGuard &guard) override { self.updateMetrics(guard); }
     };
     friend struct MetricsUpdateHook;
 
@@ -143,7 +143,7 @@ private:
      * the metric manager). Do not call this function in multiple
      * threads at once.
      **/
-    void updateMetrics(const vespalib::MonitorGuard &guard);
+    void updateMetrics(const metrics::UpdateHook::MetricLockGuard &guard);
     void waitForInitDone();
     void waitForOnlineState();
     uint32_t getDistributionKey() const override { return _distributionKey; }

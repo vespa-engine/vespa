@@ -43,33 +43,31 @@
  */
 #pragma once
 
-#include <string>
-#include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/metrics/config-metricsmanager.h>
-#include <vespa/metrics/metricset.h>
-#include <vespa/metrics/metricsnapshot.h>
-#include <vespa/metrics/memoryconsumption.h>
-#include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/updatehook.h>
+#include "config-metricsmanager.h"
+#include "metricset.h"
+#include "metricsnapshot.h"
+#include "memoryconsumption.h"
+#include "valuemetric.h"
+#include "updatehook.h"
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/util/sync.h>
-#include <map>
-#include <list>
+#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/config/config.h>
+#include <map>
+#include <list>
 
 template class vespalib::hash_set<metrics::Metric::String>;
 
 namespace metrics {
 
-typedef vespalib::MonitorGuard MetricLockGuard;
+using MetricLockGuard = UpdateHook::MetricLockGuard;
 
 class MetricManager : private document::Runnable
 {
 public:
 
     struct Timer {
-        virtual ~Timer() {}
+        virtual ~Timer() = default;
         virtual time_t getTime() const;
         virtual time_t getTimeInMilliSecs() const { return getTime() * 1000; }
     };
@@ -82,8 +80,8 @@ public:
         typedef std::shared_ptr<ConsumerSpec> SP;
 
         vespalib::hash_set<Metric::String> includedMetrics;
-        ConsumerSpec(ConsumerSpec &&) = default;
-        ConsumerSpec & operator= (ConsumerSpec &&) = default;
+        ConsumerSpec(ConsumerSpec &&) noexcept = default;
+        ConsumerSpec & operator= (ConsumerSpec &&) noexcept = default;
         ConsumerSpec();
         ~ConsumerSpec() override;
 
@@ -105,7 +103,8 @@ private:
     std::map<Metric::String, ConsumerSpec::SP> _consumerConfig;
     std::list<UpdateHook*> _periodicUpdateHooks;
     std::list<UpdateHook*> _snapshotUpdateHooks;
-    vespalib::Monitor _waiter;
+    mutable std::mutex _waiter;
+    mutable std::condition_variable _cond;
     typedef std::pair<uint32_t, time_t> PeriodTimePair;
     std::vector<MetricSnapshotSet::SP> _snapshots;
     MetricSnapshot::SP _totalMetrics;
@@ -217,8 +216,7 @@ public:
      * snapshots while you are accessing them.
      */
     MetricLockGuard getMetricLock() const {
-        MetricLockGuard m(_waiter); 
-        return m;
+        return MetricLockGuard(_waiter);
     }
 
     /** While accessing the active metrics you should have the metric lock. */

@@ -19,7 +19,6 @@
 #include <tests/common/testhelper.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <future>
 
@@ -99,7 +98,7 @@ protected:
         _manager->updateMinUsedBits();
     }
     void trigger_metric_manager_update() {
-        vespalib::Monitor l;
+        std::mutex l;
         _manager->updateMetrics(BucketManager::MetricLockGuard(l));
     }
 
