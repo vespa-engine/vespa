@@ -1347,6 +1347,7 @@ FileStorHandlerImpl::pause()
 void
 FileStorHandlerImpl::resume()
 {
+    std::unique_lock guard(_pauseMonitor);
     _paused.store(false, std::memory_order_relaxed);
     _pauseCond.notify_all();
 }
