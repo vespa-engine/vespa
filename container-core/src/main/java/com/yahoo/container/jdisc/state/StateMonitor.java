@@ -7,14 +7,16 @@ import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.core.SystemTimer;
-import java.util.logging.Level;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,45 +33,36 @@ public class StateMonitor extends AbstractComponent {
     public enum Status {up, down, initializing}
 
     private final CopyOnWriteArrayList<StateMetricConsumer> consumers = new CopyOnWriteArrayList<>();
-    private final Thread thread;
+    private final Optional<ScheduledExecutorService> executor;
     private final Timer timer;
     private final long snapshotIntervalMs;
     private volatile long lastSnapshotTimeMs;
     private volatile MetricSnapshot snapshot;
     private volatile Status status;
     private final TreeSet<String> valueNames = new TreeSet<>();
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
-
-    /** For testing */
-    public StateMonitor() {
-        this(new HealthMonitorConfig.Builder().build(), new SystemTimer());
-    }
 
     @Inject
     public StateMonitor(HealthMonitorConfig config, Timer timer) {
-        this(config,
-             timer,
-             runnable -> {
-                 Thread thread = new Thread(runnable, "StateMonitor");
-                 thread.setDaemon(true);
-                 return thread;
-             });
+        this(config, timer, runnable -> {
+            Thread thread = new Thread(runnable, "StateMonitor");
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
+    public static StateMonitor createForTesting() {
+        return new StateMonitor(new HealthMonitorConfig.Builder().build(), new SystemTimer());
+    }
+
+    /** Non-private only for unit testing this class. */
     StateMonitor(HealthMonitorConfig config, Timer timer, ThreadFactory threadFactory) {
-        this((long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1)),
-             Status.valueOf(config.initialStatus()),
-             timer, threadFactory);
-    }
-
-    /* Public for testing only */
-    public StateMonitor(long snapshotIntervalMS, Status status, Timer timer, ThreadFactory threadFactory) {
         this.timer = timer;
-        this.snapshotIntervalMs = snapshotIntervalMS;
+        this.snapshotIntervalMs = (long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1));
         this.lastSnapshotTimeMs = timer.currentTimeMillis();
-        this.status = status;
-        thread = threadFactory.newThread(this::run);
-        thread.start();
+        this.status = Status.valueOf(config.initialStatus());
+        this.executor = Optional.ofNullable(threadFactory).map(Executors::newSingleThreadScheduledExecutor);
+        this.executor.ifPresent(exec -> exec.scheduleAtFixedRate(this::updateSnapshot, snapshotIntervalMs,
+                snapshotIntervalMs, TimeUnit.MILLISECONDS));
     }
 
     /** Returns a metric consumer for jDisc which will write metrics back to this */
@@ -96,28 +89,11 @@ public class StateMonitor extends AbstractComponent {
     /** Returns the interval between each metrics snapshot used by this */
     public long getSnapshotIntervalMillis() { return snapshotIntervalMs; }
 
-    /** NOTE: For unit testing only. May lead to undefined behaviour if StateMonitor thread is running simultaneously **/
-    boolean checkTime() {
+    /** NOTE: Non-private for unit testing only. **/
+    void updateSnapshot() {
         long now = timer.currentTimeMillis();
-        if (now < lastSnapshotTimeMs + snapshotIntervalMs) {
-            return false;
-        }
         snapshot = createSnapshot(lastSnapshotTimeMs, now);
         lastSnapshotTimeMs = now;
-        return true;
-    }
-
-    private void run() {
-        log.finest("StateMonitor started.");
-        try {
-            synchronized (stopped) {
-                while (!stopped.get()) {
-                    checkTime();
-                    stopped.wait((lastSnapshotTimeMs + snapshotIntervalMs) - timer.currentTimeMillis());
-                }
-            }
-        } catch (InterruptedException e) { }
-        log.finest("StateMonitor stopped.");
     }
 
     private MetricSnapshot createSnapshot(long fromMillis, long toMillis) {
@@ -148,15 +124,16 @@ public class StateMonitor extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        synchronized (stopped) {
-            stopped.set(true);
-            stopped.notifyAll();
-        }
-        try {
-            thread.join(5000);
-        } catch (InterruptedException e) { }
-        if (thread.isAlive()) {
-            log.warning("StateMonitor failed to terminate within 5 seconds of interrupt signal. Ignoring.");
-        }
+        executor.ifPresent(exec -> {
+            exec.shutdown();
+            try {
+                exec.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+            }
+
+            if (!exec.isTerminated()) {
+                log.warning("StateMonitor failed to terminate within 5 seconds of interrupt signal. Ignoring.");
+            }
+        });
     }
 }

@@ -2,12 +2,10 @@
 package com.yahoo.container.jdisc.state;
 
 import com.google.inject.Provider;
-import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.ContainerThread;
 import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.application.MetricProvider;
-import com.yahoo.jdisc.core.SystemTimer;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,8 +30,7 @@ public class StateMonitorBenchmarkTest {
 
     @Test
     public void requireThatHealthMonitorDoesNotBlockMetricThreads() throws Exception {
-        StateMonitor monitor = new StateMonitor(new HealthMonitorConfig(new HealthMonitorConfig.Builder()),
-                                                new SystemTimer());
+        StateMonitor monitor = StateMonitor.createForTesting();
         Provider<MetricConsumer> provider = MetricConsumerProviders.wrap(monitor);
         performUpdates(provider, 8);
         for (int i = 1; i <= NUM_THREADS; i *= 2) {

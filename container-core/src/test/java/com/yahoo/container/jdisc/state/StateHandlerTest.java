@@ -34,13 +34,13 @@ public class StateHandlerTest extends StateHandlerTestBase {
     public void testReportIncludesMetricsAfterSnapshot() throws Exception {
         metric.add("foo", 1, null);
         metric.set("bar", 4, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json1 = requestAsJson("http://localhost/state/v1/metrics");
         assertEquals(json1.toString(), "up", json1.get("status").get("code").asText());
         assertEquals(json1.toString(), 2, json1.get("metrics").get("values").size());
 
         metric.add("fuz", 1, metric.createContext(new HashMap<>(0)));
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json2 = requestAsJson("http://localhost/state/v1/metrics");
         assertEquals(json2.toString(), "up", json2.get("status").get("code").asText());
         assertEquals(json2.toString(), 3, json2.get("metrics").get("values").size());
@@ -61,7 +61,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
             metric.add(metricName, 2, metricContext);
             // Change it to a gauge metric
             metric.set(metricName, 9, metricContext);
-            incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+            advanceToNextSnapshot();
             MetricValue resultingMetric = monitor.snapshot().iterator().next().getValue().get(metricName);
             assertEquals(GaugeMetric.class, resultingMetric.getClass());
             assertEquals("Value was reset and produces the last gauge value",
@@ -74,7 +74,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
             // Change it to a count metric
             metric.add(metricName, 1, metricContext);
             metric.add(metricName, 2, metricContext);
-            incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+            advanceToNextSnapshot();
             MetricValue resultingMetric = monitor.snapshot().iterator().next().getValue().get(metricName);
             assertEquals(CountMetric.class, resultingMetric.getClass());
             assertEquals("Value was reset, and changed to add semantics giving 1+2",
@@ -88,7 +88,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
         metric.set("bar", 5, null);
         metric.set("bar", 7, null);
         metric.set("bar", 2, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json = requestAsJson("http://localhost/state/v1/all");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
@@ -102,7 +102,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
         metric.add("foo", 1, null);
         metric.add("foo", 2, null);
         metric.add("foo", 1, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json = requestAsJson("http://localhost/state/v1/all");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
@@ -113,7 +113,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
     @Test
     public void testReadabilityOfJsonReport() throws Exception {
         metric.add("foo", 1, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         assertEquals("{\n" +
                      "    \"metrics\": {\n" +
                      "        \"snapshot\": {\n" +
@@ -138,7 +138,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
         metric.set("bar", 3, ctx);
         metric.set("bar", 4, ctx);
         metric.set("bar", 5, ctx);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         assertEquals("{\n" +
                      "    \"metrics\": {\n" +
                      "        \"snapshot\": {\n" +
@@ -178,10 +178,10 @@ public class StateHandlerTest extends StateHandlerTestBase {
     public void testNotAggregatingCountsBeyondSnapshots() throws Exception {
         metric.add("foo", 1, null);
         metric.add("foo", 1, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         metric.add("foo", 2, null);
         metric.add("foo", 1, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json = requestAsJson("http://localhost/state/v1/all");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
@@ -194,21 +194,19 @@ public class StateHandlerTest extends StateHandlerTestBase {
         metric.add("foo", 1, null);
         metric.set("bar", 3, null);
         // At this time we should not have done any snapshotting
-        incrementCurrentTimeAndAssertNoSnapshot(SNAPSHOT_INTERVAL - 1);
         {
             JsonNode json = requestAsJson("http://localhost/state/v1/all");
             assertFalse(json.toString(), json.get("metrics").has("snapshot"));
         }
         // At this time first snapshot should have been generated
-        incrementCurrentTimeAndAssertSnapshot(1);
+        advanceToNextSnapshot();
         {
             JsonNode json = requestAsJson("http://localhost/state/v1/all");
             assertTrue(json.toString(), json.get("metrics").has("snapshot"));
             assertEquals(0.0, json.get("metrics").get("snapshot").get("from").asDouble(), 0.00001);
             assertEquals(300.0, json.get("metrics").get("snapshot").get("to").asDouble(), 0.00001);
         }
-        // No new snapshot at this time
-        incrementCurrentTimeAndAssertNoSnapshot(SNAPSHOT_INTERVAL - 1);
+        // No new snapshot
         {
             JsonNode json = requestAsJson("http://localhost/state/v1/all");
             assertTrue(json.toString(), json.get("metrics").has("snapshot"));
@@ -216,7 +214,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
             assertEquals(300.0, json.get("metrics").get("snapshot").get("to").asDouble(), 0.00001);
         }
         // A new snapshot
-        incrementCurrentTimeAndAssertSnapshot(1);
+        advanceToNextSnapshot();
         {
             JsonNode json = requestAsJson("http://localhost/state/v1/all");
             assertTrue(json.toString(), json.get("metrics").has("snapshot"));
@@ -229,10 +227,10 @@ public class StateHandlerTest extends StateHandlerTestBase {
     public void testFreshStartOfValuesBeyondSnapshot() throws Exception {
         metric.set("bar", 4, null);
         metric.set("bar", 5, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         metric.set("bar", 4, null);
         metric.set("bar", 2, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json = requestAsJson("http://localhost/state/v1/all");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
@@ -243,8 +241,8 @@ public class StateHandlerTest extends StateHandlerTestBase {
     @Test
     public void snapshotsPreserveLastGaugeValue() throws Exception {
         metric.set("bar", 4, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
+        advanceToNextSnapshot();
         JsonNode json = requestAsJson("http://localhost/state/v1/all");
         JsonNode metricValues = getFirstMetricValueNode(json);
         assertEquals(json.toString(), 4, metricValues.get("last").asDouble(), 0.001);
@@ -266,10 +264,10 @@ public class StateHandlerTest extends StateHandlerTestBase {
     @Test
     public void gaugeSnapshotsTracksCountMinMaxAvgPerPeriod() throws Exception {
         metric.set("bar", 10000, null); // Ensure any cross-snapshot noise is visible
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         metric.set("bar", 20, null);
         metric.set("bar", 40, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json = requestAsJson("http://localhost/state/v1/all");
         JsonNode metricValues = getFirstMetricValueNode(json);
         assertEquals(json.toString(), 40, metricValues.get("last").asDouble(), 0.001);
@@ -294,7 +292,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
         metric.set("serverTotalSuccessfulResponseLatency", 20, context1);
         metric.set("serverTotalSuccessfulResponseLatency", 40, context2);
         metric.add("random", 3, context1);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
+        advanceToNextSnapshot();
         JsonNode json = requestAsJson("http://localhost/state/v1/health");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertEquals(json.toString(), 2, json.get("metrics").get("values").size());
@@ -323,10 +321,5 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
         JsonNode version = root.get("version");
         assertEquals(Vtag.currentVersion.toString(), version.asText());
-    }
-
-    private void incrementCurrentTimeAndAssertNoSnapshot(long val) {
-        currentTimeMillis.addAndGet(val);
-        assertFalse("Expected no snapshot", monitor.checkTime());;
     }
 }
