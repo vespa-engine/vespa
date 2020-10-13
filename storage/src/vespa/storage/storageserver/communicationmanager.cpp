@@ -283,8 +283,7 @@ CommunicationManager::onOpen()
     _configFetcher = std::make_unique<config::ConfigFetcher>(_configUri.getContext());
     _configFetcher->subscribe<vespa::config::content::core::StorCommunicationmanagerConfig>(_configUri.getConfigId(), this);
     _configFetcher->start();
-    framework::MilliSecTime maxProcessingTime(60 * 1000);
-    _thread = _component.startThread(*this, maxProcessingTime);
+    _thread = _component.startThread(*this, 60s);
 
     if (_shared_rpc_resources) {
         _shared_rpc_resources->start_server_and_register_slobrok(_component.getIdentity());

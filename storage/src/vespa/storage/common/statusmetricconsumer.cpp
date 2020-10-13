@@ -24,6 +24,7 @@ StatusMetricConsumer::StatusMetricConsumer(
       _manager(manager),
       _component(compReg, "statusmetricsconsumer"),
       _name(name),
+      _lock(),
       _startTime(_component.getClock().getTimeInSeconds()),
       _processedTime(0)
 {
@@ -43,8 +44,7 @@ StatusMetricConsumer::updateMetrics(const MetricLockGuard & guard)
 }
 
 vespalib::string
-StatusMetricConsumer::getReportContentType(
-        const framework::HttpUrlPath& path) const
+StatusMetricConsumer::getReportContentType(const framework::HttpUrlPath& path) const
 {
     if (!path.hasAttribute("format")) {
         return "text/html";
@@ -177,7 +177,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
 
     if (path.hasAttribute("task") && path.getAttribute("task") == "reset") {
         {
-            vespalib::MonitorGuard sync(_waiter);
+            std::lock_guard guard(_lock);
             _manager.reset(currentTime.getTime());
         }
         if (html) {
@@ -337,20 +337,6 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
 }
 
 void
-StatusMetricConsumer::waitUntilTimeProcessed(framework::SecondTime t) const
-{
-    return; // Return straight away as thread is not running now.
-        // This is used in unit testing to wait for internal thread to have
-        // generated snapshots. Wait aggressively and signal other thread to
-        // make it do it quick (as it uses fake timer)
-    vespalib::MonitorGuard sync(_waiter);
-    while (_processedTime < t) {
-        sync.signal();
-        sync.wait(1);
-    }
-}
-
-void
 StatusMetricConsumer::writeXmlTags(std::ostream& out,
                                    const vespalib::StringTokenizer& name,
                                    std::vector<std::string>& xmlTags) const
@@ -389,12 +375,10 @@ StatusMetricConsumer::writeXmlTags(std::ostream& out,
 
 namespace {
     struct UnusedMetricPrinter : public metrics::MetricVisitor {
-        const std::map<metrics::Metric::String,
-                       metrics::Metric::SP>& _usedMetrics;
+        const std::map<metrics::Metric::String, metrics::Metric::SP>& _usedMetrics;
         std::ostream& _out;
 
-        UnusedMetricPrinter(const std::map<metrics::Metric::String,
-                                           metrics::Metric::SP>& used,
+        UnusedMetricPrinter(const std::map<metrics::Metric::String, metrics::Metric::SP>& used,
                             std::ostream& out)
             : _usedMetrics(used), _out(out) {}
 

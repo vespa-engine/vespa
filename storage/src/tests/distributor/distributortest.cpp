@@ -396,17 +396,12 @@ TEST_F(DistributorTest, tick_processes_status_requests) {
     StatusRequestThread thread(distributor_status_delegate());
     FakeClock clock;
     ThreadPoolImpl pool(clock);
-    
-    uint64_t tickWaitMs = 5;
-    uint64_t tickMaxProcessTime = 5000;
     int ticksBeforeWait = 1;
-    framework::Thread::UP tp(pool.startThread(
-        thread, "statustest", tickWaitMs, tickMaxProcessTime, ticksBeforeWait));
+    framework::Thread::UP tp(pool.startThread(thread, "statustest", 5ms, 5s, ticksBeforeWait));
 
     while (true) {
         std::this_thread::sleep_for(1ms);
-        framework::TickingLockGuard guard(
-            distributor_thread_pool().freezeCriticalTicks());
+        framework::TickingLockGuard guard(distributor_thread_pool().freezeCriticalTicks());
         if (!distributor_status_todos().empty()) {
             break;
         }

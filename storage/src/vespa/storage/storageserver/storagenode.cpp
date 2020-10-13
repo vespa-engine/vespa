@@ -200,10 +200,8 @@ StorageNode::initialize()
     _deadLockDetector.reset(new DeadLockDetector(_context.getComponentRegister()));
     _deadLockDetector->enableWarning(_serverConfig->enableDeadLockDetectorWarnings);
     _deadLockDetector->enableShutdown(_serverConfig->enableDeadLockDetector);
-    _deadLockDetector->setProcessSlack(framework::MilliSecTime(
-            static_cast<uint32_t>(_serverConfig->deadLockDetectorTimeoutSlack * 1000)));
-    _deadLockDetector->setWaitSlack(framework::MilliSecTime(
-            static_cast<uint32_t>(_serverConfig->deadLockDetectorTimeoutSlack * 1000)));
+    _deadLockDetector->setProcessSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
+    _deadLockDetector->setWaitSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
 
     createChain(*_chain_builder);
     _chain = std::move(*_chain_builder).build();
@@ -240,8 +238,8 @@ void
 StorageNode::initializeStatusWebServer()
 {
     if (_singleThreadedDebugMode) return;
-    _statusWebServer.reset(new StatusWebServer(_context.getComponentRegister(),
-                                               _context.getComponentRegister(), _configUri));
+    _statusWebServer = std::make_unique<StatusWebServer>(_context.getComponentRegister(),
+                                                         _context.getComponentRegister(), _configUri);
 }
 
 #define DIFFER(a) (!(oldC.a == newC.a))

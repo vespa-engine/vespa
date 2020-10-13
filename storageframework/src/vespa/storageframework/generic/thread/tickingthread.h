@@ -80,13 +80,13 @@ struct TickingThreadPool : public ThreadLock {
 
     static TickingThreadPool::UP createDefault(
             vespalib::stringref name,
-            MilliSecTime waitTime = MilliSecTime(5),
+            vespalib::duration waitTime = 5ms,
             int ticksBeforeWait = 1,
-            MilliSecTime maxProcessTime = SecondTime(5).getMillis());
+            vespalib::duration maxProcessTime = 5s);
 
     virtual void updateParametersAllThreads(
-            MilliSecTime waitTime,
-            MilliSecTime maxProcessTime,
+            vespalib::duration waitTime,
+            vespalib::duration maxProcessTime,
             int ticksBeforeWait) = 0;
 
     ~TickingThreadPool() override = default;

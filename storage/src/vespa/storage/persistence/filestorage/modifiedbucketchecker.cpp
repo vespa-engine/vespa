@@ -85,10 +85,8 @@ ModifiedBucketChecker::configure(
 void
 ModifiedBucketChecker::onOpen()
 {
-    framework::MilliSecTime maxProcessingTime(60 * 1000);
-    framework::MilliSecTime waitTime(1000);
     if (!_singleThreadMode) {
-        _thread = _component->startThread(*this, maxProcessingTime, waitTime);
+        _thread = _component->startThread(*this, 60s, 1s);
     }
 }
 

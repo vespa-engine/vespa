@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statemanager.h"
+#include "storagemetricsset.h"
 #include <vespa/defaults.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -16,7 +15,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <fstream>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -35,6 +33,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _component(compReg, "statemanager"),
       _metricManager(metricManager),
       _stateLock(),
+      _stateCond(),
       _listenerLock(),
       _nodeState(std::make_shared<lib::NodeState>(_component.getNodeType(), lib::State::INITIALIZING)),
       _nextNodeState(),
@@ -71,9 +70,8 @@ StateManager::~StateManager()
 void
 StateManager::onOpen()
 {
-    framework::MilliSecTime maxProcessingTime(30 * 1000);
     if (!_noThreadTestMode) {
-        _thread = _component.startThread(*this, maxProcessingTime);
+        _thread = _component.startThread(*this, 30s);
     }
 }
 
@@ -148,7 +146,7 @@ StateManager::reportHtmlStatus(std::ostream& out,
 #endif
 
     {
-        vespalib::LockGuard lock(_stateLock);
+        std::lock_guard lock(_stateLock);
         const auto &baseLineClusterState = _systemState->getBaselineClusterState();
         out << "<h1>Current system state</h1>\n"
             << "<code>" << baseLineClusterState->toString(true) << "</code>\n"
@@ -181,14 +179,14 @@ StateManager::thisNode() const
 lib::NodeState::CSP
 StateManager::getReportedNodeState() const
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     return _nodeState;
 }
 
 lib::NodeState::CSP
 StateManager::getCurrentNodeState() const
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     return std::make_shared<const lib::NodeState>
         (_systemState->getBaselineClusterState()->getNodeState(thisNode()));
 }
@@ -196,7 +194,7 @@ StateManager::getCurrentNodeState() const
 std::shared_ptr<const lib::ClusterStateBundle>
 StateManager::getClusterStateBundle() const
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     return _systemState;
 }
 
@@ -226,10 +224,10 @@ struct StateManager::ExternalStateLock : public NodeStateUpdater::Lock {
     explicit ExternalStateLock(StateManager& manager) noexcept : _manager(manager) {}
     ~ExternalStateLock() override {
         {
-            vespalib::MonitorGuard lock(_manager._stateLock);
+            std::lock_guard lock(_manager._stateLock);
             _manager._grabbedExternalLock = false;
-            lock.broadcast();
         }
+        _manager._stateCond.notify_all();
         _manager.notifyStateListeners();
     }
 };
@@ -237,9 +235,9 @@ struct StateManager::ExternalStateLock : public NodeStateUpdater::Lock {
 NodeStateUpdater::Lock::SP
 StateManager::grabStateChangeLock()
 {
-    vespalib::MonitorGuard lock(_stateLock);
+    std::unique_lock guard(_stateLock);
     while (_grabbedExternalLock || _nextNodeState.get()) {
-        lock.wait();
+        _stateCond.wait(guard);
     }
     _grabbedExternalLock = true;
     return std::make_shared<ExternalStateLock>(*this);
@@ -248,7 +246,7 @@ StateManager::grabStateChangeLock()
 void
 StateManager::setReportedNodeState(const lib::NodeState& state)
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     if (!_grabbedExternalLock) {
         LOG(error,
             "Cannot set reported node state without first having "
@@ -286,10 +284,10 @@ StateManager::notifyStateListeners()
     lib::NodeState::SP newState;
     while (true) {
         {
-            vespalib::MonitorGuard stateLock(_stateLock);
+            std::lock_guard guard(_stateLock);
             if (!_nextNodeState && !_nextSystemState) {
                 _notifyingListeners = false;
-                stateLock.broadcast();
+                _stateCond.notify_all();
                 break; // No change
             }
             if (_nextNodeState) {
@@ -324,7 +322,7 @@ StateManager::notifyStateListeners()
             if (_nextSystemState) {
                 enableNextClusterState();
             }
-            stateLock.broadcast();
+            _stateCond.notify_all();
         }
         for (auto* listener : _stateListeners) {
             listener->handleNewState();
@@ -452,7 +450,7 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
     }
     std::shared_ptr<api::GetNodeStateReply> reply;
     {
-        vespalib::LockGuard lock(_stateLock);
+        std::unique_lock guard(_stateLock);
         const bool is_up_to_date = (_controllers_observed_explicit_node_state.find(cmd->getSourceIndex())
                                     != _controllers_observed_explicit_node_state.end());
         if (cmd->getExpectedState() != nullptr
@@ -479,8 +477,8 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
                         : cmd->getExpectedState()->toString().c_str(),
                 _nodeState->toString().c_str());
             reply = std::make_shared<api::GetNodeStateReply>(*cmd, *_nodeState);
-            mark_controller_as_having_observed_explicit_node_state(lock, cmd->getSourceIndex());
-            lock.unlock();
+            mark_controller_as_having_observed_explicit_node_state(guard, cmd->getSourceIndex());
+            guard.unlock();
             reply->setNodeInfo(getNodeInfo());
         }
     }
@@ -490,7 +488,8 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
     return true;
 }
 
-void StateManager::mark_controller_as_having_observed_explicit_node_state(const vespalib::LockGuard &, uint16_t controller_index) {
+void
+StateManager::mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex> &, uint16_t controller_index) {
     _controllers_observed_explicit_node_state.emplace(controller_index);
 }
 
@@ -498,7 +497,7 @@ void
 StateManager::setClusterStateBundle(const ClusterStateBundle& c)
 {
     {
-        vespalib::LockGuard lock(_stateLock);
+        std::lock_guard lock(_stateLock);
         _nextSystemState = std::make_shared<const ClusterStateBundle>(c);
     }
     notifyStateListeners();
@@ -519,7 +518,7 @@ StateManager::onActivateClusterStateVersion(
 {
     auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(*cmd);
     {
-        vespalib::LockGuard lock(_stateLock);
+        std::lock_guard lock(_stateLock);
         reply->setActualVersion(_systemState ? _systemState->getVersion() : 0);
     }
     sendUp(reply);
@@ -554,7 +553,7 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime, uin
 {
     std::vector<std::shared_ptr<api::GetNodeStateReply>> replies;
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::unique_lock guard(_stateLock);
         for (auto it = _queuedStateRequests.begin(); it != _queuedStateRequests.end();) {
             if (node != 0xffff && node != it->second->getSourceIndex()) {
                 ++it;
@@ -608,12 +607,10 @@ StateManager::getNodeInfo() const
         stream << "metrics";
         try {
             metrics::MetricLockGuard lock(_metricManager.getMetricLock());
-            std::vector<uint32_t> periods(
-                    _metricManager.getSnapshotPeriods(lock));
+            std::vector<uint32_t> periods(_metricManager.getSnapshotPeriods(lock));
             if (!periods.empty()) {
                 uint32_t period = periods[0];
-                const metrics::MetricSnapshot& snapshot(
-                        _metricManager.getMetricSnapshot(lock, period));
+                const metrics::MetricSnapshot& snapshot(_metricManager.getMetricSnapshot(lock, period));
                 metrics::JsonWriter metricJsonWriter(stream);
                 _metricManager.visit(lock,  snapshot, metricJsonWriter, "fleetcontroller");
             } else {
@@ -631,7 +628,7 @@ StateManager::getNodeInfo() const
     // - the public getSystemState() need (and should) grab a lock on
     //   _systemLock.
     // - getNodeInfo() (this function) always acquires the same lock.
-    vespalib::MonitorGuard guard(_stateLock);
+    std::lock_guard guard(_stateLock);
     stream << "cluster-state-version" << _systemState->getVersion();
 
     _hostInfo->printReport(stream);
@@ -653,7 +650,7 @@ StateManager::getNodeInfo() const
 void StateManager::immediately_send_get_node_state_replies() {
     LOG(debug, "Immediately replying to all pending GetNodeState requests");
     {
-        vespalib::MonitorGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         // Next GetNodeState request from any controller will be replied to instantly
         _controllers_observed_explicit_node_state.clear();
     }

@@ -114,9 +114,7 @@ PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor * sequence
     threadName << "Disk " << _env._partition << " thread " << _stripeId;
     _component = std::make_unique<ServiceLayerComponent>(compReg, threadName.str());
     _bucketOwnershipNotifier = std::make_unique<BucketOwnershipNotifier>(*_component, filestorHandler);
-    framework::MilliSecTime maxProcessingTime(60 * 1000);
-    framework::MilliSecTime waitTime(1000);
-    _thread = _component->startThread(*this, maxProcessingTime, waitTime);
+    _thread = _component->startThread(*this, 60s, 1s);
 }
 
 PersistenceThread::~PersistenceThread()

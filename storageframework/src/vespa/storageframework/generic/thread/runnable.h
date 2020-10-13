@@ -43,11 +43,9 @@ struct ThreadHandle {
      *                    clock fetches if client already knows current time)
      */
     virtual void registerTick(CycleType = UNKNOWN_CYCLE,
-                              MilliSecTime currentTime = MilliSecTime(0)) = 0;
+                              vespalib::steady_time = vespalib::steady_time()) = 0;
 
-    virtual uint64_t getWaitTime() const = 0;
-
-    virtual uint64_t getMaxProcessTime() const = 0;
+    virtual vespalib::duration getWaitTime() const = 0;
 
     /**
      * The number of ticks done before wait is called when no more work is

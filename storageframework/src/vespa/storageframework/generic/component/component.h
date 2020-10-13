@@ -71,7 +71,6 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 namespace storage::framework {
@@ -153,12 +152,6 @@ public:
      */
     void registerMetricUpdateHook(MetricUpdateHook&, SecondTime period);
 
-    /**
-     * If you need to modify the metric sets that have been registered, you need
-     * to hold the metric manager lock while you do it.
-     */
-    vespalib::MonitorGuard getMetricManagerLock();
-
     /** Get the name of the component. Must be a unique name. */
     const vespalib::string& getName() const override { return _name; }
 
@@ -185,8 +178,8 @@ public:
      * in this thread. (Thus one is not required to call registerTick())
      */
     Thread::UP startThread(Runnable&,
-                           MilliSecTime maxProcessTime = MilliSecTime(0),
-                           MilliSecTime waitTime = MilliSecTime(0),
+                           vespalib::duration maxProcessTime = vespalib::duration::zero(),
+                           vespalib::duration waitTime = vespalib::duration::zero(),
                            int ticksBeforeWait = 1);
 
     // Check upgrade flag settings. Note that this flag may change at any time.

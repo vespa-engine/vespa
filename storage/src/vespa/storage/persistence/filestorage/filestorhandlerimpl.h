@@ -293,8 +293,9 @@ private:
     std::map<document::Bucket, MergeStatus::SP> _mergeStates;
     vespalib::duration    _getNextMessageTimeout;
     const uint32_t        _max_active_merges_per_stripe; // Read concurrently by stripes.
-    vespalib::Monitor     _pauseMonitor;
-    std::atomic<bool>     _paused;
+    mutable std::mutex              _pauseMonitor;
+    mutable std::condition_variable _pauseCond;
+    std::atomic<bool>               _paused;
 
     void reply(api::StorageMessage&, DiskState state) const;
 
