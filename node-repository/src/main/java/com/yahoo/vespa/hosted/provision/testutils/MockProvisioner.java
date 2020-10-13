@@ -11,7 +11,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.transaction.NestedTransaction;
 
 import java.util.Collection;
 import java.util.List;
@@ -27,19 +26,7 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
-    public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) { }
-
-    @Override
-    public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) { }
-
-    @Override
     public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) { }
-
-    @Override
-    public void remove(NestedTransaction transaction, ApplicationId application) { }
-
-    @Override
-    public void remove(NestedTransaction transaction, ProvisionLock lock) { }
 
     @Override
     public void remove(ApplicationTransaction transaction) { }

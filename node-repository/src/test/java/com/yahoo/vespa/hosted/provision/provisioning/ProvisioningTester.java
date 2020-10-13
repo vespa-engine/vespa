@@ -222,7 +222,7 @@ public class ProvisioningTester {
     public void remove(ApplicationId application) {
         try (var lock = provisioner.lock(application)) {
             NestedTransaction transaction = new NestedTransaction();
-            provisioner.remove(transaction, lock);
+            provisioner.remove(new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
     }

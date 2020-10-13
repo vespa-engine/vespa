@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -101,14 +100,14 @@ public class InfraDeployerImplTest {
         verify(duperModelInfraApi, never()).infraApplicationActivated(any(), any());
         if (applicationIsActive) {
             verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-            ArgumentMatcher<ProvisionLock> lockMatcher = lock -> {
-                assertEquals(application.getApplicationId(), lock.application());
+            ArgumentMatcher<ApplicationTransaction> txMatcher = tx -> {
+                assertEquals(application.getApplicationId(), tx.application());
                 return true;
             };
-            verify(provisioner).remove(any(), argThat(lockMatcher));
+            verify(provisioner).remove(argThat(txMatcher));
             verify(duperModelInfraApi).infraApplicationRemoved(eq(application.getApplicationId()));
         } else {
-            verify(provisioner, never()).remove(any(), any(ProvisionLock.class));
+            verify(provisioner, never()).remove(any());
             verify(duperModelInfraApi, never()).infraApplicationRemoved(any());
         }
     }

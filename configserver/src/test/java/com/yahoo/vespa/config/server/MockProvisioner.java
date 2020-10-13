@@ -55,18 +55,6 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
-    public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-        activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock(application), transaction));
-    }
-
-    @Override
-    public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) {
-        activated = true;
-        lastApplicationId = lock.application();
-        lastHosts = hosts;
-    }
-
-    @Override
     public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
         activated = true;
         lastApplicationId = transaction.application();
@@ -77,16 +65,6 @@ public class MockProvisioner implements Provisioner {
     public void remove(ApplicationTransaction transaction) {
         removed = true;
         lastApplicationId = transaction.application();
-    }
-
-    @Override
-    public void remove(NestedTransaction transaction, ApplicationId application) {
-        remove(new ApplicationTransaction(lock(application), transaction));
-    }
-
-    @Override
-    public void remove(NestedTransaction transaction, ProvisionLock lock) {
-        remove(new ApplicationTransaction(lock, transaction));
     }
 
     @Override
@@ -124,4 +102,5 @@ public class MockProvisioner implements Provisioner {
     public HostFilter lastRestartFilter() {
         return lastRestartFilter;
     }
+
 }
