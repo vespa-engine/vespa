@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <cinttypes>
 #include <thread>
+#include <atomic>
 
 using namespace vespalib;
 
@@ -15,6 +16,11 @@ TEST(TimeTest, steady_time_is_compatible_with_steady_clock) {
 TEST(TimeTest, system_time_is_compatible_with_system_clock) {
     system_time t = system_clock::now();
     (void) t;
+}
+
+TEST(TimeTest, atomic_duration_is_lock_free) {
+    static_assert(std::atomic<duration>::is_always_lock_free, "std::atomic<duration> should be atomic");
+    static_assert(std::atomic<steady_time>::is_always_lock_free, "std::atomic<steady_time> should be atomic");
 }
 
 TEST(TimeTest, timer_can_measure_elapsed_time) {
