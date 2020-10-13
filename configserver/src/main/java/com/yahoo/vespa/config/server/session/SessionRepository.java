@@ -213,13 +213,12 @@ public class SessionRepository {
      * This method is used when creating a session based on a remote session and the distributed application package
      * It does not wait for session being created on other servers
      */
-    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
+    private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
-            Optional<Long> currentlyActiveSessionId = getActiveSessionId(applicationId);
+            Optional<Long> activeSessionId = getActiveSessionId(applicationId);
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
-                                                                             sessionId, currentlyActiveSessionId, false);
-            SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient);
+                                                                             sessionId, activeSessionId, false);
+            createLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -645,8 +644,7 @@ public class SessionRepository {
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
-            addLocalSession(localSession);
+            createLocalSession(sessionDir, applicationId, sessionId);
         }
     }
 
