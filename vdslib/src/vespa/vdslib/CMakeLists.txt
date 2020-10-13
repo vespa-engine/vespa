@@ -4,7 +4,6 @@ vespa_add_library(vdslib
     $<TARGET_OBJECTS:vdslib_container>
     $<TARGET_OBJECTS:vdslib_state>
     $<TARGET_OBJECTS:vdslib_distribution>
-    $<TARGET_OBJECTS:vdslib_thread>
     INSTALL lib64
     DEPENDS
 )

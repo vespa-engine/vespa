@@ -7,7 +7,7 @@ using namespace std::chrono;
 namespace mbus {
 
 RoutableQueue::RoutableQueue()
-    : _monitor(),
+    : _lock(),
       _queue()
 { }
 
@@ -23,18 +23,19 @@ RoutableQueue::~RoutableQueue()
 uint32_t
 RoutableQueue::size()
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     return _queue.size();
 }
 
 void
 RoutableQueue::enqueue(Routable::UP r)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     _queue.push(r.get());
     r.release();
     if (_queue.size() == 1) {
-        guard.broadcast(); // support multiple readers
+        guard.unlock();
+        _cond.notify_all(); // support multiple readers
     }
 }
 
@@ -43,9 +44,9 @@ RoutableQueue::dequeue(duration timeout)
 {
     steady_clock::time_point startTime = steady_clock::now();
     duration left = timeout;
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     while (_queue.size() == 0 && left > duration::zero()) {
-        if (!guard.wait(left) || _queue.size() > 0) {
+        if ((_cond.wait_for(guard, left) == std::cv_status::no_timeout) || (_queue.size() > 0)) {
             break;
         }
         duration elapsed = (steady_clock::now() - startTime);

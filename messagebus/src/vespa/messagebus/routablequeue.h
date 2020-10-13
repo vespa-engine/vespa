@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
 #include "queue.h"
 #include "routable.h"
 #include "message.h"
 #include "reply.h"
+#include <mutex>
+#include <condition_variable>
 
 namespace mbus {
 
@@ -25,8 +26,9 @@ class RoutableQueue : public IMessageHandler,
                       public IReplyHandler
 {
 private:
-    vespalib::Monitor _monitor;
-    Queue<Routable*>  _queue;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    Queue<Routable*>        _queue;
 
 public:
     RoutableQueue(const RoutableQueue &) = delete;

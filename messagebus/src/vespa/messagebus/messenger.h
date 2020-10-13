@@ -6,7 +6,6 @@
 #include "message.h"
 #include "reply.h"
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/fastos/thread.h>
 
@@ -40,8 +39,9 @@ public:
     };
 
 private:
-    vespalib::Monitor   _monitor;
-    FastOS_ThreadPool   _pool;
+    mutable std::mutex      _lock;
+    std::condition_variable _cond;
+    FastOS_ThreadPool       _pool;
     std::vector<ITask*> _children;
     vespalib::ArrayQueue<ITask*>  _queue;
     bool                _closed;

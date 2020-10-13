@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
 #include <list>
 #include <sstream>
 #include <vespa/storageapi/messageapi/storagecommand.h>
@@ -27,7 +26,8 @@ class DummyStorageLink : public StorageLink {
     bool _useDispatch;
     bool _ignore;
     static DummyStorageLink* _last;
-    vespalib::Monitor _waitMonitor;
+    std::mutex _waitMonitor;
+    std::condition_variable _waitCond;
 
 public:
     DummyStorageLink();
@@ -87,7 +87,7 @@ public:
         { return _replies; }
 
     std::vector<api::StorageMessage::SP> getCommandsOnce() {
-        vespalib::MonitorGuard lock(_waitMonitor);
+        std::lock_guard lock(_waitMonitor);
         std::vector<api::StorageMessage::SP> retval;
         {
             std::lock_guard guard(_lock);
@@ -97,7 +97,7 @@ public:
     }
 
     std::vector<api::StorageMessage::SP> getRepliesOnce() {
-        vespalib::MonitorGuard lock(_waitMonitor);
+        std::lock_guard lock(_waitMonitor);
         std::vector<api::StorageMessage::SP> retval;
         {
             std::lock_guard guard(_lock);

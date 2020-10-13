@@ -51,12 +51,13 @@ Process::UP createProcess(vespalib::stringref configId) {
 class StorageApp : public FastOS_Application,
                    private vespalib::ProgramOptions
 {
-    std::string       _configId;
-    bool              _showSyntax;
-    uint32_t          _maxShutdownTime;
-    int               _lastSignal;
-    vespalib::Monitor _signalLock;
-    Process::UP       _process;
+    std::string             _configId;
+    bool                    _showSyntax;
+    uint32_t                _maxShutdownTime;
+    int                     _lastSignal;
+    std::mutex              _signalLock;
+    std::condition_variable _signalCond;
+    Process::UP             _process;
 
 public:
     StorageApp();
@@ -64,11 +65,10 @@ public:
 
     void handleSignal(int signal) {
         LOG(info, "Got signal %d, waiting for lock", signal);
-        vespalib::MonitorGuard sync(_signalLock);
-
+        std::lock_guard sync(_signalLock);
         LOG(info, "Got lock for signal %d", signal);
         _lastSignal = signal;
-        sync.signal();
+        _signalCond.notify_one();
     }
     void handleSignals();
 
@@ -103,8 +103,7 @@ StorageApp::~StorageApp() = default;
 bool StorageApp::Init()
 {
     FastOS_Application::Init();
-    setCommandLineArguments(
-            FastOS_Application::_argc, FastOS_Application::_argv);
+    setCommandLineArguments(FastOS_Application::_argc, FastOS_Application::_argv);
     try{
         parse();
     } catch (vespalib::InvalidCommandLineArgumentsException& e) {
@@ -192,9 +191,9 @@ int StorageApp::Main()
             ResumeGuard guard(_process->getNode().pause());
             _process->updateConfig();
         }
-            // Wait until we get a kill signal.
-        vespalib::MonitorGuard lock(_signalLock);
-        lock.wait(1000ms);
+        // Wait until we get a kill signal.
+        std::unique_lock guard(_signalLock);
+        _signalCond.wait_for(guard, 1000ms);
         handleSignals();
     }
     LOG(debug, "Server was attempted stopped, shutting down");

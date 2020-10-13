@@ -29,11 +29,11 @@ RPCTarget::resolveVersion(duration timeout, RPCTarget::IVersionHandler &handler)
     ResolveState state = _state.load(std::memory_order_acquire);
     bool hasVersion = (state == VERSION_RESOLVED);
     if ( ! hasVersion ) {
-        vespalib::MonitorGuard guard(_lock);
+        std::unique_lock guard(_lock);
         state = _state.load(std::memory_order_relaxed);
         if (state == VERSION_RESOLVED || state == PROCESSING_HANDLERS) {
             while (_state.load(std::memory_order::memory_order_relaxed) == PROCESSING_HANDLERS) {
-                guard.wait();
+                _cond.wait(guard);
             }
             hasVersion = true;
         } else {
@@ -71,7 +71,7 @@ RPCTarget::RequestDone(FRT_RPCRequest *req)
 {
     HandlerList handlers;
     {
-        vespalib::MonitorGuard guard(_lock);
+        std::lock_guard guard(_lock);
         assert(_state == TARGET_INVOKED);
         if (req->CheckReturnTypes("s")) {
             FRT_Values &val = *req->GetReturn();
@@ -90,10 +90,10 @@ RPCTarget::RequestDone(FRT_RPCRequest *req)
         handler->handleVersion(_version.get());
     }
     {
-        vespalib::MonitorGuard guard(_lock);
+        std::lock_guard guard(_lock);
         _state = (_version.get() ? VERSION_RESOLVED : VERSION_NOT_RESOLVED);
-        guard.broadcast();
     }
+    _cond.notify_all();
     req->SubRef();
 }
 
