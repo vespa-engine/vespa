@@ -5,6 +5,7 @@ vespa_add_library(eval_instruction OBJECT
     generic_concat
     generic_join
     generic_reduce
+    generic_map
     generic_merge
     generic_rename
 )

@@ -10,6 +10,7 @@
 #include "string_stuff.h"
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_join.h>
+#include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
@@ -90,18 +91,6 @@ void op_double_join(State &state, uint64_t param) {
 
 void op_tensor_map(State &state, uint64_t param) {
     state.pop_push(state.engine.map(state.peek(0), to_map_fun(param), state.stash));
-}
-
-// replace with GenericMap when ready
-void op_tensor_spec_map(State &state, uint64_t param) {
-    auto fun = to_map_fun(param);
-    auto old_spec = state.engine.to_spec(state.peek(0));
-    TensorSpec new_spec(old_spec.type());
-    for (auto &cell: old_spec.cells()) {
-        new_spec.add(cell.first, fun(cell.second));
-    }
-    const Value &result = *state.stash.create<Value::UP>(state.engine.from_spec(new_spec));
-    state.pop_push(result);
 }
 
 void op_tensor_join(State &state, uint64_t param) {
@@ -313,8 +302,7 @@ Instruction
 Map::compile_self(EngineOrFactory engine, Stash &) const
 {
     if (engine.is_factory()) {
-        // replace with GenericMap when ready
-        return Instruction(op_tensor_spec_map, to_param(_function));
+        return instruction::GenericMap::make_instruction(result_type(), _function);
     }
     if (result_type().is_double()) {
         return Instruction(op_double_map, to_param(_function));

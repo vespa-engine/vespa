@@ -27,6 +27,7 @@
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
+#include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -97,6 +98,12 @@ struct Impl {
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &concat_node = tensor_function::concat(lhs_node, rhs_node, dimension, stash); 
         return concat_node.compile_self(engine, stash);
+    }
+    Instruction create_map(const ValueType &lhs, operation::op1_t function, Stash &stash) const {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
+        const auto &map_node = tensor_function::map(lhs_node, function, stash); 
+        return map_node.compile_self(engine, stash);
     }
 };
 
@@ -314,6 +321,22 @@ void benchmark_merge(const vespalib::string &desc, const TensorSpec &lhs,
     for (const Impl &impl: impl_list) {
         auto op = impl.create_merge(lhs_type, rhs_type, function, stash);
         std::vector<CREF<TensorSpec>> stack_spec({lhs, rhs});
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+    }
+    benchmark(desc, list);
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_map(const vespalib::string &desc, const TensorSpec &lhs, operation::op1_t function)
+{
+    Stash stash;
+    ValueType lhs_type = ValueType::from_spec(lhs.type());
+    ASSERT_FALSE(lhs_type.is_error());
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_map(lhs_type, function, stash);
+        std::vector<CREF<TensorSpec>> stack_spec({lhs});
         list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
     }
     benchmark(desc, list);
@@ -608,6 +631,28 @@ TEST(MergeBench, mixed_merge) {
     auto lhs = make_matrix(D::map("a", 64, 1), D::idx("b", 64), 1.0);
     auto rhs = make_matrix(D::map("a", 64, 2), D::idx("b", 64), 2.0);
     benchmark_merge("mixed merge", lhs, rhs, operation::Max::f);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(MapBench, dense_map) {
+    auto lhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.75);
+    benchmark_map("dense map", lhs, operation::Floor::f);
+}
+
+TEST(MapBench, sparse_map_small) {
+    auto lhs = make_matrix(D::map("a", 4, 1), D::map("b", 4, 1), 1.75);
+    benchmark_map("sparse map small", lhs, operation::Floor::f);
+}
+
+TEST(MapBench, sparse_map_big_small) {
+    auto lhs = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.75);
+    benchmark_map("sparse map big", lhs, operation::Floor::f);
+}
+
+TEST(MapBench, mixed_map) {
+    auto lhs = make_matrix(D::map("a", 64, 1), D::idx("b", 64), 1.75);
+    benchmark_map("mixed map", lhs, operation::Floor::f);
 }
 
 //-----------------------------------------------------------------------------
