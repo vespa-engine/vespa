@@ -142,7 +142,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         // All operations, and receiver, now waiting for this thread to arrive.
         assertEquals(4, phaser.getRegisteredParties());
         assertEquals(0, phaser.getPhase());
-        phaser.arrive();
+        phaser.arriveAndAwaitAdvance();
         assertEquals(1, phaser.getPhase());
         phaser.awaitAdvance(phaser.arriveAndDeregister());
 
