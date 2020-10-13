@@ -139,7 +139,7 @@ public class SessionRepository {
 
         for (File session : sessions) {
             try {
-                addLocalSession(createSessionFromId(Long.parseLong(session.getName())));
+                createSessionFromId(Long.parseLong(session.getName()));
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Could not load session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
@@ -604,11 +604,16 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    LocalSession createSessionFromId(long sessionId) {
+    void createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+        createLocalSession(sessionId, applicationPackage);
+    }
+
+    void createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+        addLocalSession(session);
     }
 
     /**
