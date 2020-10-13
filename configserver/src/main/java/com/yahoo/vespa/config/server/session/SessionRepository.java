@@ -181,17 +181,14 @@ public class SessionRepository {
                                                   DeployLogger logger,
                                                   boolean internalRedeploy,
                                                   TimeoutBudget timeoutBudget) {
-        File existingApp = getSessionAppDir(existingSession.getSessionId());
         ApplicationId existingApplicationId = existingSession.getApplicationId();
-
         Optional<Long> activeSessionId = getActiveSessionId(existingApplicationId);
         logger.log(Level.FINE, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
+        File existingApp = getSessionAppDir(existingSession.getSessionId());
         LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
-        // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
+        // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
-        if (existingSession.getApplicationPackageReference() != null) {
-            session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
-        }
+        session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
