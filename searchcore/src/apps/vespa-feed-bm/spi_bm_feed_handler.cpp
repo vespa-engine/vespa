@@ -3,6 +3,7 @@
 #include "spi_bm_feed_handler.h"
 #include "pending_tracker.h"
 #include "bucket_info_queue.h"
+#include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/metrics/loadtype.h>
@@ -77,10 +78,11 @@ MyOperationComplete::addResultHandler(const storage::spi::ResultHandler * result
 
 }
 
-SpiBmFeedHandler::SpiBmFeedHandler(PersistenceProvider& provider, bool skip_get_spi_bucket_info)
+SpiBmFeedHandler::SpiBmFeedHandler(PersistenceProvider& provider, const document::FieldSetRepo &field_set_repo, bool skip_get_spi_bucket_info)
     : IBmFeedHandler(),
       _name(vespalib::string("SpiBmFeedHandler(") + (skip_get_spi_bucket_info ? "skip-get-spi-bucket-info" : "get-spi-bucket-info") + ")"),
       _provider(provider),
+      _field_set_repo(field_set_repo),
       _errors(0u),
       _skip_get_spi_bucket_info(skip_get_spi_bucket_info)
 {
@@ -110,6 +112,18 @@ SpiBmFeedHandler::remove(const document::Bucket& bucket, const DocumentId& docum
     get_bucket_info_loop(tracker);
     Bucket spi_bucket(bucket, PartitionId(0));
     _provider.removeAsync(spi_bucket, Timestamp(timestamp), document_id, context, std::make_unique<MyOperationComplete>(_errors, spi_bucket, tracker));
+}
+
+void
+SpiBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
+{
+    get_bucket_info_loop(tracker);
+    Bucket spi_bucket(bucket, PartitionId(0));
+    auto field_set = _field_set_repo.getFieldSet(field_set_string);
+    auto result = _provider.get(spi_bucket, *field_set, document_id, context);
+    if (result.hasError()) {
+        ++_errors;
+    }
 }
 
 void

@@ -58,6 +58,13 @@ StorageApiMessageBusBmFeedHandler::remove(const document::Bucket& bucket, const 
 }
 
 void
+StorageApiMessageBusBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
+{
+    auto cmd = std::make_unique<storage::api::GetCommand>(bucket, document_id, field_set_string);
+    send_msg(std::move(cmd), tracker);
+}
+
+void
 StorageApiMessageBusBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
 {
 }

@@ -109,6 +109,13 @@ StorageApiRpcBmFeedHandler::remove(const document::Bucket& bucket, const Documen
 }
 
 void
+StorageApiRpcBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
+{
+    auto cmd = std::make_unique<storage::api::GetCommand>(bucket, document_id, field_set_string);
+    send_rpc(std::move(cmd), tracker);
+}
+
+void
 StorageApiRpcBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
 {
 }
