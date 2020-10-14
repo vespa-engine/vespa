@@ -116,8 +116,7 @@ TensorSpec::from_slime(const slime::Inspector &tensor)
 TensorSpec
 TensorSpec::from_value(const eval::Value &value)
 {
-    auto tensor = dynamic_cast<const vespalib::eval::Tensor *>(&value);
-    if (tensor) {
+    if (auto tensor = dynamic_cast<const vespalib::eval::Tensor *>(&value)) {
         return tensor->engine().to_spec(value);
     } else {
         return spec_from_value(value);

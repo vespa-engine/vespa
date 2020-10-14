@@ -14,8 +14,7 @@ bool operator==(const Value &lhs, const Value &rhs)
 
 std::ostream &operator<<(std::ostream &out, const Value &value)
 {
-    out << TensorSpec::from_value(value);
-    return out;
+    return out << TensorSpec::from_value(value);
 }
 
 } // namespace vespalib::eval
