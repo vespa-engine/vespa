@@ -111,37 +111,37 @@ class ServletRequestReader implements ReadListener {
     public void onDataAvailable() throws IOException {
         while (servletInputStream.isReady()) {
             final byte[] buffer = new byte[BUFFER_SIZE_BYTES];
-            final int numBytesRead = servletInputStream.read(buffer);
-            if (numBytesRead < 0) {
-                // End of stream; there should be no more data available, ever.
-                return;
-            }
-            writeRequestContent(ByteBuffer.wrap(buffer, 0, numBytesRead));
-        }
-    }
+            int numBytesRead;
 
-    private void writeRequestContent(final ByteBuffer buf) {
-        synchronized (monitor) {
-            if (state != State.READING) {
-                //We have a failure, so no point in giving the buffer to the user.
-                assert finishedFuture.isCompletedExceptionally();
-                return;
+            synchronized (monitor) {
+                numBytesRead = servletInputStream.read(buffer);
+                if (numBytesRead < 0) {
+                    // End of stream; there should be no more data available, ever.
+                    return;
+                }
+                if (state != State.READING) {
+                    //We have a failure, so no point in giving the buffer to the user.
+                    assert finishedFuture.isCompletedExceptionally();
+                    return;
+                }
+                //wait for both
+                //  - requestContentChannel.write to finish
+                //  - the write completion handler to be called
+                numberOfOutstandingUserCalls += 2;
+                bytesRead += numBytesRead;
             }
-            //wait for both
-            //  - requestContentChannel.write to finish
-            //  - the write completion handler to be called
-            numberOfOutstandingUserCalls += 2;
-        }
-        try {
-            int bytesReceived = buf.remaining();
-            requestContentChannel.write(buf, writeCompletionHandler);
-            metricReporter.successfulRead(bytesReceived);
-            bytesRead += bytesReceived;
-        } catch (Throwable t) {
-            finishedFuture.completeExceptionally(t);
-        } finally {
-            //decrease due to this method completing.
-            decreaseOutstandingUserCallsAndCloseRequestContentChannelConditionally();
+
+            try {
+                requestContentChannel.write(ByteBuffer.wrap(buffer, 0, numBytesRead), writeCompletionHandler);
+                metricReporter.successfulRead(numBytesRead);
+            }
+            catch (Throwable t) {
+                finishedFuture.completeExceptionally(t);
+            }
+            finally {
+                //decrease due to this method completing.
+                decreaseOutstandingUserCallsAndCloseRequestContentChannelConditionally();
+            }
         }
     }
 

@@ -211,27 +211,27 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         };
 
         HttpRequest request = (HttpRequest) rawRequest;
-            try {
-                Path requestPath = new Path(request.getUri());
-                for (String path : handlers.keySet())
-                    if (requestPath.matches(path)) {
-                        Map<Method, Handler> methods = handlers.get(path);
-                        if (methods.containsKey(request.getMethod()))
-                            return methods.get(request.getMethod()).handle(request, new DocumentPath(requestPath), responseHandler);
+        try {
+            Path requestPath = new Path(request.getUri());
+            for (String path : handlers.keySet())
+                if (requestPath.matches(path)) {
+                    Map<Method, Handler> methods = handlers.get(path);
+                    if (methods.containsKey(request.getMethod()))
+                        return methods.get(request.getMethod()).handle(request, new DocumentPath(requestPath), responseHandler);
 
-                        if (request.getMethod() == OPTIONS)
-                            options(methods.keySet(), responseHandler);
+                    if (request.getMethod() == OPTIONS)
+                        options(methods.keySet(), responseHandler);
 
-                        methodNotAllowed(request, methods.keySet(), responseHandler);
-                    }
-                notFound(request, handlers.keySet(), responseHandler);
-            }
-            catch (IllegalArgumentException e) {
-                badRequest(request, e, responseHandler);
-            }
-            catch (RuntimeException e) {
-                serverError(request, e, responseHandler);
-            }
+                    methodNotAllowed(request, methods.keySet(), responseHandler);
+                }
+            notFound(request, handlers.keySet(), responseHandler);
+        }
+        catch (IllegalArgumentException e) {
+            badRequest(request, e, responseHandler);
+        }
+        catch (RuntimeException e) {
+            serverError(request, e, responseHandler);
+        }
         return ignoredContent;
     }
 
