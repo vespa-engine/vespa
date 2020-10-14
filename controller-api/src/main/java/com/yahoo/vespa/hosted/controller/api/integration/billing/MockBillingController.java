@@ -143,9 +143,9 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public PlanResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
+    public CollectionResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
         collectionMethod = method;
-        return PlanResult.success();
+        return CollectionResult.success();
     }
 
     private PaymentInstrument createInstrument(String id) {

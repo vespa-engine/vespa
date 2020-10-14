@@ -4,24 +4,24 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
 import java.util.Optional;
 
 /**
- * Result of {@link BillingController#setPlan}
+ * General result class used by {@link BillingController#setCollectionMethod}
  *
- * @author olaa
+ * @author smorgrav
  */
-public class PlanResult {
+public class CollectionResult {
 
     private final Optional<String> errorMessage;
 
-    private PlanResult(Optional<String> errorMessage) {
+    private CollectionResult(Optional<String> errorMessage) {
         this.errorMessage = errorMessage;
     }
 
-    public static PlanResult success() {
-        return new PlanResult(Optional.empty());
+    public static CollectionResult success() {
+        return new CollectionResult(Optional.empty());
     }
 
-    public static PlanResult error(String errorMessage) {
-        return new PlanResult(Optional.of(errorMessage));
+    public static CollectionResult error(String errorMessage) {
+        return new CollectionResult(Optional.of(errorMessage));
     }
 
     public boolean isSuccess() {
@@ -31,5 +31,4 @@ public class PlanResult {
     public Optional<String> getErrorMessage() {
         return errorMessage;
     }
-
 }

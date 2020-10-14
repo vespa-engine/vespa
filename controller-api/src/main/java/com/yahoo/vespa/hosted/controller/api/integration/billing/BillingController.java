@@ -56,7 +56,7 @@ public interface BillingController {
         return CollectionMethod.AUTO;
     }
 
-    default PlanResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
-        return PlanResult.error("Method not implemented");
+    default CollectionResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
+        return CollectionResult.error("Method not implemented");
     }
 }
