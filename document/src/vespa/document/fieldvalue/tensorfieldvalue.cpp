@@ -4,6 +4,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
@@ -11,6 +12,7 @@
 #include <cassert>
 
 using vespalib::tensor::Tensor;
+using vespalib::eval::EngineOrFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using Engine = vespalib::tensor::DefaultTensorEngine;
@@ -218,13 +220,24 @@ TensorFieldValue::compare(const FieldValue &other) const
     if (!rhs._tensor) {
         return 1;
     }
-    if (_tensor->equals(*rhs._tensor)) {
+    // equal pointers always means identical
+    if (_tensor.get() == rhs._tensor.get()) {
         return 0;
     }
-    assert(_tensor.get() != rhs._tensor.get());
-    // XXX: Wrong, compares identity of tensors instead of values
-    // Note: sorting can be dangerous due to this.
-    return ((_tensor.get()  < rhs._tensor.get()) ? -1 : 1);
+    // compare just the type first:
+    auto lhs_type = _tensor->type().to_spec();
+    auto rhs_type = rhs._tensor->type().to_spec();
+    int type_cmp = lhs_type.compare(rhs_type);
+    if (type_cmp != 0) {
+        return type_cmp;
+    }
+    // Compare the actual tensors by converting to TensorSpec strings.
+    // TODO: this can be very slow, check if it might be used for anything
+    // performance-critical.
+    auto engine = EngineOrFactory::get();
+    auto lhs_spec = engine.to_spec(*_tensor).to_string();
+    auto rhs_spec = engine.to_spec(*rhs._tensor).to_string();
+    return lhs_spec.compare(rhs_spec);
 }
 
 IMPLEMENT_IDENTIFIABLE(TensorFieldValue, FieldValue);
