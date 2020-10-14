@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.google.inject.Inject;
@@ -20,7 +20,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -157,7 +156,11 @@ public class FileServer {
 
         boolean fileExists;
         try {
-            fileExists = hasFile(fileReference) || download(fileReference, downloadFromOtherSourceIfNotFound);
+            String client = request.target().toString();
+            FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(new FileReference(fileReference),
+                                                                                    downloadFromOtherSourceIfNotFound,
+                                                                                    client);
+            fileExists = hasFile(fileReference) || download(fileReferenceDownload);
             if (fileExists) startFileServing(fileReference, receiver);
         } catch (IllegalArgumentException e) {
             fileExists = false;
@@ -173,19 +176,14 @@ public class FileServer {
 
     // downloadFromOtherSourceIfNotFound is true when the request comes from another config server.
     // This is to avoid config servers asking each other for a file that does not exist
-    private boolean download(String fileReference, boolean downloadFromOtherSourceIfNotFound) {
-        if (downloadFromOtherSourceIfNotFound) {
+    private boolean download(FileReferenceDownload fileReferenceDownload) {
+        if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
             log.log(Level.FINE, "File not found, downloading from another source");
-            return download(fileReference).isPresent();
+            return downloader.getFile(fileReferenceDownload).isPresent();
         } else {
             log.log(Level.FINE, "File not found, will not download from another source since request came from another config server");
             return false;
         }
-    }
-
-    private Optional<File> download(String fileReference) {
-        /* downloadFromOtherSourceIfNotFound should be false here, since this request is from a config server */
-        return downloader.getFile(new FileReferenceDownload(new FileReference(fileReference), false));
     }
 
     public FileDownloader downloader() {

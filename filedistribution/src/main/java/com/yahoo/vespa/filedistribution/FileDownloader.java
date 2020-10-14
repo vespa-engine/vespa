@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.time.Duration;
@@ -55,7 +56,8 @@ public class FileDownloader implements AutoCloseable {
         try {
             return getFutureFile(fileReferenceDownload).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.log(Level.WARNING, "Failed downloading '" + fileReferenceDownload.fileReference().value() + "', removing from download queue: " + e.getMessage());
+            log.log(Level.WARNING, "Failed downloading '" + fileReferenceDownload +
+                                   "', removing from download queue: " + Exceptions.toMessageString(e));
             fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
             return Optional.empty();
         }
