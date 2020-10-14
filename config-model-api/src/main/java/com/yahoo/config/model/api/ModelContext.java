@@ -95,6 +95,9 @@ public interface ModelContext {
         // TODO Remove on 7.XXX when this is default on.
         boolean useDirectStorageApiRpc();
 
+        // TODO Remove on 7.XXX when this is default on.
+        boolean useFastValueTensorImplementation();
+
         // TODO(bjorncs) Temporary feature flag
         default String proxyProtocol() { return "https+proxy-protocol"; }
 

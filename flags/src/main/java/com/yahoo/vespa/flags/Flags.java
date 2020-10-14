@@ -196,6 +196,12 @@ public class Flags {
             "Takes effect at restart of distributor and content node process",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_FAST_VALUE_TENSOR_IMPLEMENTATION = defineFeatureFlag(
+            "use-fast-value-tensor-implementation", false,
+            "Whether to use FastValueBuilderFactory as the tensor implementation on all content nodes.",
+            "Takes effect at restart of content node process",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag HOST_HARDENING = defineFeatureFlag(
             "host-hardening", false,
             "Whether to enable host hardening Linux baseline.",

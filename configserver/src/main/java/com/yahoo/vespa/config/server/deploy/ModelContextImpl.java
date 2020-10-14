@@ -150,6 +150,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useContentNodeBtreeDb;
         private final boolean useThreePhaseUpdates;
         private final boolean useDirectStorageApiRpc;
+        private final boolean useFastValueTensorImplementation;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
         private final double threadPoolSizeFactor;
@@ -206,6 +207,8 @@ public class ModelContextImpl implements ModelContext {
             useThreePhaseUpdates = Flags.USE_THREE_PHASE_UPDATES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             useDirectStorageApiRpc = Flags.USE_DIRECT_STORAGE_API_RPC.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            useFastValueTensorImplementation = Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -311,6 +314,11 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean useDirectStorageApiRpc() {
             return useDirectStorageApiRpc;
+        }
+
+        @Override
+        public boolean useFastValueTensorImplementation() {
+            return useFastValueTensorImplementation;
         }
 
         @Override

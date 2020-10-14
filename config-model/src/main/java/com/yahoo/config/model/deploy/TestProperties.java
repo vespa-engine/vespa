@@ -38,6 +38,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useContentNodeBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
     private boolean useDirectStorageApiRpc = false;
+    private boolean useFastValueTensorImplementation = false;
     private boolean tlsUseFSync = false;
     private String tlsCompressionType = "NONE";
     private double defaultTermwiseLimit = 1.0;
@@ -79,6 +80,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useContentNodeBtreeDb() { return useContentNodeBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
+    @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
@@ -125,6 +127,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUseDirectStorageApiRpc(boolean useDirectStorageApiRpc) {
         this.useDirectStorageApiRpc = useDirectStorageApiRpc;
+        return this;
+    }
+
+    public TestProperties setUseFastValueTensorImplementation(boolean useFastValueTensorImplementation) {
+        this.useFastValueTensorImplementation = useFastValueTensorImplementation;
         return this;
     }
 

@@ -30,6 +30,7 @@ import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
+import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Rule;
@@ -1006,6 +1007,31 @@ public class ContentClusterTest extends ContentBaseTest {
     public void use_direct_storage_api_rpc_config_is_controlled_by_properties() {
         assertDirectStorageApiRpcFlagIsPropagatedToConfig(false);
         assertDirectStorageApiRpcFlagIsPropagatedToConfig(true);
+    }
+
+
+    @Test
+    public void use_fast_value_tensor_implementation_config_is_controlled_by_properties() {
+        assertUseFastValueTensorImplementationFlagIsPropagatedToConfig(false);
+        assertUseFastValueTensorImplementationFlagIsPropagatedToConfig(true);
+    }
+
+    void assertUseFastValueTensorImplementationFlagIsPropagatedToConfig(boolean useFastValueTensorImplementation) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseFastValueTensorImplementation(useFastValueTensorImplementation));
+        ContentCluster cc = model.getContentClusters().get("storage");
+        var node = cc.getSearch().getSearchNodes().get(0);
+        if (useFastValueTensorImplementation) {
+            assertTensorImplementationConfig(ProtonConfig.Tensor_implementation.FAST_VALUE, node);
+        } else {
+            assertTensorImplementationConfig(ProtonConfig.Tensor_implementation.TENSOR_ENGINE, node);
+        }
+    }
+
+    void assertTensorImplementationConfig(ProtonConfig.Tensor_implementation.Enum exp, SearchNode node) {
+        var builder = new ProtonConfig.Builder();
+        node.getConfig(builder);
+        var config = new ProtonConfig(builder);
+        assertEquals(exp, config.tensor_implementation());
     }
 
 }
