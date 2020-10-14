@@ -39,7 +39,6 @@ uint32_t per_stripe_merge_limit(uint32_t num_threads, uint32_t num_stripes) noex
 
 FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender& sender,
                                          FileStorMetrics& metrics,
-                                         [[maybe_unused]] const spi::PartitionStateList& partitions,
                                          ServiceLayerComponentRegister& compReg)
     : _component(compReg, "filestorhandlerimpl"),
       _diskInfo(),

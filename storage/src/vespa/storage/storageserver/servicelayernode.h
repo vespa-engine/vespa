@@ -28,7 +28,6 @@ class ServiceLayerNode
 {
     ServiceLayerNodeContext& _context;
     spi::PersistenceProvider& _persistenceProvider;
-    spi::PartitionStateList _partitions;
     VisitorFactory::Map _externalVisitors;
     MinimumUsedBitsTracker _minUsedBitsTracker;
 

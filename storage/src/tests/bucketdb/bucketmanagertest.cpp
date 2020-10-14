@@ -151,7 +151,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
                     "config-doctypes", FileSpec("../config-doctypes.cfg")));
     _top = std::make_unique<DummyStorageLink>();
     _node = std::make_unique<TestServiceLayerApp>(
-                DiskCount(2), NodeIndex(0), config.getConfigId());
+                DiskCount(1), NodeIndex(0), config.getConfigId());
     _node->setTypeRepo(repo);
     _node->setupDummyPersistence();
     // Set up the 3 links
@@ -164,7 +164,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
         _top->push_back(std::move(bottom));
     } else {
         auto bottom = std::make_unique<FileStorManager>(
-                    config.getConfigId(), _node->getPartitions(),
+                    config.getConfigId(),
                     _node->getPersistenceProvider(), _node->getComponentRegister());
         _filestorManager = bottom.get();
         _top->push_back(std::move(bottom));
@@ -191,7 +191,7 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
         info.size = randomizer.nextUint32();
         info.count = randomizer.nextUint32(1, 0xFFFF);
 
-        info.partition = _node->getPartition(id);
+        info.partition = 0u;
         _bucketInfo[id] = info;
     }
 
@@ -454,7 +454,7 @@ TEST_F(BucketManagerTest, metrics_generation) {
     _top->doneInit();
     trigger_metric_manager_update();
 
-    ASSERT_EQ(2u, bucket_manager_metrics().disks.size());
+    ASSERT_EQ(1u, bucket_manager_metrics().disks.size());
     const DataStoredMetrics& m(*bucket_manager_metrics().disks[0]);
     EXPECT_EQ(3, m.buckets.getLast());
     EXPECT_EQ(300, m.docs.getLast());

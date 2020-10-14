@@ -15,7 +15,8 @@ namespace storage {
 struct MergeBlockingTest : public FileStorTestFixture {
     void setupDisks() {
         FileStorTestFixture::setupPersistenceThreads(1);
-        _node->setPersistenceProvider(std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo(), 1));
+        _node->setPersistenceProvider(std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo()));
+        _node->getPersistenceProvider().initialize();
     }
 
     void SetUp() override;

@@ -40,7 +40,7 @@ public:
     {
     }
     bool shouldBeReady(const document::Bucket &bucket) const override {
-        return _calc.shouldBeReady(Bucket(bucket, PartitionId(0)));
+        return _calc.shouldBeReady(Bucket(bucket));
     }
     bool clusterUp() const override { return _clusterUp; }
     bool nodeUp() const override { return _nodeUp; }

@@ -848,7 +848,8 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
 {
     tracker->setMetric(_env._metrics.mergeBuckets);
 
-    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(cmd.getBucket());
     LOG(debug, "MergeBucket(%s) with max timestamp %" PRIu64 ".",
         bucket.toString().c_str(), cmd.getMaxTimestamp());
 
@@ -1058,7 +1059,8 @@ MessageTracker::UP
 MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker)
 {
     tracker->setMetric(_env._metrics.getBucketDiff);
-    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(cmd.getBucket());
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
     checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
 
@@ -1169,7 +1171,8 @@ void
 MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSender& sender)
 {
     _env._metrics.getBucketDiffReply.inc();
-    spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(reply.getBucket());
     LOG(debug, "GetBucketDiffReply(%s)", bucket.toString().c_str());
 
     if (!_env._fileStorHandler.isMerging(bucket.getBucket())) {
@@ -1243,7 +1246,8 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
 {
     tracker->setMetric(_env._metrics.applyBucketDiff);
 
-    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(cmd.getBucket());
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
@@ -1330,7 +1334,8 @@ void
 MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,MessageSender& sender)
 {
     _env._metrics.applyBucketDiffReply.inc();
-    spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(reply.getBucket());
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 

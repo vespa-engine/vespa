@@ -136,12 +136,11 @@ private:
 class DummyPersistence : public AbstractPersistenceProvider
 {
 public:
-    DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo,
-                     uint16_t partitionCount = 1);
+    DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
     ~DummyPersistence();
 
-    PartitionStateListResult getPartitionStates() const override;
-    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
+    Result initialize() override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
 
     void setModifiedBuckets(const BucketIdListResult::List& result);
 
@@ -201,11 +200,9 @@ private:
 
     mutable bool _initialized;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    PartitionStateList _partitions;
-    typedef vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>
-    PartitionContent;
+    using Content = vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>;
 
-    std::vector<PartitionContent> _content;
+    Content _content;
     IteratorId _nextIterator;
     mutable std::map<IteratorId, Iterator::UP> _iterators;
     mutable std::mutex      _monitor;

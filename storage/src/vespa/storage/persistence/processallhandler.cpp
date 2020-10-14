@@ -88,7 +88,8 @@ ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, Message
         cmd.getBucketId().toString().c_str(),
         cmd.getDocumentSelection().c_str());
 
-    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(cmd.getBucket());
     UnrevertableRemoveEntryProcessor processor(_spi, bucket, tracker->context());
     BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
                                 processor, spi::NEWEST_DOCUMENT_ONLY,tracker->context());
@@ -107,7 +108,8 @@ ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd, MessageTracker:
     ost << "Persistence bucket " << cmd.getBucketId()
         << ", partition " << _env._partition << "\n";
 
-    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(cmd.getBucket());
     StatEntryProcessor processor(ost);
     BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
                                 processor, spi::ALL_VERSIONS,tracker->context());

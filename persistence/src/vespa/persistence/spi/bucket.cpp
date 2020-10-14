@@ -20,7 +20,6 @@ operator<<(vespalib::asciistream& os, const Bucket& bucket)
               << vespalib::hex << vespalib::setw(sizeof(document::BucketId::Type)*2) << vespalib::setfill('0')
               << bucket.getBucketId().getId()
               << vespalib::dec
-              << ", partition " << bucket.getPartition()
               << ")";
 }
 

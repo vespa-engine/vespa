@@ -70,7 +70,7 @@ void StateReporterTest::SetUp() {
     _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "statereportertest"));
     assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
 
-    _node = std::make_unique<TestServiceLayerApp>(DiskCount(4), NodeIndex(0), _config->getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(DiskCount(1), NodeIndex(0), _config->getConfigId());
     _node->setupDummyPersistence();
     _clock = &_node->getClock();
     _clock->setAbsoluteTimeInSeconds(1000000);
@@ -89,7 +89,7 @@ void StateReporterTest::SetUp() {
             _generationFetcher,
             "status");
 
-    uint16_t diskCount = _node->getPartitions().size();
+    uint16_t diskCount = 1u;
     documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
     _filestorMetrics = std::make_shared<FileStorMetrics>(_node->getLoadTypes()->getMetricLoadTypes());

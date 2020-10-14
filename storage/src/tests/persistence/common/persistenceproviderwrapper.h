@@ -91,8 +91,7 @@ public:
     }
 
     spi::Result createBucket(const spi::Bucket&, spi::Context&) override;
-    spi::PartitionStateListResult getPartitionStates() const override;
-    spi::BucketIdListResult listBuckets(BucketSpace bucketSpace, spi::PartitionId) const override;
+    spi::BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
     spi::Result put(const spi::Bucket&, spi::Timestamp, spi::DocumentSP, spi::Context&) override;
     spi::RemoveResult remove(const spi::Bucket&, spi::Timestamp, const spi::DocumentId&, spi::Context&) override;

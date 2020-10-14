@@ -34,7 +34,6 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceL
     : StorageNode(configUri, context, generationFetcher, std::make_unique<HostInfo>()),
       _context(context),
       _persistenceProvider(persistenceProvider),
-      _partitions(0),
       _externalVisitors(externalVisitors),
       _fileStorManager(nullptr),
       _init_has_been_called(false),
@@ -52,17 +51,6 @@ void ServiceLayerNode::init()
         throw spi::HandledException("Failed provider init: " + initResult.toString(), VESPA_STRLOC);
     }
 
-    spi::PartitionStateListResult result(_persistenceProvider.getPartitionStates());
-    if (result.hasError()) {
-        LOG(error, "Failed to get partition list from persistence provider: %s", result.toString().c_str());
-        throw spi::HandledException("Failed to get partition list: " + result.toString(), VESPA_STRLOC);
-    }
-    _partitions = result.getList();
-    if (_partitions.size() == 0) {
-        LOG(error, "No partitions in persistence provider. See documentation "
-                    "for your persistence provider as to how to set up partitions in it.");
-        throw spi::HandledException("No partitions in provider", VESPA_STRLOC);
-    }
     try{
         initialize();
     } catch (spi::HandledException& e) {
@@ -94,15 +82,14 @@ ServiceLayerNode::subscribeToConfigs()
     std::lock_guard configLockGuard(_configLock);
         // Verify and set disk count
     if (_serverConfig->diskCount != 0
-        && _serverConfig->diskCount != _partitions.size())
+        && _serverConfig->diskCount != 1u)
     {
         std::ostringstream ost;
         ost << "Storage is configured to have " << _serverConfig->diskCount
-            << " disks but persistence provider states it has "
-            << _partitions.size() << " disks.";
+            << " disks but persistence provider states it has 1 disk.";
         throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
     }
-    _context.getComponentRegister().setDiskCount(_partitions.size());
+    _context.getComponentRegister().setDiskCount(1u);
 }
 
 void
@@ -120,23 +107,8 @@ ServiceLayerNode::initializeNodeSpecific()
     // node state.
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
-    ns.setDiskCount(_partitions.size());
+    ns.setDiskCount(1u);
 
-    uint32_t usablePartitions = 0;
-    for (uint32_t i = 0; i < _partitions.size(); ++i) {
-        if (_partitions[i].getState() == spi::PartitionState::UP) {
-            ++usablePartitions;
-        } else {
-            lib::DiskState diskState(lib::State::DOWN, _partitions[i].getReason());
-            ns.setDiskState(i, diskState);
-        }
-    }
-
-    if (usablePartitions == 0) {
-        _noUsablePartitionMode = true;
-        ns.setState(lib::State::DOWN);
-        ns.setDescription("All partitions are down");
-    }
     ns.setCapacity(_serverConfig->nodeCapacity);
     ns.setReliability(_serverConfig->nodeReliability);
     for (uint16_t i=0; i<_serverConfig->diskCapacity.size(); ++i) {
@@ -244,12 +216,12 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     builder.add(std::move(merge_throttler_up));
     builder.add(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
     builder.add(std::make_unique<StorageBucketDBInitializer>(
-            _configUri, _partitions, getDoneInitializeHandler(), compReg));
+            _configUri, getDoneInitializeHandler(), compReg));
     builder.add(std::make_unique<BucketManager>(_configUri, _context.getComponentRegister()));
     builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(), static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
     builder.add(std::make_unique<ModifiedBucketChecker>(
             _context.getComponentRegister(), _persistenceProvider, _configUri));
-    auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _partitions, _persistenceProvider, _context.getComponentRegister());
+    auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister());
     _fileStorManager = filstor_manager.get();
     builder.add(std::move(filstor_manager));
     builder.add(releaseStateManager());

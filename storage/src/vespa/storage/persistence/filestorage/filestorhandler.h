@@ -25,9 +25,6 @@ namespace api {
     class StorageCommand;
     class StorageReply;
 }
-namespace spi {
-    class PartitionStateList;
-}
 namespace framework {
     class HttpUrlPath;
 }
@@ -71,9 +68,9 @@ public:
     };
 
     FileStorHandler(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
-                    const spi::PartitionStateList&, ServiceLayerComponentRegister&);
+                    ServiceLayerComponentRegister&);
     FileStorHandler(MessageSender&, FileStorMetrics&,
-                    const spi::PartitionStateList&, ServiceLayerComponentRegister&);
+                    ServiceLayerComponentRegister&);
     ~FileStorHandler();
 
         // Commands used by file stor manager

@@ -5,15 +5,15 @@
 namespace storage {
 
 FileStorHandler::FileStorHandler(MessageSender& sender, FileStorMetrics& metrics,
-                                 const spi::PartitionStateList& partitions, ServiceLayerComponentRegister& compReg)
-        : _impl(std::make_unique<FileStorHandlerImpl>(1, 1, sender, metrics, partitions, compReg))
+                                 ServiceLayerComponentRegister& compReg)
+        : _impl(std::make_unique<FileStorHandlerImpl>(1, 1, sender, metrics, compReg))
 {
 }
 
 
 FileStorHandler::FileStorHandler(uint32_t numThreads, uint32_t numStripes, MessageSender& sender, FileStorMetrics& metrics,
-                                 const spi::PartitionStateList& partitions, ServiceLayerComponentRegister& compReg)
-    : _impl(std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, sender, metrics, partitions, compReg))
+                                 ServiceLayerComponentRegister& compReg)
+    : _impl(std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, sender, metrics, compReg))
 {
 }
 

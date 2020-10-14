@@ -39,7 +39,6 @@ struct InitializerTest : public Test {
         Redundancy redundancy;
         uint32_t docsPerDisk;
         DiskCount diskCount;
-        std::set<uint32_t> disksDown;
         bool bucketWrongDisk;
         bool bucketMultipleDisks;
         bool failingListRequest;
@@ -53,7 +52,7 @@ struct InitializerTest : public Test {
               nodeCount(10),
               redundancy(2),
               docsPerDisk(10),
-              diskCount(5),
+              diskCount(1),
               bucketWrongDisk(false),
               bucketMultipleDisks(false),
               failingListRequest(false),
@@ -92,18 +91,6 @@ TEST_F(InitializerTest, init_with_data_on_single_disk) {
 
 TEST_F(InitializerTest, init_with_multiple_disks) {
     InitParams params;
-    do_test_initialization(params);
-}
-
-TEST_F(InitializerTest, init_with_bad_non_last_disk) {
-    InitParams params;
-    params.disksDown.insert(1);
-    do_test_initialization(params);
-}
-
-TEST_F(InitializerTest, init_with_bad_last_disk) {
-    InitParams params;
-    params.disksDown.insert(params.diskCount - 1);
     do_test_initialization(params);
 }
 
@@ -169,9 +156,7 @@ buildBucketInfo(const document::TestDocMan& docMan,
 {
     std::map<PartitionId, DiskData> result;
     for (uint32_t i=0; i<params.diskCount; ++i) {
-        if (params.disksDown.find(i) == params.disksDown.end()) {
-            result[i];
-        }
+        result[i];
     }
     lib::Distribution distribution(
             lib::Distribution::getDefaultDistributionConfig(
@@ -197,15 +182,9 @@ buildBucketInfo(const document::TestDocMan& docMan,
         uint32_t partition(distribution.getIdealDisk(
                     nodeState, params.nodeIndex, bid,
                     lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN));
-        if (params.disksDown.find(partition) != params.disksDown.end()) {
-            continue;
-        }
         if (useWrongDisk) {
             int correctPart = partition;
             partition = (partition + 1) % params.diskCount;;
-            while (params.disksDown.find(partition) != params.disksDown.end()) {
-                partition = (partition + 1) % params.diskCount;;
-            }
             LOG(debug, "Putting bucket %s on wrong disk %u instead of %u",
                 bid.toString().c_str(), partition, correctPart);
         }
@@ -432,10 +411,7 @@ InitializerTest::do_test_initialization(InitParams& params)
 {
     std::map<PartitionId, DiskData> data(buildBucketInfo(_docMan, params));
 
-    spi::PartitionStateList partitions(params.diskCount);
-    for (const auto& p : params.disksDown) {
-        partitions[p] = spi::PartitionState(spi::PartitionState::DOWN, "Set down in test");
-    }
+    assert(params.diskCount == 1u);
     TestServiceLayerApp node(params.diskCount, params.nodeIndex,
                              params.getConfig().getConfigId());
     DummyStorageLink top;
@@ -443,7 +419,6 @@ InitializerTest::do_test_initialization(InitParams& params)
     FakePersistenceLayer* bottom;
     top.push_back(StorageLink::UP(initializer = new StorageBucketDBInitializer(
             params.getConfig().getConfigId(),
-            partitions,
             node.getDoneInitializeHandler(),
             node.getComponentRegister())));
     top.push_back(StorageLink::UP(bottom = new FakePersistenceLayer(
@@ -579,7 +554,7 @@ TEST_F(InitializerTest, buckets_initialized_by_load) {
 
     std::map<PartitionId, DiskData> data(buildBucketInfo(_docMan, params));
 
-    spi::PartitionStateList partitions(params.diskCount);
+    assert(params.diskCount == 1u);
     TestServiceLayerApp node(params.diskCount, params.nodeIndex,
                              params.getConfig().getConfigId());
     DummyStorageLink top;
@@ -587,7 +562,6 @@ TEST_F(InitializerTest, buckets_initialized_by_load) {
     FakePersistenceLayer* bottom;
     top.push_back(StorageLink::UP(initializer = new StorageBucketDBInitializer(
             params.getConfig().getConfigId(),
-            partitions,
             node.getDoneInitializeHandler(),
             node.getComponentRegister())));
     top.push_back(StorageLink::UP(bottom = new FakePersistenceLayer(

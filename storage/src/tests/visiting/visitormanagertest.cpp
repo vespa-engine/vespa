@@ -96,7 +96,7 @@ VisitorManagerTest::initializeTest()
                 config.getConfigId(), _node->getComponentRegister(),
                 *_messageSessionFactory)));
     _top->push_back(std::unique_ptr<StorageLink>(new FileStorManager(
-            config.getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            config.getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     _manager->setTimeBetweenTicks(10);
     _top->open();
 

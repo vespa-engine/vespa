@@ -39,7 +39,8 @@ FileStorTestFixture::SetUp()
 {
     setupPersistenceThreads(1);
     _node->setPersistenceProvider(
-            std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo(), 1));
+            std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo()));
+    _node->getPersistenceProvider().initialize();
 }
 
 void
@@ -77,7 +78,6 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
         const StorageLinkInjector& injector)
     : _fixture(fixture),
       manager(new FileStorManager(fixture._config->getConfigId(),
-                                  fixture._node->getPartitions(),
                                   fixture._node->getPersistenceProvider(),
                                   fixture._node->getComponentRegister()))
 {

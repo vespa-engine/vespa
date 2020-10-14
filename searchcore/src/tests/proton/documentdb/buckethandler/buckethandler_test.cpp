@@ -20,7 +20,6 @@ using storage::spi::test::makeSpiBucket;
 using vespalib::ThreadStackExecutor;
 using proton::test::BucketStateCalculator;
 
-const PartitionId PART_ID(0);
 const GlobalId GID_1("111111111111");
 const BucketId BUCKET_1(8, GID_1.convertToBucketId().getRawId());
 const Timestamp TIME_1(1u);
@@ -147,7 +146,7 @@ struct Fixture
     }
     void sync() { _exec.sync(); }
     void handleGetBucketInfo(const BucketId &bucket) {
-        _handler.handleGetBucketInfo(makeSpiBucket(bucket, PART_ID), _bucketInfo);
+        _handler.handleGetBucketInfo(makeSpiBucket(bucket), _bucketInfo);
     }
     void
     setNodeUp(bool value)

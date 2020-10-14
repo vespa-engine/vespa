@@ -332,13 +332,12 @@ document::DocumentUpdate::SP upd1(createUpd(type1, docId1));
 document::DocumentUpdate::SP upd2(createUpd(type2, docId2));
 document::DocumentUpdate::SP upd3(createUpd(type3, docId3));
 document::DocumentUpdate::SP bad_id_upd(createUpd(type1, docId2));
-PartitionId partId(0);
 BucketId bckId1(1);
 BucketId bckId2(2);
 BucketId bckId3(3);
 Bucket bucket0;
-Bucket bucket1(makeSpiBucket(bckId1, partId));
-Bucket bucket2(makeSpiBucket(bckId2, partId));
+Bucket bucket1(makeSpiBucket(bckId1));
+Bucket bucket2(makeSpiBucket(bckId2));
 BucketChecksum checksum1(1);
 BucketChecksum checksum2(2);
 BucketChecksum checksum3(1+2);
@@ -433,7 +432,7 @@ void assertBucketList(const BucketIdListResult &result, const std::vector<Bucket
 
 void assertBucketList(PersistenceProvider &spi, BucketSpace bucketSpace, const std::vector<BucketId> &expBuckets)
 {
-    BucketIdListResult result = spi.listBuckets(bucketSpace, partId);
+    BucketIdListResult result = spi.listBuckets(bucketSpace);
     TEST_DO(assertBucketList(result, expBuckets));
 }
 
@@ -577,7 +576,6 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", Simpl
 TEST_F("require that listBuckets() is routed to handlers and merged", SimpleFixture)
 {
     f.hset.prepareListBuckets();
-    EXPECT_TRUE(f.engine.listBuckets(makeBucketSpace(), PartitionId(1)).getList().empty());
     TEST_DO(assertBucketList(f.engine, makeBucketSpace(), { bckId1, bckId2, bckId3 }));
 }
 

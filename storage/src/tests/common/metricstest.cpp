@@ -72,7 +72,7 @@ void MetricsTest::SetUp() {
     assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
     try {
         _node = std::make_unique<TestServiceLayerApp>(
-                DiskCount(4), NodeIndex(0), _config->getConfigId());
+                DiskCount(1), NodeIndex(0), _config->getConfigId());
         _node->setupDummyPersistence();
         _clock = &_node->getClock();
         _clock->setAbsoluteTimeInSeconds(1000000);
@@ -93,7 +93,7 @@ void MetricsTest::SetUp() {
             *_metricManager,
             "status");
 
-    uint16_t diskCount = _node->getPartitions().size();
+    uint16_t diskCount = 1u;
     documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
     _filestorMetrics = std::make_shared<FileStorMetrics>(_node->getLoadTypes()->getMetricLoadTypes());
@@ -213,10 +213,10 @@ TEST_F(MetricsTest, filestor_metrics) {
     bool retVal = _metricsConsumer->reportStatus(ost, path);
     ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";
     std::string s = ost.str();
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.get.sum.count count=240"));
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.put.sum.count count=200"));
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.count count=120"));
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.not_found count=20"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.get.sum.count count=60"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.put.sum.count count=50"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.count count=30"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.not_found count=5"));
 }
 
 #define ASSERT_METRIC(interval, metric, count) \

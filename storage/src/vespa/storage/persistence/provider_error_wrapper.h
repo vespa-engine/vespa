@@ -42,8 +42,7 @@ public:
     }
 
     spi::Result initialize() override;
-    spi::PartitionStateListResult getPartitionStates() const override;
-    spi::BucketIdListResult listBuckets(BucketSpace bucketSpace, spi::PartitionId) const override;
+    spi::BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     spi::Result setClusterState(BucketSpace bucketSpace, const spi::ClusterState&)  override;
     spi::Result setActiveState(const spi::Bucket& bucket, spi::BucketInfo::ActiveState newState) override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
@@ -62,7 +61,6 @@ public:
     spi::BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     spi::Result split(const spi::Bucket& source, const spi::Bucket& target1, const spi::Bucket& target2, spi::Context&) override;
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2, const spi::Bucket& target, spi::Context&) override;
-    spi::Result move(const spi::Bucket& source, spi::PartitionId target, spi::Context&) override;
     spi::Result removeEntry(const spi::Bucket&, spi::Timestamp, spi::Context&) override;
 
     spi::PersistenceProvider& getProviderImplementation() {

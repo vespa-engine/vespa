@@ -62,19 +62,12 @@ PersistenceProviderWrapper::toString() const
     return ss.str();
 }
 
-spi::PartitionStateListResult
-PersistenceProviderWrapper::getPartitionStates() const
-{
-    LOG_SPI("getPartitionStates()");
-    return _spi.getPartitionStates();
-}
-
 spi::BucketIdListResult
-PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace, spi::PartitionId partitionId) const
+PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace) const
 {
-    LOG_SPI("listBuckets(" << bucketSpace.getId() << ", " << uint16_t(partitionId) << ")");
+    LOG_SPI("listBuckets(" << bucketSpace.getId() << ")");
     CHECK_ERROR(spi::BucketIdListResult, FAIL_LIST_BUCKETS);
-    return _spi.listBuckets(bucketSpace, partitionId);
+    return _spi.listBuckets(bucketSpace);
 }
 
 spi::Result

@@ -77,7 +77,8 @@ struct FileStorManagerTest : Test{
     void createBucket(document::BucketId bid, uint16_t disk)
     {
         spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
-        _node->getPersistenceProvider().createBucket(makeSpiBucket(bid, spi::PartitionId(disk)), context);
+        assert(disk == 0u);
+        _node->getPersistenceProvider().createBucket(makeSpiBucket(bid), context);
 
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bid, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
@@ -213,7 +214,6 @@ struct TestFileStorComponents {
 
     explicit TestFileStorComponents(FileStorManagerTest& test)
         : manager(new FileStorManager(test.config->getConfigId(),
-                                      test._node->getPartitions(),
                                       test._node->getPersistenceProvider(),
                                       test._node->getComponentRegister()))
     {
@@ -241,7 +241,7 @@ TEST_F(FileStorManagerTest, header_only_put) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -308,7 +308,7 @@ TEST_F(FileStorManagerTest, put) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -339,7 +339,7 @@ TEST_F(FileStorManagerTest, state_change) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(),
+            new FileStorManager(config->getConfigId(),
                                 _node->getPersistenceProvider(),
                                 _node->getComponentRegister())));
     top.open();
@@ -356,7 +356,7 @@ TEST_F(FileStorManagerTest, flush) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -395,9 +395,9 @@ TEST_F(FileStorManagerTest, handler_priority) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId(0);
     ASSERT_EQ(0u, stripeId);
@@ -503,9 +503,9 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
 
     std::string content("Here is some content which is in all documents");
@@ -549,9 +549,9 @@ TEST_F(FileStorManagerTest, handler_pause) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
@@ -595,9 +595,9 @@ TEST_F(FileStorManagerTest, remap_split) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
 
     std::string content("Here is some content which is in all documents");
@@ -653,9 +653,9 @@ TEST_F(FileStorManagerTest, handler_timeout) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(),1,  1);
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
@@ -713,9 +713,9 @@ TEST_F(FileStorManagerTest, priority) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(),1,  2);
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  2);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0], 0));
@@ -794,8 +794,8 @@ TEST_F(FileStorManagerTest, split1) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0], 0));
@@ -934,8 +934,8 @@ TEST_F(FileStorManagerTest, split_single_group) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(),1,  1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  1);
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
@@ -1051,8 +1051,8 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0], 0));
@@ -1116,8 +1116,8 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0], 0));
@@ -1157,8 +1157,8 @@ TEST_F(FileStorManagerTest, join) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0], 0));
@@ -1274,7 +1274,7 @@ TEST_F(FileStorManagerTest, visiting) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-            smallConfig->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            smallConfig->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
         // Adding documents to two buckets which we are going to visit
         // We want one bucket in one slotfile, and one bucket with a file split
@@ -1392,7 +1392,7 @@ TEST_F(FileStorManagerTest, remove_location) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     document::BucketId bid(8, 0);
@@ -1435,7 +1435,7 @@ TEST_F(FileStorManagerTest, delete_bucket) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                    config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
@@ -1481,7 +1481,7 @@ TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                    config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
@@ -1533,7 +1533,7 @@ TEST_F(FileStorManagerTest, delete_bucket_with_invalid_bucket_info){
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                    config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
@@ -1576,7 +1576,7 @@ TEST_F(FileStorManagerTest, no_timestamps) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address(
             "storage", lib::NodeType::STORAGE, 3);
@@ -1620,7 +1620,7 @@ TEST_F(FileStorManagerTest, equal_timestamps) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -1681,7 +1681,7 @@ TEST_F(FileStorManagerTest, get_iter) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address(
             "storage", lib::NodeType::STORAGE, 3);
@@ -1757,7 +1757,6 @@ TEST_F(FileStorManagerTest, set_bucket_active_state) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
-                                _node->getPartitions(),
                                 _node->getPersistenceProvider(),
                                 _node->getComponentRegister()));
     top.push_back(unique_ptr<StorageLink>(manager));
@@ -1770,7 +1769,7 @@ TEST_F(FileStorManagerTest, set_bucket_active_state) {
     const uint16_t disk = 0;
     createBucket(bid, disk);
     auto& provider = dynamic_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider());
-    EXPECT_FALSE(provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
+    EXPECT_FALSE(provider.isActive(makeSpiBucket(bid)));
 
     {
         auto cmd = std::make_shared<api::SetBucketStateCommand>(
@@ -1785,7 +1784,7 @@ TEST_F(FileStorManagerTest, set_bucket_active_state) {
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
-    EXPECT_TRUE(provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
+    EXPECT_TRUE(provider.isActive(makeSpiBucket(bid)));
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
@@ -1823,7 +1822,7 @@ TEST_F(FileStorManagerTest, set_bucket_active_state) {
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
-    EXPECT_FALSE(provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
+    EXPECT_FALSE(provider.isActive(makeSpiBucket(bid)));
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
@@ -1836,7 +1835,6 @@ TEST_F(FileStorManagerTest, notify_owner_distributor_on_outdated_set_bucket_stat
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
-                                _node->getPartitions(),
                                 _node->getPersistenceProvider(),
                                 _node->getComponentRegister()));
     top.push_back(unique_ptr<StorageLink>(manager));
@@ -1879,7 +1877,6 @@ TEST_F(FileStorManagerTest, GetBucketDiff_implicitly_creates_bucket) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
-                                _node->getPartitions(),
                                 _node->getPersistenceProvider(),
                                 _node->getComponentRegister()));
     top.push_back(unique_ptr<StorageLink>(manager));
@@ -1911,7 +1908,6 @@ TEST_F(FileStorManagerTest, merge_bucket_implicitly_creates_bucket) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
-                                _node->getPartitions(),
                                 _node->getPersistenceProvider(),
                                 _node->getComponentRegister()));
     top.push_back(unique_ptr<StorageLink>(manager));
@@ -1942,7 +1938,6 @@ TEST_F(FileStorManagerTest, newly_created_bucket_is_ready) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
-                                _node->getPartitions(),
                                 _node->getPersistenceProvider(),
                                 _node->getComponentRegister()));
     top.push_back(unique_ptr<StorageLink>(manager));

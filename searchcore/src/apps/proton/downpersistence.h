@@ -27,8 +27,7 @@ public:
     ~DownPersistence() override;
 
     Result initialize() override;
-    PartitionStateListResult getPartitionStates() const override;
-    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     Result setClusterState(BucketSpace, const ClusterState&) override;
     Result setActiveState(const Bucket&, BucketInfo::ActiveState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
@@ -50,7 +49,6 @@ public:
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
-    Result move(const Bucket&, PartitionId target, Context&) override;
 };
 
 }
