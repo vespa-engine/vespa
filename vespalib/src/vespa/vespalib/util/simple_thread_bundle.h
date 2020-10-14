@@ -6,7 +6,6 @@
 #include "thread.h"
 #include "runnable.h"
 #include "thread_bundle.h"
-#include "noncopyable.hpp"
 
 namespace vespalib {
 
@@ -46,32 +45,35 @@ struct Part {
 struct Signal {
     bool valid;
     size_t generation;
-    Monitor monitor;
-    Signal() noexcept : valid(true), generation(0), monitor() {}
+    std::unique_ptr<std::mutex> monitor;
+    std::unique_ptr<std::condition_variable> cond;
+    Signal() noexcept;
+    Signal(Signal &&) noexcept = default;
+    ~Signal();
     size_t wait(size_t &localGen) {
-        MonitorGuard guard(monitor);
+        std::unique_lock guard(*monitor);
         while (localGen == generation) {
-            guard.wait();
+            cond->wait(guard);
         }
         size_t diff = (generation - localGen);
         localGen = generation;
         return (valid ? diff : 0);
     }
     void send() {
-        MonitorGuard guard(monitor);
+        std::lock_guard guard(*monitor);
         ++generation;
-        guard.signal();
+        cond->notify_one();
     }
     void broadcast() {
-        MonitorGuard guard(monitor);
+        std::lock_guard guard(*monitor);
         ++generation;
-        guard.broadcast();
+        cond->notify_all();
     }
     void cancel() {
-        MonitorGuard guard(monitor);
+        std::lock_guard guard(*monitor);
         ++generation;
         valid = false;
-        guard.broadcast();
+        cond->notify_all();
     }
 };
 
@@ -105,7 +107,7 @@ public:
     };
 
 private:
-    struct Worker : Runnable, noncopyable {
+    struct Worker : Runnable {
         using UP = std::unique_ptr<Worker>;
         Thread thread;
         Signal &signal;

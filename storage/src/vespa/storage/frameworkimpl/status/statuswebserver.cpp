@@ -2,7 +2,6 @@
 
 #include "statuswebserver.h"
 #include <vespa/storageframework/storageframework.h>
-#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/component/vtag.h>
@@ -19,7 +18,6 @@ StatusWebServer::StatusWebServer(
         framework::StatusReporterMap& reporterMap,
         const config::ConfigUri & configUri)
     : _reporterMap(reporterMap),
-      _workerMonitor(),
       _port(0),
       _httpServer(),
       _configFetcher(configUri.getContext()),
@@ -34,11 +32,11 @@ StatusWebServer::~StatusWebServer()
     // Avoid getting config during shutdown
     _configFetcher.close();
 
-    if (_httpServer.get() != 0) {
+    if (_httpServer) {
         LOG(debug, "Shutting down status web server on port %u", _httpServer->getListenPort());
     }
     // Delete http server to ensure that no more incoming requests reach us.
-    _httpServer.reset(0);
+    _httpServer.reset();
 }
 
 void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::StorStatusConfig> config)
@@ -55,7 +53,7 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
         // Negative port number means don't run the web server
     if (newPort >= 0) {
         try {
-            server.reset(new WebServer(*this, newPort));
+            server = std::make_unique<WebServer>(*this, newPort);
         } catch (const vespalib::PortListenException & e) {
             LOG(error, "Failed listening to network port(%d) with protocol(%s): '%s', giving up and restarting.",
                 e.get_port(), e.get_protocol().c_str(), e.what());
@@ -148,7 +146,7 @@ void
 StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Portal::GetRequest request)
 {
     vespalib::string link(urlpath.getPath());
-    if (link.size() > 0 && link[0] == '/') link = link.substr(1);
+    if (!link.empty() && link[0] == '/') link = link.substr(1);
 
     size_t slashPos = link.find('/');
     if (slashPos != std::string::npos) link = link.substr(0, slashPos);

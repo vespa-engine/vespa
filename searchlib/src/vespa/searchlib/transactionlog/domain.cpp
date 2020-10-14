@@ -22,8 +22,6 @@ using vespalib::make_string_short::fmt;
 using vespalib::makeTask;
 using vespalib::makeClosure;
 using vespalib::makeLambdaTask;
-using vespalib::Monitor;
-using vespalib::MonitorGuard;
 using std::runtime_error;
 using std::make_shared;
 

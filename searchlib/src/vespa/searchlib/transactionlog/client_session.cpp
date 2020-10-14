@@ -9,7 +9,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".translog.client_session");
 
-using vespalib::LockGuard;
 using namespace std::chrono_literals;
 
 namespace search::transactionlog::client {
