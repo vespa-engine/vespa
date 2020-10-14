@@ -4,10 +4,19 @@
 
 namespace vespalib {
 
+Barrier::Barrier(size_t n)
+  : _n(n),
+    _lock(),
+    _cond(),
+    _count(0),
+    _next(0)
+{}
+Barrier::~Barrier() = default;
+
 bool
 Barrier::await()
 {
-    MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     if (_n == 0) {
         return false;
     }
@@ -15,14 +24,14 @@ Barrier::await()
         _next += _n;
     }
     if (++_count == _next) {
-        guard.broadcast();
+        _cond.notify_all();
     } else {
         size_t limit = _next;
         while ((_count - limit) > _n) {
             if (_n == 0) {
                 return false;
             }
-            guard.wait();
+            _cond.wait(guard);
         }
     }
     return true;
@@ -31,9 +40,9 @@ Barrier::await()
 void
 Barrier::destroy()
 {
-    MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     _n = 0;
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 } // namespace vespalib
