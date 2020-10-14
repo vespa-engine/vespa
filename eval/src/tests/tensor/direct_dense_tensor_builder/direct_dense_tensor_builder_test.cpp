@@ -176,7 +176,7 @@ TEST("require that dense tensor cells iterator works for 2d tensor") {
 TEST("require that memory used count is reasonable") {
     Tensor::UP full = build2DTensor();
     const DenseTensorView &full_view = dynamic_cast<const DenseTensorView &>(*full);
-    DenseTensorView ref_view(full_view.fast_type(), full_view.cellsRef());
+    DenseTensorView ref_view(full_view.fast_type(), full_view.cells());
 
     size_t full_sz = full->get_memory_usage().usedBytes();
     size_t view_sz = full_view.get_memory_usage().usedBytes();

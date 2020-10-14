@@ -25,19 +25,19 @@ void
 checkCellsSize(const DenseTensor<T> &arg)
 {
     auto cellsSize = calcCellsSize(arg.fast_type());
-    if (arg.cellsRef().size != cellsSize) {
+    if (arg.cells().size != cellsSize) {
         throw IllegalStateException(make_string("Wrong cell size, "
                                                 "expected=%zu, "
                                                 "actual=%zu",
                                                 cellsSize,
-                                                arg.cellsRef().size));
+                                                arg.cells().size));
     }
-    if (arg.fast_type().cell_type() != arg.cellsRef().type) {
+    if (arg.fast_type().cell_type() != arg.cells().type) {
         throw IllegalStateException(make_string("Wrong cell type, "
                                                 "expected=%u, "
                                                 "actual=%u",
                                                 (unsigned char)arg.fast_type().cell_type(),
-                                                (unsigned char)arg.cellsRef().type));
+                                                (unsigned char)arg.cells().type));
     }
 }
 

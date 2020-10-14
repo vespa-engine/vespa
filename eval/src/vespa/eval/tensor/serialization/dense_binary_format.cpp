@@ -77,7 +77,7 @@ void
 DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 {
     size_t cellsSize = encodeDimensions(stream, tensor.fast_type());
-    TypedCells cells = tensor.cellsRef();
+    TypedCells cells = tensor.cells();
     assert(cells.size == cellsSize);
     switch (tensor.fast_type().cell_type()) {
     case CellType::DOUBLE:
