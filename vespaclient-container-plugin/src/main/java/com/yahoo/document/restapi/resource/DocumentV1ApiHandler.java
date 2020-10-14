@@ -408,13 +408,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             overload(request, "Rejecting execution due to overload: " + maxThrottled + " requests already enqueued", handler);
             return;
         }
-        Operation operation = Operation.lazilyParsed(request, handler, operationParser);
-        if (enqueued.get() == 1 && operation.dispatch()) // Bypass queue if it is empty.
-            enqueued.decrementAndGet();
-        else {
-            operations.offer(operation);
-            dispatchFirst();
-        }
+        operations.offer(Operation.lazilyParsed(request, handler, operationParser));
+        dispatchFirst();
     }
 
 
