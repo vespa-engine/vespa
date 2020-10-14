@@ -8,19 +8,21 @@ namespace document {
 
 Runnable::Runnable()
     : _stateLock(),
+      _stateCond(),
       _state(NOT_RUNNING)
 {
 }
 
 Runnable::~Runnable() {
-    vespalib::MonitorGuard monitorGuard(_stateLock);
+    std::lock_guard monitorGuard(_stateLock);
     assert(_state == NOT_RUNNING);
 }
 
 bool Runnable::start(FastOS_ThreadPool& pool)
 {
-    vespalib::MonitorGuard monitor(_stateLock);
-    while (_state == STOPPING) monitor.wait();
+    std::unique_lock guard(_stateLock);
+    _stateCond.wait(guard, [&](){ return (_state != STOPPING);});
+
     if (_state != NOT_RUNNING) return false;
     _state = STARTING;
     if (pool.NewThread(this) == nullptr) {
@@ -31,7 +33,7 @@ bool Runnable::start(FastOS_ThreadPool& pool)
 
 bool Runnable::stop()
 {
-    vespalib::MonitorGuard monitor(_stateLock);
+    std::lock_guard monitor(_stateLock);
     if (_state == STOPPING || _state == NOT_RUNNING) return false;
     GetThread()->SetBreakFlag();
     _state = STOPPING;
@@ -45,16 +47,16 @@ bool Runnable::onStop()
 
 bool Runnable::join() const
 {
-    vespalib::MonitorGuard monitor(_stateLock);
+    std::unique_lock guard(_stateLock);
     assert ((_state != STARTING) && (_state != RUNNING));
-    while (_state != NOT_RUNNING) monitor.wait();
+    _stateCond.wait(guard, [&](){ return (_state == NOT_RUNNING);});
     return true;
 }
 
 void Runnable::Run(FastOS_ThreadInterface*, void*)
 {
     {
-        vespalib::MonitorGuard monitor(_stateLock);
+        std::lock_guard guard(_stateLock);
         // Dont set state if its alreadyt at stopping. (And let run() be
         // called even though about to stop for consistency)
         if (_state == STARTING) {
@@ -68,9 +70,9 @@ void Runnable::Run(FastOS_ThreadInterface*, void*)
     run();
 
     {
-        vespalib::MonitorGuard monitor(_stateLock);
+        std::lock_guard guard(_stateLock);
         _state = NOT_RUNNING;
-        monitor.broadcast();
+        _stateCond.notify_all();
     }
 }
 
