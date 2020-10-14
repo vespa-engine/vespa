@@ -6,22 +6,24 @@ import java.util.Optional;
 /**
  * General result class for mutating operations on the {@link BillingController}
  *
+ *
  * @author olaa
+ * @author smorgrav
  */
-public class BillingResult {
+public class PlanResult {
 
     private final Optional<String> errorMessage;
 
-    private BillingResult(Optional<String> errorMessage) {
+    private PlanResult(Optional<String> errorMessage) {
         this.errorMessage = errorMessage;
     }
 
-    public static BillingResult success() {
-        return new BillingResult(Optional.empty());
+    public static PlanResult success() {
+        return new PlanResult(Optional.empty());
     }
 
-    public static BillingResult error(String errorMessage) {
-        return new BillingResult(Optional.of(errorMessage));
+    public static PlanResult error(String errorMessage) {
+        return new PlanResult(Optional.of(errorMessage));
     }
 
     public boolean isSuccess() {

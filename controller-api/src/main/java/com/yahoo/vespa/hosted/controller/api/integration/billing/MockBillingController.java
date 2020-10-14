@@ -38,9 +38,9 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public BillingResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments) {
+    public PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments) {
         plans.put(tenant, planId);
-        return BillingResult.success();
+        return PlanResult.success();
     }
 
     @Override
@@ -143,9 +143,9 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public BillingResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
+    public PlanResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
         collectionMethod = method;
-        return BillingResult.success();
+        return PlanResult.success();
     }
 
     private PaymentInstrument createInstrument(String id) {
