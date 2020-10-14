@@ -47,6 +47,10 @@ public class Quota {
         return withBudget(BigDecimal.valueOf(budget));
     }
 
+    public Quota withoutBudget() {
+        return new Quota(maxClusterSize, Optional.empty());
+    }
+
     /** Maximum number of nodes in a cluster in a Vespa deployment */
     public OptionalInt maxClusterSize() {
         return maxClusterSize;
