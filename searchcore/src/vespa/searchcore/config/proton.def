@@ -500,3 +500,10 @@ maintenancejobs.maxoutstandingmoveops int default=10
 ## Controls the type of bucket checksum used. Do not change unless 
 ## in depth understanding is present.
 bucketdb.checksumtype enum {LEGACY, XXHASH64} default = LEGACY restart
+
+## Specifies which tensor implementation to use for all backend code.
+##
+## TENSOR_ENGINE (default) uses DefaultTensorEngine, which has been the production implementation for years.
+## FAST_VALUE uses the new and optimized FastValueBuilderFactory instead.
+## TODO: Remove when default has been switched to FAST_VALUE.
+tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = TENSOR_ENGINE
