@@ -275,6 +275,13 @@ public class CapacityChecker {
     private static boolean violatesParentHostPolicy(Node node, Node host, Map<Node, List<Allocation>> containedAllocations) {
         if (node.allocation().isEmpty()) return false;
         Allocation nodeAllocation = node.allocation().get();
+
+        if (host.reservedTo()
+                .filter(tenantName -> !tenantName.equals(nodeAllocation.owner().tenant()))
+                .isPresent()) {
+            return true;
+        }
+
         for (var allocation : containedAllocations.get(host)) {
             if (allocation.membership().cluster().satisfies(nodeAllocation.membership().cluster())
                     && allocation.owner().equals(nodeAllocation.owner())) {
