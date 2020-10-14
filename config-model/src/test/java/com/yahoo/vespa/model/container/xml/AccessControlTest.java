@@ -171,6 +171,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         AccessControl accessControl = maybeAccessControl.get();
         assertThat(accessControl.writeEnabled, is(false));
         assertThat(accessControl.readEnabled, is(false));
+        assertThat(accessControl.clientAuthentication, is(AccessControl.ClientAuthentication.need));
         assertThat(accessControl.domain, equalTo("my-tenant-domain"));
     }
 
@@ -265,6 +266,30 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
         Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-response-chain"));
         assertThat(actualCustomChainBindings, containsInAnyOrder("http://*/custom-handler/*"));
+    }
+
+    @Test
+    public void access_control_client_auth_defaults_to_need() {
+        Http http = createModelAndGetHttp(
+                "  <http>",
+                "    <filtering>",
+                "      <access-control />",
+                "    </filtering>",
+                "  </http>");
+        assertTrue(http.getAccessControl().isPresent());
+        assertEquals(AccessControl.ClientAuthentication.need, http.getAccessControl().get().clientAuthentication);
+    }
+
+    @Test
+    public void access_control_client_auth_can_be_overridden() {
+        Http http = createModelAndGetHttp(
+                "  <http>",
+                "    <filtering>",
+                "      <access-control tls-handshake-client-auth=\"want\"/>",
+                "    </filtering>",
+                "  </http>");
+        assertTrue(http.getAccessControl().isPresent());
+        assertEquals(AccessControl.ClientAuthentication.want, http.getAccessControl().get().clientAuthentication);
     }
 
     private Http createModelAndGetHttp(String... httpElement) {

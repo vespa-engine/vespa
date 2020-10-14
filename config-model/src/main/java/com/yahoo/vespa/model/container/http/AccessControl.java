@@ -26,6 +26,8 @@ import java.util.Set;
  */
 public class AccessControl {
 
+    public enum ClientAuthentication { want, need }
+
     public static final ComponentId ACCESS_CONTROL_CHAIN_ID = ComponentId.fromString("access-control-chain");
     public static final ComponentId ACCESS_CONTROL_EXCLUDED_CHAIN_ID = ComponentId.fromString("access-control-excluded-chain");
 
@@ -46,6 +48,7 @@ public class AccessControl {
         private final String domain;
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
+        private ClientAuthentication clientAuthentication = ClientAuthentication.need;
         private final Set<BindingPattern> excludeBindings = new LinkedHashSet<>();
         private Collection<Handler<?>> handlers = Collections.emptyList();
 
@@ -73,25 +76,33 @@ public class AccessControl {
             return this;
         }
 
+        public Builder clientAuthentication(ClientAuthentication clientAuthentication) {
+            this.clientAuthentication = clientAuthentication;
+            return this;
+        }
+
         public AccessControl build() {
-            return new AccessControl(domain, writeEnabled, readEnabled, excludeBindings, handlers);
+            return new AccessControl(domain, writeEnabled, readEnabled, clientAuthentication, excludeBindings, handlers);
         }
     }
 
     public final String domain;
     public final boolean readEnabled;
     public final boolean writeEnabled;
+    public final ClientAuthentication clientAuthentication;
     private final Set<BindingPattern> excludedBindings;
     private final Collection<Handler<?>> handlers;
 
     private AccessControl(String domain,
                           boolean writeEnabled,
                           boolean readEnabled,
+                          ClientAuthentication clientAuthentication,
                           Set<BindingPattern> excludedBindings,
                           Collection<Handler<?>> handlers) {
         this.domain = domain;
         this.readEnabled = readEnabled;
         this.writeEnabled = writeEnabled;
+        this.clientAuthentication = clientAuthentication;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
         this.handlers = handlers;
     }

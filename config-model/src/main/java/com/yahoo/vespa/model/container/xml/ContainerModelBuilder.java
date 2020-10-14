@@ -368,6 +368,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .setHandlers(cluster)
                 .readEnabled(false)
                 .writeEnabled(false)
+                .clientAuthentication(AccessControl.ClientAuthentication.need)
                 .build()
                 .configureHttpFilterChains(http);
     }
