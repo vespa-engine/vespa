@@ -75,4 +75,5 @@ findhost
 # END environment bootstrap section
 
 java -cp $VESPA_HOME/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
+     -Xms32m -Xmx512m \
      org.apache.zookeeper.server.persistence.TxnLogToolkit "$@"
