@@ -284,7 +284,7 @@ VisitorTest::getMessagesAndReply(
         session.waitForMessages(1);
         mbus::Reply::UP reply;
         {
-            vespalib::MonitorGuard guard(session.getMonitor());
+            std::lock_guard guard(session.getMonitor());
             ASSERT_FALSE(session.sentMessages.empty());
             std::unique_ptr<documentapi::DocumentMessage> msg(std::move(session.sentMessages.front()));
             session.sentMessages.pop_front();
@@ -292,12 +292,10 @@ VisitorTest::getMessagesAndReply(
 
             switch (msg->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
-                docs.push_back(
-                        static_cast<documentapi::PutDocumentMessage&>(*msg).getDocumentSP());
+                docs.push_back(static_cast<documentapi::PutDocumentMessage&>(*msg).getDocumentSP());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
-                docIds.push_back(
-                        static_cast<documentapi::RemoveDocumentMessage&>(*msg).getDocumentId());
+                docIds.push_back(static_cast<documentapi::RemoveDocumentMessage&>(*msg).getDocumentId());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_VISITORINFO:
                 infoMessages.push_back(static_cast<documentapi::VisitorInfoMessage&>(*msg).getErrorMessage());
@@ -309,7 +307,7 @@ VisitorTest::getMessagesAndReply(
             reply = msg->createReply();
             reply->swapState(*msg);
 
-            reply->setMessage(mbus::Message::UP(msg.release()));
+            reply->setMessage(std::move(msg));
 
             if (result != api::ReturnCode::OK) {
                 reply->addError(mbus::Error(result, "Generic error"));

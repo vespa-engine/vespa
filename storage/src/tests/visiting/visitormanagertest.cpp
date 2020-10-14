@@ -250,7 +250,7 @@ VisitorManagerTest::getMessagesAndReply(
         session.waitForMessages(i + 1);
         mbus::Reply::UP reply;
         {
-            vespalib::MonitorGuard guard(session.getMonitor());
+            std::lock_guard guard(session.getMonitor());
 
             if (priority) {
                 ASSERT_EQ(*priority, session.sentMessages[i]->getPriority());
@@ -271,8 +271,7 @@ VisitorManagerTest::getMessagesAndReply(
 
             reply = session.sentMessages[i]->createReply();
             reply->swapState(*session.sentMessages[i]);
-            reply->setMessage(
-                    mbus::Message::UP(session.sentMessages[i].release()));
+            reply->setMessage(std::move(session.sentMessages[i]));
 
             if (result != api::ReturnCode::OK) {
                 reply->addError(mbus::Error(result, "Generic error"));
@@ -582,7 +581,7 @@ TEST_F(VisitorManagerTest, visitor_callbacks) {
         session.waitForMessages(i + 1);
         mbus::Reply::UP reply;
         {
-            vespalib::MonitorGuard guard(session.getMonitor());
+            std::lock_guard guard(session.getMonitor());
 
             ASSERT_EQ(documentapi::DocumentProtocol::MESSAGE_MAPVISITOR, session.sentMessages[i]->getType());
 
@@ -593,7 +592,7 @@ TEST_F(VisitorManagerTest, visitor_callbacks) {
 
             reply = mapvisitormsg->createReply();
             reply->swapState(*session.sentMessages[i]);
-            reply->setMessage(mbus::Message::UP(session.sentMessages[i].release()));
+            reply->setMessage(std::move(session.sentMessages[i]));
         }
         session.reply(std::move(reply));
     }

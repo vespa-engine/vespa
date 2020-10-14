@@ -16,7 +16,8 @@ namespace storage {
 class TestVisitorMessageSession : public VisitorMessageSession
 {
 private:
-    vespalib::Monitor _waitMonitor;
+    std::mutex _waitMonitor;
+    std::condition_variable _waitCond;
     mbus::Error _autoReplyError;
     bool _autoReply;
 
@@ -27,7 +28,7 @@ public:
     Visitor& visitor;
     std::atomic<uint32_t> pendingCount;
 
-    ~TestVisitorMessageSession();
+    ~TestVisitorMessageSession() override;
 
     std::deque<std::unique_ptr<documentapi::DocumentMessage> > sentMessages;
 
@@ -40,7 +41,7 @@ public:
     uint32_t pending() override { return pendingCount; }
     mbus::Result send(std::unique_ptr<documentapi::DocumentMessage> message) override;
     void waitForMessages(unsigned int msgCount);
-    vespalib::Monitor& getMonitor() { return _waitMonitor; }
+    std::mutex & getMonitor() { return _waitMonitor; }
 };
 
 struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory

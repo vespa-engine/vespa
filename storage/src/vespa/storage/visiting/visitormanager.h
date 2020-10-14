@@ -60,7 +60,8 @@ private:
     };
 
     std::map<api::StorageMessage::Id, MessageInfo> _visitorMessages;
-    vespalib::Monitor _visitorLock;
+    mutable std::mutex      _visitorLock;
+    std::condition_variable _visitorCond;
     uint64_t _visitorCounter;
     config::ConfigFetcher _configFetcher;
     std::shared_ptr<VisitorMetrics> _metrics;
@@ -71,24 +72,19 @@ private:
     StorageComponent _component;
     framework::Thread::UP _thread;
     CommandQueue<api::CreateVisitorCommand> _visitorQueue;
-    std::deque<std::pair<std::string,
-                         framework::MicroSecTime> > _recentlyDeletedVisitors;
+    std::deque<std::pair<std::string, framework::MicroSecTime> > _recentlyDeletedVisitors;
     framework::MicroSecTime _recentlyDeletedMaxTime;
 
     mutable std::mutex _statusLock; // Only one can get status at a time
-    mutable vespalib::Monitor _statusMonitor; // Notify when done
+    mutable std::condition_variable _statusCond;// Notify when done
     mutable std::vector<std::shared_ptr<RequestStatusPageReply> > _statusRequest;
     bool _enforceQueueUse;
     VisitorFactory::Map _visitorFactories;
-
-    VisitorManager(const VisitorManager &);
-    VisitorManager& operator=(const VisitorManager &);
-
 public:
     VisitorManager(const config::ConfigUri & configUri, StorageComponentRegister&,
                    VisitorMessageSessionFactory&,
                    const VisitorFactory::Map& external = VisitorFactory::Map());
-    ~VisitorManager();
+    ~VisitorManager() override;
 
     void onClose() override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -120,6 +116,7 @@ public:
     void enforceQueueUsage() { _enforceQueueUse = true; }
 
 private:
+    using MonitorGuard = std::unique_lock<std::mutex>;
     void configure(std::unique_ptr<vespa::config::content::core::StorVisitorConfig>) override;
     void run(framework::ThreadHandle&) override;
 
@@ -131,7 +128,7 @@ private:
      * @return True if successful, false if failed and reply is sent.
      */
     bool scheduleVisitor(const std::shared_ptr<api::CreateVisitorCommand>&,
-                         bool skipQueue, vespalib::MonitorGuard& visitorLock);
+                         bool skipQueue, MonitorGuard & visitorLock);
 
     bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
 
@@ -150,7 +147,7 @@ private:
      * @return true if a visitor was removed from the queue and scheduled,
      * false otherwise.
      */
-    bool attemptScheduleQueuedVisitor(vespalib::MonitorGuard& visitorLock);
+    bool attemptScheduleQueuedVisitor(MonitorGuard& visitorLock);
 
     // VisitorMessageHandler implementation
     void send(const std::shared_ptr<api::StorageCommand>& cmd, Visitor& visitor) override;

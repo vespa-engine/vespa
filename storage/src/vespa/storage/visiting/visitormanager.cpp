@@ -28,6 +28,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _visitorThread(),
       _visitorMessages(),
       _visitorLock(),
+      _visitorCond(),
       _visitorCounter(0),
       _configFetcher(configUri.getContext()),
       _metrics(new VisitorMetrics),
@@ -40,7 +41,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _recentlyDeletedVisitors(),
       _recentlyDeletedMaxTime(5 * 1000 * 1000),
       _statusLock(),
-      _statusMonitor(),
+      _statusCond(),
       _statusRequest(),
       _enforceQueueUse(false),
       _visitorFactories(externalFactories)
@@ -63,10 +64,7 @@ VisitorManager::~VisitorManager() {
     LOG(debug, "Deleting link %s.", toString().c_str());
     if (_thread.get() != 0) {
         _thread->interrupt();
-        {
-            vespalib::MonitorGuard waiter(_visitorLock);
-            waiter.signal();
-        }
+        _visitorCond.notify_all();
         _thread->join();
     }
     _visitorThread.clear();
@@ -84,15 +82,12 @@ VisitorManager::onClose()
         // Avoid getting config during shutdown
     _configFetcher.close();
     {
-        vespalib::MonitorGuard sync(_visitorLock);
+        std::lock_guard sync(_visitorLock);
         for (CommandQueue<api::CreateVisitorCommand>::iterator it
                 = _visitorQueue.begin(); it != _visitorQueue.end(); ++it)
         {
-            std::shared_ptr<api::CreateVisitorReply> reply(
-                    new api::CreateVisitorReply(*it->_command));
-            reply->setResult(api::ReturnCode(
-                        api::ReturnCode::ABORTED,
-                        "Shutting down storage node."));
+            auto reply = std::make_shared<api::CreateVisitorReply>(*it->_command);
+            reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
             sendUp(reply);
         }
         _visitorQueue.clear();
@@ -103,8 +98,7 @@ VisitorManager::onClose()
 }
 
 void
-VisitorManager::print(std::ostream& out, bool verbose,
-              const std::string& indent) const
+VisitorManager::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "VisitorManager";
@@ -113,7 +107,7 @@ VisitorManager::print(std::ostream& out, bool verbose,
 void
 VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisitorConfig> config)
 {
-    vespalib::MonitorGuard sync(_visitorLock);
+    std::lock_guard sync(_visitorLock);
     if (config->defaultdocblocksize % 512 != 0) {
         throw config::InvalidConfigException(
                 "The default docblock size needs to be a multiplum of the "
@@ -208,39 +202,33 @@ VisitorManager::run(framework::ThreadHandle& thread)
     while (true) {
         thread.registerTick(framework::PROCESS_CYCLE);
         {
-            vespalib::LockGuard waiter(_visitorLock);
+            std::lock_guard waiter(_visitorLock);
             if (thread.interrupted()) {
                 break;
             }
             timedOut = _visitorQueue.releaseTimedOut();
         }
-        framework::MicroSecTime currentTime(
-                _component.getClock().getTimeInMicros());
+        framework::MicroSecTime currentTime(_component.getClock().getTimeInMicros());
         for (std::list<CQ::CommandEntry>::iterator it = timedOut.begin();
              it != timedOut.end(); ++it)
         {
-            _metrics->queueTimeoutWaitTime.addValue(
-                    currentTime.getTime() - it->_time);
-            std::shared_ptr<api::StorageReply> reply(
-                    it->_command->makeReply().release());
-            reply->setResult(api::ReturnCode(api::ReturnCode::BUSY,
-                                        "Visitor timed out in visitor queue"));
+            _metrics->queueTimeoutWaitTime.addValue(currentTime.getTime() - it->_time);
+            std::shared_ptr<api::StorageReply> reply(it->_command->makeReply());
+            reply->setResult(api::ReturnCode(api::ReturnCode::BUSY,"Visitor timed out in visitor queue"));
             sendUp(reply);
         }
         {
-            vespalib::MonitorGuard waiter(_visitorLock);
+            std::unique_lock waiter(_visitorLock);
             if (thread.interrupted()) {
                 break;
             } else if (_visitorQueue.empty()) {
-                waiter.wait(1000);
+                _visitorCond.wait_for(waiter, 1000ms);
                 thread.registerTick(framework::WAIT_CYCLE);
             } else {
-                uint64_t timediff = (_visitorQueue.tbegin()->_time
-                                     - currentTime.getTime())
-                                            / 1000000;
+                uint64_t timediff = (_visitorQueue.tbegin()->_time- currentTime.getTime()) / 1000000;
                 timediff = std::min(timediff, uint64_t(1000));
                 if (timediff > 0) {
-                    waiter.wait(timediff);
+                    _visitorCond.wait_for(waiter, std::chrono::milliseconds(timediff));
                     thread.registerTick(framework::WAIT_CYCLE);
                 }
             }
@@ -267,7 +255,7 @@ namespace {
 uint32_t
 VisitorManager::getActiveVisitorCount() const
 {
-    vespalib::MonitorGuard sync(_visitorLock);
+    std::lock_guard sync(_visitorLock);
     uint32_t totalCount = 0;
     for (uint32_t i=0; i<_visitorThread.size(); ++i) {
         totalCount += _visitorThread[i].second.size();
@@ -279,14 +267,14 @@ VisitorManager::getActiveVisitorCount() const
 bool
 VisitorManager::hasPendingMessageState() const
 {
-    vespalib::MonitorGuard sync(_visitorLock);
+    std::lock_guard sync(_visitorLock);
     return !_visitorMessages.empty();
 }
 
 void
 VisitorManager::setTimeBetweenTicks(uint32_t time)
 {
-    vespalib::MonitorGuard sync(_visitorLock);
+    std::lock_guard sync(_visitorLock);
     for (uint32_t i=0; i<_visitorThread.size(); ++i) {
         _visitorThread[i].first->setTimeBetweenTicks(time);
     }
@@ -295,7 +283,7 @@ VisitorManager::setTimeBetweenTicks(uint32_t time)
 bool
 VisitorManager::scheduleVisitor(
         const std::shared_ptr<api::CreateVisitorCommand>& cmd, bool skipQueue,
-        vespalib::MonitorGuard& visitorLock)
+        MonitorGuard& visitorLock)
 {
     api::VisitorId id;
     typedef std::map<std::string, api::VisitorId> NameToIdMap;
@@ -312,7 +300,7 @@ VisitorManager::scheduleVisitor(
                     if (_visitorQueue.size() < _maxVisitorQueueSize) {
                             // Still room in the queue
                         _visitorQueue.add(cmd);
-                        visitorLock.signal();
+                        _visitorCond.notify_one();
                     } else {
                         // If tail of priority queue has a lower priority than
                         // the new visitor, evict it and insert the new one. If
@@ -323,7 +311,7 @@ VisitorManager::scheduleVisitor(
                             std::pair<api::CreateVisitorCommand::SP, time_t> evictCommand(_visitorQueue.releaseLowestPriorityCommand());
                             assert(tail == evictCommand.first);
                             _visitorQueue.add(cmd);
-                            visitorLock.signal();
+                            _visitorCond.notify_one();
                             framework::MicroSecTime t(_component.getClock().getTimeInMicros());
                             _metrics->queueEvictedWaitTime.addValue(t.getTime() - evictCommand.second);
                             failCommand = evictCommand.first;
@@ -396,7 +384,7 @@ VisitorManager::scheduleVisitor(
 bool
 VisitorManager::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>& cmd)
 {
-    vespalib::MonitorGuard sync(_visitorLock);
+    MonitorGuard sync(_visitorLock);
     scheduleVisitor(cmd, false, sync);
     return true;
 }
@@ -404,10 +392,9 @@ VisitorManager::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>
 bool
 VisitorManager::onDown(const std::shared_ptr<api::StorageMessage>& r)
 {
-    std::shared_ptr<api::StorageReply> reply(
-            std::dynamic_pointer_cast<api::StorageReply>(r));
+    std::shared_ptr<api::StorageReply> reply(std::dynamic_pointer_cast<api::StorageReply>(r));
 
-    if (reply.get() != 0 && processReply(reply)) {
+    if (reply && processReply(reply)) {
         return true;
     } else {
         return StorageLink::onDown(r);
@@ -420,12 +407,11 @@ VisitorManager::onInternalReply(const std::shared_ptr<api::InternalReply>& r)
     switch(r->getType()) {
         case RequestStatusPageReply::ID:
             {
-                std::shared_ptr<RequestStatusPageReply> reply(
-                        std::dynamic_pointer_cast<RequestStatusPageReply>(r));
+                std::shared_ptr<RequestStatusPageReply> reply(std::dynamic_pointer_cast<RequestStatusPageReply>(r));
                 assert(reply.get());
-                vespalib::MonitorGuard waiter(_statusMonitor);
+                std::lock_guard waiter(_statusLock);
                 _statusRequest.push_back(reply);
-                waiter.signal();
+                _statusCond.notify_one();
                 return true;
             }
         case PropagateVisitorConfigReply::ID:
@@ -442,9 +428,8 @@ VisitorManager::processReply(const std::shared_ptr<api::StorageReply>& reply)
 {
     api::VisitorId id;
     {
-        vespalib::MonitorGuard sync(_visitorLock);
-        std::map<api::StorageMessage::Id, MessageInfo>::iterator it
-                = _visitorMessages.find(reply->getMsgId());
+        std::lock_guard sync(_visitorLock);
+        auto it = _visitorMessages.find(reply->getMsgId());
         if (it == _visitorMessages.end()) return false;
         id = it->second.id;
         _visitorMessages.erase(it);
@@ -461,8 +446,7 @@ VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd,
     // Only add to internal state if not destroy iterator command, as
     // these are considered special-cased fire-and-forget commands
     // that don't have replies.
-    if (static_cast<const api::InternalCommand&>(*cmd).getType()
-        != DestroyIteratorCommand::ID)
+    if (static_cast<const api::InternalCommand&>(*cmd).getType() != DestroyIteratorCommand::ID)
     {
         MessageInfo inf;
         inf.id = visitor.getVisitorId();
@@ -473,7 +457,7 @@ VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd,
             inf.destination = cmd->getAddress()->toString();
         }
 
-        vespalib::MonitorGuard sync(_visitorLock);
+        std::lock_guard sync(_visitorLock);
         _visitorMessages[cmd->getMsgId()] = inf;
     }
     mbus::Trace & trace = cmd->getTrace();
@@ -487,13 +471,11 @@ VisitorManager::send(const std::shared_ptr<api::StorageReply>& reply)
 {
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         LOG(spam, "Received an internal reply");
-        std::shared_ptr<api::InternalReply> rep(
-                std::dynamic_pointer_cast<api::InternalReply>(reply));
+        std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
         assert(rep.get());
         if (onInternalReply(rep)) return;
     }
-    LOG(spam, "Sending visitor reply %s up.",
-              reply->getType().getName().c_str());
+    LOG(spam, "Sending visitor reply %s up.", reply->getType().getName().c_str());
     sendUp(reply);
 }
 
@@ -501,18 +483,16 @@ VisitorManager::send(const std::shared_ptr<api::StorageReply>& reply)
 // the time of the call and will be unlocked if scheduling takes
 // place. Returns true if a visitor was scheduled, false otherwise.
 bool
-VisitorManager::attemptScheduleQueuedVisitor(vespalib::MonitorGuard& visitorLock)
+VisitorManager::attemptScheduleQueuedVisitor(MonitorGuard& visitorLock)
 {
     if (_visitorQueue.empty()) return false;
 
     uint32_t totCount;
     getLeastLoadedThread(_visitorThread, totCount);
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            _visitorQueue.peekNextCommand());
+    std::shared_ptr<api::CreateVisitorCommand> cmd(_visitorQueue.peekNextCommand());
     assert(cmd.get());
     if (totCount < maximumConcurrent(*cmd)) {
-        std::pair<api::CreateVisitorCommand::SP, time_t> cmd2(
-                _visitorQueue.releaseNextCommand());
+        std::pair<api::CreateVisitorCommand::SP, time_t> cmd2(_visitorQueue.releaseNextCommand());
         assert(cmd == cmd2.first);
         scheduleVisitor(cmd, true, visitorLock);
         framework::MicroSecTime time(_component.getClock().getTimeInMicros());
@@ -526,9 +506,8 @@ VisitorManager::attemptScheduleQueuedVisitor(vespalib::MonitorGuard& visitorLock
 void
 VisitorManager::closed(api::VisitorId id)
 {
-    vespalib::MonitorGuard sync(_visitorLock);
-    std::map<api::VisitorId, std::string>& usedIds(
-            _visitorThread[id % _visitorThread.size()].second);
+    std::unique_lock sync(_visitorLock);
+    std::map<api::VisitorId, std::string>& usedIds(_visitorThread[id % _visitorThread.size()].second);
 
     std::map<api::VisitorId, std::string>::iterator it = usedIds.find(id);
     if (it == usedIds.end()) {
@@ -537,13 +516,10 @@ VisitorManager::closed(api::VisitorId id)
         return;
     }
     framework::MicroSecTime time(_component.getClock().getTimeInMicros());
-    _recentlyDeletedVisitors.push_back(
-            std::make_pair(it->second, time));
+    _recentlyDeletedVisitors.emplace_back(it->second, time);
     _nameToId.erase(it->second);
     usedIds.erase(it);
-    while (_recentlyDeletedVisitors.front().second + _recentlyDeletedMaxTime
-            < time)
-    {
+    while ((_recentlyDeletedVisitors.front().second + _recentlyDeletedMaxTime) < time) {
         _recentlyDeletedVisitors.pop_front();
     }
 
@@ -553,7 +529,7 @@ VisitorManager::closed(api::VisitorId id)
     while (scheduled) {
         // At this point, sync is unlocked, so we have to re-acquire
         // the lock
-        vespalib::MonitorGuard resync(_visitorLock);
+        std::unique_lock resync(_visitorLock);
         scheduled = attemptScheduleQueuedVisitor(resync);
     }
 }
@@ -589,7 +565,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
 
     uint32_t visitorCount = 0;
     if (showStatus) {
-        vespalib::MonitorGuard sync(_visitorLock);
+        std::lock_guard sync(_visitorLock);
         if (verbose) {
             out << "<h3>Currently running visitors</h3>\n";
             for (uint32_t i=0; i<_visitorThread.size(); ++i) {
@@ -609,14 +585,12 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
             }
             out << "<h3>Queued visitors</h3>\n<ul>\n";
 
-            framework::MicroSecTime time(
-                    _component.getClock().getTimeInMicros());
+            framework::MicroSecTime time(_component.getClock().getTimeInMicros());
             for (CommandQueue<api::CreateVisitorCommand>::const_iterator it
                     = _visitorQueue.begin(); it != _visitorQueue.end(); ++it)
             {
-                std::shared_ptr<api::CreateVisitorCommand> cmd(
-                            it->_command);
-                assert(cmd.get());
+                std::shared_ptr<api::CreateVisitorCommand> cmd(it->_command);
+                assert(cmd);
                 out << "<li>" << cmd->getInstanceId() << " - "
                     << vespalib::count_ms(cmd->getQueueTimeout()) << ", remaining timeout "
                     << (it->_time - time.getTime()) / 1000000 << " ms\n";
@@ -634,17 +608,13 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                     << "<th>Timeout</th>"
                     << "<th>Destination</th>"
                     << "</tr>\n";
-                for (std::map<api::StorageMessage::Id,
-                              MessageInfo>::const_iterator it
-                        = _visitorMessages.begin();
-                     it != _visitorMessages.end(); ++it)
-                {
+                for (const auto & entry : _visitorMessages) {
                     out << "<tr>"
-                        << "<td>" << it->first << "</td>"
-                        << "<td>" << it->second.id << "</td>"
-                        << "<td>" << it->second.timestamp << "</td>"
-                        << "<td>" << vespalib::count_ms(it->second.timeout) << "</td>"
-                        << "<td>" << it->second.destination << "</td>"
+                        << "<td>" << entry.first << "</td>"
+                        << "<td>" << entry.second.id << "</td>"
+                        << "<td>" << entry.second.timestamp << "</td>"
+                        << "<td>" << vespalib::count_ms(entry.second.timeout) << "</td>"
+                        << "<td>" << entry.second.destination << "</td>"
                         << "</tr>\n";
                 }
                 out << "</table>\n";
@@ -659,8 +629,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
     }
         // Only one can access status at a time as _statusRequest only holds
         // answers from one request at a time
-    std::lock_guard sync(_statusLock);
-    vespalib::MonitorGuard waiter(_statusMonitor);
+    std::unique_lock sync(_statusLock);
         // Send all subrequests
     uint32_t parts = _visitorThread.size();
     for (uint32_t i=0; i<parts; ++i) {
@@ -670,10 +639,8 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
         cmd->setSortToken(token.str());
         _visitorThread[i].first->processMessage(0, cmd);
     }
-        // Wait for all replies to come back
-    while (_statusRequest.size() < parts) {
-        waiter.wait();
-    }
+    // Wait for all replies to come back
+    _statusCond.wait(sync, [&]() { return (_statusRequest.size() >= parts);});
     std::sort(_statusRequest.begin(), _statusRequest.end(), StatusReqSorter());
 
         // Create output
