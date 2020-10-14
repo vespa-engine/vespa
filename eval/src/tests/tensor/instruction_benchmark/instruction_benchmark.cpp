@@ -635,6 +635,11 @@ TEST(MergeBench, mixed_merge) {
 
 //-----------------------------------------------------------------------------
 
+TEST(MapBench, number_map) {
+    auto lhs = make_spec(1.75);
+    benchmark_map("number map", lhs, operation::Floor::f);
+}
+
 TEST(MapBench, dense_map) {
     auto lhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.75);
     benchmark_map("dense map", lhs, operation::Floor::f);
@@ -645,7 +650,7 @@ TEST(MapBench, sparse_map_small) {
     benchmark_map("sparse map small", lhs, operation::Floor::f);
 }
 
-TEST(MapBench, sparse_map_big_small) {
+TEST(MapBench, sparse_map_big) {
     auto lhs = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.75);
     benchmark_map("sparse map big", lhs, operation::Floor::f);
 }
