@@ -4,7 +4,8 @@ namespace vbench {
 
 template <typename T>
 TimeQueue<T>::TimeQueue(double window, double tick)
-    : _monitor(),
+    : _lock(),
+      _cond(),
       _time(0.0),
       _window(window),
       _tick(tick),
@@ -20,29 +21,29 @@ template <typename T>
 void
 TimeQueue<T>::close()
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     _closed = true;
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 template <typename T>
 void
 TimeQueue<T>::discard()
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     while (!_queue.empty()) {
         _queue.pop_any();
     }
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 template <typename T>
 void
 TimeQueue<T>::insert(std::unique_ptr<T> obj, double time)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     while (time > (_time + _window) && !_closed) {
-        guard.wait();
+        _cond.wait(guard);
     }
     if (!_closed) {
         _queue.push(Entry(std::move(obj), time));
@@ -53,13 +54,13 @@ template <typename T>
 bool
 TimeQueue<T>::extract(double time, std::vector<std::unique_ptr<T> > &list, double &delay)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     _time = time;
     while (!_queue.empty() && _queue.front().time <= time) {
         list.push_back(std::move(_queue.front().object));
         _queue.pop_front();
     }
-    guard.broadcast();
+    _cond.notify_all();
     delay = _queue.empty() ? _tick : (_queue.front().time - time);
     return (!_closed || !_queue.empty() || !list.empty());
 }
