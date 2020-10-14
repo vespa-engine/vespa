@@ -166,11 +166,11 @@ template <class TensorType>
 TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)
 {
-    size_t numCells = tensor.cellsRef().size;
+    size_t numCells = tensor.cells().size;
     assert(numCells == getNumCells());
     assert(tensor.type() == _type);
     auto raw = allocRawBuffer();
-    memcpy(raw.data, tensor.cellsRef().data, getBufSize());
+    memcpy(raw.data, tensor.cells().data, getBufSize());
     return raw.ref;
 }
 

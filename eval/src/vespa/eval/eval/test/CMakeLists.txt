@@ -5,4 +5,5 @@ vespa_add_library(eval_eval_test OBJECT
     eval_spec.cpp
     tensor_conformance.cpp
     test_io.cpp
+    value_compare.cpp
 )

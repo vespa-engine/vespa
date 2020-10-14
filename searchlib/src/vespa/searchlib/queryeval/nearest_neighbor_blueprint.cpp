@@ -24,7 +24,7 @@ template<typename LCT, typename RCT>
 void
 convert_cells(std::unique_ptr<DenseTensorView> &original, vespalib::eval::ValueType want_type)
 {
-    auto old_cells = original->cellsRef().typify<LCT>();
+    auto old_cells = original->cells().typify<LCT>();
     std::vector<RCT> new_cells;
     new_cells.reserve(old_cells.size());
     for (LCT value : old_cells) {
@@ -66,7 +66,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _found_hits(),
       _global_filter(GlobalFilter::create())
 {
-    auto lct = _query_tensor->cellsRef().type;
+    auto lct = _query_tensor->cells().type;
     auto rct = _attr_tensor.getTensorType().cell_type();
     using MyTypify = vespalib::eval::TypifyCellType;
     auto fixup_fun = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(lct, rct);
@@ -124,7 +124,7 @@ NearestNeighborBlueprint::perform_top_k()
         auto rhs_type = _attr_tensor.getTensorType();
         // different cell types should be converted already
         if (lhs_type == rhs_type) {
-            auto lhs = _query_tensor->cellsRef();
+            auto lhs = _query_tensor->cells();
             uint32_t k = _target_num_hits;
             if (_global_filter->has_filter()) {
                 auto filter = _global_filter->filter();

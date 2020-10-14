@@ -75,7 +75,7 @@ std::unique_ptr<DenseTensorView>
 reduce(const DenseTensorView &tensor, const vespalib::string &dimensionToRemove, Function &&func)
 {
     DimensionReducer reducer(tensor.fast_type(), dimensionToRemove);
-    TypedCells oldCells = tensor.cellsRef();
+    TypedCells oldCells = tensor.cells();
     return dispatch_1<CallReduceCells>(oldCells, reducer, func);
 }
 
@@ -97,7 +97,7 @@ reduce(const DenseTensorView &tensor, const std::vector<vespalib::string> &dimen
     {
         eval::ValueType newType = tensor.fast_type().reduce(dimensions);
         assert(newType.is_double());
-        double result = reduce_all_dimensions(tensor.cellsRef(), func);
+        double result = reduce_all_dimensions(tensor.cells(), func);
         std::vector<double> newCells({result});
         return std::make_unique<DenseTensor<double>>(std::move(newType), std::move(newCells));
     }
