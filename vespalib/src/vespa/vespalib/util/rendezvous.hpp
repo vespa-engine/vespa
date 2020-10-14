@@ -6,7 +6,8 @@ namespace vespalib {
 
 template <typename IN, typename OUT>
 Rendezvous<IN, OUT>::Rendezvous(size_t n)
-    : _monitor(),
+    : _lock(),
+      _cond(),
       _size(n),
       _next(0),
       _gen(0),
@@ -31,7 +32,7 @@ Rendezvous<IN, OUT>::rendezvous(IN input)
         _out[0] = &ret;
         mingle();
     } else {
-        MonitorGuard guard(_monitor);
+        std::unique_lock guard(_lock);
         size_t me = _next++;
         _in[me] = &input;
         _out[me] = &ret;
@@ -39,11 +40,11 @@ Rendezvous<IN, OUT>::rendezvous(IN input)
             mingle();
             _next = 0;
             ++_gen;
-            guard.broadcast();
+            _cond.notify_all();
         } else {
             size_t oldgen = _gen;
             while (oldgen == _gen) {
-                guard.wait();
+                _cond.wait(guard);
             }
         }
     }
