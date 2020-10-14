@@ -1272,8 +1272,8 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        framework::MilliSecTimer startTime(_env._component.getClock());
-        [[maybe_unused]] api::BucketInfo info(applyDiffLocally(bucket, cmd.getLoadType(),
-                                              cmd.getDiff(), index, tracker->context()));
+       (void) applyDiffLocally(bucket, cmd.getLoadType(),
+                               cmd.getDiff(), index, tracker->context());
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
     } else {
@@ -1369,7 +1369,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
                 framework::MilliSecTimer startTime(_env._component.getClock());
-                [[maybe_unused]] api::BucketInfo info(applyDiffLocally(bucket, reply.getLoadType(), diff, index, s.context));
+                (void) applyDiffLocally(bucket, reply.getLoadType(), diff, index, s.context);
                 _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
