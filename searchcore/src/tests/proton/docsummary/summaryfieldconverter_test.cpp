@@ -468,8 +468,8 @@ void Test::checkTensor(const Tensor::UP &tensor, const FieldValue *value) {
     ASSERT_TRUE(value);
     const TensorFieldValue *s = dynamic_cast<const TensorFieldValue *>(value);
     ASSERT_TRUE(s);
-    const Tensor::UP &tvalue = s->getAsTensorPtr();
-    EXPECT_EQUAL(tensor.get() != nullptr, tvalue.get() != nullptr);
+    auto tvalue = s->getAsTensorPtr();
+    EXPECT_EQUAL(tensor.get() != nullptr, tvalue != nullptr);
     if (tensor) {
         EXPECT_EQUAL(*tensor, *tvalue);
     }

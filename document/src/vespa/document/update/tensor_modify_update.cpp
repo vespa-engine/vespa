@@ -159,7 +159,7 @@ TensorModifyUpdate::checkCompatibility(const Field& field) const
 std::unique_ptr<Tensor>
 TensorModifyUpdate::applyTo(const Tensor &tensor) const
 {
-    auto &cellsTensor = _tensor->getAsTensorPtr();
+    auto cellsTensor = _tensor->getAsTensorPtr();
     if (cellsTensor) {
         // Cells tensor being sparse was validated during deserialize().
         vespalib::tensor::CellValues cellValues(static_cast<const vespalib::tensor::SparseTensor &>(*cellsTensor));
@@ -173,7 +173,7 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
 {
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
-        auto &oldTensor = tensorFieldValue.getAsTensorPtr();
+        auto oldTensor = tensorFieldValue.getAsTensorPtr();
         if (oldTensor) {
             auto newTensor = applyTo(*oldTensor);
             if (newTensor) {
@@ -207,9 +207,9 @@ TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& in
 namespace {
 
 void
-verifyCellsTensorIsSparse(const std::unique_ptr<Tensor> &cellsTensor)
+verifyCellsTensorIsSparse(const Tensor *cellsTensor)
 {
-    if (cellsTensor && !dynamic_cast<const vespalib::tensor::SparseTensor *>(cellsTensor.get())) {
+    if (cellsTensor && !dynamic_cast<const vespalib::tensor::SparseTensor *>(cellsTensor)) {
         vespalib::string err = make_string("Expected cell values tensor to be sparse, but has type '%s'",
                                            cellsTensor->type().to_spec().c_str());
         throw IllegalStateException(err, VESPA_STRLOC);
