@@ -155,14 +155,14 @@ public:
 
 namespace mbus {
 
-Messenger::Messenger(bool skip_request_thread, bool skip_reply_thread) :
-        _lock(),
-        _pool(128000),
-        _children(),
-        _queue(),
-        _closed(false),
-        _skip_request_thread(skip_request_thread),
-        _skip_reply_thread(skip_reply_thread)
+Messenger::Messenger(bool skip_request_thread, bool skip_reply_thread)
+    : _lock(),
+      _pool(128000),
+      _children(),
+      _queue(),
+      _closed(false),
+      _skip_request_thread(skip_request_thread),
+      _skip_reply_thread(skip_reply_thread)
 {}
 
 Messenger::~Messenger()
