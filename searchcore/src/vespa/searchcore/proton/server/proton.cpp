@@ -14,26 +14,29 @@
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 
-#include <vespa/searchcore/proton/flushengine/flushengine.h>
-#include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
-#include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
-#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/summaryengine/summaryengine.h>
-#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
-#include <vespa/searchcore/proton/matchengine/matchengine.h>
-#include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
-#include <vespa/searchlib/transactionlog/translogserverapp.h>
-#include <vespa/searchlib/util/fileheadertk.h>
-#include <vespa/searchlib/common/packets.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
+#include <vespa/searchcore/proton/flushengine/flushengine.h>
+#include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
+#include <vespa/searchcore/proton/matchengine/matchengine.h>
+#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
+#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
+#include <vespa/searchcore/proton/summaryengine/summaryengine.h>
+#include <vespa/searchlib/common/packets.h>
+#include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
+#include <vespa/searchlib/transactionlog/translogserverapp.h>
+#include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/host_name.h>
-#include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/host_name.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/random.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -54,6 +57,7 @@ using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
 using vespalib::compression::CompressionConfig;
+using vespalib::eval::EngineOrFactory;
 
 namespace proton {
 
@@ -68,6 +72,17 @@ convert(InternalProtonType::Packetcompresstype type)
       case InternalProtonType::Packetcompresstype::LZ4: return CompressionConfig::LZ4;
       default: return CompressionConfig::LZ4;
     }
+}
+
+void
+set_tensor_implementation(const ProtonConfig& cfg)
+{
+    if (cfg.tensorImplementation == ProtonConfig::TensorImplementation::TENSOR_ENGINE) {
+        EngineOrFactory::set(vespalib::tensor::DefaultTensorEngine::ref());
+    } else if (cfg.tensorImplementation == ProtonConfig::TensorImplementation::FAST_VALUE) {
+        EngineOrFactory::set(vespalib::eval::FastValueBuilderFactory::get());
+    }
+    LOG(info, "Tensor implementation used: %s", EngineOrFactory::get().to_string().c_str());
 }
 
 void
@@ -254,6 +269,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
 
+    set_tensor_implementation(protonConfig);
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir,
