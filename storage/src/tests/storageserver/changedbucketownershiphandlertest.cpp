@@ -109,7 +109,6 @@ ChangedBucketOwnershipHandlerTest::insertBuckets(uint32_t numBuckets,
 
         bucketdb::StorageBucketInfo sbi;
         sbi.setBucketInfo(api::BucketInfo(1, 2, 3));
-        sbi.disk = 0;
         _app->getStorageBucketDatabase().insert(bucket, sbi, "test");
         inserted.push_back(bucket);
     }

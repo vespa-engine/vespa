@@ -55,7 +55,7 @@ StateManagerTest::StateManagerTest()
 void
 StateManagerTest::SetUp() {
     vdstestlib::DirConfig config(getStandardConfig(true));
-    _node = std::make_unique<TestServiceLayerApp>(DiskCount(1), NodeIndex(2));
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2));
     // Clock will increase 1 sec per call.
     _node->getClock().setAbsoluteTimeInSeconds(1);
     _metricManager = std::make_unique<metrics::MetricManager>();

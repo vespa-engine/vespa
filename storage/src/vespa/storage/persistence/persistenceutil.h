@@ -99,7 +99,6 @@ struct PersistenceUtil {
     ServiceLayerComponentRegister             &_compReg;
     ServiceLayerComponent                      _component;
     FileStorHandler                           &_fileStorHandler;
-    uint16_t                                   _partition;
     uint16_t                                   _nodeIndex;
     FileStorThreadMetrics                     &_metrics;
     const document::BucketIdFactory           &_bucketFactory;
@@ -111,7 +110,6 @@ struct PersistenceUtil {
             ServiceLayerComponentRegister&,
             FileStorHandler& fileStorHandler,
             FileStorThreadMetrics& metrics,
-            uint16_t partition,
             spi::PersistenceProvider& provider);
 
     ~PersistenceUtil();
@@ -127,18 +125,16 @@ struct PersistenceUtil {
     /** Lock the given bucket in the file stor handler. */
     struct LockResult {
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock;
-        uint16_t disk;
+        LockResult() : lock() {}
 
-        LockResult() : lock(), disk(0) {}
-
-        bool bucketExisted() const { return (lock.get() != 0); }
+        bool bucketExisted() const { return bool(lock); }
     };
 
     LockResult lockAndGetDisk(
             const document::Bucket &bucket,
             StorBucketDatabase::Flag flags = StorBucketDatabase::NONE);
 
-    api::BucketInfo getBucketInfo(const document::Bucket &bucket, int disk = -1) const;
+    api::BucketInfo getBucketInfo(const document::Bucket &bucket) const;
 
     api::BucketInfo convertBucketInfo(const spi::BucketInfo&) const;
 

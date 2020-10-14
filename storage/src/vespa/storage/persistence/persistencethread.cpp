@@ -99,10 +99,9 @@ PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor * sequence
                                      const config::ConfigUri & configUri,
                                      spi::PersistenceProvider& provider,
                                      FileStorHandler& filestorHandler,
-                                     FileStorThreadMetrics& metrics,
-                                     uint16_t deviceIndex)
-    : _stripeId(filestorHandler.getNextStripeId(deviceIndex)),
-      _env(configUri, compReg, filestorHandler, metrics, deviceIndex, provider),
+                                     FileStorThreadMetrics& metrics)
+    : _stripeId(filestorHandler.getNextStripeId()),
+      _env(configUri, compReg, filestorHandler, metrics, provider),
       _sequencedExecutor(sequencedExecutor),
       _spi(provider),
       _processAllHandler(_env, provider),
@@ -110,7 +109,7 @@ PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor * sequence
       _bucketOwnershipNotifier()
 {
     std::ostringstream threadName;
-    threadName << "Disk " << _env._partition << " thread " << _stripeId;
+    threadName << "Thread " << _stripeId;
     _component = std::make_unique<ServiceLayerComponent>(compReg, threadName.str());
     _bucketOwnershipNotifier = std::make_unique<BucketOwnershipNotifier>(*_component, filestorHandler);
     _thread = _component->startThread(*this, 60s, 1s);
@@ -137,7 +136,6 @@ PersistenceThread::getBucket(const DocumentId& id, const document::Bucket &bucke
                 + "bucket " + bucket.getBucketId().toString() + ".", VESPA_STRLOC);
     }
 
-    assert(_env._partition == 0u);
     return spi::Bucket(bucket);
 }
 
@@ -329,7 +327,6 @@ MessageTracker::UP
 PersistenceThread::handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker)
 {
     tracker->setMetric(_env._metrics.revert[cmd.getLoadType()]);
-    assert(_env._partition == 0u);
     spi::Bucket b = spi::Bucket(cmd.getBucket());
     const std::vector<api::Timestamp> & tokens = cmd.getRevertTokens();
     for (const api::Timestamp & token : tokens) {
@@ -347,7 +344,6 @@ PersistenceThread::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTrac
         LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
         DUMP_LOGGED_BUCKET_OPERATIONS(cmd.getBucketId());
     }
-    assert(_env._partition == 0u);
     spi::Bucket spiBucket(cmd.getBucket());
     _spi.createBucket(spiBucket, tracker->context());
     if (cmd.getActive()) {
@@ -407,7 +403,6 @@ PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTrac
         _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
                 api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
     }
-    assert(_env._partition == 0u);
     spi::Bucket bucket(cmd.getBucket());
     if (!checkProviderBucketInfoMatches(bucket, cmd.getBucketInfo())) {
            return tracker;
@@ -486,7 +481,6 @@ PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTrack
     if ( ! fieldSet) { return tracker; }
 
     tracker->context().setReadConsistency(cmd.getReadConsistency());
-    assert(_env._partition == 0u);
     spi::CreateIteratorResult result(_spi.createIterator(
             spi::Bucket(cmd.getBucket()),
             std::move(fieldSet), cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
@@ -514,7 +508,6 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
         return tracker;
     }
 
-    assert(_env._partition == 0u);
     spi::Bucket spiBucket(cmd.getBucket());
     SplitBitDetector::Result targetInfo;
     if (_env._config.enableMultibitSplitOptimalization) {
@@ -556,8 +549,6 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
         }
     }
 #endif
-    assert(lock1.disk == 0u);
-    assert(lock2.disk == 0u);
     spi::Result result = _spi.split(spiBucket, spi::Bucket(target1),
                                     spi::Bucket(target2), tracker->context());
     if (result.hasError()) {
@@ -576,14 +567,12 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
     std::vector<TargetInfo> targets;
     for (uint32_t i = 0; i < 2; i++) {
         const document::Bucket &target(i == 0 ? target1 : target2);
-        uint16_t disk(i == 0 ? lock1.disk : lock2.disk);
         assert(target.getBucketId().getRawId() != 0);
         targets.emplace_back(_env.getBucketDatabase(target.getBucketSpace()).get(
                     target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
                     StorBucketDatabase::CREATE_IF_NONEXISTING),
-                FileStorHandler::RemapInfo(target, disk));
-        targets.back().first->setBucketInfo(_env.getBucketInfo(target, disk));
-        targets.back().first->disk = disk;
+                FileStorHandler::RemapInfo(target));
+        targets.back().first->setBucketInfo(_env.getBucketInfo(target));
     }
     if (LOG_WOULD_LOG(spam)) {
         api::BucketInfo targ1(targets[0].first->getBucketInfo());
@@ -596,7 +585,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
             target2.getBucketId().toString().c_str(),
             targ2.getMetaCount());
     }
-    FileStorHandler::RemapInfo source(cmd.getBucket(), _env._partition);
+    FileStorHandler::RemapInfo source(cmd.getBucket());
     _env._fileStorHandler.remapQueueAfterSplit(source, targets[0].second, targets[1].second);
     bool ownershipChanged(!_bucketOwnershipNotifier->distributorOwns(cmd.getSourceIndex(), cmd.getBucket()));
     // Now release all the bucketdb locks.
@@ -613,7 +602,6 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
                 // Must make sure target bucket exists when we have pending ops
                 // to an empty target bucket, since the provider will have
                 // implicitly erased it by this point.
-                assert(target.second.diskIndex == 0u);
                 spi::Bucket createTarget(spi::Bucket(target.second.bucket));
                 LOG(debug, "Split target %s was empty, but re-creating it since there are remapped operations queued to it",
                     createTarget.toString().c_str());
@@ -679,7 +667,6 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracke
         StorBucketDatabase::WrappedEntry entry =
         _env.getBucketDatabase(destBucket.getBucketSpace()).get(destBucket.getBucketId(), "join",
                                                                 StorBucketDatabase::CREATE_IF_NONEXISTING);
-        entry->disk = _env._partition;
         entry.write();
     }
 
@@ -705,9 +692,6 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracke
         }
     }
 #endif
-    assert(lock1.disk == 0u);
-    assert(lock2.disk == 0u);
-    assert(_env._partition == 0u);
     spi::Result result =
         _spi.join(spi::Bucket(firstBucket),
                   spi::Bucket(secondBucket),
@@ -719,9 +703,8 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracke
     uint64_t lastModified = 0;
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
         document::Bucket srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
-        uint16_t disk = (i == 0) ? lock1.disk : lock2.disk;
-        FileStorHandler::RemapInfo target(cmd.getBucket(), _env._partition);
-        _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket, disk), target);
+        FileStorHandler::RemapInfo target(cmd.getBucket());
+        _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket), target);
         // Remove source from bucket db.
         StorBucketDatabase::WrappedEntry entry =
                 _env.getBucketDatabase(srcBucket.getBucketSpace()).get(srcBucket.getBucketId(), "join-remove-source");
@@ -749,7 +732,6 @@ PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd, Message
     NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
 
     LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
-    assert(_env._partition == 0u);
     spi::Bucket bucket(cmd.getBucket());
     bool shouldBeActive(cmd.getState() == api::SetBucketStateCommand::ACTIVE);
     spi::BucketInfo::ActiveState newState(shouldBeActive ? spi::BucketInfo::ACTIVE : spi::BucketInfo::NOT_ACTIVE);
@@ -785,7 +767,6 @@ PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, Mess
             _env.getBucketDatabase(destBucket.getBucketSpace()).get(
                     destBucket.getBucketId(), "join", StorBucketDatabase::CREATE_IF_NONEXISTING);
 
-        entry->disk = _env._partition;
         entry.write();
     }
     assert(cmd.getDiskOfInstanceToJoin() == 0u);
@@ -939,7 +920,7 @@ PersistenceThread::processMessage(api::StorageMessage& msg, MessageTracker::UP t
 
 void
 PersistenceThread::processLockedMessage(FileStorHandler::LockedMessage lock) {
-    LOG(debug, "Partition %d, nodeIndex %d, ptr=%p", _env._partition, _env._nodeIndex, lock.second.get());
+    LOG(debug, "NodeIndex %d, ptr=%p", _env._nodeIndex, lock.second.get());
     api::StorageMessage & msg(*lock.second);
 
     // Important: we _copy_ the message shared_ptr instead of moving to ensure that `msg` remains
@@ -956,10 +937,10 @@ PersistenceThread::run(framework::ThreadHandle& thread)
 {
     LOG(debug, "Started persistence thread");
 
-    while (!thread.interrupted() && !_env._fileStorHandler.closed(_env._partition)) {
+    while (!thread.interrupted() && !_env._fileStorHandler.closed()) {
         thread.registerTick();
 
-        FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_env._partition, _stripeId));
+        FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_stripeId));
 
         if (lock.first) {
             processLockedMessage(std::move(lock));

@@ -56,8 +56,7 @@ class FileStorManager : public StorageLinkQueued,
     const document::BucketIdFactory& _bucketIdFactory;
     config::ConfigUri                _configUri;
 
-    typedef std::vector<DiskThread::SP> DiskThreads;
-    std::vector<DiskThreads>                 _disks;
+    std::vector<DiskThread::SP>              _threads;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
 
     std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
@@ -114,7 +113,7 @@ private:
 
     StorBucketDatabase::WrappedEntry mapOperationToDisk(api::StorageMessage&, const document::Bucket&);
     StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(api::BucketCommand&, const document::DocumentId*);
-    bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
+    bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&);
 
     // Document operations
     bool onPut(const std::shared_ptr<api::PutCommand>&) override;

@@ -22,7 +22,7 @@ class PersistenceThread final : public DiskThread, public Types
 public:
     PersistenceThread(vespalib::ISequencedTaskExecutor *, ServiceLayerComponentRegister&,
                       const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
-                      FileStorHandler& filestorHandler, FileStorThreadMetrics& metrics, uint16_t deviceIndex);
+                      FileStorHandler& filestorHandler, FileStorThreadMetrics& metrics);
     ~PersistenceThread() override;
 
     /** Waits for current operation to be finished. */

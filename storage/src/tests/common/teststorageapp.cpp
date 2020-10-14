@@ -147,14 +147,13 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
     _nodeStateUpdater.setReportedNodeState(ns);
 }
 
-TestServiceLayerApp::TestServiceLayerApp(DiskCount dc, NodeIndex index,
+TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
                                          vespalib::stringref configId)
     : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
                      lib::NodeType::STORAGE, index, configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider()
 {
-    assert(dc == 1u);
     _compReg.setDiskCount(1);
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     ns.setDiskCount(1);

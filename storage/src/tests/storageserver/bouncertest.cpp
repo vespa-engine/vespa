@@ -65,7 +65,7 @@ BouncerTest::BouncerTest()
 void BouncerTest::setUpAsNode(const lib::NodeType& type) {
     vdstestlib::DirConfig config(getStandardConfig(type == lib::NodeType::STORAGE));
     if (type == lib::NodeType::STORAGE) {
-        _node.reset(new TestServiceLayerApp(DiskCount(1), NodeIndex(2), config.getConfigId()));
+        _node.reset(new TestServiceLayerApp(NodeIndex(2), config.getConfigId()));
     } else {
         _node.reset(new TestDistributorApp(NodeIndex(2), config.getConfigId()));
     }

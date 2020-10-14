@@ -112,9 +112,8 @@ class TestServiceLayerApp : public TestStorageApp
     PersistenceProviderUP _persistenceProvider;
 
 public:
-    TestServiceLayerApp(vespalib::stringref configId = "");
-    TestServiceLayerApp(DiskCount diskCount, NodeIndex = NodeIndex(0xffff),
-                        vespalib::stringref configId = "");
+    TestServiceLayerApp(vespalib::stringref configId);
+    TestServiceLayerApp(NodeIndex = NodeIndex(0xffff), vespalib::stringref configId = "");
     ~TestServiceLayerApp();
 
     void setupDummyPersistence();
