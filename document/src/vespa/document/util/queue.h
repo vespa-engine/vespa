@@ -22,15 +22,8 @@ public:
     Semaphore(int count=0) : _count(count), _numWaiters(0), _lock() { }
 
     ~Semaphore() {
-        // XXX alternative: assert(_numWaiters == 0)
-        while (true) {
-            {
-                std::lock_guard guard(_lock);
-                if (_numWaiters == 0) break;
-                _count++;
-            }
-            _cond.notify_one();
-        }
+        std::lock_guard guard(_lock);
+        assert(_numWaiters == 0);
     }
 
     bool wait(int ms) {
