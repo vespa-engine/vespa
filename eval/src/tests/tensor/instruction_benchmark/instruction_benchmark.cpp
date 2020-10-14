@@ -39,6 +39,7 @@
 #include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <optional>
@@ -451,6 +452,76 @@ TEST(MakeInputTest, print_some_test_input) {
     fprintf(stderr, "dense vector: %s\n", dense.to_string().c_str());
     fprintf(stderr, "mixed cube: %s\n", mixed.to_string().c_str());
     fprintf(stderr, "--------------------------------------------------------\n");
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_encode_decode(const vespalib::string &desc, const TensorSpec &proto) {
+    ValueType proto_type = ValueType::from_spec(proto.type());
+    ASSERT_FALSE(proto_type.is_error());
+    for (const Impl &impl: impl_list) {
+        vespalib::nbostream data;
+        auto value = impl.create_value(proto);
+        impl.engine.encode(*value, data);
+        auto new_value = impl.engine.decode(data);
+        ASSERT_EQ(data.size(), 0);
+        ASSERT_EQ(proto, impl.engine.to_spec(*new_value));
+    }
+    fprintf(stderr, "--------------------------------------------------------\n");
+    fprintf(stderr, "Benchmarking encode/decode for: [%s]\n", desc.c_str());
+    BenchmarkResult encode_result(desc + " <encode>", impl_list.size());
+    BenchmarkResult decode_result(desc + " <decode>", impl_list.size());
+    for (const Impl &impl: impl_list) {
+        constexpr size_t loop_cnt = 16;
+        auto value = impl.create_value(proto);
+        BenchmarkTimer encode_timer(2 * budget);
+        BenchmarkTimer decode_timer(2 * budget);
+        while (encode_timer.has_budget() || decode_timer.has_budget()) {
+            std::array<vespalib::nbostream, loop_cnt> data;
+            std::array<Value::UP, loop_cnt> object;
+            encode_timer.before();
+            for (size_t i = 0; i < loop_cnt; ++i) {
+                impl.engine.encode(*value, data[i]);
+            }
+            encode_timer.after();
+            decode_timer.before();
+            for (size_t i = 0; i < loop_cnt; ++i) {
+                object[i] = impl.engine.decode(data[i]);
+            }
+            decode_timer.after();
+        }
+        double encode_us = encode_timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
+        double decode_us = decode_timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
+        fprintf(stderr, "    %s (%s) <encode>: %10.3f us\n", impl.name.c_str(), impl.short_name.c_str(), encode_us);
+        fprintf(stderr, "    %s (%s) <decode>: %10.3f us\n", impl.name.c_str(), impl.short_name.c_str(), decode_us);
+        encode_result.sample(impl.order, encode_us);
+        decode_result.sample(impl.order, decode_us);
+    }
+    encode_result.normalize();
+    decode_result.normalize();
+    benchmark_results.push_back(encode_result);
+    benchmark_results.push_back(decode_result);
+    fprintf(stderr, "--------------------------------------------------------\n");
+}
+
+//-----------------------------------------------------------------------------
+
+// encode/decode operations are not actual instructions, but still
+// relevant for the overall performance of the tensor implementation.
+
+TEST(EncodeDecodeBench, encode_decode_dense) {
+    auto proto = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.0);
+    benchmark_encode_decode("dense tensor", proto);
+}
+
+TEST(EncodeDecodeBench, encode_decode_sparse) {
+    auto proto = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.0);
+    benchmark_encode_decode("sparse tensor", proto);
+}
+
+TEST(EncodeDecodeBench, encode_decode_mixed) {
+    auto proto = make_matrix(D::map("a", 64, 1), D::idx("b", 64), 1.0);
+    benchmark_encode_decode("mixed tensor", proto);
 }
 
 //-----------------------------------------------------------------------------
