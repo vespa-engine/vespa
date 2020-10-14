@@ -31,8 +31,6 @@ private:
     Queue<Routable*>        _queue;
 
 public:
-    RoutableQueue(const RoutableQueue &) = delete;
-    RoutableQueue &operator=(const RoutableQueue &) = delete;
     /**
      * Create an empty queue.
      **/
@@ -41,7 +39,7 @@ public:
     /**
      * The destructor will delete any objects still on the queue.
      **/
-    virtual ~RoutableQueue();
+    ~RoutableQueue() override;
 
     /**
      * Obtain the number of elements currently in this queue. Note

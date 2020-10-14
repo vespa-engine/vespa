@@ -46,7 +46,7 @@ RoutableQueue::dequeue(duration timeout)
     duration left = timeout;
     std::unique_lock guard(_lock);
     while (_queue.size() == 0 && left > duration::zero()) {
-        if ((_cond.wait_for(guard, left) == std::cv_status::no_timeout) || (_queue.size() > 0)) {
+        if ((_cond.wait_for(guard, left) == std::cv_status::timeout) || (_queue.size() > 0)) {
             break;
         }
         duration elapsed = (steady_clock::now() - startTime);
