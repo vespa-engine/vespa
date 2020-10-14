@@ -96,7 +96,7 @@ public:
     static std::unique_ptr<SimpleTensor> concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension);
     static void encode(const SimpleTensor &tensor, nbostream &output);
     static std::unique_ptr<SimpleTensor> decode(nbostream &input);
-    MemoryUsage get_memory_usage() const;
+    MemoryUsage get_memory_usage() const override;
 };
 
 } // namespace vespalib::eval

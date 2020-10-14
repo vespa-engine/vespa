@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "memory_usage_stuff.h"
 #include "value_type.h"
 #include "typed_cells.h"
 #include <vespa/vespalib/stllike/string.h>
@@ -61,6 +62,8 @@ struct Value {
     virtual const Index &index() const = 0;
 // --- end of new interface
 
+    virtual MemoryUsage get_memory_usage() const = 0;
+
 // --- old interface that may be (partially) removed in the future
     virtual bool is_double() const { return type().is_double(); }
     virtual bool is_tensor() const { return type().is_tensor(); }
@@ -92,6 +95,7 @@ public:
     DoubleValue(double value) : _value(value) {}
     TypedCells cells() const override { return TypedCells(ConstArrayRef<double>(&_value, 1)); }
     const Index &index() const override { return TrivialIndex::get(); }
+    MemoryUsage get_memory_usage() const override { return self_memory_usage<DoubleValue>(); }
     bool is_double() const override { return true; }
     double as_double() const override { return _value; }
     const ValueType &type() const override { return _type; }
@@ -113,6 +117,7 @@ public:
     const ValueType &type() const final override { return _type; }
     TypedCells cells() const final override { return _cells; }
     const Index &index() const final override { return TrivialIndex::get(); }
+    MemoryUsage get_memory_usage() const override { return self_memory_usage<DenseValueView>(); }
 };
 
 /**
@@ -130,6 +135,7 @@ public:
     const ValueType &type() const final override { return _type; }
     TypedCells cells() const final override { return _cells; }
     const Index &index() const final override { return _index; }
+    MemoryUsage get_memory_usage() const override { return self_memory_usage<ValueView>(); }
 };
 
 /**

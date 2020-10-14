@@ -43,6 +43,8 @@ public:
     const Value::Index &index() const override { return *this; }
     TypedCells cells() const override { return _cells; }
 
+    MemoryUsage get_memory_usage() const override;
+
     // Value::Index API:
     size_t size() const override { return _mappings.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;

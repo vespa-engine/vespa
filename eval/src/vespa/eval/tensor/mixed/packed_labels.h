@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/eval/eval/memory_usage_stuff.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>
 
@@ -32,6 +33,7 @@ public:
 
     vespalib::stringref get_label(uint32_t index) const;
 
+    MemoryUsage estimate_extra_memory_usage() const;
 private:
     const ConstArrayRef<uint32_t> _offsets;
     const ConstArrayRef<char> _label_store;

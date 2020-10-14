@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "memory_usage_stuff.h"
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -93,6 +94,20 @@ public:
         _labels.reserve(_num_dims * expected_subspaces);
     }
     ~FastSparseMap();
+
+    MemoryUsage estimate_extra_memory_usage() const {
+        MemoryUsage extra_usage;
+        size_t map_self_size = sizeof(_map);
+        size_t map_used = _map.getMemoryUsed();
+        size_t map_allocated = _map.getMemoryConsumption();
+        // avoid double-counting the map itself
+        map_used = std::min(map_used, map_used - map_self_size);
+        map_allocated = std::min(map_allocated, map_allocated - map_self_size);
+        extra_usage.merge(MemoryUsage(map_used, map_allocated, 0, 0));
+        extra_usage.merge(vector_extra_memory_usage(_labels));
+        return extra_usage;
+    }
+
     size_t size() const { return _map.size(); }
     size_t num_dims() const { return _num_dims; }
     static constexpr size_t npos() { return -1; }

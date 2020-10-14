@@ -37,6 +37,17 @@ PackedLabels::get_label(uint32_t index) const
     return vespalib::stringref(p, sz);
 }
 
+MemoryUsage
+PackedLabels::estimate_extra_memory_usage() const
+{
+    MemoryUsage extra_usage;
+    size_t offsets_size = _offsets.size() * sizeof(uint32_t);
+    size_t labels_size = _label_store.size() * sizeof(char);
+    extra_usage.merge(MemoryUsage(offsets_size, offsets_size, 0, 0));
+    extra_usage.merge(MemoryUsage(labels_size, labels_size, 0, 0));
+    return extra_usage;
+}
+
 void
 PackedLabels::validate_labels(uint32_t num_labels)
 {
