@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
 import com.google.inject.Inject;
@@ -6,7 +6,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provisioning.CloudConfig;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * The zone (environment + region) of this runtime, and some other information.
@@ -21,10 +20,9 @@ public class Zone {
     private final SystemName systemName;
     private final Environment environment;
     private final RegionName region;
-    private final Optional<NodeFlavors> nodeFlavors;
 
     @Inject
-    public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors, CloudConfig cloudConfig) {
+    public Zone(ConfigserverConfig configserverConfig, CloudConfig cloudConfig) {
         this(Cloud.builder()
                   .name(CloudName.from(configserverConfig.cloud()))
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
@@ -34,8 +32,7 @@ public class Zone {
                   .build(),
              SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),
-             RegionName.from(configserverConfig.region()),
-             nodeFlavors);
+             RegionName.from(configserverConfig.region()));
     }
 
     /** Create from environment and region. Use for testing.  */
@@ -48,22 +45,12 @@ public class Zone {
         this(Cloud.defaultCloud(), systemName, environment, region);
     }
 
-    /** Create from cloud, system, environment and region. Use for testing. */
+    /** Create from cloud, system, environment and region. Also used for testing. */
     public Zone(Cloud cloud, SystemName systemName, Environment environment, RegionName region) {
-        this(cloud, systemName, environment, region, null);
-    }
-
-    /** Create from cloud, system, environment, region and node flavors. Use for testing. */
-    private Zone(Cloud cloud,
-                 SystemName systemName,
-                 Environment environment,
-                 RegionName region,
-                 NodeFlavors nodeFlavors) {
         this.cloud = cloud;
         this.systemName = systemName;
         this.environment = environment;
         this.region = region;
-        this.nodeFlavors = Optional.ofNullable(nodeFlavors);
     }
 
     /** Returns the current cloud */
@@ -81,9 +68,6 @@ public class Zone {
     public RegionName region() {
         return region;
     }
-
-    /** Returns all available node flavors for the zone, or empty if not set for this Zone. */
-    public Optional<NodeFlavors> nodeFlavors() { return nodeFlavors; }
 
     /** Do not use */
     public static Zone defaultZone() {
