@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.thread");
@@ -106,9 +107,7 @@ PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor * sequence
       _spi(provider),
       _processAllHandler(_env, provider),
       _mergeHandler(_spi, _env),
-      _bucketOwnershipNotifier(),
-      _flushMonitor(),
-      _closed(false)
+      _bucketOwnershipNotifier()
 {
     std::ostringstream threadName;
     threadName << "Disk " << _env._partition << " thread " << _stripeId;
@@ -950,22 +949,15 @@ PersistenceThread::run(framework::ThreadHandle& thread)
         if (lock.first) {
             processLockedMessage(std::move(lock));
         }
-
-        vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);
-        flushMonitorGuard.broadcast();
     }
     LOG(debug, "Closing down persistence thread");
-    vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);
-    _closed = true;
-    flushMonitorGuard.broadcast();
 }
 
 void
 PersistenceThread::flush()
 {
-    vespalib::MonitorGuard flushMonitorGuard(_flushMonitor);
-    if (!_closed) {
-        flushMonitorGuard.wait();
+    while (_env._fileStorHandler.getQueueSize() != 0) {
+        std::this_thread::sleep_for(1ms);
     }
 }
 
