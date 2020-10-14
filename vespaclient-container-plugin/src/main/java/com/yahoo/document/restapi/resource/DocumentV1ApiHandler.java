@@ -995,11 +995,15 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     // ------------------------------------------------ Helpers ------------------------------------------------
 
     private static Optional<String> getProperty(HttpRequest request, String name) {
-        List<String> values = request.parameters().get(name);
-        if (values != null && values.size() != 0)
-            return Optional.ofNullable(values.get(values.size() - 1));
+        if ( ! request.parameters().containsKey(name))
+            return Optional.empty();
 
-        return Optional.empty();
+        List<String> values = request.parameters().get(name);
+        String value;
+        if (values == null || values.isEmpty() || (value = values.get(values.size() - 1)) == null || value.isEmpty())
+            throw new IllegalArgumentException("Expected non-empty value for request property '" + name + "'");
+
+        return Optional.of(value);
     }
 
     private static <T> Optional<T> getProperty(HttpRequest request, String name, Parser<T> parser) {

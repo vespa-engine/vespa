@@ -384,6 +384,15 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
+        // GET with empty route is a 400
+        access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?route=", DELETE);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"message\": \"Expected non-empty value for request property 'route'\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
         // GET with non-existent cluster is a 400
         access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?cluster=throw-me");
