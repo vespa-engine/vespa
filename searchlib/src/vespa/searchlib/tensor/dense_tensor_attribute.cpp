@@ -149,7 +149,7 @@ DenseTensorAttribute::prepare_set_tensor(DocId docid, const Tensor& tensor) cons
     if (_index) {
         const auto* view = dynamic_cast<const DenseTensorView*>(&tensor);
         assert(view);
-        return _index->prepare_add_document(docid, view->cellsRef(), getGenerationHandler().takeGuard());
+        return _index->prepare_add_document(docid, view->cells(), getGenerationHandler().takeGuard());
     }
     return std::unique_ptr<PrepareResult>();
 }

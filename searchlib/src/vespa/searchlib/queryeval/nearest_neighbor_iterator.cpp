@@ -37,7 +37,7 @@ public:
 
     NearestNeighborImpl(Params params_in)
         : NearestNeighborIterator(params_in),
-          _lhs(params().queryTensor.cellsRef()),
+          _lhs(params().queryTensor.cells()),
           _fieldTensor(params().tensorAttribute.getTensorType()),
           _lastScore(0.0)
     {
@@ -77,7 +77,7 @@ public:
 private:
     double computeDistance(uint32_t docId, double limit) {
         params().tensorAttribute.extract_dense_view(docId, _fieldTensor);
-        auto rhs = _fieldTensor.cellsRef();
+        auto rhs = _fieldTensor.cells();
         return params().distanceFunction->calc_with_limit(_lhs, rhs, limit);
     }
 
