@@ -61,8 +61,8 @@ HandlerThread<T>::join()
     {
         std::lock_guard guard(_lock);
         _done = true;
+        _cond.notify_one();
     }
-    _cond.notify_one();
     _thread.join();
 }
 
