@@ -329,7 +329,7 @@ DummyPersistence::getPartitionStates() const
 {
     _initialized = true;
     LOG(debug, "getPartitionStates()");
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     return PartitionStateListResult(_partitions);
 }
 
@@ -344,7 +344,7 @@ DummyPersistence::listBuckets(BucketSpace bucketSpace, PartitionId id) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "listBuckets(%u)", uint16_t(id));
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     BucketIdListResult::List list;
     if (bucketSpace == FixedBucketSpaces::default_space()) {
         for (PartitionContent::const_iterator it = _content[id].begin();
@@ -359,14 +359,14 @@ DummyPersistence::listBuckets(BucketSpace bucketSpace, PartitionId id) const
 void
 DummyPersistence::setModifiedBuckets(const BucketIdListResult::List& buckets)
 {
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     _modifiedBuckets = buckets;
 }
 
 BucketIdListResult
 DummyPersistence::getModifiedBuckets(BucketSpace bucketSpace) const
 {
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     if (bucketSpace == FixedBucketSpaces::default_space()) {
         return BucketIdListResult(_modifiedBuckets);
     } else {
@@ -378,7 +378,7 @@ DummyPersistence::getModifiedBuckets(BucketSpace bucketSpace) const
 Result
 DummyPersistence::setClusterState(BucketSpace bucketSpace, const ClusterState& c)
 {
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     if (bucketSpace == FixedBucketSpaces::default_space()) {
         _clusterState.reset(new ClusterState(c));
         if (!_clusterState->nodeUp()) {
@@ -570,7 +570,7 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
     Iterator* it;
     IteratorId id;
     {
-        vespalib::MonitorGuard lock(_monitor);
+        std::lock_guard lock(_monitor);
         id = _nextIterator;
         ++_nextIterator;
         assert(_iterators.find(id) == _iterators.end());
@@ -640,7 +640,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
     ctx.trace(9, "started iterate()");
     Iterator* it;
     {
-        vespalib::MonitorGuard lock(_monitor);
+        std::lock_guard lock(_monitor);
         std::map<IteratorId, Iterator::UP>::iterator iter(_iterators.find(id));
         if (iter == _iterators.end()) {
             return IterateResult(Result::ErrorType::PERMANENT_ERROR,
@@ -711,7 +711,7 @@ DummyPersistence::destroyIterator(IteratorId id, Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "destroyIterator(%" PRIu64 ")", uint64_t(id));
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     if (_iterators.find(id) != _iterators.end()) {
         _iterators.erase(id);
     }
@@ -724,7 +724,7 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     if (_content[b.getPartition()].find(b) == _content[b.getPartition()].end()) {
         _content[b.getPartition()][b] = std::make_shared<BucketContent>();
     } else {
@@ -740,7 +740,7 @@ DummyPersistence::deleteBucket(const Bucket& b, Context&)
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     if (_content[b.getPartition()][b].get()) {
         assert(!_content[b.getPartition()][b]->_inUse);
     }
@@ -904,7 +904,7 @@ DummyPersistence::dumpBucket(const Bucket& b) const
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(spam, "dumpBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     PartitionContent::const_iterator it(_content[b.getPartition()].find(b));
     if (it == _content[b.getPartition()].end()) {
         return "DOESN'T EXIST";
@@ -924,7 +924,7 @@ DummyPersistence::isActive(const Bucket& b) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     LOG(spam, "isActive(%s)", b.toString().c_str());
     PartitionContent::const_iterator it(_content[b.getPartition()].find(b));
     if (it == _content[b.getPartition()].end()) {
@@ -942,7 +942,7 @@ BucketContentGuard::UP
 DummyPersistence::acquireBucketWithLock(const Bucket& b, LockMode lock_mode) const
 {
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-    vespalib::MonitorGuard lock(_monitor);
+    std::lock_guard lock(_monitor);
     DummyPersistence& ncp(const_cast<DummyPersistence&>(*this));
     PartitionContent::iterator it(ncp._content[b.getPartition()].find(b));
     if (it == ncp._content[b.getPartition()].end()) {

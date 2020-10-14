@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messenger.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/gate.h>
 
 #include <vespa/log/log.h>
@@ -156,23 +155,24 @@ public:
 
 namespace mbus {
 
-Messenger::Messenger(bool skip_request_thread, bool skip_reply_thread) :
-    _monitor(),
-    _pool(128000),
-    _children(),
-    _queue(),
-    _closed(false),
-    _skip_request_thread(skip_request_thread),
-    _skip_reply_thread(skip_reply_thread)
+Messenger::Messenger(bool skip_request_thread, bool skip_reply_thread)
+    : _lock(),
+      _pool(128000),
+      _children(),
+      _queue(),
+      _closed(false),
+      _skip_request_thread(skip_request_thread),
+      _skip_reply_thread(skip_reply_thread)
 {}
 
 Messenger::~Messenger()
 {
     {
-        vespalib::MonitorGuard guard(_monitor);
+        std::lock_guard guard(_lock);
         _closed = true;
-        guard.broadcast();
     }
+    _cond.notify_all();
+
     _pool.Close();
     std::for_each(_children.begin(), _children.end(), DeleteFunctor<ITask>());
     if ( ! _queue.empty()) {
@@ -194,12 +194,12 @@ Messenger::Run(FastOS_ThreadInterface *thread, void *arg)
     while (true) {
         ITask::UP task;
         {
-            vespalib::MonitorGuard guard(_monitor);
+            std::unique_lock guard(_lock);
             if (_closed) {
                 break;
             }
             if (_queue.empty()) {
-                guard.wait(100);
+                _cond.wait_for(guard, 100ms);
             }
             if (!_queue.empty()) {
                 task.reset(_queue.front());
@@ -237,7 +237,7 @@ Messenger::discardRecurrentTasks()
 bool
 Messenger::start()
 {
-    if (_pool.NewThread(this) == 0) {
+    if (_pool.NewThread(this) == nullptr) {
         return false;
     }
     return true;
@@ -266,11 +266,12 @@ Messenger::deliverReply(Reply::UP reply, IReplyHandler &handler)
 void
 Messenger::enqueue(ITask::UP task)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     if (!_closed) {
         _queue.push(task.release());
         if (_queue.size() == 1) {
-            guard.signal();
+            guard.unlock();
+            _cond.notify_one();
         }
     }
 }
@@ -286,7 +287,7 @@ Messenger::sync()
 bool
 Messenger::isEmpty() const
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(_lock);
     return _queue.empty();
 }
 

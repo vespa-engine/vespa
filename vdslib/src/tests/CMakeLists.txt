@@ -9,7 +9,6 @@ vespa_add_executable(vdslib_gtest_runner_app TEST
     vdslib_containertest
     vdslib_testdistribution
     vdslib_teststate
-    vdslib_testthread
     GTest::GTest
 )
 

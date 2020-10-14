@@ -713,7 +713,7 @@ updateExecutorMetrics(ExecutorMetrics &metrics,
 }
 
 void
-Proton::updateMetrics(const vespalib::MonitorGuard &)
+Proton::updateMetrics(const metrics::UpdateHook::MetricLockGuard &)
 {
     {
         ContentProtonMetrics &metrics = _metricsEngine->root();

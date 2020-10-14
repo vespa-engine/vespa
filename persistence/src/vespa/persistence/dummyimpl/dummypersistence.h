@@ -11,10 +11,11 @@
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <atomic>
 #include <map>
+#include <mutex>
+#include <condition_variable>
 
 namespace document {
 class DocumentTypeRepo;
@@ -207,7 +208,8 @@ private:
     std::vector<PartitionContent> _content;
     IteratorId _nextIterator;
     mutable std::map<IteratorId, Iterator::UP> _iterators;
-    vespalib::Monitor _monitor;
+    mutable std::mutex      _monitor;
+    std::condition_variable _cond;
 
     std::unique_ptr<ClusterState> _clusterState;
 

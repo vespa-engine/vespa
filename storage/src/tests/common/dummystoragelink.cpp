@@ -63,12 +63,12 @@ bool DummyStorageLink::onDown(const api::StorageMessage::SP& cmd)
         }
     }
     if (isBottom()) {
-        vespalib::MonitorGuard lock(_waitMonitor);
+        std::lock_guard lock(_waitMonitor);
         {
             std::lock_guard guard(_lock);
             _commands.push_back(cmd);
         }
-        lock.broadcast();
+        _waitCond.notify_all();
         return true;
     }
     return StorageLink::onDown(cmd);
@@ -76,12 +76,12 @@ bool DummyStorageLink::onDown(const api::StorageMessage::SP& cmd)
 
 bool DummyStorageLink::onUp(const api::StorageMessage::SP& reply) {
     if (isTop()) {
-        vespalib::MonitorGuard lock(_waitMonitor);
+        std::lock_guard lock(_waitMonitor);
         {
             std::lock_guard guard(_lock);
             _replies.push_back(reply);
         }
-        lock.broadcast();
+        _waitCond.notify_all();
         return true;
     }
     return StorageLink::onUp(reply);
@@ -96,7 +96,7 @@ void DummyStorageLink::injectReply(api::StorageReply* reply)
 }
 
 void DummyStorageLink::reset() {
-    vespalib::MonitorGuard lock(_waitMonitor);
+    std::lock_guard lock(_waitMonitor);
     std::lock_guard guard(_lock);
     _commands.clear();
     _replies.clear();
@@ -106,11 +106,10 @@ void DummyStorageLink::reset() {
 void DummyStorageLink::waitForMessages(unsigned int msgCount, int timeout)
 {
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(
-            clock.getTimeInMillis() + framework::MilliSecTime(timeout * 1000));
-    vespalib::MonitorGuard lock(_waitMonitor);
+    vespalib::steady_time endTime = clock.getMonotonicTime() + vespalib::from_s(timeout);
+    std::unique_lock guard(_waitMonitor);
     while (_commands.size() + _replies.size() < msgCount) {
-        if (timeout != 0 && clock.getTimeInMillis() > endTime) {
+        if (timeout != 0 && clock.getMonotonicTime() > endTime) {
             std::ostringstream ost;
             ost << "Timed out waiting for " << msgCount << " messages to "
                 << "arrive in dummy storage link. Only "
@@ -119,9 +118,9 @@ void DummyStorageLink::waitForMessages(unsigned int msgCount, int timeout)
             throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
         }
         if (timeout >= 0) {
-            lock.wait((endTime - clock.getTimeInMillis()).getTime());
+            _waitCond.wait_until(guard, endTime);
         } else {
-            lock.wait();
+            _waitCond.wait(guard);
         }
     }
 }
@@ -129,9 +128,8 @@ void DummyStorageLink::waitForMessages(unsigned int msgCount, int timeout)
 void DummyStorageLink::waitForMessage(const api::MessageType& type, int timeout)
 {
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(
-            clock.getTimeInMillis() + framework::MilliSecTime(timeout * 1000));
-    vespalib::MonitorGuard lock(_waitMonitor);
+    vespalib::steady_time endTime = clock.getMonotonicTime() + vespalib::from_s(timeout);
+    std::unique_lock lock(_waitMonitor);
     while (true) {
         for (uint32_t i=0; i<_commands.size(); ++i) {
             if (_commands[i]->getType() == type) return;
@@ -139,7 +137,7 @@ void DummyStorageLink::waitForMessage(const api::MessageType& type, int timeout)
         for (uint32_t i=0; i<_replies.size(); ++i) {
             if (_replies[i]->getType() == type) return;
         }
-        if (timeout != 0 && clock.getTimeInMillis() > endTime) {
+        if (timeout != 0 && clock.getMonotonicTime() > endTime) {
             std::ostringstream ost;
             ost << "Timed out waiting for " << type << " message to "
                 << "arrive in dummy storage link. Only "
@@ -154,9 +152,9 @@ void DummyStorageLink::waitForMessage(const api::MessageType& type, int timeout)
             throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
         }
         if (timeout >= 0) {
-            lock.wait((endTime - clock.getTimeInMillis()).getTime());
+            _waitCond.wait_until(lock, endTime);
         } else {
-            lock.wait();
+            _waitCond.wait(lock);
         }
     }
 }
@@ -164,7 +162,7 @@ void DummyStorageLink::waitForMessage(const api::MessageType& type, int timeout)
 api::StorageMessage::SP
 DummyStorageLink::getAndRemoveMessage(const api::MessageType& type)
 {
-    vespalib::MonitorGuard lock(_waitMonitor);
+    std::lock_guard lock(_waitMonitor);
     for (std::vector<api::StorageMessage::SP>::iterator it = _commands.begin();
          it != _commands.end(); ++it)
     {

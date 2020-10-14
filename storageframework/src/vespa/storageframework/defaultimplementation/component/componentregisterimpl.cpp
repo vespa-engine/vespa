@@ -137,8 +137,7 @@ namespace {
     struct MetricHookWrapper : public metrics::UpdateHook {
         MetricUpdateHook& _hook;
 
-        MetricHookWrapper(vespalib::stringref name,
-                          MetricUpdateHook& hook)
+        MetricHookWrapper(vespalib::stringref name, MetricUpdateHook& hook)
             : metrics::UpdateHook(name.data()), // Expected to point to static name
               _hook(hook)
         {

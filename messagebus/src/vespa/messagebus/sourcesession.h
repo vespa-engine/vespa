@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
 #include "ireplyhandler.h"
 #include "result.h"
 #include "sequencer.h"
 #include "sourcesessionparams.h"
+#include <condition_variable>
 
 namespace mbus {
 
@@ -21,7 +21,8 @@ class SourceSession : public IReplyHandler {
 private:
     friend class MessageBus;
 
-    vespalib::Monitor   _monitor;
+    std::mutex              _lock;
+    std::condition_variable _cond;
     MessageBus         &_mbus;
     ReplyGate          *_gate;
     Sequencer           _sequencer;
