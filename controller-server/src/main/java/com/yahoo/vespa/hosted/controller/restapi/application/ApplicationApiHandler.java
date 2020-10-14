@@ -70,6 +70,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
@@ -104,7 +105,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.Principal;
 import java.security.PublicKey;
@@ -1007,16 +1007,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add zone endpoints
         var endpointArray = response.setArray("endpoints");
-        for (var endpoint : controller.routing().endpointsOf(deploymentId)
-                                      .scope(Endpoint.Scope.zone)
-                                      .not().legacy()) {
+        EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId)
+                                               .scope(Endpoint.Scope.zone)
+                                               .not().legacy();
+        for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }
         // Add global endpoints
-        var globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
-                                        .not().legacy()
-                                        .targets(deploymentId.zoneId());
-        for (var endpoint : globalEndpoints) {
+        EndpointList globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
+                                                 .not().legacy()
+                                                 .targets(deploymentId.zoneId());
+        for (var endpoint : controller.routing().directEndpoints(globalEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }
 

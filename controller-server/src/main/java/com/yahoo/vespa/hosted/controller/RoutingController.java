@@ -87,12 +87,9 @@ public class RoutingController {
         boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
         // Avoid reading application more than once per call to this
         var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
-        var hideSharedEndpoints = hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value();
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
-                // Hide shared endpoints if configured for application, and the application can be routed to directly
-                if (hideSharedEndpoints && !routingMethod.isDirect() && !isSystemApplication && canRouteDirectlyTo(deployment, application.get())) continue;
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
                 endpoints.add(policy.endpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
                 endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
@@ -142,9 +139,10 @@ public class RoutingController {
     public Map<ZoneId, List<Endpoint>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
         var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
-            var zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone).asList();
+            EndpointList zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone);
+            zoneEndpoints = directEndpoints(zoneEndpoints, deployment.applicationId());
             if  ( ! zoneEndpoints.isEmpty()) {
-                endpoints.put(deployment.zoneId(), zoneEndpoints);
+                endpoints.put(deployment.zoneId(), zoneEndpoints.asList());
             }
         }
         return Collections.unmodifiableMap(endpoints);
@@ -291,16 +289,11 @@ public class RoutingController {
         var zones = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
         var availableRoutingMethods = routingMethodsOfAll(deployments, application);
 
-        // Hide global shared endpoints if at least one direct method is supported
-        // and instances referenced by the global endpoint is configured to be hidden
-        var hideSharedEndpoints = availableRoutingMethods.stream().anyMatch(RoutingMethod::isDirect)
-                && hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, routingId.application().serializedForm()).value();
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
                                                    "direct methods");
             }
-            if (hideSharedEndpoints && !method.isDirect()) continue;
             endpoints.add(Endpoint.of(routingId.application())
                                   .target(routingId.endpointId(), cluster, zones)
                                   .on(Port.fromRoutingMethod(method))
@@ -350,5 +343,17 @@ public class RoutingController {
         }
 
     }
+
+    /** Returns direct routing endpoints if any exist and feature flag is set for given application */
+    // TODO: Remove this when feature flag is removed, and in-line .direct() filter where relevant
+    public EndpointList directEndpoints(EndpointList endpoints, ApplicationId application) {
+        boolean hideSharedEndpoint = hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
+        EndpointList directEndpoints = endpoints.direct();
+        if (hideSharedEndpoint && !directEndpoints.isEmpty()) {
+            return directEndpoints;
+        }
+        return endpoints;
+    }
+
 
 }

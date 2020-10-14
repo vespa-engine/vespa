@@ -18,8 +18,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -928,55 +926,6 @@ public class ControllerTest {
                                 "application--tenant.global.vespa.oath.cloud"),
                          tester.configServer().rotationNames().get(context.deploymentIdIn(zone)));
         }
-    }
-
-    @Test
-    public void testDirectRoutingSupportHidingSharedEndpoint() {
-        // TODO (mortent): remove this test when shared routing is gone
-        var context = tester.newDeploymentContext();
-        var zone1 = ZoneId.from("prod", "us-west-1");
-        var zone2 = ZoneId.from("prod", "us-east-3");
-        var zone3 = ZoneId.from("staging", "us-east-3");
-        var zone4 = ZoneId.from("test", "us-east-1");
-        var applicationPackageBuilder = new ApplicationPackageBuilder()
-                .region(zone1.region())
-                .region(zone2.region());
-        tester.controllerTester().zoneRegistry()
-                .setRoutingMethod(ZoneApiMock.from(zone1), RoutingMethod.shared, RoutingMethod.sharedLayer4)
-                .setRoutingMethod(ZoneApiMock.from(zone2), RoutingMethod.shared, RoutingMethod.sharedLayer4)
-                .setRoutingMethod(ZoneApiMock.from(zone3), RoutingMethod.shared, RoutingMethod.sharedLayer4)
-                .setRoutingMethod(ZoneApiMock.from(zone4), RoutingMethod.shared, RoutingMethod.sharedLayer4);
-        Supplier<Set<RoutingMethod>> routingMethods = () -> tester.controller().routing().endpointsOf(context.deploymentIdIn(zone1))
-                .asList()
-                .stream()
-                .map(Endpoint::routingMethod)
-                .collect(Collectors.toSet());
-
-        ((InMemoryFlagSource)tester.controller().flagSource()).withBooleanFlag(Flags.HIDE_SHARED_ROUTING_ENDPOINT.id(), true);
-        // Without satisfying any requirement
-        context.submit(applicationPackageBuilder.build()).deploy();
-        assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
-
-        // Without satisfying Athenz service requirement
-        context.submit(applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION).build())
-                .deploy();
-        assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
-
-        // Satisfying all requirements
-        context.submit(applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
-                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                .build()).deploy();
-        assertEquals(Set.of(RoutingMethod.sharedLayer4), routingMethods.get());
-
-        // Global endpoint is added and includes directly routed endpoint name
-        applicationPackageBuilder = applicationPackageBuilder.endpoint("default", "default");
-        context.submit(applicationPackageBuilder.build()).deploy();
-        for (var zone : List.of(zone1, zone2)) {
-            assertEquals(Set.of("rotation-id-01",
-                    "application.tenant.global.vespa.oath.cloud"),
-                    tester.configServer().rotationNames().get(context.deploymentIdIn(zone)));
-        }
-
     }
 
     @Test
