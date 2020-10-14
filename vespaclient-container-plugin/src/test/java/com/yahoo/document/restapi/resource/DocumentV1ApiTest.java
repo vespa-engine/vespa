@@ -343,6 +343,16 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
+        // POST with no payload is a 400
+        access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it", POST, "");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"message\": \"Could not read document, no document?\"" +
+                       "}",
+                       response.readAll());
+        assertEquals(400, response.getStatus());
+
         // POST with illegal payload is a 400
         access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it", POST,
