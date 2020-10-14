@@ -956,7 +956,8 @@ PersistenceThread::run(framework::ThreadHandle& thread)
 void
 PersistenceThread::flush()
 {
-    while (_env._fileStorHandler.getQueueSize(_stripeId) != 0) {
+    //TODO Only need to check for this stripe.
+    while (_env._fileStorHandler.getQueueSize() != 0) {
         std::this_thread::sleep_for(1ms);
     }
 }
