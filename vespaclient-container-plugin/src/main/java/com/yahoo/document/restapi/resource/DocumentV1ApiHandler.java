@@ -80,6 +80,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -640,6 +641,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         private final ReadableContentChannel delegate = new ReadableContentChannel();
         private final Consumer<InputStream> reader;
+        private final AtomicBoolean written = new AtomicBoolean();
 
         public ForwardingContentChannel(Consumer<InputStream> reader) {
             this.reader = reader;
@@ -650,17 +652,21 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         public void write(ByteBuffer buf, CompletionHandler handler) {
             try {
                 delegate.write(buf, logException);
+                written.set(true);
                 handler.completed();
             }
             catch (Exception e) {
+                log.log(WARNING, "Failed writing request data", e);
                 handler.failed(e);
             }
         }
 
-        /** Close is complete when we have close the buffer. */
+        /** Close is complete when we have closed the buffer. */
         @Override
         public void close(CompletionHandler handler) {
             try {
+                if ( ! written.get())
+                    log.log(WARNING, "Closed without any content. Really!? Usage error (no content needed) or bug.");
                 delegate.close(logException);
                 try (UnsafeContentInputStream in = new UnsafeContentInputStream(delegate)) {
                     reader.accept(in);
@@ -668,6 +674,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 handler.completed();
             }
             catch (Exception e) {
+                log.log(WARNING, "Failed closing request data", e);
                 handler.failed(e);
             }
         }

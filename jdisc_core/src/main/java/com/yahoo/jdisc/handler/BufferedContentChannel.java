@@ -102,7 +102,7 @@ public final class BufferedContentChannel implements ContentChannel {
             }
             try {
                 while (this.content == null) {
-                    lock.wait(); // waiting for connecTo()
+                    lock.wait(); // waiting for connectTo()
                 }
             } catch (InterruptedException e) {
                 throw new IllegalStateException(e);
@@ -129,7 +129,7 @@ public final class BufferedContentChannel implements ContentChannel {
             }
             try {
                 while (this.content == null) {
-                    lock.wait(); // waiting for connecTo()
+                    lock.wait(); // waiting for connectTo()
                 }
             } catch (InterruptedException e) {
                 throw new IllegalStateException(e);
