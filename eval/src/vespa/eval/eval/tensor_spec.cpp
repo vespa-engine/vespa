@@ -2,6 +2,7 @@
 
 #include "tensor_spec.h"
 #include "value.h"
+#include "value_codec.h"
 #include "tensor.h"
 #include "tensor_engine.h"
 #include "simple_tensor_engine.h"
@@ -115,13 +116,12 @@ TensorSpec::from_slime(const slime::Inspector &tensor)
 TensorSpec
 TensorSpec::from_value(const eval::Value &value)
 {
-    if (const eval::Tensor *tensor = value.as_tensor()) {
-        return tensor->engine().to_spec(*tensor);
+    auto tensor = dynamic_cast<const vespalib::eval::Tensor *>(&value);
+    if (tensor) {
+        return tensor->engine().to_spec(value);
+    } else {
+        return spec_from_value(value);
     }
-    if (value.is_double()) {
-        return TensorSpec("double").add({}, value.as_double());
-    }
-    return TensorSpec("error");
 }
 
 TensorSpec
