@@ -56,8 +56,6 @@ private:
     ServiceLayerComponent::UP _component;
     framework::Thread::UP     _thread;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
-    vespalib::Monitor         _flushMonitor;
-    bool                      _closed;
 
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
 
