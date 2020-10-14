@@ -57,6 +57,53 @@ template <typename T> using CREF = std::reference_wrapper<const T>;
 
 //-----------------------------------------------------------------------------
 
+struct D {
+    vespalib::string name;
+    bool mapped;
+    size_t size;
+    size_t stride;
+    static D map(const vespalib::string &name_in, size_t size_in, size_t stride_in) { return D{name_in, true, size_in, stride_in}; }
+    static D idx(const vespalib::string &name_in, size_t size_in) { return D{name_in, false, size_in, 1}; }
+    operator ValueType::Dimension() const {
+        if (mapped) {
+            return ValueType::Dimension(name);
+        } else {
+            return ValueType::Dimension(name, size);
+        }
+    }
+    TensorSpec::Label operator()(size_t idx) const {
+        if (mapped) {
+            return TensorSpec::Label(fmt("label_%zu", idx));
+        } else {
+            return TensorSpec::Label(idx);
+        }
+    }
+};
+
+void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr) {
+    spec.add(addr, seq);
+    seq += 1.0;
+}
+
+template <typename ...Ds> void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr, const D &d, const Ds &...ds) {
+    for (size_t i = 0, idx = 0; i < d.size; ++i, idx += d.stride) {
+        addr.insert_or_assign(d.name, d(idx));
+        add_cells(spec, seq, addr, ds...);
+    }
+}
+
+template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
+    TensorSpec spec(ValueType::tensor_type({ds...}, ValueType::CellType::FLOAT).to_spec());
+    add_cells(spec, seq, TensorSpec::Address(), ds...);
+    return spec;
+}
+
+TensorSpec make_vector(const D &d1, double seq) { return make_spec(seq, d1); }
+TensorSpec make_matrix(const D &d1, const D &d2, double seq) { return make_spec(seq, d1, d2); }
+TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) { return make_spec(seq, d1, d2, d3); }
+
+//-----------------------------------------------------------------------------
+
 struct Impl {
     size_t order;
     vespalib::string name;
@@ -104,6 +151,16 @@ struct Impl {
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &map_node = tensor_function::map(lhs_node, function, stash); 
         return map_node.compile_self(engine, stash);
+    }
+    Instruction create_tensor_create(const ValueType &proto_type, const TensorSpec &proto, Stash &stash) const {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &my_double = tensor_function::inject(ValueType::double_type(), 0, stash);
+        std::map<TensorSpec::Address,TensorFunction::CREF> spec;
+        for (const auto &cell: proto.cells()) {
+            spec.emplace(cell.first, my_double);
+        }
+        const auto &create_tensor_node = tensor_function::create(proto_type, spec, stash); 
+        return create_tensor_node.compile_self(engine, stash);
     }
 };
 
@@ -365,50 +422,21 @@ void benchmark_concat(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
-struct D {
-    vespalib::string name;
-    bool mapped;
-    size_t size;
-    size_t stride;
-    static D map(const vespalib::string &name_in, size_t size_in, size_t stride_in) { return D{name_in, true, size_in, stride_in}; }
-    static D idx(const vespalib::string &name_in, size_t size_in) { return D{name_in, false, size_in, 1}; }
-    operator ValueType::Dimension() const {
-        if (mapped) {
-            return ValueType::Dimension(name);
-        } else {
-            return ValueType::Dimension(name, size);
-        }
+void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &proto) {
+    Stash stash;
+    ValueType proto_type = ValueType::from_spec(proto.type());
+    ASSERT_FALSE(proto_type.is_error());
+    std::vector<CREF<TensorSpec>> stack_spec;
+    for (const auto &cell: proto.cells()) {
+        stack_spec.emplace_back(stash.create<TensorSpec>(make_spec(cell.second)));
     }
-    TensorSpec::Label operator()(size_t idx) const {
-        if (mapped) {
-            return TensorSpec::Label(fmt("label_%zu", idx));
-        } else {
-            return TensorSpec::Label(idx);
-        }
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_tensor_create(proto_type, proto, stash);
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
     }
-};
-
-void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr) {
-    spec.add(addr, seq);
-    seq += 1.0;
+    benchmark(desc, list);    
 }
-
-template <typename ...Ds> void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr, const D &d, const Ds &...ds) {
-    for (size_t i = 0, idx = 0; i < d.size; ++i, idx += d.stride) {
-        addr.insert_or_assign(d.name, d(idx));
-        add_cells(spec, seq, addr, ds...);
-    }
-}
-
-template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
-    TensorSpec spec(ValueType::tensor_type({ds...}, ValueType::CellType::FLOAT).to_spec());
-    add_cells(spec, seq, TensorSpec::Address(), ds...);
-    return spec;
-}
-
-TensorSpec make_vector(const D &d1, double seq) { return make_spec(seq, d1); }
-TensorSpec make_matrix(const D &d1, const D &d2, double seq) { return make_spec(seq, d1, d2); }
-TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) { return make_spec(seq, d1, d2, d3); }
 
 //-----------------------------------------------------------------------------
 
@@ -658,6 +686,23 @@ TEST(MapBench, sparse_map_big) {
 TEST(MapBench, mixed_map) {
     auto lhs = make_matrix(D::map("a", 64, 1), D::idx("b", 64), 1.75);
     benchmark_map("mixed map", lhs, operation::Floor::f);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(TensorCreateBench, create_dense) {
+    auto proto = make_matrix(D::idx("a", 32), D::idx("b", 32), 1.0);
+    benchmark_tensor_create("dense tensor create", proto);
+}
+
+TEST(TensorCreateBench, create_sparse) {
+    auto proto = make_matrix(D::map("a", 32, 1), D::map("b", 32, 1), 1.0);
+    benchmark_tensor_create("sparse tensor create", proto);
+}
+
+TEST(TensorCreateBench, create_mixed) {
+    auto proto = make_matrix(D::map("a", 32, 1), D::idx("b", 32), 1.0);
+    benchmark_tensor_create("mixed tensor create", proto);
 }
 
 //-----------------------------------------------------------------------------
