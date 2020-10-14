@@ -6,7 +6,7 @@
 #ifndef FASTOS_NO_THREADS
 #include <string>
 #include <queue>
-#include "sync.h"
+#include <condition_variable>
 
 namespace vespalib::child_process { class Timer; }
 
@@ -24,7 +24,8 @@ private:
     class Reader : public FastOS_ProcessRedirectListener
     {
     private:
-        Monitor                 _cond;
+        std::mutex              _lock;
+        std::condition_variable _cond;
         std::queue<std::string> _queue;
         std::string             _data;
         bool                    _gotEOF;
@@ -33,12 +34,12 @@ private:
 
         void OnReceiveData(const void *data, size_t length) override;
         bool hasData();
-        bool waitForData(child_process::Timer &timer, MonitorGuard &lock);
+        bool waitForData(child_process::Timer &timer, std::unique_lock<std::mutex> &lock);
         void updateEOF();
 
     public:
         Reader();
-        ~Reader();
+        ~Reader() override;
 
         uint32_t read(char *buf, uint32_t len, int msTimeout);
         bool readLine(std::string &line, int msTimeout);
@@ -105,8 +106,7 @@ public:
      * @param len number of bytes to try to read
      * @param msTimeout number of milliseconds to wait for data
      **/
-    uint32_t read(char *buf, uint32_t len,
-                  int msTimeout = 10000);
+    uint32_t read(char *buf, uint32_t len, int msTimeout = 10000);
 
     /**
      * @brief read a line of program output
@@ -116,8 +116,7 @@ public:
      * @param msTimeout number of milliseconds to wait for data
      * @return true if successful
      **/
-    bool readLine(std::string &line,
-                  int msTimeout = 10000);
+    bool readLine(std::string &line, int msTimeout = 10000);
 
     /**
      * @brief check if the program has finished writing output

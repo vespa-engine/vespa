@@ -61,17 +61,17 @@ void
 ChildProcess::Reader::OnReceiveData(const void *data, size_t length)
 {
     const char *buf = (const char *) data;
-    MonitorGuard lock(_cond);
-    if (_gotEOF || (buf != NULL && length == 0)) { // ignore special cases
+    std::unique_lock lock(_lock);
+    if (_gotEOF || (buf != nullptr && length == 0)) { // ignore special cases
         return;
     }
-    if (buf == NULL) { // EOF
+    if (buf == nullptr) { // EOF
         _gotEOF = true;
     } else {
         _queue.push(std::string(buf, length));
     }
     if (_waitCnt > 0) {
-        lock.signal();
+        _cond.notify_one();
     }
 }
 
@@ -85,12 +85,12 @@ ChildProcess::Reader::hasData()
 
 
 bool
-ChildProcess::Reader::waitForData(child_process::Timer &timer, MonitorGuard &lock)
+ChildProcess::Reader::waitForData(child_process::Timer &timer, std::unique_lock<std::mutex> &guard)
 {
     // NB: caller has lock on _cond
     CounterGuard count(_waitCnt);
     while (!timer.update().timeOut() && !hasData() && !_gotEOF) {
-        lock.wait(timer.waitTime());
+        _cond.wait_for(guard, std::chrono::milliseconds(timer.waitTime()));
     }
     return hasData();
 }
@@ -107,7 +107,8 @@ ChildProcess::Reader::updateEOF()
 
 
 ChildProcess::Reader::Reader()
-    : _cond(),
+    : _lock(),
+      _cond(),
       _queue(),
       _data(),
       _gotEOF(false),
@@ -117,9 +118,7 @@ ChildProcess::Reader::Reader()
 }
 
 
-ChildProcess::Reader::~Reader()
-{
-}
+ChildProcess::Reader::~Reader() = default;
 
 
 uint32_t
@@ -129,8 +128,8 @@ ChildProcess::Reader::read(char *buf, uint32_t len, int msTimeout)
         return 0;
     }
     child_process::Timer timer(msTimeout);
-    MonitorGuard lock(_cond);
-    waitForData(timer, lock);
+    std::unique_lock guard(_lock);
+    waitForData(timer, guard);
     uint32_t bytes = 0;
     while (bytes < len && hasData()) {
         if (_data.empty()) {
@@ -160,8 +159,8 @@ ChildProcess::Reader::readLine(std::string &line, int msTimeout)
         return false;
     }
     child_process::Timer timer(msTimeout);
-    MonitorGuard lock(_cond);
-    while (waitForData(timer, lock)) {
+    std::unique_lock guard(_lock);
+    while (waitForData(timer, guard)) {
         while (hasData()) {
             if (_data.empty()) {
                 _data = _queue.front();
