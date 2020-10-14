@@ -7,7 +7,7 @@
 #include <deque>
 #include <atomic>
 
-namespace storage::spi { class PersistenceProvider; }
+namespace storage::spi { struct PersistenceProvider; }
 
 namespace feedbm {
 

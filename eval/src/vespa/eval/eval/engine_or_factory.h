@@ -14,9 +14,9 @@ class nbostream;
 
 namespace vespalib::eval {
 
-class TensorEngine;
-class ValueBuilderFactory;
-class TensorFunction;
+struct TensorEngine;
+struct ValueBuilderFactory;
+struct TensorFunction;
 
 /**
  * This utility class contains a reference to either a TensorEngine or
