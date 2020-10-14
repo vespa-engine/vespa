@@ -824,12 +824,50 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         ConnectorConfig connectorConfig = new ConnectorConfig(builder);
         assertTrue(connectorConfig.ssl().enabled());
+        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH, connectorConfig.ssl().clientAuth());
         assertEquals("CERT", connectorConfig.ssl().certificate());
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());
 
         assertThat("Connector must use Athenz truststore in a non-public system.",
                    connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
+        assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
+    }
+
+    @Test
+    public void requireThatClientAuthenticationIsEnforced() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                nodesXml,
+                "   <http><filtering>" +
+                "      <access-control domain=\"vespa\" tls-handshake-client-auth=\"need\"/>" +
+                "   </filtering></http>" +
+                "</container>" );
+
+        DeployState state = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setHostedVespa(true)
+                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
+                        .useAccessControlTlsHandshakeClientAuth(true))
+                .build();
+        createModel(root, state, null, clusterElem);
+        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
+
+        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
+        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
+
+        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
+        tlsPort.getConfig(builder);
+
+        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
+        assertTrue(connectorConfig.ssl().enabled());
+        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH, connectorConfig.ssl().clientAuth());
+        assertEquals("CERT", connectorConfig.ssl().certificate());
+        assertEquals("KEY", connectorConfig.ssl().privateKey());
+        assertEquals(4443, connectorConfig.listenPort());
+
+        assertThat("Connector must use Athenz truststore in a non-public system.",
+                connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
         assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
     }
 

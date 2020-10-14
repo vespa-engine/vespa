@@ -118,6 +118,9 @@ public interface ModelContext {
         // TODO(bjorncs): Temporary feature flag
         default boolean useNewRestapiHandler() { return false; }
 
+        // TODO(mortent): Temporary feature flag
+        default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
+
     }
 
 }

@@ -52,6 +52,7 @@ public class TestProperties implements ModelContext.Properties {
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
     private Quota quota = Quota.unlimited();
+    private boolean useAccessControlTlsHandshakeClientAuth;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -89,6 +90,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public double visibilityDelay() { return visibilityDelay; }
     @Override public boolean tlsUseFSync() { return tlsUseFSync; }
     @Override public String tlsCompressionType() { return tlsCompressionType; }
+    @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
@@ -197,6 +199,11 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setQuota(Quota quota) {
         this.quota = quota;
+        return this;
+    }
+
+    public TestProperties useAccessControlTlsHandshakeClientAuth(boolean useAccessControlTlsHandshakeClientAuth) {
+        this.useAccessControlTlsHandshakeClientAuth = useAccessControlTlsHandshakeClientAuth;
         return this;
     }
 
