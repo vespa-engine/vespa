@@ -81,7 +81,7 @@ TensorAddUpdate::checkCompatibility(const Field& field) const
 std::unique_ptr<Tensor>
 TensorAddUpdate::applyTo(const Tensor &tensor) const
 {
-    auto &addTensor = _tensor->getAsTensorPtr();
+    auto addTensor = _tensor->getAsTensorPtr();
     if (addTensor) {
         return tensor.add(*addTensor);
     }
@@ -94,7 +94,7 @@ TensorAddUpdate::applyTo(FieldValue& value) const
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         tensorFieldValue.make_empty_if_not_existing();
-        auto &oldTensor = tensorFieldValue.getAsTensorPtr();
+        auto oldTensor = tensorFieldValue.getAsTensorPtr();
         auto newTensor = applyTo(*oldTensor);
         if (newTensor) {
             tensorFieldValue = std::move(newTensor);

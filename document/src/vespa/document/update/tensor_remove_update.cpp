@@ -105,7 +105,7 @@ TensorRemoveUpdate::checkCompatibility(const Field &field) const
 std::unique_ptr<Tensor>
 TensorRemoveUpdate::applyTo(const Tensor &tensor) const
 {
-    auto &addressTensor = _tensor->getAsTensorPtr();
+    auto addressTensor = _tensor->getAsTensorPtr();
     if (addressTensor) {
         // Address tensor being sparse was validated during deserialize().
         vespalib::tensor::CellValues cellAddresses(static_cast<const vespalib::tensor::SparseTensor &>(*addressTensor));
@@ -119,7 +119,7 @@ TensorRemoveUpdate::applyTo(FieldValue &value) const
 {
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
-        auto &oldTensor = tensorFieldValue.getAsTensorPtr();
+        auto oldTensor = tensorFieldValue.getAsTensorPtr();
         if (oldTensor) {
             auto newTensor = applyTo(*oldTensor);
             if (newTensor) {
@@ -153,9 +153,9 @@ TensorRemoveUpdate::print(std::ostream &out, bool verbose, const std::string &in
 namespace {
 
 void
-verifyAddressTensorIsSparse(const std::unique_ptr<Tensor> &addressTensor)
+verifyAddressTensorIsSparse(const Tensor *addressTensor)
 {
-    if (addressTensor && !dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor.get())) {
+    if (addressTensor && !dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor)) {
         vespalib::string err = make_string("Expected address tensor to be sparse, but has type '%s'",
                                            addressTensor->type().to_spec().c_str());
         throw IllegalStateException(err, VESPA_STRLOC);

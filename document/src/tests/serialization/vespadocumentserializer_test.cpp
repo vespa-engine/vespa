@@ -919,7 +919,7 @@ DeserializedTensorDoc::setup(const DocumentTypeRepo &docTypeRepo, const vespalib
 const Tensor *
 DeserializedTensorDoc::getTensor() const
 {
-    return dynamic_cast<const TensorFieldValue &>(*_fieldValue).getAsTensorPtr().get();
+    return dynamic_cast<const TensorFieldValue &>(*_fieldValue).getAsTensorPtr();
 }
 
 TEST("Require that wrong tensor type hides tensor")

@@ -789,7 +789,7 @@ makeTensorFieldValue(const TensorSpec &spec, const TensorDataType &dataType)
 
 const Tensor &asTensor(const FieldValue &fieldValue) {
     auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
-    auto &tensor = tensorFieldValue.getAsTensorPtr();
+    auto tensor = tensorFieldValue.getAsTensorPtr();
     assert(tensor);
     return *tensor;
 }
@@ -876,7 +876,7 @@ struct TensorUpdateFixture {
         auto field = getTensor();
         auto tensor_field = dynamic_cast<TensorFieldValue*>(field.get());
         ASSERT_TRUE(tensor_field);
-        EXPECT_TRUE(tensor_field->getAsTensorPtr().get() == nullptr);
+        EXPECT_TRUE(tensor_field->getAsTensorPtr() == nullptr);
     }
 
     void assertTensor(const TensorSpec &expSpec) {

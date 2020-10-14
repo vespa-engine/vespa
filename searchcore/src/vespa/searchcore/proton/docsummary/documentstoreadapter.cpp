@@ -86,7 +86,7 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
             vespalib::nbostream serialized;
             if (value.getClass().inherits(TensorFieldValue::classId)) {
                 const auto &tvalue = static_cast<const TensorFieldValue &>(value);
-                const std::unique_ptr<Tensor> &tensor = tvalue.getAsTensorPtr();
+                auto tensor = tvalue.getAsTensorPtr();
                 if (tensor) {
                     vespalib::tensor::TypedBinaryFormat::serialize(serialized, *tensor);
                 }

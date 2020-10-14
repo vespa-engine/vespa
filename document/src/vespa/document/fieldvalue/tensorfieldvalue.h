@@ -39,8 +39,8 @@ public:
                        const std::string& indent) const override;
     virtual void printXml(XmlOutputStream& out) const override;
     virtual FieldValue &assign(const FieldValue &value) override;
-    const std::unique_ptr<vespalib::tensor::Tensor> &getAsTensorPtr() const {
-        return _tensor;
+    const vespalib::tensor::Tensor *getAsTensorPtr() const {
+        return _tensor.get();
     }
     void assignDeserialized(std::unique_ptr<vespalib::tensor::Tensor> rhs);
     virtual int compare(const FieldValue& other) const override;
