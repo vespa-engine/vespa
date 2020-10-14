@@ -139,7 +139,7 @@ public class SessionRepository {
 
         for (File session : sessions) {
             try {
-                addLocalSession(createSessionFromId(Long.parseLong(session.getName())));
+                createSessionFromId(Long.parseLong(session.getName()));
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Could not load session '" +
                         session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
@@ -181,17 +181,14 @@ public class SessionRepository {
                                                   DeployLogger logger,
                                                   boolean internalRedeploy,
                                                   TimeoutBudget timeoutBudget) {
-        File existingApp = getSessionAppDir(existingSession.getSessionId());
         ApplicationId existingApplicationId = existingSession.getApplicationId();
-
         Optional<Long> activeSessionId = getActiveSessionId(existingApplicationId);
         logger.log(Level.FINE, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
+        File existingApp = getSessionAppDir(existingSession.getSessionId());
         LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
-        // Note: Needs to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
+        // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
-        if (existingSession.getApplicationPackageReference() != null) {
-            session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
-        }
+        session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
@@ -216,13 +213,12 @@ public class SessionRepository {
      * This method is used when creating a session based on a remote session and the distributed application package
      * It does not wait for session being created on other servers
      */
-    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
+    private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
-            Optional<Long> currentlyActiveSessionId = getActiveSessionId(applicationId);
+            Optional<Long> activeSessionId = getActiveSessionId(applicationId);
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
-                                                                             sessionId, currentlyActiveSessionId, false);
-            SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-            return new LocalSession(tenantName, sessionId, applicationPackage, sessionZooKeeperClient);
+                                                                             sessionId, activeSessionId, false);
+            createLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -550,6 +546,7 @@ public class SessionRepository {
             Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
             LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
             waiter.awaitCompletion(timeoutBudget.timeLeft());
+            addLocalSession(session);
             return session;
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -607,11 +604,16 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    LocalSession createSessionFromId(long sessionId) {
+    void createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+        createLocalSession(sessionId, applicationPackage);
+    }
+
+    void createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+        addLocalSession(session);
     }
 
     /**
@@ -643,8 +645,7 @@ public class SessionRepository {
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            LocalSession localSession = createLocalSession(sessionDir, applicationId, sessionId);
-            addLocalSession(localSession);
+            createLocalSession(sessionDir, applicationId, sessionId);
         }
     }
 
