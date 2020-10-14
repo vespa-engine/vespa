@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "sync.h"
+#include <condition_variable>
 #include <vector>
 
 namespace vespalib {
@@ -22,12 +22,13 @@ template <typename IN, typename OUT>
 class Rendezvous
 {
 private:
-    Monitor            _monitor;
-    size_t             _size;
-    size_t             _next;
-    size_t             _gen;
-    std::vector<IN *>  _in;
-    std::vector<OUT *> _out;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    size_t                  _size;
+    size_t                  _next;
+    size_t                  _gen;
+    std::vector<IN *>       _in;
+    std::vector<OUT *>      _out;
 
     /**
      * Function called to perform the actual inter-thread state
