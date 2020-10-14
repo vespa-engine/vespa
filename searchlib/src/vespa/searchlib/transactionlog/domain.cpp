@@ -113,8 +113,8 @@ Domain::addPart(SerialNum partId, bool isLastPart) {
 }
 
 Domain::~Domain() {
-    MonitorGuard guard(_currentChunkMonitor);
-    guard.broadcast();
+    std::unique_lock guard(_currentChunkMonitor);
+    _currentChunkCond.notify_all();
     commitChunk(grabCurrentChunk(guard), guard);
     _singleCommitter->shutdown().sync();
 }
@@ -122,7 +122,7 @@ Domain::~Domain() {
 DomainInfo
 Domain::getDomainInfo() const
 {
-    UniqueLock guard(_lock);
+    std::unique_lock guard(_lock);
     DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard), _maxSessionRunTime);
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
@@ -211,17 +211,17 @@ void
 Domain::triggerSyncNow()
 {
     {
-        vespalib::MonitorGuard guard(_currentChunkMonitor);
+        std::unique_lock guard(_currentChunkMonitor);
         commitAndTransferResponses(guard);
     }
-    MonitorGuard guard(_syncMonitor);
+    std::unique_lock guard(_syncMonitor);
     if (!_pendingSync) {
         _pendingSync = true;
         _executor.execute(makeLambdaTask([this, domainPart=_parts.rbegin()->second]() {
             domainPart->sync();
-            MonitorGuard monitorGuard(_syncMonitor);
+            std::lock_guard monitorGuard(_syncMonitor);
             _pendingSync = false;
-            monitorGuard.broadcast();
+            _syncCond.notify_all();
         }));
     }
 }
@@ -297,11 +297,11 @@ Domain::cleanSessions()
 namespace {
 
 void
-waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
+waitPendingSync(std::mutex &syncMonitor, std::condition_variable & syncCond, bool &pendingSync)
 {
-    MonitorGuard guard(syncMonitor);
+    std::unique_lock guard(syncMonitor);
     while (pendingSync) {
-        guard.wait();
+        syncCond.wait(guard);
     }
 }
 
@@ -311,9 +311,9 @@ DomainPart::SP
 Domain::optionallyRotateFile(SerialNum serialNum) {
     DomainPart::SP dp(_parts.rbegin()->second);
     if (dp->byteSize() > _config.getPartSizeLimit()) {
-        waitPendingSync(_syncMonitor, _pendingSync);
+        waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
         triggerSyncNow();
-        waitPendingSync(_syncMonitor, _pendingSync);
+        waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
         dp->close();
         dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _config.getEncoding(),
                                           _config.getCompressionlevel(), _fileHeaderContext, false);
@@ -329,7 +329,7 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
 
 void
 Domain::append(const Packet & packet, Writer::DoneCallback onDone) {
-    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    std::unique_lock guard(_currentChunkMonitor);
     if (_lastSerial >= packet.range().from()) {
         throw runtime_error(fmt("Incoming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
                                 packet.range().from(), _lastSerial));
@@ -342,7 +342,7 @@ Domain::append(const Packet & packet, Writer::DoneCallback onDone) {
 
 Domain::CommitResult
 Domain::startCommit(DoneCallback onDone) {
-    vespalib::MonitorGuard guard(_currentChunkMonitor);
+    std::unique_lock guard(_currentChunkMonitor);
     if ( !_currentChunk->empty() ) {
         auto completed = grabCurrentChunk(guard);
         completed->setCommitDoneCallback(std::move(onDone));
@@ -354,30 +354,30 @@ Domain::startCommit(DoneCallback onDone) {
 }
 
 void
-Domain::commitIfFull(const vespalib::MonitorGuard &guard) {
+Domain::commitIfFull(const UniqueLock &guard) {
     if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
         commitAndTransferResponses(guard);
     }
 }
 
 void
-Domain::commitAndTransferResponses(const vespalib::MonitorGuard &guard) {
+Domain::commitAndTransferResponses(const UniqueLock &guard) {
     auto completed = std::move(_currentChunk);
     _currentChunk = std::make_unique<CommitChunk>(_config.getChunkSizeLimit(), completed->stealCallbacks());
     commitChunk(std::move(completed), guard);
 }
 
 std::unique_ptr<CommitChunk>
-Domain::grabCurrentChunk(const vespalib::MonitorGuard & guard) {
-    assert(guard.monitors(_currentChunkMonitor));
+Domain::grabCurrentChunk(const UniqueLock & guard) {
+    assert(guard.mutex() == &_currentChunkMonitor && guard.owns_lock());
     auto chunk = std::move(_currentChunk);
     _currentChunk = createCommitChunk(_config);
     return chunk;
 }
 
 void
-Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard) {
-    assert(chunkOrderGuard.monitors(_currentChunkMonitor));
+Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard) {
+    assert(chunkOrderGuard.mutex() == &_currentChunkMonitor && chunkOrderGuard.owns_lock());
     _singleCommitter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
         doCommit(std::move(chunk));
     }));
