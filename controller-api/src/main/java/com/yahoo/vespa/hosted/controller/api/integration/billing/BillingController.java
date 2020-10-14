@@ -22,7 +22,7 @@ public interface BillingController {
     /**
      * @return String containing error message if something went wrong. Empty otherwise
      */
-    PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments);
+    BillingResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments);
 
     Invoice.Id createInvoiceForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
 
@@ -52,4 +52,11 @@ public interface BillingController {
 
     void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged);
 
+    default CollectionMethod getCollectionMethod(TenantName tenant) {
+        return CollectionMethod.AUTO;
+    }
+
+    default BillingResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
+        return BillingResult.error("Method not implemented");
+    }
 }

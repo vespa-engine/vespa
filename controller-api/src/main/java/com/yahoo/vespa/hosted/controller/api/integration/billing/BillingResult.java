@@ -4,24 +4,24 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
 import java.util.Optional;
 
 /**
- * Result of {@link BillingController#setPlan}
+ * General result class for mutating operations on the {@link BillingController}
  *
  * @author olaa
  */
-public class PlanResult {
+public class BillingResult {
 
     private final Optional<String> errorMessage;
 
-    private PlanResult(Optional<String> errorMessage) {
+    private BillingResult(Optional<String> errorMessage) {
         this.errorMessage = errorMessage;
     }
 
-    public static PlanResult success() {
-        return new PlanResult(Optional.empty());
+    public static BillingResult success() {
+        return new BillingResult(Optional.empty());
     }
 
-    public static PlanResult error(String errorMessage) {
-        return new PlanResult(Optional.of(errorMessage));
+    public static BillingResult error(String errorMessage) {
+        return new BillingResult(Optional.of(errorMessage));
     }
 
     public boolean isSuccess() {
