@@ -8,7 +8,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.session");
 
-using vespalib::LockGuard;
 
 namespace search::transactionlog {
 

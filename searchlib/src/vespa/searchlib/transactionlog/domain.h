@@ -2,9 +2,10 @@
 #pragma once
 
 #include "domainconfig.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 namespace search::common { class FileHeaderContext; }
 namespace search::transactionlog {
@@ -58,11 +59,11 @@ public:
 private:
     using UniqueLock = std::unique_lock<std::mutex>;
     void verifyLock(const UniqueLock & guard) const;
-    void commitIfFull(const vespalib::MonitorGuard & guard);
-    void commitAndTransferResponses(const vespalib::MonitorGuard & guard);
+    void commitIfFull(const UniqueLock & guard);
+    void commitAndTransferResponses(const UniqueLock & guard);
 
-    std::unique_ptr<CommitChunk> grabCurrentChunk(const vespalib::MonitorGuard & guard);
-    void commitChunk(std::unique_ptr<CommitChunk> chunk, const vespalib::MonitorGuard & chunkOrderGuard);
+    std::unique_ptr<CommitChunk> grabCurrentChunk(const UniqueLock & guard);
+    void commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard);
     void doCommit(std::unique_ptr<CommitChunk> chunk);
     SerialNum begin(const UniqueLock & guard) const;
     SerialNum end(const UniqueLock & guard) const;
@@ -87,12 +88,14 @@ private:
     std::unique_ptr<Executor>    _singleCommitter;
     Executor                    &_executor;
     std::atomic<int>             _sessionId;
-    vespalib::Monitor            _syncMonitor;
+    std::mutex                   _syncMonitor;
+    std::condition_variable      _syncCond;
     bool                         _pendingSync;
     vespalib::string             _name;
     DomainPartList               _parts;
     mutable std::mutex           _lock;
-    vespalib::Monitor            _currentChunkMonitor;
+    std::mutex                   _currentChunkMonitor;
+    std::condition_variable      _currentChunkCond;
     mutable std::mutex           _sessionLock;
     SessionList                  _sessions;
     DurationSeconds              _maxSessionRunTime;
