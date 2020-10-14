@@ -666,7 +666,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         public void close(CompletionHandler handler) {
             try {
                 if ( ! written.get())
-                    log.log(WARNING, "Closed without any content. Really!? Usage error (no content needed) or bug.");
+                    throw new IllegalStateException("This content channel expects content to be written prior to close");
                 delegate.close(logException);
                 try (UnsafeContentInputStream in = new UnsafeContentInputStream(delegate)) {
                     reader.accept(in);
