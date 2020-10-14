@@ -3,7 +3,6 @@
 #pragma once
 
 #include "handler.h"
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/runnable.h>
@@ -24,7 +23,8 @@ class HandlerThread : public Handler<T>,
                       public vespalib::Joinable
 {
 private:
-    vespalib::Monitor                          _monitor;
+    std::mutex                                 _lock;
+    std::condition_variable                    _cond;
     vespalib::ArrayQueue<std::unique_ptr<T> >  _queue;
     Handler<T>                                &_next;
     vespalib::Thread                           _thread;

@@ -4,8 +4,9 @@
 
 #include "closeable.h"
 #include <vespa/vespalib/util/priority_queue.h>
-#include <vespa/vespalib/util/sync.h>
 #include <memory>
+#include <mutex>
+#include <condition_variable>
 
 namespace vbench {
 
@@ -33,7 +34,8 @@ private:
         }
     };
 
-    vespalib::Monitor              _monitor;
+    std::mutex                     _lock;
+    std::condition_variable        _cond;
     double                         _time;
     double                         _window;
     double                         _tick;

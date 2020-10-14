@@ -5,9 +5,7 @@
 #include <vespa/vespalib/websocket/acceptor.h>
 #include <vespa/vespalib/websocket/key.h>
 #include <vespa/vespalib/websocket/buffer.h>
-#include <vespa/vespalib/util/sync.h>
 #include <thread>
-#include <functional>
 #include <chrono>
 
 using namespace vespalib;
@@ -25,7 +23,7 @@ struct Receptor : vespalib::ws::Handler<T> {
 };
 
 template <typename T>
-Receptor<T>::~Receptor() { }
+Receptor<T>::~Receptor() = default;
 
 vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
     char tmp[64];
