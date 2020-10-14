@@ -162,7 +162,7 @@ DenseConcatPlan::InOutLoop::fill_from(const ValueType &in_type,
     visit_ranges(visitor, input_dimensions.begin(), input_dimensions.end(), output_dimensions.begin(), output_dimensions.end(),
                  [](const auto &a, const auto &b){ return (a.name < b.name); });
     input_size = 1;
-    size_t output_size = 1;
+    size_t output_size_for_concat = 1;
     size_t offset_for_concat = 0;
     for (size_t i = in_loop_cnt.size(); i-- > 0; ) {
         if (in_stride[i] != 0) {
@@ -171,8 +171,8 @@ DenseConcatPlan::InOutLoop::fill_from(const ValueType &in_type,
         }
         assert(out_stride[i] != 0);
         assert(out_loop_cnt[i] != 0);
-        out_stride[i] = output_size;
-        output_size *= out_loop_cnt[i];
+        out_stride[i] = output_size_for_concat;
+        output_size_for_concat *= out_loop_cnt[i];
         // loop counts are different if and only if this is the concat dimension 
         if (in_loop_cnt[i] != out_loop_cnt[i]) {
             assert(offset_for_concat == 0);
@@ -180,7 +180,7 @@ DenseConcatPlan::InOutLoop::fill_from(const ValueType &in_type,
         }
     }
     assert(offset_for_concat != 0);
-    return std::make_pair(offset_for_concat, output_size);
+    return std::make_pair(offset_for_concat, output_size_for_concat);
 }
 
 InterpretedFunction::Instruction
