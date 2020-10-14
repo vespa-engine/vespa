@@ -161,7 +161,7 @@ FileChunk::erase()
 }
 
 size_t
-FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
+FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
 {
     size_t sz(0);
     assert(_chunkInfo.empty());

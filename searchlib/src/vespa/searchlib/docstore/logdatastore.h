@@ -33,7 +33,7 @@ private:
     using FileId = FileChunk::FileId;
 public:
     using NameIdSet = std::set<NameId>;
-    using LockGuard = std::unique_lock<std::mutex>;
+    using MonitorGuard = std::unique_lock<std::mutex>;
     using CompressionConfig = vespalib::compression::CompressionConfig;
     class Config {
     public:
@@ -119,8 +119,8 @@ public:
     const Config & getConfig() const { return _config; }
     Config & getConfig() { return _config; }
 
-    void write(LockGuard guard, WriteableFileChunk & destination, uint64_t serialNum, uint32_t lid, const void * buffer, size_t len);
-    void write(LockGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len);
+    void write(MonitorGuard guard, WriteableFileChunk & destination, uint64_t serialNum, uint32_t lid, const void * buffer, size_t len);
+    void write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len);
 
     /**
      * This will spinn through the data and verify the content of both
@@ -146,9 +146,9 @@ public:
     }
 
     // Implements IGetLid API
-    IGetLid::LockGuard getLidGuard(uint32_t lid) const override {
+    IGetLid::unique_lock getLidGuard(uint32_t lid) const override {
         (void) lid;
-        return IGetLid::LockGuard(_updateLock);
+        return IGetLid::unique_lock(_updateLock);
     }
 
     // Implements IGetLid API
@@ -160,12 +160,12 @@ public:
             return LidInfo();
         }
     }
-    FileId getActiveFileId(const LockGuard & guard) const {
+    FileId getActiveFileId(const MonitorGuard & guard) const {
         assert(hasUpdateLock(guard));
         (void) guard;
         return _active;
     }
-    bool hasUpdateLock(const LockGuard & guard) const {
+    bool hasUpdateLock(const MonitorGuard & guard) const {
         return (guard.mutex() == &_updateLock) && guard.owns_lock();
     }
 
@@ -188,7 +188,7 @@ private:
     class FileChunkHolder;
 
     // Implements ISetLid API
-    void setLid(const ISetLid::LockGuard & guard, uint32_t lid, const LidInfo & lm) override;
+    void setLid(const ISetLid::unique_lock & guard, uint32_t lid, const LidInfo & lm) override;
 
     void compactWorst(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
     void compactFile(FileId chunkId);
@@ -209,25 +209,25 @@ private:
     bool isTotalDiskBloatExceeded(size_t diskFootPrint, size_t bloat) const;
 
     NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);
-    FileId allocateFileId(const LockGuard & guard);
-    void setNewFileChunk(const LockGuard & guard, FileChunk::UP fileChunk);
+    FileId allocateFileId(const MonitorGuard & guard);
+    void setNewFileChunk(const MonitorGuard & guard, FileChunk::UP fileChunk);
     vespalib::string ls(const NameIdSet & partList);
 
-    WriteableFileChunk & getActive(const LockGuard & guard) {
+    WriteableFileChunk & getActive(const MonitorGuard & guard) {
         assert(hasUpdateLock(guard));
         return static_cast<WriteableFileChunk &>(*_fileChunks[_active.getId()]);
     }
 
-    const WriteableFileChunk & getActive(const LockGuard & guard) const {
+    const WriteableFileChunk & getActive(const MonitorGuard & guard) const {
         assert(hasUpdateLock(guard));
         return static_cast<const WriteableFileChunk &>(*_fileChunks[_active.getId()]);
     }
 
-    const FileChunk * getPrevActive(const LockGuard & guard) const {
+    const FileChunk * getPrevActive(const MonitorGuard & guard) const {
         assert(hasUpdateLock(guard));
         return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : nullptr;
     }
-    void setActive(const LockGuard & guard, FileId fileId) {
+    void setActive(const MonitorGuard & guard, FileId fileId) {
         assert(hasUpdateLock(guard));
         _prevActive = _active;
         _active = fileId;
@@ -242,7 +242,7 @@ private:
     vespalib::string createDatFileName(NameId id) const;
     vespalib::string createIdxFileName(NameId id) const;
 
-    void requireSpace(LockGuard guard, WriteableFileChunk & active);
+    void requireSpace(MonitorGuard guard, WriteableFileChunk & active);
     bool isReadOnly() const { return _readOnly; }
     void updateSerialNum();
 
@@ -259,17 +259,17 @@ private:
      */
     void unholdFileChunk(FileId fileId);
 
-    SerialNum flushFile(LockGuard guard, WriteableFileChunk & file, SerialNum syncToken);
+    SerialNum flushFile(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken);
     SerialNum flushActive(SerialNum syncToken);
     void flushActiveAndWait(SerialNum syncToken);
-    void flushFileAndWait(LockGuard guard, WriteableFileChunk & file, SerialNum syncToken);
+    void flushFileAndWait(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken);
     SerialNum getMinLastPersistedSerialNum() const {
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
     bool shouldCompactToActiveFile(size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
     void incGeneration();
-    bool canShrinkLidSpace(const LockGuard &guard) const;
+    bool canShrinkLidSpace(const MonitorGuard &guard) const;
 
     typedef std::vector<FileId> FileIdxVector;
     Config                                   _config;

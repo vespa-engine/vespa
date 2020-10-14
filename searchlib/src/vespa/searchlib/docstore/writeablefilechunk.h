@@ -4,11 +4,11 @@
 
 #include "filechunk.h"
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/fastos/file.h>
 #include <map>
 #include <deque>
+#include <condition_variable>
 
 namespace search {
 
@@ -64,7 +64,7 @@ public:
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
     vespalib::MemoryUsage getMemoryUsage() const override;
-    size_t updateLidMap(const LockGuard &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit) override;
+    size_t updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit) override;
     void waitForDiskToCatchUpToNow() const;
     void flushPendingChunks(uint64_t serialNum);
     DataStoreFileChunkStats getStats() const override;
@@ -85,30 +85,31 @@ private:
     int32_t flushLastIfNonEmpty(bool force);
     // _writeMonitor should not be held when calling restart
     void restart(uint32_t nextChunkId);
-    ProcessedChunkQ drainQ(vespalib::MonitorGuard & guard);
+    ProcessedChunkQ drainQ(unique_lock & guard);
     void readDataHeader();
     void readIdxHeader(FastOS_FileInterface & idxFile);
     void writeDataHeader(const common::FileHeaderContext &fileHeaderContext);
     bool needFlushPendingChunks(uint64_t serialNum, uint64_t datFileLen);
-    bool needFlushPendingChunks(const vespalib::MonitorGuard & guard, uint64_t serialNum, uint64_t datFileLen);
-    vespalib::system_time unconditionallyFlushPendingChunks(const LockGuard & flushGuard, uint64_t serialNum, uint64_t datFileLen);
-    static void insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChunkQ & newChunks, const uint32_t nextChunkId);
-    static ProcessedChunkQ fetchNextChain(ProcessedChunkMap & orderedChunks, const uint32_t firstChunkId);
-    ChunkMeta computeChunkMeta(const vespalib::LockGuard & guard,
+    bool needFlushPendingChunks(const unique_lock & guard, uint64_t serialNum, uint64_t datFileLen);
+    vespalib::system_time unconditionallyFlushPendingChunks(const unique_lock & flushGuard, uint64_t serialNum, uint64_t datFileLen);
+    static void insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChunkQ & newChunks, uint32_t nextChunkId);
+    static ProcessedChunkQ fetchNextChain(ProcessedChunkMap & orderedChunks, uint32_t firstChunkId);
+    ChunkMeta computeChunkMeta(const unique_lock & guard,
                                const vespalib::GenerationHandler::Guard & bucketizerGuard,
                                size_t offset, const ProcessedChunk & tmp, const Chunk & active);
     ChunkMetaV computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, size_t & sz, bool & done);
     void writeData(const ProcessedChunkQ & chunks, size_t sz);
     void updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV, size_t sz);
     void updateCurrentDiskFootprint();
-    size_t getDiskFootprint(const vespalib::MonitorGuard & guard) const;
+    size_t getDiskFootprint(const unique_lock & guard) const;
     std::unique_ptr<FastOS_FileInterface> openIdx();
 
     Config            _config;
     SerialNum         _serialNum;
     bool              _frozen;
     // Lock order is _writeLock, _flushLock, _lock
-    vespalib::Monitor _lock;
+    mutable std::mutex             _lock;
+    mutable std::condition_variable _cond;
     std::mutex        _writeLock;
     std::mutex        _flushLock;
     FastOS_File       _dataFile;
@@ -127,7 +128,8 @@ private:
     size_t            _maxChunkSize;
     uint32_t          _firstChunkIdToBeWritten;
     bool              _writeTaskIsRunning;
-    vespalib::Monitor _writeMonitor;
+    std::mutex              _writeMonitor;
+    std::condition_variable _writeCond;
     ProcessedChunkQ   _writeQ;
     vespalib::Executor  & _executor;
     ProcessedChunkMap     _orderedChunks;
