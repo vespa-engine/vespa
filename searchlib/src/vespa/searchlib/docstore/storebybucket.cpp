@@ -18,7 +18,8 @@ StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executo
       _where(),
       _backingMemory(backingMemory),
       _executor(executor),
-      _monitor(),
+      _lock(std::make_unique<std::mutex>()),
+      _cond(std::make_unique<std::condition_variable>()),
       _numChunksPosted(0),
       _chunks(),
       _compression(compression)
@@ -50,7 +51,7 @@ StoreByBucket::createChunk()
 
 size_t
 StoreByBucket::getChunkCount() const {
-    vespalib::LockGuard guard(_monitor);
+    std::lock_guard guard(*_lock);
     return _chunks.size();
 }
 
@@ -61,24 +62,24 @@ StoreByBucket::closeChunk(Chunk::UP chunk)
     chunk->pack(1, buffer, _compression);
     buffer.shrink(buffer.getDataLen());
     ConstBufferRef bufferRef(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(*_lock);
     _chunks[chunk->getId()] = bufferRef;
     if (_numChunksPosted == _chunks.size()) {
-        guard.signal();
+        _cond->notify_one();
     }
 }
 
 void
 StoreByBucket::incChunksPosted() {
-    vespalib::MonitorGuard guard(_monitor);
+    std::lock_guard guard(*_lock);
     _numChunksPosted++;
 }
 
 void
 StoreByBucket::waitAllProcessed() {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(*_lock);
     while (_numChunksPosted != _chunks.size()) {
-        guard.wait();
+        _cond->wait(guard);
     }
 }
 

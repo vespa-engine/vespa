@@ -72,7 +72,7 @@ private:
 class FileChunk
 {
 public:
-    using LockGuard = std::unique_lock<std::mutex>;
+    using unique_lock = std::unique_lock<std::mutex>;
     class NameId {
     public:
         explicit NameId(size_t id) noexcept : _id(id) { }
@@ -109,7 +109,7 @@ public:
               const IBucketizer *bucketizer, bool skipCrcOnRead);
     virtual ~FileChunk();
 
-    virtual size_t updateLidMap(const LockGuard &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
+    virtual size_t updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
     virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
     virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
     void remove(uint32_t lid, uint32_t size);

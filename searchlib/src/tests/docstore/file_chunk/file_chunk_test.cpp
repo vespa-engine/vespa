@@ -29,7 +29,7 @@ struct MyFileHeaderContext : public FileHeaderContext {
 
 struct SetLidObserver : public ISetLid {
     std::vector<uint32_t> lids;
-    void setLid(const LockGuard &guard, uint32_t lid, const LidInfo &lidInfo) override {
+    void setLid(const unique_lock &guard, uint32_t lid, const LidInfo &lidInfo) override {
         (void) guard;
         (void) lidInfo;
         lids.push_back(lid);

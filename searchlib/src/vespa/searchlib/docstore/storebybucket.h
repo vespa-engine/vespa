@@ -6,9 +6,9 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/data/memorydatastore.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
+#include <condition_variable>
 
 namespace search::docstore {
 
@@ -72,7 +72,8 @@ private:
     std::map<uint64_t, IndexVector>              _where;
     MemoryDataStore                            & _backingMemory;
     Executor                                   & _executor;
-    vespalib::Monitor                            _monitor;
+    std::unique_ptr<std::mutex>                  _lock;
+    std::unique_ptr<std::condition_variable>     _cond;
     size_t                                       _numChunksPosted;
     vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;
     CompressionConfig                            _compression;
