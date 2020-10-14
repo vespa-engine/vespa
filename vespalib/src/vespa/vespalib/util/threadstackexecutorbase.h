@@ -5,7 +5,6 @@
 #include "threadexecutor.h"
 #include "eventbarrier.hpp"
 #include "arrayqueue.hpp"
-#include "sync.h"
 #include "gate.h"
 #include "runnable.h"
 #include <vector>
@@ -35,6 +34,8 @@ class ThreadStackExecutorBase : public SyncableThreadExecutor,
 {
 public:
     using init_fun_t = std::function<int(Runnable&)>;
+    using LockGuard = std::unique_lock<std::mutex>;
+    using MonitorGuard = std::unique_lock<std::mutex>;
 
 private:
 
@@ -56,13 +57,14 @@ private:
     };
 
     struct Worker {
-        Monitor    monitor;
+        std::mutex              monitor;
+        std::condition_variable cond;
         uint32_t   pre_guard;
         bool       idle;
         uint32_t   post_guard;
         TaggedTask task;
-        Worker() : monitor(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
-        void verify(bool expect_idle) {
+        Worker() : monitor(), cond(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
+        void verify(bool expect_idle) const {
             (void) expect_idle;
             assert(pre_guard == 0xaaaaaaaa);
             assert(post_guard == 0x55555555);
@@ -78,16 +80,20 @@ private:
 
     struct BlockedThread {
         const uint32_t wait_task_count;
-        Monitor monitor;
+        mutable std::mutex monitor;
+        mutable std::condition_variable cond;
         bool blocked;
         BlockedThread(uint32_t wait_task_count_in)
-            : wait_task_count(wait_task_count_in), monitor(), blocked(true) {}
+            : wait_task_count(wait_task_count_in), monitor(), cond(), blocked(true) {}
         void wait() const;
         void unblock();
     };
 
     std::unique_ptr<FastOS_ThreadPool>   _pool;
-    Monitor                              _monitor;
+    mutable std::mutex                   _monitor;
+protected:
+    std::condition_variable              _cond;
+private:
     Stats                                _stats;
     Gate                                 _executorCompletion;
     ArrayQueue<TaggedTask>               _tasks;

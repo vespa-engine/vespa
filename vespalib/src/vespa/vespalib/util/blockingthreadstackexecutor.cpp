@@ -10,15 +10,15 @@ bool
 BlockingThreadStackExecutor::acceptNewTask(MonitorGuard & guard)
 {
     while (!closed() && !isRoomForNewTask() && !owns_this_thread()) {
-        guard.wait();
+        _cond.wait(guard);
     }
     return (!closed());
 }
 
 void
-BlockingThreadStackExecutor::wakeup(MonitorGuard & monitor)
+BlockingThreadStackExecutor::wakeup(MonitorGuard &)
 {
-    monitor.broadcast();
+    _cond.notify_all();
 }
 
 BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit)

@@ -29,7 +29,7 @@ ThreadStackExecutorBase::BlockedThread::wait() const
 {
     MonitorGuard guard(monitor);
     while (blocked) {
-        guard.wait();
+        cond.wait(guard);
     }
 }
 
@@ -38,7 +38,7 @@ ThreadStackExecutorBase::BlockedThread::unblock()
 {
     MonitorGuard guard(monitor);
     blocked = false;
-    guard.signal();
+    cond.notify_one();
 }
 
 //-----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
     worker.verify(/* idle: */ true);
     worker.idle = false;
     worker.task = std::move(task);
-    monitor.signal();
+    worker.cond.notify_one();
 }
 
 bool
@@ -107,7 +107,7 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
     {
         MonitorGuard monitor(worker.monitor);
         while (worker.idle) {
-            monitor.wait();
+            worker.cond.wait(monitor);
         }
     }
     worker.idle = !worker.task.task;
