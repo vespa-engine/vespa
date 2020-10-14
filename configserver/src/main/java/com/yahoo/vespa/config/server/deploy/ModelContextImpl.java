@@ -169,6 +169,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean tlsUseFSync;
         private final String tlsCompressionType;
         private final boolean useNewRestapiHandler;
+        private final boolean useAccessControlTlsHandshakeClientAuth;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -238,6 +239,10 @@ public class ModelContextImpl implements ModelContext {
             this.useNewRestapiHandler = Flags.USE_NEW_RESTAPI_HANDLER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
                     .value();
+            this.useAccessControlTlsHandshakeClientAuth =
+                    Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION.bindTo(flagSource)
+                            .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
+                            .value();
         }
 
         @Override
@@ -332,6 +337,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public Quota quota() { return quota; }
 
         @Override public boolean useNewRestapiHandler() { return useNewRestapiHandler; }
+
+        @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     }
 
 }

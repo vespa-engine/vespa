@@ -367,6 +367,13 @@ public class Flags {
             "Whether provision lock should always be taken when writing nodes",
             "Takes effect on config server restart");
 
+    public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
+            "use-access-control-client-authentication",
+            false,
+            "Whether application container should set up client authentication on default port based on access control element",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

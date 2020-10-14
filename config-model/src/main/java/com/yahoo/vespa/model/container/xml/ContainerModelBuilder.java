@@ -318,11 +318,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (isHostedTenantApplication(context)) {
             addHostedImplicitHttpIfNotPresent(cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
-            addAdditionalHostedConnector(deployState, cluster);
+            addAdditionalHostedConnector(deployState, cluster, context);
         }
     }
 
-    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
+    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster, ConfigModelContext context) {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
@@ -333,9 +333,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/security-model#data-plane");
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
+
+            boolean enforceHandshakeClientAuth = context.properties().useAccessControlTlsHandshakeClientAuth() &&
+                    cluster.getHttp().getAccessControl()
+                    .map(accessControl -> accessControl.clientAuthentication)
+                    .map(clientAuth -> clientAuth.equals(AccessControl.ClientAuthentication.need))
+                    .orElse(false);
+
             HostedSslConnectorFactory connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
-                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets);
+                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enforceHandshakeClientAuth);
             server.addConnector(connectorFactory);
         } else {
             server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName));
@@ -368,6 +375,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .setHandlers(cluster)
                 .readEnabled(false)
                 .writeEnabled(false)
+                .clientAuthentication(AccessControl.ClientAuthentication.need)
                 .build()
                 .configureHttpFilterChains(http);
     }
