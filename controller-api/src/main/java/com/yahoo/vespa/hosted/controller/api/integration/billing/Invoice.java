@@ -6,7 +6,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -125,37 +124,43 @@ public class Invoice {
         private final String plan;
         private final String agent;
         private final ZonedDateTime addedAt;
-        private final Optional<ZonedDateTime> startedAt;
-        private final Optional<ZonedDateTime> endedAt;
-        private final Optional<ApplicationId> applicationId;
-        private final Optional<ZoneId> zoneId;
-        private final Optional<BigDecimal> cpuHours;
-        private final Optional<BigDecimal> memoryHours;
-        private final Optional<BigDecimal> diskHours;
+        private ZonedDateTime startedAt;
+        private ZonedDateTime endedAt;
+        private ApplicationId applicationId;
+        private ZoneId zoneId;
+        private BigDecimal cpuHours;
+        private BigDecimal memoryHours;
+        private BigDecimal diskHours;
+        private BigDecimal cpuCost;
+        private BigDecimal memoryCost;
+        private BigDecimal diskCost;
 
-        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
-                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours) {
+        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
             this.id = id;
             this.description = description;
             this.amount = amount;
             this.plan = plan;
             this.agent = agent;
             this.addedAt = addedAt;
-            this.startedAt = Optional.ofNullable(startedAt);
-            this.endedAt = Optional.ofNullable(endedAt);
+        }
+
+        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
+                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost) {
+            this(id, description, amount, plan, agent, addedAt);
+            this.startedAt = startedAt;
+            this.endedAt = endedAt;
 
             if (applicationId == null && zoneId != null)
                 throw new IllegalArgumentException("Must supply applicationId if zoneId is supplied");
 
-            this.applicationId = Optional.ofNullable(applicationId);
-            this.zoneId = Optional.ofNullable(zoneId);
-            this.cpuHours = Optional.ofNullable(cpuHours);
-            this.memoryHours = Optional.ofNullable(memoryHours);
-            this.diskHours = Optional.ofNullable(diskHours);
-        }
-
-        public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
-            this(id, description, amount, plan, agent, addedAt, null, null, null, null, null, null, null);
+            this.applicationId = applicationId;
+            this.zoneId = zoneId;
+            this.cpuHours = cpuHours;
+            this.memoryHours = memoryHours;
+            this.diskHours = diskHours;
+            this.cpuCost = cpuCost;
+            this.memoryCost = memoryCost;
+            this.diskCost = diskCost;
         }
 
         /** The opaque ID of this */
@@ -190,34 +195,46 @@ public class Invoice {
 
         /** What time period is this line item for - time start */
         public Optional<ZonedDateTime> startedAt() {
-            return startedAt;
+            return Optional.ofNullable(startedAt);
         }
 
         /** What time period is this line item for - time end */
         public Optional<ZonedDateTime> endedAt() {
-            return endedAt;
+            return Optional.ofNullable(endedAt);
         }
 
         /** Optionally - what application is this line item about */
         public Optional<ApplicationId> applicationId() {
-            return applicationId;
+            return Optional.ofNullable(applicationId);
         }
 
         /** Optionally - what zone deployment is this line item about */
         public Optional<ZoneId> zoneId() {
-            return zoneId;
+            return Optional.ofNullable(zoneId);
         }
 
         public Optional<BigDecimal> getCpuHours() {
-            return cpuHours;
+            return Optional.ofNullable(cpuHours);
         }
 
         public Optional<BigDecimal> getMemoryHours() {
-            return memoryHours;
+            return Optional.ofNullable(memoryHours);
         }
 
         public Optional<BigDecimal> getDiskHours() {
-            return diskHours;
+            return Optional.ofNullable(diskHours);
+        }
+
+        public Optional<BigDecimal> getCpuCost() {
+            return Optional.ofNullable(cpuCost);
+        }
+
+        public Optional<BigDecimal> getMemoryCost() {
+            return Optional.ofNullable(memoryCost);
+        }
+
+        public Optional<BigDecimal> getDiskCost() {
+            return Optional.ofNullable(diskCost);
         }
 
         @Override

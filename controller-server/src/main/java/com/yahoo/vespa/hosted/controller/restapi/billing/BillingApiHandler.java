@@ -354,6 +354,15 @@ public class BillingApiHandler extends LoggingRequestHandler {
         lineItem.getDiskHours().ifPresent(diskHours ->
                 cursor.setString("diskHours", diskHours.toString())
         );
+        lineItem.getCpuCost().ifPresent(cpuCost ->
+                cursor.setString("cpuCost", cpuCost.toString())
+        );
+        lineItem.getMemoryCost().ifPresent(memoryCost ->
+                cursor.setString("memoryCost", memoryCost.toString())
+        );
+        lineItem.getDiskCost().ifPresent(diskCost ->
+                cursor.setString("diskCost", diskCost.toString())
+        );
 
     }
 
