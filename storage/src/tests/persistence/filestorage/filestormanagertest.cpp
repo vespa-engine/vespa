@@ -112,8 +112,7 @@ struct FileStorManagerTest : Test{
     }
 
     spi::dummy::DummyPersistence& getDummyPersistence() {
-        return static_cast<spi::dummy::DummyPersistence&>
-            (_node->getPersistenceProvider());
+        return dynamic_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider());
     }
 
     void setClusterState(const std::string& state) {
@@ -213,7 +212,8 @@ struct TestFileStorComponents {
     explicit TestFileStorComponents(FileStorManagerTest& test)
         : manager(new FileStorManager(test.config->getConfigId(),
                                       test._node->getPersistenceProvider(),
-                                      test._node->getComponentRegister()))
+                                      test._node->getComponentRegister(),
+                                      *test._node))
     {
         top.push_back(unique_ptr<StorageLink>(manager));
         top.open();
@@ -239,7 +239,7 @@ TEST_F(FileStorManagerTest, header_only_put) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -306,7 +306,7 @@ TEST_F(FileStorManagerTest, put) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -339,7 +339,8 @@ TEST_F(FileStorManagerTest, state_change) {
     top.push_back(unique_ptr<StorageLink>(manager =
             new FileStorManager(config->getConfigId(),
                                 _node->getPersistenceProvider(),
-                                _node->getComponentRegister())));
+                                _node->getComponentRegister(),
+                                *_node)));
     top.open();
 
     setClusterState("storage:3 distributor:3");
@@ -354,7 +355,7 @@ TEST_F(FileStorManagerTest, flush) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -1267,7 +1268,7 @@ TEST_F(FileStorManagerTest, visiting) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-            smallConfig->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            smallConfig->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
         // Adding documents to two buckets which we are going to visit
         // We want one bucket in one slotfile, and one bucket with a file split
@@ -1385,7 +1386,7 @@ TEST_F(FileStorManagerTest, remove_location) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     document::BucketId bid(8, 0);
@@ -1428,7 +1429,7 @@ TEST_F(FileStorManagerTest, delete_bucket) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
@@ -1474,7 +1475,7 @@ TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
@@ -1526,7 +1527,7 @@ TEST_F(FileStorManagerTest, delete_bucket_with_invalid_bucket_info){
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
-                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+                    config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
@@ -1569,7 +1570,7 @@ TEST_F(FileStorManagerTest, no_timestamps) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address(
             "storage", lib::NodeType::STORAGE, 3);
@@ -1613,7 +1614,7 @@ TEST_F(FileStorManagerTest, equal_timestamps) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
@@ -1674,7 +1675,7 @@ TEST_F(FileStorManagerTest, get_iter) {
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+            new FileStorManager(config->getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
     top.open();
     api::StorageMessageAddress address(
             "storage", lib::NodeType::STORAGE, 3);
@@ -1751,7 +1752,8 @@ TEST_F(FileStorManagerTest, set_bucket_active_state) {
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
                                 _node->getPersistenceProvider(),
-                                _node->getComponentRegister()));
+                                _node->getComponentRegister(),
+                                *_node));
     top.push_back(unique_ptr<StorageLink>(manager));
     setClusterState("storage:4 distributor:1");
     top.open();
@@ -1829,7 +1831,8 @@ TEST_F(FileStorManagerTest, notify_owner_distributor_on_outdated_set_bucket_stat
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
                                 _node->getPersistenceProvider(),
-                                _node->getComponentRegister()));
+                                _node->getComponentRegister(),
+                                *_node));
     top.push_back(unique_ptr<StorageLink>(manager));
 
     setClusterState("storage:2 distributor:2");
@@ -1871,7 +1874,8 @@ TEST_F(FileStorManagerTest, GetBucketDiff_implicitly_creates_bucket) {
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
                                 _node->getPersistenceProvider(),
-                                _node->getComponentRegister()));
+                                _node->getComponentRegister(),
+                                *_node));
     top.push_back(unique_ptr<StorageLink>(manager));
     setClusterState("storage:2 distributor:1");
     top.open();
@@ -1902,7 +1906,8 @@ TEST_F(FileStorManagerTest, merge_bucket_implicitly_creates_bucket) {
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
                                 _node->getPersistenceProvider(),
-                                _node->getComponentRegister()));
+                                _node->getComponentRegister(),
+                                *_node));
     top.push_back(unique_ptr<StorageLink>(manager));
     setClusterState("storage:3 distributor:1");
     top.open();
@@ -1932,7 +1937,8 @@ TEST_F(FileStorManagerTest, newly_created_bucket_is_ready) {
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
                                 _node->getPersistenceProvider(),
-                                _node->getComponentRegister()));
+                                _node->getComponentRegister(),
+                                *_node));
     top.push_back(unique_ptr<StorageLink>(manager));
     setClusterState("storage:2 distributor:1");
     top.open();
@@ -2055,6 +2061,60 @@ TEST_F(FileStorManagerTest, test_and_set_condition_mismatch_not_counted_as_failu
     EXPECT_EQ(metrics.failed.getValue(), 0);
     EXPECT_EQ(metrics.test_and_set_failed.getValue(), 1);
     EXPECT_EQ(thread_metrics_of(*c.manager)->failedOperations.getValue(), 0);
+}
+
+namespace {
+
+spi::Bucket make_spi_bucket(uint32_t seed) {
+    return spi::Bucket(makeDocumentBucket(document::BucketId(15, seed)));
+}
+
+spi::BucketInfo make_dummy_spi_bucket_info(uint32_t seed) {
+    return spi::BucketInfo(spi::BucketChecksum(seed + 0x1000), seed, seed * 100, seed, seed * 200);
+}
+
+}
+
+TEST_F(FileStorManagerTest, bucket_db_is_populated_from_provider_when_initialize_is_called) {
+    TestFileStorComponents c(*this);
+    // TODO extend to test global bucket space as well. Dummy provider currently only
+    // supports default bucket space. Replace with a better mock.
+    std::vector<std::pair<spi::Bucket, spi::BucketInfo>> buckets = {
+        {make_spi_bucket(1), make_dummy_spi_bucket_info(1)},
+        {make_spi_bucket(2), make_dummy_spi_bucket_info(2)},
+        {make_spi_bucket(3), make_dummy_spi_bucket_info(3)},
+    };
+    std::sort(buckets.begin(), buckets.end(), [](auto& lhs, auto& rhs) {
+        return (lhs.first.getBucketId().toKey() < rhs.first.getBucketId().toKey());
+    });
+
+    getDummyPersistence().set_fake_bucket_set(buckets);
+    c.manager->initialize_bucket_databases_from_provider();
+
+    std::vector<std::pair<document::BucketId, api::BucketInfo>> from_db;
+    auto populate_from_db = [&from_db](uint64_t key, auto& entry) {
+        from_db.emplace_back(document::BucketId::keyToBucketId(key), entry.info);
+    };
+
+    auto& default_db = _node->content_bucket_db(document::FixedBucketSpaces::default_space());
+    default_db.acquire_read_guard()->for_each(populate_from_db);
+    ASSERT_EQ(from_db.size(), buckets.size());
+    for (size_t i = 0; i < from_db.size(); ++i) {
+        auto& wanted = buckets[i];
+        auto& actual = from_db[i];
+        EXPECT_EQ(actual.first, wanted.first.getBucket().getBucketId());
+        EXPECT_EQ(actual.second, PersistenceUtil::convertBucketInfo(wanted.second));
+    }
+
+    from_db.clear();
+    auto& global_db = _node->content_bucket_db(document::FixedBucketSpaces::global_space());
+    global_db.acquire_read_guard()->for_each(populate_from_db);
+    EXPECT_EQ(from_db.size(), 0);
+
+    auto reported_state = _node->getStateUpdater().getReportedNodeState();
+    EXPECT_EQ(reported_state->getMinUsedBits(), 15);
+    EXPECT_EQ(reported_state->getInitProgress(), 1.0); // Should be exact.
+    EXPECT_EQ(reported_state->getState(), lib::State::UP);
 }
 
 } // storage

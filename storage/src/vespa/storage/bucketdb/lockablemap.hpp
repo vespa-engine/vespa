@@ -221,18 +221,20 @@ LockableMap<Map>::handleDecision(key_type& key, mapped_type& val,
 }
 
 template<typename Map>
-void LockableMap<Map>::do_for_each_mutable(std::function<Decision(uint64_t, mapped_type&)> func,
-                                           const char* clientId,
-                                           const key_type& first,
-                                           const key_type& last)
+void LockableMap<Map>::do_for_each_mutable_unordered(std::function<Decision(uint64_t, mapped_type&)> func,
+                                                     const char* clientId)
 {
-    key_type key = first;
+    key_type key = 0;
     mapped_type val;
     std::unique_lock<std::mutex> guard(_lock);
     while (true) {
-        if (findNextKey(key, val, clientId, guard) || key > last) return;
+        if (findNextKey(key, val, clientId, guard)) {
+            return;
+        }
         Decision d(func(const_cast<const key_type&>(key), val));
-        if (handleDecision(key, val, d)) return;
+        if (handleDecision(key, val, d)) {
+            return;
+        }
         ++key;
     }
 }
@@ -247,10 +249,14 @@ void LockableMap<Map>::do_for_each(std::function<Decision(uint64_t, const mapped
     mapped_type val;
     std::unique_lock<std::mutex> guard(_lock);
     while (true) {
-        if (findNextKey(key, val, clientId, guard) || key > last) return;
+        if (findNextKey(key, val, clientId, guard) || key > last) {
+            return;
+        }
         Decision d(func(const_cast<const key_type&>(key), val));
         assert(d == Decision::ABORT || d == Decision::CONTINUE);
-        if (handleDecision(key, val, d)) return;
+        if (handleDecision(key, val, d)) {
+            return;
+        }
         ++key;
     }
 }

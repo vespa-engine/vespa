@@ -60,17 +60,15 @@ public:
                           vespalib::duration yieldTime = 10us,
                           uint32_t chunkSize = bucketdb::AbstractBucketMap<bucketdb::StorageBucketInfo>::DEFAULT_CHUNK_SIZE);
 
-    void for_each_mutable(std::function<Decision(uint64_t, bucketdb::StorageBucketInfo&)> func,
-                          const char* clientId,
-                          const key_type& first = key_type(),
-                          const key_type& last = key_type() - 1);
+    void for_each_mutable_unordered(std::function<Decision(uint64_t, bucketdb::StorageBucketInfo&)> func,
+                                    const char* clientId);
 
     void for_each(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
                   const char* clientId,
                   const key_type& first = key_type(),
                   const key_type& last = key_type() - 1);
 
-    std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const;
+    [[nodiscard]] std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const;
 
     /**
      * Returns true iff bucket has no superbuckets or sub-buckets in the

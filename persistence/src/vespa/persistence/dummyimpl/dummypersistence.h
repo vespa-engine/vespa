@@ -144,6 +144,10 @@ public:
 
     void setModifiedBuckets(const BucketIdListResult::List& result);
 
+    // Important: any subsequent mutations to the bucket set in fake_info will reset
+    // the bucket info due to implicit recalculation of bucket info.
+    void set_fake_bucket_set(const std::vector<std::pair<Bucket, BucketInfo>>& fake_info);
+
     /**
      * Returns the list set by setModifiedBuckets(), then clears
      * the list.

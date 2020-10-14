@@ -43,7 +43,7 @@ DEFINE_PRIMITIVE_WRAPPER(uint16_t, Redundancy);
 
 class TestStorageApp
         : public framework::defaultimplementation::TestComponentRegister,
-          private DoneInitializeHandler
+          public DoneInitializeHandler
 {
     StorageComponentRegisterImpl& _compReg;
 
@@ -100,10 +100,11 @@ public:
 
 private:
     // Storage server interface implementation (until we can remove it)
-    virtual api::Timestamp getUniqueTimestamp() { assert(0); throw; }
-    virtual StorBucketDatabase& getStorageBucketDatabase() { assert(0); throw; }
-    virtual BucketDatabase& getBucketDatabase() { assert(0); throw; }
-    virtual uint16_t getDiskCount() const { assert(0); throw; }
+    virtual api::Timestamp getUniqueTimestamp() { abort(); }
+    [[nodiscard]] virtual StorBucketDatabase& content_bucket_db(document::BucketSpace) { abort(); }
+    virtual StorBucketDatabase& getStorageBucketDatabase() { abort(); }
+    virtual BucketDatabase& getBucketDatabase() { abort(); }
+    virtual uint16_t getDiskCount() const { abort(); }
 };
 
 class TestServiceLayerApp : public TestStorageApp
@@ -124,6 +125,10 @@ public:
     ServiceLayerComponentRegisterImpl& getComponentRegister() { return _compReg; }
 
     spi::PersistenceProvider& getPersistenceProvider();
+
+    StorBucketDatabase& content_bucket_db(document::BucketSpace space) override {
+        return _compReg.getBucketSpaceRepo().get(space).bucketDatabase();
+    }
 
     StorBucketDatabase& getStorageBucketDatabase() override {
         return _compReg.getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).bucketDatabase();

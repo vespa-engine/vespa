@@ -215,13 +215,12 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));
     builder.add(std::make_unique<ChangedBucketOwnershipHandler>(_configUri, compReg));
-    builder.add(std::make_unique<StorageBucketDBInitializer>(
-            _configUri, getDoneInitializeHandler(), compReg));
     builder.add(std::make_unique<BucketManager>(_configUri, _context.getComponentRegister()));
     builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(), static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
     builder.add(std::make_unique<ModifiedBucketChecker>(
             _context.getComponentRegister(), _persistenceProvider, _configUri));
-    auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister());
+    auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister(),
+                                                             getDoneInitializeHandler());
     _fileStorManager = filstor_manager.get();
     builder.add(std::move(filstor_manager));
     builder.add(releaseStateManager());
@@ -237,6 +236,11 @@ ResumeGuard
 ServiceLayerNode::pause()
 {
     return _fileStorManager->getFileStorHandler().pause();
+}
+
+void ServiceLayerNode::perform_post_chain_creation_init_steps() {
+    assert(_fileStorManager);
+    _fileStorManager->initialize_bucket_databases_from_provider();
 }
 
 } // storage

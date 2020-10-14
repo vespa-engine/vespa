@@ -357,7 +357,7 @@ PersistenceThread::checkProviderBucketInfoMatches(const spi::Bucket& bucket, con
             bucket.toString().c_str(), result.getErrorMessage().c_str());
         return false;
     }
-    api::BucketInfo providerInfo(_env.convertBucketInfo(result.getBucketInfo()));
+    api::BucketInfo providerInfo(PersistenceUtil::convertBucketInfo(result.getBucketInfo()));
     // Don't check meta fields or active/ready fields since these are not
     // that important and ready may change under the hood in a race with
     // getModifiedBuckets(). If bucket is empty it means it has already

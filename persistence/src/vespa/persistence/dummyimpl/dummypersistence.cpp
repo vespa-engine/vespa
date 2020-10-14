@@ -359,6 +359,21 @@ DummyPersistence::setModifiedBuckets(const BucketIdListResult::List& buckets)
     _modifiedBuckets = buckets;
 }
 
+void DummyPersistence::set_fake_bucket_set(const std::vector<std::pair<Bucket, BucketInfo>>& fake_info) {
+    std::lock_guard lock(_monitor);
+    _content.clear();
+    for (auto& info : fake_info) {
+        const auto& bucket = info.first;
+        // DummyPersistence currently only supports default bucket space
+        assert(bucket.getBucketSpace() == FixedBucketSpaces::default_space());
+        auto bucket_content = std::make_shared<BucketContent>();
+        bucket_content->getMutableBucketInfo() = info.second;
+        // Must tag as up to date, or bucket info will be recomputed implicitly from zero state in getBucketInfo
+        bucket_content->setOutdatedInfo(false);
+        _content[bucket] = std::move(bucket_content);
+    }
+}
+
 BucketIdListResult
 DummyPersistence::getModifiedBuckets(BucketSpace bucketSpace) const
 {

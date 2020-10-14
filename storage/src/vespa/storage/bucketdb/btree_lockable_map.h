@@ -117,10 +117,8 @@ private:
     bool handleDecision(key_type& key, mapped_type& val, Decision decision);
     void acquireKey(const LockId & lid, std::unique_lock<std::mutex> &guard);
 
-    void do_for_each_mutable(std::function<Decision(uint64_t, mapped_type&)> func,
-                             const char* clientId,
-                             const key_type& first,
-                             const key_type& last) override;
+    void do_for_each_mutable_unordered(std::function<Decision(uint64_t, mapped_type&)> func,
+                                       const char* clientId) override;
 
     void do_for_each(std::function<Decision(uint64_t, const mapped_type&)> func,
                      const char* clientId,

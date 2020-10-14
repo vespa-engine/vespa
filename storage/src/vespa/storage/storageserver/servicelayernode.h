@@ -58,6 +58,7 @@ public:
 private:
     void subscribeToConfigs() override;
     void initializeNodeSpecific() override;
+    void perform_post_chain_creation_init_steps() override;
     void handleLiveConfigUpdate(const InitialGuard & initGuard) override;
     VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;

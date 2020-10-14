@@ -40,6 +40,7 @@ struct FileStorManagerTest;
 class ReadBucketList;
 class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
+class DoneInitializeHandler;
 
 class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,
@@ -52,6 +53,7 @@ class FileStorManager : public StorageLinkQueued,
     spi::PersistenceProvider      & _providerCore;
     ProviderErrorWrapper            _providerErrorWrapper;
     spi::PersistenceProvider      * _provider;
+    DoneInitializeHandler&          _init_handler;
     
     const document::BucketIdFactory& _bucketIdFactory;
     config::ConfigUri                _configUri;
@@ -71,8 +73,8 @@ class FileStorManager : public StorageLinkQueued,
     friend struct FileStorManagerTest;
 
 public:
-    FileStorManager(const config::ConfigUri &,
-                    spi::PersistenceProvider&, ServiceLayerComponentRegister&);
+    FileStorManager(const config::ConfigUri &, spi::PersistenceProvider&,
+                    ServiceLayerComponentRegister&, DoneInitializeHandler&);
     FileStorManager(const FileStorManager &) = delete;
     FileStorManager& operator=(const FileStorManager &) = delete;
 
@@ -92,6 +94,15 @@ public:
     }
 
     void handleNewState() override;
+
+    // Must be called exactly once at startup _before_ storage chain is opened.
+    // This function expects that no external messages may arrive prior to, or
+    // concurrently with this call, such as client operations or cluster controller
+    // node state requests.
+    // By ensuring that this function is called prior to chain opening, this invariant
+    // shall be upheld since no RPC/MessageBus endpoints have been made available
+    // yet at that point in time.
+    void initialize_bucket_databases_from_provider();
 
 private:
     void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
@@ -152,6 +163,7 @@ private:
     void storageDistributionChanged() override;
     void updateState();
     void propagateClusterStates();
+    void update_reported_state_after_db_init();
 };
 
 } // storage

@@ -164,7 +164,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
     } else {
         auto bottom = std::make_unique<FileStorManager>(
                     config.getConfigId(),
-                    _node->getPersistenceProvider(), _node->getComponentRegister());
+                    _node->getPersistenceProvider(), _node->getComponentRegister(), *_node);
         _filestorManager = bottom.get();
         _top->push_back(std::move(bottom));
     }

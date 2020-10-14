@@ -145,7 +145,7 @@ std::map<PartitionId, DiskData>
 createMapFromBucketDatabase(StorBucketDatabase& db) {
     std::map<PartitionId, DiskData> result;
     BucketInfoLogger infoLogger(result);
-    db.for_each(std::ref(infoLogger), "createmap");
+    db.acquire_read_guard()->for_each(std::ref(infoLogger));
     return result;
 }
 // Create data we want to have in this test

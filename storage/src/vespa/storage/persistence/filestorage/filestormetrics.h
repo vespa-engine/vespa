@@ -164,6 +164,7 @@ struct FileStorMetrics : public metrics::MetricSet
     metrics::LongCountMetric directoryEvents;
     metrics::LongCountMetric partitionEvents;
     metrics::LongCountMetric diskEvents;
+    metrics::LongAverageMetric bucket_db_init_latency;
 
     explicit FileStorMetrics(const metrics::LoadTypeSet&);
     ~FileStorMetrics() override;

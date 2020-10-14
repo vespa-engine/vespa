@@ -121,13 +121,11 @@ void StorBucketDatabase::for_each_chunked(
     _impl->for_each_chunked(std::move(func), clientId, yieldTime, chunkSize);
 }
 
-void StorBucketDatabase::for_each_mutable(
+void StorBucketDatabase::for_each_mutable_unordered(
         std::function<Decision(uint64_t, bucketdb::StorageBucketInfo&)> func,
-        const char* clientId,
-        const key_type& first,
-        const key_type& last)
+        const char* clientId)
 {
-    _impl->for_each_mutable(std::move(func), clientId, first, last);
+    _impl->for_each_mutable_unordered(std::move(func), clientId);
 }
 
 void StorBucketDatabase::for_each(
