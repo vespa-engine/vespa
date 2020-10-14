@@ -537,6 +537,13 @@ public class ApplicationController {
 
             Optional<Quota> quota = billingController.getQuota(application.tenant(), zone.environment());
 
+            if (platform.isBefore(Version.fromString("7.299"))) {
+                // there is a bug in the configuration model that makes the QuotaValidator fail if the budget
+                // parameter is used.  make sure we don't send budget to deployments with these old versions.
+                // TODO: Remove once < 7.299 is no longer deployed in public and publiccd
+                quota = quota.map(Quota::withoutBudget);
+            }
+
             if (zone.environment().isManuallyDeployed())
                 controller.applications().applicationStore().putMeta(new DeploymentId(application, zone),
                                                                      clock.instant(),
