@@ -102,13 +102,13 @@ public class LocalAsyncSession implements AsyncSession {
     }
 
     @Override
-    public Result remove(DocumentId id, DocumentOperationParameters parameters) {
+    public Result remove(DocumentRemove remove, DocumentOperationParameters parameters) {
         return send(req -> {
-                        if (syncSession.remove(new DocumentRemove(id), parameters)) {
+                        if (syncSession.remove(remove, parameters)) {
                             return new RemoveResponse(req, true);
                         }
                         else {
-                            return new DocumentIdResponse(req, id, "Document not found.", Response.Outcome.NOT_FOUND);
+                            return new DocumentIdResponse(req, remove.getId(), "Document not found.", Response.Outcome.NOT_FOUND);
                         }
                     },
                     parameters);

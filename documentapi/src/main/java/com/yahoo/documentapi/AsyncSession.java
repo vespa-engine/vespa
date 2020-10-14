@@ -4,6 +4,7 @@ package com.yahoo.documentapi;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
@@ -211,7 +212,24 @@ public interface AsyncSession extends Session {
      * @throws UnsupportedOperationException if this access implementation does not support removal
      */
     default Result remove(DocumentId id, DocumentOperationParameters parameters) {
-        return remove(id);
+        return remove(new DocumentRemove(id), parameters);
+    }
+
+    /**
+     * <p>Removes a document if it is present. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentIdResponse} objects to appear within the timeout time of this session.
+     * The response returned later will either be a success, or contain the document id submitted here.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param remove the document remove operation
+     * @param parameters parameters for the operation
+     * @return the synchronous result of this operation
+     * @throws UnsupportedOperationException if this access implementation does not support removal
+     */
+    default Result remove(DocumentRemove remove, DocumentOperationParameters parameters) {
+        return remove(remove.getId());
     }
 
     /**

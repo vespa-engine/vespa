@@ -58,7 +58,7 @@ public class JsonSerializationHelper {
     }
 
     @FunctionalInterface
-    static interface SubroutineThrowingIOException {
+    interface SubroutineThrowingIOException {
         void invoke() throws IOException;
     }
 
