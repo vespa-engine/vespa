@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.billing;
 import java.util.Optional;
 
 /**
- * General result class used by {@link BillingController#setCollectionMethod}
+ * Object to carry the result of {@link BillingController#setCollectionMethod}
  *
  * @author smorgrav
  */
