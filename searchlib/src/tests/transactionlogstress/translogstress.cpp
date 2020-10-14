@@ -18,8 +18,6 @@ LOG_SETUP("translogstress");
 
 using vespalib::nbostream;
 using search::Runnable;
-using vespalib::Monitor;
-using vespalib::MonitorGuard;
 using std::shared_ptr;
 using vespalib::make_string;
 using vespalib::ConstBufferRef;
@@ -116,7 +114,7 @@ Packet::Entry
 EntryGenerator::getRandomEntry(SerialNum num)
 {
     _rnd.srand48(_baseSeed + num);
-    if (_buffers != NULL) {
+    if (_buffers != nullptr) {
         size_t i = _rnd.lrand48() % _buffers->size();
         const nbostream& buffer = (*_buffers)[i];
         return Packet::Entry(num, 1024, ConstBufferRef(buffer.data(), buffer.size()));
@@ -209,7 +207,7 @@ private:
 public:
     FeederThread(const std::string & tlsSpec, const std::string & domain,
                  const EntryGenerator & generator, uint32_t feedRate, size_t packetSize);
-    ~FeederThread();
+    ~FeederThread() override;
     void doRun() override;
     SerialNumRange getRange() const { return SerialNumRange(1, _lastCommited); }
 };
@@ -247,7 +245,7 @@ void
 FeederThread::doRun()
 {
     _session = _client.open(_domain);
-    if (_session.get() == NULL) {
+    if ( ! _session) {
         throw std::runtime_error(vespalib::make_string("FeederThread: Could not open session to %s", _tlsSpec.c_str()));
     }
 
@@ -328,10 +326,10 @@ private:
     SerialNum _to;
     SerialNum _next;
     State _state;
-    Monitor _monitor;
+    std::mutex _monitor;
 
     void setState(State newState) {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         //LOG(info, "VisitorAgent[%u]: setState(%s)", _id, newState == IDLE ? "idle" :
         //    (newState == RUNNING ? "running" : "finished"));
         _state = newState;
@@ -343,23 +341,23 @@ public:
                  const EntryGenerator & generator, uint32_t id, bool validate) :
         Agent(tlsSpec, domain, generator, "VisitorAgent", id, validate),
         _visitor(), _from(0), _to(0), _next(0), _state(IDLE) {}
-    virtual ~VisitorAgent() {}
+    ~VisitorAgent() override = default;
     void start(SerialNum from, SerialNum to);
     void setIdle();
     bool idle() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         return _state == IDLE;
     }
     bool running() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         return _state == RUNNING;
     }
     bool finished() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         return _state == FINISHED;
     }
     std::string getState() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         if (_state == IDLE) {
             return std::string("idle");
         } else if (_state == FINISHED) {
@@ -516,7 +514,7 @@ void
 ControllerThread::doRun()
 {
     _session = _client.open(_domain);
-    if (_session.get() == NULL) {
+    if ( ! _session) {
         throw std::runtime_error(vespalib::make_string("ControllerThread: Could not open session to %s", _tlsSpec.c_str()));
     }
 

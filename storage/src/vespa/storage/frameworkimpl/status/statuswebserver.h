@@ -62,7 +62,6 @@ class StatusWebServer : private config::IFetcherCallback<vespa::config::content:
     };
 
     framework::StatusReporterMap&          _reporterMap;
-    vespalib::Monitor                      _workerMonitor;
     uint16_t                               _port;
     std::unique_ptr<WebServer>             _httpServer;
     config::ConfigFetcher                  _configFetcher;

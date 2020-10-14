@@ -45,8 +45,6 @@ struct RpcTask : public vespalib::Executor::Task {
 
 }
 
-using vespalib::LockGuard;
-
 TransLogClient::TransLogClient(const vespalib::string & rpcTarget) :
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024, translogclient_rpc_callback)),
     _rpcTarget(rpcTarget),

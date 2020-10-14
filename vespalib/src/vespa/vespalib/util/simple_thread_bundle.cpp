@@ -50,6 +50,14 @@ Runnable::UP chain(Runnable::UP first, Runnable::UP second) {
 
 //-----------------------------------------------------------------------------
 
+Signal::Signal() noexcept
+    : valid(true),
+      generation(0),
+      monitor(std::make_unique<std::mutex>()),
+      cond(std::make_unique<std::condition_variable>())
+{}
+Signal::~Signal() = default;
+
 SimpleThreadBundle::Pool::Pool(size_t bundleSize)
     : _lock(),
       _bundleSize(bundleSize),

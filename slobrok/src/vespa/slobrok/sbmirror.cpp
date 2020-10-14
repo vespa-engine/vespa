@@ -7,10 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.mirror");
 
-using vespalib::LockGuard;
-
-namespace slobrok {
-namespace api {
+namespace slobrok::api {
 
 MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
     : FNET_Task(orb.GetScheduler()),
@@ -326,5 +323,4 @@ MirrorAPI::RequestDone(FRT_RPCRequest *req)
     ScheduleNow();
 }
 
-} // namespace api
-} // namespace slobrok
+}

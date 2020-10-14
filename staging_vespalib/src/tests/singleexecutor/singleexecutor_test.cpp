@@ -28,7 +28,8 @@ TEST("test that all tasks are executed") {
 }
 
 void verifyResizeTaskLimit(bool up) {
-    Monitor lock;
+    std::mutex lock;
+    std::condition_variable cond;
     std::atomic<uint64_t> started(0);
     std::atomic<uint64_t> allowed(0);
     SingleExecutor executor(10);
@@ -38,11 +39,11 @@ void verifyResizeTaskLimit(bool up) {
     EXPECT_NOT_EQUAL(16u, roundedTaskLimit);
 
     for (uint64_t i(0); i < 10; i++) {
-        executor.execute(makeLambdaTask([&lock, &started, &allowed] {
+        executor.execute(makeLambdaTask([&lock, &cond, &started, &allowed] {
             started++;
-            MonitorGuard guard(lock);
+            std::unique_lock guard(lock);
             while (allowed < started) {
-                guard.wait(1ms);
+                cond.wait_for(guard, 1ms);
             }
         }));
     }
@@ -58,11 +59,11 @@ void verifyResizeTaskLimit(bool up) {
     while (started < 10);
     EXPECT_EQUAL(10u, started);
     EXPECT_EQUAL(16u, executor.getTaskLimit());
-    executor.execute(makeLambdaTask([&lock, &started, &allowed] {
+    executor.execute(makeLambdaTask([&lock, &cond, &started, &allowed] {
         started++;
-        MonitorGuard guard(lock);
+        std::unique_lock guard(lock);
         while (allowed < started) {
-            guard.wait(1ms);
+            cond.wait_for(guard, 1ms);
         }
     }));
     while (started < 11);
