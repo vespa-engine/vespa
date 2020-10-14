@@ -302,7 +302,7 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
     out << "<h2>Overview of latest thread ticks</h2>\n";
     ThreadTable threads;
     std::lock_guard guard(_lock);
-    framework::MilliSecTime time(_component->getClock().getTimeInMillis());
+    [[maybe_unused]] framework::MilliSecTime time(_component->getClock().getTimeInMillis());
     ThreadStatusWriter writer(threads, _component->getClock().getMonotonicTime(),
                               getProcessSlack(), getWaitSlack());
     visitThreads(writer);
