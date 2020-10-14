@@ -50,7 +50,7 @@ import static org.mockito.Mockito.verify;
 public class DynamicDockerProvisionTest {
 
     private static final Zone zone = new Zone(
-            Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
+            Cloud.builder().dynamicProvisioning(true).build(),
             SystemName.main,
             Environment.prod,
             RegionName.from("us-east"));
