@@ -26,13 +26,12 @@ using document::BucketSpace;
 namespace storage {
 
 FileStorManager::
-FileStorManager(const config::ConfigUri & configUri, const spi::PartitionStateList& partitions,
+FileStorManager(const config::ConfigUri & configUri,
                 spi::PersistenceProvider& provider, ServiceLayerComponentRegister& compReg)
     : StorageLinkQueued("File store manager", compReg),
       framework::HtmlStatusReporter("filestorman", "File store manager"),
       _compReg(compReg),
       _component(compReg, "filestormanager"),
-      _partitions(partitions),
       _providerCore(provider),
       _providerErrorWrapper(_providerCore),
       _provider(&_providerErrorWrapper),
@@ -128,20 +127,16 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
         _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
 
-        _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _partitions, _compReg);
+        _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _compReg);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
         if (numResponseThreads > 0) {
             _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResponseThreads, 10000, selectSequencer(_config->responseSequencerType));
         }
         for (uint32_t i=0; i<_component.getDiskCount(); ++i) {
-            if (_partitions[i].isUp()) {
-                LOG(spam, "Setting up disk %u", i);
-                for (uint32_t j = 0; j < numThreads; j++) {
-                    _disks[i].push_back(std::make_shared<PersistenceThread>(_sequencedExecutor.get(), _compReg, _configUri, *_provider,
+            LOG(spam, "Setting up disk %u", i);
+            for (uint32_t j = 0; j < numThreads; j++) {
+                _disks[i].push_back(std::make_shared<PersistenceThread>(_sequencedExecutor.get(), _compReg, _configUri, *_provider,
                                                                             *_filestorHandler, *_metrics->disks[i]->threads[j], i));
-                }
-            } else {
-                _filestorHandler->disable(i);
             }
         }
     }
@@ -383,24 +378,17 @@ FileStorManager::onCreateBucket(
             code = api::ReturnCode(api::ReturnCode::EXISTS, "Bucket already exist");
         } else {
             entry->disk = _component.getIdealPartition(cmd->getBucket());
-            if (_partitions[entry->disk].isUp()) {
-                // Newly created buckets are ready but not active, unless
-                // explicitly marked as such by the distributor.
-                entry->setBucketInfo(api::BucketInfo(
+            // Newly created buckets are ready but not active, unless
+            // explicitly marked as such by the distributor.
+            entry->setBucketInfo(api::BucketInfo(
                         0, 0, 0, 0, 0, true, cmd->getActive()));
-                cmd->setPriority(0);
-                handlePersistenceMessage(cmd, entry->disk);
-                entry.write();
-                LOG(debug, "Created bucket %s on disk %d (node index is %d)",
-                    cmd->getBucketId().toString().c_str(),
-                    entry->disk, _component.getIndex());
-                return true;
-            } else {
-                entry.remove();
-                code = api::ReturnCode(api::ReturnCode::IO_FAILURE,
-                                       vespalib::make_string("Trying to create bucket %s on disabled disk %d",
-                                                             cmd->getBucketId().toString().c_str(), entry->disk));
-            }
+            cmd->setPriority(0);
+            handlePersistenceMessage(cmd, entry->disk);
+            entry.write();
+            LOG(debug, "Created bucket %s on disk %d (node index is %d)",
+                cmd->getBucketId().toString().c_str(),
+                entry->disk, _component.getIndex());
+            return true;
         }
     }
     std::shared_ptr<api::CreateBucketReply> reply((api::CreateBucketReply*)cmd->makeReply().release());
@@ -499,27 +487,13 @@ FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd)
 
     if (!entry.preExisted()) {
         entry->disk = _component.getIdealPartition(cmd->getBucket());
-        if (_partitions[entry->disk].isUp()) {
-            entry->info = api::BucketInfo(0, 0, 0, 0, 0, true, false);
-            LOG(debug, "Created bucket %s on disk %d (node index is %d) due to merge being received.",
-                cmd->getBucketId().toString().c_str(), entry->disk, _component.getIndex());
-                // Call before writing bucket entry as we need to have bucket
-                // lock while calling
-            handlePersistenceMessage(cmd, entry->disk);
-            entry.write();
-        } else {
-            entry.remove();
-            api::ReturnCode code(api::ReturnCode::IO_FAILURE,
-                    vespalib::make_string(
-                            "Trying to perform merge %s whose bucket belongs on target disk %d, which is down. Cluster state version of command is %d, our system state version is %d",
-                            cmd->toString().c_str(), entry->disk, cmd->getClusterStateVersion(),
-                            _component.getStateUpdater().getClusterStateBundle()->getVersion()));
-            LOGBT(debug, cmd->getBucketId().toString(), "%s", code.getMessage().c_str());
-            auto reply = std::make_shared<api::MergeBucketReply>(*cmd);
-            reply->setResult(code);
-            sendUp(reply);
-            return true;
-        }
+        entry->info = api::BucketInfo(0, 0, 0, 0, 0, true, false);
+        LOG(debug, "Created bucket %s on disk %d (node index is %d) due to merge being received.",
+            cmd->getBucketId().toString().c_str(), entry->disk, _component.getIndex());
+        // Call before writing bucket entry as we need to have bucket
+        // lock while calling
+        handlePersistenceMessage(cmd, entry->disk);
+        entry.write();
     } else {
         handlePersistenceMessage(cmd, entry->disk);
     }
@@ -536,28 +510,15 @@ FileStorManager::onGetBucketDiff(
     }
     if (!entry.preExisted()) {
         entry->disk = _component.getIdealPartition(cmd->getBucket());
-        if (_partitions[entry->disk].isUp()) {
-            LOG(debug, "Created bucket %s on disk %d (node index is %d) due to get bucket diff being received.",
-                cmd->getBucketId().toString().c_str(), entry->disk, _component.getIndex());
-            entry->info.setTotalDocumentSize(0);
-            entry->info.setUsedFileSize(0);
-            entry->info.setReady(true);
-            // Call before writing bucket entry as we need to have bucket
-            // lock while calling
-            handlePersistenceMessage(cmd, entry->disk);
-            entry.write();
-        } else {
-            entry.remove();
-            api::ReturnCode code(api::ReturnCode::IO_FAILURE,
-                        vespalib::make_string(
-                            "Trying to merge non-existing bucket %s, which can't be created because target disk %d is down",
-                            cmd->getBucketId().toString().c_str(), entry->disk));
-            LOGBT(warning, cmd->getBucketId().toString(), "%s", code.getMessage().c_str());
-            auto reply = std::make_shared<api::GetBucketDiffReply>(*cmd);
-            reply->setResult(code);
-            sendUp(reply);
-            return true;
-        }
+        LOG(debug, "Created bucket %s on disk %d (node index is %d) due to get bucket diff being received.",
+            cmd->getBucketId().toString().c_str(), entry->disk, _component.getIndex());
+        entry->info.setTotalDocumentSize(0);
+        entry->info.setUsedFileSize(0);
+        entry->info.setReady(true);
+        // Call before writing bucket entry as we need to have bucket
+        // lock while calling
+        handlePersistenceMessage(cmd, entry->disk);
+        entry.write();
     } else {
         handlePersistenceMessage(cmd, entry->disk);
     }

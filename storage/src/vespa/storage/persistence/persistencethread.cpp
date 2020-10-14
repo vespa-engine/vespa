@@ -137,7 +137,8 @@ PersistenceThread::getBucket(const DocumentId& id, const document::Bucket &bucke
                 + "bucket " + bucket.getBucketId().toString() + ".", VESPA_STRLOC);
     }
 
-    return spi::Bucket(bucket, spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    return spi::Bucket(bucket);
 }
 
 bool
@@ -328,7 +329,8 @@ MessageTracker::UP
 PersistenceThread::handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker)
 {
     tracker->setMetric(_env._metrics.revert[cmd.getLoadType()]);
-    spi::Bucket b = spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket b = spi::Bucket(cmd.getBucket());
     const std::vector<api::Timestamp> & tokens = cmd.getRevertTokens();
     for (const api::Timestamp & token : tokens) {
         spi::Result result = _spi.removeEntry(b, spi::Timestamp(token), tracker->context());
@@ -345,7 +347,8 @@ PersistenceThread::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTrac
         LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
         DUMP_LOGGED_BUCKET_OPERATIONS(cmd.getBucketId());
     }
-    spi::Bucket spiBucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket spiBucket(cmd.getBucket());
     _spi.createBucket(spiBucket, tracker->context());
     if (cmd.getActive()) {
         _spi.setActiveState(spiBucket, spi::BucketInfo::ACTIVE);
@@ -404,7 +407,8 @@ PersistenceThread::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTrac
         _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
                 api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
     }
-    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(cmd.getBucket());
     if (!checkProviderBucketInfoMatches(bucket, cmd.getBucketInfo())) {
            return tracker;
     }
@@ -455,7 +459,8 @@ PersistenceThread::handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP 
 {
     tracker->setMetric(_env._metrics.readBucketList);
 
-    spi::BucketIdListResult result(_spi.listBuckets(cmd.getBucketSpace(), cmd.getPartition()));
+    assert(cmd.getPartition() == 0u);
+    spi::BucketIdListResult result(_spi.listBuckets(cmd.getBucketSpace()));
     if (tracker->checkForError(result)) {
         auto reply = std::make_shared<ReadBucketListReply>(cmd);
         result.getList().swap(reply->getBuckets());
@@ -481,8 +486,9 @@ PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTrack
     if ( ! fieldSet) { return tracker; }
 
     tracker->context().setReadConsistency(cmd.getReadConsistency());
+    assert(_env._partition == 0u);
     spi::CreateIteratorResult result(_spi.createIterator(
-            spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition)),
+            spi::Bucket(cmd.getBucket()),
             std::move(fieldSet), cmd.getSelection(), cmd.getIncludedVersions(), tracker->context()));
     if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<CreateIteratorReply>(cmd, spi::IteratorId(result.getIteratorId())));
@@ -508,7 +514,8 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
         return tracker;
     }
 
-    spi::Bucket spiBucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket spiBucket(cmd.getBucket());
     SplitBitDetector::Result targetInfo;
     if (_env._config.enableMultibitSplitOptimalization) {
         targetInfo = SplitBitDetector::detectSplit(_spi, spiBucket, cmd.getMaxSplitBits(),
@@ -549,8 +556,10 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
         }
     }
 #endif
-    spi::Result result = _spi.split(spiBucket, spi::Bucket(target1, spi::PartitionId(lock1.disk)),
-                                    spi::Bucket(target2, spi::PartitionId(lock2.disk)), tracker->context());
+    assert(lock1.disk == 0u);
+    assert(lock2.disk == 0u);
+    spi::Result result = _spi.split(spiBucket, spi::Bucket(target1),
+                                    spi::Bucket(target2), tracker->context());
     if (result.hasError()) {
         tracker->fail(PersistenceUtil::convertErrorCode(result), result.getErrorMessage());
         return tracker;
@@ -604,8 +613,8 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracke
                 // Must make sure target bucket exists when we have pending ops
                 // to an empty target bucket, since the provider will have
                 // implicitly erased it by this point.
-                spi::Bucket createTarget(spi::Bucket(target.second.bucket,
-                                                     spi::PartitionId(target.second.diskIndex)));
+                assert(target.second.diskIndex == 0u);
+                spi::Bucket createTarget(spi::Bucket(target.second.bucket));
                 LOG(debug, "Split target %s was empty, but re-creating it since there are remapped operations queued to it",
                     createTarget.toString().c_str());
                 _spi.createBucket(createTarget, tracker->context());
@@ -696,10 +705,13 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracke
         }
     }
 #endif
+    assert(lock1.disk == 0u);
+    assert(lock2.disk == 0u);
+    assert(_env._partition == 0u);
     spi::Result result =
-        _spi.join(spi::Bucket(firstBucket, spi::PartitionId(lock1.disk)),
-                  spi::Bucket(secondBucket, spi::PartitionId(lock2.disk)),
-                  spi::Bucket(destBucket, spi::PartitionId(_env._partition)),
+        _spi.join(spi::Bucket(firstBucket),
+                  spi::Bucket(secondBucket),
+                  spi::Bucket(destBucket),
                   tracker->context());
     if (!tracker->checkForError(result)) {
         return tracker;
@@ -737,7 +749,8 @@ PersistenceThread::handleSetBucketState(api::SetBucketStateCommand& cmd, Message
     NotificationGuard notifyGuard(*_bucketOwnershipNotifier);
 
     LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
-    spi::Bucket bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
+    assert(_env._partition == 0u);
+    spi::Bucket bucket(cmd.getBucket());
     bool shouldBeActive(cmd.getState() == api::SetBucketStateCommand::ACTIVE);
     spi::BucketInfo::ActiveState newState(shouldBeActive ? spi::BucketInfo::ACTIVE : spi::BucketInfo::NOT_ACTIVE);
 
@@ -775,10 +788,12 @@ PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, Mess
         entry->disk = _env._partition;
         entry.write();
     }
+    assert(cmd.getDiskOfInstanceToJoin() == 0u);
+    assert(cmd.getDiskOfInstanceToKeep() == 0u);
     spi::Result result =
-        _spi.join(spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
-                  spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToJoin())),
-                  spi::Bucket(destBucket, spi::PartitionId(cmd.getDiskOfInstanceToKeep())),
+        _spi.join(spi::Bucket(destBucket),
+                  spi::Bucket(destBucket),
+                  spi::Bucket(destBucket),
                   tracker->context());
     if (tracker->checkForError(result)) {
         tracker->setReply(std::make_shared<InternalBucketJoinReply>(cmd, _env.getBucketInfo(cmd.getBucket())));

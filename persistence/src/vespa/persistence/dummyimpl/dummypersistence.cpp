@@ -295,11 +295,10 @@ BucketContent::eraseEntry(Timestamp t)
     }
 }
 
-DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo, uint16_t partitionCount)
+DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
     : _initialized(false),
       _repo(repo),
-      _partitions(partitionCount),
-      _content(partitionCount),
+      _content(),
       _nextIterator(1),
       _iterators(),
       _monitor(),
@@ -324,33 +323,30 @@ DummyPersistence::parseDocumentSelection(const string& documentSelection, bool a
     return ret;
 }
 
-PartitionStateListResult
-DummyPersistence::getPartitionStates() const
+Result
+DummyPersistence::initialize()
 {
+    assert(!_initialized);
     _initialized = true;
-    LOG(debug, "getPartitionStates()");
-    std::lock_guard lock(_monitor);
-    return PartitionStateListResult(_partitions);
+    return Result();
 }
 
 #define DUMMYPERSISTENCE_VERIFY_INITIALIZED \
     if (!_initialized) throw vespalib::IllegalStateException( \
-            "getPartitionStates() must always be called first in order to " \
+            "initialize() must always be called first in order to " \
             "trigger lazy initialization.", VESPA_STRLOC)
 
 
 BucketIdListResult
-DummyPersistence::listBuckets(BucketSpace bucketSpace, PartitionId id) const
+DummyPersistence::listBuckets(BucketSpace bucketSpace) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "listBuckets(%u)", uint16_t(id));
+    LOG(debug, "listBuckets()");
     std::lock_guard lock(_monitor);
     BucketIdListResult::List list;
     if (bucketSpace == FixedBucketSpaces::default_space()) {
-        for (PartitionContent::const_iterator it = _content[id].begin();
-             it != _content[id].end(); ++it)
-        {
-            list.push_back(it->first);
+        for (const auto &entry : _content) {
+            list.push_back(entry.first);
         }
     }
     return BucketIdListResult(list);
@@ -382,12 +378,8 @@ DummyPersistence::setClusterState(BucketSpace bucketSpace, const ClusterState& c
     if (bucketSpace == FixedBucketSpaces::default_space()) {
         _clusterState.reset(new ClusterState(c));
         if (!_clusterState->nodeUp()) {
-            for (uint32_t i=0, n=_content.size(); i<n; ++i) {
-                for (PartitionContent::iterator it = _content[i].begin();
-                     it != _content[i].end(); ++it)
-                {
-                    it->second->setActive(false);
-                }
+            for (const auto &entry : _content) {
+                entry.second->setActive(false);
             }
         }
     }
@@ -725,10 +717,10 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
     LOG(debug, "createBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
-    if (_content[b.getPartition()].find(b) == _content[b.getPartition()].end()) {
-        _content[b.getPartition()][b] = std::make_shared<BucketContent>();
+    if (_content.find(b) == _content.end()) {
+        _content[b] = std::make_shared<BucketContent>();
     } else {
-        assert(!_content[b.getPartition()][b]->_inUse);
+        assert(!_content[b]->_inUse);
         LOG(debug, "%s already existed", b.toString().c_str());
     }
     return Result();
@@ -741,10 +733,10 @@ DummyPersistence::deleteBucket(const Bucket& b, Context&)
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
-    if (_content[b.getPartition()][b].get()) {
-        assert(!_content[b.getPartition()][b]->_inUse);
+    if (_content[b].get()) {
+        assert(!_content[b]->_inUse);
     }
-    _content[b.getPartition()].erase(b);
+    _content.erase(b);
     return Result();
 }
 
@@ -905,8 +897,8 @@ DummyPersistence::dumpBucket(const Bucket& b) const
     LOG(spam, "dumpBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
-    PartitionContent::const_iterator it(_content[b.getPartition()].find(b));
-    if (it == _content[b.getPartition()].end()) {
+    Content::const_iterator it(_content.find(b));
+    if (it == _content.end()) {
         return "DOESN'T EXIST";
     } else {
         vespalib::asciistream ost;
@@ -926,8 +918,8 @@ DummyPersistence::isActive(const Bucket& b) const
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
     LOG(spam, "isActive(%s)", b.toString().c_str());
-    PartitionContent::const_iterator it(_content[b.getPartition()].find(b));
-    if (it == _content[b.getPartition()].end()) {
+    Content::const_iterator it(_content.find(b));
+    if (it == _content.end()) {
         return false;
     }
     return it->second->isActive();
@@ -944,8 +936,8 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b, LockMode lock_mode) con
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
     DummyPersistence& ncp(const_cast<DummyPersistence&>(*this));
-    PartitionContent::iterator it(ncp._content[b.getPartition()].find(b));
-    if (it == ncp._content[b.getPartition()].end()) {
+    Content::iterator it(ncp._content.find(b));
+    if (it == ncp._content.end()) {
         return BucketContentGuard::UP();
     }
     if (lock_mode == LockMode::Exclusive) {

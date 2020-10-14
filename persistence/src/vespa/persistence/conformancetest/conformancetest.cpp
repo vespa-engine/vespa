@@ -38,7 +38,6 @@ std::unique_ptr<PersistenceProvider> getSpi(ConformanceTest::PersistenceFactory 
     PersistenceProviderUP result(factory.getPersistenceImplementation(
                 testDocMan.getTypeRepoSP(), *testDocMan.getTypeConfig()));
     EXPECT_TRUE(!result->initialize().hasError());
-    EXPECT_TRUE(!result->getPartitionStates().hasError());
     return result;
 }
 
@@ -419,13 +418,12 @@ TEST_F(ConformanceTest, testListBuckets)
     _factory->clear();
     PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
 
-    PartitionId partId(0);
     BucketId bucketId1(8, 0x01);
     BucketId bucketId2(8, 0x02);
     BucketId bucketId3(8, 0x03);
-    Bucket bucket1(makeSpiBucket(bucketId1, partId));
-    Bucket bucket2(makeSpiBucket(bucketId2, partId));
-    Bucket bucket3(makeSpiBucket(bucketId3, partId));
+    Bucket bucket1(makeSpiBucket(bucketId1));
+    Bucket bucket2(makeSpiBucket(bucketId2));
+    Bucket bucket3(makeSpiBucket(bucketId3));
 
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x02, 2);
@@ -440,12 +438,7 @@ TEST_F(ConformanceTest, testListBuckets)
     spi->put(bucket3, Timestamp(3), doc3, context);
 
     {
-        BucketIdListResult result = spi->listBuckets(makeBucketSpace(), PartitionId(1));
-        EXPECT_TRUE(result.getList().empty());
-    }
-
-    {
-        BucketIdListResult result = spi->listBuckets(makeBucketSpace(), partId);
+        BucketIdListResult result = spi->listBuckets(makeBucketSpace());
         const BucketIdListResult::List &bucketList = result.getList();
         EXPECT_EQ(3u, (uint32_t)bucketList.size());
         EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), bucketId1) != bucketList.end());
@@ -2216,10 +2209,9 @@ void assertBucketInfo(PersistenceProvider &spi, const Bucket &bucket, uint32_t e
 
 void assertBucketList(PersistenceProvider &spi,
                       BucketSpace &bucketSpace,
-                      PartitionId partId,
                       const std::vector<BucketId> &expBuckets)
 {
-    BucketIdListResult result = spi.listBuckets(bucketSpace, partId);
+    BucketIdListResult result = spi.listBuckets(bucketSpace);
     const BucketIdListResult::List &bucketList = result.getList();
     EXPECT_EQ(expBuckets.size(), bucketList.size());
     for (const auto &expBucket : expBuckets) {
@@ -2239,13 +2231,12 @@ TEST_F(ConformanceTest, testBucketSpaces)
     BucketSpace bucketSpace0(makeBucketSpace("testdoctype1"));
     BucketSpace bucketSpace1(makeBucketSpace("testdoctype2"));
     BucketSpace bucketSpace2(makeBucketSpace("no"));
-    PartitionId partId(0);
 
     BucketId bucketId1(8, 0x01);
     BucketId bucketId2(8, 0x02);
-    Bucket bucket01({ bucketSpace0, bucketId1 }, partId);
-    Bucket bucket11({ bucketSpace1, bucketId1 }, partId);
-    Bucket bucket12({ bucketSpace1, bucketId2 }, partId);
+    Bucket bucket01({ bucketSpace0, bucketId1 });
+    Bucket bucket11({ bucketSpace1, bucketId1 });
+    Bucket bucket12({ bucketSpace1, bucketId2 });
     Document::SP doc1 = testDocMan.createDocument("content", "id:test:testdoctype1:n=1:1", "testdoctype1");
     Document::SP doc2 = testDocMan.createDocument("content", "id:test:testdoctype1:n=1:2", "testdoctype1");
     Document::SP doc3 = testDocMan.createDocument("content", "id:test:testdoctype2:n=1:3", "testdoctype2");
@@ -2258,9 +2249,9 @@ TEST_F(ConformanceTest, testBucketSpaces)
     spi->put(bucket11, Timestamp(5), doc3, context);
     spi->put(bucket12, Timestamp(6), doc4, context);
     // Check bucket lists
-    assertBucketList(*spi, bucketSpace0, partId, { bucketId1 });
-    assertBucketList(*spi, bucketSpace1, partId, { bucketId1, bucketId2 });
-    assertBucketList(*spi, bucketSpace2, partId, { });
+    assertBucketList(*spi, bucketSpace0, { bucketId1 });
+    assertBucketList(*spi, bucketSpace1, { bucketId1, bucketId2 });
+    assertBucketList(*spi, bucketSpace2, { });
     // Check bucket info
     assertBucketInfo(*spi, bucket01, 2);
     assertBucketInfo(*spi, bucket11, 1);

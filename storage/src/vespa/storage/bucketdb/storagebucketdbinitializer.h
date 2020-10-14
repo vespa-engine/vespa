@@ -78,14 +78,12 @@ class StorageBucketDBInitializer : public StorageLink,
     struct System {
         DoneInitializeHandler& _doneInitializeHandler;
         ServiceLayerComponent _component;
-        const spi::PartitionStateList& _partitions;
         const ContentBucketSpaceRepo& _bucketSpaceRepo;
         uint32_t _nodeIndex;
         lib::NodeState _nodeState; // Disk info for ideal state calculations
         framework::Thread::UP _thread;
 
-        System(const spi::PartitionStateList&,
-               DoneInitializeHandler& doneInitializeHandler,
+        System(DoneInitializeHandler& doneInitializeHandler,
                ServiceLayerComponentRegister&,
                const Config&);
         ~System();
@@ -145,7 +143,6 @@ private:
 
 public:
     StorageBucketDBInitializer(const config::ConfigUri&,
-                               const spi::PartitionStateList&,
                                DoneInitializeHandler&,
                                ServiceLayerComponentRegister&);
     ~StorageBucketDBInitializer();

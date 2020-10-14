@@ -6,7 +6,6 @@
 #include "context.h"
 #include "docentry.h"
 #include "documentselection.h"
-#include "partitionstate.h"
 #include "result.h"
 #include "selection.h"
 #include "clusterstate.h"
@@ -26,11 +25,6 @@ namespace storage::spi {
  * groups a set of documents. The persistence provider can choose freely
  * how to implement a bucket, but it needs to be able to access a bucket as
  * a unit. The placement of these units is controlled by the distributors.
- * <p/>
- * A persistence provider may support multiple "partitions". One example of
- * a partition is a physical disk, but the exact meaning of "partitions"
- * is left to the provider. It must be able to report to the service layer
- * though.
  * <p/>
  * All operations return a Result object. The base Result class only
  * encapsulates potential errors, which can be <i>transient</i>,
@@ -73,17 +67,9 @@ struct PersistenceProvider
     virtual Result initialize() = 0;
 
     /**
-     * Returns a list of the partitions available, and which are up and down.
-     * Currently called once on startup. Partitions are not allowed to change
-     * runtime.
+     * Return list of buckets that provider has stored.
      */
-    virtual PartitionStateListResult getPartitionStates() const = 0;
-
-    /**
-     * Return list of buckets that provider has stored on the given partition.
-     * Typically called once per partition on startup.
-     */
-    virtual BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const = 0;
+    virtual BucketIdListResult listBuckets(BucketSpace bucketSpace) const = 0;
 
     /**
      * Updates the persistence provider with the last cluster state.
@@ -388,13 +374,6 @@ struct PersistenceProvider
      * source1 and source2 should be stored in the target bucket.
      */
     virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) = 0;
-
-    /**
-     * Moves a bucket from one partition to another.
-     *
-     * @param target The partition to move to. (From partition is in bucket)
-     */
-    virtual Result move(const Bucket&, PartitionId target, Context&) = 0;
 };
 
 }

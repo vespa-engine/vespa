@@ -30,7 +30,6 @@ private:
     using IterateResult = storage::spi::IterateResult;
     using IteratorId = storage::spi::IteratorId;
     using PartitionId = storage::spi::PartitionId;
-    using PartitionStateListResult = storage::spi::PartitionStateListResult;
     using RemoveResult = storage::spi::RemoveResult;
     using Result = storage::spi::Result;
     using Selection = storage::spi::Selection;
@@ -95,8 +94,7 @@ public:
 
     // Implements PersistenceProvider
     Result initialize() override;
-    PartitionStateListResult getPartitionStates() const override;
-    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
     Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;

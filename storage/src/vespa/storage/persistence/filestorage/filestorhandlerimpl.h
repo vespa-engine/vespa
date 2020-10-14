@@ -235,7 +235,7 @@ public:
     };
 
     FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
-                        const spi::PartitionStateList&, ServiceLayerComponentRegister&);
+                        ServiceLayerComponentRegister&);
 
     ~FileStorHandlerImpl();
     void setGetNextMessageTimeout(vespalib::duration timeout) { _getNextMessageTimeout = timeout; }

@@ -94,7 +94,7 @@ void
 SpiBmFeedHandler::put(const document::Bucket& bucket, std::unique_ptr<Document> document, uint64_t timestamp, PendingTracker& tracker)
 {
     get_bucket_info_loop(tracker);
-    Bucket spi_bucket(bucket, PartitionId(0));
+    Bucket spi_bucket(bucket);
     _provider.putAsync(spi_bucket, Timestamp(timestamp), std::move(document), context, std::make_unique<MyOperationComplete>(_errors, spi_bucket, tracker));
 }
 
@@ -102,7 +102,7 @@ void
 SpiBmFeedHandler::update(const document::Bucket& bucket, std::unique_ptr<DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker)
 {
     get_bucket_info_loop(tracker);
-    Bucket spi_bucket(bucket, PartitionId(0));
+    Bucket spi_bucket(bucket);
     _provider.updateAsync(spi_bucket, Timestamp(timestamp), std::move(document_update), context, std::make_unique<MyOperationComplete>(_errors, spi_bucket, tracker));
 }
 
@@ -110,7 +110,7 @@ void
 SpiBmFeedHandler::remove(const document::Bucket& bucket, const DocumentId& document_id,  uint64_t timestamp, PendingTracker& tracker)
 {
     get_bucket_info_loop(tracker);
-    Bucket spi_bucket(bucket, PartitionId(0));
+    Bucket spi_bucket(bucket);
     _provider.removeAsync(spi_bucket, Timestamp(timestamp), document_id, context, std::make_unique<MyOperationComplete>(_errors, spi_bucket, tracker));
 }
 
@@ -118,7 +118,7 @@ void
 SpiBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
 {
     get_bucket_info_loop(tracker);
-    Bucket spi_bucket(bucket, PartitionId(0));
+    Bucket spi_bucket(bucket);
     auto field_set = _field_set_repo.getFieldSet(field_set_string);
     auto result = _provider.get(spi_bucket, *field_set, document_id, context);
     if (result.hasError()) {
@@ -129,7 +129,7 @@ SpiBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_
 void
 SpiBmFeedHandler::create_bucket(const document::Bucket& bucket)
 {
-    _provider.createBucket(Bucket(bucket, PartitionId(0)), context);
+    _provider.createBucket(Bucket(bucket), context);
 }
 
 void

@@ -49,7 +49,6 @@ class FileStorManager : public StorageLinkQueued,
 {
     ServiceLayerComponentRegister & _compReg;
     ServiceLayerComponent          _component;
-    const spi::PartitionStateList & _partitions;
     spi::PersistenceProvider      & _providerCore;
     ProviderErrorWrapper            _providerErrorWrapper;
     spi::PersistenceProvider      * _provider;
@@ -73,7 +72,7 @@ class FileStorManager : public StorageLinkQueued,
     friend struct FileStorManagerTest;
 
 public:
-    FileStorManager(const config::ConfigUri &, const spi::PartitionStateList&,
+    FileStorManager(const config::ConfigUri &,
                     spi::PersistenceProvider&, ServiceLayerComponentRegister&);
     FileStorManager(const FileStorManager &) = delete;
     FileStorManager& operator=(const FileStorManager &) = delete;

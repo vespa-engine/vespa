@@ -27,16 +27,8 @@ DownPersistence::initialize()
     return Result();
 }
 
-PartitionStateListResult
-DownPersistence::getPartitionStates() const
-{
-    PartitionStateList list(1);
-    list[0] = PartitionState(PartitionState::DOWN, _downReason);
-    return PartitionStateListResult(list);
-}
-
 BucketIdListResult
-DownPersistence::listBuckets(BucketSpace, PartitionId) const
+DownPersistence::listBuckets(BucketSpace) const
 {
     return BucketIdListResult(errorResult.getErrorCode(), errorResult.getErrorMessage());
 }
@@ -141,13 +133,6 @@ DownPersistence::split(const Bucket&, const Bucket&, const Bucket&, Context&)
 
 Result
 DownPersistence::join(const Bucket&, const Bucket&, const Bucket&, Context&)
-{
-    return errorResult;
-}
-
-
-Result
-DownPersistence::move(const Bucket&, PartitionId, Context&)
 {
     return errorResult;
 }

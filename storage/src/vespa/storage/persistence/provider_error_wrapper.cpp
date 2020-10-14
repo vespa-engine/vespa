@@ -47,16 +47,10 @@ ProviderErrorWrapper::initialize()
     return checkResult(_impl.initialize());
 }
 
-spi::PartitionStateListResult
-ProviderErrorWrapper::getPartitionStates() const
-{
-    return checkResult(_impl.getPartitionStates());
-}
-
 spi::BucketIdListResult
-ProviderErrorWrapper::listBuckets(BucketSpace bucketSpace, spi::PartitionId partitionId) const
+ProviderErrorWrapper::listBuckets(BucketSpace bucketSpace) const
 {
-    return checkResult(_impl.listBuckets(bucketSpace, partitionId));
+    return checkResult(_impl.listBuckets(bucketSpace));
 }
 
 spi::Result
@@ -159,12 +153,6 @@ ProviderErrorWrapper::join(const spi::Bucket& source1, const spi::Bucket& source
                            const spi::Bucket& target, spi::Context& context)
 {
     return checkResult(_impl.join(source1, source2, target, context));
-}
-
-spi::Result
-ProviderErrorWrapper::move(const spi::Bucket& source, spi::PartitionId target, spi::Context& context)
-{
-    return checkResult(_impl.move(source, target, context));
 }
 
 spi::Result

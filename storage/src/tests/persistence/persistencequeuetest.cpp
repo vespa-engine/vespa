@@ -49,9 +49,9 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
     top.push_back(std::move(dummyManager));
     top.open();
 
-    metrics.initDiskMetrics(parent._node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    filestorHandler = std::make_unique<FileStorHandler>(messageSender, metrics, parent._node->getPartitions(),
+    filestorHandler = std::make_unique<FileStorHandler>(messageSender, metrics,
                                                         parent._node->getComponentRegister());
     // getNextMessage will time out if no unlocked buckets are present. Choose a timeout
     // that is large enough to fail tests with high probability if this is not the case,
@@ -65,7 +65,7 @@ PersistenceQueueTest::Fixture::~Fixture() = default;
 
 void PersistenceQueueTest::SetUp() {
     setupPersistenceThreads(1);
-    _node->setPersistenceProvider(std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo(), 1));
+    _node->setPersistenceProvider(std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo()));
 }
 
 std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createPut(uint64_t bucket, uint64_t docIdx) {

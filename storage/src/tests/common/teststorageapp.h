@@ -110,7 +110,6 @@ class TestServiceLayerApp : public TestStorageApp
     using PersistenceProviderUP = std::unique_ptr<spi::PersistenceProvider>;
     ServiceLayerComponentRegisterImpl& _compReg;
     PersistenceProviderUP _persistenceProvider;
-    spi::PartitionStateList _partitions;
 
 public:
     TestServiceLayerApp(vespalib::stringref configId = "");
@@ -124,8 +123,6 @@ public:
     ServiceLayerComponentRegisterImpl& getComponentRegister() { return _compReg; }
 
     spi::PersistenceProvider& getPersistenceProvider();
-    spi::PartitionStateList& getPartitions();
-    uint16_t getPartition(const document::BucketId&);
 
     StorBucketDatabase& getStorageBucketDatabase() override {
         return _compReg.getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).bucketDatabase();

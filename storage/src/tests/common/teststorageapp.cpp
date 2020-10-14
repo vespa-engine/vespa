@@ -139,8 +139,7 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
     : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
                      lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
-      _persistenceProvider(),
-      _partitions(1)
+      _persistenceProvider()
 {
     _compReg.setDiskCount(1);
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
@@ -153,16 +152,13 @@ TestServiceLayerApp::TestServiceLayerApp(DiskCount dc, NodeIndex index,
     : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
                      lib::NodeType::STORAGE, index, configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
-      _persistenceProvider(),
-      _partitions(dc)
+      _persistenceProvider()
 {
-    _compReg.setDiskCount(dc);
+    assert(dc == 1u);
+    _compReg.setDiskCount(1);
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
-    ns.setDiskCount(dc);
+    ns.setDiskCount(1);
     _nodeStateUpdater.setReportedNodeState(ns);
-    // Tests should know how many disks they want to use. If testing auto
-    // detection, you should not need this utility.
-    assert(dc > 0);
 }
 
 TestServiceLayerApp::~TestServiceLayerApp() = default;
@@ -170,15 +166,15 @@ TestServiceLayerApp::~TestServiceLayerApp() = default;
 void
 TestServiceLayerApp::setupDummyPersistence()
 {
-    auto provider = std::make_unique<spi::dummy::DummyPersistence>(getTypeRepo(), _compReg.getDiskCount());
+    assert(_compReg.getDiskCount() == 1u);
+    auto provider = std::make_unique<spi::dummy::DummyPersistence>(getTypeRepo());
+    provider->initialize();
     setPersistenceProvider(std::move(provider));
 }
 
 void
 TestServiceLayerApp::setPersistenceProvider(PersistenceProviderUP provider)
 {
-    _partitions = provider->getPartitionStates().getList();
-    assert(spi::PartitionId(_compReg.getDiskCount()) == _partitions.size());
     _persistenceProvider = std::move(provider);
 }
 
@@ -189,25 +185,6 @@ TestServiceLayerApp::getPersistenceProvider()
         throw vespalib::IllegalStateException("Persistence provider requested but not initialized.", VESPA_STRLOC);
     }
     return *_persistenceProvider;
-}
-
-spi::PartitionStateList&
-TestServiceLayerApp::getPartitions()
-{
-    if (_persistenceProvider.get() == 0) {
-        throw vespalib::IllegalStateException("Partition list requested but not initialized.", VESPA_STRLOC);
-    }
-    return _partitions;
-}
-
-uint16_t
-TestServiceLayerApp::getPartition(const document::BucketId& bucket)
-{
-    lib::NodeState state(lib::NodeType::STORAGE, lib::State::UP);
-    state.setDiskCount(_compReg.getDiskCount());
-    return getDistribution()->getIdealDisk(
-            state, _compReg.getIndex(), bucket.stripUnused(),
-            lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN);
 }
 
 namespace {

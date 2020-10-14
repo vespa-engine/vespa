@@ -48,11 +48,6 @@ public:
      * Default impl empty.
      */
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
-
-    /**
-     * Uses join by default.
-     */
-    Result move(const Bucket& source, PartitionId id, Context&) override;
 };
 
 }

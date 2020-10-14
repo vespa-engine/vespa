@@ -21,8 +21,6 @@ using storage::spi::BucketIdListResult;
 using storage::spi::BucketInfo;
 using storage::spi::BucketInfoResult;
 using storage::spi::IncludedVersions;
-using storage::spi::PartitionState;
-using storage::spi::PartitionStateList;
 using storage::spi::Result;
 using vespalib::IllegalStateException;
 using vespalib::Sequence;
@@ -242,24 +240,12 @@ PersistenceEngine::initialize()
 }
 
 
-PersistenceEngine::PartitionStateListResult
-PersistenceEngine::getPartitionStates() const
-{
-    PartitionStateList list(1);
-    return PartitionStateListResult(list);
-}
-
-
 BucketIdListResult
-PersistenceEngine::listBuckets(BucketSpace bucketSpace, PartitionId id) const
+PersistenceEngine::listBuckets(BucketSpace bucketSpace) const
 {
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
     ReadGuard rguard(_rwMutex);
-    if (id != 0) {
-        BucketIdListResult::List emptyList;
-        return BucketIdListResult(emptyList);
-    }
     HandlerSnapshot snap = getHandlerSnapshot(rguard, bucketSpace);
     BucketIdListResultHandler resultHandler;
     for (; snap.handlers().valid(); snap.handlers().next()) {

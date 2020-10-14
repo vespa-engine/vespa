@@ -260,8 +260,8 @@ PersistenceUtil::getBucketInfo(const document::Bucket &bucket, int disk) const
         disk = _partition;
     }
 
-    spi::BucketInfoResult response =
-        _spi.getBucketInfo(spi::Bucket(bucket, spi::PartitionId(disk)));
+    assert(disk == 0u);
+    spi::BucketInfoResult response = _spi.getBucketInfo(spi::Bucket(bucket));
 
     return convertBucketInfo(response.getBucketInfo());
 }

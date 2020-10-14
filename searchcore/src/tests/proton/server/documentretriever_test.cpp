@@ -387,13 +387,12 @@ TEST_F("require that document retriever can retrieve document meta data", Fixtur
 
 TEST_F("require that document retriever can retrieve bucket meta data", Fixture) {
     DocumentMetaData::Vector result;
-    f._retriever->getBucketMetaData(makeSpiBucket(f.bucket_id, PartitionId(0)), result);
+    f._retriever->getBucketMetaData(makeSpiBucket(f.bucket_id), result);
     ASSERT_EQUAL(1u, result.size());
     EXPECT_EQUAL(f.lid, result[0].lid);
     EXPECT_EQUAL(f.timestamp, result[0].timestamp);
     result.clear();
-    f._retriever->getBucketMetaData(makeSpiBucket(BucketId(f.bucket_id.getId() + 1),
-                                         PartitionId(0)), result);
+    f._retriever->getBucketMetaData(makeSpiBucket(BucketId(f.bucket_id.getId() + 1)), result);
     EXPECT_EQUAL(0u, result.size());
 }
 

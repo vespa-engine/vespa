@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "partitionstate.h"
 #include "bucketinfo.h"
 #include "bucket.h"
 #include "docentry.h"
@@ -312,28 +311,6 @@ public:
 private:
     bool _completed;
     std::vector<DocEntry::UP> _entries;
-};
-
-class PartitionStateListResult : public Result
-{
-public:
-    /**
-     * Constructor to use for a result where an error has been detected.
-     */
-    PartitionStateListResult(ErrorType error, const vespalib::string& msg)
-        : Result(error, msg),
-          _list(0)
-    { }
-
-    /**
-     * Constructor to use when the operation was successful.
-     */
-    PartitionStateListResult(PartitionStateList list) : _list(list) { }
-
-    const PartitionStateList & getList() const { return _list; }
-
-private:
-    PartitionStateList _list;
 };
 
 }

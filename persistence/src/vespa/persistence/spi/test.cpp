@@ -9,14 +9,9 @@ using document::test::makeBucketSpace;
 
 namespace storage::spi::test {
 
-Bucket makeSpiBucket(BucketId bucketId, PartitionId partitionId)
-{
-    return Bucket(document::Bucket(makeBucketSpace(), bucketId), partitionId);
-}
-
 Bucket makeSpiBucket(BucketId bucketId)
 {
-    return makeSpiBucket(bucketId, PartitionId(0));
+    return Bucket(document::Bucket(makeBucketSpace(), bucketId));
 }
 
 }

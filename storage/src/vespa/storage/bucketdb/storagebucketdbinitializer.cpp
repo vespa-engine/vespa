@@ -63,13 +63,11 @@ StorageBucketDBInitializer::Config::Config(const config::ConfigUri & configUri)
 StorageBucketDBInitializer::System::~System() = default;
 
 StorageBucketDBInitializer::System::System(
-        const spi::PartitionStateList& partitions,
         DoneInitializeHandler& doneInitializeHandler,
         ServiceLayerComponentRegister& compReg,
         const Config&)
     : _doneInitializeHandler(doneInitializeHandler),
       _component(compReg, "storagebucketdbinitializer"),
-      _partitions(partitions),
       _bucketSpaceRepo(_component.getBucketSpaceRepo()),
       _nodeIndex(_component.getIndex()),
       _nodeState()
@@ -78,12 +76,7 @@ StorageBucketDBInitializer::System::System(
     // so it could work with disk capacities. Object is used to check for
     // correct disk further down (in the case of internal join, deciding which
     // should have it). Not that bad if wrong disk is picked though.
-    _nodeState.setDiskCount(_partitions.size());
-    for (uint32_t i=0; i<_partitions.size(); ++i) {
-        if (!_partitions[i].isUp()) {
-            _nodeState.setDiskState(i, lib::State::DOWN);
-        }
-    }
+    _nodeState.setDiskCount(1);
 }
 
 StorBucketDatabase &
@@ -131,20 +124,18 @@ StorageBucketDBInitializer::GlobalState::~GlobalState() { }
 
 StorageBucketDBInitializer::StorageBucketDBInitializer(
         const config::ConfigUri & configUri,
-        const spi::PartitionStateList& partitions,
         DoneInitializeHandler& doneInitializeHandler,
         ServiceLayerComponentRegister& compReg)
     : StorageLink("StorageBucketDBInitializer"),
       framework::HtmlStatusReporter("dbinit", "Bucket database initializer"),
       _config(configUri),
-      _system(partitions, doneInitializeHandler, compReg, _config),
+      _system(doneInitializeHandler, compReg, _config),
       _metrics(_system._component),
       _state(),
-      _readState(_system._partitions.size())
+      _readState(1u)
 {
         // Initialize read state for disks being available
-    for (uint32_t i=0; i<_system._partitions.size(); ++i) {
-        if (!_system._partitions[i].isUp()) continue;
+    for (uint32_t i=0; i< _readState.size(); ++i) {
         _readState[i] = std::make_unique<BucketSpaceReadState>();
         for (const auto &elem : _system._bucketSpaceRepo) {
             _readState[i]->emplace(elem.first, std::make_unique<BucketReadState>());
@@ -167,8 +158,7 @@ void
 StorageBucketDBInitializer::onOpen()
 {
         // Trigger bucket database initialization
-    for (uint32_t i=0; i<_system._partitions.size(); ++i) {
-        if (!_system._partitions[i].isUp()) continue;
+    for (uint32_t i=0; i< _readState.size(); ++i) {
         assert(_readState[i]);
         const BucketSpaceReadState &spaceState = *_readState[i];
         for (const auto &stateElem : spaceState) {

@@ -84,7 +84,8 @@ struct OperationAbortingTest : FileStorTestFixture {
 
     void setupProviderAndBarriers(uint32_t queueBarrierThreads) {
         FileStorTestFixture::setupPersistenceThreads(1);
-        _dummyProvider = std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo(), 1);
+        _dummyProvider = std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo());
+        _dummyProvider->initialize();
         _queueBarrier = std::make_unique<vespalib::Barrier>(queueBarrierThreads);
         _completionBarrier = std::make_unique<vespalib::Barrier>(2);
         auto blockingProvider = std::make_unique<BlockingMockProvider>(*_dummyProvider, *_queueBarrier, *_completionBarrier);
