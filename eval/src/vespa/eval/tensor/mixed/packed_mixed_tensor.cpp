@@ -1,8 +1,19 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "packed_mixed_tensor.h"
+#include <vespa/vespalib/util/typify.h>
 
 namespace vespalib::eval::packed_mixed_tensor {
+
+namespace {
+
+struct MySize {
+    template <typename CT> static size_t invoke(TypedCells cells) {
+        return (sizeof(CT) * cells.size);
+    }
+};
+
+} // namespace <unnamed>
 
 /*********************************************************************************/
 
@@ -193,6 +204,15 @@ PackedMixedTensorAllMappings::next_result(ConstArrayRef<vespalib::stringref*> ad
 /*********************************************************************************/
 
 PackedMixedTensor::~PackedMixedTensor() = default;
+
+MemoryUsage
+PackedMixedTensor::get_memory_usage() const {
+    MemoryUsage usage = self_memory_usage<PackedMixedTensor>();
+    size_t cells_size = typify_invoke<1,TypifyCellType,MySize>(type().cell_type(), cells());
+    usage.merge(MemoryUsage(cells_size, cells_size, 0, 0));
+    usage.merge(_mappings.estimate_extra_memory_usage());
+    return usage;
+}
 
 std::unique_ptr<Value::Index::View>
 PackedMixedTensor::create_view(const std::vector<size_t> &dims) const

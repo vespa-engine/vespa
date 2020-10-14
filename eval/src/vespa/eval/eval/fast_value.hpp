@@ -191,6 +191,12 @@ struct FastValue final : Value, ValueBuilder<T> {
         self.release();
         return std::unique_ptr<Value>(this);
     }
+    MemoryUsage get_memory_usage() const override {
+        MemoryUsage usage = self_memory_usage<FastValue<T>>();
+        usage.merge(vector_extra_memory_usage(my_cells));
+        usage.merge(my_index.map.estimate_extra_memory_usage());
+        return usage;
+    }
 };
 template <typename T> FastValue<T>::~FastValue() = default;
 

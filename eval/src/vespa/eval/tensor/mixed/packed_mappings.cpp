@@ -99,6 +99,16 @@ PackedMappings::fill_address_by_sortid(uint32_t internal_index, Address &address
     return _int_store[offset];
 }
 
+MemoryUsage
+PackedMappings::estimate_extra_memory_usage() const
+{
+    MemoryUsage extra_usage;
+    size_t store_size = _int_store.size() * sizeof(uint32_t);
+    extra_usage.merge(MemoryUsage(store_size, store_size, 0, 0));
+    extra_usage.merge(_label_store.estimate_extra_memory_usage());
+    return extra_usage;
+}
+
 void
 PackedMappings::validate() const
 {

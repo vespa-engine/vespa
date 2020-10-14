@@ -47,6 +47,8 @@ public:
 
     // mapping from label enum to stringref (and vice versa)
     const PackedLabels & label_store() const { return _label_store; }
+
+    MemoryUsage estimate_extra_memory_usage() const;
 private:
     PackedMappings(uint32_t num_dims, uint32_t num_mappings,
                    ConstArrayRef<uint32_t> int_store,

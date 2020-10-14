@@ -31,6 +31,7 @@ protected:
     size_t num_mapped_dims() const { return _num_mapped_dims; }
     size_t subspace_size() const { return _subspace_size; }
     void add_mapping(ConstArrayRef<vespalib::stringref> addr);
+    MemoryUsage estimate_extra_memory_usage() const;
 public:
     SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValue() override;
@@ -62,6 +63,12 @@ public:
         assert(me == self.get());
         self.release();
         return std::unique_ptr<Value>(this);
+    }
+    MemoryUsage get_memory_usage() const override {
+        MemoryUsage usage = self_memory_usage<SimpleValueT<T>>();
+        usage.merge(vector_extra_memory_usage(_cells));
+        usage.merge(estimate_extra_memory_usage());
+        return usage;
     }
 };
 
