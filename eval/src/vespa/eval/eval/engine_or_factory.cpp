@@ -8,6 +8,8 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/default_value_builder_factory.h>
 #include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
+#include <vespa/vespalib/data/memory.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -74,6 +76,14 @@ EngineOrFactory::decode(nbostream &input) const
     } else {
         return decode_value(input, factory());
     }
+}
+
+std::unique_ptr<Value>
+EngineOrFactory::copy(const Value &value)
+{
+    nbostream stream;
+    encode(value, stream);
+    return decode(stream);
 }
 
 const Value &
