@@ -98,7 +98,10 @@ MetricManager::stop()
         return; // Let stop() be idempotent.
     }
     Runnable::stop();
-    _cond.notify_all();
+    {
+        MetricLockGuard sync(_waiter);
+        _cond.notify_all();
+    }
     join();
 }
 
@@ -643,6 +646,7 @@ MetricManager::getMetricSnapshotSet(const MetricLockGuard& l,
 void
 MetricManager::timeChangedNotification() const
 {
+    MetricLockGuard sync(_waiter);
     _cond.notify_all();
 }
 
@@ -714,6 +718,7 @@ MetricManager::forceEventLogging()
 {
     LOG(debug, "Forcing event logging to happen.");
     // Ensure background thread is not in a current cycle during change.
+    MetricLockGuard sync(_waiter);
     _cond.notify_all();
 }
 
