@@ -1,12 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "thread.h"
+#include "time.h"
 #include <thread>
 #include <cassert>
 
 namespace vespalib {
 
 __thread Thread *Thread::_currentThread = nullptr;
+
+Thread::Proxy::Proxy(Thread &parent, Runnable &target)
+    : thread(parent), runnable(target),
+    start(), started(), cancel(false)
+{ }
 
 void
 Thread::Proxy::Run(FastOS_ThreadInterface *, void *)
@@ -27,7 +33,8 @@ Thread::Proxy::~Proxy() = default;
 Thread::Thread(Runnable &runnable)
     : _proxy(*this, runnable),
       _pool(STACK_SIZE, 1),
-      _monitor(),
+      _lock(),
+      _cond(),
       _stopped(false),
       _woken(false)
 {
@@ -52,9 +59,9 @@ Thread::start()
 Thread &
 Thread::stop()
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     _stopped = true;
-    guard.broadcast();
+    _cond.notify_all();
     return *this;
 }
 
@@ -67,9 +74,9 @@ Thread::join()
 bool
 Thread::slumber(double s)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     if (!_stopped || _woken) {
-        if (guard.wait((int)(s * 1000.0))) {
+        if (_cond.wait_for(guard, from_s(s)) == std::cv_status::no_timeout) {
             _woken = _stopped;
         }
     } else {
