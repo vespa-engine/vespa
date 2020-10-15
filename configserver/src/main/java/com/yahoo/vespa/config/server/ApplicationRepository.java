@@ -293,14 +293,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         Tenant tenant = getTenant(prepareParams.getApplicationId());
-        validateThatLocalSessionIsNotActive(tenant, sessionId);
-        LocalSession session = getLocalSession(tenant, sessionId);
-        ApplicationId applicationId = prepareParams.getApplicationId();
+        LocalSession session = validateThatLocalSessionIsNotActive(tenant, sessionId);
         Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
         deployment.prepare();
-
         logConfigChangeActions(deployment.configChangeActions(), logger);
-        log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+        log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + sessionId + " prepared successfully. ");
         return deployment;
     }
 
@@ -436,20 +433,20 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getTenantMetaData(tenant);
     }
 
-    static void checkIfActiveHasChanged(LocalSession session, Session currentActiveSession, boolean ignoreStaleSessionFailure) {
+    static void checkIfActiveHasChanged(LocalSession session, Session activeSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
-        log.log(Level.FINE, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
-        if (activeSessionAtCreate == 0) return; // No active session at create
+        log.log(Level.FINE, activeSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        if (activeSessionAtCreate == 0) return; // No active session at create time
 
         long sessionId = session.getSessionId();
-        long currentActiveSessionSessionId = currentActiveSession.getSessionId();
-        log.log(Level.FINE, currentActiveSession.logPre() + "sessionId=" + sessionId +
-                            ", current active session=" + currentActiveSessionSessionId);
-        if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
-            currentActiveSessionSessionId != sessionId) {
-            String errMsg = currentActiveSession.logPre() + "Cannot activate session " +
+        long activeSessionSessionId = activeSession.getSessionId();
+        log.log(Level.FINE, activeSession.logPre() + "sessionId=" + sessionId +
+                            ", current active session=" + activeSessionSessionId);
+        if (activeSession.isNewerThan(activeSessionAtCreate) &&
+            activeSessionSessionId != sessionId) {
+            String errMsg = activeSession.logPre() + "Cannot activate session " +
                             sessionId + " because the currently active session (" +
-                            currentActiveSessionSessionId + ") has changed since session " + sessionId +
+                            activeSessionSessionId + ") has changed since session " + sessionId +
                             " was created (was " + activeSessionAtCreate + " at creation time)";
             if (ignoreStaleSessionFailure) {
                 log.warning(errMsg + " (Continuing because of force.)");
@@ -459,8 +456,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    // As of now, config generation is based on session id, and config generation must be a monotonically
-    // increasing number
+    // Config generation is equal to session id, and config generation must be a monotonically increasing number
     static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
             throw new ActivationConflictException("It is not possible to activate session " + sessionId +
@@ -912,11 +908,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return applicationId.orElse(null);
     }
 
-    private void validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
+    private LocalSession validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
         LocalSession session = getLocalSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
             throw new IllegalStateException("Session is active: " + sessionId);
         }
+        return session;
     }
 
     private LocalSession getLocalSession(Tenant tenant, long sessionId) {
