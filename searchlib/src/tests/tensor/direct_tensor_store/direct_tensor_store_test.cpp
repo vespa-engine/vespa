@@ -18,9 +18,7 @@ vespalib::string tensor_spec("tensor(x{})");
 Value::UP
 make_tensor(const TensorSpec& spec)
 {
-    auto value = EngineOrFactory::get().from_spec(spec);
-    assert(value->is_tensor());
-    return value;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 Value::UP

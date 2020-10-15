@@ -775,9 +775,7 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
 std::unique_ptr<vespalib::eval::Value>
 makeTensor(const TensorSpec &spec)
 {
-    auto result = EngineOrFactory::get().from_spec(spec);
-    EXPECT_TRUE(result->is_tensor());
-    return result;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>

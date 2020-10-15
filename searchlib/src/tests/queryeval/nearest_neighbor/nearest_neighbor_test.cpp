@@ -42,7 +42,6 @@ DistanceFunction::UP euclid_f = search::tensor::make_distance_function(DistanceM
 
 std::unique_ptr<Value> createTensor(const TensorSpec &spec) {
     auto value = EngineOrFactory::get().from_spec(spec);
-    ASSERT_TRUE(value->is_tensor());
     return value;
 }
 

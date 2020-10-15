@@ -442,8 +442,7 @@ struct TensorFixture : public Fixture {
     }
 
     void assertTensor(const TensorSpec &expSpec) {
-        auto engine = EngineOrFactory::get();
-        auto actual = engine.to_spec(*attribute->getTensor(1));
+        auto actual = EngineOrFactory::get().to_spec(*attribute->getTensor(1));
         EXPECT_EQUAL(expSpec, actual);
     }
 };

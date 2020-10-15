@@ -61,8 +61,7 @@ vespalib::string denseSpec("tensor(x[2],y[3])");
 vespalib::string vec_2d_spec("tensor(x[2])");
 
 Value::UP createTensor(const TensorSpec &spec) {
-    auto value = EngineOrFactory::get().from_spec(spec);
-    return value;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 TensorSpec
@@ -904,8 +903,7 @@ public:
     }
 
     std::unique_ptr<Value> createDenseTensor(const TensorSpec &spec) {
-        auto value = EngineOrFactory::get().from_spec(spec);
-        return value;
+        return EngineOrFactory::get().from_spec(spec);
     }
 
     std::unique_ptr<NearestNeighborBlueprint> make_blueprint(double brute_force_limit = 0.05) {

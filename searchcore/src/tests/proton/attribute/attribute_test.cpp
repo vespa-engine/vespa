@@ -641,8 +641,7 @@ TEST_F(FilterAttributeManagerTest, readable_attribute_vector_filters_attributes)
 namespace {
 
 Value::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = EngineOrFactory::get().from_spec(spec);
-    return tensor;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 const vespalib::string sparse_tensor = "tensor(x{},y{})";

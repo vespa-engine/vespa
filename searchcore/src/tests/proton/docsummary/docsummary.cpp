@@ -139,8 +139,7 @@ getDocTypeName()
 }
 
 vespalib::eval::Value::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = EngineOrFactory::get().from_spec(spec);
-    return tensor;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 vespalib::string asVstring(vespalib::Memory str) {

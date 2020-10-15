@@ -772,9 +772,7 @@ namespace
 {
 
 vespalib::eval::Value::UP createTensor(const TensorSpec &spec) {
-    auto value = EngineOrFactory::get().from_spec(spec);
-    ASSERT_TRUE(value->is_tensor());
-    return value;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 }

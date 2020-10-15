@@ -36,8 +36,7 @@ typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
 
 Value::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = EngineOrFactory::get().from_spec(spec);
-    return tensor;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 Value::UP make_empty(const vespalib::string &type) {
@@ -123,7 +122,6 @@ struct ExecFixture
     }
     const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().is_tensor());
         return value.get();
     }
     const Value &execute() {

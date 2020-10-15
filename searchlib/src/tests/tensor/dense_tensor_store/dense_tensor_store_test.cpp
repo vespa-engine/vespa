@@ -23,8 +23,7 @@ using EntryRef = DenseTensorStore::EntryRef;
 Value::UP
 makeTensor(const TensorSpec &spec)
 {
-    auto tensor = EngineOrFactory::get().from_spec(spec);
-    return tensor;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 struct Fixture
