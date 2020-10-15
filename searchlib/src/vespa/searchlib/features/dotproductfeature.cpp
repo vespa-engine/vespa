@@ -10,7 +10,7 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -19,6 +19,8 @@ LOG_SETUP(".features.dotproduct");
 
 using namespace search::attribute;
 using namespace search::fef;
+using vespalib::eval::EngineOrFactory;
+using vespalib::eval::TypedCells;
 using vespalib::hwaccelrated::IAccelrated;
 
 namespace search::features {
@@ -473,7 +475,19 @@ parseVectors<int8_t, int8_t>(const Property& prop, std::vector<int8_t>& values, 
     parseVectors<int8_t, int16_t>(prop, values, indexes);
 }
 
-}
+template <typename TCT>
+struct CopyCellsToVector {
+    template<typename ICT>
+    static void invoke(TypedCells source, std::vector<TCT> &target) {
+        target.reserve(source.size);
+        auto cells = source.typify<ICT>();
+        for (auto value : cells) {
+            target.push_back(value);
+        }
+    }
+};
+
+} // namespace <unnamed>
 
 namespace dotproduct {
 
@@ -484,7 +498,15 @@ ArrayParam<T>::ArrayParam(const Property & prop) {
 
 template <typename T>
 ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
-    vespalib::tensor::TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(stream, values);
+    using vespalib::typify_invoke;
+    using vespalib::eval::TypifyCellType;
+    auto tensor = EngineOrFactory::get().decode(stream);
+    if (tensor->type().is_dense()) {
+        TypedCells cells = tensor->cells();
+        typify_invoke<1,TypifyCellType,CopyCellsToVector<T>>(cells.type, cells, values);
+    } else {
+        LOG(warning, "Expected dense tensor, but got type '%s'", tensor->type().to_spec().c_str());
+    }
 }
 
 template <typename T>
