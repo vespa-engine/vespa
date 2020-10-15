@@ -3,10 +3,8 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/partial_update.h>
-#include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -75,12 +73,8 @@ TensorSpec perform_old_modify(const TensorSpec &a, const TensorSpec &b, join_fun
     const auto &engine = tensor::DefaultTensorEngine::ref();
     auto lhs = engine.from_spec(a);
     auto rhs = engine.from_spec(b);
-    auto lhs_tensor = dynamic_cast<tensor::Tensor *>(lhs.get());
-    EXPECT_TRUE(lhs_tensor);
-    auto rhs_sparse = dynamic_cast<tensor::SparseTensor *>(rhs.get());
-    EXPECT_TRUE(rhs_sparse);
-    tensor::CellValues cell_values(*rhs_sparse);
-    auto up = lhs_tensor->modify(fun, cell_values);
+    EXPECT_TRUE(tensor::TensorPartialUpdate::check_suitably_sparse(*rhs, engine));
+    auto up = tensor::TensorPartialUpdate::modify(*lhs, fun, *rhs, engine);
     EXPECT_TRUE(up);
     return engine.to_spec(*up);
 }
