@@ -110,7 +110,7 @@ public:
     /**
      * Used by file stor threads to get their next message to process.
      *
-     * @param disk The disk to get messages for
+     * @param stripe The stripe to get messages for
      */
     LockedMessage getNextMessage(uint32_t stripeId);
 
