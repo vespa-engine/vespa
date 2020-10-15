@@ -364,7 +364,7 @@ TensorPartialUpdate::modify(const Value &input, join_fun_t function,
                             const Value &modifier, EngineOrFactory engine)
 {
     if (engine.is_engine()) {
-        auto inp_ptr = dynamic_cast<const Tensor *>(&input);
+        auto inp_ptr = dynamic_cast<const tensor::Tensor *>(&input);
         auto mod_ptr = dynamic_cast<const SparseTensor *>(&modifier);
         if (inp_ptr && mod_ptr) {
             vespalib::tensor::CellValues cellValues(*mod_ptr);
