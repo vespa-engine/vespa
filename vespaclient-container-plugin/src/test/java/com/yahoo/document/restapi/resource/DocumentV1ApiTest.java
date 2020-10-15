@@ -61,8 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -457,9 +455,9 @@ public class DocumentV1ApiTest {
 
         // OVERLOAD is a 429
         access.session.expect((id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, new Error("overload")));
-        var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");
-        var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");
-        var response3 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");
+        var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
+        var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
+        var response3 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
                        "  \"message\": \"Rejecting execution due to overload: 2 requests already enqueued\"" +
