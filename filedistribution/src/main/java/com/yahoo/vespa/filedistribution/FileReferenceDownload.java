@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.filedistribution;
 
@@ -15,17 +15,15 @@ public class FileReferenceDownload {
     // If a config server wants to download from another config server (because it does not have the
     // file itself) we set this flag to true to avoid an eternal loop
     private final boolean downloadFromOtherSourceIfNotFound;
-    private final String client;
 
     public FileReferenceDownload(FileReference fileReference) {
-        this(fileReference, true, "unknown");
+        this(fileReference, true);
     }
 
-    public FileReferenceDownload(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound, String client) {
+    public FileReferenceDownload(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound) {
         this.fileReference = fileReference;
         this.future = new CompletableFuture<>();
         this.downloadFromOtherSourceIfNotFound = downloadFromOtherSourceIfNotFound;
-        this.client = client;
     }
 
     FileReference fileReference() {
@@ -36,13 +34,7 @@ public class FileReferenceDownload {
         return future;
     }
 
-    public boolean downloadFromOtherSourceIfNotFound() {
+    boolean downloadFromOtherSourceIfNotFound() {
         return downloadFromOtherSourceIfNotFound;
     }
-
-    @Override
-    public String toString() {
-        return fileReference + ", client: " + client;
-    }
-
 }
