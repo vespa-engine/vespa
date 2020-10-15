@@ -333,7 +333,7 @@ assertTensor(const vespalib::eval::Value::UP & exp, const std::string & fieldNam
     EXPECT_EQUAL(exp.get() == nullptr, data.size == 0u);
     if (exp) {
         vespalib::nbostream x(data.data, data.size);
-        vespalib::eval::Value::UP tensor = EngineOrFactory::get().decode(x);
+        auto tensor = EngineOrFactory::get().decode(x);
         EXPECT_TRUE(tensor.get() != nullptr);
         EXPECT_EQUAL(*exp, *tensor);
     }
