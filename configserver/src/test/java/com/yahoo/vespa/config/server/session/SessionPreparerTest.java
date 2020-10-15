@@ -75,7 +75,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class SessionPreparerTest {
 
-    private static final Path tenantPath = Path.createRoot();
     private static final File testApp = new File("src/test/apps/app");
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
     private static final Version version123 = new Version(1, 2, 3);
@@ -161,23 +160,22 @@ public class SessionPreparerTest {
                         .dryRun(true)
                         .timeoutBudget(TimeoutBudgetTest.day())
                         .build(),
-                1);
+                sessionId);
         Path sessionPath = sessionPath(sessionId);
         assertFalse(configCurator.exists(sessionPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
+        long sessionId = 1;
         PrepareResult result = prepare(testApp,
                                        new PrepareParams.Builder()
                                                .applicationId(applicationId())
                                                .dryRun(true)
                                                .build(),
-                                       1);
+                                       sessionId);
         Map<Version, FileRegistry> fileRegistries = result.getFileRegistries();
-        System.out.println(fileRegistries);
-        assertEquals(1, fileRegistries.get(version321).export().size());
-        assertEquals("./", fileRegistries.get(version321).export().get(0).reference.value());
+        assertEquals(0, fileRegistries.get(version321).export().size());
     }
 
     @Test
@@ -192,7 +190,7 @@ public class SessionPreparerTest {
         HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
         hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().applicationId(applicationId("default")).build(),
-                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
+                         Optional.empty(), Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
     }
     
     @Test
@@ -206,7 +204,7 @@ public class SessionPreparerTest {
         ApplicationId applicationId = applicationId();
         hostValidator.update(applicationId, Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
-                         Optional.empty(), tenantPath, Instant.now(), app.getAppDir(), app,
+                         Optional.empty(), Instant.now(), app.getAppDir(), app,
                          createSessionZooKeeperClient());
         assertEquals(logged.toString(), "");
     }
@@ -302,6 +300,7 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
         // Read from zk and verify cert and key are available
+        Path tenantPath = TenantRepository.getTenantPath(applicationId.tenant());
         Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
                 .readEndpointCertificateMetadata(applicationId)
                 .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
@@ -319,6 +318,7 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
         // Read from zk and verify cert and key are available
+        Path tenantPath = TenantRepository.getTenantPath(applicationId.tenant());
         Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
                 .readEndpointCertificateMetadata(applicationId)
                 .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
@@ -352,22 +352,23 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
     }
 
-    private List<ContainerEndpoint> readContainerEndpoints(ApplicationId application) {
-        return new ContainerEndpointsCache(tenantPath, curator).read(application);
+    private List<ContainerEndpoint> readContainerEndpoints(ApplicationId applicationId) {
+        Path tenantPath = TenantRepository.getTenantPath(applicationId.tenant());
+        return new ContainerEndpointsCache(tenantPath, curator).read(applicationId);
     }
 
     private void prepare(File app) throws IOException {
         prepare(app, new PrepareParams.Builder().applicationId(applicationId()).build());
     }
 
-    private PrepareResult prepare(File app, PrepareParams params) throws IOException {
-        return prepare(app, params, 1);
+    private void prepare(File app, PrepareParams params) throws IOException {
+        prepare(app, params, 1);
     }
 
     private PrepareResult prepare(File app, PrepareParams params, long sessionId) throws IOException {
         FilesApplicationPackage applicationPackage = getApplicationPackage(app);
         return preparer.prepare(new HostRegistry<>(), getLogger(), params,
-                                Optional.empty(), tenantPath, Instant.now(), applicationPackage.getAppDir(),
+                                Optional.empty(), Instant.now(), applicationPackage.getAppDir(),
                                 applicationPackage, createSessionZooKeeperClient(sessionId));
     }
 

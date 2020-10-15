@@ -147,11 +147,7 @@ public class SessionRepository {
         }
     }
 
-    public ConfigChangeActions prepareLocalSession(LocalSession session,
-                                                   DeployLogger logger,
-                                                   PrepareParams params,
-                                                   Path tenantPath,
-                                                   Instant now) {
+    public ConfigChangeActions prepareLocalSession(LocalSession session, DeployLogger logger, PrepareParams params, Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
@@ -159,8 +155,7 @@ public class SessionRepository {
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
         Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
-                                                              activeApplicationSet, tenantPath, now,
-                                                              getSessionAppDir(sessionId),
+                                                              activeApplicationSet, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
         setPrepared(session);
@@ -172,20 +167,14 @@ public class SessionRepository {
      * Creates a new deployment session from an already existing session.
      *
      * @param existingSession the session to use as base
-     * @param logger a deploy logger where the deploy log will be written.
      * @param internalRedeploy whether this session is for a system internal redeploy — not an application package change
      * @param timeoutBudget timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSessionFromExisting(Session existingSession,
-                                                  DeployLogger logger,
-                                                  boolean internalRedeploy,
-                                                  TimeoutBudget timeoutBudget) {
+    public LocalSession createSessionFromExisting(Session existingSession, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         ApplicationId existingApplicationId = existingSession.getApplicationId();
-        Optional<Long> activeSessionId = getActiveSessionId(existingApplicationId);
-        logger.log(Level.FINE, "Create new session for application id '" + existingApplicationId + "' from existing active session " + activeSessionId);
         File existingApp = getSessionAppDir(existingSession.getSessionId());
-        LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, activeSessionId, internalRedeploy, timeoutBudget);
+        LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, internalRedeploy, timeoutBudget);
         // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
         session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
@@ -205,8 +194,7 @@ public class SessionRepository {
      */
     public LocalSession createSessionFromApplicationPackage(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
         applicationRepo.createApplication(applicationId);
-        Optional<Long> activeSessionId = applicationRepo.activeSessionOf(applicationId);
-        return createSessionFromApplication(applicationDirectory, applicationId, activeSessionId, false, timeoutBudget);
+        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget);
     }
 
     /**
@@ -215,9 +203,7 @@ public class SessionRepository {
      */
     private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
-            Optional<Long> activeSessionId = getActiveSessionId(applicationId);
-            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId,
-                                                                             sessionId, activeSessionId, false);
+            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, sessionId, false);
             createLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -532,14 +518,12 @@ public class SessionRepository {
 
     private LocalSession createSessionFromApplication(File applicationFile,
                                                       ApplicationId applicationId,
-                                                      Optional<Long> currentlyActiveSessionId,
                                                       boolean internalRedeploy,
                                                       TimeoutBudget timeoutBudget) {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
-            ApplicationPackage app = createApplicationPackage(applicationFile, applicationId,
-                                                              sessionId, currentlyActiveSessionId, internalRedeploy);
+            ApplicationPackage app = createApplicationPackage(applicationFile, applicationId, sessionId, internalRedeploy);
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
             sessionZKClient.createNewSession(clock.instant());
@@ -554,15 +538,15 @@ public class SessionRepository {
     }
 
     private ApplicationPackage createApplicationPackage(File applicationFile, ApplicationId applicationId,
-                                                        long sessionId, Optional<Long> currentlyActiveSessionId,
-                                                        boolean internalRedeploy) throws IOException {
+                                                        long sessionId, boolean internalRedeploy) throws IOException {
+        Optional<Long> activeSessionId = getActiveSessionId(applicationId);
         File userApplicationDir = getSessionAppDir(sessionId);
         copyApp(applicationFile, userApplicationDir);
         ApplicationPackage applicationPackage = createApplication(applicationFile,
                                                                   userApplicationDir,
                                                                   applicationId,
                                                                   sessionId,
-                                                                  currentlyActiveSessionId,
+                                                                  activeSessionId,
                                                                   internalRedeploy);
         applicationPackage.writeMetaData();
         return applicationPackage;

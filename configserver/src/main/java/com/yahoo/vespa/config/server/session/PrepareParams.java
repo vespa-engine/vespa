@@ -270,9 +270,7 @@ public final class PrepareParams {
         return ignoreValidationErrors;
     }
 
-    public boolean isDryRun() {
-        return dryRun;
-    }
+    public boolean isDryRun() { return dryRun; }
 
     public boolean isVerbose() {
         return verbose;
