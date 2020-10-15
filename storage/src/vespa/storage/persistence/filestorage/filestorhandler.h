@@ -84,7 +84,7 @@ public:
     void setDiskState(DiskState state);
     DiskState getDiskState();
 
-    /** Check whether a given disk is enabled or not. */
+    /** Check whether it is enabled or not. */
     bool enabled() { return (getDiskState() == AVAILABLE); }
     bool closed() { return (getDiskState() == CLOSED); }
     /**
@@ -102,7 +102,7 @@ public:
     ResumeGuard pause();
 
     /**
-     * Schedule a storage message to be processed by the given disk
+     * Schedule a storage message to be processed
      * @return True if we maanged to schedule operation. False if not
      */
     bool schedule(const std::shared_ptr<api::StorageMessage>&);

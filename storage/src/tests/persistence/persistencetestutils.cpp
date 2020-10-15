@@ -77,7 +77,7 @@ PersistenceTestUtils::dumpBucket(const document::BucketId& bid) {
 void
 PersistenceTestUtils::setupDisks() {
     _env = std::make_unique<PersistenceTestEnvironment>("todo-make-unique-persistencetestutils");
-    setupExecutor(2);
+    setupExecutor(1);
 }
 
 void
