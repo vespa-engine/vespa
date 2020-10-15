@@ -31,7 +31,7 @@ struct PersistenceTestEnvironment {
     vdstestlib::DirConfig _config;
     MessageKeeper _messageKeeper;
     TestServiceLayerApp _node;
-    StorageComponent _component;
+    ServiceLayerComponent _component;
     FileStorMetrics _metrics;
     std::unique_ptr<FileStorHandler> _handler;
     std::unique_ptr<PersistenceUtil>  _diskEnv;

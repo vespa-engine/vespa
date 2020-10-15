@@ -36,7 +36,7 @@ class StorBucketDatabase;
 
 struct ServiceLayerManagedComponent
 {
-    virtual ~ServiceLayerManagedComponent() {}
+    virtual ~ServiceLayerManagedComponent() = default;
 
     virtual void setDiskCount(uint16_t count) = 0;
     virtual void setBucketSpaceRepo(ContentBucketSpaceRepo&) = 0;
@@ -45,8 +45,7 @@ struct ServiceLayerManagedComponent
 
 struct ServiceLayerComponentRegister : public virtual StorageComponentRegister
 {
-    virtual void registerServiceLayerComponent(
-                    ServiceLayerManagedComponent&) = 0;
+    virtual void registerServiceLayerComponent(ServiceLayerManagedComponent&) = 0;
 };
 
 class ServiceLayerComponent : public StorageComponent,

@@ -92,6 +92,11 @@ private:
     vespalib::ISequencedTaskExecutor::ExecutorId   _executorId;
 };
 
+vespalib::string
+createThreadName(size_t stripeId) {
+    return vespalib::make_string("Thread %zu", stripeId);
+}
+
 }
 
 PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor & sequencedExecutor,
@@ -101,16 +106,14 @@ PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor & sequence
                                      FileStorHandler& filestorHandler,
                                      FileStorThreadMetrics& metrics)
     : _stripeId(filestorHandler.getNextStripeId()),
-      _env(configUri, compReg, filestorHandler, metrics, provider),
+      _component(std::make_unique<ServiceLayerComponent>(compReg, createThreadName(_stripeId))),
+      _env(configUri, *_component, filestorHandler, metrics, provider),
       _sequencedExecutor(sequencedExecutor),
       _spi(provider),
       _processAllHandler(_env, provider),
       _mergeHandler(_spi, _env),
       _bucketOwnershipNotifier()
 {
-    std::ostringstream threadName;
-    threadName << "Thread " << _stripeId;
-    _component = std::make_unique<ServiceLayerComponent>(compReg, threadName.str());
     _bucketOwnershipNotifier = std::make_unique<BucketOwnershipNotifier>(*_component, filestorHandler);
     _thread = _component->startThread(*this, 60s, 1s);
 }
