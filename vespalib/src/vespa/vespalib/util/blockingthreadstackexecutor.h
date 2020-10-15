@@ -12,8 +12,8 @@ namespace vespalib {
 class BlockingThreadStackExecutor : public ThreadStackExecutorBase
 {
 private:
-    bool acceptNewTask(MonitorGuard & monitor) override;
-    void wakeup(MonitorGuard & monitor) override;
+    bool acceptNewTask(unique_lock & guard, std::condition_variable & cond) override;
+    void wakeup(unique_lock & guard, std::condition_variable &) override;
 
 public:
     /**
@@ -32,7 +32,7 @@ public:
     BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit,
                                 init_fun_t init_function);
 
-    ~BlockingThreadStackExecutor();
+    ~BlockingThreadStackExecutor() override;
 };
 
 } // namespace vespalib

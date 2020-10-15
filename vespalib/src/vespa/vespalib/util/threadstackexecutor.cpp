@@ -7,13 +7,13 @@ namespace vespalib {
 VESPA_THREAD_STACK_TAG(unnamed_nonblocking_executor);
 
 bool
-ThreadStackExecutor::acceptNewTask(MonitorGuard &)
+ThreadStackExecutor::acceptNewTask(unique_lock &, std::condition_variable &)
 {
     return isRoomForNewTask();
 }
 
 void
-ThreadStackExecutor::wakeup(MonitorGuard &)
+ThreadStackExecutor::wakeup(unique_lock &, std::condition_variable &)
 {
 }
 

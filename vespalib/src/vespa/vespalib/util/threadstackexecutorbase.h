@@ -34,8 +34,7 @@ class ThreadStackExecutorBase : public SyncableThreadExecutor,
 {
 public:
     using init_fun_t = std::function<int(Runnable&)>;
-    using LockGuard = std::unique_lock<std::mutex>;
-    using MonitorGuard = std::unique_lock<std::mutex>;
+    using unique_lock = std::unique_lock<std::mutex>;
 
 private:
 
@@ -57,13 +56,13 @@ private:
     };
 
     struct Worker {
-        std::mutex              monitor;
+        std::mutex              lock;
         std::condition_variable cond;
         uint32_t   pre_guard;
         bool       idle;
         uint32_t   post_guard;
         TaggedTask task;
-        Worker() : monitor(), cond(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
+        Worker() : lock(), cond(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
         void verify(bool expect_idle) const {
             (void) expect_idle;
             assert(pre_guard == 0xaaaaaaaa);
@@ -80,20 +79,18 @@ private:
 
     struct BlockedThread {
         const uint32_t wait_task_count;
-        mutable std::mutex monitor;
+        mutable std::mutex lock;
         mutable std::condition_variable cond;
         bool blocked;
         BlockedThread(uint32_t wait_task_count_in)
-            : wait_task_count(wait_task_count_in), monitor(), cond(), blocked(true) {}
+            : wait_task_count(wait_task_count_in), lock(), cond(), blocked(true) {}
         void wait() const;
         void unblock();
     };
 
     std::unique_ptr<FastOS_ThreadPool>   _pool;
-    mutable std::mutex                   _monitor;
-protected:
+    mutable std::mutex                   _lock;
     std::condition_variable              _cond;
-private:
     Stats                                _stats;
     Gate                                 _executorCompletion;
     ArrayQueue<TaggedTask>               _tasks;
@@ -106,8 +103,8 @@ private:
     std::unique_ptr<thread::ThreadInit>  _thread_init;
     static thread_local ThreadStackExecutorBase *_master;
 
-    void block_thread(const LockGuard &, BlockedThread &blocked_thread);
-    void unblock_threads(const MonitorGuard &);
+    void block_thread(const unique_lock &, BlockedThread &blocked_thread);
+    void unblock_threads(const unique_lock &);
 
     /**
      * Assign the given task to the given idle worker. This will wake
@@ -136,14 +133,14 @@ protected:
      * This will tell if a task will be accepted or not.
      * An implementation might decide to block.
      */
-    virtual bool acceptNewTask(MonitorGuard & monitor) = 0;
+    virtual bool acceptNewTask(unique_lock & guard, std::condition_variable & cond) = 0;
 
     /**
      * If blocking implementation, this might wake up any waiters.
      *
      * @param monitor to use for signaling.
      */
-    virtual void wakeup(MonitorGuard & monitor) = 0;
+    virtual void wakeup(unique_lock & guard, std::condition_variable & cond) = 0;
 
     /**
      *  Will tell you if the executor has been closed for new tasks.
