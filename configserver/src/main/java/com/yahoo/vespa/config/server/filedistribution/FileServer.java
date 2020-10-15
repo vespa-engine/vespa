@@ -8,7 +8,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
-import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.FileDownloader;
@@ -161,7 +160,7 @@ public class FileServer {
             FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(new FileReference(fileReference),
                                                                                     downloadFromOtherSourceIfNotFound,
                                                                                     client);
-            fileExists = hasFile(fileReference) || download(fileReferenceDownload);
+            fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
             if (fileExists) startFileServing(fileReference, receiver);
         } catch (IllegalArgumentException e) {
             fileExists = false;
@@ -175,12 +174,17 @@ public class FileServer {
         request.returnRequest();
     }
 
-    // downloadFromOtherSourceIfNotFound is true when the request comes from another config server.
-    // This is to avoid config servers asking each other for a file that does not exist
-    boolean download(FileReferenceDownload fileReferenceDownload) {
+
+    boolean hasFileDownloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
+        FileReference fileReference = fileReferenceDownload.fileReference();
+        if (hasFile(fileReference)) return true;
+
         if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
             log.log(Level.FINE, "File not found, downloading from another source");
-            return downloader.getFile(fileReferenceDownload).isPresent();
+            // Create new FileReferenceDownload with downloadFromOtherSourceIfNotFound set to false
+            // to avoid config servers requesting a file reference perpetually, e.g. for a file that does not exist anymore
+            FileReferenceDownload newDownload = new FileReferenceDownload(fileReference, false, fileReferenceDownload.client());
+            return downloader.getFile(newDownload).isPresent();
         } else {
             log.log(Level.FINE, "File not found, will not download from another source since request came from another config server");
             return false;

@@ -56,9 +56,9 @@ public class FileServerTest {
         String dir = "123";
         assertFalse(fileServer.hasFile(dir));
         FileReferenceDownload foo = new FileReferenceDownload(new FileReference(dir), true, "foo");
-        assertFalse(fileServer.download(foo));
+        assertFalse(fileServer.hasFileDownloadIfNeeded(foo));
         writeFile(dir);
-        assertTrue(fileServer.download(foo));
+        assertTrue(fileServer.hasFileDownloadIfNeeded(foo));
     }
 
     @Test
