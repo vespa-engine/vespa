@@ -27,7 +27,7 @@ template<typename T>
 DirectSparseTensorBuilder<T>::~DirectSparseTensorBuilder() = default;
 
 template<typename T>
-Tensor::UP
+std::unique_ptr<SparseTensorT<T>>
 DirectSparseTensorBuilder<T>::build() {
     using tt = SparseTensorT<T>;
     return std::make_unique<tt>(std::move(_type), std::move(_index), std::move(_values));

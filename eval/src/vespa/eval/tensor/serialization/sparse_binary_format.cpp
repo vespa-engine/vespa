@@ -133,14 +133,19 @@ SparseBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 
 struct BuildSparseCells {
     template<typename CT>
-    static auto invoke(ValueType type, nbostream &stream,
-                       size_t dimensionsSize, 
-                       size_t cellsSize)
+    static Tensor::UP invoke(ValueType type, nbostream &stream,
+                             size_t dimensionsSize, 
+                             size_t cellsSize)
     {
         DirectSparseTensorBuilder<CT> builder(std::move(type));
         builder.reserve(cellsSize);
         decodeCells<CT>(stream, dimensionsSize, cellsSize, builder);
-        return builder.build();
+        auto retval = builder.build();
+        if (retval->should_shrink()) {
+            return retval->shrink();
+        } else {
+            return retval;
+        }
     }
 };
 

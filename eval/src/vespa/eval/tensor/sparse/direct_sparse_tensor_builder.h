@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/hdr_abort.h>
 #include "sparse_tensor.h"
+#include "sparse_tensor_t.h"
 #include "sparse_tensor_address_builder.h"
 
 namespace vespalib::tensor {
@@ -29,7 +30,7 @@ public:
     DirectSparseTensorBuilder(const eval::ValueType &type_in);
     ~DirectSparseTensorBuilder();
 
-    Tensor::UP build();
+    std::unique_ptr<SparseTensorT<T>> build();
 
     template <class Function>
     void insertCell(SparseTensorAddressRef address, T value, Function &&func)

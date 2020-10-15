@@ -19,7 +19,8 @@ public:
                               std::equal_to<>, hashtable_base::and_modulator>;
     // construct
     explicit SparseTensorIndex(size_t num_mapped_dims_in);
-    SparseTensorIndex(const SparseTensorIndex & index_in);
+    SparseTensorIndex copy() const;
+    SparseTensorIndex shrunk_copy() const;
     SparseTensorIndex(SparseTensorIndex && index_in) = default;
     ~SparseTensorIndex();
     // Index API
@@ -40,6 +41,7 @@ private:
     IndexMap _map;
     size_t _num_mapped_dims;
     static size_t needed_memory_for(const SparseTensorIndex &other);
+    SparseTensorIndex(size_t stash_size, const SparseTensorIndex &other);
 };
 
 } // namespace

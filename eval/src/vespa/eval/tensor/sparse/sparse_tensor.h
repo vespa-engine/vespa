@@ -26,7 +26,7 @@ public:
     SparseTensor(eval::ValueType type_in, SparseTensorIndex index_in);
     ~SparseTensor() override;
     size_t my_size() const { return _index.get_map().size(); }
-    const SparseTensorIndex &index() const override { return _index; }
+    const SparseTensorIndex &index() const final override { return _index; }
     const eval::ValueType &fast_type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;
     eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;

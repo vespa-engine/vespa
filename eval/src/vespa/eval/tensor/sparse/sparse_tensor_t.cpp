@@ -150,7 +150,7 @@ SparseTensorT<T>::add(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    SparseTensorAdd<T> adder(fast_type(), index(), _values);
+    SparseTensorAdd<T> adder(fast_type(), index().copy(), _values);
     rhs->accept(adder);
     return adder.build();
 }
@@ -164,14 +164,14 @@ SparseTensorT<T>::apply(const CellFunction &func) const
     for (T v : _values) {
         new_values.push_back(func.apply(v));
     }
-    return std::make_unique<SparseTensorT<T>>(fast_type(), index(), std::move(new_values));
+    return std::make_unique<SparseTensorT<T>>(fast_type(), index().copy(), std::move(new_values));
 }
 
 template<typename T>
 Tensor::UP
 SparseTensorT<T>::clone() const
 {
-    return std::make_unique<SparseTensorT<T>>(fast_type(), index(), _values);
+    return std::make_unique<SparseTensorT<T>>(fast_type(), index().shrunk_copy(), _values);
 }
 
 template<typename T>
@@ -243,6 +243,21 @@ SparseTensorT<T>::get_memory_usage() const
     result.incAllocatedBytes(sizeof(SparseTensor));
     result.incAllocatedBytes(_values.capacity() * sizeof(T));
     return result;
+}
+
+template<typename T>
+bool
+SparseTensorT<T>::should_shrink() const
+{
+    auto mem_use = get_memory_usage();
+    return (mem_use.usedBytes() * 3 < mem_use.allocatedBytes());
+}
+
+template<typename T>
+Tensor::UP
+SparseTensorT<T>::shrink() const
+{
+    return std::make_unique<SparseTensorT<T>>(fast_type(), index().shrunk_copy(), _values);
 }
 
 template class SparseTensorT<float>;
