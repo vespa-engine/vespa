@@ -612,6 +612,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
          * dispatch should be retried at a later time.
          */
         boolean dispatch() {
+            if (request.isCancelled())
+                return true;
+            
             if ( ! lock.tryLock())
                 throw new IllegalStateException("Comcurrent attempts at dispatch — this is a bug");
 
