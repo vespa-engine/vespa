@@ -44,7 +44,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
         if (threadPoolSizeFactor <= 0 || vcpu == 0) return;
 
         // Configuration is currently identical to the search handler's threadpool
-        int workerThreads = Math.max(16, (int)Math.ceil(vcpu * threadPoolSizeFactor)); // TODO(bjorncs): reduce minimum size
+        int workerThreads = Math.max(8, (int)Math.ceil(vcpu * threadPoolSizeFactor));
         builder.maxthreads(workerThreads);
         builder.corePoolSize(workerThreads);
         builder.queueSize((int)(workerThreads * deployState.getProperties().queueSizeFactor()));
