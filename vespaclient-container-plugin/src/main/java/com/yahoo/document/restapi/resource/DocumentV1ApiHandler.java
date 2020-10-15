@@ -614,9 +614,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         boolean dispatch() {
             if (request.isCancelled())
                 return true;
-            
+
             if ( ! lock.tryLock())
-                throw new IllegalStateException("Comcurrent attempts at dispatch — this is a bug");
+                throw new IllegalStateException("Concurrent attempts at dispatch — this is a bug");
 
             try {
                 if (operation == null)
@@ -679,9 +679,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         public void close(CompletionHandler handler) {
             try {
                 delegate.close(logException);
-                try (UnsafeContentInputStream in = new UnsafeContentInputStream(delegate)) {
-                    reader.accept(in);
-                }
+                reader.accept(new UnsafeContentInputStream(delegate));
                 handler.completed();
             }
             catch (Exception e) {
