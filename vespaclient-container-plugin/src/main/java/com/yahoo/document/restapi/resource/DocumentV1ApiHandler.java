@@ -834,7 +834,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                             catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             }
-                            visits.get(this).destroy();
+                            visits.remove(this).destroy();
                         });
                     });
                 }
