@@ -103,7 +103,7 @@ public class ConnectorFactory {
             if (proxyProtocolConfig.mixedMode()) {
                 return List.of(new DetectorConnectionFactory(sslFactory, new ProxyConnectionFactory(sslFactory.getProtocol())), sslFactory, httpFactory);
             } else {
-                return List.of(new ProxyConnectionFactory(), sslFactory, httpFactory);
+                return List.of(new ProxyConnectionFactory(sslFactory.getProtocol()), sslFactory, httpFactory);
             }
         } else {
             return List.of(sslFactory, httpFactory);
