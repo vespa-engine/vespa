@@ -48,10 +48,17 @@ public:
                   SerialNum flushedSummaryMgrSerial,
                   ConfigStore &config_store);
 
+
+    /*
+     * Make a tls replay progress object for serial numbers (first..last]
+     */
+    std::unique_ptr<TlsReplayProgress>
+    make_replay_progress(SerialNum first, SerialNum last);
+
     /**
      * Start replay of the transaction log.
      **/
-    TlsReplayProgress::UP startReplay(SerialNum first, SerialNum syncToken, Callback &callback);
+    void startReplay(SerialNum first, SerialNum syncToken, Callback &callback);
 
     /**
      * Indicate that replay is done.

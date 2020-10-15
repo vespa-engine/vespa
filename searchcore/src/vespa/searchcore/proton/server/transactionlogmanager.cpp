@@ -112,8 +112,13 @@ TransactionLogManager::prepareReplay(TransLogClient &client,
     }
 }
 
+std::unique_ptr<TlsReplayProgress>
+TransactionLogManager::make_replay_progress(SerialNum first, SerialNum last)
+{
+    return std::make_unique<TlsReplayProgress>(getDomainName(), first, last);
+}
 
-TlsReplayProgress::UP
+void
 TransactionLogManager::startReplay(SerialNum first,
                                    SerialNum syncToken,
                                    Callback &callback)
@@ -141,7 +146,6 @@ TransactionLogManager::startReplay(SerialNum first,
                     getDomainName().c_str(),
                     first, syncToken, getRpcTarget().c_str()));
     }
-    return std::make_unique<TlsReplayProgress>(getDomainName(), first, syncToken);
 }
 
 
