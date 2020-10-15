@@ -72,7 +72,7 @@ ThreadStackExecutorBase::unblock_threads(const unique_lock &)
 void
 ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
 {
-    unique_lock monitor(worker.lock);
+    unique_lock guard(worker.lock);
     worker.verify(/* idle: */ true);
     worker.idle = false;
     worker.task = std::move(task);
@@ -83,16 +83,16 @@ bool
 ThreadStackExecutorBase::obtainTask(Worker &worker)
 {
     {
-        unique_lock monitor(_lock);
+        unique_lock guard(_lock);
         if (!worker.idle) {
             assert(_taskCount != 0);
             --_taskCount;
-            wakeup(monitor, _cond);
+            wakeup(guard, _cond);
             _barrier.completeEvent(worker.task.token);
             worker.idle = true;
         }
         worker.verify(/* idle: */ true);
-        unblock_threads(monitor);
+        unblock_threads(guard);
         if (!_tasks.empty()) {
             worker.task = std::move(_tasks.front());
             worker.idle = false;
@@ -105,9 +105,9 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
         _workers.push(&worker);
     }
     {
-        unique_lock monitor(worker.lock);
+        unique_lock guard(worker.lock);
         while (worker.idle) {
-            worker.cond.wait(monitor);
+            worker.cond.wait(guard);
         }
     }
     worker.idle = !worker.task.task;
@@ -139,6 +139,7 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
       Runnable(),
       _pool(std::make_unique<FastOS_ThreadPool>(stackSize)),
       _lock(),
+      _cond(),
       _stats(),
       _executorCompletion(),
       _tasks(),
