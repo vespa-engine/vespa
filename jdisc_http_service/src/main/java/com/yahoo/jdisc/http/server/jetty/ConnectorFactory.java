@@ -18,6 +18,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
+import java.nio.channels.ServerSocketChannel;
 import java.util.List;
 
 /**
@@ -41,22 +42,16 @@ public class ConnectorFactory {
     // e.g. due to TLS configuration through environment variables.
     private static void runtimeConnectorConfigValidation(ConnectorConfig config) {
         validateProxyProtocolConfiguration(config);
-        validateSecureRedirectConfig(config);
     }
 
     private static void validateProxyProtocolConfiguration(ConnectorConfig config) {
         ConnectorConfig.ProxyProtocol proxyProtocolConfig = config.proxyProtocol();
         if (proxyProtocolConfig.enabled()) {
+            boolean sslEnabled = config.ssl().enabled() || TransportSecurityUtils.isTransportSecurityEnabled();
             boolean tlsMixedModeEnabled = TransportSecurityUtils.getInsecureMixedMode() != MixedMode.DISABLED;
-            if (!isSslEffectivelyEnabled(config) || tlsMixedModeEnabled) {
+            if (!sslEnabled || tlsMixedModeEnabled) {
                 throw new IllegalArgumentException("Proxy protocol can only be enabled if connector is effectively HTTPS only");
             }
-        }
-    }
-
-    private static void validateSecureRedirectConfig(ConnectorConfig config) {
-        if (config.secureRedirect().enabled() && isSslEffectivelyEnabled(config)) {
-            throw new IllegalArgumentException("Secure redirect can only be enabled on connectors without HTTPS");
         }
     }
 
@@ -77,7 +72,7 @@ public class ConnectorFactory {
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
         HttpConnectionFactory httpFactory = newHttpConnectionFactory();
-        if (!isSslEffectivelyEnabled(connectorConfig)) {
+        if (connectorConfig.healthCheckProxy().enable() || connectorConfig.secureRedirect().enabled()) {
             return List.of(httpFactory);
         } else if (connectorConfig.ssl().enabled()) {
             return connectionFactoriesForHttps(metric, httpFactory);
@@ -119,7 +114,7 @@ public class ConnectorFactory {
         httpConfig.setOutputBufferSize(connectorConfig.outputBufferSize());
         httpConfig.setRequestHeaderSize(connectorConfig.requestHeaderSize());
         httpConfig.setResponseHeaderSize(connectorConfig.responseHeaderSize());
-        if (isSslEffectivelyEnabled(connectorConfig)) {
+        if (connectorConfig.ssl().enabled() || TransportSecurityUtils.isTransportSecurityEnabled()) { // TODO Cleanup once mixed mode is gone
             httpConfig.addCustomizer(new SecureRequestCustomizer());
         }
         return new HttpConnectionFactory(httpConfig);
@@ -130,11 +125,6 @@ public class ConnectorFactory {
         SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, httpFactory.getProtocol());
         connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
         return connectionFactory;
-    }
-
-    private static boolean isSslEffectivelyEnabled(ConnectorConfig config) {
-        return config.ssl().enabled()
-                || (config.implicitTlsEnabled() && TransportSecurityUtils.isTransportSecurityEnabled());
     }
 
 }
