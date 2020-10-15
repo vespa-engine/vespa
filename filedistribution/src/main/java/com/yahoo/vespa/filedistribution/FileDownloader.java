@@ -42,7 +42,7 @@ public class FileDownloader implements AutoCloseable {
         this(connectionPool, downloadDirectory , downloadDirectory , Duration.ofMinutes(15), Duration.ofSeconds(10));
     }
 
-    FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
         this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool, timeout, sleepBetweenRetries);

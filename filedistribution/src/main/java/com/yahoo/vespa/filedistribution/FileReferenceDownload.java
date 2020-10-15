@@ -28,7 +28,7 @@ public class FileReferenceDownload {
         this.client = client;
     }
 
-    FileReference fileReference() {
+    public FileReference fileReference() {
         return fileReference;
     }
 
@@ -39,6 +39,8 @@ public class FileReferenceDownload {
     public boolean downloadFromOtherSourceIfNotFound() {
         return downloadFromOtherSourceIfNotFound;
     }
+
+    public String client() { return client;  }
 
     @Override
     public String toString() {

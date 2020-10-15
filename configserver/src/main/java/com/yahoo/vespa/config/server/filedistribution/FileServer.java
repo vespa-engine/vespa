@@ -68,16 +68,17 @@ public class FileServer {
     @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
     public FileServer(ConfigserverConfig configserverConfig) {
-        this(createConnectionPool(configserverConfig), new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())));
+        this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
+             new FileDownloader(createConnectionPool(configserverConfig)));
     }
 
     // For testing only
     public FileServer(File rootDir) {
-        this(emptyConnectionPool(), rootDir);
+        this(rootDir, new FileDownloader(emptyConnectionPool()));
     }
 
-    private FileServer(ConnectionPool connectionPool, File rootDir) {
-        this.downloader = new FileDownloader(connectionPool);
+    public FileServer(File rootDir, FileDownloader fileDownloader) {
+        this.downloader = fileDownloader;
         this.root = new FileDirectory(rootDir);
         this.pushExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                          new DaemonThreadFactory("file server push"));
@@ -176,7 +177,7 @@ public class FileServer {
 
     // downloadFromOtherSourceIfNotFound is true when the request comes from another config server.
     // This is to avoid config servers asking each other for a file that does not exist
-    private boolean download(FileReferenceDownload fileReferenceDownload) {
+    boolean download(FileReferenceDownload fileReferenceDownload) {
         if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
             log.log(Level.FINE, "File not found, downloading from another source");
             return downloader.getFile(fileReferenceDownload).isPresent();
