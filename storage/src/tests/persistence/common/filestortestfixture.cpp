@@ -28,8 +28,7 @@ FileStorTestFixture::setupPersistenceThreads(uint32_t threads)
     _config->getConfig("stor-server").set("node_index", "1");
     _config->getConfig("stor-filestor").set("num_threads", std::to_string(threads));
 
-    _node = std::make_unique<TestServiceLayerApp>(
-            DiskCount(1), NodeIndex(1), _config->getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(1), _config->getConfigId());
     _testdoctype1 = _node->getTypeRepo()->getDocumentType("testdoctype1");
 }
 
@@ -60,7 +59,6 @@ FileStorTestFixture::createBucket(const document::BucketId& bid)
     StorBucketDatabase::WrappedEntry entry(
             _node->getStorageBucketDatabase().get(bid, "foo",
                     StorBucketDatabase::CREATE_IF_NONEXISTING));
-    entry->disk = 0;
     entry->info = api::BucketInfo(0, 0, 0, 0, 0, true, false);
     entry.write();
 }

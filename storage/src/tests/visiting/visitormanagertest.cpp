@@ -161,7 +161,6 @@ VisitorManagerTest::initializeTest()
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bid, "",
                     StorBucketDatabase::CREATE_IF_NONEXISTING));
-        entry->disk = 0;
         entry.write();
     }
     for (uint32_t i=0; i<docCount; ++i) {

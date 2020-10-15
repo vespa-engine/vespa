@@ -41,31 +41,21 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
                                          FileStorMetrics& metrics,
                                          ServiceLayerComponentRegister& compReg)
     : _component(compReg, "filestorhandlerimpl"),
-      _diskInfo(),
+      _disk(*this, sender, numStripes),
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _getNextMessageTimeout(100ms),
       _max_active_merges_per_stripe(per_stripe_merge_limit(numThreads, numStripes)),
       _paused(false)
 {
-    _diskInfo.reserve(_component.getDiskCount());
-    for (uint32_t i(0); i < _component.getDiskCount(); i++) {
-        _diskInfo.emplace_back(*this, sender, numStripes);
-    }
-    for (uint32_t i=0; i<_diskInfo.size(); ++i) {
-        _diskInfo[i].metrics = metrics.disks[i].get();
-        assert(_diskInfo[i].metrics != nullptr);
-        uint32_t j(0);
-        for (Stripe & stripe : _diskInfo[i].getStripes()) {
-            stripe.setMetrics(metrics.disks[i]->stripes[j++].get());
-        }
+    _disk.metrics = metrics.disks[0].get();
+    assert(_disk.metrics != nullptr);
+    uint32_t j(0);
+    for (Stripe & stripe : _disk.getStripes()) {
+        stripe.setMetrics(metrics.disks[0]->stripes[j++].get());
     }
 
-    if (_diskInfo.size() == 0) {
-        throw vespalib::IllegalArgumentException("No disks configured", VESPA_STRLOC);
-    }
-        // Add update hook, so we will get callbacks each 5 seconds to update
-        // metrics.
+    // Add update hook, so we will get callbacks each 5 seconds to update metrics.
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
 }
 
@@ -86,7 +76,7 @@ FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 {
     std::lock_guard mlock(_mergeStatesLock);
     MergeStatus::SP status = _mergeStates[bucket];
-    if (status.get() == 0) {
+    if ( ! status ) {
         throw vespalib::IllegalStateException("No merge state exist for " + bucket.toString(), VESPA_STRLOC);
     }
     return *status;
@@ -151,11 +141,9 @@ FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api:
 void
 FileStorHandlerImpl::flush(bool killPendingMerges)
 {
-    for (uint32_t i=0; i<_diskInfo.size(); ++i) {
-        LOG(debug, "Wait until queues and bucket locks released for disk '%d'", i);
-        _diskInfo[i].flush();
-        LOG(debug, "All queues and bucket locks released for disk '%d'", i);
-    }
+        LOG(debug, "Wait until queues and bucket locks released.");
+        _disk.flush();
+        LOG(debug, "All queues and bucket locks released.");
 
     if (killPendingMerges) {
         api::ReturnCode code(api::ReturnCode::ABORTED, "Storage node is shutting down");
@@ -194,53 +182,44 @@ FileStorHandlerImpl::reply(api::StorageMessage& msg, DiskState state) const
 }
 
 void
-FileStorHandlerImpl::setDiskState(uint16_t diskId, DiskState state)
+FileStorHandlerImpl::setDiskState(DiskState state)
 {
-    Disk& disk = _diskInfo[diskId];
 
     // Mark disk closed
-    disk.setState(state);
+    _disk.setState(state);
     if (state != FileStorHandler::AVAILABLE) {
-        disk.flush();
+        _disk.flush();
     }
 }
 
 FileStorHandler::DiskState
-FileStorHandlerImpl::getDiskState(uint16_t disk) const
+FileStorHandlerImpl::getDiskState() const
 {
-    return _diskInfo[disk].getState();
+    return _disk.getState();
 }
 
 void
 FileStorHandlerImpl::close()
 {
-    for (uint32_t i=0; i<_diskInfo.size(); ++i) {
-        if (getDiskState(i) == FileStorHandler::AVAILABLE) {
-            LOG(debug, "AVAILABLE -> CLOSED disk[%d]", i);
-            setDiskState(i, FileStorHandler::CLOSED);
-        }
-        LOG(debug, "Closing disk[%d]", i);
-        _diskInfo[i].broadcast();
-        LOG(debug, "Closed disk[%d]", i);
+    if (getDiskState() == FileStorHandler::AVAILABLE) {
+        LOG(debug, "AVAILABLE -> CLOSED");
+        setDiskState(FileStorHandler::CLOSED);
     }
+    LOG(debug, "Closing");
+    _disk.broadcast();
+    LOG(debug, "Closed");
 }
 
 uint32_t
 FileStorHandlerImpl::getQueueSize() const
 {
-    size_t count = 0;
-    for (const auto & disk : _diskInfo) {
-        count += disk.getQueueSize();
-    }
-    return count;
+    return _disk.getQueueSize();
 }
 
 bool
-FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg, uint16_t diskId)
+FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg)
 {
-    assert(diskId < _diskInfo.size());
-    Disk& disk(_diskInfo[diskId]);
-    return disk.schedule(msg);
+    return _disk.schedule(msg);
 }
 
 bool
@@ -288,43 +267,37 @@ FileStorHandlerImpl::abortQueuedOperations(const AbortBucketOperationsCommand& c
 {
     // Do queue clearing and active operation waiting in two passes
     // to allow disk threads to drain running operations in parallel.
-    for (Disk & disk : _diskInfo) {
-        abortQueuedCommandsForBuckets(disk, cmd);
-    }
-    for (Disk & disk : _diskInfo) {
-        disk.waitInactive(cmd);
-    }    
+    abortQueuedCommandsForBuckets(_disk, cmd);
+    _disk.waitInactive(cmd);
 }
 
 void
 FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
 {
-    for (Disk & disk : _diskInfo) {
-        std::lock_guard lockGuard(_mergeStatesLock);
-        disk.metrics->pendingMerges.addValue(_mergeStates.size());
-        disk.metrics->queueSize.addValue(disk.getQueueSize());
+    std::lock_guard lockGuard(_mergeStatesLock);
+    _disk.metrics->pendingMerges.addValue(_mergeStates.size());
+    _disk.metrics->queueSize.addValue(_disk.getQueueSize());
 
-        for (auto & entry : disk.metrics->averageQueueWaitingTime.getMetricMap()) {
-            metrics::LoadType loadType(entry.first, "ignored");
-            for (const auto & stripe : disk.metrics->stripes) {
-                const auto & m = stripe->averageQueueWaitingTime[loadType];
-                entry.second->addTotalValueWithCount(m.getTotal(), m.getCount());
-            }
+    for (auto & entry : _disk.metrics->averageQueueWaitingTime.getMetricMap()) {
+        metrics::LoadType loadType(entry.first, "ignored");
+        for (const auto & stripe : _disk.metrics->stripes) {
+            const auto & m = stripe->averageQueueWaitingTime[loadType];
+            entry.second->addTotalValueWithCount(m.getTotal(), m.getCount());
         }
     }
 }
 
 uint32_t
-FileStorHandlerImpl::getNextStripeId(uint32_t disk) {
-    return _diskInfo[disk].getNextStripeId();
+FileStorHandlerImpl::getNextStripeId() {
+    return _disk.getNextStripeId();
 }
 
 bool
-FileStorHandlerImpl::tryHandlePause(uint16_t disk) const
+FileStorHandlerImpl::tryHandlePause() const
 {
     if (isPaused()) {
         // Wait a single time to see if filestor gets unpaused.
-        if (!_diskInfo[disk].isClosed()) {
+        if (!_disk.isClosed()) {
             std::unique_lock g(_pauseMonitor);
             _pauseCond.wait_for(g, 100ms);
         }
@@ -352,14 +325,13 @@ FileStorHandlerImpl::makeQueueTimeoutReply(api::StorageMessage& msg)
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::getNextMessage(uint16_t disk, uint32_t stripeId)
+FileStorHandlerImpl::getNextMessage(uint32_t stripeId)
 {
-    assert(disk < _diskInfo.size());
-    if (!tryHandlePause(disk)) {
+    if (!tryHandlePause()) {
         return {}; // Still paused, return to allow tick.
     }
 
-    return _diskInfo[disk].getNextMessage(stripeId, _getNextMessageTimeout);
+    return _disk.getNextMessage(stripeId, _getNextMessageTimeout);
 }
 
 std::shared_ptr<FileStorHandler::BucketLockInterface>
@@ -381,30 +353,14 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket, api::LockingRe
 namespace {
     struct MultiLockGuard {
         using monitor_guard = FileStorHandlerImpl::monitor_guard;
-        struct DiskAndStripe {
-            uint16_t disk;
-            uint16_t stripe;
 
-            DiskAndStripe(uint16_t disk_, uint16_t stripe_) noexcept : disk(disk_), stripe(stripe_) {}
-
-            bool operator==(const DiskAndStripe& rhs) const noexcept {
-                return (disk == rhs.disk) && (stripe == rhs.stripe);
-            }
-            bool operator<(const DiskAndStripe& rhs) const noexcept {
-                if (disk != rhs.disk) {
-                    return disk < rhs.disk;
-                }
-                return stripe < rhs.stripe;
-            }
-        };
-
-        std::map<DiskAndStripe, std::mutex*> monitors;
+        std::map<uint16_t, std::mutex*> monitors;
         std::vector<std::shared_ptr<monitor_guard>> guards;
 
         MultiLockGuard() = default;
 
-        void addLock(std::mutex & lock, uint16_t disk_index, uint16_t stripe_index) {
-            monitors[DiskAndStripe(disk_index, stripe_index)] = & lock;
+        void addLock(std::mutex & lock, uint16_t stripe_index) {
+            monitors[stripe_index] = & lock;
         }
         void lock() {
             for (auto & entry : monitors) {
@@ -476,7 +432,7 @@ splitOrJoin(FileStorHandlerImpl::Operation op) {
 
 document::Bucket
 FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Bucket& source, Operation op,
-                                  std::vector<RemapInfo*>& targets, uint16_t& targetDisk, api::ReturnCode& returnCode)
+                                  std::vector<RemapInfo*>& targets, api::ReturnCode& returnCode)
 {
     document::Bucket newBucket = source;
 
@@ -496,7 +452,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                 if (idx > -1) {
                     cmd.remapBucketId(targets[idx]->bucket.getBucketId());
                     targets[idx]->foundInQueue = true;
-                    targetDisk = targets[idx]->diskIndex;
 #if defined(ENABLE_BUCKET_OPERATION_LOGGING)
                     {
                         vespalib::string desc = vespalib::make_string(
@@ -539,7 +494,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                     cmd.toString().c_str(), targets[0]->bucket.getBucketId().toString().c_str());
                 cmd.remapBucketId(targets[0]->bucket.getBucketId());
                 newBucket = targets[0]->bucket;
-                targetDisk = targets[0]->diskIndex;
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
                 {
                     vespalib::string desc = vespalib::make_string(
@@ -588,7 +542,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         api::BucketCommand& cmd(static_cast<api::BucketCommand&>(msg));
         if (cmd.getBucket() == source) {
             if (op == MOVE) {
-                targetDisk = targets[0]->diskIndex;
             } else if (op == SPLIT) {
                 returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, "Bucket split while operation enqueued");
             } else {
@@ -607,7 +560,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         api::BucketCommand& cmd(static_cast<api::BucketCommand&>(msg));
         if (cmd.getBucket() == source) {
             if (op == MOVE) {
-                targetDisk = targets[0]->diskIndex;
             } else {
                 returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, splitOrJoin(op));
             }
@@ -622,7 +574,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         api::BucketCommand& cmd(static_cast<api::BucketCommand&>(msg));
         if (cmd.getBucket() == source) {
             if (op == MOVE) {
-                targetDisk = targets[0]->diskIndex;
             }
         }
         break;
@@ -641,7 +592,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
             // Fail with bucket not found if op != MOVE
             if (bucket == source) {
                 if (op == MOVE) {
-                    targetDisk = targets[0]->diskIndex;
                 } else {
                     returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, splitOrJoin(op));
                 }
@@ -653,7 +603,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
             // Fail with bucket not found if op != MOVE
             if (bucket == source) {
                 if (op == MOVE) {
-                    targetDisk = targets[0]->diskIndex;
                 } else {
                     returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, splitOrJoin(op));
                 }
@@ -714,14 +663,13 @@ FileStorHandlerImpl::remapQueueNoLock(Disk& from, const RemapInfo& source,
         // If set to something other than source.diskIndex, move this message
         // to that queue.
         MessageEntry& entry = entriesFound[i];
-        uint16_t targetDisk = source.diskIndex;
 
         // If not OK, reply to this message with the following message
         api::ReturnCode returnCode(api::ReturnCode::OK);
         api::StorageMessage& msg(*entry._command);
         assert(entry._bucket == source.bucket);
 
-        document::Bucket bucket = remapMessage(msg, source.bucket, op, targets, targetDisk, returnCode);
+        document::Bucket bucket = remapMessage(msg, source.bucket, op, targets, returnCode);
 
         if (returnCode.getResult() != api::ReturnCode::OK) {
             // Fail message if errorcode set
@@ -739,7 +687,7 @@ FileStorHandlerImpl::remapQueueNoLock(Disk& from, const RemapInfo& source,
             assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e){
                 return e->bucket == bucket;
             }) != targets.end());
-            _diskInfo[targetDisk].stripe(bucket).exposeQueue().emplace_back(std::move(entry));
+            _disk.stripe(bucket).exposeQueue().emplace_back(std::move(entry));
         }
     }
 
@@ -752,12 +700,10 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target, Oper
     // the same bucket. Will fix order if we accept wrong order later.
     MultiLockGuard guard;
 
-    Disk& from(_diskInfo[source.diskIndex]);
-    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex, from.stripe_index(source.bucket));
+    guard.addLock(_disk.stripe(source.bucket).exposeLock(), _disk.stripe_index(source.bucket));
 
-    Disk& to1(_diskInfo[target.diskIndex]);
     if (target.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to1.stripe(target.bucket).exposeLock(), target.diskIndex, to1.stripe_index(target.bucket));
+        guard.addLock(_disk.stripe(target.bucket).exposeLock(), _disk.stripe_index(target.bucket));
     }
 
     std::vector<RemapInfo*> targets;
@@ -765,7 +711,7 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target, Oper
 
     guard.lock();
 
-    remapQueueNoLock(from, source, targets, op);
+    remapQueueNoLock(_disk, source, targets, op);
 }
 
 void
@@ -775,17 +721,14 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target1, Rem
     // the same bucket. Will fix order if we accept wrong order later.
     MultiLockGuard guard;
 
-    Disk& from(_diskInfo[source.diskIndex]);
-    guard.addLock(from.stripe(source.bucket).exposeLock(), source.diskIndex, from.stripe_index(source.bucket));
+    guard.addLock(_disk.stripe(source.bucket).exposeLock(), _disk.stripe_index(source.bucket));
 
-    Disk& to1(_diskInfo[target1.diskIndex]);
     if (target1.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to1.stripe(target1.bucket).exposeLock(), target1.diskIndex, to1.stripe_index(target1.bucket));
+        guard.addLock(_disk.stripe(target1.bucket).exposeLock(), _disk.stripe_index(target1.bucket));
     }
 
-    Disk& to2(_diskInfo[target2.diskIndex]);
     if (target2.bucket.getBucketId().getRawId() != 0) {
-        guard.addLock(to2.stripe(target2.bucket).exposeLock(), target2.diskIndex, to2.stripe_index(target2.bucket));
+        guard.addLock(_disk.stripe(target2.bucket).exposeLock(), _disk.stripe_index(target2.bucket));
     }
 
     guard.lock();
@@ -794,7 +737,7 @@ FileStorHandlerImpl::remapQueue(const RemapInfo& source, RemapInfo& target1, Rem
     targets.push_back(&target1);
     targets.push_back(&target2);
 
-    remapQueueNoLock(from, source, targets, op);
+    remapQueueNoLock(_disk, source, targets, op);
 }
 
 void
@@ -1180,12 +1123,6 @@ FileStorHandlerImpl::Disk::getQueueSize() const noexcept
     return sum;
 }
 
-uint32_t
-FileStorHandlerImpl::getQueueSize(uint16_t disk) const
-{
-    return _diskInfo[disk].getQueueSize();
-}
-
 FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard & guard, Stripe& stripe,
                                             const document::Bucket &bucket, uint8_t priority,
                                             api::MessageType::Id msgType, api::StorageMessage::Id msgId,
@@ -1295,22 +1232,21 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
 {
     bool verbose = path.hasAttribute("verbose");
     out << "<h1>Filestor handler</h1>\n";
-    for (uint32_t i=0; i<_diskInfo.size(); ++i) {
-        out << "<h2>Disk " << i << "</h2>\n";
-        const Disk& disk(_diskInfo[i]);
-        out << "Queue size: " << disk.getQueueSize() << "<br>\n";
-        out << "Disk state: ";
-        switch (disk.getState()) {
-            case FileStorHandler::AVAILABLE: out << "AVAILABLE"; break;
-            case FileStorHandler::DISABLED: out << "DISABLED"; break;
-            case FileStorHandler::CLOSED: out << "CLOSED"; break;
-        }
-        out << "<h4>Active operations</h4>\n";
-        disk.dumpActiveHtml(out);
-        if (!verbose) continue;
+
+    out << "<h2>Disk " << "</h2>\n";
+    out << "Queue size: " << _disk.getQueueSize() << "<br>\n";
+    out << "Disk state: ";
+    switch (_disk.getState()) {
+        case FileStorHandler::AVAILABLE: out << "AVAILABLE"; break;
+        case FileStorHandler::DISABLED: out << "DISABLED"; break;
+        case FileStorHandler::CLOSED: out << "CLOSED"; break;
+    }
+    out << "<h4>Active operations</h4>\n";
+    _disk.dumpActiveHtml(out);
+    if (verbose) {
         out << "<h4>Input queue</h4>\n";
         out << "<ul>\n";
-        disk.dumpQueueHtml(out);
+        _disk.dumpQueueHtml(out);
         out << "</ul>\n";
     }
 
@@ -1330,9 +1266,7 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
 void
 FileStorHandlerImpl::waitUntilNoLocks()
 {
-    for (const auto & disk : _diskInfo) {
-        disk.waitUntilNoLocks();
-    }
+    _disk.waitUntilNoLocks();
 }
 
 ResumeGuard

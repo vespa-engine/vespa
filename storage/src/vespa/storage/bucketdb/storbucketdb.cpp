@@ -17,19 +17,19 @@ void
 StorageBucketInfo::
 print(std::ostream& out, bool, const std::string&) const
 {
-    out << info << ", disk " << disk;
+    out << info;
 }
 
-bool StorageBucketInfo::operator==(const StorageBucketInfo& b) const {
-    return disk == b.disk;
+bool StorageBucketInfo::operator==(const StorageBucketInfo& ) const {
+    return true;
 }
 
 bool StorageBucketInfo::operator!=(const StorageBucketInfo& b) const {
     return !(*this == b);
 }
 
-bool StorageBucketInfo::operator<(const StorageBucketInfo& b) const {
-    return disk < b.disk;
+bool StorageBucketInfo::operator<(const StorageBucketInfo& ) const {
+    return false;
 }
 
 std::ostream&
@@ -62,7 +62,6 @@ StorBucketDatabase::insert(const document::BucketId& bucket,
                            const bucketdb::StorageBucketInfo& entry,
                            const char* clientId)
 {
-    assert(entry.disk != 0xff);
     bool preExisted;
     return _impl->insert(bucket.toKey(), entry, clientId, false, preExisted);
 }

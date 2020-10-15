@@ -70,7 +70,7 @@ void StateReporterTest::SetUp() {
     _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "statereportertest"));
     assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
 
-    _node = std::make_unique<TestServiceLayerApp>(DiskCount(1), NodeIndex(0), _config->getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->getConfigId());
     _node->setupDummyPersistence();
     _clock = &_node->getClock();
     _clock->setAbsoluteTimeInSeconds(1000000);

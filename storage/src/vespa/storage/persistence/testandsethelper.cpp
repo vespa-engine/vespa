@@ -71,8 +71,8 @@ TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
         auto docPtr = result.getDocumentPtr();
         if (_docSelectionUp->contains(*docPtr) != document::select::Result::True) {
             return api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
-                                   vespalib::make_string("Condition did not match document partition=%d, nodeIndex=%d bucket=%" PRIx64 " %s",
-                                                         _thread._env._partition, _thread._env._nodeIndex, _cmd.getBucketId().getRawId(),
+                                   vespalib::make_string("Condition did not match document nodeIndex=%d bucket=%" PRIx64 " %s",
+                                                         _thread._env._nodeIndex, _cmd.getBucketId().getRawId(),
                                                          _cmd.hasBeenRemapped() ? "remapped" : ""));
         }
 
@@ -83,8 +83,8 @@ TestAndSetHelper::retrieveAndMatch(spi::Context & context) {
     }
 
     return api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
-                           vespalib::make_string("Document does not exist partition=%d, nodeIndex=%d bucket=%" PRIx64 " %s",
-                                                 _thread._env._partition, _thread._env._nodeIndex, _cmd.getBucketId().getRawId(),
+                           vespalib::make_string("Document does not exist nodeIndex=%d bucket=%" PRIx64 " %s",
+                                                 _thread._env._nodeIndex, _cmd.getBucketId().getRawId(),
                                                  _cmd.hasBeenRemapped() ? "remapped" : ""));
 }
 

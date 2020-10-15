@@ -382,7 +382,7 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
             bucketInfo.toString().c_str());
     }
     if (entry.preExisted()) {
-        if (entry->disk == partition) {
+        if (0 == partition) {
             LOG(debug, "%s already existed in bucket database on disk %i. "
                        "Might have been moved from wrong directory prior to "
                        "listing this directory.",
@@ -395,14 +395,14 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
                 bucketId.stripUnused()) == partition)
         {
             keepOnDisk = partition;
-            joinFromDisk = entry->disk;
+            joinFromDisk = 0;
         } else {
-            keepOnDisk = entry->disk;
+            keepOnDisk = 0;
             joinFromDisk = partition;
         }
-        LOG(debug, "%s exist on both disk %u and disk %i. Joining two versions "
+        LOG(debug, "%s exist on both disk 0 and disk %i. Joining two versions "
                    "onto disk %u.",
-            bucketId.toString().c_str(), entry->disk, int(partition), keepOnDisk);
+            bucketId.toString().c_str(), int(partition), keepOnDisk);
         entry.unlock();
         // Must not have bucket db lock while sending down
         auto cmd = std::make_shared<InternalBucketJoinCommand>(bucket, keepOnDisk, joinFromDisk);
@@ -414,7 +414,6 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
         _system._component.getMinUsedBitsTracker().update(bucketId);
         LOG(spam, "Inserted %s on disk %i into bucket database",
             bucketId.toString().c_str(), int(partition));
-        entry->disk = partition;
         entry.write();
         uint16_t disk(distribution.getIdealDisk(
                 _system._nodeState, _system._nodeIndex, bucketId.stripUnused(),
@@ -453,7 +452,7 @@ namespace {
                 return StorBucketDatabase::Decision::CONTINUE;
             }
             _iterator = bucket;
-            if (entry.disk != _disk) {
+            if (0 != _disk) {
                 //LOG(spam, "Ignoring bucket %s as it is not on disk currently "
                 //          "being processed", bucket.toString().c_str());
                 // Ignore. We only want to scan for one disk

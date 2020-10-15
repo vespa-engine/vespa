@@ -39,14 +39,12 @@ class FileStorHandler : public MessageSender {
 public:
     struct RemapInfo {
         document::Bucket bucket;
-        uint16_t diskIndex;
         bool foundInQueue;
 
-        RemapInfo(const document::Bucket &bucket_, uint16_t diskIdx)
+        RemapInfo(const document::Bucket &bucket_)
             : bucket(bucket_),
-              diskIndex(diskIdx),
               foundInQueue(false)
-            {}
+        {}
     };
 
     class BucketLockInterface {
@@ -69,8 +67,7 @@ public:
 
     FileStorHandler(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
                     ServiceLayerComponentRegister&);
-    FileStorHandler(MessageSender&, FileStorMetrics&,
-                    ServiceLayerComponentRegister&);
+    FileStorHandler(MessageSender&, FileStorMetrics&, ServiceLayerComponentRegister&);
     ~FileStorHandler();
 
         // Commands used by file stor manager
@@ -84,17 +81,17 @@ public:
      */
     void flush(bool killPendingMerges);
 
-    void setDiskState(uint16_t disk, DiskState state);
-    DiskState getDiskState(uint16_t disk);
+    void setDiskState(DiskState state);
+    DiskState getDiskState();
 
-    /** Check whether a given disk is enabled or not. */
-    bool enabled(uint16_t disk) { return (getDiskState(disk) == AVAILABLE); }
-    bool closed(uint16_t disk) { return (getDiskState(disk) == CLOSED); }
+    /** Check whether it is enabled or not. */
+    bool enabled() { return (getDiskState() == AVAILABLE); }
+    bool closed() { return (getDiskState() == CLOSED); }
     /**
-     * Disable the given disk. Operations towards threads using this disk will
+     * Disable the disk. Operations towards threads using this disk will
      * start to fail. Typically called when disk errors are detected.
      */
-    void disable(uint16_t disk) { setDiskState(disk, DISABLED); }
+    void disable() { setDiskState(DISABLED); }
     /** Closes all disk threads. */
     void close();
 
@@ -105,17 +102,17 @@ public:
     ResumeGuard pause();
 
     /**
-     * Schedule a storage message to be processed by the given disk
+     * Schedule a storage message to be processed
      * @return True if we maanged to schedule operation. False if not
      */
-    bool schedule(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
+    bool schedule(const std::shared_ptr<api::StorageMessage>&);
 
     /**
      * Used by file stor threads to get their next message to process.
      *
-     * @param disk The disk to get messages for
+     * @param stripe The stripe to get messages for
      */
-    LockedMessage getNextMessage(uint16_t disk, uint32_t stripeId);
+    LockedMessage getNextMessage(uint32_t stripeId);
 
     /**
      * Lock a bucket. By default, each file stor thread has the locks of all
@@ -131,7 +128,7 @@ public:
      *
      *
      */
-    BucketLockInterface::SP lock(const document::Bucket&, uint16_t disk, api::LockingRequirements lockReq);
+    BucketLockInterface::SP lock(const document::Bucket&, api::LockingRequirements lockReq);
 
     /**
      * Called by FileStorThread::onBucketDiskMove() after moving file, in case
@@ -143,8 +140,7 @@ public:
      * requeststatus - Ignore
      * readbucketinfo/bucketdiskmove/internalbucketjoin - Fail and log errors
      */
-    void remapQueueAfterDiskMove(const document::Bucket &bucket,
-                                 uint16_t sourceDisk, uint16_t targetDisk);
+    void remapQueueAfterDiskMove(const document::Bucket &bucket);
 
     /**
      * Called by FileStorThread::onJoin() after joining a bucket into another,
@@ -194,7 +190,7 @@ public:
      * Fail all operations towards a single bucket currently queued to the
      * given thread with the given error code.
      */
-    void failOperations(const document::Bucket&, uint16_t fromDisk, const api::ReturnCode&);
+    void failOperations(const document::Bucket&, const api::ReturnCode&);
 
     /**
      * Add a new merge state to the registry.
@@ -224,7 +220,7 @@ public:
     uint32_t getNumActiveMerges() const;
 
     /// Provides the next stripe id for a certain disk.
-    uint32_t getNextStripeId(uint32_t disk);
+    uint32_t getNextStripeId();
 
     /** Removes the merge status for the given bucket. */
     void clearMergeStatus(const document::Bucket&);
@@ -243,12 +239,11 @@ public:
 
     /** Utility function to fetch total size of queue. */
     uint32_t getQueueSize() const;
-    uint32_t getQueueSize(uint16_t disk) const;
 
     // Commands used by testing
     void setGetNextMessageTimeout(vespalib::duration timeout);
 
-    std::string dumpQueue(uint16_t disk) const;
+    std::string dumpQueue() const;
 
 private:
     std::unique_ptr<FileStorHandlerImpl> _impl;

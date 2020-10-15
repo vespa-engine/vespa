@@ -241,20 +241,20 @@ public:
     void setGetNextMessageTimeout(vespalib::duration timeout) { _getNextMessageTimeout = timeout; }
 
     void flush(bool killPendingMerges);
-    void setDiskState(uint16_t disk, DiskState state);
-    DiskState getDiskState(uint16_t disk) const;
+    void setDiskState(DiskState state);
+    DiskState getDiskState() const;
     void close();
-    bool schedule(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
+    bool schedule(const std::shared_ptr<api::StorageMessage>&);
 
-    FileStorHandler::LockedMessage getNextMessage(uint16_t disk, uint32_t stripeId);
+    FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId);
 
     enum Operation { MOVE, SPLIT, JOIN };
     void remapQueue(const RemapInfo& source, RemapInfo& target, Operation op);
 
     void remapQueue(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2, Operation op);
 
-    void failOperations(const document::Bucket & bucket, uint16_t disk, const api::ReturnCode & code) {
-        _diskInfo[disk].failOperations(bucket, code);
+    void failOperations(const document::Bucket & bucket, const api::ReturnCode & code) {
+        _disk.failOperations(bucket, code);
     }
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
@@ -263,12 +263,11 @@ public:
     void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
 
     uint32_t getQueueSize() const;
-    uint32_t getQueueSize(uint16_t disk) const;
-    uint32_t getNextStripeId(uint32_t disk);
+    uint32_t getNextStripeId();
 
     std::shared_ptr<FileStorHandler::BucketLockInterface>
-    lock(const document::Bucket & bucket, uint16_t disk, api::LockingRequirements lockReq) {
-        return _diskInfo[disk].lock(bucket, lockReq);
+    lock(const document::Bucket & bucket, api::LockingRequirements lockReq) {
+        return _disk.lock(bucket, lockReq);
     }
 
     void addMergeStatus(const document::Bucket&, MergeStatus::SP);
@@ -277,8 +276,8 @@ public:
     uint32_t getNumActiveMerges() const;
     void clearMergeStatus(const document::Bucket&, const api::ReturnCode*);
 
-    std::string dumpQueue(uint16_t disk) const {
-        return _diskInfo[disk].dumpQueue();
+    std::string dumpQueue() const {
+        return _disk.dumpQueue();
     }
     ResumeGuard pause();
     void resume() override;
@@ -286,7 +285,7 @@ public:
 
 private:
     ServiceLayerComponent _component;
-    std::vector<Disk>     _diskInfo;
+    Disk                  _disk;
     MessageSender&        _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;
     mutable std::mutex    _mergeStatesLock;
@@ -307,7 +306,7 @@ private:
      * recheck pause status. Returns true if filestor isn't paused at the time
      * of the first check or after the wait, false if it's still paused.
      */
-    bool tryHandlePause(uint16_t disk) const;
+    bool tryHandlePause() const;
 
     /**
      * Checks whether the entire filestor layer is paused.
@@ -335,7 +334,7 @@ private:
 
     document::Bucket
     remapMessage(api::StorageMessage& msg, const document::Bucket &source, Operation op,
-                 std::vector<RemapInfo*>& targets, uint16_t& targetDisk, api::ReturnCode& returnCode);
+                 std::vector<RemapInfo*>& targets, api::ReturnCode& returnCode);
 
     void remapQueueNoLock(Disk& from, const RemapInfo& source, std::vector<RemapInfo*>& targets, Operation op);
 

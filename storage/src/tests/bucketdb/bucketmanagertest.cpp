@@ -150,8 +150,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
                 *ConfigGetter<DocumenttypesConfig>::getConfig(
                     "config-doctypes", FileSpec("../config-doctypes.cfg")));
     _top = std::make_unique<DummyStorageLink>();
-    _node = std::make_unique<TestServiceLayerApp>(
-                DiskCount(1), NodeIndex(0), config.getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), config.getConfigId());
     _node->setTypeRepo(repo);
     _node->setupDummyPersistence();
     // Set up the 3 links
@@ -204,7 +203,6 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
     ++_emptyBuckets;
     for (const auto& bi : _bucketInfo) {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = bi.second.partition;
         entry.setBucketInfo(api::BucketInfo(bi.second.crc,
                                             bi.second.count,
                                             bi.second.size));
@@ -224,7 +222,6 @@ BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg,
     {
         bucketdb::StorageBucketInfo entry;
         entry.setBucketInfo(info);
-        entry.disk = 0;
         _node->getStorageBucketDatabase().insert(id, entry, "foo");
     }
 
@@ -438,7 +435,6 @@ TEST_F(BucketManagerTest, metrics_generation) {
     // Add 3 buckets; 2 ready, 1 active. 300 docs total, 600 bytes total.
     for (int i = 0; i < 3; ++i) {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = 0;
         api::BucketInfo info(50, 100, 200);
         if (i > 0) {
             info.setReady();
@@ -483,7 +479,6 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     auto& repo = _node->getComponentRegister().getBucketSpaceRepo();
     {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = 0;
         api::BucketInfo info(50, 100, 200);
         info.setReady(true);
         entry.setBucketInfo(info);
@@ -492,7 +487,6 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     }
     {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = 0;
         api::BucketInfo info(60, 150, 300);
         info.setActive(true);
         entry.setBucketInfo(info);
@@ -530,7 +524,6 @@ BucketManagerTest::insertSingleBucket(const document::BucketId& bucket,
                                       const api::BucketInfo& info)
 {
     bucketdb::StorageBucketInfo entry;
-    entry.disk = 0;
     entry.setBucketInfo(info);
     _node->getStorageBucketDatabase().insert(bucket, entry, "foo");
 }

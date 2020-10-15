@@ -25,13 +25,11 @@ namespace {
 
     spi::LoadType defaultLoadType(0, "default");
 
-    vdstestlib::DirConfig initialize(uint32_t numDisks, const std::string & rootOfRoot) {
+    vdstestlib::DirConfig initialize(const std::string & rootOfRoot) {
         vdstestlib::DirConfig config(getStandardConfig(true, rootOfRoot));
         std::string rootFolder = getRootFolder(config);
         vespalib::rmdir(rootFolder, true);
-        for (uint32_t i = 0; i < numDisks; i++) {
-            vespalib::mkdir(vespalib::make_string("%s/disks/d%d", rootFolder.c_str(), i), true);
-        }
+        vespalib::mkdir(vespalib::make_string("%s/disks/d0", rootFolder.c_str()), true);
         return config;
     }
 
@@ -47,27 +45,23 @@ namespace {
     };
 }
 
-PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const std::string & rootOfRoot)
-    : _config(initialize(numDisks, rootOfRoot)),
+PersistenceTestEnvironment::PersistenceTestEnvironment(const std::string & rootOfRoot)
+    : _config(initialize(rootOfRoot)),
       _messageKeeper(),
-      _node(numDisks, NodeIndex(0), _config.getConfigId()),
+      _node(NodeIndex(0), _config.getConfigId()),
       _component(_node.getComponentRegister(), "persistence test env"),
       _metrics(_component.getLoadTypes()->getMetricLoadTypes())
 {
     _node.setupDummyPersistence();
-    _metrics.initDiskMetrics(numDisks, _node.getLoadTypes()->getMetricLoadTypes(), 1, 1);
-    _handler = std::make_unique<FileStorHandler>(_messageKeeper, _metrics,
-                                       _node.getComponentRegister());
-    for (uint32_t i = 0; i < numDisks; i++) {
-        _diskEnvs.push_back(
-                std::make_unique<PersistenceUtil>(_config.getConfigId(), _node.getComponentRegister(), *_handler,
-                                                  *_metrics.disks[i]->threads[0], i, _node.getPersistenceProvider()));
-    }
+    _metrics.initDiskMetrics(1, _node.getLoadTypes()->getMetricLoadTypes(), 1, 1);
+    _handler = std::make_unique<FileStorHandler>(_messageKeeper, _metrics, _node.getComponentRegister());
+    _diskEnv = std::make_unique<PersistenceUtil>(_config.getConfigId(), _node.getComponentRegister(), *_handler,
+                                                 *_metrics.disks[0]->threads[0], _node.getPersistenceProvider());
 }
 
 PersistenceTestEnvironment::~PersistenceTestEnvironment() {
     _handler->close();
-    while (!_handler->closed(0)) {
+    while (!_handler->closed()) {
         std::this_thread::sleep_for(1ms);
     }
 }
@@ -76,15 +70,14 @@ PersistenceTestUtils::PersistenceTestUtils() = default;
 PersistenceTestUtils::~PersistenceTestUtils() = default;
 
 std::string
-PersistenceTestUtils::dumpBucket(const document::BucketId& bid, uint16_t disk) {
-    assert(disk == 0u);
+PersistenceTestUtils::dumpBucket(const document::BucketId& bid) {
     return dynamic_cast<spi::dummy::DummyPersistence&>(_env->_node.getPersistenceProvider()).dumpBucket(makeSpiBucket(bid));
 }
 
 void
-PersistenceTestUtils::setupDisks(uint32_t numDisks) {
-    _env = std::make_unique<PersistenceTestEnvironment>(DiskCount(numDisks), "todo-make-unique-persistencetestutils");
-    setupExecutor(numDisks);
+PersistenceTestUtils::setupDisks() {
+    _env = std::make_unique<PersistenceTestEnvironment>("todo-make-unique-persistencetestutils");
+    setupExecutor(1);
 }
 
 void
@@ -93,27 +86,24 @@ PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
 }
 
 std::unique_ptr<PersistenceThread>
-PersistenceTestUtils::createPersistenceThread(uint32_t disk)
+PersistenceTestUtils::createPersistenceThread()
 {
     return std::make_unique<PersistenceThread>(_sequenceTaskExecutor.get(), _env->_node.getComponentRegister(),
                                                _env->_config.getConfigId(),getPersistenceProvider(),
-                                               getEnv()._fileStorHandler, getEnv()._metrics, disk);
+                                               getEnv()._fileStorHandler, getEnv()._metrics);
 }
 
 document::Document::SP
 PersistenceTestUtils::schedulePut(
         uint32_t location,
         spi::Timestamp timestamp,
-        uint16_t disk,
         uint32_t minSize,
         uint32_t maxSize)
 {
     document::Document::SP doc(createRandomDocumentAtLocation(
             location, timestamp, minSize, maxSize));
-    std::shared_ptr<api::StorageMessage> msg(
-            new api::PutCommand(
-                makeDocumentBucket(document::BucketId(16, location)), doc, timestamp));
-    fsHandler().schedule(msg, disk);
+    auto msg = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, location)), doc, timestamp);
+    fsHandler().schedule(msg);
     return doc;
 }
 
@@ -150,7 +140,7 @@ PersistenceTestUtils::getBucketStatus(const document::BucketId& id)
     if (!entry.exist()) {
         ost << "null";
     } else {
-        ost << entry->getBucketInfo().getDocumentCount() << "," << entry->disk;
+        ost << entry->getBucketInfo().getDocumentCount();
     }
 
     return ost.str();
@@ -158,76 +148,52 @@ PersistenceTestUtils::getBucketStatus(const document::BucketId& id)
 
 document::Document::SP
 PersistenceTestUtils::doPutOnDisk(
-        uint16_t disk,
         uint32_t location,
         spi::Timestamp timestamp,
         uint32_t minSize,
         uint32_t maxSize)
 {
-    document::Document::SP doc(createRandomDocumentAtLocation(
-                             location, timestamp, minSize, maxSize));
-    assert(disk == 0u);
+    document::Document::SP doc(createRandomDocumentAtLocation(location, timestamp, minSize, maxSize));
     spi::Bucket b(makeSpiBucket(document::BucketId(16, location)));
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-
+    spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     getPersistenceProvider().createBucket(b, context);
-
     getPersistenceProvider().put(spi::Bucket(b), timestamp, doc, context);
-
     return doc;
 }
 
 bool
 PersistenceTestUtils::doRemoveOnDisk(
-        uint16_t disk,
         const document::BucketId& bucketId,
         const document::DocumentId& docId,
         spi::Timestamp timestamp,
         bool persistRemove)
 {
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-    assert(disk == 0u);
+    spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     if (persistRemove) {
-        spi::RemoveResult result = getPersistenceProvider().removeIfFound(
-            makeSpiBucket(bucketId),
-            timestamp, docId, context);
+        spi::RemoveResult result = getPersistenceProvider().removeIfFound(makeSpiBucket(bucketId),timestamp, docId, context);
         return result.wasFound();
     }
-    spi::RemoveResult result = getPersistenceProvider().remove(
-            makeSpiBucket(bucketId),
-            timestamp, docId, context);
+    spi::RemoveResult result = getPersistenceProvider().remove(makeSpiBucket(bucketId), timestamp, docId, context);
 
     return result.wasFound();
 }
 
 bool
 PersistenceTestUtils::doUnrevertableRemoveOnDisk(
-        uint16_t disk,
         const document::BucketId& bucketId,
         const document::DocumentId& docId,
         spi::Timestamp timestamp)
 {
-    assert(disk == 0u);
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-    spi::RemoveResult result = getPersistenceProvider().remove(
-            makeSpiBucket(bucketId),
-            timestamp, docId, context);
+    spi::Context context(defaultLoadType, spi::Priority(0),spi::Trace::TraceLevel(0));
+    spi::RemoveResult result = getPersistenceProvider().remove(makeSpiBucket(bucketId), timestamp, docId, context);
     return result.wasFound();
 }
 
 spi::GetResult
-PersistenceTestUtils::doGetOnDisk(
-        uint16_t disk,
-        const document::BucketId& bucketId,
-        const document::DocumentId& docId)
+PersistenceTestUtils::doGetOnDisk(const document::BucketId& bucketId, const document::DocumentId& docId)
 {
     auto fieldSet = std::make_unique<document::AllFields>();
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-    assert(disk == 0u);
+    spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     return getPersistenceProvider().get(makeSpiBucket(bucketId), *fieldSet, docId, context);
 }
 
@@ -255,47 +221,19 @@ PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, cons
     return update;
 }
 
-uint16_t
-PersistenceTestUtils::getDiskFromBucketDatabaseIfUnset(const document::Bucket& bucket, uint16_t disk)
-{
-    if (disk == 0xffff) {
-        StorBucketDatabase::WrappedEntry entry(
-                getEnv().getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "createTestBucket"));
-        if (entry.exist()) {
-            return entry->disk;
-        } else {
-            std::ostringstream error;
-            error << bucket.toString() << " not in db and disk unset";
-            throw vespalib::IllegalStateException(error.str(), VESPA_STRLOC);
-        }
-    }
-    return disk;
-}
-
 void
-PersistenceTestUtils::doPut(const document::Document::SP& doc,
-                            spi::Timestamp time,
-                            uint16_t disk,
-                            uint16_t usedBits)
+PersistenceTestUtils::doPut(const document::Document::SP& doc, spi::Timestamp time, uint16_t usedBits)
 {
-    document::BucketId bucket(
-            _env->_component.getBucketIdFactory().getBucketId(doc->getId()));
+    document::BucketId bucket(_env->_component.getBucketIdFactory().getBucketId(doc->getId()));
     bucket.setUsedBits(usedBits);
-    disk = getDiskFromBucketDatabaseIfUnset(makeDocumentBucket(bucket), disk);
-
-    doPut(doc, bucket, time, disk);
+    doPut(doc, bucket, time);
 }
 
 void
-PersistenceTestUtils::doPut(const document::Document::SP& doc,
-                            document::BucketId bid,
-                            spi::Timestamp time,
-                            uint16_t disk)
+PersistenceTestUtils::doPut(const document::Document::SP& doc, document::BucketId bid, spi::Timestamp time)
 {
-    assert(disk == 0u);
     spi::Bucket b(makeSpiBucket(bid));
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
+    spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     getPersistenceProvider().createBucket(b, context);
     getPersistenceProvider().put(b, time, std::move(doc), context);
 }
@@ -303,28 +241,20 @@ PersistenceTestUtils::doPut(const document::Document::SP& doc,
 spi::UpdateResult
 PersistenceTestUtils::doUpdate(document::BucketId bid,
                                const document::DocumentUpdate::SP& update,
-                               spi::Timestamp time,
-                               uint16_t disk)
+                               spi::Timestamp time)
 {
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-    assert(disk == 0u);
-    return getPersistenceProvider().update(
-            makeSpiBucket(bid), time, update, context);
+    spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
+    return getPersistenceProvider().update(makeSpiBucket(bid), time, update, context);
 }
 
 void
 PersistenceTestUtils::doRemove(const document::DocumentId& id, spi::Timestamp time,
-                           uint16_t disk, bool unrevertableRemove,
-                           uint16_t usedBits)
+                               bool unrevertableRemove, uint16_t usedBits)
 {
     document::BucketId bucket(
             _env->_component.getBucketIdFactory().getBucketId(id));
     bucket.setUsedBits(usedBits);
-    disk = getDiskFromBucketDatabaseIfUnset(makeDocumentBucket(bucket), disk);
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-    assert(disk == 0u);
+    spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     if (unrevertableRemove) {
         getPersistenceProvider().remove(
                 makeSpiBucket(bucket), time, id, context);
@@ -360,8 +290,7 @@ PersistenceTestUtils::createRandomDocumentAtLocation(
 }
 
 void
-PersistenceTestUtils::createTestBucket(const document::Bucket& bucket,
-                                       uint16_t disk)
+PersistenceTestUtils::createTestBucket(const document::Bucket& bucket)
 {
     document::BucketId bucketId(bucket.getBucketId());
     uint32_t opsPerType = 2;
@@ -377,25 +306,20 @@ PersistenceTestUtils::createTestBucket(const document::Bucket& bucket,
                 location <<= 32;
                 location += (bucketId.getRawId() & 0xffffffff);
                 document::Document::SP doc(
-                        createRandomDocumentAtLocation(
-                            location, seed, minDocSize, maxDocSize));
+                        createRandomDocumentAtLocation(location, seed, minDocSize, maxDocSize));
                 if (headerOnly) {
                     clearBody(*doc);
                 }
-                doPut(doc, spi::Timestamp(seed), disk, bucketId.getUsedBits());
+                doPut(doc, spi::Timestamp(seed), bucketId.getUsedBits());
                 if (optype == 0) { // Regular put
                 } else if (optype == 1) { // Overwritten later in time
                     document::Document::SP doc2(new document::Document(*doc));
-                    doc2->setValue(doc2->getField("content"),
-                                   document::StringFieldValue("overwritten"));
-                    doPut(doc2, spi::Timestamp(seed + 500),
-                          disk, bucketId.getUsedBits());
+                    doc2->setValue(doc2->getField("content"), document::StringFieldValue("overwritten"));
+                    doPut(doc2, spi::Timestamp(seed + 500), bucketId.getUsedBits());
                 } else if (optype == 2) { // Removed
-                    doRemove(doc->getId(), spi::Timestamp(seed + 500), disk, false,
-                             bucketId.getUsedBits());
+                    doRemove(doc->getId(), spi::Timestamp(seed + 500), false, bucketId.getUsedBits());
                 } else if (optype == 3) { // Unrevertable removed
-                    doRemove(doc->getId(), spi::Timestamp(seed), disk, true,
-                             bucketId.getUsedBits());
+                    doRemove(doc->getId(), spi::Timestamp(seed), true, bucketId.getUsedBits());
                 }
             }
         }

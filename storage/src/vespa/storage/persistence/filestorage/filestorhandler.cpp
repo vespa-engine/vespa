@@ -25,15 +25,15 @@ FileStorHandler::flush(bool flushMerges)
 }
 
 void
-FileStorHandler::setDiskState(uint16_t disk, DiskState state)
+FileStorHandler::setDiskState(DiskState state)
 {
-    _impl->setDiskState(disk, state);
+    _impl->setDiskState(state);
 }
 
 FileStorHandler::DiskState
-FileStorHandler::getDiskState(uint16_t disk)
+FileStorHandler::getDiskState()
 {
-    return _impl->getDiskState(disk);
+    return _impl->getDiskState();
 }
 
 void
@@ -49,28 +49,28 @@ FileStorHandler::pause()
 }
 
 bool
-FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t disk)
+FileStorHandler::schedule(const api::StorageMessage::SP& msg)
 {
-    return _impl->schedule(msg, disk);
+    return _impl->schedule(msg);
 }
 
 FileStorHandler::LockedMessage
-FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId)
+FileStorHandler::getNextMessage(uint32_t stripeId)
 {
-    return _impl->getNextMessage(disk, stripeId);
+    return _impl->getNextMessage(stripeId);
 }
 
 FileStorHandler::BucketLockInterface::SP
-FileStorHandler::lock(const document::Bucket& bucket, uint16_t disk, api::LockingRequirements lockReq)
+FileStorHandler::lock(const document::Bucket& bucket, api::LockingRequirements lockReq)
 {
-    return _impl->lock(bucket, disk, lockReq);
+    return _impl->lock(bucket, lockReq);
 }
 
 void
-FileStorHandler::remapQueueAfterDiskMove(const document::Bucket& bucket, uint16_t sourceDisk, uint16_t targetDisk)
+FileStorHandler::remapQueueAfterDiskMove(const document::Bucket& bucket)
 {
-    RemapInfo target(bucket, targetDisk);
-    _impl->remapQueue(RemapInfo(bucket, sourceDisk), target, FileStorHandlerImpl::MOVE);
+    RemapInfo target(bucket);
+    _impl->remapQueue(RemapInfo(bucket), target, FileStorHandlerImpl::MOVE);
 }
 
 void
@@ -86,9 +86,9 @@ FileStorHandler::remapQueueAfterSplit(const RemapInfo& source,RemapInfo& target1
 }
 
 void
-FileStorHandler::failOperations(const document::Bucket &bucket, uint16_t fromDisk, const api::ReturnCode& err)
+FileStorHandler::failOperations(const document::Bucket &bucket, const api::ReturnCode& err)
 {
-    _impl->failOperations(bucket, fromDisk, err);
+    _impl->failOperations(bucket, err);
 }
 
 void
@@ -121,12 +121,6 @@ FileStorHandler::getQueueSize() const
     return _impl->getQueueSize();
 }
 
-uint32_t
-FileStorHandler::getQueueSize(uint16_t disk) const
-{
-    return _impl->getQueueSize(disk);
-}
-
 void
 FileStorHandler::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP ms)
 {
@@ -152,8 +146,8 @@ FileStorHandler::getNumActiveMerges() const
 }
 
 uint32_t
-FileStorHandler::getNextStripeId(uint32_t disk) {
-    return _impl->getNextStripeId(disk);
+FileStorHandler::getNextStripeId() {
+    return _impl->getNextStripeId();
 }
 
 void
@@ -182,9 +176,9 @@ FileStorHandler::setGetNextMessageTimeout(vespalib::duration timeout)
 }
 
 std::string
-FileStorHandler::dumpQueue(uint16_t disk) const
+FileStorHandler::dumpQueue() const
 {
-    return _impl->dumpQueue(disk);
+    return _impl->dumpQueue();
 }
 
 } // storage

@@ -42,7 +42,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
     for (int i = 0; i < 10; ++i) {
         document::Document::SP doc(docMan.createRandomDocumentAtLocation(4, 1234 + i));
         doc->setValue(doc->getField("headerval"), document::IntFieldValue(i));
-        doPut(doc, bucketId, spi::Timestamp(100 + i), 0);
+        doPut(doc, bucketId, spi::Timestamp(100 + i));
     }
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
@@ -102,7 +102,7 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matc
     for (int i = 0; i < 10; ++i) {
         document::Document::SP doc(docMan.createRandomDocumentAtLocation(4, 1234 + i));
         doc->setValue(doc->getField("headerval"), document::IntFieldValue(i));
-        doPut(doc, bucketId, spi::Timestamp(100 + i), 0);
+        doPut(doc, bucketId, spi::Timestamp(100 + i));
     }
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
@@ -114,7 +114,7 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matc
     EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
-        "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
+        "Persistence bucket BucketId(0x4000000000000004)\n"
         "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 163\n"
         "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 141\n"
         "  Timestamp: 104, Doc(id:mail:testdoctype1:n=4:56061.html), gid(0x040000002b8f80f0160f6c5c), size: 118\n"
@@ -132,7 +132,7 @@ TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) 
     for (int i = 0; i < 10; ++i) {
         document::Document::SP doc(docMan.createRandomDocumentAtLocation(4, 1234 + i));
         doc->setValue(doc->getField("headerval"), document::IntFieldValue(i));
-        doPut(doc, bucketId, spi::Timestamp(100 + i), 0);
+        doPut(doc, bucketId, spi::Timestamp(100 + i));
         doRemove(bucketId,
                  doc->getId(),
                  spi::Timestamp(200 + i),
@@ -148,7 +148,7 @@ TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) 
     EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
-        "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
+        "Persistence bucket BucketId(0x4000000000000004)\n"
         "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 163\n"
         "  Timestamp: 101, Doc(id:mail:testdoctype1:n=4:33113.html), gid(0x04000000b121a632741db368), size: 89\n"
         "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 141\n"
@@ -182,7 +182,7 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_
     for (int i = 0; i < 10; ++i) {
         document::Document::SP doc(docMan.createRandomDocumentAtLocation(4, 1234 + i));
         doc->setValue(doc->getField("headerval"), document::IntFieldValue(i));
-        doPut(doc, bucketId, spi::Timestamp(100 + i), 0);
+        doPut(doc, bucketId, spi::Timestamp(100 + i));
     }
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
@@ -194,7 +194,7 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_
     EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
-        "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
+        "Persistence bucket BucketId(0x4000000000000004)\n"
         "  Timestamp: 100, Doc(id:mail:testdoctype1:n=4:3619.html), gid(0x0400000092bb8d298934253a), size: 163\n"
         "  Timestamp: 101, Doc(id:mail:testdoctype1:n=4:33113.html), gid(0x04000000b121a632741db368), size: 89\n"
         "  Timestamp: 102, Doc(id:mail:testdoctype1:n=4:62608.html), gid(0x04000000ce878d2488413bc4), size: 141\n"

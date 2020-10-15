@@ -89,11 +89,11 @@ MessageTracker::sendReply() {
     vespalib::duration duration = vespalib::from_s(_timer.getElapsedTimeAsDouble()/1000.0);
     if (duration >= WARN_ON_SLOW_OPERATIONS) {
         LOGBT(warning, _msg->getType().toString(),
-              "Slow processing of message %s on disk %u. Processing time: %1.1f s (>=%1.1f s)",
-              _msg->toString().c_str(), _env._partition, vespalib::to_s(duration), vespalib::to_s(WARN_ON_SLOW_OPERATIONS));
+              "Slow processing of message %s. Processing time: %1.1f s (>=%1.1f s)",
+              _msg->toString().c_str(), vespalib::to_s(duration), vespalib::to_s(WARN_ON_SLOW_OPERATIONS));
     } else {
-        LOGBT(spam, _msg->getType().toString(), "Processing time of message %s on disk %u: %1.1f s",
-              _msg->toString(true).c_str(), _env._partition, vespalib::to_s(duration));
+        LOGBT(spam, _msg->getType().toString(), "Processing time of message %s: %1.1f s",
+              _msg->toString(true).c_str(), vespalib::to_s(duration));
     }
     if (hasReply()) {
         if ( ! _context.getTrace().getRoot().isEmpty()) {
@@ -166,13 +166,11 @@ PersistenceUtil::PersistenceUtil(
         ServiceLayerComponentRegister& compReg,
         FileStorHandler& fileStorHandler,
         FileStorThreadMetrics& metrics,
-        uint16_t partition,
         spi::PersistenceProvider& provider)
     : _config(*config::ConfigGetter<vespa::config::content::StorFilestorConfig>::getConfig(configUri.getConfigId(), configUri.getContext())),
       _compReg(compReg),
       _component(compReg, generateName(this)),
       _fileStorHandler(fileStorHandler),
-      _partition(partition),
       _nodeIndex(_component.getIndex()),
       _metrics(metrics),
       _bucketFactory(_component.getBucketIdFactory()),
@@ -220,24 +218,18 @@ PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
     // the bucket DB again to verify that the bucket is still on that
     // disk after locking it, or we will have to retry on new disk.
     LockResult result;
-    result.disk = getPreferredAvailableDisk(bucket);
 
     while (true) {
         // This function is only called in a context where we require exclusive
         // locking (split/join). Refactor if this no longer the case.
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(
-                _fileStorHandler.lock(bucket, result.disk, api::LockingRequirements::Exclusive));
+                _fileStorHandler.lock(bucket, api::LockingRequirements::Exclusive));
 
         // TODO disks are no longer used in practice, can we safely discard this?
         // Might need it for synchronization purposes if something has taken the
         // disk lock _and_ the bucket lock...?
         StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(
                 bucket.getBucketId(), "join-lockAndGetDisk-1", flags));
-        if (entry.exist() && entry->disk != result.disk) {
-            result.disk = entry->disk;
-            continue;
-        }
-
         result.lock = lock;
         return result;
     }
@@ -246,7 +238,7 @@ PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
 void
 PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket)
 {
-    api::BucketInfo info = getBucketInfo(bucket, _partition);
+    api::BucketInfo info = getBucketInfo(bucket);
 
     static_cast<api::BucketInfoReply&>(tracker.getReply()).setBucketInfo(info);
 
@@ -254,13 +246,8 @@ PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &
 }
 
 api::BucketInfo
-PersistenceUtil::getBucketInfo(const document::Bucket &bucket, int disk) const
+PersistenceUtil::getBucketInfo(const document::Bucket &bucket) const
 {
-    if (disk == -1) {
-        disk = _partition;
-    }
-
-    assert(disk == 0u);
     spi::BucketInfoResult response = _spi.getBucketInfo(spi::Bucket(bucket));
 
     return convertBucketInfo(response.getBucketInfo());

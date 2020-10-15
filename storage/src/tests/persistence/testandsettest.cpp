@@ -47,7 +47,7 @@ struct TestAndSetTest : SingleDiskPersistenceTestUtils {
         createBucket(BUCKET_ID);
         getPersistenceProvider().createBucket(makeSpiBucket(BUCKET_ID),context);
 
-        thread = createPersistenceThread(0);
+        thread = createPersistenceThread();
         testDoc = createTestDocument();
         testDocId = testDoc->getId();
     }

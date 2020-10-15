@@ -184,16 +184,15 @@ namespace {
                     document::BucketId::keyToBucketId(bucketId));
 
             if (data.valid()) {
-                assert(data.disk < diskCount);
-                ++disk[data.disk].buckets;
+                ++disk[0].buckets;
                 if (data.getBucketInfo().isActive()) {
-                    ++disk[data.disk].active;
+                    ++disk[0].active;
                 }
                 if (data.getBucketInfo().isReady()) {
-                    ++disk[data.disk].ready;
+                    ++disk[0].ready;
                 }
-                disk[data.disk].docs += data.getBucketInfo().getDocumentCount();
-                disk[data.disk].bytes += data.getBucketInfo().getTotalDocumentSize();
+                disk[0].docs += data.getBucketInfo().getDocumentCount();
+                disk[0].bytes += data.getBucketInfo().getTotalDocumentSize();
 
                 if (bucket.getUsedBits() < lowestUsedBit) {
                     lowestUsedBit = bucket.getUsedBits();
@@ -357,7 +356,6 @@ namespace {
             _xos << XmlTag("bucket")
                  << XmlAttribute("id", ost.str());
             info.getBucketInfo().printXml(_xos);
-            _xos << XmlAttribute("disk", info.disk);
             _xos << XmlEndTag();
         };
     };

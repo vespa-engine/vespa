@@ -156,13 +156,11 @@ MergeThrottlerTest::SetUp()
     vdstestlib::DirConfig config(getStandardConfig(true));
 
     for (int i = 0; i < _storageNodeCount; ++i) {
-        std::unique_ptr<TestServiceLayerApp> server(
-                new TestServiceLayerApp(DiskCount(1), NodeIndex(i)));
-        server->setClusterState(lib::ClusterState(
-                    "distributor:100 storage:100 version:1"));
+        auto server = std::make_unique<TestServiceLayerApp>(NodeIndex(i));
+        server->setClusterState(lib::ClusterState("distributor:100 storage:100 version:1"));
         std::unique_ptr<DummyStorageLink> top;
 
-        top.reset(new DummyStorageLink);
+        top = std::make_unique<DummyStorageLink>();
         MergeThrottler* throttler = new MergeThrottler(config.getConfigId(), server->getComponentRegister());
         // MergeThrottler will be sandwiched in between two dummy links
         top->push_back(std::unique_ptr<StorageLink>(throttler));

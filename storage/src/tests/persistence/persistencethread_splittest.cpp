@@ -204,7 +204,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
         spi.put(bucket, spi::Timestamp(1000 + i), std::move(doc), context);
     }
 
-    std::unique_ptr<PersistenceThread> thread(createPersistenceThread(0));
+    std::unique_ptr<PersistenceThread> thread(createPersistenceThread());
     getNode().getStateUpdater().setClusterState(
             std::make_shared<lib::ClusterState>("distributor:1 storage:1"));
     document::Bucket docBucket = makeDocumentBucket(document::BucketId(currentSplitLevel, 1));

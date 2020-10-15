@@ -132,11 +132,10 @@ struct BucketInfoLogger {
     StorBucketDatabase::Decision operator()(
             uint64_t revBucket, const StorBucketDatabase::Entry& entry)
     {
-        document::BucketId bucket(
-                document::BucketId::keyToBucketId(revBucket));
+        document::BucketId bucket(document::BucketId::keyToBucketId(revBucket));
         assert(bucket.getRawId() != 0);
         assert(entry.getBucketInfo().valid());
-        DiskData& ddata(map[entry.disk]);
+        DiskData& ddata(map[0]);
         BucketData& bdata(ddata[bucket]);
         bdata.info = entry.getBucketInfo();
         return StorBucketDatabase::Decision::CONTINUE;
@@ -356,8 +355,7 @@ struct FakePersistenceLayer : public StorageLink {
                           + " did not exist in bucket database but we got "
                           + "read bucket info request for it.");
                 } else {
-                    const BucketData* bucketData(getBucketData(
-                            entry->disk, rbi.getBucketId(), "readbucketinfo"));
+                    const BucketData* bucketData(getBucketData(0, rbi.getBucketId(), "readbucketinfo"));
                     if (bucketData != 0) {
                         entry->setBucketInfo(bucketData->info);
                         entry.write();
@@ -412,8 +410,7 @@ InitializerTest::do_test_initialization(InitParams& params)
     std::map<PartitionId, DiskData> data(buildBucketInfo(_docMan, params));
 
     assert(params.diskCount == 1u);
-    TestServiceLayerApp node(params.diskCount, params.nodeIndex,
-                             params.getConfig().getConfigId());
+    TestServiceLayerApp node(params.nodeIndex, params.getConfig().getConfigId());
     DummyStorageLink top;
     StorageBucketDBInitializer* initializer;
     FakePersistenceLayer* bottom;
@@ -534,7 +531,6 @@ struct DatabaseInsertCallback : MessageCallback
                         d.info = api::BucketInfo(3+i, 4+i, 5+i, 6+i, 7+i);
                     }
                     _data[bid] = d;
-                    entry->disk = 0;
                     entry->setBucketInfo(d.info);
                     entry.write();
                 }
@@ -555,7 +551,7 @@ TEST_F(InitializerTest, buckets_initialized_by_load) {
     std::map<PartitionId, DiskData> data(buildBucketInfo(_docMan, params));
 
     assert(params.diskCount == 1u);
-    TestServiceLayerApp node(params.diskCount, params.nodeIndex,
+    TestServiceLayerApp node(params.nodeIndex,
                              params.getConfig().getConfigId());
     DummyStorageLink top;
     StorageBucketDBInitializer* initializer;
