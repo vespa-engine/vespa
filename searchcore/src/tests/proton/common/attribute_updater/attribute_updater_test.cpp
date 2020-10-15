@@ -452,7 +452,7 @@ TEST_F("require that tensor modify update is applied",
     f.setTensor(TensorSpec(f.type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
     f.applyValueUpdate(*f.attribute, 1,
                        TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
-                                          makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", 0}}, 7))));
+                                          makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "0"}}, 7))));
     f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 7).add({{"x", 1}}, 5));
 }
 
