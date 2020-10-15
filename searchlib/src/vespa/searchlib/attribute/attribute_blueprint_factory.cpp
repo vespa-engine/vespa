@@ -726,11 +726,11 @@ public:
         const auto & qt_type = query_tensor->type();
         if (! qt_type.is_dense()) {
             return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
-                                                             query_tensor->type().to_spec().c_str()));
+                                                             qt_type.to_spec().c_str()));
         }
         if (!is_compatible_for_nearest_neighbor(dense_attr_tensor->getTensorType(), qt_type)) {
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
-                                                             dense_attr_tensor->getTensorType().to_spec().c_str(), query_tensor->type().to_spec().c_str()));
+                                                             dense_attr_tensor->getTensorType().to_spec().c_str(), qt_type.to_spec().c_str()));
         }
         setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
                                                                         std::move(query_tensor),
