@@ -119,7 +119,6 @@ public class ApplicationController {
     private final EndpointCertificateManager endpointCertificateManager;
     private final StringFlag dockerImageRepoFlag;
     private final BooleanFlag provisionApplicationRoles;
-    private final BooleanFlag deployWithInternalRestart;
     private final BillingController billingController;
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
@@ -134,7 +133,6 @@ public class ApplicationController {
         this.applicationStore = controller.serviceRegistry().applicationStore();
         this.dockerImageRepoFlag = Flags.DOCKER_IMAGE_REPO.bindTo(flagSource);
         this.provisionApplicationRoles = Flags.PROVISION_APPLICATION_ROLES.bindTo(flagSource);
-        this.deployWithInternalRestart = Flags.DEPLOY_WITH_INTERNAL_RESTART.bindTo(controller.flagSource());
         this.billingController = billingController;
 
         deploymentTrigger = new DeploymentTrigger(controller, clock);
@@ -526,11 +524,6 @@ public class ApplicationController {
                     .filter(s -> !s.isBlank())
                     .map(DockerImage::fromString);
 
-            boolean internalRestart = deployWithInternalRestart
-                    .with(FetchVector.Dimension.ZONE_ID, zone.value())
-                    .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                    .value();
-
             Optional<AthenzDomain> domain = controller.tenants().get(application.tenant())
                     .filter(tenant-> tenant instanceof AthenzTenant)
                     .map(tenant -> ((AthenzTenant)tenant).domain());
@@ -552,7 +545,7 @@ public class ApplicationController {
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           applicationRoles, quota, internalRestart));
+                                                           applicationRoles, quota));
 
             var quotaUsage = configServer.getQuotaUsage(new DeploymentId(application, zone));
 

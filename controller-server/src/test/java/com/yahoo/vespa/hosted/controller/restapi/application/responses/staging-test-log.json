@@ -6,11 +6,6 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "No services requiring restart."
-      },
-      {
-        "at": 14503000,
-        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -75,11 +70,6 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "No services requiring restart."
-      },
-      {
-        "at": 14503000,
-        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -130,7 +120,7 @@
       }
     ]
   },
-  "lastId": 23,
+  "lastId": 21,
   "steps": {
     "deployTester": {
       "status": "succeeded",
