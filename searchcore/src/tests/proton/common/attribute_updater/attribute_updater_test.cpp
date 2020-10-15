@@ -411,8 +411,7 @@ getTensorDataType(const vespalib::string &spec)
 std::unique_ptr<Value>
 makeTensor(const TensorSpec &spec)
 {
-    auto result = EngineOrFactory::get().from_spec(spec);
-    return result;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>
