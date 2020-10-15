@@ -75,8 +75,6 @@ public:
     using Clock = std::chrono::steady_clock;
     using monitor_guard = std::unique_lock<std::mutex>;
 
-    struct Disk;
-
     class Stripe {
     public:
         struct LockEntry {
@@ -131,7 +129,7 @@ public:
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
 
-        FileStorHandler::LockedMessage getNextMessage(vespalib::duration timeout, Disk & disk);
+        FileStorHandler::LockedMessage getNextMessage(vespalib::duration timeout);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
@@ -154,66 +152,6 @@ public:
         std::unique_ptr<PriorityQueue>  _queue;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_merges;
-    };
-    struct Disk {
-        FileStorDiskMetrics * metrics;
-
-        /**
-         * No assumption on memory ordering around disk state reads should
-         * be made by callers.
-         */
-        DiskState getState() const noexcept {
-            return state.load(std::memory_order_relaxed);
-        }
-        /**
-         * No assumption on memory ordering around disk state writes should
-         * be made by callers.
-         */
-        void setState(DiskState s) noexcept {
-            state.store(s, std::memory_order_relaxed);
-        }
-
-        Disk(const FileStorHandlerImpl & owner, MessageSender & messageSender, uint32_t numStripes);
-        Disk(Disk &&) noexcept;
-        ~Disk();
-
-        bool isClosed() const noexcept { return getState() == DiskState::CLOSED; }
-
-        void flush();
-        void broadcast();
-        bool schedule(const std::shared_ptr<api::StorageMessage>& msg);
-        void waitUntilNoLocks() const;
-        std::vector<std::shared_ptr<api::StorageReply>> abort(const AbortBucketOperationsCommand& cmd);
-        void waitInactive(const AbortBucketOperationsCommand& cmd) const;
-        FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, vespalib::duration timeout) {
-            return _stripes[stripeId].getNextMessage(timeout, *this);
-        }
-        std::shared_ptr<FileStorHandler::BucketLockInterface>
-        lock(const document::Bucket & bucket, api::LockingRequirements lockReq) {
-            return stripe(bucket).lock(bucket, lockReq);
-        }
-        void failOperations(const document::Bucket & bucket, const api::ReturnCode & code) {
-            stripe(bucket).failOperations(bucket, code);
-        }
-
-        uint32_t getQueueSize() const noexcept;
-        uint32_t getNextStripeId() { return (_nextStripeId++)%_stripes.size(); }
-        std::string dumpQueue() const;
-        void dumpActiveHtml(std::ostream & os) const;
-        void dumpQueueHtml(std::ostream & os) const;
-        static uint64_t dispersed_bucket_bits(const document::Bucket& bucket) noexcept;
-        // We make a fairly reasonable assumption that there will be less than 64k stripes.
-        uint16_t stripe_index(const document::Bucket& bucket) const noexcept {
-            return static_cast<uint16_t>(dispersed_bucket_bits(bucket) % _stripes.size());
-        }
-        Stripe & stripe(const document::Bucket & bucket) {
-            return _stripes[stripe_index(bucket)];
-        }
-        std::vector<Stripe> & getStripes() { return _stripes; }
-    private:
-        uint32_t                 _nextStripeId;
-        std::vector<Stripe>      _stripes;
-        std::atomic<DiskState>   state;
     };
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
@@ -254,7 +192,7 @@ public:
     void remapQueue(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2, Operation op);
 
     void failOperations(const document::Bucket & bucket, const api::ReturnCode & code) {
-        _disk.failOperations(bucket, code);
+        stripe(bucket).failOperations(bucket, code);
     }
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
@@ -263,11 +201,13 @@ public:
     void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
 
     uint32_t getQueueSize() const;
-    uint32_t getNextStripeId();
+    uint32_t getNextStripeId() {
+        return (_nextStripeId++) % _stripes.size();
+    }
 
     std::shared_ptr<FileStorHandler::BucketLockInterface>
     lock(const document::Bucket & bucket, api::LockingRequirements lockReq) {
-        return _disk.lock(bucket, lockReq);
+        return stripe(bucket).lock(bucket, lockReq);
     }
 
     void addMergeStatus(const document::Bucket&, MergeStatus::SP);
@@ -276,17 +216,18 @@ public:
     uint32_t getNumActiveMerges() const;
     void clearMergeStatus(const document::Bucket&, const api::ReturnCode*);
 
-    std::string dumpQueue() const {
-        return _disk.dumpQueue();
-    }
+    std::string dumpQueue() const;
     ResumeGuard pause();
     void resume() override;
     void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
 
 private:
-    ServiceLayerComponent _component;
-    Disk                  _disk;
-    MessageSender&        _messageSender;
+    ServiceLayerComponent   _component;
+    std::atomic<DiskState>  _state;
+    uint32_t                _nextStripeId;
+    FileStorDiskMetrics   * _metrics;
+    std::vector<Stripe>     _stripes;
+    MessageSender&          _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;
     mutable std::mutex    _mergeStatesLock;
     std::map<document::Bucket, MergeStatus::SP> _mergeStates;
@@ -327,7 +268,6 @@ private:
      */
     static std::unique_ptr<api::StorageReply> makeQueueTimeoutReply(api::StorageMessage& msg);
     static bool messageMayBeAborted(const api::StorageMessage& msg);
-    void abortQueuedCommandsForBuckets(Disk& disk, const AbortBucketOperationsCommand& cmd);
 
     // Update hook
     void updateMetrics(const MetricLockGuard &) override;
@@ -336,13 +276,44 @@ private:
     remapMessage(api::StorageMessage& msg, const document::Bucket &source, Operation op,
                  std::vector<RemapInfo*>& targets, api::ReturnCode& returnCode);
 
-    void remapQueueNoLock(Disk& from, const RemapInfo& source, std::vector<RemapInfo*>& targets, Operation op);
+    void remapQueueNoLock(const RemapInfo& source, std::vector<RemapInfo*>& targets, Operation op);
 
     /**
      * Waits until the queue has no pending operations (i.e. no locks are
      * being held.
      */
     void waitUntilNoLocks();
+    /**
+     * No assumption on memory ordering around disk state reads should
+     * be made by callers.
+     */
+    DiskState getState() const noexcept {
+        return _state.load(std::memory_order_relaxed);
+    }
+    /**
+     * No assumption on memory ordering around disk state writes should
+     * be made by callers.
+     */
+    void setState(DiskState s) noexcept {
+        _state.store(s, std::memory_order_relaxed);
+    }
+    bool isClosed() const noexcept { return getState() == DiskState::CLOSED; }
+    void dumpActiveHtml(std::ostream & os) const;
+    void dumpQueueHtml(std::ostream & os) const;
+    void flush();
+    static uint64_t dispersed_bucket_bits(const document::Bucket& bucket) noexcept;
+
+    // We make a fairly reasonable assumption that there will be less than 64k stripes.
+    uint16_t stripe_index(const document::Bucket& bucket) const noexcept {
+        return static_cast<uint16_t>(dispersed_bucket_bits(bucket) % _stripes.size());
+    }
+    Stripe & stripe(const document::Bucket & bucket) {
+        return _stripes[stripe_index(bucket)];
+    }
+    FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, vespalib::duration timeout) {
+        return _stripes[stripeId].getNextMessage(timeout);
+    }
+
 };
 
 } // storage
