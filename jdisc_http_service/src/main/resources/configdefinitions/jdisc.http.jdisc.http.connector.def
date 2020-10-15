@@ -53,10 +53,6 @@ throttling.maxAcceptRate            int      default=-1
 # Idle timeout in seconds applied to endpoints when a threshold is exceeded.
 throttling.idleTimeout              double   default=-1.0
 
-# Whether to enable TLS on connector when Vespa is configured with TLS.
-# The connector will implicitly enable TLS if set to 'true' and Vespa TLS is enabled.
-implicitTlsEnabled                  bool     default=true
-
 # Whether to enable SSL for this connector.
 ssl.enabled                         bool     default=false
 

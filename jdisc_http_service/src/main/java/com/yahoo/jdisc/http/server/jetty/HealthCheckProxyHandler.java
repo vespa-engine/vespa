@@ -3,18 +3,16 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.security.SslContextBuilder;
-import com.yahoo.security.tls.TransportSecurityOptions;
-import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.security.tls.TrustAllX509TrustManager;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -27,6 +25,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -168,25 +167,21 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         }
 
         private SSLContext getSslContext(SslContextFactory.Server sslContextFactory) {
-            // A client certificate is only required if the server connector's ssl context factory is configured with "need-auth".
             if (sslContextFactory.getNeedClientAuth()) {
-                log.info(String.format("Port %d requires client certificate - client will provide its node certificate", port));
-                // We should ideally specify the client certificate through connector config, but the model has currently no knowledge of node certificate location on disk.
-                // Instead we assume that the server connector will accept its own node certificate. This will work for the current hosted use-case.
-                // The Vespa TLS config will provide us the location of certificate and key.
-                TransportSecurityOptions options = TransportSecurityUtils.getOptions()
-                        .orElseThrow(() ->
-                                new IllegalStateException("Vespa TLS configuration is required when using health check proxy to a port with client auth 'need'"));
-                return new SslContextBuilder()
-                        .withKeyStore(options.getPrivateKeyFile().get(), options.getCertificatesFile().get())
-                        .withTrustManager(new TrustAllX509TrustManager())
-                        .build();
+                log.info(String.format("Port %d requires client certificate. HTTPS client will use the target server connector's ssl context.", port));
+                // A client certificate is only required if the server connector's ssl context factory is configured with "need-auth".
+                // We use the server's ssl context (truststore + keystore) if a client certificate is required.
+                // This will only work if the server certificate's CA is in the truststore.
+                return sslContextFactory.getSslContext();
             } else {
                 log.info(String.format(
-                        "Port %d does not require a client certificate - client will not provide a certificate", port));
-                return new SslContextBuilder()
-                        .withTrustManager(new TrustAllX509TrustManager())
-                        .build();
+                        "Port %d does not require a client certificate. HTTPS client will use a custom ssl context accepting all certificates.", port));
+                // No client certificate required. The client is configured with a trust manager that accepts all certificates.
+                try {
+                    return SSLContexts.custom().loadTrustMaterial(new TrustAllStrategy()).build();
+                } catch (GeneralSecurityException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
