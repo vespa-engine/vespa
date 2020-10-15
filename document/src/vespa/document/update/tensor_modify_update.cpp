@@ -185,7 +185,7 @@ TensorModifyUpdate::applyTo(const vespalib::eval::Value &tensor) const
             return old_modify(&tensor, cellsTensor, getJoinFunction(_operation));
         }
     }
-    return std::unique_ptr<vespalib::eval::Value>();
+    return {};
 }
 
 bool

@@ -91,7 +91,7 @@ SerializedTensorStore::getTensor(EntryRef ref) const
 {
     auto raw = getRawBuffer(ref);
     if (raw.second == 0u) {
-        return std::unique_ptr<Value>();
+        return {};
     }
     return deserialize_tensor(raw.first, raw.second);
 }

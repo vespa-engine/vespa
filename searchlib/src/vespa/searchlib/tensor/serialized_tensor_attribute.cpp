@@ -50,7 +50,7 @@ SerializedTensorAttribute::getTensor(DocId docId) const
         ref = _refVector[docId];
     }
     if (!ref.valid()) {
-        return std::unique_ptr<Value>();
+        return {};
     }
     return _serializedTensorStore.getTensor(ref);
 }

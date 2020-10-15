@@ -129,7 +129,7 @@ TensorRemoveUpdate::applyTo(const vespalib::eval::Value &tensor) const
             return old_remove(&tensor, addressTensor);
         }
     }
-    return std::unique_ptr<vespalib::eval::Value>();
+    return {};
 }
 
 bool

@@ -168,7 +168,7 @@ DenseTensorAttribute::getTensor(DocId docId) const
         ref = _refVector[docId];
     }
     if (!ref.valid()) {
-        return std::unique_ptr<vespalib::eval::Value>();
+        return {};
     }
     return _denseTensorStore.getTensor(ref);
 }

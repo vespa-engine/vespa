@@ -109,7 +109,7 @@ TensorAddUpdate::applyTo(const vespalib::eval::Value &tensor) const
             return old_add(&tensor, addTensor);
         }
     }
-    return std::unique_ptr<vespalib::eval::Value>();
+    return {};
 }
 
 bool
