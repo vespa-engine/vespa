@@ -118,10 +118,11 @@ InterpretedFunction::detect_issues(const Function &function)
     return Function::Issues(std::move(checker.issues));
 }
 
-InterpretedFunction::EvalSingle::EvalSingle(EngineOrFactory engine, Instruction op)
+InterpretedFunction::EvalSingle::EvalSingle(EngineOrFactory engine, Instruction op, const LazyParams &params)
     : _state(engine),
       _op(op)
 {
+    _state.params = &params;
 }
 
 const Value &

@@ -106,17 +106,18 @@ public:
     /**
      * This inner class is used for testing and benchmarking. It runs
      * a single interpreted instruction in isolation. Note that
-     * instructions manipulating the program counter or resolving
-     * parameters may not be run in this way. Also note that the stack
-     * must contain exactly one value after the instruction is
-     * executed.
+     * instructions manipulating the program counter may not be run in
+     * this way. Also note that the stack must contain exactly one
+     * value after the instruction is executed. The params object must
+     * be kept alive externally.
      **/
     class EvalSingle {
     private:
         State _state;
         Instruction _op;
     public:
-        EvalSingle(EngineOrFactory engine, Instruction op);
+        EvalSingle(EngineOrFactory engine, Instruction op, const LazyParams &params);
+        EvalSingle(EngineOrFactory engine, Instruction op) : EvalSingle(engine, op, NoParams::params) {}
         const Value &eval(const std::vector<Value::CREF> &stack);
     };
 };

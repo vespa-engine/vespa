@@ -163,6 +163,14 @@ struct Impl {
         const auto &create_tensor_node = tensor_function::create(proto_type, spec, stash); 
         return create_tensor_node.compile_self(engine, stash);
     }
+    Instruction create_tensor_lambda(const ValueType &type, const Function &function, const ValueType &p0_type, Stash &stash) const {
+        std::vector<ValueType> arg_types(type.dimensions().size(), ValueType::double_type());
+        arg_types.push_back(p0_type);
+        NodeTypes types(function, arg_types);
+        EXPECT_EQ(types.errors(), std::vector<vespalib::string>());
+        const auto &tensor_lambda_node = tensor_function::lambda(type, {0}, function, std::move(types), stash);
+        return tensor_lambda_node.compile_self(engine, stash);
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -254,16 +262,29 @@ std::vector<BenchmarkResult> benchmark_results;
 
 //-----------------------------------------------------------------------------
 
+struct MyParam : LazyParams {
+    Value::UP my_value;
+    MyParam() : my_value() {}
+    MyParam(const TensorSpec &p0, const Impl &impl) : my_value(impl.create_value(p0)) {}
+    const Value &resolve(size_t idx, Stash &) const override {
+        assert(idx == 0);
+        return *my_value;
+    }
+    ~MyParam() override;
+};
+MyParam::~MyParam() = default;
+
 struct EvalOp {
     using UP = std::unique_ptr<EvalOp>;
     const Impl              &impl;
+    MyParam                  my_param;
     std::vector<Value::UP>   values;
     std::vector<Value::CREF> stack;
     EvalSingle               single;
     EvalOp(const EvalOp &) = delete;
     EvalOp &operator=(const EvalOp &) = delete;
     EvalOp(Instruction op, const std::vector<CREF<TensorSpec>> &stack_spec, const Impl &impl_in)
-        : impl(impl_in), values(), stack(), single(impl.engine, op)
+        : impl(impl_in), my_param(), values(), stack(), single(impl.engine, op)
     {
         for (const TensorSpec &spec: stack_spec) {
             values.push_back(impl.create_value(spec));
@@ -271,6 +292,10 @@ struct EvalOp {
         for (const auto &value: values) {
             stack.push_back(*value.get());
         }
+    }
+    EvalOp(Instruction op, const TensorSpec &p0, const Impl &impl_in)
+        : impl(impl_in), my_param(p0, impl), values(), stack(), single(impl.engine, op, my_param)
+    {
     }
     TensorSpec result() { return impl.create_spec(single.eval(stack)); }
     double estimate_cost_us() {
@@ -437,6 +462,20 @@ void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &pro
         list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
     }
     benchmark(desc, list);    
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_tensor_lambda(const vespalib::string &desc, const ValueType &type, const TensorSpec &p0, const Function &function) {
+    Stash stash;
+    ValueType p0_type = ValueType::from_spec(p0.type());
+    ASSERT_FALSE(p0_type.is_error());
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_tensor_lambda(type, function, p0_type, stash);
+        list.push_back(std::make_unique<EvalOp>(op, p0, impl));
+    }
+    benchmark(desc, list);
 }
 
 //-----------------------------------------------------------------------------
@@ -774,6 +813,24 @@ TEST(TensorCreateBench, create_sparse) {
 TEST(TensorCreateBench, create_mixed) {
     auto proto = make_matrix(D::map("a", 32, 1), D::idx("b", 32), 1.0);
     benchmark_tensor_create("mixed tensor create", proto);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(TensorLambdaBench, simple_lambda) {
+    auto type = ValueType::from_spec("tensor<float>(a[64],b[64])");
+    auto p0 = make_spec(3.5);
+    auto function = Function::parse({"a", "b", "p0"}, "(a*64+b)*p0");
+    ASSERT_FALSE(function->has_error());
+    benchmark_tensor_lambda("simple tensor lambda", type, p0, *function);
+}
+
+TEST(TensorLambdaBench, complex_lambda) {
+    auto type = ValueType::from_spec("tensor<float>(a[64],b[64])");
+    auto p0 = make_vector(D::idx("x", 3), 1.0);
+    auto function = Function::parse({"a", "b", "p0"}, "(a*64+b)*reduce(p0,sum)");
+    ASSERT_FALSE(function->has_error());
+    benchmark_tensor_lambda("complex tensor lambda", type, p0, *function);
 }
 
 //-----------------------------------------------------------------------------
