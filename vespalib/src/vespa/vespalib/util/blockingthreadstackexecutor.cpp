@@ -7,18 +7,18 @@ namespace vespalib {
 VESPA_THREAD_STACK_TAG(unnamed_blocking_executor);
 
 bool
-BlockingThreadStackExecutor::acceptNewTask(MonitorGuard & guard)
+BlockingThreadStackExecutor::acceptNewTask(unique_lock & guard, std::condition_variable & cond)
 {
     while (!closed() && !isRoomForNewTask() && !owns_this_thread()) {
-        guard.wait();
+        cond.wait(guard);
     }
     return (!closed());
 }
 
 void
-BlockingThreadStackExecutor::wakeup(MonitorGuard & monitor)
+BlockingThreadStackExecutor::wakeup(unique_lock &, std::condition_variable & cond)
 {
-    monitor.broadcast();
+    cond.notify_all();
 }
 
 BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit)
