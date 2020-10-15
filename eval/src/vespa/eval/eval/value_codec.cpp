@@ -23,7 +23,7 @@ inline uint32_t cell_type_to_id(CellType cell_type) {
     case CellType::DOUBLE: return DOUBLE_CELL_TYPE;
     case CellType::FLOAT: return FLOAT_CELL_TYPE;
     }
-    abort();
+    throw IllegalArgumentException(fmt("Unknown CellType=%u", (uint32_t)cell_type));
 }
 
 inline CellType id_to_cell_type(uint32_t id) {
@@ -31,7 +31,7 @@ inline CellType id_to_cell_type(uint32_t id) {
     case DOUBLE_CELL_TYPE: return CellType::DOUBLE;
     case FLOAT_CELL_TYPE: return CellType::FLOAT;
     }
-    abort();
+    throw IllegalArgumentException(fmt("Unknown CellType id=%u", id));
 }
 
 struct Format {
@@ -48,7 +48,12 @@ struct Format {
         : has_sparse((tag_in & 0x1) != 0),
           has_dense((tag_in & 0x2) != 0),
           with_cell_type((tag_in & 0x4) != 0),
-          tag(tag_in) {}
+          tag(tag_in)
+    {
+        if (tag & ~7u) {
+            throw IllegalArgumentException(fmt("Unknown tensor format tag=%u", tag));
+        }
+    }
     ~Format() {}
 };
 

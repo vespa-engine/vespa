@@ -21,7 +21,6 @@ using search::fef::ParameterList;
 using vespalib::Stash;
 using vespalib::eval::ValueType;
 using vespalib::make_string_short::fmt;
-using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::Onnx;
 

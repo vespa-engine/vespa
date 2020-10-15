@@ -13,7 +13,7 @@
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace vespalib::tensor { class Tensor; }
+namespace vespalib::eval { class Value; }
 
 namespace search::index {
 
@@ -96,7 +96,7 @@ private:
         virtual void addPredicate(std::unique_ptr<vespalib::Slime>) {
             throw Error("Function not supported");
         }
-        virtual void addTensor(std::unique_ptr<vespalib::tensor::Tensor>) {
+        virtual void addTensor(std::unique_ptr<vespalib::eval::Value>) {
             throw Error("Function not supported");
         }
         const document::FieldValue::UP & getValue() const { return _value; }
@@ -203,7 +203,7 @@ private:
         void addInt(int64_t val) override;
         void addFloat(double val) override;
         void addPredicate(std::unique_ptr<vespalib::Slime> val) override;
-        void addTensor(std::unique_ptr<vespalib::tensor::Tensor> val) override;
+        void addTensor(std::unique_ptr<vespalib::eval::Value> val) override;
         void addPosition(int32_t xpos, int32_t ypos) override;
     };
 
@@ -280,7 +280,7 @@ public:
     DocBuilder & addInt(int64_t val);
     DocBuilder & addFloat(double val);
     DocBuilder & addPredicate(std::unique_ptr<vespalib::Slime> val);
-    DocBuilder & addTensor(std::unique_ptr<vespalib::tensor::Tensor> val);
+    DocBuilder & addTensor(std::unique_ptr<vespalib::eval::Value> val);
     DocBuilder &addTokenizedString(const vespalib::string &val);
     DocBuilder &addUrlTokenizedString(const vespalib::string &val);
     DocBuilder &addSpan(size_t start, size_t len);

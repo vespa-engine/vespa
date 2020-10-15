@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/eval/param_usage.h>
 
@@ -17,6 +18,7 @@ using vespalib::ConstArrayRef;
 using vespalib::eval::CompileCache;
 using vespalib::eval::CompiledFunction;
 using vespalib::eval::DoubleValue;
+using vespalib::eval::EngineOrFactory;
 using vespalib::eval::Function;
 using vespalib::eval::InterpretedFunction;
 using vespalib::eval::LazyParams;
@@ -25,7 +27,6 @@ using vespalib::eval::PassParams;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::gbdt::FastForest;
-using vespalib::tensor::DefaultTensorEngine;
 
 namespace search::features {
 
@@ -325,7 +326,8 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
                 }
             }
         } else {
-            _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), *rank_function, node_types));
+            _interpreted_function.reset(new InterpretedFunction(EngineOrFactory::get(),
+                                                                *rank_function, node_types));
         }
     }
     FeatureType output_type = do_compile

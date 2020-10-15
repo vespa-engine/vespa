@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
@@ -50,8 +51,9 @@ using search::queryeval::SearchIterator;
 using std::string;
 using std::vector;
 using vespalib::eval::TensorSpec;
+using vespalib::eval::EngineOrFactory;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DefaultTensorEngine;
 using namespace search::attribute;
 using namespace search;
 
@@ -356,7 +358,7 @@ expect_nearest_neighbor_blueprint(const vespalib::string& attribute_tensor_type_
     auto result = f.create_blueprint();
     const auto& nearest = downcast<const NearestNeighborBlueprint>(*result);
     EXPECT_EQ(attribute_tensor_type_spec, nearest.get_attribute_tensor().getTensorType().to_spec());
-    EXPECT_EQ(converted_query_tensor, DefaultTensorEngine::ref().to_spec(nearest.get_query_tensor()));
+    EXPECT_EQ(converted_query_tensor, EngineOrFactory::get().to_spec(nearest.get_query_tensor()));
     EXPECT_EQ(7u, nearest.get_target_num_hits());
 }
 
@@ -392,7 +394,7 @@ expect_empty_blueprint(AttributeVector::SP attr)
 
 TEST(AttributeBlueprintTest, empty_blueprint_is_created_when_nearest_neighbor_term_is_invalid)
 {
-    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", 0}}, 3);
+    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", "0"}}, 3);
     TensorSpec dense_y_2 = TensorSpec("tensor(y[2])").add({{"y", 0}}, 3).add({{"y", 1}}, 5);
     TensorSpec dense_x_3 = TensorSpec("tensor(x[3])").add({{"x", 0}}, 3).add({{"x", 1}}, 5).add({{"x", 2}}, 7);
     expect_empty_blueprint(make_int_attribute(field)); // attribute is not a tensor

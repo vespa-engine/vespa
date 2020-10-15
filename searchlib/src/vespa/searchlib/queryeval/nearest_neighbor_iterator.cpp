@@ -5,7 +5,6 @@
 
 using search::tensor::DenseTensorAttribute;
 using vespalib::ConstArrayRef;
-using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::TypedCells;
 
@@ -41,7 +40,7 @@ public:
           _fieldTensor(params().tensorAttribute.getTensorType()),
           _lastScore(0.0)
     {
-        assert(is_compatible(_fieldTensor.fast_type(), params().queryTensor.fast_type()));
+        assert(is_compatible(_fieldTensor.fast_type(), params().queryTensor.type()));
     }
 
     ~NearestNeighborImpl();
@@ -95,7 +94,7 @@ template <bool has_filter>
 std::unique_ptr<NearestNeighborIterator>
 resolve_strict(bool strict, const NearestNeighborIterator::Params &params)
 {
-    CellType lct = params.queryTensor.fast_type().cell_type();
+    CellType lct = params.queryTensor.type().cell_type();
     CellType rct = params.tensorAttribute.getTensorType().cell_type();
     if (lct != rct) abort();
     if (strict) {
@@ -113,7 +112,7 @@ std::unique_ptr<NearestNeighborIterator>
 NearestNeighborIterator::create(
         bool strict,
         fef::TermFieldMatchData &tfmd,
-        const vespalib::tensor::DenseTensorView &queryTensor,
+        const vespalib::eval::Value &queryTensor,
         const search::tensor::DenseTensorAttribute &tensorAttribute,
         NearestNeighborDistanceHeap &distanceHeap,
         const search::BitVector *filter,

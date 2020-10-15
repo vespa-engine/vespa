@@ -8,6 +8,8 @@
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
+namespace vespalib::eval { class Value; }
+
 namespace search::tensor {
 
 /**
@@ -21,12 +23,12 @@ protected:
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors
-    std::unique_ptr<Tensor> _emptyTensor;
+    std::unique_ptr<vespalib::eval::Value> _emptyTensor;
     uint64_t    _compactGeneration; // Generation when last compact occurred
 
     template <typename RefType>
     void doCompactWorst();
-    void checkTensorType(const Tensor &tensor);
+    void checkTensorType(const vespalib::eval::Value &tensor);
     void setTensorRef(DocId docId, EntryRef ref);
     virtual vespalib::MemoryUsage memory_usage() const;
     void populate_state(vespalib::slime::Cursor& object) const;
@@ -44,9 +46,9 @@ public:
     void removeOldGenerations(generation_t firstUsed) override;
     void onGenerationChange(generation_t generation) override;
     bool addDoc(DocId &docId) override;
-    std::unique_ptr<Tensor> getEmptyTensor() const override;
+    std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
     void extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const override;
-    const Tensor& get_tensor_ref(uint32_t docid) const override;
+    const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const override;
     bool supports_extract_dense_view() const override { return false; }
     bool supports_get_tensor_ref() const override { return false; }
     vespalib::eval::ValueType getTensorType() const override;
@@ -55,7 +57,7 @@ public:
     void onShrinkLidSpace() override;
     uint32_t getVersion() const override;
     RefCopyVector getRefCopy() const;
-    virtual void setTensor(DocId docId, const Tensor &tensor) = 0;
+    virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor) = 0;
 
     /**
      * Performs the prepare step in a two-phase operation to set a tensor for a document.
@@ -63,7 +65,7 @@ public:
      * This function can be called by any thread.
      * It should return the result of the costly and non-modifying part of such operation.
      */
-    virtual std::unique_ptr<PrepareResult> prepare_set_tensor(DocId docid, const Tensor& tensor) const;
+    virtual std::unique_ptr<PrepareResult> prepare_set_tensor(DocId docid, const vespalib::eval::Value& tensor) const;
 
     /**
      * Performs the complete step in a two-phase operation to set a tensor for a document.
@@ -71,7 +73,7 @@ public:
      * This function is only called by the attribute writer thread.
      * It uses the result from the prepare step to do the modifying changes.
      */
-    virtual void complete_set_tensor(DocId docid, const Tensor& tensor, std::unique_ptr<PrepareResult> prepare_result);
+    virtual void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor, std::unique_ptr<PrepareResult> prepare_result);
 
     virtual void compactWorst() = 0;
 };

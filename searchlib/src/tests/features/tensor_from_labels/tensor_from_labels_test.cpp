@@ -12,9 +12,10 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/function.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -26,8 +27,7 @@ using search::StringAttribute;
 using vespalib::eval::Value;
 using vespalib::eval::Function;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
+using vespalib::eval::EngineOrFactory;
 
 typedef search::attribute::Config AVC;
 typedef search::attribute::BasicType AVBT;
@@ -35,12 +35,11 @@ typedef search::attribute::CollectionType AVCT;
 typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
 
-Tensor::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
-    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+Value::UP make_tensor(const TensorSpec &spec) {
+    return EngineOrFactory::get().from_spec(spec);
 }
 
-Tensor::UP make_empty(const vespalib::string &type) {
+Value::UP make_empty(const vespalib::string &type) {
     return make_tensor(TensorSpec(type));
 }
 
@@ -121,12 +120,11 @@ struct ExecFixture
         test.getQueryEnv().getProperties().add("astr_query", "[d e f e]");
         test.getQueryEnv().getProperties().add("aint_query", "[11 13 17]");
     }
-    const Tensor &extractTensor(uint32_t docid) {
+    const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().is_tensor());
-        return static_cast<const Tensor &>(*value.get().as_tensor());
+        return value.get();
     }
-    const Tensor &execute() {
+    const Value &execute() {
         return extractTensor(1);
     }
 };

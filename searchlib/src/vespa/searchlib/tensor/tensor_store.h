@@ -6,7 +6,7 @@
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
-namespace vespalib { namespace tensor { class Tensor; } }
+namespace vespalib::eval { class Value; }
 
 namespace search {
 
@@ -24,7 +24,6 @@ class TensorStore
 public:
     using EntryRef = vespalib::datastore::EntryRef;
     typedef vespalib::GenerationHandler::generation_t generation_t;
-    using Tensor = vespalib::tensor::Tensor;
 
 protected:
     vespalib::datastore::DataStoreBase &_store;

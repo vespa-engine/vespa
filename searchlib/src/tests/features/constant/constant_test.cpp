@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-
+#include <iostream>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -20,15 +21,13 @@ using vespalib::eval::Value;
 using vespalib::eval::DoubleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
+using vespalib::eval::EngineOrFactory;
 
 namespace
 {
 
-Tensor::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
-    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+Value::UP make_tensor(const TensorSpec &spec) {
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 }
@@ -44,12 +43,12 @@ struct ExecFixture
         setup_search_features(factory);
     }
     bool setup() { return test.setup(); }
-    const Tensor &extractTensor(uint32_t docid) {
+    const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
         ASSERT_TRUE(value.get().is_tensor());
-        return static_cast<const Tensor &>(*value.get().as_tensor());
+        return value.get();
     }
-    const Tensor &executeTensor(uint32_t docId = 1) {
+    const Value &executeTensor(uint32_t docId = 1) {
         return extractTensor(docId);
     }
     double extractDouble(uint32_t docid) {
@@ -63,7 +62,7 @@ struct ExecFixture
     void addTensor(const vespalib::string &name,
                    const TensorSpec &spec)
     {
-        Tensor::UP tensor = make_tensor(spec);
+        Value::UP tensor = make_tensor(spec);
         ValueType type(tensor->type());
         test.getIndexEnv().addConstantValue(name,
                                             std::move(type),

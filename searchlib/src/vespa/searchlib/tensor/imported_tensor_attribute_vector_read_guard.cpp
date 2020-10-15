@@ -2,11 +2,9 @@
 
 #include "imported_tensor_attribute_vector_read_guard.h"
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 
 namespace search::tensor {
-
-using vespalib::tensor::Tensor;
 
 namespace {
 
@@ -38,13 +36,13 @@ ImportedTensorAttributeVectorReadGuard::asTensorAttribute() const
     return this;
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<vespalib::eval::Value>
 ImportedTensorAttributeVectorReadGuard::getTensor(uint32_t docId) const
 {
     return _target_tensor_attribute.getTensor(getTargetLid(docId));
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<vespalib::eval::Value>
 ImportedTensorAttributeVectorReadGuard::getEmptyTensor() const
 {
     return _target_tensor_attribute.getEmptyTensor();
@@ -56,7 +54,7 @@ ImportedTensorAttributeVectorReadGuard::extract_dense_view(uint32_t docid, vespa
     _target_tensor_attribute.extract_dense_view(getTargetLid(docid), tensor);
 }
 
-const Tensor&
+const vespalib::eval::Value&
 ImportedTensorAttributeVectorReadGuard::get_tensor_ref(uint32_t docid) const
 {
     return _target_tensor_attribute.get_tensor_ref(getTargetLid(docid));

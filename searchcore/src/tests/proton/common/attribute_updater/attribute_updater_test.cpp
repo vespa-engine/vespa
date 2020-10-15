@@ -22,8 +22,8 @@
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/tensor_remove_update.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
@@ -50,10 +50,10 @@ using search::tensor::ITensorAttribute;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::SerializedTensorAttribute;
 using search::tensor::TensorAttribute;
+using vespalib::eval::EngineOrFactory;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
 
 namespace search {
 
@@ -408,11 +408,10 @@ getTensorDataType(const vespalib::string &spec)
     return *insres.first->second;
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<Value>
 makeTensor(const TensorSpec &spec)
 {
-    auto result = DefaultTensorEngine::ref().from_spec(spec);
-    return std::unique_ptr<Tensor>(dynamic_cast<Tensor*>(result.release()));
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>
@@ -442,7 +441,8 @@ struct TensorFixture : public Fixture {
     }
 
     void assertTensor(const TensorSpec &expSpec) {
-        EXPECT_EQUAL(expSpec, attribute->getTensor(1)->toSpec());
+        auto actual = EngineOrFactory::get().to_spec(*attribute->getTensor(1));
+        EXPECT_EQUAL(expSpec, actual);
     }
 };
 
@@ -452,7 +452,7 @@ TEST_F("require that tensor modify update is applied",
     f.setTensor(TensorSpec(f.type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
     f.applyValueUpdate(*f.attribute, 1,
                        TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
-                                          makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", 0}}, 7))));
+                                          makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "0"}}, 7))));
     f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 7).add({{"x", 1}}, 5));
 }
 

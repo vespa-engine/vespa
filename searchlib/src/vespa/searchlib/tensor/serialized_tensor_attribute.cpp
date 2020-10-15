@@ -4,14 +4,14 @@
 #include "serialized_tensor_attribute.h"
 #include "serialized_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::tensor::Tensor;
 
 namespace search::tensor {
 
@@ -34,7 +34,7 @@ SerializedTensorAttribute::~SerializedTensorAttribute()
 }
 
 void
-SerializedTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
+SerializedTensorAttribute::setTensor(DocId docId, const vespalib::eval::Value &tensor)
 {
     checkTensorType(tensor);
     EntryRef ref = _serializedTensorStore.setTensor(tensor);
@@ -42,7 +42,7 @@ SerializedTensorAttribute::setTensor(DocId docId, const Tensor &tensor)
 }
 
 
-std::unique_ptr<Tensor>
+std::unique_ptr<Value>
 SerializedTensorAttribute::getTensor(DocId docId) const
 {
     EntryRef ref;
@@ -50,7 +50,7 @@ SerializedTensorAttribute::getTensor(DocId docId) const
         ref = _refVector[docId];
     }
     if (!ref.valid()) {
-        return std::unique_ptr<Tensor>();
+        return {};
     }
     return _serializedTensorStore.getTensor(ref);
 }

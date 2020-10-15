@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>

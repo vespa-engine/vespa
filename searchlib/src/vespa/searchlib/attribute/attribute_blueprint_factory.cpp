@@ -82,7 +82,6 @@ using search::tensor::DenseTensorAttribute;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
 using vespalib::string;
-using vespalib::tensor::DenseTensorView;
 
 namespace search {
 namespace {
@@ -724,19 +723,17 @@ public:
         if (query_tensor.get() == nullptr) {
             return fail_nearest_neighbor_term(n, "Query tensor was not found in request context");
         }
-        auto* dense_query_tensor = dynamic_cast<DenseTensorView*>(query_tensor.get());
-        if (dense_query_tensor == nullptr) {
+        const auto & qt_type = query_tensor->type();
+        if (! qt_type.is_dense()) {
             return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
-                                                             query_tensor->type().to_spec().c_str()));
+                                                             qt_type.to_spec().c_str()));
         }
-        if (!is_compatible_for_nearest_neighbor(dense_attr_tensor->getTensorType(), dense_query_tensor->type())) {
+        if (!is_compatible_for_nearest_neighbor(dense_attr_tensor->getTensorType(), qt_type)) {
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
-                                                             dense_attr_tensor->getTensorType().to_spec().c_str(), dense_query_tensor->type().to_spec().c_str()));
+                                                             dense_attr_tensor->getTensorType().to_spec().c_str(), qt_type.to_spec().c_str()));
         }
-        std::unique_ptr<DenseTensorView> dense_query_tensor_up(dense_query_tensor);
-        query_tensor.release();
         setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
-                                                                        std::move(dense_query_tensor_up),
+                                                                        std::move(query_tensor),
                                                                         n.get_target_num_hits(),
                                                                         n.get_allow_approximate(),
                                                                         n.get_explore_additional_hits(),

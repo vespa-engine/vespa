@@ -4,7 +4,7 @@
 
 #include "searchiterator.h"
 #include "nearest_neighbor_distance_heap.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -18,18 +18,18 @@ class NearestNeighborIterator : public SearchIterator
 {
 public:
     using DenseTensorAttribute = search::tensor::DenseTensorAttribute;
-    using DenseTensorView = vespalib::tensor::DenseTensorView;
+    using Value = vespalib::eval::Value;
 
     struct Params {
         fef::TermFieldMatchData &tfmd;
-        const DenseTensorView &queryTensor;
+        const Value &queryTensor;
         const DenseTensorAttribute &tensorAttribute;
         NearestNeighborDistanceHeap &distanceHeap;
         const search::BitVector *filter;
         const search::tensor::DistanceFunction *distanceFunction;
         
         Params(fef::TermFieldMatchData &tfmd_in,
-               const DenseTensorView &queryTensor_in,
+               const Value &queryTensor_in,
                const DenseTensorAttribute &tensorAttribute_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
                const search::BitVector *filter_in,
@@ -50,7 +50,7 @@ public:
     static std::unique_ptr<NearestNeighborIterator> create(
             bool strict,
             fef::TermFieldMatchData &tfmd,
-            const vespalib::tensor::DenseTensorView &queryTensor,
+            const Value &queryTensor,
             const search::tensor::DenseTensorAttribute &tensorAttribute,
             NearestNeighborDistanceHeap &distanceHeap,
             const search::BitVector *filter,

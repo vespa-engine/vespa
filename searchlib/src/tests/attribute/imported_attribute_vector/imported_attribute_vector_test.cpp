@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -11,17 +13,13 @@
 using search::attribute::IAttributeVector;
 using search::tensor::ITensorAttribute;
 using search::tensor::TensorAttribute;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DefaultTensorEngine;
+using vespalib::eval::EngineOrFactory;
 
-Tensor::UP createTensor(const TensorSpec &spec) {
-    auto value = DefaultTensorEngine::ref().from_spec(spec);
-    Tensor *tensor = dynamic_cast<Tensor*>(value.get());
-    ASSERT_TRUE(tensor != nullptr);
-    value.release();
-    return Tensor::UP(tensor);
+Value::UP createTensor(const TensorSpec &spec) {
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 namespace search::attribute {
@@ -501,8 +499,8 @@ TEST("onSerializeForDescendingSort() is forwarded with remapped LID to target ve
 }
 
 struct TensorAttrFixture : Fixture {
-    std::shared_ptr<Tensor> tensor1;
-    std::shared_ptr<Tensor> tensor2;
+    std::shared_ptr<Value> tensor1;
+    std::shared_ptr<Value> tensor2;
 
     TensorAttrFixture(bool dense)
         : Fixture(),
@@ -519,14 +517,14 @@ struct TensorAttrFixture : Fixture {
             tensor1 = createTensor(TensorSpec("tensor(x{})").add({{"x", "1"}}, 11));
             tensor2 = createTensor(TensorSpec("tensor(x{})").add({{"x", "0"}}, 12));
         }
-        const std::vector<ImportedAttributeFixture::LidToLidMapping<std::shared_ptr<Tensor>>> mappings =
+        const std::vector<ImportedAttributeFixture::LidToLidMapping<std::shared_ptr<Value>>> mappings =
             {   {DocId(2), dummy_gid(3), DocId(3), tensor1 },
                 {DocId(4), dummy_gid(7), DocId(7), tensor2 } };
-        this->template reset_with_tensor_reference_mappings<TensorAttribute, std::shared_ptr<Tensor>>(
+        this->template reset_with_tensor_reference_mappings<TensorAttribute, std::shared_ptr<Value>>(
                 ValueType::from_spec(dense ? "tensor(x[2])" : "tensor(x{})"),
                 mappings);
     }
-    Tensor::UP getTensor(DocId docId) {
+    Value::UP getTensor(DocId docId) {
         auto imp_attr = this->get_imported_attr();
         const ITensorAttribute *tensorAttr = imp_attr->asTensorAttribute();
         ASSERT_TRUE(tensorAttr != nullptr);
@@ -536,7 +534,7 @@ struct TensorAttrFixture : Fixture {
         auto tensor = getTensor(docId);
         EXPECT_TRUE(!tensor);
     }
-    void assertTensor(DocId docId, const Tensor &expTensor) {
+    void assertTensor(DocId docId, const Value &expTensor) {
         auto tensor = getTensor(docId);
         ASSERT_TRUE(!!tensor);
         EXPECT_EQUAL(expTensor, *tensor);

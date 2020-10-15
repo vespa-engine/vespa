@@ -11,11 +11,11 @@
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -28,12 +28,11 @@ using search::AttributeFactory;
 using search::tensor::TensorAttribute;
 using search::tensor::DirectTensorAttribute;
 using search::AttributeVector;
+using vespalib::eval::EngineOrFactory;
 using vespalib::eval::Function;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
 using vespalib::tensor::test::makeTensor;
 
 using AVC = search::attribute::Config;
@@ -46,8 +45,8 @@ using CollectionType = FieldInfo::CollectionType;
 namespace
 {
 
-Tensor::UP make_empty(const vespalib::string &type) {
-    return makeTensor<Tensor>(TensorSpec(type));
+Value::UP make_empty(const vespalib::string &type) {
+    return EngineOrFactory::get().from_spec(TensorSpec(type));
 }
 
 }
@@ -114,7 +113,7 @@ struct ExecFixture
         DirectTensorAttribute *directAttr =
             dynamic_cast<DirectTensorAttribute *>(attrs[1].get());
 
-        auto doc_tensor = makeTensor<Tensor>(TensorSpec("tensor(x{})")
+        auto doc_tensor = makeTensor<Value>(TensorSpec("tensor(x{})")
                                              .add({{"x", "a"}}, 3)
                                              .add({{"x", "b"}}, 5)
                                              .add({{"x", "c"}}, 7));
@@ -127,10 +126,10 @@ struct ExecFixture
     }
     void setQueryTensor(const vespalib::string &tensorName,
                         const vespalib::string &tensorTypeSpec,
-                        std::unique_ptr<Tensor> tensor)
+                        std::unique_ptr<Value> tensor)
     {
         vespalib::nbostream stream;
-        vespalib::tensor::TypedBinaryFormat::serialize(stream, *tensor);
+        EngineOrFactory::get().encode(*tensor, stream);
         test.getQueryEnv().getProperties().add(tensorName,
                 vespalib::stringref(stream.peek(), stream.size()));
         setQueryTensorType(tensorName, tensorTypeSpec);
@@ -139,24 +138,24 @@ struct ExecFixture
     void setupQueryEnvironment() {
         setQueryTensor("tensorquery",
                        "tensor(q{})",
-                       makeTensor<Tensor>(TensorSpec("tensor(q{})")
+                       makeTensor<Value>(TensorSpec("tensor(q{})")
                                           .add({{"q", "d"}}, 11 )
                                           .add({{"q", "e"}}, 13 )
                                           .add({{"q", "f"}}, 17 )));
         setQueryTensor("mappedtensorquery",
                        "tensor(x[2])",
-                       makeTensor<Tensor>(TensorSpec("tensor(x{},y{})")
+                       makeTensor<Value>(TensorSpec("tensor(x{},y{})")
                                           .add({{"x", "0"},{"y", "0"}}, 11 )
                                           .add({{"x", "0"},{"y", "1"}}, 13 )
                                           .add({{"x", "1"},{"y", "0"}}, 17 )));
         setQueryTensorType("null", "tensor(q{})");
     }
-    const Tensor &extractTensor(uint32_t docid) {
+    const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
         ASSERT_TRUE(value.get().is_tensor());
-        return static_cast<const Tensor &>(*value.get().as_tensor());
+        return value.get();
     }
-    const Tensor &execute(uint32_t docId = 1) {
+    const Value &execute(uint32_t docId = 1) {
         return extractTensor(docId);
     }
 };
@@ -164,7 +163,7 @@ struct ExecFixture
 TEST_F("require that tensor attribute can be extracted as tensor in attribute feature",
        ExecFixture("attribute(tensorattr)"))
 {
-    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(x{})")
+    EXPECT_EQUAL(*makeTensor<Value>(TensorSpec("tensor(x{})")
                                      .add({{"x", "b"}}, 5)
                                      .add({{"x", "c"}}, 7)
                                      .add({{"x", "a"}}, 3)), f.execute());
@@ -173,7 +172,7 @@ TEST_F("require that tensor attribute can be extracted as tensor in attribute fe
 TEST_F("require that direct tensor attribute can be extracted in attribute feature",
        ExecFixture("attribute(directattr)"))
 {
-    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(x{})")
+    EXPECT_EQUAL(*makeTensor<Value>(TensorSpec("tensor(x{})")
                                      .add({{"x", "b"}}, 5)
                                      .add({{"x", "c"}}, 7)
                                      .add({{"x", "a"}}, 3)), f.execute());
@@ -182,7 +181,7 @@ TEST_F("require that direct tensor attribute can be extracted in attribute featu
 TEST_F("require that tensor from query can be extracted as tensor in query feature",
        ExecFixture("query(tensorquery)"))
 {
-    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(q{})")
+    EXPECT_EQUAL(*makeTensor<Value>(TensorSpec("tensor(q{})")
                                      .add({{"q", "f"}}, 17)
                                      .add({{"q", "d"}}, 11)
                                      .add({{"q", "e"}}, 13)), f.execute());
@@ -218,7 +217,7 @@ TEST_F("require that empty tensor with correct type is returned by direct tensor
 
 TEST_F("require that wrong tensor type from query tensor gives empty tensor",
        ExecFixture("query(mappedtensorquery)")) {
-    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(x[2])")
+    EXPECT_EQUAL(*makeTensor<Value>(TensorSpec("tensor(x[2])")
                                      .add({{"x", 0}}, 0)
                                      .add({{"x", 1}}, 0)), f.execute());
 }

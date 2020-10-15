@@ -3,23 +3,20 @@
 #include "tensor_attribute.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
-#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
-#include <vespa/eval/tensor/wrapped_simple_tensor.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
 
 using document::TensorDataType;
 using document::WrongTensorTypeException;
-using vespalib::eval::SimpleTensor;
+using vespalib::eval::EngineOrFactory;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DirectSparseTensorBuilder;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::TypedDenseTensorBuilder;
-using vespalib::tensor::WrappedSimpleTensor;
 using search::StateExplorerUtils;
 
 namespace search::tensor {
@@ -31,26 +28,12 @@ constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 // minimum dead bytes in tensor attribute before consider compaction
 constexpr size_t DEAD_SLACK = 0x10000u;
 
-struct CallMakeEmptyTensor {
-    template <typename CT>
-    static Tensor::UP invoke(const ValueType &type) {
-        if (type.is_dense()) {
-            TypedDenseTensorBuilder<CT> builder(type);
-            return builder.build();
-        }
-        if (type.is_sparse()) {
-            DirectSparseTensorBuilder<CT> builder(type);
-            return builder.build();
-        }
-        return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
-    }
-};
-
-Tensor::UP
+Value::UP
 createEmptyTensor(const ValueType &type)
 {
-    using MyTypify = vespalib::eval::TypifyCellType;
-    return vespalib::typify_invoke<1,MyTypify,CallMakeEmptyTensor>(type.cell_type(), type);
+    auto engine = EngineOrFactory::get();
+    TensorSpec empty_spec(type.to_spec());
+    return engine.from_spec(empty_spec);
 }
 
 vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
@@ -154,7 +137,7 @@ TensorAttribute::addDoc(DocId &docId)
 }
 
 void
-TensorAttribute::checkTensorType(const Tensor &tensor)
+TensorAttribute::checkTensorType(const vespalib::eval::Value &tensor)
 {
     const ValueType &fieldTensorType = getConfig().tensorType();
     const ValueType &tensorType = tensor.type();
@@ -197,10 +180,10 @@ TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
                                               object.setObject("tensor_store").setObject("memory_usage"));
 }
 
-Tensor::UP
+vespalib::eval::Value::UP
 TensorAttribute::getEmptyTensor() const
 {
-    return _emptyTensor->clone();
+    return EngineOrFactory::get().copy(*_emptyTensor);
 }
 
 void
@@ -211,7 +194,7 @@ TensorAttribute::extract_dense_view(uint32_t docid, vespalib::tensor::MutableDen
     notImplemented();
 }
 
-const Tensor&
+const vespalib::eval::Value&
 TensorAttribute::get_tensor_ref(uint32_t docid) const
 {
     (void) docid;
@@ -271,7 +254,7 @@ TensorAttribute::getRefCopy() const
 }
 
 std::unique_ptr<PrepareResult>
-TensorAttribute::prepare_set_tensor(DocId docid, const Tensor& tensor) const
+TensorAttribute::prepare_set_tensor(DocId docid, const vespalib::eval::Value& tensor) const
 {
     (void) docid;
     (void) tensor;
@@ -279,7 +262,7 @@ TensorAttribute::prepare_set_tensor(DocId docid, const Tensor& tensor) const
 }
 
 void
-TensorAttribute::complete_set_tensor(DocId docid, const Tensor& tensor,
+TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor,
                                      std::unique_ptr<PrepareResult> prepare_result)
 {
     (void) docid;

@@ -2,30 +2,26 @@
 
 #include <vespa/searchlib/tensor/direct_tensor_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
 using namespace search::tensor;
 
 using vespalib::datastore::EntryRef;
+using vespalib::eval::EngineOrFactory;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
+using vespalib::eval::Value;
 
 vespalib::string tensor_spec("tensor(x{})");
 
-Tensor::UP
+Value::UP
 make_tensor(const TensorSpec& spec)
 {
-    auto value = DefaultTensorEngine::ref().from_spec(spec);
-    auto* tensor = dynamic_cast<Tensor*>(value.get());
-    assert(tensor != nullptr);
-    value.release();
-    return Tensor::UP(tensor);
+    return EngineOrFactory::get().from_spec(spec);
 }
 
-Tensor::UP
+Value::UP
 make_tensor(double value)
 {
     return make_tensor(TensorSpec(tensor_spec).add({{"x", "a"}}, value));
@@ -41,7 +37,7 @@ public:
         store.clearHoldLists();
     }
 
-    void expect_tensor(const Tensor* exp, EntryRef ref) {
+    void expect_tensor(const Value* exp, EntryRef ref) {
         const auto* act = store.get_tensor(ref);
         ASSERT_TRUE(act);
         EXPECT_EQ(exp, act);

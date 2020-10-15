@@ -36,8 +36,9 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -50,8 +51,7 @@ using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::slime::Cursor;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DefaultTensorEngine;
+using vespalib::eval::EngineOrFactory;
 using vespalib::compression::CompressionConfig;
 using namespace document;
 using std::string;
@@ -771,12 +771,8 @@ TEST("Require that predicate deserialization matches Java") {
 namespace
 {
 
-Tensor::UP createTensor(const TensorSpec &spec) {
-    auto value = DefaultTensorEngine::ref().from_spec(spec);
-    Tensor *tensor = dynamic_cast<Tensor*>(value.get());
-    ASSERT_TRUE(tensor != nullptr);
-    value.release();
-    return Tensor::UP(tensor);
+vespalib::eval::Value::UP createTensor(const TensorSpec &spec) {
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 }
@@ -836,13 +832,13 @@ void deserializeAndCheck(const string &file_name, TensorFieldValue &value) {
     deserializeAndCheck(file_name, value, tensor_repo, tensor_field_name);
 }
 
-void checkDeserialization(const string &name, std::unique_ptr<Tensor> tensor) {
+void checkDeserialization(const string &name, std::unique_ptr<vespalib::eval::Value> tensor) {
     const string data_dir = TEST_PATH("../../test/resources/tensor/");
 
     TensorDataType valueType(tensor ? tensor->type() : vespalib::eval::ValueType::error_type());
     TensorFieldValue value(valueType);
     if (tensor) {
-        value = tensor->clone();
+        value = EngineOrFactory::get().copy(*tensor);
     }
     serializeToFile(value, data_dir + name + "__cpp");
     deserializeAndCheck(data_dir + name + "__cpp", value);
@@ -851,7 +847,7 @@ void checkDeserialization(const string &name, std::unique_ptr<Tensor> tensor) {
 
 
 TEST("Require that tensor deserialization matches Java") {
-    checkDeserialization("non_existing_tensor", std::unique_ptr<Tensor>());
+    checkDeserialization("non_existing_tensor", std::unique_ptr<vespalib::eval::Value>());
     checkDeserialization("empty_tensor", createTensor(TensorSpec("tensor(dimX{},dimY{})")));
     checkDeserialization("multi_cell_tensor",
                          createTensor(TensorSpec("tensor(dimX{},dimY{})")
@@ -863,17 +859,17 @@ TEST("Require that tensor deserialization matches Java") {
 struct TensorDocFixture {
     const DocumentTypeRepo &_docTypeRepo;
     const DocumentType *_docType;
-    std::unique_ptr<Tensor> _tensor;
+    std::unique_ptr<vespalib::eval::Value> _tensor;
     Document _doc;
     vespalib::nbostream _blob;
 
     TensorDocFixture(const DocumentTypeRepo &docTypeRepo,
-                     std::unique_ptr<Tensor> tensor);
+                     std::unique_ptr<vespalib::eval::Value> tensor);
     ~TensorDocFixture();
 };
 
 TensorDocFixture::TensorDocFixture(const DocumentTypeRepo &docTypeRepo,
-                                   std::unique_ptr<Tensor> tensor)
+                                   std::unique_ptr<vespalib::eval::Value> tensor)
     : _docTypeRepo(docTypeRepo),
       _docType(_docTypeRepo.getDocumentType(tensor_doc_type_id)),
       _tensor(std::move(tensor)),
@@ -881,7 +877,7 @@ TensorDocFixture::TensorDocFixture(const DocumentTypeRepo &docTypeRepo,
       _blob()
 {
     auto fv = _doc.getField(tensor_field_name).createValue();
-    dynamic_cast<TensorFieldValue &>(*fv) = _tensor->clone();
+    dynamic_cast<TensorFieldValue &>(*fv) = EngineOrFactory::get().copy(*_tensor);
     _doc.setValue(tensor_field_name, *fv);
     _doc.serialize(_blob);
 }
@@ -897,7 +893,7 @@ struct DeserializedTensorDoc
     ~DeserializedTensorDoc();
 
     void setup(const DocumentTypeRepo &docTypeRepo, const vespalib::nbostream &blob);
-    const Tensor *getTensor() const;
+    const vespalib::eval::Value *getTensor() const;
 };
 
 DeserializedTensorDoc::DeserializedTensorDoc()
@@ -916,7 +912,7 @@ DeserializedTensorDoc::setup(const DocumentTypeRepo &docTypeRepo, const vespalib
     _fieldValue = _doc->getValue(tensor_field_name);
 }
 
-const Tensor *
+const vespalib::eval::Value *
 DeserializedTensorDoc::getTensor() const
 {
     return dynamic_cast<const TensorFieldValue &>(*_fieldValue).getAsTensorPtr();
@@ -936,14 +932,14 @@ TEST("Require that wrong tensor type hides tensor")
     DeserializedTensorDoc doc;
     doc.setup(tensor_doc_repo, f._blob);
     EXPECT_TRUE(doc.getTensor() != nullptr);
-    EXPECT_TRUE(doc.getTensor()->equals(*f._tensor));
+    EXPECT_TRUE((*doc.getTensor()) == (*f._tensor));
     doc.setup(tensor_doc_repo, f1._blob);
     EXPECT_TRUE(doc.getTensor() == nullptr);
     doc.setup(tensor_doc_repo1, f._blob);
     EXPECT_TRUE(doc.getTensor() == nullptr);
     doc.setup(tensor_doc_repo1, f1._blob);
     EXPECT_TRUE(doc.getTensor() != nullptr);
-    EXPECT_TRUE(doc.getTensor()->equals(*f1._tensor));
+    EXPECT_TRUE((*doc.getTensor()) == (*f1._tensor));
 }
 
 struct RefFixture {

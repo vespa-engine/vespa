@@ -4,6 +4,8 @@
 
 #include "tensor_store.h"
 
+namespace vespalib::eval { class Value; }
+
 namespace search::tensor {
 
 /**
@@ -33,9 +35,9 @@ public:
 
     virtual EntryRef move(EntryRef ref) override;
 
-    std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
+    std::unique_ptr<vespalib::eval::Value> getTensor(EntryRef ref) const;
 
-    EntryRef setTensor(const Tensor &tensor);
+    EntryRef setTensor(const vespalib::eval::Value &tensor);
 };
 
 }

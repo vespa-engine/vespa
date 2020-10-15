@@ -12,8 +12,8 @@
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/eval/eval/function.h>
-#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.tensor_from_weighted_set_feature");

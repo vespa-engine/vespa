@@ -2,9 +2,9 @@
 
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -59,8 +59,7 @@ using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DefaultTensorEngine;
+using vespalib::eval::EngineOrFactory;
 using namespace vespalib::slime;
 
 typedef std::unique_ptr<GeneralResult> GeneralResultPtr;
@@ -139,9 +138,8 @@ getDocTypeName()
     return "searchdocument";
 }
 
-Tensor::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
-    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+vespalib::eval::Value::UP make_tensor(const TensorSpec &spec) {
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 vespalib::string asVstring(vespalib::Memory str) {
@@ -316,7 +314,7 @@ assertString(const std::string & exp, const std::string & fieldName,
 }
 
 void
-assertTensor(const Tensor::UP & exp, const std::string & fieldName,
+assertTensor(const vespalib::eval::Value::UP & exp, const std::string & fieldName,
                    const DocsumReply & reply, uint32_t id, uint32_t)
 {
     const DocsumReply::Docsum & docsum = reply.docsums[id];
@@ -335,7 +333,7 @@ assertTensor(const Tensor::UP & exp, const std::string & fieldName,
     EXPECT_EQUAL(exp.get() == nullptr, data.size == 0u);
     if (exp) {
         vespalib::nbostream x(data.data, data.size);
-        Tensor::UP tensor = vespalib::tensor::TypedBinaryFormat::deserialize(x);
+        auto tensor = EngineOrFactory::get().decode(x);
         EXPECT_TRUE(tensor.get() != nullptr);
         EXPECT_EQUAL(*exp, *tensor);
     }
@@ -741,7 +739,7 @@ TEST("requireThatAttributesAreUsed")
 
     // empty doc
     EXPECT_TRUE(assertSlime("{}", *rep, 1, false));
-    TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
+    TEST_DO(assertTensor(vespalib::eval::Value::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
     vespalib::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();

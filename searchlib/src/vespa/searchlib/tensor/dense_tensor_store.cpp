@@ -1,17 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_store.h"
-#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
 using vespalib::datastore::Handle;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using CellType = vespalib::eval::ValueType::CellType;
 
@@ -131,14 +127,14 @@ DenseTensorStore::move(EntryRef ref)
     return newraw.ref;
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<Value>
 DenseTensorStore::getTensor(EntryRef ref) const
 {
     if (!ref.valid()) {
-        return std::unique_ptr<Tensor>();
+        return {};
     }
     vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
-    return std::make_unique<DenseTensorView>(_type, cells_ref);
+    return std::make_unique<vespalib::tensor::DenseTensorView>(_type, cells_ref);
 }
 
 void
@@ -166,19 +162,19 @@ template <class TensorType>
 TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)
 {
-    size_t numCells = tensor.cells().size;
-    assert(numCells == getNumCells());
     assert(tensor.type() == _type);
+    auto cells = tensor.cells();
+    assert(cells.size == getNumCells());
+    assert(cells.type == _type.cell_type());
     auto raw = allocRawBuffer();
-    memcpy(raw.data, tensor.cells().data, getBufSize());
+    memcpy(raw.data, cells.data, getBufSize());
     return raw.ref;
 }
 
 TensorStore::EntryRef
-DenseTensorStore::setTensor(const Tensor &tensor)
+DenseTensorStore::setTensor(const vespalib::eval::Value &tensor)
 {
-    const DenseTensorView &view(dynamic_cast<const DenseTensorView &>(tensor));
-    return setDenseTensor(view);
+    return setDenseTensor(tensor);
 }
 
 }

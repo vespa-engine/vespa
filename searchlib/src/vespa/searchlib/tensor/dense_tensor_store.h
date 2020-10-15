@@ -7,6 +7,7 @@
 #include <vespa/eval/eval/typed_cells.h>
 
 namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
+namespace vespalib::eval { class Value; }
 
 namespace search::tensor {
 
@@ -64,10 +65,10 @@ public:
     vespalib::datastore::Handle<char> allocRawBuffer();
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
-    std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
+    std::unique_ptr<vespalib::eval::Value> getTensor(EntryRef ref) const;
     void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const;
-    EntryRef setTensor(const Tensor &tensor);
+    EntryRef setTensor(const vespalib::eval::Value &tensor);
     // The following method is meant to be used only for unit tests.
     uint32_t getArraySize() const { return _bufferType.getArraySize(); }
 };

@@ -29,6 +29,7 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;
 using vespalib::ThreadStackExecutorBase;
+using vespalib::eval::EngineOrFactory;
 using namespace searchcorespi;
 
 namespace proton {
@@ -40,7 +41,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _indexWriter(),
       _rSearchView(),
       _rFeedView(),
-      _tensorLoader(vespalib::tensor::DefaultTensorEngine::ref()),
+      _tensorLoader(EngineOrFactory::get()),
       _constantValueCache(_tensorLoader),
       _constantValueRepo(_constantValueCache),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,

@@ -5,6 +5,8 @@
 #include "tensor_store.h"
 #include <memory>
 
+namespace vespalib::eval { class Value; }
+
 namespace search::tensor {
 
 /**
@@ -16,7 +18,7 @@ class DirectTensorStore : public TensorStore {
 private:
     // Note: Must use SP (instead of UP) because of fallbackCopy() and initializeReservedElements() in BufferType,
     //       and implementation of move().
-    using TensorSP = std::shared_ptr<Tensor>;
+    using TensorSP = std::shared_ptr<vespalib::eval::Value>;
     using TensorStoreType = vespalib::datastore::DataStore<TensorSP>;
 
     class TensorBufferType : public vespalib::datastore::BufferType<TensorSP> {
@@ -38,8 +40,8 @@ public:
     ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
-    const Tensor* get_tensor(EntryRef ref) const;
-    EntryRef store_tensor(std::unique_ptr<Tensor> tensor);
+    const vespalib::eval::Value * get_tensor(EntryRef ref) const;
+    EntryRef store_tensor(std::unique_ptr<vespalib::eval::Value> tensor);
 
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;

@@ -21,8 +21,9 @@
 #include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -33,10 +34,10 @@
 #include <unistd.h>
 
 using namespace document::config_builder;
+
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
+using vespalib::eval::EngineOrFactory;
 using vespalib::nbostream;
 
 namespace document {
@@ -771,11 +772,10 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
     EXPECT_EQ(fv4->find(StringFieldValue("apple")), fv4->end());
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<vespalib::eval::Value>
 makeTensor(const TensorSpec &spec)
 {
-    auto result = DefaultTensorEngine::ref().from_spec(spec);
-    return std::unique_ptr<Tensor>(dynamic_cast<Tensor*>(result.release()));
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>
@@ -787,7 +787,7 @@ makeTensorFieldValue(const TensorSpec &spec, const TensorDataType &dataType)
     return result;
 }
 
-const Tensor &asTensor(const FieldValue &fieldValue) {
+const vespalib::eval::Value &asTensor(const FieldValue &fieldValue) {
     auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
     auto tensor = tensorFieldValue.getAsTensorPtr();
     assert(tensor);

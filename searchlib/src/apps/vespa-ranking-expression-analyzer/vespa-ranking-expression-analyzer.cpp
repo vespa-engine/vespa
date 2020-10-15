@@ -9,6 +9,7 @@
 #include <vespa/eval/eval/vm_forest.h>
 #include <vespa/eval/eval/fast_forest.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/eval/eval/param_usage.h>
@@ -17,7 +18,6 @@
 //-----------------------------------------------------------------------------
 
 using vespalib::BenchmarkTimer;
-using vespalib::tensor::DefaultTensorEngine;
 using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
 using namespace vespalib::eval::gbdt;
@@ -154,7 +154,7 @@ struct FunctionInfo {
     size_t get_path_len(const TreeList &trees) const {
         size_t path = 0;
         for (const Node *tree: trees) {
-            InterpretedFunction ifun(DefaultTensorEngine::ref(), *tree, NodeTypes());
+            InterpretedFunction ifun(EngineOrFactory::get(), *tree, NodeTypes());
             InterpretedFunction::Context ctx(ifun);
             SimpleParams fun_params(params);
             ifun.eval(ctx, fun_params);

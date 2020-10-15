@@ -3,8 +3,7 @@
 #include "documentstoreadapter.h"
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 
@@ -13,7 +12,6 @@ LOG_SETUP(".proton.docsummary.documentstoreadapter");
 
 using namespace document;
 using namespace search::docsummary;
-using vespalib::tensor::Tensor;
 
 namespace proton {
 
@@ -88,7 +86,7 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
                 const auto &tvalue = static_cast<const TensorFieldValue &>(value);
                 auto tensor = tvalue.getAsTensorPtr();
                 if (tensor) {
-                    vespalib::tensor::TypedBinaryFormat::serialize(serialized, *tensor);
+                    vespalib::eval::EngineOrFactory::get().encode(*tensor, serialized);
                 }
             }
             return _resultPacker.AddSerializedTensor(serialized.peek(), serialized.size());
