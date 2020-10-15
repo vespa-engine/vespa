@@ -192,14 +192,15 @@ bool fileExistsWithin(const std::string& path, const std::string& file) {
     return !(findFile(path, file) == "");
 }
 
-std::unique_ptr<DiskThread> createThread(vdstestlib::DirConfig& config,
-                                       TestServiceLayerApp& node,
-                                       spi::PersistenceProvider& provider,
-                                       FileStorHandler& filestorHandler,
-                                       FileStorThreadMetrics& metrics)
+std::unique_ptr<DiskThread>
+createThread(vdstestlib::DirConfig& config,
+             TestServiceLayerApp& node,
+             spi::PersistenceProvider& provider,
+             FileStorHandler& filestorHandler,
+             FileStorThreadMetrics& metrics)
 {
     (void) config;
-    return std::make_unique<PersistenceThread>(nullptr,node.getComponentRegister(), config.getConfigId(),
+    return std::make_unique<PersistenceThread>(node.executor(), node.getComponentRegister(), config.getConfigId(),
                                                provider, filestorHandler, metrics);
 }
 

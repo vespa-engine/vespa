@@ -20,7 +20,7 @@ class TestAndSetHelper;
 class PersistenceThread final : public DiskThread, public Types
 {
 public:
-    PersistenceThread(vespalib::ISequencedTaskExecutor *, ServiceLayerComponentRegister&,
+    PersistenceThread(vespalib::ISequencedTaskExecutor &, ServiceLayerComponentRegister&,
                       const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
                       FileStorHandler& filestorHandler, FileStorThreadMetrics& metrics);
     ~PersistenceThread() override;
@@ -49,7 +49,7 @@ public:
 private:
     uint32_t                  _stripeId;
     PersistenceUtil           _env;
-    vespalib::ISequencedTaskExecutor * _sequencedExecutor;
+    vespalib::ISequencedTaskExecutor & _sequencedExecutor;
     spi::PersistenceProvider& _spi;
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;
