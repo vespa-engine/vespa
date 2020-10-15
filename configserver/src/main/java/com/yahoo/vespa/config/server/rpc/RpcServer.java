@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
 import com.google.inject.Inject;
@@ -567,9 +567,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                     Stream.of(fileReferenceStrings)
                             .map(FileReference::new)
                             .forEach(fileReference -> downloader.downloadIfNeeded(
-                                    new FileReferenceDownload(fileReference,
-                                                              false, /* downloadFromOtherSourceIfNotFound */
-                                                              req.target().toString())));
+                                    new FileReferenceDownload(fileReference, false /* downloadFromOtherSourceIfNotFound */)));
                     req.returnValues().add(new Int32Value(0));
                 });
     }
