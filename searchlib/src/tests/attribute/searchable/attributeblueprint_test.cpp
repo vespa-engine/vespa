@@ -394,7 +394,7 @@ expect_empty_blueprint(AttributeVector::SP attr)
 
 TEST(AttributeBlueprintTest, empty_blueprint_is_created_when_nearest_neighbor_term_is_invalid)
 {
-    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", 0}}, 3);
+    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", "0"}}, 3);
     TensorSpec dense_y_2 = TensorSpec("tensor(y[2])").add({{"y", 0}}, 3).add({{"y", 1}}, 5);
     TensorSpec dense_x_3 = TensorSpec("tensor(x[3])").add({{"x", 0}}, 3).add({{"x", 1}}, 5).add({{"x", 2}}, 7);
     expect_empty_blueprint(make_int_attribute(field)); // attribute is not a tensor
