@@ -47,6 +47,7 @@ import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import org.xml.sax.SAXException;
@@ -113,33 +114,30 @@ public class SessionPreparer {
      * Prepares a session (validates, builds model, writes to zookeeper and distributes files)
      *
      * @param hostValidator               host validator
-     * @param logger                      For storing logs returned in response to client.
+     * @param logger                      for storing logs returned in response to client.
      * @param params                      parameters controlling behaviour of prepare.
-     * @param currentActiveApplicationSet Set of currently active applications.
-     * @param tenantPath                  Zookeeper path for the tenant for this session
+     * @param activeApplicationSet        set of currently active applications.
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
     public PrepareResult prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
-                                 Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
-                                 Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
-                                 SessionZooKeeperClient sessionZooKeeperClient) {
-        Preparation preparation = new Preparation(hostValidator, logger, params, currentActiveApplicationSet,
-                                                  tenantPath, serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
-
+                                 Optional<ApplicationSet> activeApplicationSet, Instant now, File serverDbSessionDir,
+                                 ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient) {
+        ApplicationId applicationId = params.getApplicationId();
+        Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationSet,
+                                                  TenantRepository.getTenantPath(applicationId.tenant()),
+                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
         preparation.preprocess();
-        var distributedApplicationPackage = preparation.distributeApplicationPackage();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
-                preparation.writeStateZK(distributedApplicationPackage);
+                preparation.writeStateZK(preparation.distributeApplicationPackage());
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
                 preparation.writeApplicationRoles();
                 preparation.distribute();
             }
-            log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() +
-                    " : " + params.getApplicationId());
+            log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() + " : " + applicationId);
             return preparation.result();
         }
         catch (IllegalArgumentException e) {
@@ -303,8 +301,7 @@ public class SessionPreparer {
         }
 
         void writeApplicationRoles() {
-            applicationRoles.ifPresent(roles ->
-                    applicationRolesStore.writeApplicationRoles(applicationId, roles));
+            applicationRoles.ifPresent(roles -> applicationRolesStore.writeApplicationRoles(applicationId, roles));
             checkTimeout("write application roles to zookeeper");
         }
 

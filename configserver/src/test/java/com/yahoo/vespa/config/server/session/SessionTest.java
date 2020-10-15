@@ -29,7 +29,7 @@ public class SessionTest {
 
         @Override
         public PrepareResult prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
-                                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
+                                     Optional<ApplicationSet> currentActiveApplicationSet,
                                      Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
                                      SessionZooKeeperClient sessionZooKeeperClient) {
             return new PrepareResult(AllocatedHosts.withHosts(Set.of()), List.of());

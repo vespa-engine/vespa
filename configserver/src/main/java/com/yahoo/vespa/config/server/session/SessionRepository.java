@@ -147,11 +147,7 @@ public class SessionRepository {
         }
     }
 
-    public ConfigChangeActions prepareLocalSession(LocalSession session,
-                                                   DeployLogger logger,
-                                                   PrepareParams params,
-                                                   Path tenantPath,
-                                                   Instant now) {
+    public ConfigChangeActions prepareLocalSession(LocalSession session, DeployLogger logger, PrepareParams params, Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
@@ -159,8 +155,7 @@ public class SessionRepository {
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
         Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
-                                                              activeApplicationSet, tenantPath, now,
-                                                              getSessionAppDir(sessionId),
+                                                              activeApplicationSet, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
         setPrepared(session);
