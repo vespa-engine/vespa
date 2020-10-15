@@ -651,8 +651,7 @@ FileStorHandlerImpl::remapQueueNoLock(Disk& from, const RemapInfo& source,
     // Find all the messages for the given bucket.
     for (BucketIdx::iterator i = range.first; i != range.second; ++i) {
         assert(i->_bucket == source.bucket);
-
-        entriesFound.push_back(std::move(*i));
+        entriesFound.push_back(std::move(i.get_node()->value()));
     }
 
     // Remove them
@@ -790,15 +789,6 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::Stora
       _bucket(bucket),
       _priority(cmd->getPriority())
 { }
-
-
-FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry)
-    : _command(entry._command),
-      _timer(entry._timer),
-      _bucket(entry._bucket),
-      _priority(entry._priority)
-{ }
-
 
 FileStorHandlerImpl::MessageEntry::MessageEntry(MessageEntry && entry) noexcept
     : _command(std::move(entry._command)),
