@@ -468,7 +468,8 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flu
     TransactionLogManager::prepareReplay(_tlsMgr.getClient(), _docTypeName.getName(),
                                          flushedIndexMgrSerial, flushedSummaryMgrSerial, config_store);
 
-    _tlsReplayProgress = _tlsMgr.startReplay(_prunedSerialNum, _serialNum, *this);
+    _tlsReplayProgress = _tlsMgr.make_replay_progress(_prunedSerialNum, _serialNum);
+    _tlsMgr.startReplay(_prunedSerialNum, _serialNum, *this);
 }
 
 void
