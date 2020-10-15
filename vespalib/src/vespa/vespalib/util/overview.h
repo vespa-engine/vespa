@@ -22,17 +22,6 @@
  *
  * vespalib::GenCnt
  *
- * Synchronization classes
- *
- * vespalib::Lock
- * <BR> vespalib::LockGuard
- * <BR> vespalib::Monitor	
- * <BR> vespalib::TryLock	
- * <BR> vespalib::MonitorGuard	
- * <BR> vespalib::RWLock	
- * <BR> vespalib::RWLockReader	
- * <BR> vespalib::RWLockWriter	
- *
  * Reference counting
  *
  * <BR> vespalib::ReferenceCounter	
