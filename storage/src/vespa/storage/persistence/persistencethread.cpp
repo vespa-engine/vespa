@@ -94,7 +94,7 @@ private:
 
 }
 
-PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor * sequencedExecutor,
+PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor & sequencedExecutor,
                                      ServiceLayerComponentRegister& compReg,
                                      const config::ConfigUri & configUri,
                                      spi::PersistenceProvider& provider,
@@ -180,17 +180,13 @@ PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP)
     }
 
     spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
-    if (_sequencedExecutor == nullptr) {
-        spi::Result response = _spi.put(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()),tracker.context());
-        tracker.checkForError(response);
-    } else {
-        auto task = makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
-            tracker->checkForError(*response);
-            tracker->sendReply();
-        });
-        _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker.context(),
-                      std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-    }
+    auto task = makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
+        tracker->checkForError(*response);
+        tracker->sendReply();
+    });
+    _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker.context(),
+                  std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
+
     return trackerUP;
 }
 
@@ -208,29 +204,20 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trac
     }
 
     spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
-    if (_sequencedExecutor == nullptr) {
-        spi::RemoveResult response = _spi.removeIfFound(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(),tracker.context());
-        if (tracker.checkForError(response)) {
-            tracker.setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
+
+    // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
+    auto task = makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
+        auto & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
+        if (tracker->checkForError(response)) {
+            tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
         }
         if (!response.wasFound()) {
             metrics.notFound.inc();
         }
-    } else {
-        // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
-        auto task = makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-            auto & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
-            if (tracker->checkForError(response)) {
-                tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
-            }
-            if (!response.wasFound()) {
-                metrics.notFound.inc();
-            }
-            tracker->sendReply();
-        });
-        _spi.removeIfFoundAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker.context(),
-                                std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-    }
+        tracker->sendReply();
+    });
+    _spi.removeIfFoundAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker.context(),
+                            std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     return trackerUP;
 }
 
@@ -248,27 +235,19 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trac
     }
 
     spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
-    if (_sequencedExecutor == nullptr) {
-        spi::UpdateResult response = _spi.update(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getUpdate()),tracker.context());
-        if (tracker.checkForError(response)) {
+
+    // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
+    auto task = makeResultTask([&cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
+        auto & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
+        if (tracker->checkForError(response)) {
             auto reply = std::make_shared<api::UpdateReply>(cmd);
             reply->setOldTimestamp(response.getExistingTimestamp());
-            tracker.setReply(std::move(reply));
+            tracker->setReply(std::move(reply));
         }
-    } else {
-        // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
-        auto task = makeResultTask([&cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-            auto & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
-            if (tracker->checkForError(response)) {
-                auto reply = std::make_shared<api::UpdateReply>(cmd);
-                reply->setOldTimestamp(response.getExistingTimestamp());
-                tracker->setReply(std::move(reply));
-            }
-            tracker->sendReply();
-        });
-        _spi.updateAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getUpdate()), tracker.context(),
-                         std::make_unique<ResultTaskOperationDone>(*_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-    }
+        tracker->sendReply();
+    });
+    _spi.updateAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getUpdate()), tracker.context(),
+                     std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     return trackerUP;
 }
 

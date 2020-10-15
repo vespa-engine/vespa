@@ -86,7 +86,7 @@ FileStorManager::print(std::ostream& out, bool verbose, const std::string& inden
 namespace {
 
 uint32_t computeNumResponseThreads(int configured) {
-    return (configured < 0) ? std::max(1u, std::thread::hardware_concurrency()/4) : configured;
+    return (configured <= 0) ? std::max(1u, std::thread::hardware_concurrency()/4) : configured;
 }
 
 vespalib::Executor::OptimizeFor
@@ -125,12 +125,11 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
 
         _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _compReg);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
-        if (numResponseThreads > 0) {
-            _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResponseThreads, 10000, selectSequencer(_config->responseSequencerType));
-        }
+        _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResponseThreads, 10000, selectSequencer(_config->responseSequencerType));
+        assert(_sequencedExecutor);
         LOG(spam, "Setting up the disk");
         for (uint32_t j = 0; j < numThreads; j++) {
-            _threads.push_back(std::make_shared<PersistenceThread>(_sequencedExecutor.get(), _compReg, _configUri, *_provider,
+            _threads.push_back(std::make_shared<PersistenceThread>(*_sequencedExecutor, _compReg, _configUri, *_provider,
                                                                    *_filestorHandler, *_metrics->disks[0]->threads[j]));
         }
     }

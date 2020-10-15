@@ -29,6 +29,7 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <atomic>
 
 namespace storage {
@@ -110,6 +111,7 @@ class TestServiceLayerApp : public TestStorageApp
     using PersistenceProviderUP = std::unique_ptr<spi::PersistenceProvider>;
     ServiceLayerComponentRegisterImpl& _compReg;
     PersistenceProviderUP _persistenceProvider;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _executor;
 
 public:
     TestServiceLayerApp(vespalib::stringref configId);
@@ -126,6 +128,7 @@ public:
     StorBucketDatabase& getStorageBucketDatabase() override {
         return _compReg.getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).bucketDatabase();
     }
+    vespalib::ISequencedTaskExecutor & executor() { return *_executor; }
 
 private:
     // For storage server interface implementation we'll get rid of soon.

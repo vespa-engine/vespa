@@ -88,7 +88,7 @@ PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
 std::unique_ptr<PersistenceThread>
 PersistenceTestUtils::createPersistenceThread()
 {
-    return std::make_unique<PersistenceThread>(_sequenceTaskExecutor.get(), _env->_node.getComponentRegister(),
+    return std::make_unique<PersistenceThread>(*_sequenceTaskExecutor, _env->_node.getComponentRegister(),
                                                _env->_config.getConfigId(),getPersistenceProvider(),
                                                getEnv()._fileStorHandler, getEnv()._metrics);
 }
