@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
 
@@ -38,6 +39,15 @@ struct TensorPartialUpdate {
      *  Returns null pointer if these constraints are violated.
      **/
     static Value::UP remove(const Value &input, const Value &remove_spec, const ValueBuilderFactory &factory);
+
+    /* Backwards compatibility adapters. TODO: remove */
+    using EngineOrFactory = vespalib::eval::EngineOrFactory;
+    static Value::UP modify(const Value &input, join_fun_t function,
+                            const Value &modifier, EngineOrFactory factory);
+    static Value::UP add(const Value &input, const Value &add_cells, EngineOrFactory factory);
+    static Value::UP remove(const Value &input, const Value &remove_spec, EngineOrFactory factory);
+    /** Check if the given value can be used as a modifier or remove_spec */
+    static bool check_suitably_sparse(const Value &modifier,  EngineOrFactory factory);
 };
 
 } // namespace
