@@ -54,12 +54,13 @@ RequestContext::get_query_tensor(const vespalib::string& tensor_name) const
         vespalib::nbostream stream(value.data(), value.size());
         try {
             return EngineOrFactory::get().decode(stream);
-        } catch (vespalib::IllegalArgumentException& ex) {
-            LOG(warning, "Query tensor '%s' could not be deserialized", tensor_name.c_str());
-            return vespalib::eval::Value::UP();
+        } catch (vespalib::Exception& ex) {
+            LOG(warning, "Query tensor '%s' could not be deserialized: %s",
+                tensor_name.c_str(), ex.getMessage().c_str());
+            return {};
         }
     }
-    return vespalib::eval::Value::UP();
+    return {};
 }
 
 const search::attribute::AttributeBlueprintParams&
