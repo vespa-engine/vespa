@@ -229,6 +229,7 @@ public class DocumentV1ApiTest {
         // GET with namespace and document type is a restricted visit.
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space')", parameters.getDocumentSelection());
+            assertEquals(new ProgressToken().serializeToString(), parameters.getResumeToken().serializeToString());
             throw new IllegalArgumentException("parse failure");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?continuation=" + new ProgressToken().serializeToString());
