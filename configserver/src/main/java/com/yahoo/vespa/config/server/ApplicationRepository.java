@@ -386,7 +386,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         DeployLogger logger = new SilentDeployLogger();
-        LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, logger, true, timeoutBudget);
+        LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, true, timeoutBudget);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
@@ -784,14 +784,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
 
-    public long createSessionFromExisting(ApplicationId applicationId,
-                                          DeployLogger logger,
-                                          boolean internalRedeploy,
-                                          TimeoutBudget timeoutBudget) {
+    public long createSessionFromExisting(ApplicationId applicationId, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         Tenant tenant = getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         RemoteSession fromSession = getExistingSession(tenant, applicationId);
-        LocalSession session = sessionRepository.createSessionFromExisting(fromSession, logger, internalRedeploy, timeoutBudget);
+        LocalSession session = sessionRepository.createSessionFromExisting(fromSession, internalRedeploy, timeoutBudget);
         return session.getSessionId();
     }
 

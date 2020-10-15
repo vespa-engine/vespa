@@ -53,7 +53,7 @@ public class SessionCreateHandler extends SessionHandler {
         if (request.hasProperty("from")) {
             ApplicationId applicationId = getFromApplicationId(request);
             logger = DeployHandlerLogger.forApplication(applicationId, verbose);
-            sessionId = applicationRepository.createSessionFromExisting(applicationId, logger, false, timeoutBudget);
+            sessionId = applicationRepository.createSessionFromExisting(applicationId, false, timeoutBudget);
         } else {
             validateDataAndHeader(request);
             logger = DeployHandlerLogger.forTenant(tenantName, verbose);

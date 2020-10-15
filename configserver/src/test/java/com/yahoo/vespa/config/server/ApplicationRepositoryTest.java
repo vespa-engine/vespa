@@ -236,10 +236,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void createFromActiveSession() {
         PrepareResult result = deployApp(testApp);
-        long sessionId = applicationRepository.createSessionFromExisting(applicationId(),
-                                                                         new SilentDeployLogger(),
-                                                                         false,
-                                                                         timeoutBudget);
+        long sessionId = applicationRepository.createSessionFromExisting(applicationId(), false, timeoutBudget);
         long originalSessionId = result.sessionId();
         ApplicationMetaData originalApplicationMetaData = getApplicationMetaData(applicationId(), originalSessionId);
         ApplicationMetaData applicationMetaData = getApplicationMetaData(applicationId(), sessionId);
@@ -564,10 +561,7 @@ public class ApplicationRepositoryTest {
         PrepareResult result1 = deployApp(testAppJdiscOnly);
         result1.sessionId();
 
-        long sessionId2 = applicationRepository.createSessionFromExisting(applicationId(),
-                                                                          new BaseDeployLogger(),
-                                                                          false,
-                                                                          timeoutBudget);
+        long sessionId2 = applicationRepository.createSessionFromExisting(applicationId(), false, timeoutBudget);
         // Deploy and activate another session
         PrepareResult result2 = deployApp(testAppJdiscOnly);
         result2.sessionId();
