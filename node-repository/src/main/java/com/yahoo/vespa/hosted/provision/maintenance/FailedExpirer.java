@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  *
  * The purpose of the automatic recycling to dirty + fail count is that nodes which were moved
  * to failed due to some undetected hardware failure will end up being failed again.
- * When that has happened enough they will not be recycled.
+ * When that has happened enough they will not be recycled, and need manual inspection to move on.
  *
  * Nodes with detected hardware issues will not be recycled.
  *
@@ -44,7 +44,9 @@ import java.util.stream.Collectors;
 public class FailedExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
-    private static final int maxAllowedFailures = 50; // Stop recycling nodes after this number of failures
+    // We will stop giving the nodes back to Openstack for break-fix, setting this to number a high value, we might
+    // eventually remove this counter and recycling nodes forever
+    private static final int maxAllowedFailures = 50;
 
     private final NodeRepository nodeRepository;
     private final Zone zone;
