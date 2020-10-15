@@ -374,6 +374,13 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag AWS_NLB_SEPARATE_HEALTHCHECK_PORT = defineFeatureFlag(
+            "aws-nlb-separate-healthcheck-port",
+            false,
+            "Use separate port for NLB health checks",
+            "Takes effect on next internal redeploy",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
