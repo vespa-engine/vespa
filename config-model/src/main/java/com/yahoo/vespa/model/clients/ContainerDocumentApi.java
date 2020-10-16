@@ -41,7 +41,7 @@ public class ContainerDocumentApi {
 
 
     private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
-        // TODO(bjorncs,jvenstad) Cleanup once old restapi handler is gone
+        // TODO(bjorncs,jonmv) Cleanup once old restapi handler is gone
         // We need to include the old handler implementation even when the new handler is enabled
         // The internal legacy test framework requires that the name of the old handler is listed in /ApplicationStatus
         String oldHandlerName = "com.yahoo.document.restapi.resource.RestApi";
