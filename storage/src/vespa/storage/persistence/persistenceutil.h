@@ -113,11 +113,11 @@ struct PersistenceUtil {
 
     ~PersistenceUtil();
 
-    StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace)
-        { return _component.getBucketDatabase(bucketSpace); }
+    StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) {
+        return _component.getBucketDatabase(bucketSpace);
+    }
 
-    void updateBucketDatabase(const document::Bucket &bucket,
-                              const api::BucketInfo& info);
+    void updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& info);
 
     uint16_t getPreferredAvailableDisk(const document::Bucket &bucket) const;
 
@@ -138,6 +138,8 @@ struct PersistenceUtil {
     api::BucketInfo convertBucketInfo(const spi::BucketInfo&) const;
 
     void setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket);
+
+    spi::Bucket getBucket(const document::DocumentId& id, const document::Bucket &bucket) const;
 
     static uint32_t convertErrorCode(const spi::Result& response);
 

@@ -7,7 +7,6 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
@@ -24,77 +23,9 @@ namespace storage {
 
 namespace {
 
-class ResultTask : public vespalib::Executor::Task {
-public:
-    ResultTask() : _result(), _resultHandler(nullptr) { }
-    void setResult(spi::Result::UP result) {
-        _result = std::move(result);
-    }
-    void addResultHandler(const spi::ResultHandler * resultHandler) {
-        // Only handles a signal handler now,
-        // Can be extended if necessary later on
-        assert(_resultHandler == nullptr);
-        _resultHandler = resultHandler;
-    }
-    void handle(const spi::Result &result ) {
-        if (_resultHandler != nullptr) {
-            _resultHandler->handle(result);
-        }
-    }
-protected:
-    spi::Result::UP      _result;
-private:
-    const spi::ResultHandler * _resultHandler;
-};
-
-template<class FunctionType>
-class LambdaResultTask : public ResultTask {
-public:
-    explicit LambdaResultTask(FunctionType && func)
-        : _func(std::move(func))
-    {}
-    ~LambdaResultTask() override = default;
-    void run() override {
-        handle(*_result);
-        _func(std::move(_result));
-    }
-private:
-    FunctionType _func;
-};
-
-template <class FunctionType>
-std::unique_ptr<ResultTask>
-makeResultTask(FunctionType &&function)
-{
-    return std::make_unique<LambdaResultTask<std::decay_t<FunctionType>>>
-           (std::forward<FunctionType>(function));
-}
-
-class ResultTaskOperationDone : public spi::OperationComplete {
-public:
-    ResultTaskOperationDone(vespalib::ISequencedTaskExecutor & executor, document::BucketId bucketId,
-                            std::unique_ptr<ResultTask> task)
-        : _executor(executor),
-          _task(std::move(task)),
-          _executorId(executor.getExecutorId(bucketId.getId()))
-    {
-    }
-    void onComplete(spi::Result::UP result) override {
-        _task->setResult(std::move(result));
-        _executor.executeTask(_executorId, std::move(_task));
-    }
-    void addResultHandler(const spi::ResultHandler * resultHandler) override {
-        _task->addResultHandler(resultHandler);
-    }
-private:
-    vespalib::ISequencedTaskExecutor             & _executor;
-    std::unique_ptr<ResultTask>                    _task;
-    vespalib::ISequencedTaskExecutor::ExecutorId   _executorId;
-};
-
 vespalib::string
 createThreadName(size_t stripeId) {
-    return vespalib::make_string("Thread %zu", stripeId);
+    return vespalib::make_string("PersistenceThread-%zu", stripeId);
 }
 
 }
@@ -108,10 +39,10 @@ PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor & sequence
     : _stripeId(filestorHandler.getNextStripeId()),
       _component(std::make_unique<ServiceLayerComponent>(compReg, createThreadName(_stripeId))),
       _env(configUri, *_component, filestorHandler, metrics, provider),
-      _sequencedExecutor(sequencedExecutor),
       _spi(provider),
       _processAllHandler(_env, provider),
-      _mergeHandler(_spi, _env),
+      _mergeHandler(_env, _spi),
+      _asyncHandler(_env, _spi, sequencedExecutor),
       _bucketOwnershipNotifier()
 {
     _bucketOwnershipNotifier = std::make_unique<BucketOwnershipNotifier>(*_component, filestorHandler);
@@ -125,133 +56,6 @@ PersistenceThread::~PersistenceThread()
     LOG(debug, "Waiting for thread to terminate.");
     _thread->join();
     LOG(debug, "Persistence thread done with destruction");
-}
-
-spi::Bucket
-PersistenceThread::getBucket(const DocumentId& id, const document::Bucket &bucket) const
-{
-    BucketId docBucket(_env._bucketFactory.getBucketId(id));
-    docBucket.setUsedBits(bucket.getBucketId().getUsedBits());
-    if (bucket.getBucketId() != docBucket) {
-        docBucket = _env._bucketFactory.getBucketId(id);
-        throw vespalib::IllegalStateException("Document " + id.toString()
-                + " (bucket " + docBucket.toString() + ") does not belong in "
-                + "bucket " + bucket.getBucketId().toString() + ".", VESPA_STRLOC);
-    }
-
-    return spi::Bucket(bucket);
-}
-
-bool
-PersistenceThread::tasConditionExists(const api::TestAndSetCommand & cmd) {
-    return cmd.getCondition().isPresent();
-}
-
-bool
-PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
-                                            spi::Context & context, bool missingDocumentImpliesMatch) {
-    try {
-        TestAndSetHelper helper(*this, cmd, missingDocumentImpliesMatch);
-
-        auto code = helper.retrieveAndMatch(context);
-        if (code.failed()) {
-            tracker.fail(code.getResult(), code.getMessage());
-            return false;
-        }
-    } catch (const TestAndSetException & e) {
-        auto code = e.getCode();
-        tracker.fail(code.getResult(), code.getMessage());
-        return false;
-    }
-
-    return true;
-}
-
-MessageTracker::UP
-PersistenceThread::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP)
-{
-    MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.put[cmd.getLoadType()];
-    tracker.setMetric(metrics);
-    metrics.request_size.addValue(cmd.getApproxByteSize());
-
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
-        // Will also count condition parse failures etc as TaS failures, but
-        // those results _will_ increase the error metrics as well.
-        metrics.test_and_set_failed.inc();
-        return trackerUP;
-    }
-
-    spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
-    auto task = makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
-        tracker->checkForError(*response);
-        tracker->sendReply();
-    });
-    _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker.context(),
-                  std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-
-    return trackerUP;
-}
-
-MessageTracker::UP
-PersistenceThread::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP)
-{
-    MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.remove[cmd.getLoadType()];
-    tracker.setMetric(metrics);
-    metrics.request_size.addValue(cmd.getApproxByteSize());
-
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
-        metrics.test_and_set_failed.inc();
-        return trackerUP;
-    }
-
-    spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
-
-    // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
-    auto task = makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-        auto & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
-        if (tracker->checkForError(response)) {
-            tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
-        }
-        if (!response.wasFound()) {
-            metrics.notFound.inc();
-        }
-        tracker->sendReply();
-    });
-    _spi.removeIfFoundAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(), tracker.context(),
-                            std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-    return trackerUP;
-}
-
-MessageTracker::UP
-PersistenceThread::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP)
-{
-    MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.update[cmd.getLoadType()];
-    tracker.setMetric(metrics);
-    metrics.request_size.addValue(cmd.getApproxByteSize());
-
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context(), cmd.getUpdate()->getCreateIfNonExistent())) {
-        metrics.test_and_set_failed.inc();
-        return trackerUP;
-    }
-
-    spi::Bucket bucket = getBucket(cmd.getDocumentId(), cmd.getBucket());
-
-    // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
-    auto task = makeResultTask([&cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-        auto & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
-        if (tracker->checkForError(response)) {
-            auto reply = std::make_shared<api::UpdateReply>(cmd);
-            reply->setOldTimestamp(response.getExistingTimestamp());
-            tracker->setReply(std::move(reply));
-        }
-        tracker->sendReply();
-    });
-    _spi.updateAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getUpdate()), tracker.context(),
-                     std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-    return trackerUP;
 }
 
 namespace {
@@ -291,8 +95,8 @@ PersistenceThread::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker)
     if ( ! fieldSet) { return tracker; }
 
     tracker->context().setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
-    spi::GetResult result =
-        _spi.get(getBucket(cmd.getDocumentId(), cmd.getBucket()), *fieldSet, cmd.getDocumentId(), tracker->context());
+    spi::GetResult result = _spi.get(_env.getBucket(cmd.getDocumentId(), cmd.getBucket()),
+                                     *fieldSet, cmd.getDocumentId(), tracker->context());
 
     if (tracker->checkForError(result)) {
         if (!result.hasDocument() && (document::FieldSet::Type::NONE != fieldSet->getType())) {
@@ -801,11 +605,11 @@ PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, MessageTra
     case api::MessageType::GET_ID:
         return handleGet(static_cast<api::GetCommand&>(msg), std::move(tracker));
     case api::MessageType::PUT_ID:
-        return handlePut(static_cast<api::PutCommand&>(msg), std::move(tracker));
+        return _asyncHandler.handlePut(static_cast<api::PutCommand&>(msg), std::move(tracker));
     case api::MessageType::REMOVE_ID:
-        return handleRemove(static_cast<api::RemoveCommand&>(msg), std::move(tracker));
+        return _asyncHandler.handleRemove(static_cast<api::RemoveCommand&>(msg), std::move(tracker));
     case api::MessageType::UPDATE_ID:
-        return handleUpdate(static_cast<api::UpdateCommand&>(msg), std::move(tracker));
+        return _asyncHandler.handleUpdate(static_cast<api::UpdateCommand&>(msg), std::move(tracker));
     case api::MessageType::REVERT_ID:
         return handleRevert(static_cast<api::RevertCommand&>(msg), std::move(tracker));
     case api::MessageType::CREATEBUCKET_ID:

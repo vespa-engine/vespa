@@ -14,6 +14,8 @@
 
 namespace storage {
 
+class MessageTracker;
+
 struct Types {
     typedef document::BucketId BucketId;
     typedef document::Document Document;
@@ -25,6 +27,7 @@ struct Types {
     typedef api::BucketInfo BucketInfo;
     typedef api::ReturnCode ReturnCode;
     typedef StorBucketDatabase::WrappedEntry BucketDBEntry;
+    using MessageTrackerUP = std::unique_ptr<MessageTracker>;
 
     static const framework::MicroSecTime MAX_TIMESTAMP;
     static const framework::MicroSecTime UNSET_TIMESTAMP;

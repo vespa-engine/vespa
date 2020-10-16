@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mergehandler.h"
+#include "persistenceutil.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -13,16 +14,16 @@ LOG_SETUP(".persistence.mergehandler");
 
 namespace storage {
 
-MergeHandler::MergeHandler(spi::PersistenceProvider& spi, PersistenceUtil& env)
-    : _spi(spi),
-      _env(env),
+MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi)
+    : _env(env),
+      _spi(spi),
       _maxChunkSize(env._config.bucketMergeChunkSize)
 {
 }
 
-MergeHandler::MergeHandler(spi::PersistenceProvider& spi, PersistenceUtil& env, uint32_t maxChunkSize)
-    : _spi(spi),
-      _env(env),
+MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, uint32_t maxChunkSize)
+    : _env(env),
+      _spi(spi),
       _maxChunkSize(maxChunkSize)
 {
 }

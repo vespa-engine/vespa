@@ -5,6 +5,7 @@
 #include "diskthread.h"
 #include "processallhandler.h"
 #include "mergehandler.h"
+#include "asynchandler.h"
 #include "persistenceutil.h"
 #include "provider_error_wrapper.h"
 #include <vespa/storage/common/bucketmessages.h>
@@ -15,7 +16,6 @@
 namespace storage {
 
 class BucketOwnershipNotifier;
-class TestAndSetHelper;
 
 class PersistenceThread final : public DiskThread, public Types
 {
@@ -29,9 +29,6 @@ public:
     void flush() override;
     framework::Thread& getThread() override { return *_thread; }
 
-    MessageTracker::UP handlePut(api::PutCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleRemove(api::RemoveCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleGet(api::GetCommand& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker);
@@ -46,14 +43,15 @@ public:
     MessageTracker::UP handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTracker::UP tracker);
 
+    const AsyncHandler & asyncHandler() const { return _asyncHandler; }
 private:
     uint32_t                  _stripeId;
     ServiceLayerComponent::UP _component;
     PersistenceUtil           _env;
-    vespalib::ISequencedTaskExecutor & _sequencedExecutor;
     spi::PersistenceProvider& _spi;
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;
+    AsyncHandler              _asyncHandler;
     framework::Thread::UP     _thread;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
 
@@ -75,12 +73,6 @@ private:
 
     // Thread main loop
     void run(framework::ThreadHandle&) override;
-    spi::Bucket getBucket(const DocumentId& id, const document::Bucket &bucket) const;
-
-    friend class TestAndSetHelper;
-    static bool tasConditionExists(const api::TestAndSetCommand & cmd);
-    bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
-                             spi::Context & context, bool missingDocumentImpliesMatch = false);
 };
 
 } // storage
