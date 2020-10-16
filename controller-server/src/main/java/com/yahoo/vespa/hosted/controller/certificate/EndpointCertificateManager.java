@@ -149,10 +149,10 @@ public class EndpointCertificateManager {
     }
 
     private void deleteUnusedCertificates() {
-        CleanupMode mode = CleanupMode.valueOf(deleteUnusedEndpointCertificates.value());
+        CleanupMode mode = CleanupMode.valueOf(deleteUnusedEndpointCertificates.value().toUpperCase());
         if (mode == CleanupMode.DISABLE) return;
 
-        var oneMonthAgo = clock.instant().minus(1, ChronoUnit.MONTHS);
+        var oneMonthAgo = clock.instant().minus(30, ChronoUnit.DAYS);
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
             var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
