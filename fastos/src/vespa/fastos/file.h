@@ -87,20 +87,11 @@ private:
     size_t        _writeChunkSize;
     void WriteBufInternal(const void *buffer, size_t length);
 
-public:
-    using FailedHandler = void (*)(const char *op,
-                                   const char *file,
-                                   int error,
-                                   int64_t offset,
-                                   size_t len,
-                                   ssize_t rlen);
-
 protected:
     char         *_filename;
     unsigned int  _openFlags;
     bool          _directIOEnabled;
     bool          _syncWritesEnabled;
-    static FailedHandler _failedHandler;
 
 public:
     static void setDefaultFAdviseOptions(int options) { _defaultFAdviseOptions = options; }
@@ -120,14 +111,6 @@ public:
      * @return Boolean success/failure
      */
     static bool CleanupClass ();
-
-    /**
-     * Set the handler called on fatal file errors.
-     * @param failedHandler new handler routine.
-     */
-    static void SetFailedHandler(FailedHandler failedHandler) {
-        _failedHandler = failedHandler;
-    }
 
     /**
      * Copy a single file. Will overwrite destination if it already exists.

@@ -37,57 +37,27 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
-    ssize_t readResult = File_RW_Ops::pread(fh, buffer, length, readOffset);
-    if (readResult < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        const char *fileName = GetFileName();
-        _failedHandler("read", fileName, error, readOffset, length, readResult);
-        errno = error;
-    }
-    return readResult;
+    return File_RW_Ops::pread(fh, buffer, length, readOffset);
 }
 
 
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 {
-    ssize_t readResult = File_RW_Ops::read(fh, buffer, length);
-    if (readResult < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        int64_t readOffset = GetPosition();
-        const char *fileName = GetFileName();
-        _failedHandler("read", fileName, error, readOffset, length, readResult);
-        errno = error;
-    }
-    return readResult;
+    return File_RW_Ops::read(fh, buffer, length);
 }
 
 
 ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset)
 {
-    ssize_t writeRes = File_RW_Ops::pwrite(fh, buffer, length, writeOffset);
-    if (writeRes < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        const char *fileName = GetFileName();
-        _failedHandler("write", fileName, error, writeOffset, length, writeRes);
-        errno = error;
-    }
-    return writeRes;
+    return File_RW_Ops::pwrite(fh, buffer, length, writeOffset);
 }
 
 ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length)
 {
-    ssize_t writeRes = File_RW_Ops::write(fh, buffer, length);
-    if (writeRes < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        int64_t writeOffset = GetPosition();
-        const char *fileName = GetFileName();
-        _failedHandler("write", fileName, error, writeOffset, length, writeRes);
-        errno = error;
-    }
-    return writeRes;
+    return File_RW_Ops::write(fh, buffer, length);
 }
 
 
