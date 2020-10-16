@@ -229,8 +229,6 @@ vespa_define_module(
     src/tests/util/bufferwriter
     src/tests/util/searchable_stats
     src/tests/util/slime_output_raw_buf_adapter
-    src/tests/util/statebuf
-    src/tests/util/statefile
     src/tests/vespa-fileheader-inspect
 )
 
