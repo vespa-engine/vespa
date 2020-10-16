@@ -190,31 +190,6 @@ DenseTensorView::apply(const CellFunction &func) const
     return dispatch_1<CallApply>(_cellsRef, _typeRef, func);
 }
 
-bool
-DenseTensorView::equals(const Tensor &arg) const
-{
-    if (fast_type() == arg.type()) {
-        return sameCells(cells(), arg.cells());
-    }
-    return false;
-}
-
-struct CallClone {
-    template<class CT>
-    static Tensor::UP
-    call(const ConstArrayRef<CT> &cells, eval::ValueType newType)
-    {
-        std::vector<CT> newCells(cells.begin(), cells.end());
-        return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
-    }
-};
-
-Tensor::UP
-DenseTensorView::clone() const
-{
-    return dispatch_1<CallClone>(_cellsRef, _typeRef);
-}
-
 namespace {
 
 void

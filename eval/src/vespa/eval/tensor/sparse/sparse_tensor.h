@@ -32,7 +32,6 @@ public:
     eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;
 
     const eval::ValueType &type() const override;
-    bool equals(const Tensor &arg) const override;
     eval::TensorSpec toSpec() const override;
 };
 

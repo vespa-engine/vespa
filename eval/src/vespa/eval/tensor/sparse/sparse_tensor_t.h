@@ -29,7 +29,6 @@ public:
     void accept(TensorVisitor &visitor) const override;
     Tensor::UP add(const Tensor &arg) const override;
     Tensor::UP apply(const CellFunction &func) const override;
-    Tensor::UP clone() const override;
     Tensor::UP join(join_fun_t function, const Tensor &arg) const override;
     Tensor::UP merge(join_fun_t function, const Tensor &arg) const override;
     Tensor::UP modify(join_fun_t op, const CellValues &cellValues) const override;
