@@ -171,12 +171,10 @@ public:
         do_for_each_chunked(std::move(func), clientId, yieldTime, chunkSize);
     }
 
-    void for_each_mutable(std::function<Decision(uint64_t, ValueT&)> func,
-                          const char* clientId,
-                          const key_type& first = 0,
-                          const key_type& last = UINT64_MAX)
+    void for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func,
+                                    const char* clientId)
     {
-        do_for_each_mutable(std::move(func), clientId, first, last);
+        do_for_each_mutable_unordered(std::move(func), clientId);
     }
 
     void for_each(std::function<Decision(uint64_t, const ValueT&)> func,
@@ -205,10 +203,8 @@ private:
                                      const char* clientId,
                                      vespalib::duration yieldTime,
                                      uint32_t chunkSize) = 0;
-    virtual void do_for_each_mutable(std::function<Decision(uint64_t, ValueT&)> func,
-                                     const char* clientId,
-                                     const key_type& first,
-                                     const key_type& last) = 0;
+    virtual void do_for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func,
+                                               const char* clientId) = 0;
     virtual void do_for_each(std::function<Decision(uint64_t, const ValueT&)> func,
                              const char* clientId,
                              const key_type& first,

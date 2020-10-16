@@ -77,7 +77,8 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
     : _fixture(fixture),
       manager(new FileStorManager(fixture._config->getConfigId(),
                                   fixture._node->getPersistenceProvider(),
-                                  fixture._node->getComponentRegister()))
+                                  fixture._node->getComponentRegister(),
+                                  *fixture._node))
 {
     injector.inject(top);
     top.push_back(StorageLink::UP(manager));

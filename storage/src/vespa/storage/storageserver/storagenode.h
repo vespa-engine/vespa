@@ -181,6 +181,7 @@ protected:
     void initialize();
     virtual void subscribeToConfigs();
     virtual void initializeNodeSpecific() = 0;
+    virtual void perform_post_chain_creation_init_steps() = 0;
     virtual void createChain(IStorageChainBuilder &builder) = 0;
     virtual void handleLiveConfigUpdate(const InitialGuard & initGuard);
     void shutdown();

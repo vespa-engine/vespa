@@ -3,9 +3,11 @@
 #include "filestormanager.h"
 
 #include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
+#include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/config/config-stor-server.h>
@@ -26,8 +28,8 @@ using document::BucketSpace;
 namespace storage {
 
 FileStorManager::
-FileStorManager(const config::ConfigUri & configUri,
-                spi::PersistenceProvider& provider, ServiceLayerComponentRegister& compReg)
+FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
+                ServiceLayerComponentRegister& compReg, DoneInitializeHandler& init_handler)
     : StorageLinkQueued("File store manager", compReg),
       framework::HtmlStatusReporter("filestorman", "File store manager"),
       _compReg(compReg),
@@ -35,6 +37,7 @@ FileStorManager(const config::ConfigUri & configUri,
       _providerCore(provider),
       _providerErrorWrapper(_providerCore),
       _provider(&_providerErrorWrapper),
+      _init_handler(init_handler),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _configUri(configUri),
       _threads(),
@@ -223,11 +226,6 @@ FileStorManager::handlePersistenceMessage( const shared_ptr<api::StorageMessage>
     do {
         LOG(spam, "Received %s. Attempting to queue it.", msg->getType().getName().c_str());
 
-        LOG_BUCKET_OPERATION_NO_LOCK(
-                getStorageMessageBucket(*msg).getBucketId(),
-                vespalib::make_string("Attempting to queue %s", msg->toString().c_str()));
-
-
         if (_filestorHandler->schedule(msg)) {
             LOG(spam, "Received persistence message %s. Queued it to disk",
                 msg->getType().getName().c_str());
@@ -243,7 +241,7 @@ FileStorManager::handlePersistenceMessage( const shared_ptr<api::StorageMessage>
             case FileStorHandler::AVAILABLE:
                 assert(false);
         }
-    } while(0);
+    } while (false);
         // If we get here, we failed to schedule message. errorCode says why
         // We need to reply to message (while not having bucket lock)
     if (!msg->getType().isReply()) {
@@ -830,7 +828,7 @@ FileStorManager::updateState()
         if (contentBucketSpace.getNodeUpInLastNodeStateSeenByProvider() && !nodeUp) {
             LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database for bucket space %s", bucketSpace.toString().c_str());
             Deactivator deactivator;
-            contentBucketSpace.bucketDatabase().for_each_mutable(
+            contentBucketSpace.bucketDatabase().for_each_mutable_unordered(
                     std::ref(deactivator), "FileStorManager::updateState");
         }
         contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(nodeUp);
@@ -860,6 +858,48 @@ FileStorManager::handleNewState()
     propagateClusterStates();
     //TODO: Don't update if it isn't necessary (distributor-only change)
     updateState();
+}
+
+void FileStorManager::update_reported_state_after_db_init() {
+    auto state_lock = _component.getStateUpdater().grabStateChangeLock();
+    auto ns = *_component.getStateUpdater().getReportedNodeState();
+    ns.setInitProgress(1.0);
+    ns.setMinUsedBits(_component.getMinUsedBitsTracker().getMinUsedBits());
+    _component.getStateUpdater().setReportedNodeState(ns);
+}
+
+void FileStorManager::initialize_bucket_databases_from_provider() {
+    framework::MilliSecTimer start_time(_component.getClock());
+    size_t bucket_count = 0;
+    for (const auto& elem : _component.getBucketSpaceRepo()) {
+        const auto bucket_space = elem.first;
+        const auto bucket_result = _provider->listBuckets(bucket_space);
+        assert(!bucket_result.hasError());
+        const auto& buckets = bucket_result.getList();
+        LOG(debug, "Fetching bucket info for %zu buckets in space '%s'",
+            buckets.size(), elem.first.toString().c_str());
+        auto& db = elem.second->bucketDatabase();
+
+        for (const auto& bucket : buckets) {
+            _component.getMinUsedBitsTracker().update(bucket);
+            // TODO replace with far more efficient bulk insert API
+            auto entry = db.get(bucket, "FileStorManager::initialize_bucket_databases_from_provider",
+                                StorBucketDatabase::CREATE_IF_NONEXISTING);
+            assert(!entry.preExisted());
+            auto spi_bucket = spi::Bucket(document::Bucket(bucket_space, bucket));
+            auto provider_result = _provider->getBucketInfo(spi_bucket);
+            assert(!provider_result.hasError());
+            entry->setBucketInfo(PersistenceUtil::convertBucketInfo(provider_result.getBucketInfo()));
+            entry.write();
+        }
+        bucket_count += buckets.size();
+    }
+    const double elapsed = start_time.getElapsedTimeAsDouble();
+    LOG(info, "Completed listing of %zu buckets in %.2g milliseconds", bucket_count, elapsed);
+    _metrics->bucket_db_init_latency.addValue(elapsed);
+
+    update_reported_state_after_db_init();
+    _init_handler.notifyDoneInitializing();
 }
 
 } // storage

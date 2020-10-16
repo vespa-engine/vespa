@@ -251,11 +251,11 @@ TYPED_TEST(LockableMapTest, iterating) {
     // Test that we can use functor with non-const function
     {
         NonConstProcessor<TypeParam> ncproc;
-        map.for_each_mutable(std::ref(ncproc), "foo"); // First round of mutating functor for `all`
+        map.for_each_mutable_unordered(std::ref(ncproc), "foo"); // First round of mutating functor for `all`
         EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
         EXPECT_EQ(A(42,1, 0), *map.get(14, "foo"));
         EXPECT_EQ(A(1, 3, 3), *map.get(16, "foo"));
-        map.for_each_mutable(std::ref(ncproc), "foo"); // Once more, with feeling.
+        map.for_each_mutable_unordered(std::ref(ncproc), "foo"); // Once more, with feeling.
         EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
         EXPECT_EQ(A(42,2, 0), *map.get(14, "foo"));
         EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
@@ -272,27 +272,13 @@ TYPED_TEST(LockableMapTest, iterating) {
     // Test that we can use const functors directly..
     map.for_each(ConstProcessor<TypeParam>(), "foo");
 
-    // Test iterator bounds
-    {
-        EntryProcessor<TypeParam> proc;
-        map.for_each_mutable(std::ref(proc), "foo", 11, 16);
-        std::string expected("11 - A(4, 8, 0)\n"
-                             "14 - A(42, 2, 0)\n"
-                             "16 - A(1, 4, 3)\n");
-        EXPECT_EQ(expected, proc.toString());
-
-        EntryProcessor<TypeParam> proc2;
-        map.for_each_mutable(std::ref(proc2), "foo", 12, 15);
-        expected = "14 - A(42, 2, 0)\n";
-        EXPECT_EQ(expected, proc2.toString());
-    }
-        // Test that we can abort iterating
+    // Test that we can abort iterating
     {
         std::vector<typename TypeParam::Decision> decisions;
         decisions.push_back(TypeParam::CONTINUE);
         decisions.push_back(TypeParam::ABORT);
         EntryProcessor<TypeParam> proc(decisions);
-        map.for_each_mutable(std::ref(proc), "foo");
+        map.for_each_mutable_unordered(std::ref(proc), "foo");
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n");
         EXPECT_EQ(expected, proc.toString());
@@ -303,7 +289,7 @@ TYPED_TEST(LockableMapTest, iterating) {
         decisions.push_back(TypeParam::CONTINUE);
         decisions.push_back(TypeParam::REMOVE); // TODO consider removing; not used
         EntryProcessor<TypeParam> proc(decisions);
-        map.for_each_mutable(std::ref(proc), "foo");
+        map.for_each_mutable_unordered(std::ref(proc), "foo");
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n"
                              "16 - A(1, 4, 3)\n");

@@ -255,7 +255,9 @@ FileStorMetrics::FileStorMetrics(const LoadTypeSet&)
       sum("alldisks", {{"sum"}}, "", this),
       directoryEvents("directoryevents", {}, "Number of directory events received.", this),
       partitionEvents("partitionevents", {}, "Number of partition events received.", this),
-      diskEvents("diskevents", {}, "Number of disk events received.", this)
+      diskEvents("diskevents", {}, "Number of disk events received.", this),
+      bucket_db_init_latency("bucket_db_init_latency", {}, "Time taken (in ms) to initialize bucket databases with "
+                                                           "information from the persistence provider", this)
 { }
 
 FileStorMetrics::~FileStorMetrics() = default;

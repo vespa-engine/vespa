@@ -135,7 +135,7 @@ struct PersistenceUtil {
 
     api::BucketInfo getBucketInfo(const document::Bucket &bucket) const;
 
-    api::BucketInfo convertBucketInfo(const spi::BucketInfo&) const;
+    static api::BucketInfo convertBucketInfo(const spi::BucketInfo&);
 
     void setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket);
 

@@ -248,7 +248,7 @@ PersistenceUtil::getBucketInfo(const document::Bucket &bucket) const
 }
 
 api::BucketInfo
-PersistenceUtil::convertBucketInfo(const spi::BucketInfo& info) const
+PersistenceUtil::convertBucketInfo(const spi::BucketInfo& info)
 {
    return api::BucketInfo(info.getChecksum(),
                           info.getDocumentCount(),

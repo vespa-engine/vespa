@@ -52,6 +52,7 @@ public:
 
 private:
     void initializeNodeSpecific() override;
+    void perform_post_chain_creation_init_steps() override { /* no-op */ }
     void createChain(IStorageChainBuilder &builder) override;
     api::Timestamp getUniqueTimestamp() override;
 
