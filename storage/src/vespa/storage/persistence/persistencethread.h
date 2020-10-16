@@ -48,12 +48,12 @@ public:
 
 private:
     uint32_t                  _stripeId;
+    ServiceLayerComponent::UP _component;
     PersistenceUtil           _env;
     vespalib::ISequencedTaskExecutor & _sequencedExecutor;
     spi::PersistenceProvider& _spi;
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;
-    ServiceLayerComponent::UP _component;
     framework::Thread::UP     _thread;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
 

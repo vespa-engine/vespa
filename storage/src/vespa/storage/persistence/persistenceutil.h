@@ -88,26 +88,25 @@ private:
     spi::Context                             _context;
     PersistenceUtil                         &_env;
     MessageSender                           &_replySender;
-    FileStorThreadMetrics::Op               *_metric;
+    FileStorThreadMetrics::Op               *_metric; // needs a better and thread safe solution
     api::StorageReply::SP                    _reply;
     api::ReturnCode                          _result;
     framework::MilliSecTimer                 _timer;
 };
 
 struct PersistenceUtil {
-    vespa::config::content::StorFilestorConfig _config;
-    ServiceLayerComponentRegister             &_compReg;
-    ServiceLayerComponent                      _component;
-    FileStorHandler                           &_fileStorHandler;
-    uint16_t                                   _nodeIndex;
-    FileStorThreadMetrics                     &_metrics;
-    const document::BucketIdFactory           &_bucketFactory;
+    vespa::config::content::StorFilestorConfig  _config;
+    ServiceLayerComponent                      &_component;
+    FileStorHandler                            &_fileStorHandler;
+    uint16_t                                    _nodeIndex;
+    FileStorThreadMetrics                      &_metrics;  // Needs a better solution for speed and thread safety
+    const document::BucketIdFactory            &_bucketFactory;
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    spi::PersistenceProvider& _spi;
+    spi::PersistenceProvider                   &_spi;
 
     PersistenceUtil(
             const config::ConfigUri&,
-            ServiceLayerComponentRegister&,
+            ServiceLayerComponent&,
             FileStorHandler& fileStorHandler,
             FileStorThreadMetrics& metrics,
             spi::PersistenceProvider& provider);

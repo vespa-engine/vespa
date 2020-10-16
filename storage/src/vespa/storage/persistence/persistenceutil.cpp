@@ -9,12 +9,6 @@ LOG_SETUP(".persistence.util");
 
 namespace storage {
 namespace {
-    std::string generateName(void* p) {
-        std::ostringstream ost;
-        ost << "PersistenceUtil(" << p << ")";
-        return ost.str();
-    }
-
     bool isBatchable(api::MessageType::Id id)
     {
         return (id == api::MessageType::PUT_ID ||
@@ -163,18 +157,17 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
 
 PersistenceUtil::PersistenceUtil(
         const config::ConfigUri & configUri,
-        ServiceLayerComponentRegister& compReg,
+        ServiceLayerComponent& component,
         FileStorHandler& fileStorHandler,
         FileStorThreadMetrics& metrics,
         spi::PersistenceProvider& provider)
     : _config(*config::ConfigGetter<vespa::config::content::StorFilestorConfig>::getConfig(configUri.getConfigId(), configUri.getContext())),
-      _compReg(compReg),
-      _component(compReg, generateName(this)),
+      _component(component),
       _fileStorHandler(fileStorHandler),
-      _nodeIndex(_component.getIndex()),
+      _nodeIndex(component.getIndex()),
       _metrics(metrics),
-      _bucketFactory(_component.getBucketIdFactory()),
-      _repo(_component.getTypeRepo()->documentTypeRepo),
+      _bucketFactory(component.getBucketIdFactory()),
+      _repo(component.getTypeRepo()->documentTypeRepo),
       _spi(provider)
 {
 }
