@@ -57,6 +57,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** This node can be resized to the new NodeResources */
     final boolean isResizable;
 
+
     private NodeCandidate(NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean exclusiveSwitch, boolean isSurplus, boolean isNew, boolean isResizeable) {
         if (isResizeable && isNew)
             throw new IllegalArgumentException("A new node cannot be resizable");
@@ -82,6 +83,9 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
     /** Called when the node described by this candidate must be created */
     public abstract NodeCandidate withNode();
+
+    /** Returns a copy of this with exclusive switch set to given value */
+    public abstract NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch);
 
     /** Returns the node instance of this candidate, or an invalid node if it cannot be created */
     public abstract Node toNode();
@@ -205,29 +209,27 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                             NodeResources freeParentCapacity,
                                             Node parent,
                                             boolean violatesSpares,
-                                            boolean exclusiveSwitch,
                                             boolean isSurplus,
                                             boolean isNew,
                                             boolean isResizeable) {
-        return new ConcreteNodeCandidate(node, freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizeable);
+        return new ConcreteNodeCandidate(node, freeParentCapacity, Optional.of(parent), violatesSpares, true, isSurplus, isNew, isResizeable);
     }
 
     public static NodeCandidate createNewChild(NodeResources resources,
                                                NodeResources freeParentCapacity,
                                                Node parent,
                                                boolean violatesSpares,
-                                               boolean exclusiveSwitch,
                                                LockedNodeList allNodes,
                                                NodeRepository nodeRepository) {
-        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, allNodes, nodeRepository);
+        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, nodeRepository);
     }
 
     public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
         return new ConcreteNodeCandidate(node, node.resources(), Optional.of(parent), false, true, false, true, false);
     }
 
-    public static NodeCandidate createStandalone(Node node, boolean isSurplus, boolean isNew, boolean exclusiveSwitch) {
-        return new ConcreteNodeCandidate(node, node.resources(), Optional.empty(), false, exclusiveSwitch, isSurplus, isNew, false);
+    public static NodeCandidate createStandalone(Node node, boolean isSurplus, boolean isNew) {
+        return new ConcreteNodeCandidate(node, node.resources(), Optional.empty(), false, true, isSurplus, isNew, false);
     }
 
     /** A candidate backed by a node */
@@ -272,6 +274,12 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         /** Called when the node described by this candidate must be created */
         @Override
         public NodeCandidate withNode() { return this; }
+
+        @Override
+        public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
+            return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch,
+                                             isSurplus, isNew, isResizable);
+        }
 
         @Override
         public Node toNode() { return node; }
@@ -367,6 +375,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         }
 
         @Override
+        public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
+            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, nodeRepository);
+        }
+
+        @Override
         public Node toNode() { return withNode().toNode(); }
 
         @Override
@@ -430,6 +443,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         @Override
         public NodeCandidate withNode() {
+            return this;
+        }
+
+        @Override
+        public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
             return this;
         }
 

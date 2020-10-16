@@ -11,8 +11,11 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -74,8 +77,32 @@ public class NodePrioritizer {
     }
 
     /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
-    List<NodeCandidate> prioritize() {
-        return nodes.stream().sorted().collect(Collectors.toList());
+    private List<NodeCandidate> prioritize() {
+        // Group candidates by their cluster switch
+        Map<ClusterSwitch, List<NodeCandidate>> candidatesBySwitch = this.nodes.stream().collect(Collectors.groupingBy(candidate -> {
+            Node nodeOnSwitch = candidate.parent.orElseGet(candidate::toNode);
+            ClusterSpec.Id cluster = candidate.toNode().allocation()
+                                              .map(a -> a.membership().cluster().id())
+                                              .orElseGet(clusterSpec::id);
+            return ClusterSwitch.from(cluster, nodeOnSwitch.switchHostname());
+        }));
+        // Mark lower priority nodes on shared switch as non-exclusive
+        List<NodeCandidate> nodes = new ArrayList<>(this.nodes.size());
+        for (var clusterSwitch : candidatesBySwitch.keySet()) {
+            List<NodeCandidate> switchCandidates = candidatesBySwitch.get(clusterSwitch);
+            if (clusterSwitch.equals(ClusterSwitch.unknown)) {
+                nodes.addAll(switchCandidates); // Nodes are on exclusive switch by default
+            } else {
+                Collections.sort(switchCandidates);
+                NodeCandidate bestNode = switchCandidates.get(0);
+                nodes.add(bestNode);
+                for (var node : switchCandidates.subList(1, switchCandidates.size())) {
+                    nodes.add(node.withExclusiveSwitch(false));
+                }
+            }
+        }
+        Collections.sort(nodes);
+        return nodes;
     }
 
     /**
@@ -123,7 +150,6 @@ public class NodePrioritizer {
                                                    capacity.freeCapacityOf(host, false),
                                                    host,
                                                    spareHosts.contains(host),
-                                                   unusedSwitch(host, clusterSpec.id()),
                                                    allNodes,
                                                    nodeRepository));
         }
@@ -155,13 +181,11 @@ public class NodePrioritizer {
     /** Create a candidate from given pre-existing node */
     private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
         Optional<Node> parent = allNodes.parentOf(node);
-        boolean exclusiveSwitch = onExclusiveSwitch(node, parent);
         if (parent.isPresent()) {
             return NodeCandidate.createChild(node,
                                              capacity.freeCapacityOf(parent.get(), false),
                                              parent.get(),
                                              spareHosts.contains(parent.get()),
-                                             exclusiveSwitch,
                                              isSurplus,
                                              false,
                                              !allocateFully
@@ -171,32 +195,8 @@ public class NodePrioritizer {
                                                                          currentClusterSize));
         }
         else {
-            return NodeCandidate.createStandalone(node, isSurplus, false, exclusiveSwitch);
+            return NodeCandidate.createStandalone(node, isSurplus, false);
         }
-    }
-
-    /** Returns whether given node is on an exclusive switch */
-    private boolean onExclusiveSwitch(Node node, Optional<Node> parent) {
-        Node host = parent.orElse(node);
-        return unusedSwitch(host, node.allocation()
-                                      .map(allocation -> allocation.membership().cluster().id())
-                                      .orElseGet(clusterSpec::id));
-    }
-
-    /** Returns whether switch of host is unused by any existing candidates for given cluster */
-    private boolean unusedSwitch(Node host, ClusterSpec.Id cluster) {
-        if (host.switchHostname().isEmpty()) return true;
-        String switchHostname = host.switchHostname().get();
-        for (var candidate : nodes) {
-            ClusterSpec.Id candidateCluster = candidate.toNode().allocation()
-                                                       .map(a -> a.membership().cluster().id())
-                                                       .orElseGet(clusterSpec::id);
-            if (!cluster.equals(candidateCluster)) continue; // Wrong cluster
-            Node node = candidate.parent.orElseGet(candidate::toNode);
-            if (node.switchHostname().isEmpty()) continue;
-            if (node.switchHostname().get().equals(switchHostname)) return false;
-        }
-        return true;
     }
 
     /** Returns whether we are allocating to replace a failed node */
@@ -221,6 +221,40 @@ public class NodePrioritizer {
     private static NodeResources resources(NodeSpec requestedNodes) {
         if ( ! (requestedNodes instanceof NodeSpec.CountNodeSpec)) return null;
         return requestedNodes.resources().get();
+    }
+
+    /** A cluster and its network switch */
+    private static class ClusterSwitch {
+
+        private static final ClusterSwitch unknown = new ClusterSwitch(null, null);
+
+        private final ClusterSpec.Id cluster;
+        private final String switchHostname;
+
+        public ClusterSwitch(ClusterSpec.Id cluster, String switchHostname) {
+            this.cluster = cluster;
+            this.switchHostname = switchHostname;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ClusterSwitch that = (ClusterSwitch) o;
+            return Objects.equals(cluster, that.cluster) &&
+                   Objects.equals(switchHostname, that.switchHostname);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(cluster, switchHostname);
+        }
+
+        public static ClusterSwitch from(ClusterSpec.Id cluster, Optional<String> switchHostname) {
+            if (switchHostname.isEmpty()) return unknown;
+            return new ClusterSwitch(cluster, switchHostname.get());
+        }
+
     }
 
 }

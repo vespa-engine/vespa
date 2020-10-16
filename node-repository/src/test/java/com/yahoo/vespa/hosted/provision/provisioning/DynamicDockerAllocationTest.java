@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -425,36 +426,42 @@ public class DynamicDockerAllocationTest {
 
         // Application is deployed
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
-        NodeResources resources = new NodeResources(2, 4, 50, 1);
+        NodeResources resources = new NodeResources(2, 4, 50, 1, NodeResources.DiskSpeed.any);
         ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
         tester.assertSwitches(Set.of(), app1, cluster.id());
 
         // One host is provisioned on a known switch
         String switch0 = "switch0";
-        List<Node> hosts1 = tester.makeReadyNodes(1, hostResources, NodeType.host, 5);
-        tester.activateTenantHosts();
-        tester.patchNodes(hosts1, (host) -> host.withSwitchHostname(switch0));
+        {
+            List<Node> hosts = tester.makeReadyNodes(1, hostResources, NodeType.host, 5);
+            tester.activateTenantHosts();
+            tester.patchNodes(hosts, (host) -> host.withSwitchHostname(switch0));
+        }
 
         // Redeploy does not change allocation as a host with switch information is no better or worse than hosts
         // without switch information
-        NodeList allocatedNodes = tester.nodeRepository().list().owner(app1);
+        List<Node> allocatedNodes = tester.nodeRepository().getNodes(app1);
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes.asList(), tester.nodeRepository().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().getNodes(app1));
 
         // Initial hosts are attached to the same switch
         tester.patchNodes(hosts0, (host) -> host.withSwitchHostname(switch0));
 
         // Redeploy does not change allocation
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes.asList(), tester.nodeRepository().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().getNodes(app1));
 
-        // Additional hosts are provisioned on distinct switches
-        List<Node> hosts2 = tester.makeReadyNodes(2, hostResources, NodeType.host, 5);
-        tester.activateTenantHosts();
-        for (var i = 0; i < hosts2.size(); i++) {
-            String switchHostname = "switch" + (i + 1);
-            tester.patchNode(hosts2.get(i), (host) -> host.withSwitchHostname(switchHostname));
+        // One regular host and one slow-disk host are provisioned on the same switch
+        String switch1 = "switch1";
+        Node hostWithSlowDisk;
+        {
+            NodeResources slowDisk = hostResources.with(NodeResources.DiskSpeed.slow);
+            List<Node> hosts = tester.makeReadyNodes(1, slowDisk, NodeType.host, 5);
+            hosts.addAll(tester.makeReadyNodes(1, hostResources, NodeType.host, 5));
+            tester.patchNodes(hosts, (host) -> host.withSwitchHostname(switch1));
+            tester.activateTenantHosts();
+            hostWithSlowDisk = hosts.get(0);
         }
 
         // Redeploy does not change allocation as we prefer to keep our already active nodes
@@ -465,14 +472,20 @@ public class DynamicDockerAllocationTest {
         tester.patchNode(tester.nodeRepository().list().owner(app1).asList().get(0),
                          (node) -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
 
-        // Redeploy allocates new node on a distinct switch
+        // Redeploy allocates new node on a distinct switch, and the host with slowest disk (cheapest) on that switch
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        String switch2 = "switch2";
-        tester.assertSwitches(Set.of(switch0, switch2), app1, cluster.id());
+        tester.assertSwitches(Set.of(switch0, switch1), app1, cluster.id());
+        assertTrue("Host with slow disk on " + switch1 + " is chosen", tester.nodeRepository().list().owner(app1).state(State.active).stream()
+                                                                             .anyMatch(node -> node.hasParent(hostWithSlowDisk.hostname())));
 
         // Growing cluster picks new node on exclusive switch
+        String switch2 = "switch2";
+        {
+            List<Node> hosts = tester.makeReadyNodes(1, hostResources, NodeType.host, 5);
+            tester.activateTenantHosts();
+            tester.patchNodes(hosts, (host) -> host.withSwitchHostname(switch2));
+        }
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(3, 1, resources))));
-        String switch1 = "switch1";
         tester.assertSwitches(Set.of(switch0, switch1, switch2), app1, cluster.id());
 
         // Growing cluster further can reuse switches as we're now out of exclusive ones
