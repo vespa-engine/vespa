@@ -45,7 +45,6 @@ using search::index::schema::DataType;
 using searchcorespi::IndexSearchable;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
-using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using vespalib::eval::ValueType;

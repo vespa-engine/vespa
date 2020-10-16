@@ -50,7 +50,6 @@ using search::index::schema::DataType;
 using vespalib::makeLambdaTask;
 using search::transactionlog::TransLogServer;
 using search::transactionlog::DomainConfig;
-using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
 using storage::spi::Timestamp;

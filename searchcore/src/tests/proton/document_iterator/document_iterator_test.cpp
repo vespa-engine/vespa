@@ -46,7 +46,6 @@ using storage::spi::DocEntry;
 using storage::spi::DocumentSelection;
 using storage::spi::IncludedVersions;
 using storage::spi::IterateResult;
-using storage::spi::PartitionId;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;

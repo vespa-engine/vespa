@@ -85,7 +85,6 @@ using search::index::schema::DataType;
 using search::tensor::TensorAttribute;
 using storage::spi::Bucket;
 using storage::spi::GetResult;
-using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 using vespalib::make_string;

@@ -29,7 +29,6 @@ LOG_SETUP(".proton.server.feedhandler");
 using document::BucketId;
 using document::Document;
 using document::DocumentTypeRepo;
-using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
 using storage::spi::Result;
 using storage::spi::Timestamp;
