@@ -41,16 +41,21 @@ public class ContainerDocumentApi {
 
 
     private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
-        String handlerClassName = options.useNewRestapiHandler
-                ? "com.yahoo.document.restapi.resource.DocumentV1ApiHandler"
-                : "com.yahoo.document.restapi.resource.RestApi";
-        var handler = newVespaClientHandler(handlerClassName, "/document/v1/*", options);
-        cluster.addComponent(handler);
-        if (!options.useNewRestapiHandler) {
-            var executor = new Threadpool(
-                    "restapi-handler", cluster, options.restApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
-            handler.inject(executor);
-            handler.addComponent(executor);
+        // TODO(bjorncs,jvenstad) Cleanup once old restapi handler is gone
+        // We need to include the old handler implementation even when the new handler is enabled
+        // The internal legacy test framework requires that the name of the old handler is listed in /ApplicationStatus
+        String oldHandlerName = "com.yahoo.document.restapi.resource.RestApi";
+        String bindingSuffix = "/document/v1/*";
+        var oldHandler = newVespaClientHandler(oldHandlerName, options.useNewRestapiHandler ? null : bindingSuffix, options);
+        cluster.addComponent(oldHandler);
+        var executor = new Threadpool("restapi-handler", cluster, options.restApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
+        oldHandler.inject(executor);
+        oldHandler.addComponent(executor);
+
+        if (options.useNewRestapiHandler) {
+            String newHandlerName = "com.yahoo.document.restapi.resource.DocumentV1ApiHandler";
+            var newHandler = newVespaClientHandler(newHandlerName, bindingSuffix, options);
+            cluster.addComponent(newHandler);
         }
     }
 
@@ -60,6 +65,7 @@ public class ContainerDocumentApi {
             Options options) {
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(componentId, null, "vespaclient-container-plugin"), ""));
+        if (bindingSuffix == null) return handler; // TODO(bjorncs,jvenstad) Cleanup once old restapi handler is gone
         if (options.bindings.isEmpty()) {
             handler.addServerBindings(
                     SystemBindingPattern.fromHttpPath(bindingSuffix),
