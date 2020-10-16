@@ -5,6 +5,7 @@
 
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/persistence/spi/result.h>
+#include <stdexcept>
 
 namespace document::select { class Node; }
 namespace document { class FieldSet; }
