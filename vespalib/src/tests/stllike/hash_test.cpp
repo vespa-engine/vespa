@@ -346,7 +346,7 @@ struct myhash {
 };
 
 bool operator == (uint32_t a, const S & b) { return a == b.a(); }
-bool operator == (const S & a, uint32_t b) { return a.a() == b; }
+bool operator == (const S & a, uint32_t b) noexcept { return a.a() == b; }
 
 TEST("test hash set find")
 {
