@@ -238,20 +238,14 @@ public class Flags {
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_REFRESHED_ENDPOINT_CERTIFICATE = defineFeatureFlag(
-            "use-refreshed-endpoint-certificate", false,
-            "Whether an application should start using a newer certificate/key pair if available",
-            "Takes effect on the next deployment of the application",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag VALIDATE_ENDPOINT_CERTIFICATES = defineFeatureFlag(
             "validate-endpoint-certificates", false,
             "Whether endpoint certificates should be validated before use",
             "Takes effect on the next deployment of the application");
 
-    public static final UnboundStringFlag ENDPOINT_CERTIFICATE_BACKFILL = defineStringFlag(
-            "endpoint-certificate-backfill", "disable",
-            "Whether the endpoint certificate maintainer should backfill missing certificate data from cameo",
+    public static final UnboundStringFlag DELETE_UNUSED_ENDPOINT_CERTIFICATES = defineStringFlag(
+            "delete-unused-endpoint-certificates", "disable",
+            "Whether the endpoint certificate maintainer should delete unused certificates in cameo/zk",
             "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\"");
 
     public static final UnboundBooleanFlag USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER = defineFeatureFlag(

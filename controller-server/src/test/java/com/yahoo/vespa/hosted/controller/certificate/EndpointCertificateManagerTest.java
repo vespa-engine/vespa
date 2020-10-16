@@ -141,8 +141,6 @@ public class EndpointCertificateManagerTest {
 
     @Test
     public void uses_refreshed_certificate_when_available_and_valid() {
-        inMemoryFlagSource.withBooleanFlag(Flags.USE_REFRESHED_ENDPOINT_CERTIFICATE.id(), true);
-
         secretStore.setSecret(testKeyName, "secret-key", 7);
         secretStore.setSecret(testCertName, "cert", 7);
         secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 8);
