@@ -28,9 +28,6 @@ numthreadspersearch int default=1 restart
 ## Num summary threads
 numsummarythreads int default=16 restart
 
-## Stop on io errors ?
-stoponioerrors bool default=false restart
-
 ## Perform extra validation of stored data on startup
 ## It requires a restart to be turned, but no restart to turned off.
 ## Hence it must always be followed by a manual restart.
