@@ -94,7 +94,7 @@ public class OsVersionsTest {
         int maxActiveUpgrades = 5;
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), maxActiveUpgrades));
         provisionInfraApplication(totalNodes);
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().state(Node.State.active).nodeType(NodeType.host);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().state(Node.State.active).hosts();
 
         // 5 nodes have no version. The other 15 are spread across different versions
         var hostNodesList = hostNodes.get().asList();
@@ -140,7 +140,7 @@ public class OsVersionsTest {
     public void newer_upgrade_aborts_upgrade_to_stale_version() {
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         provisionInfraApplication(10);
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().nodeType(NodeType.host);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().hosts();
 
         // Some nodes are targeting an older version
         var version1 = Version.fromString("7.1");
@@ -167,7 +167,7 @@ public class OsVersionsTest {
             tester.makeReadyVirtualDockerNodes(2, resources, host.hostname());
         }
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list()
-                                                   .nodeType(NodeType.host)
+                                                   .hosts()
                                                    .not().state(Node.State.deprovisioned);
 
         // Target is set and upgrade started

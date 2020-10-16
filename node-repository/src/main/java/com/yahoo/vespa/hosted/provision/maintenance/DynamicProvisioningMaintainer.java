@@ -75,7 +75,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                                                                                node -> node.parentHostname().get(),
                                                                                Collectors.toSet()));
 
-        nodes.state(Node.State.provisioned).nodeType(NodeType.host).forEach(host -> {
+        nodes.state(Node.State.provisioned).hosts().forEach(host -> {
             Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
             try {
                 List<Node> updatedNodes = hostProvisioner.provision(host, children);
@@ -170,7 +170,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     /** Returns hosts that are considered available, i.e. not parked or flagged for deprovisioning */
     private static List<Node> availableHostsOf(NodeList nodes) {
-        return nodes.nodeType(NodeType.host)
+        return nodes.hosts()
                     .matching(host -> host.state() != Node.State.parked || host.status().wantToDeprovision())
                     .asList();
     }

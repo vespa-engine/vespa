@@ -293,14 +293,14 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     private static NodeResources getCapacityTotal(NodeList nodes) {
-        return nodes.nodeType(NodeType.host).state(active).asList().stream()
+        return nodes.hosts().state(active).asList().stream()
                 .map(host -> host.flavor().resources())
                 .map(NodeResources::justNumbers)
                 .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
     private static NodeResources getFreeCapacityTotal(NodeList nodes) {
-        return nodes.nodeType(NodeType.host).state(active).asList().stream()
+        return nodes.hosts().state(active).asList().stream()
                 .map(n -> freeCapacityOf(nodes, n))
                 .map(NodeResources::justNumbers)
                 .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
