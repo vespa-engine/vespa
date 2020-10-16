@@ -90,10 +90,8 @@ public class DynamicDockerAllocationTest {
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
-        for (Node node : tester.nodeRepository().getNodes(NodeType.tenant, State.active)) {
-            if (!isInactiveOrRetired(node)) {
-                hostsWithChildren.add(node.parentHostname().get());
-            }
+        for (Node node : tester.nodeRepository().list(State.active).nodeType(NodeType.tenant).not().state(State.inactive).not().retired()) {
+            hostsWithChildren.add(node.parentHostname().get());
         }
         assertEquals(4 - spareCount, hostsWithChildren.size());
 
@@ -218,10 +216,8 @@ public class DynamicDockerAllocationTest {
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
-        for (Node node : tester.nodeRepository().getNodes(NodeType.tenant, State.active)) {
-            if (!isInactiveOrRetired(node)) {
-                hostsWithChildren.add(node.parentHostname().get());
-            }
+        for (Node node : tester.nodeRepository().list(State.active).nodeType(NodeType.tenant).not().state(State.inactive).not().retired()) {
+            hostsWithChildren.add(node.parentHostname().get());
         }
         assertEquals(2, hostsWithChildren.size());
     }
@@ -543,16 +539,6 @@ public class DynamicDockerAllocationTest {
         b.addFlavor("cpu", 40, 20, 400, 3, Flavor.Type.BARE_METAL);
         b.addFlavor("mem", 20, 40, 400, 3, Flavor.Type.BARE_METAL);
         return b.build();
-    }
-
-    private boolean isInactiveOrRetired(Node node) {
-        boolean isInactive = node.state().equals(State.inactive);
-        boolean isRetired = false;
-        if (node.allocation().isPresent()) {
-            isRetired = node.allocation().get().membership().retired();
-        }
-
-        return isInactive || isRetired;
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
