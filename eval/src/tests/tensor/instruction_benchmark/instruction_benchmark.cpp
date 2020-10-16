@@ -39,6 +39,7 @@
 #include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <optional>
@@ -54,6 +55,70 @@ using Instruction = InterpretedFunction::Instruction;
 using EvalSingle = InterpretedFunction::EvalSingle;
 
 template <typename T> using CREF = std::reference_wrapper<const T>;
+
+//-----------------------------------------------------------------------------
+
+struct D {
+    vespalib::string name;
+    bool mapped;
+    size_t size;
+    size_t stride;
+    static D map(const vespalib::string &name_in, size_t size_in, size_t stride_in) { return D{name_in, true, size_in, stride_in}; }
+    static D idx(const vespalib::string &name_in, size_t size_in) { return D{name_in, false, size_in, 1}; }
+    operator ValueType::Dimension() const {
+        if (mapped) {
+            return ValueType::Dimension(name);
+        } else {
+            return ValueType::Dimension(name, size);
+        }
+    }
+    TensorSpec::Label operator()(size_t idx) const {
+        if (mapped) {
+            // need plain number as string for dynamic sparse peek
+            return TensorSpec::Label(fmt("%zu", idx));
+        } else {
+            return TensorSpec::Label(idx);
+        }
+    }
+};
+
+void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr) {
+    spec.add(addr, seq);
+    seq += 1.0;
+}
+
+template <typename ...Ds> void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr, const D &d, const Ds &...ds) {
+    for (size_t i = 0, idx = 0; i < d.size; ++i, idx += d.stride) {
+        addr.insert_or_assign(d.name, d(idx));
+        add_cells(spec, seq, addr, ds...);
+    }
+}
+
+template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
+    TensorSpec spec(ValueType::tensor_type({ds...}, ValueType::CellType::FLOAT).to_spec());
+    add_cells(spec, seq, TensorSpec::Address(), ds...);
+    return spec;
+}
+
+TensorSpec make_vector(const D &d1, double seq) { return make_spec(seq, d1); }
+TensorSpec make_matrix(const D &d1, const D &d2, double seq) { return make_spec(seq, d1, d2); }
+TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) { return make_spec(seq, d1, d2, d3); }
+
+//-----------------------------------------------------------------------------
+
+// helper class used to set up peek instructions
+struct MyPeekSpec {
+    bool is_dynamic;
+    std::map<vespalib::string,size_t> spec;
+    MyPeekSpec(bool is_dynamic_in) : is_dynamic(is_dynamic_in), spec() {}
+    MyPeekSpec &add(const vespalib::string &dim, size_t index) {
+        auto [ignore, was_inserted] = spec.emplace(dim, index);
+        assert(was_inserted);
+        return *this;
+    }
+};
+MyPeekSpec dynamic_peek() { return MyPeekSpec(true); }
+MyPeekSpec verbatim_peek() { return MyPeekSpec(false); }
 
 //-----------------------------------------------------------------------------
 
@@ -104,6 +169,47 @@ struct Impl {
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &map_node = tensor_function::map(lhs_node, function, stash); 
         return map_node.compile_self(engine, stash);
+    }
+    Instruction create_tensor_create(const ValueType &proto_type, const TensorSpec &proto, Stash &stash) const {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &my_double = tensor_function::inject(ValueType::double_type(), 0, stash);
+        std::map<TensorSpec::Address,TensorFunction::CREF> spec;
+        for (const auto &cell: proto.cells()) {
+            spec.emplace(cell.first, my_double);
+        }
+        const auto &create_tensor_node = tensor_function::create(proto_type, spec, stash); 
+        return create_tensor_node.compile_self(engine, stash);
+    }
+    Instruction create_tensor_lambda(const ValueType &type, const Function &function, const ValueType &p0_type, Stash &stash) const {
+        std::vector<ValueType> arg_types(type.dimensions().size(), ValueType::double_type());
+        arg_types.push_back(p0_type);
+        NodeTypes types(function, arg_types);
+        EXPECT_EQ(types.errors(), std::vector<vespalib::string>());
+        const auto &tensor_lambda_node = tensor_function::lambda(type, {0}, function, std::move(types), stash);
+        return tensor_lambda_node.compile_self(engine, stash);
+    }
+    Instruction create_tensor_peek(const ValueType &type, const MyPeekSpec &my_spec, Stash &stash) const {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &my_param = tensor_function::inject(type, 0, stash);
+        std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
+        if (my_spec.is_dynamic) {
+            const auto &my_double = tensor_function::inject(ValueType::double_type(), 1, stash);
+            for (const auto &entry: my_spec.spec) {
+                spec.emplace(entry.first, my_double);
+            }
+        } else {
+            for (const auto &entry: my_spec.spec) {
+                size_t idx = type.dimension_index(entry.first);
+                assert(idx != ValueType::Dimension::npos);
+                if (type.dimensions()[idx].is_mapped()) {
+                    spec.emplace(entry.first, TensorSpec::Label(fmt("%zu", entry.second)));
+                } else {
+                    spec.emplace(entry.first, TensorSpec::Label(entry.second));
+                }
+            }
+        }
+        const auto &peek_node = tensor_function::peek(my_param, spec, stash);
+        return peek_node.compile_self(engine, stash);
     }
 };
 
@@ -196,16 +302,29 @@ std::vector<BenchmarkResult> benchmark_results;
 
 //-----------------------------------------------------------------------------
 
+struct MyParam : LazyParams {
+    Value::UP my_value;
+    MyParam() : my_value() {}
+    MyParam(const TensorSpec &p0, const Impl &impl) : my_value(impl.create_value(p0)) {}
+    const Value &resolve(size_t idx, Stash &) const override {
+        assert(idx == 0);
+        return *my_value;
+    }
+    ~MyParam() override;
+};
+MyParam::~MyParam() = default;
+
 struct EvalOp {
     using UP = std::unique_ptr<EvalOp>;
     const Impl              &impl;
+    MyParam                  my_param;
     std::vector<Value::UP>   values;
     std::vector<Value::CREF> stack;
     EvalSingle               single;
     EvalOp(const EvalOp &) = delete;
     EvalOp &operator=(const EvalOp &) = delete;
     EvalOp(Instruction op, const std::vector<CREF<TensorSpec>> &stack_spec, const Impl &impl_in)
-        : impl(impl_in), values(), stack(), single(impl.engine, op)
+        : impl(impl_in), my_param(), values(), stack(), single(impl.engine, op)
     {
         for (const TensorSpec &spec: stack_spec) {
             values.push_back(impl.create_value(spec));
@@ -213,6 +332,10 @@ struct EvalOp {
         for (const auto &value: values) {
             stack.push_back(*value.get());
         }
+    }
+    EvalOp(Instruction op, const TensorSpec &p0, const Impl &impl_in)
+        : impl(impl_in), my_param(p0, impl), values(), stack(), single(impl.engine, op, my_param)
+    {
     }
     TensorSpec result() { return impl.create_spec(single.eval(stack)); }
     double estimate_cost_us() {
@@ -365,50 +488,56 @@ void benchmark_concat(const vespalib::string &desc, const TensorSpec &lhs,
 
 //-----------------------------------------------------------------------------
 
-struct D {
-    vespalib::string name;
-    bool mapped;
-    size_t size;
-    size_t stride;
-    static D map(const vespalib::string &name_in, size_t size_in, size_t stride_in) { return D{name_in, true, size_in, stride_in}; }
-    static D idx(const vespalib::string &name_in, size_t size_in) { return D{name_in, false, size_in, 1}; }
-    operator ValueType::Dimension() const {
-        if (mapped) {
-            return ValueType::Dimension(name);
-        } else {
-            return ValueType::Dimension(name, size);
+void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &proto) {
+    Stash stash;
+    ValueType proto_type = ValueType::from_spec(proto.type());
+    ASSERT_FALSE(proto_type.is_error());
+    std::vector<CREF<TensorSpec>> stack_spec;
+    for (const auto &cell: proto.cells()) {
+        stack_spec.emplace_back(stash.create<TensorSpec>(make_spec(cell.second)));
+    }
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_tensor_create(proto_type, proto, stash);
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+    }
+    benchmark(desc, list);    
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_tensor_lambda(const vespalib::string &desc, const ValueType &type, const TensorSpec &p0, const Function &function) {
+    Stash stash;
+    ValueType p0_type = ValueType::from_spec(p0.type());
+    ASSERT_FALSE(p0_type.is_error());
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_tensor_lambda(type, function, p0_type, stash);
+        list.push_back(std::make_unique<EvalOp>(op, p0, impl));
+    }
+    benchmark(desc, list);
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, const MyPeekSpec &peek_spec) {
+    Stash stash;
+    ValueType type = ValueType::from_spec(lhs.type());
+    ASSERT_FALSE(type.is_error());
+    std::vector<CREF<TensorSpec>> stack_spec;
+    stack_spec.emplace_back(lhs);
+    if (peek_spec.is_dynamic) {
+        for (const auto &entry: peek_spec.spec) {
+            stack_spec.emplace_back(stash.create<TensorSpec>(make_spec(double(entry.second))));
         }
     }
-    TensorSpec::Label operator()(size_t idx) const {
-        if (mapped) {
-            return TensorSpec::Label(fmt("label_%zu", idx));
-        } else {
-            return TensorSpec::Label(idx);
-        }
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_tensor_peek(type, peek_spec, stash);
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
     }
-};
-
-void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr) {
-    spec.add(addr, seq);
-    seq += 1.0;
+    benchmark(desc, list);
 }
-
-template <typename ...Ds> void add_cells(TensorSpec &spec, double &seq, TensorSpec::Address addr, const D &d, const Ds &...ds) {
-    for (size_t i = 0, idx = 0; i < d.size; ++i, idx += d.stride) {
-        addr.insert_or_assign(d.name, d(idx));
-        add_cells(spec, seq, addr, ds...);
-    }
-}
-
-template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
-    TensorSpec spec(ValueType::tensor_type({ds...}, ValueType::CellType::FLOAT).to_spec());
-    add_cells(spec, seq, TensorSpec::Address(), ds...);
-    return spec;
-}
-
-TensorSpec make_vector(const D &d1, double seq) { return make_spec(seq, d1); }
-TensorSpec make_matrix(const D &d1, const D &d2, double seq) { return make_spec(seq, d1, d2); }
-TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) { return make_spec(seq, d1, d2, d3); }
 
 //-----------------------------------------------------------------------------
 
@@ -423,6 +552,76 @@ TEST(MakeInputTest, print_some_test_input) {
     fprintf(stderr, "dense vector: %s\n", dense.to_string().c_str());
     fprintf(stderr, "mixed cube: %s\n", mixed.to_string().c_str());
     fprintf(stderr, "--------------------------------------------------------\n");
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_encode_decode(const vespalib::string &desc, const TensorSpec &proto) {
+    ValueType proto_type = ValueType::from_spec(proto.type());
+    ASSERT_FALSE(proto_type.is_error());
+    for (const Impl &impl: impl_list) {
+        vespalib::nbostream data;
+        auto value = impl.create_value(proto);
+        impl.engine.encode(*value, data);
+        auto new_value = impl.engine.decode(data);
+        ASSERT_EQ(data.size(), 0);
+        ASSERT_EQ(proto, impl.engine.to_spec(*new_value));
+    }
+    fprintf(stderr, "--------------------------------------------------------\n");
+    fprintf(stderr, "Benchmarking encode/decode for: [%s]\n", desc.c_str());
+    BenchmarkResult encode_result(desc + " <encode>", impl_list.size());
+    BenchmarkResult decode_result(desc + " <decode>", impl_list.size());
+    for (const Impl &impl: impl_list) {
+        constexpr size_t loop_cnt = 16;
+        auto value = impl.create_value(proto);
+        BenchmarkTimer encode_timer(2 * budget);
+        BenchmarkTimer decode_timer(2 * budget);
+        while (encode_timer.has_budget() || decode_timer.has_budget()) {
+            std::array<vespalib::nbostream, loop_cnt> data;
+            std::array<Value::UP, loop_cnt> object;
+            encode_timer.before();
+            for (size_t i = 0; i < loop_cnt; ++i) {
+                impl.engine.encode(*value, data[i]);
+            }
+            encode_timer.after();
+            decode_timer.before();
+            for (size_t i = 0; i < loop_cnt; ++i) {
+                object[i] = impl.engine.decode(data[i]);
+            }
+            decode_timer.after();
+        }
+        double encode_us = encode_timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
+        double decode_us = decode_timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
+        fprintf(stderr, "    %s (%s) <encode>: %10.3f us\n", impl.name.c_str(), impl.short_name.c_str(), encode_us);
+        fprintf(stderr, "    %s (%s) <decode>: %10.3f us\n", impl.name.c_str(), impl.short_name.c_str(), decode_us);
+        encode_result.sample(impl.order, encode_us);
+        decode_result.sample(impl.order, decode_us);
+    }
+    encode_result.normalize();
+    decode_result.normalize();
+    benchmark_results.push_back(encode_result);
+    benchmark_results.push_back(decode_result);
+    fprintf(stderr, "--------------------------------------------------------\n");
+}
+
+//-----------------------------------------------------------------------------
+
+// encode/decode operations are not actual instructions, but still
+// relevant for the overall performance of the tensor implementation.
+
+TEST(EncodeDecodeBench, encode_decode_dense) {
+    auto proto = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.0);
+    benchmark_encode_decode("dense tensor", proto);
+}
+
+TEST(EncodeDecodeBench, encode_decode_sparse) {
+    auto proto = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.0);
+    benchmark_encode_decode("sparse tensor", proto);
+}
+
+TEST(EncodeDecodeBench, encode_decode_mixed) {
+    auto proto = make_matrix(D::map("a", 64, 1), D::idx("b", 64), 1.0);
+    benchmark_encode_decode("mixed tensor", proto);
 }
 
 //-----------------------------------------------------------------------------
@@ -635,6 +834,11 @@ TEST(MergeBench, mixed_merge) {
 
 //-----------------------------------------------------------------------------
 
+TEST(MapBench, number_map) {
+    auto lhs = make_spec(1.75);
+    benchmark_map("number map", lhs, operation::Floor::f);
+}
+
 TEST(MapBench, dense_map) {
     auto lhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.75);
     benchmark_map("dense map", lhs, operation::Floor::f);
@@ -645,7 +849,7 @@ TEST(MapBench, sparse_map_small) {
     benchmark_map("sparse map small", lhs, operation::Floor::f);
 }
 
-TEST(MapBench, sparse_map_big_small) {
+TEST(MapBench, sparse_map_big) {
     auto lhs = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.75);
     benchmark_map("sparse map big", lhs, operation::Floor::f);
 }
@@ -653,6 +857,75 @@ TEST(MapBench, sparse_map_big_small) {
 TEST(MapBench, mixed_map) {
     auto lhs = make_matrix(D::map("a", 64, 1), D::idx("b", 64), 1.75);
     benchmark_map("mixed map", lhs, operation::Floor::f);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(TensorCreateBench, create_dense) {
+    auto proto = make_matrix(D::idx("a", 32), D::idx("b", 32), 1.0);
+    benchmark_tensor_create("dense tensor create", proto);
+}
+
+TEST(TensorCreateBench, create_sparse) {
+    auto proto = make_matrix(D::map("a", 32, 1), D::map("b", 32, 1), 1.0);
+    benchmark_tensor_create("sparse tensor create", proto);
+}
+
+TEST(TensorCreateBench, create_mixed) {
+    auto proto = make_matrix(D::map("a", 32, 1), D::idx("b", 32), 1.0);
+    benchmark_tensor_create("mixed tensor create", proto);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(TensorLambdaBench, simple_lambda) {
+    auto type = ValueType::from_spec("tensor<float>(a[64],b[64])");
+    auto p0 = make_spec(3.5);
+    auto function = Function::parse({"a", "b", "p0"}, "(a*64+b)*p0");
+    ASSERT_FALSE(function->has_error());
+    benchmark_tensor_lambda("simple tensor lambda", type, p0, *function);
+}
+
+TEST(TensorLambdaBench, complex_lambda) {
+    auto type = ValueType::from_spec("tensor<float>(a[64],b[64])");
+    auto p0 = make_vector(D::idx("x", 3), 1.0);
+    auto function = Function::parse({"a", "b", "p0"}, "(a*64+b)*reduce(p0,sum)");
+    ASSERT_FALSE(function->has_error());
+    benchmark_tensor_lambda("complex tensor lambda", type, p0, *function);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(TensorPeekBench, dense_peek) {
+    auto lhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.0);
+    benchmark_tensor_peek("dense peek cell verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("dense peek cell dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("dense peek vector verbatim", lhs, verbatim_peek().add("a", 1));
+    benchmark_tensor_peek("dense peek vector dynamic", lhs, dynamic_peek().add("a", 1));
+}
+
+TEST(TensorPeekBench, sparse_peek) {
+    auto lhs = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.0);
+    benchmark_tensor_peek("sparse peek cell verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("sparse peek cell dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("sparse peek vector verbatim", lhs, verbatim_peek().add("a", 1));
+    benchmark_tensor_peek("sparse peek vector dynamic", lhs, dynamic_peek().add("a", 1));
+}
+
+TEST(TensorPeekBench, mixed_peek) {
+    auto lhs = make_spec(1.0, D::map("a", 8, 1), D::map("b", 8, 1), D::idx("c", 8), D::idx("d", 8));
+    benchmark_tensor_peek("mixed peek cell verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek cell dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek dense verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("mixed peek dense dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("mixed peek sparse verbatim", lhs, verbatim_peek().add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek sparse dynamic", lhs, dynamic_peek().add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek partial dense verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2).add("c", 3));
+    benchmark_tensor_peek("mixed peek partial dense dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2).add("c", 3));
+    benchmark_tensor_peek("mixed peek partial sparse verbatim", lhs, verbatim_peek().add("a", 1).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek partial sparse dynamic", lhs, dynamic_peek().add("a", 1).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek partial mixed verbatim", lhs, verbatim_peek().add("a", 1).add("c", 4));
+    benchmark_tensor_peek("mixed peek partial mixed dynamic", lhs, dynamic_peek().add("a", 1).add("c", 4));
 }
 
 //-----------------------------------------------------------------------------

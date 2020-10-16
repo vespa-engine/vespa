@@ -50,6 +50,7 @@ struct SimpleParams : LazyParams {
  * Simple wrapper for cases where you have no parameters.
  **/
 struct NoParams : LazyParams {
+    static NoParams params;
     const Value &resolve(size_t, Stash &) const override {
         abort();
     }

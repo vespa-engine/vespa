@@ -32,4 +32,8 @@ SimpleParams::resolve(size_t idx, Stash &stash) const
 
 //-----------------------------------------------------------------------------
 
+NoParams NoParams::params;
+
+//-----------------------------------------------------------------------------
+
 } // namespace vespalib::eval
