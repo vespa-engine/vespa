@@ -76,7 +76,7 @@ public class ClusterDeploymentMetricsRetriever {
                 })
                 .collect(Collectors.toList());
         try {
-            executor.invokeAll(jobs, 1, TimeUnit.SECONDS);
+            executor.invokeAll(jobs, 1, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
             throw new RuntimeException("Failed to retrieve metrics in time: " + e.getMessage(), e);
         }
