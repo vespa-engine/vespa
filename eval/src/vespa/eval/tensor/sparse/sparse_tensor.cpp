@@ -75,16 +75,6 @@ SparseTensor::type() const
     return _type;
 }
 
-bool
-SparseTensor::equals(const Tensor &arg) const
-{
-    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
-    if (!rhs) {
-        return false;
-    }
-    return *this == *rhs;
-}
-
 TensorSpec
 SparseTensor::toSpec() const
 {

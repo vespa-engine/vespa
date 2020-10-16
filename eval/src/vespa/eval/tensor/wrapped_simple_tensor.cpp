@@ -16,14 +16,6 @@ namespace vespalib::tensor {
 using eval::SimpleTensor;
 using eval::TensorSpec;
 
-bool
-WrappedSimpleTensor::equals(const Tensor &arg) const
-{
-    auto lhs_spec = _tensor.engine().to_spec(_tensor);
-    auto rhs_spec = arg.engine().to_spec(arg);
-    return (lhs_spec == rhs_spec);
-}
-
 eval::TensorSpec
 WrappedSimpleTensor::toSpec() const
 {
@@ -65,13 +57,6 @@ WrappedSimpleTensor::get_memory_usage() const
         return plus;
     }
     return MemoryUsage(used, used, 0, 0);
-}
-
-Tensor::UP
-WrappedSimpleTensor::clone() const
-{
-    auto tensor = std::make_unique<eval::SimpleTensor>(_tensor.type(), _tensor.my_cells());
-    return std::make_unique<WrappedSimpleTensor>(std::move(tensor));
 }
 
 //-----------------------------------------------------------------------------
