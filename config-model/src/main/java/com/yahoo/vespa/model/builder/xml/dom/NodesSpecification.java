@@ -36,10 +36,10 @@ public class NodesSpecification {
     private final boolean dedicated;
 
     /** The Vespa version we want the nodes to run */
-    private Version version;
+    private final Version version;
 
     /** 
-     * Whether the capacity amount specified is required or can it be relaxed 
+     * Whether the capacity amount specified is required or can be relaxed
      * at the discretion of the component fulfilling it
      */
     private final boolean required;

@@ -1142,6 +1142,30 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testExclusiveNodes() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "<container version='1.0' id='container'>" +
+                "      <nodes count='2' exclusive='true'/>" +
+                "   </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='3' exclusive='true'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 5;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
+        model.hostSystem().getHosts().forEach(host -> assertTrue(host.spec().membership().get().cluster().isExclusive()));
+    }
+
+    @Test
     public void testUsingNodesCountAttributesAndGettingJustOneNode() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
