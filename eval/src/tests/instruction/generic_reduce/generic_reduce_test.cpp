@@ -23,6 +23,8 @@ std::vector<Layout> layouts = {
     {x(3),y(5),z(7)},
     float_cells({x(3),y(5),z(7)}),
     {x({"a","b","c"})},
+    {x({})},
+    {x({}),y(10)},
     {x({"a","b","c"}),y({"foo","bar"})},
     {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
     float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
@@ -55,7 +57,9 @@ TensorSpec reference_reduce(const TensorSpec &a, const std::vector<vespalib::str
     for (const auto &my_entry: my_map) {
         result.add(my_entry.first, my_entry.second.value()->result());
     }
-    return result;
+    // use SimpleValue to add implicit cells with default value
+    const auto &factory = SimpleValueBuilderFactory::get();
+    return spec_from_value(*value_from_spec(result, factory));
 }
 
 TensorSpec perform_generic_reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims, Aggr aggr) {
