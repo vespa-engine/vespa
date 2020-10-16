@@ -3,6 +3,7 @@
 #include "persistenceutil.h"
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.util");
@@ -283,6 +284,21 @@ void
 PersistenceUtil::shutdown(const std::string& reason)
 {
     _component.requestShutdown(reason);
+}
+
+spi::Bucket
+PersistenceUtil::getBucket(const document::DocumentId& id, const document::Bucket &bucket) const
+{
+    document::BucketId docBucket(_bucketFactory.getBucketId(id));
+    docBucket.setUsedBits(bucket.getBucketId().getUsedBits());
+    if (bucket.getBucketId() != docBucket) {
+        docBucket = _bucketFactory.getBucketId(id);
+        throw vespalib::IllegalStateException("Document " + id.toString()
+                                              + " (bucket " + docBucket.toString() + ") does not belong in "
+                                              + "bucket " + bucket.getBucketId().toString() + ".", VESPA_STRLOC);
+    }
+
+    return spi::Bucket(bucket);
 }
 
 } // storage

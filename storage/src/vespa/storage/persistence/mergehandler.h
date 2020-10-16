@@ -13,13 +13,17 @@
  */
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include "types.h"
+#include <vespa/persistence/spi/bucket.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
-#include <vespa/storage/persistence/persistenceutil.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/common/messagesender.h>
 
 namespace storage {
+
+namespace spi { struct PersistenceProvider; }
+struct PersistenceUtil;
 
 class MergeHandler : public Types {
 
@@ -30,11 +34,9 @@ public:
         DELETED_IN_PLACE           = 0x04
     };
 
-    MergeHandler(spi::PersistenceProvider& spi, PersistenceUtil&);
+    MergeHandler(PersistenceUtil&, spi::PersistenceProvider& spi);
     /** Used for unit testing */
-    MergeHandler(spi::PersistenceProvider& spi,
-                 PersistenceUtil& env,
-                 uint32_t maxChunkSize);
+    MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, uint32_t maxChunkSize);
 
     bool buildBucketInfoList(
             const spi::Bucket& bucket,
@@ -55,16 +57,16 @@ public:
                           uint8_t nodeIndex,
                           spi::Context& context);
 
-    MessageTracker::UP handleMergeBucket(api::MergeBucketCommand&, MessageTracker::UP);
-    MessageTracker::UP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTracker::UP);
+    MessageTrackerUP handleMergeBucket(api::MergeBucketCommand&, MessageTrackerUP);
+    MessageTrackerUP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTrackerUP);
     void handleGetBucketDiffReply(api::GetBucketDiffReply&, MessageSender&);
-    MessageTracker::UP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTracker::UP);
+    MessageTrackerUP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTrackerUP);
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&);
 
 private:
-    spi::PersistenceProvider& _spi;
-    PersistenceUtil& _env;
-    uint32_t _maxChunkSize;
+    PersistenceUtil          &_env;
+    spi::PersistenceProvider &_spi;
+    uint32_t                  _maxChunkSize;
 
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,
