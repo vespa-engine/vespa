@@ -65,7 +65,7 @@ public class ContainerDocumentApi {
             Options options) {
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(componentId, null, "vespaclient-container-plugin"), ""));
-        if (bindingSuffix == null) return handler; // TODO(bjorncs,jvenstad) Cleanup once old restapi handler is gone
+        if (bindingSuffix == null) return handler; // TODO(bjorncs,jonmv) Cleanup once old restapi handler is gone
         if (options.bindings.isEmpty()) {
             handler.addServerBindings(
                     SystemBindingPattern.fromHttpPath(bindingSuffix),
