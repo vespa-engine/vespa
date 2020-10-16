@@ -117,6 +117,12 @@ void my_generic_reduce_op(State &state, uint64_t param_in) {
                             };
         param.dense_plan.execute_keep(reduce_cells);
     }
+    if (sparse.map.empty() && param.sparse_plan.keep_dims.empty()) {
+        auto zero = builder->add_subspace({});
+        for (size_t i = 0; i < zero.size(); ++i) {
+            zero[i] = OCT{};
+        }
+    }
     auto &result = state.stash.create<std::unique_ptr<Value>>(builder->build(std::move(builder)));
     const Value &result_ref = *(result.get());
     state.pop_push(result_ref);
