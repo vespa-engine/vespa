@@ -230,8 +230,11 @@ struct FastValue final : Value, ValueBuilder<T> {
     const Value::Index &index() const override { return my_index; }
     TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override {
-        my_index.map.add_mapping(addr);
-        return my_cells.add_cells(my_subspace_size);
+        size_t idx = my_index.map.lookup_or_add_mapping(addr) * my_subspace_size;
+        if (idx == my_cells.size) {
+            return my_cells.add_cells(my_subspace_size);
+        } 
+        return ArrayRef<T>(my_cells.get(idx), my_subspace_size);
     }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (my_index.map.num_dims() == 0) {

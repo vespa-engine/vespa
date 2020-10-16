@@ -135,6 +135,26 @@ public:
         _map.insert(std::make_pair(Key(hash), value));
     }
 
+    // used to add a mapping, but in the unlikely case
+    // of hash collision it works like lookup instead.
+    template <typename T>
+    size_t lookup_or_add_mapping(ConstArrayRef<T> addr) {
+        uint64_t hash = 0;
+        size_t old_labels_size = _labels.size();
+        for (const auto &label: addr) {
+            _labels.emplace_back(label);
+            hash = 31 * hash + hash_label(_labels.back());
+        }
+        uint32_t value = _map.size();
+        auto [iter, did_add] = _map.insert(std::make_pair(Key(hash), value));
+        if (did_add) {
+            return value;
+        }
+        // undo adding to _labels
+        _labels.resize(old_labels_size);
+        return iter->second;
+    }
+
     template <typename T>
     void add_mapping(ConstArrayRef<T> addr) {
         uint64_t h = 0;
