@@ -924,6 +924,8 @@ TEST(TensorPeekBench, mixed_peek) {
     benchmark_tensor_peek("mixed peek partial dense dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2).add("c", 3));
     benchmark_tensor_peek("mixed peek partial sparse verbatim", lhs, verbatim_peek().add("a", 1).add("c", 3).add("d", 4));
     benchmark_tensor_peek("mixed peek partial sparse dynamic", lhs, dynamic_peek().add("a", 1).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek partial mixed verbatim", lhs, verbatim_peek().add("a", 1).add("c", 4));
+    benchmark_tensor_peek("mixed peek partial mixed dynamic", lhs, dynamic_peek().add("a", 1).add("c", 4));
 }
 
 //-----------------------------------------------------------------------------
