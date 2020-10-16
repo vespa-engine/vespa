@@ -74,7 +74,8 @@ struct D {
     }
     TensorSpec::Label operator()(size_t idx) const {
         if (mapped) {
-            return TensorSpec::Label(fmt("label_%zu", idx));
+            // need plain number as string for dynamic sparse peek
+            return TensorSpec::Label(fmt("%zu", idx));
         } else {
             return TensorSpec::Label(idx);
         }
@@ -102,6 +103,22 @@ template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
 TensorSpec make_vector(const D &d1, double seq) { return make_spec(seq, d1); }
 TensorSpec make_matrix(const D &d1, const D &d2, double seq) { return make_spec(seq, d1, d2); }
 TensorSpec make_cube(const D &d1, const D &d2, const D &d3, double seq) { return make_spec(seq, d1, d2, d3); }
+
+//-----------------------------------------------------------------------------
+
+// helper class used to set up peek instructions
+struct MyPeekSpec {
+    bool is_dynamic;
+    std::map<vespalib::string,size_t> spec;
+    MyPeekSpec(bool is_dynamic_in) : is_dynamic(is_dynamic_in), spec() {}
+    MyPeekSpec &add(const vespalib::string &dim, size_t index) {
+        auto [ignore, was_inserted] = spec.emplace(dim, index);
+        assert(was_inserted);
+        return *this;
+    }
+};
+MyPeekSpec dynamic_peek() { return MyPeekSpec(true); }
+MyPeekSpec verbatim_peek() { return MyPeekSpec(false); }
 
 //-----------------------------------------------------------------------------
 
@@ -170,6 +187,29 @@ struct Impl {
         EXPECT_EQ(types.errors(), std::vector<vespalib::string>());
         const auto &tensor_lambda_node = tensor_function::lambda(type, {0}, function, std::move(types), stash);
         return tensor_lambda_node.compile_self(engine, stash);
+    }
+    Instruction create_tensor_peek(const ValueType &type, const MyPeekSpec &my_spec, Stash &stash) const {
+        // create a complete tensor function, but only compile the relevant instruction
+        const auto &my_param = tensor_function::inject(type, 0, stash);
+        std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
+        if (my_spec.is_dynamic) {
+            const auto &my_double = tensor_function::inject(ValueType::double_type(), 1, stash);
+            for (const auto &entry: my_spec.spec) {
+                spec.emplace(entry.first, my_double);
+            }
+        } else {
+            for (const auto &entry: my_spec.spec) {
+                size_t idx = type.dimension_index(entry.first);
+                assert(idx != ValueType::Dimension::npos);
+                if (type.dimensions()[idx].is_mapped()) {
+                    spec.emplace(entry.first, TensorSpec::Label(fmt("%zu", entry.second)));
+                } else {
+                    spec.emplace(entry.first, TensorSpec::Label(entry.second));
+                }
+            }
+        }
+        const auto &peek_node = tensor_function::peek(my_param, spec, stash);
+        return peek_node.compile_self(engine, stash);
     }
 };
 
@@ -474,6 +514,27 @@ void benchmark_tensor_lambda(const vespalib::string &desc, const ValueType &type
     for (const Impl &impl: impl_list) {
         auto op = impl.create_tensor_lambda(type, function, p0_type, stash);
         list.push_back(std::make_unique<EvalOp>(op, p0, impl));
+    }
+    benchmark(desc, list);
+}
+
+//-----------------------------------------------------------------------------
+
+void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, const MyPeekSpec &peek_spec) {
+    Stash stash;
+    ValueType type = ValueType::from_spec(lhs.type());
+    ASSERT_FALSE(type.is_error());
+    std::vector<CREF<TensorSpec>> stack_spec;
+    stack_spec.emplace_back(lhs);
+    if (peek_spec.is_dynamic) {
+        for (const auto &entry: peek_spec.spec) {
+            stack_spec.emplace_back(stash.create<TensorSpec>(make_spec(double(entry.second))));
+        }
+    }
+    std::vector<EvalOp::UP> list;
+    for (const Impl &impl: impl_list) {
+        auto op = impl.create_tensor_peek(type, peek_spec, stash);
+        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
@@ -831,6 +892,38 @@ TEST(TensorLambdaBench, complex_lambda) {
     auto function = Function::parse({"a", "b", "p0"}, "(a*64+b)*reduce(p0,sum)");
     ASSERT_FALSE(function->has_error());
     benchmark_tensor_lambda("complex tensor lambda", type, p0, *function);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(TensorPeekBench, dense_peek) {
+    auto lhs = make_matrix(D::idx("a", 64), D::idx("b", 64), 1.0);
+    benchmark_tensor_peek("dense peek cell verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("dense peek cell dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("dense peek vector verbatim", lhs, verbatim_peek().add("a", 1));
+    benchmark_tensor_peek("dense peek vector dynamic", lhs, dynamic_peek().add("a", 1));
+}
+
+TEST(TensorPeekBench, sparse_peek) {
+    auto lhs = make_matrix(D::map("a", 64, 1), D::map("b", 64, 1), 1.0);
+    benchmark_tensor_peek("sparse peek cell verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("sparse peek cell dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("sparse peek vector verbatim", lhs, verbatim_peek().add("a", 1));
+    benchmark_tensor_peek("sparse peek vector dynamic", lhs, dynamic_peek().add("a", 1));
+}
+
+TEST(TensorPeekBench, mixed_peek) {
+    auto lhs = make_spec(1.0, D::map("a", 8, 1), D::map("b", 8, 1), D::idx("c", 8), D::idx("d", 8));
+    benchmark_tensor_peek("mixed peek cell verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek cell dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek dense verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("mixed peek dense dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2));
+    benchmark_tensor_peek("mixed peek sparse verbatim", lhs, verbatim_peek().add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek sparse dynamic", lhs, dynamic_peek().add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek partial dense verbatim", lhs, verbatim_peek().add("a", 1).add("b", 2).add("c", 3));
+    benchmark_tensor_peek("mixed peek partial dense dynamic", lhs, dynamic_peek().add("a", 1).add("b", 2).add("c", 3));
+    benchmark_tensor_peek("mixed peek partial sparse verbatim", lhs, verbatim_peek().add("a", 1).add("c", 3).add("d", 4));
+    benchmark_tensor_peek("mixed peek partial sparse dynamic", lhs, dynamic_peek().add("a", 1).add("c", 3).add("d", 4));
 }
 
 //-----------------------------------------------------------------------------
