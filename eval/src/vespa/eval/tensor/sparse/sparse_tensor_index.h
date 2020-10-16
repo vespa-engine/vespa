@@ -41,7 +41,7 @@ private:
     Stash _stash;
     IndexMap _map;
     size_t _num_mapped_dims;
-    static size_t wanted_stash_size_for(const SparseTensorIndex &other);
+    static size_t wanted_chunk_size_for(const SparseTensorIndex &other);
     SparseTensorIndex(size_t stash_size, const SparseTensorIndex &other);
 };
 

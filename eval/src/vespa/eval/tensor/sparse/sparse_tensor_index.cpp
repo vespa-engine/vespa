@@ -180,7 +180,7 @@ SparseTensorValueAllMappings::next_result(ConstArrayRef<vespalib::stringref*> ad
 //-----------------------------------------------------------------------------
 
 size_t
-SparseTensorIndex::wanted_stash_size_for(const SparseTensorIndex &other) {
+SparseTensorIndex::wanted_chunk_size_for(const SparseTensorIndex &other) {
     auto mem = other._stash.get_memory_usage();
     size_t mem_use = mem.usedBytes();
     if (mem_use == 0) {
@@ -208,7 +208,7 @@ SparseTensorIndex::SparseTensorIndex(size_t stash_size, const SparseTensorIndex 
 SparseTensorIndex
 SparseTensorIndex::shrunk_copy() const
 {
-    size_t want_mem = wanted_stash_size_for(*this);
+    size_t want_mem = wanted_chunk_size_for(*this);
     return SparseTensorIndex(want_mem, *this);
 }
 
