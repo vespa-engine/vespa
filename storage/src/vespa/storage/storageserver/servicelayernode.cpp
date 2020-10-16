@@ -13,7 +13,6 @@
 #include <vespa/storage/visiting/messagebusvisitormessagesession.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/persistence/spi/exceptions.h>
