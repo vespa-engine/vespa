@@ -28,7 +28,6 @@ DirectIOException::DirectIOException(const char * fileName, const void * buffer,
 
 DirectIOException::~DirectIOException() {}
 
-FastOS_FileInterface::FailedHandler FastOS_FileInterface::_failedHandler = nullptr;
 #ifdef __linux__
 int FastOS_FileInterface::_defaultFAdviseOptions = POSIX_FADV_NORMAL;
 #else
