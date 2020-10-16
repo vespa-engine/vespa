@@ -13,6 +13,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Instant;
@@ -186,6 +187,8 @@ public abstract class Session implements Comparable<Session>  {
         }
         return getApplicationPackage().getFile(relativePath);
     }
+
+    Optional<ApplicationSet> applicationSet() { return Optional.empty(); };
 
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);

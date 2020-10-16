@@ -293,7 +293,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         Tenant tenant = getTenant(prepareParams.getApplicationId());
-        LocalSession session = validateThatLocalSessionIsNotActive(tenant, sessionId);
+        Session session = validateThatLocalSessionIsNotActive(tenant, sessionId);
         Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
         deployment.prepare();
         logConfigChangeActions(deployment.configChangeActions(), logger);
@@ -381,12 +381,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
-        LocalSession activeSession = getActiveLocalSession(tenant, application);
+        Session activeSession = getActiveLocalSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         DeployLogger logger = new SilentDeployLogger();
-        LocalSession newSession = sessionRepository.createSessionFromExisting(activeSession, true, timeoutBudget);
+        Session newSession = sessionRepository.createSessionFromExisting(activeSession, true, timeoutBudget);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
@@ -396,7 +396,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Optional<Instant> lastDeployTime(ApplicationId application) {
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
-        RemoteSession activeSession = getActiveSession(tenant, application);
+        Session activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         return Optional.of(activeSession.getCreateTime());
     }
@@ -406,13 +406,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   TimeoutBudget timeoutBudget,
                                   boolean force) {
         DeployLogger logger = new SilentDeployLogger();
-        LocalSession localSession = getLocalSession(tenant, sessionId);
-        Deployment deployment = Deployment.prepared(localSession, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
+        Session session = getLocalSession(tenant, sessionId);
+        Deployment deployment = Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
-        return localSession.getApplicationId();
+        return session.getApplicationId();
     }
 
-    public Transaction deactivateCurrentActivateNew(Session active, LocalSession prepared, boolean force) {
+    public Transaction deactivateCurrentActivateNew(Session active, Session prepared, boolean force) {
         Tenant tenant = tenantRepository.getTenant(prepared.getTenantName());
         Transaction transaction = tenant.getSessionRepository().createActivateTransaction(prepared);
         if (active != null) {
@@ -433,7 +433,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getTenantMetaData(tenant);
     }
 
-    static void checkIfActiveHasChanged(LocalSession session, Session activeSession, boolean ignoreStaleSessionFailure) {
+    static void checkIfActiveHasChanged(Session session, Session activeSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
         log.log(Level.FINE, activeSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create time
@@ -485,8 +485,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             // Deleting an application is done by deleting the remote session, other config
             // servers will pick this up and clean up through the watcher in this class
             try {
-                RemoteSession remoteSession = getRemoteSession(tenant, activeSession.get());
-                tenant.getSessionRepository().delete(remoteSession);
+                Session session = getRemoteSession(tenant, activeSession.get());
+                tenant.getSessionRepository().delete(session);
             } catch (NotFoundException e) {
                 log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
             }
@@ -591,7 +591,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getOptionalApplication(applicationId).map(app -> app.getModel().fileReferences()).orElse(Set.of());
     }
 
-    public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, LocalSession.Mode mode) {
+    public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, Session.Mode mode) {
         Tenant tenant = tenantRepository.getTenant(tenantName);
         return getLocalSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
     }
@@ -648,7 +648,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public Optional<String> getApplicationPackageReference(ApplicationId applicationId) {
         Optional<String> applicationPackage = Optional.empty();
-        RemoteSession session = getActiveSession(applicationId);
+        Session session = getActiveSession(applicationId);
         if (session != null) {
             FileReference applicationPackageReference = session.getApplicationPackageReference();
             File downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig().fileReferencesDir()));
@@ -727,7 +727,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public CompletionWaiter activate(LocalSession session, Session previousActiveSession, ApplicationId applicationId, boolean force) {
+    public CompletionWaiter activate(Session session, Session previousActiveSession, ApplicationId applicationId, boolean force) {
         CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, force));
@@ -752,7 +752,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      *
      * @return the active session, or null if there is no active session for the given application id.
      */
-    public RemoteSession getActiveSession(ApplicationId applicationId) {
+    public Session getActiveSession(ApplicationId applicationId) {
+        return getActiveRemoteSession(applicationId);
+    }
+
+    /**
+     * Gets the active Session for the given application id.
+     *
+     * @return the active session, or null if there is no active session for the given application id.
+     */
+    public RemoteSession getActiveRemoteSession(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new IllegalArgumentException("Could not find any tenant for '" + applicationId + "'");
         return getActiveSession(tenant, applicationId);
@@ -787,8 +796,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public long createSessionFromExisting(ApplicationId applicationId, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         Tenant tenant = getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
-        RemoteSession fromSession = getExistingSession(tenant, applicationId);
-        LocalSession session = sessionRepository.createSessionFromExisting(fromSession, internalRedeploy, timeoutBudget);
+        Session fromSession = getExistingSession(tenant, applicationId);
+        Session session = sessionRepository.createSessionFromExisting(fromSession, internalRedeploy, timeoutBudget);
         return session.getSessionId();
     }
 
@@ -806,7 +815,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        LocalSession session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
+        Session session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
         return session.getSessionId();
     }
 
@@ -823,7 +832,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         Map<ApplicationId, Long> activeSessions = new HashMap<>();
         applicationIds.forEach(applicationId -> {
-            RemoteSession activeSession = getActiveSession(applicationId);
+            Session activeSession = getActiveSession(applicationId);
             if (activeSession != null)
                 activeSessions.put(applicationId, activeSession.getSessionId());
         });
@@ -905,16 +914,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return applicationId.orElse(null);
     }
 
-    private LocalSession validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
-        LocalSession session = getLocalSession(tenant, sessionId);
+    private Session validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
+        Session session = getLocalSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
             throw new IllegalStateException("Session is active: " + sessionId);
         }
         return session;
     }
 
-    private LocalSession getLocalSession(Tenant tenant, long sessionId) {
-        LocalSession session = tenant.getSessionRepository().getLocalSession(sessionId);
+    private Session getLocalSession(Tenant tenant, long sessionId) {
+        Session session = tenant.getSessionRepository().getLocalSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
@@ -954,12 +963,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private RemoteSession getExistingSession(Tenant tenant, ApplicationId applicationId) {
+    // TODO: Merge this and getActiveSession(), they are almost identical
+    private Session getExistingSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return getRemoteSession(tenant, applicationRepo.requireActiveSessionOf(applicationId));
     }
 
-    private RemoteSession getActiveSession(Tenant tenant, ApplicationId applicationId) {
+    public RemoteSession getActiveSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
             return tenant.getSessionRepository().getRemoteSession(applicationRepo.requireActiveSessionOf(applicationId));
@@ -967,7 +977,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return null;
     }
 
-    public LocalSession getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
+    public Session getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
             return tenant.getSessionRepository().getLocalSession(applicationRepo.requireActiveSessionOf(applicationId));

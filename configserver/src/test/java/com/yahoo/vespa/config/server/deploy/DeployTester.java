@@ -29,8 +29,8 @@ import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -159,8 +159,7 @@ public class DeployTester {
 
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {
         Tenant tenant = tenant();
-        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
-                                                                             .requireActiveSessionOf(applicationId));
+        Session session = applicationRepository.getActiveSession(tenant, applicationId);
         return session.getAllocatedHosts();
     }
 

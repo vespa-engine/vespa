@@ -175,9 +175,9 @@ public class SessionRepositoryTest {
         curator.set(TenantRepository.getApplicationsPath(mytenant).append("mytenant:appX:default"), new byte[0]); // Invalid data
         tenantRepository.addTenant(mytenant);
         curator.create(TenantRepository.getSessionsPath(mytenant));
-        assertThat(sessionRepository.getRemoteSessions().size(), is(0));
+        assertThat(sessionRepository.getRemoteSessionsFromZooKeeper().size(), is(0));
         createSession(sessionId, true);
-        assertThat(sessionRepository.getRemoteSessions().size(), is(1));
+        assertThat(sessionRepository.getRemoteSessionsFromZooKeeper().size(), is(1));
     }
 
     @Test(expected = InvalidApplicationException.class)

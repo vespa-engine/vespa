@@ -8,7 +8,6 @@ import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationRoles;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
@@ -36,11 +35,9 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
-import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -155,8 +152,7 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
         Tenant tenant = applicationRepository.getTenant(applicationId());
-        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo()
-                                                                               .requireActiveSessionOf(applicationId()));
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
         session.getAllocatedHosts();
     }
 
@@ -228,8 +224,7 @@ public class ApplicationRepositoryTest {
         assertNotEquals(firstSessionId, secondSessionId);
 
         Tenant tenant = applicationRepository.getTenant(applicationId());
-        LocalSession session = tenant.getSessionRepository().getLocalSession(
-                tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
         assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
     }
 
@@ -314,7 +309,7 @@ public class ApplicationRepositoryTest {
         {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
-            LocalSession applicationData = sessionRepository.getLocalSession(sessionId);
+            Session applicationData = sessionRepository.getLocalSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
             assertNotNull(sessionRepository.getLocalSession(sessionId));
@@ -383,7 +378,7 @@ public class ApplicationRepositoryTest {
         assertTrue(deployment3.isPresent());
         deployment3.get().prepare();  // session 4 (not activated)
 
-        LocalSession deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
+        Session deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
         assertNotEquals(activeSessionId, deployment3session.getSessionId());
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
@@ -402,8 +397,8 @@ public class ApplicationRepositoryTest {
 
         // All sessions except 3 should be removed after the call to deleteExpiredRemoteSessions
         assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
-        ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessions());
-        RemoteSession remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
+        ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessionsFromZooKeeper());
+        Session remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
         assertEquals(3, remoteSession.getSessionId());
 
         // Deploy, but do not activate
@@ -485,7 +480,7 @@ public class ApplicationRepositoryTest {
         prepareAndActivate(testAppJdiscOnly);
 
         Tenant tenant = applicationRepository.getTenant(applicationId());
-        LocalSession session = tenant.getSessionRepository().getLocalSession(tenant.getApplicationRepo().requireActiveSessionOf(applicationId()));
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
 
         List<NetworkPorts.Allocation> list = new ArrayList<>();
         list.add(new NetworkPorts.Allocation(8080, "container", "container/container.0", "http"));
@@ -532,7 +527,7 @@ public class ApplicationRepositoryTest {
         exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
 
-        RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
+        Session activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
         assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
     }
@@ -549,7 +544,7 @@ public class ApplicationRepositoryTest {
         exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
 
-        RemoteSession activeSession = applicationRepository.getActiveSession(applicationId());
+        Session activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
         assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
     }

@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -38,8 +37,6 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
     private static final File testApp = new File("src/test/apps/content");
     private static final File testApp2 = new File("src/test/apps/content2");
-
-
 
     private final TenantName tenantName1 = TenantName.from("mofet");
     private final TenantName tenantName2 = TenantName.from("bla");
@@ -126,7 +123,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     @Test
     public void require_that_get_does_not_set_write_flag() throws IOException {
         Tenant tenant1 = applicationRepository.getTenant(appId1);
-        LocalSession session = applicationRepository.getActiveLocalSession(tenant1, appId1);
+        Session session = applicationRepository.getActiveLocalSession(tenant1, appId1);
         assertContent("/test.txt", "foo\n");
         assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
     }

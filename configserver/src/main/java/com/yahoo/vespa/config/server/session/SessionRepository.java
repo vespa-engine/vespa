@@ -147,7 +147,7 @@ public class SessionRepository {
         }
     }
 
-    public ConfigChangeActions prepareLocalSession(LocalSession session, DeployLogger logger, PrepareParams params, Instant now) {
+    public ConfigChangeActions prepareLocalSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
@@ -235,7 +235,7 @@ public class SessionRepository {
         return remoteSessionCache.get(sessionId);
     }
 
-    public List<Long> getRemoteSessions() {
+    public List<Long> getRemoteSessionsFromZooKeeper() {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
@@ -250,8 +250,8 @@ public class SessionRepository {
 
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
         int deleted = 0;
-        for (long sessionId : getRemoteSessions()) {
-            RemoteSession session = remoteSessionCache.get(sessionId);
+        for (long sessionId : getRemoteSessionsFromZooKeeper()) {
+            Session session = remoteSessionCache.get(sessionId);
             if (session == null) continue; // Internal sessions not in sync with zk, continue
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
@@ -268,7 +268,7 @@ public class SessionRepository {
         remoteSessionCache.put(session.getSessionId(), session);
     }
 
-    public void deleteRemoteSessionFromZooKeeper(RemoteSession session) {
+    public void deleteRemoteSessionFromZooKeeper(Session session) {
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         Transaction transaction = sessionZooKeeperClient.deleteTransaction();
         transaction.commit();
@@ -290,7 +290,7 @@ public class SessionRepository {
     }
 
     private void loadRemoteSessions() throws NumberFormatException {
-        getRemoteSessions().forEach(this::sessionAdded);
+        getRemoteSessionsFromZooKeeper().forEach(this::sessionAdded);
     }
 
     /**
@@ -300,7 +300,7 @@ public class SessionRepository {
      */
     public synchronized void sessionAdded(long sessionId) {
         log.log(Level.FINE, () -> "Adding remote session " + sessionId);
-        RemoteSession session = createRemoteSession(sessionId);
+        Session session = createRemoteSession(sessionId);
         if (session.getStatus() == Session.Status.NEW) {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
@@ -320,7 +320,7 @@ public class SessionRepository {
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
-    public void delete(RemoteSession remoteSession) {
+    public void delete(Session remoteSession) {
         long sessionId = remoteSession.getSessionId();
         // TODO: Change log level to FINE when debugging is finished
         log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
@@ -360,7 +360,6 @@ public class SessionRepository {
     }
 
     public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
-
         if (session.applicationSet().isPresent()) {
             return session.applicationSet().get();
         }
@@ -374,7 +373,7 @@ public class SessionRepository {
         return applicationSet;
     }
 
-    void confirmUpload(RemoteSession session) {
+    void confirmUpload(Session session) {
         Curator.CompletionWaiter waiter = session.getSessionZooKeeperClient().getUploadWaiter();
         long sessionId = session.getSessionId();
         log.log(Level.FINE, "Notifying upload waiter for session " + sessionId);
@@ -382,7 +381,7 @@ public class SessionRepository {
         log.log(Level.FINE, "Done notifying upload for session " + sessionId);
     }
 
-    void notifyCompletion(Curator.CompletionWaiter completionWaiter, RemoteSession session) {
+    void notifyCompletion(Curator.CompletionWaiter completionWaiter, Session session) {
         try {
             completionWaiter.notifyCompletion();
         } catch (RuntimeException e) {
@@ -406,7 +405,7 @@ public class SessionRepository {
         }
     }
 
-    private ApplicationSet loadApplication(RemoteSession session) {
+    private ApplicationSet loadApplication(Session session) {
         log.log(Level.FINE, () -> "Loading application for " + session);
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         ApplicationPackage applicationPackage = sessionZooKeeperClient.loadApplicationPackage();
@@ -428,7 +427,7 @@ public class SessionRepository {
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
             Multiset<Session.Status> sessionMetrics = HashMultiset.create();
-            for (RemoteSession session : remoteSessionCache.values()) {
+            for (Session session : remoteSessionCache.values()) {
                 sessionMetrics.add(session.getStatus());
             }
             metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
@@ -708,7 +707,7 @@ public class SessionRepository {
     }
 
     private void checkForRemovedSessions(List<Long> sessions) {
-        for (RemoteSession session : remoteSessionCache.values())
+        for (Session session : remoteSessionCache.values())
             if ( ! sessions.contains(session.getSessionId()))
                 sessionRemoved(session.getSessionId());
     }
