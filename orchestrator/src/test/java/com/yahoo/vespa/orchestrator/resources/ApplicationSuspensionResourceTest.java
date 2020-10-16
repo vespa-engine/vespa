@@ -17,8 +17,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.util.Set;
 
@@ -141,18 +139,6 @@ public class ApplicationSuspensionResourceTest {
     }
 
     private String servicesXml() {
-        int port = 0;
-        do {
-            try {
-                ServerSocket socket = new ServerSocket(0);
-                port = socket.getLocalPort();
-                socket.close();
-                System.out.println("Using port " + port);
-            } catch (IOException e) {
-                // ignore
-            }
-        } while (port == 0);
-
         return "<services>\n" +
                 "    <container version=\"1.0\" jetty=\"true\">\n" +
                 "        <accesslog type=\"disabled\"/>\n" +
@@ -171,7 +157,7 @@ public class ApplicationSuspensionResourceTest {
                 "        </rest-api>\n" +
                 "\n" +
                 "        <http>\n" +
-                "            <server id=\"foo\" port=\"" + port + "\"/>\n" +
+                "            <server id=\"foo\" port=\"0\"/>\n" +
                 "        </http>\n" +
                 "    </container>\n" +
                 "</services>\n";
