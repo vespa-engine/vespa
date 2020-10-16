@@ -21,6 +21,7 @@ public:
     explicit SparseTensorIndex(size_t num_mapped_dims_in);
     SparseTensorIndex copy() const;
     SparseTensorIndex shrunk_copy() const;
+    SparseTensorIndex(const SparseTensorIndex &) = delete;
     SparseTensorIndex(SparseTensorIndex && index_in) = default;
     ~SparseTensorIndex();
     // Index API
@@ -40,7 +41,7 @@ private:
     Stash _stash;
     IndexMap _map;
     size_t _num_mapped_dims;
-    static size_t needed_memory_for(const SparseTensorIndex &other);
+    static size_t wanted_stash_size_for(const SparseTensorIndex &other);
     SparseTensorIndex(size_t stash_size, const SparseTensorIndex &other);
 };
 
