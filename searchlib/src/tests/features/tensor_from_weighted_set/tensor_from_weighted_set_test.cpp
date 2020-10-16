@@ -120,8 +120,7 @@ struct ExecFixture
         test.getQueryEnv().getProperties().add("wsquery", "{d:11,e:13,f:17}");
     }
     const Value &extractTensor(uint32_t docid) {
-        Value::CREF value = test.resolveObjectFeature(docid);
-        return value.get();
+        return test.resolveObjectFeature(docid);
     }
     const Value &execute() {
         return extractTensor(1);

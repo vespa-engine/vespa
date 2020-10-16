@@ -19,10 +19,10 @@ template<typename T>
 class SparseTensorModify : public TensorVisitor
 {
     using join_fun_t = vespalib::eval::operation::op2_t;
-    join_fun_t             _op;
-    eval::ValueType        _type;
-    SparseTensorIndex      _index;
-    std::vector<T>         _values;
+    join_fun_t                 _op;
+    eval::ValueType            _type;
+    const SparseTensorIndex &  _index;
+    std::vector<T>             _values;
     SparseTensorAddressBuilder _addressBuilder;
 
 public:

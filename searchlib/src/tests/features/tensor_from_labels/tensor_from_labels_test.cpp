@@ -121,8 +121,7 @@ struct ExecFixture
         test.getQueryEnv().getProperties().add("aint_query", "[11 13 17]");
     }
     const Value &extractTensor(uint32_t docid) {
-        Value::CREF value = test.resolveObjectFeature(docid);
-        return value.get();
+        return test.resolveObjectFeature(docid);
     }
     const Value &execute() {
         return extractTensor(1);

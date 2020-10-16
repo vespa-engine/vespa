@@ -41,8 +41,7 @@ DistanceFunction::UP euclid_d = search::tensor::make_distance_function(DistanceM
 DistanceFunction::UP euclid_f = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::FLOAT);
 
 std::unique_ptr<Value> createTensor(const TensorSpec &spec) {
-    auto value = EngineOrFactory::get().from_spec(spec);
-    return value;
+    return EngineOrFactory::get().from_spec(spec);
 }
 
 std::unique_ptr<Value> createTensor(const vespalib::string& type_spec, double v1, double v2) {

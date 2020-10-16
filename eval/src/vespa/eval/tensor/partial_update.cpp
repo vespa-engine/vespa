@@ -215,7 +215,7 @@ PerformModify::invoke(const Value &input, join_fun_t function, const Value &modi
     const ValueType &modifier_type = modifier.type();
     AddressHandler handler(input_type, modifier_type);
     if (! handler.valid) {
-        return Value::UP();
+        return {};
     }
     // copy input to output
     auto out = copy_tensor<ICT>(input, input_type, handler.for_output, factory);
@@ -264,7 +264,7 @@ PerformAdd::invoke(const Value &input, const Value &modifier, const ValueBuilder
         LOG(error, "when adding cells to a tensor, dimensions must be equal. "
             "Got input type %s != modifier type %s",
             input_type.to_spec().c_str(), modifier_type.to_spec().c_str());
-        return Value::UP();
+        return {};
     }
     const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
     const size_t dsss = input_type.dense_subspace_size();
@@ -308,13 +308,13 @@ PerformRemove::invoke(const Value &input, const Value &modifier, const ValueBuil
         LOG(error, "when removing cells from a tensor, mapped dimensions must be equal. "
             "Got input type %s versus modifier type %s",
             input_type.to_spec().c_str(), modifier_type.to_spec().c_str());
-        return Value::UP();
+        return {};
     }
     const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
     if (num_mapped_in_input == 0) {
         LOG(error, "cannot remove cells from a dense tensor of type %s",
             input_type.to_spec().c_str());
-        return Value::UP();
+        return {};
     }
     SparseCoords addrs(num_mapped_in_input);
     auto modifier_view = modifier.index().create_view(addrs.lookup_view_dims);
@@ -370,7 +370,7 @@ TensorPartialUpdate::modify(const Value &input, join_fun_t function,
             vespalib::tensor::CellValues cellValues(*mod_ptr);
             return inp_ptr->modify(function, cellValues);
         }
-        return Value::UP();
+        return {};
     } else {
         return modify(input, function, modifier, engine.factory());
     }
@@ -385,7 +385,7 @@ TensorPartialUpdate::add(const Value &input, const Value &add_cells, EngineOrFac
         if (inp_ptr && add_ptr) {
             return inp_ptr->add(*add_ptr);
         }
-        return Value::UP();
+        return {};
     } else {
         return add(input, add_cells, engine.factory());
     }
@@ -401,7 +401,7 @@ TensorPartialUpdate::remove(const Value &input, const Value &remove_spec, Engine
             vespalib::tensor::CellValues cellAddresses(*rem_ptr);
             return inp_ptr->remove(cellAddresses);
         }
-        return Value::UP();
+        return {};
     } else {
         return remove(input, remove_spec, engine.factory());
     }

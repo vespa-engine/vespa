@@ -12,13 +12,36 @@ using vespalib::datastore::EntryRef;
 using vespalib::eval::EngineOrFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
+using vespalib::eval::ValueType;
+using vespalib::eval::TypedCells;
+using vespalib::MemoryUsage;
 
 vespalib::string tensor_spec("tensor(x{})");
+
+class MockBigTensor : public Value
+{
+private:
+    Value::UP _real_tensor;
+public:
+    MockBigTensor(std::unique_ptr<Value> real_tensor)
+        : _real_tensor(std::move(real_tensor))
+    {}
+    MemoryUsage get_memory_usage() const override {
+        auto memuse = _real_tensor->get_memory_usage();
+        memuse.incUsedBytes(1000);
+        memuse.incAllocatedBytes(1000000);
+        return memuse;
+    }
+    const ValueType &type() const override { return _real_tensor->type(); }
+    TypedCells cells() const override { return _real_tensor->cells(); }
+    const Index &index() const override { return _real_tensor->index(); }
+};
 
 Value::UP
 make_tensor(const TensorSpec& spec)
 {
-    return EngineOrFactory::get().from_spec(spec);
+    auto value = EngineOrFactory::get().from_spec(spec);
+    return std::make_unique<MockBigTensor>(std::move(value));
 }
 
 Value::UP
@@ -59,8 +82,10 @@ TEST_F(DirectTensorStoreTest, heap_allocated_memory_is_tracked)
     auto ref = store.store_tensor(make_tensor(10));
     auto tensor_mem_usage = store.get_tensor(ref)->get_memory_usage();
     auto mem_2 = store.getMemoryUsage();
-    EXPECT_GT(tensor_mem_usage.usedBytes(), 100);
-    EXPECT_GT(tensor_mem_usage.allocatedBytes(), 500);
+    EXPECT_GT(tensor_mem_usage.usedBytes(), 500);
+    EXPECT_LT(tensor_mem_usage.usedBytes(), 50000);
+    EXPECT_GT(tensor_mem_usage.allocatedBytes(), 500000);
+    EXPECT_LT(tensor_mem_usage.allocatedBytes(), 50000000);
     EXPECT_GE(mem_2.allocatedBytes(), mem_1.allocatedBytes() + tensor_mem_usage.allocatedBytes());
     EXPECT_GT(mem_2.usedBytes(), mem_1.usedBytes() + tensor_mem_usage.allocatedBytes());
 }

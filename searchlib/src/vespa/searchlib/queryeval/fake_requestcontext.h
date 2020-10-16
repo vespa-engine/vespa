@@ -37,7 +37,7 @@ public:
         if (_query_tensor && (tensor_name == _query_tensor_name)) {
             return vespalib::eval::EngineOrFactory::get().from_spec(*_query_tensor);
         }
-        return vespalib::eval::Value::UP();
+        return {};
     }
     void set_query_tensor(const vespalib::string& name, const vespalib::eval::TensorSpec& tensor_spec) {
         _query_tensor_name = name;

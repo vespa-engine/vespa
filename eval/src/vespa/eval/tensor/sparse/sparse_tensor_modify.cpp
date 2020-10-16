@@ -36,7 +36,7 @@ std::unique_ptr<Tensor>
 SparseTensorModify<T>::build()
 {
     using tt = SparseTensorT<T>;
-    return std::make_unique<tt>(std::move(_type), std::move(_index), std::move(_values));
+    return std::make_unique<tt>(std::move(_type), _index.copy(), std::move(_values));
 }
 
 template class SparseTensorModify<float>;

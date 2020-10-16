@@ -36,6 +36,8 @@ public:
     Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const override;
     Tensor::UP remove(const CellValues &cellAddresses) const override;
     MemoryUsage get_memory_usage() const override;
+    bool should_shrink() const;
+    Tensor::UP shrink() const;
 };
 
 }
