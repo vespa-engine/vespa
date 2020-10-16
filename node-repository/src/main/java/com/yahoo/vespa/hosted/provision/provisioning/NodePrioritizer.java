@@ -76,6 +76,15 @@ public class NodePrioritizer {
         this.isDocker = resources(requestedNodes) != null;
     }
 
+    /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
+    List<NodeCandidate> collect(List<Node> surplusActiveNodes) {
+        addApplicationNodes();
+        addSurplusNodes(surplusActiveNodes);
+        addReadyNodes();
+        addNewDockerNodes();
+        return prioritize();
+    }
+
     /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
     private List<NodeCandidate> prioritize() {
         // Group candidates by their cluster switch
@@ -109,7 +118,7 @@ public class NodePrioritizer {
      * Add nodes that have been previously reserved to the same application from
      * an earlier downsizing of a cluster
      */
-    void addSurplusNodes(List<Node> surplusNodes) {
+    private void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
             NodeCandidate candidate = candidateFrom(node, true);
             if (!candidate.violatesSpares || isAllocatingForReplacement) {
@@ -119,7 +128,7 @@ public class NodePrioritizer {
     }
 
     /** Add a node on each docker host with enough capacity for the requested flavor  */
-    void addNewDockerNodes() {
+    private void addNewDockerNodes() {
         if ( ! isDocker) return;
 
         LockedNodeList candidates = allNodes
@@ -156,7 +165,7 @@ public class NodePrioritizer {
     }
 
     /** Add existing nodes allocated to the application */
-    void addApplicationNodes() {
+    private void addApplicationNodes() {
         EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.asList().stream()
                 .filter(node -> node.type() == requestedNodes.type())
@@ -169,7 +178,7 @@ public class NodePrioritizer {
     }
 
     /** Add nodes already provisioned, but not allocated to any application */
-    void addReadyNodes() {
+    private void addReadyNodes() {
         allNodes.asList().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> node.state() == Node.State.ready)
