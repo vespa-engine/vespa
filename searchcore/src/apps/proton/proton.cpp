@@ -2,7 +2,6 @@
 
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/storage/storageserver/storagenode.h>
-#include <vespa/searchlib/util/statefile.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
@@ -48,25 +47,6 @@ App::setupSignals()
     SIG::PIPE.ignore();
     SIG::INT.hook();
     SIG::TERM.hook();
-}
-
-namespace {
-
-vespalib::string
-getStateString(search::StateFile &stateFile)
-{
-    std::vector<char> buf;
-    stateFile.readState(buf);
-    if (!buf.empty() && buf[buf.size() - 1] == '\n')
-        buf.resize(buf.size() - 1);
-    return vespalib::string(buf.begin(), buf.end());
-}
-
-bool stateIsDown(const vespalib::string &stateString)
-{
-    return strstr(stateString.c_str(), "state=down") != nullptr;
-}
-
 }
 
 Params
@@ -164,7 +144,6 @@ App::Main()
         LOG(debug, "identity: '%s'", params.identity.c_str());
         LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
         LOG(debug, "subscribeTimeout: '%" PRIu64 "'", params.subscribeTimeout);
-        std::unique_ptr<search::StateFile> stateFile;
         protonUP = std::make_unique<proton::Proton>(params.identity, _argc > 0 ? _argv[0] : "proton", std::chrono::milliseconds(params.subscribeTimeout));
         proton::Proton & proton = *protonUP;
         proton::BootstrapConfig::SP configSnapshot = proton.init();
@@ -174,13 +153,6 @@ App::Main()
             const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
             vespalib::string basedir = protonConfig.basedir;
             vespalib::mkdir(basedir, true);
-            // TODO: Test that we can write to new file in directory
-            stateFile = std::make_unique<search::StateFile>(basedir + "/state");
-            int stateGen = stateFile->getGen();
-            vespalib::string stateString = getStateString(*stateFile);
-            if (stateIsDown(stateString)) {
-                LOG(error, "proton state string is %s", stateString.c_str());
-            }
             if ( ! params.serviceidentity.empty()) {
                 proton.getMetricManager().init(params.serviceidentity, proton.getThreadPool());
             } else {
@@ -201,13 +173,6 @@ App::Main()
                 if (spiProton && spiProton->configUpdated()) {
                     storage::ResumeGuard guard(spiProton->getNode().pause());
                     spiProton->updateConfig();
-                }
-                if (stateGen != stateFile->getGen()) {
-                    stateGen = stateFile->getGen();
-                    stateString = getStateString(*stateFile);
-                    if (stateIsDown(stateString)) {
-                        LOG(error, "proton state string is %s", stateString.c_str());
-                    }
                 }
             }
             // Ensure metric manager and state server are shut down before we start tearing
