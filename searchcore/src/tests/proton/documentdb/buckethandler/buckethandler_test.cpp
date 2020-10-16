@@ -14,7 +14,6 @@ using document::BucketId;
 using document::GlobalId;
 using storage::spi::Bucket;
 using storage::spi::BucketInfo;
-using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 using vespalib::ThreadStackExecutor;

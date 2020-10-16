@@ -11,7 +11,6 @@ LOG_SETUP(".proton.server.clusterstatehandler");
 using storage::spi::Bucket;
 using storage::spi::BucketIdListResult;
 using storage::spi::ClusterState;
-using storage::spi::PartitionId;
 using storage::spi::Result;
 using vespalib::Executor;
 using vespalib::makeTask;

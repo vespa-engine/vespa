@@ -38,7 +38,6 @@ using storage::spi::DocumentSelection;
 using storage::spi::GetResult;
 using storage::spi::IterateResult;
 using storage::spi::IteratorId;
-using storage::spi::PartitionId;
 using storage::spi::PersistenceProvider;
 using storage::spi::RemoveResult;
 using storage::spi::Result;

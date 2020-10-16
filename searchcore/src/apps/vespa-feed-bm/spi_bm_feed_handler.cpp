@@ -13,7 +13,6 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
 using storage::spi::Bucket;
-using storage::spi::PartitionId;
 using storage::spi::PersistenceProvider;
 using storage::spi::Timestamp;
 

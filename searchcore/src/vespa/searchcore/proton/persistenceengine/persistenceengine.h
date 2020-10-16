@@ -29,7 +29,6 @@ private:
     using IncludedVersions = storage::spi::IncludedVersions;
     using IterateResult = storage::spi::IterateResult;
     using IteratorId = storage::spi::IteratorId;
-    using PartitionId = storage::spi::PartitionId;
     using RemoveResult = storage::spi::RemoveResult;
     using Result = storage::spi::Result;
     using Selection = storage::spi::Selection;
