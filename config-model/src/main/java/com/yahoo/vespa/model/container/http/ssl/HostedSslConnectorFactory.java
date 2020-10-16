@@ -29,7 +29,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     // TODO Enforce client authentication
     public static HostedSslConnectorFactory withProvidedCertificate(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth) {
-        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null), false, enforceHandshakeClientAuth);
+        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth), false, enforceHandshakeClientAuth);
     }
 
     /**
@@ -37,7 +37,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
      */
     public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates) {
-        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates), true, false);
+        return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates, false), true, false);
     }
 
     /**
@@ -54,22 +54,21 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     }
 
     private static ConfiguredDirectSslProvider createConfiguredDirectSslProvider(
-            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificatesPath, String tlsCaCertificates) {
+            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificatesPath, String tlsCaCertificates, boolean enforceHandshakeClientAuth) {
+        var clientAuthentication = enforceHandshakeClientAuth ? ClientAuth.Enum.NEED_AUTH : ClientAuth.Enum.WANT_AUTH;
         return new ConfiguredDirectSslProvider(
                 serverName,
                 endpointCertificateSecrets.key(),
                 endpointCertificateSecrets.certificate(),
                 tlsCaCertificatesPath,
                 tlsCaCertificates,
-                ClientAuth.Enum.WANT_AUTH);
+                clientAuthentication);
     }
 
     @Override
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
         super.getConfig(connectorBuilder);
-        if (enforceHandshakeClientAuth) {
-            connectorBuilder.ssl.clientAuth(ClientAuth.Enum.NEED_AUTH);
-        } else {
+        if (! enforceHandshakeClientAuth) {
             connectorBuilder
                     .tlsClientAuthEnforcer(new ConnectorConfig.TlsClientAuthEnforcer.Builder()
                             .pathWhitelist(INSECURE_WHITELISTED_PATHS)
