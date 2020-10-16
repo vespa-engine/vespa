@@ -12,7 +12,6 @@ vespa_add_library(searchlib_util OBJECT
     filesizecalculator.cpp
     fileutil.cpp
     foldedstringcompare.cpp
-    ioerrorhandler.cpp
     logutil.cpp
     rawbuf.cpp
     slime_output_raw_buf_adapter.cpp

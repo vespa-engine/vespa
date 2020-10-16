@@ -3,7 +3,6 @@
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/searchlib/util/statefile.h>
-#include <vespa/searchlib/util/ioerrorhandler.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
@@ -166,7 +165,6 @@ App::Main()
         LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
         LOG(debug, "subscribeTimeout: '%" PRIu64 "'", params.subscribeTimeout);
         std::unique_ptr<search::StateFile> stateFile;
-        std::unique_ptr<search::IOErrorHandler> ioErrorHandler;
         protonUP = std::make_unique<proton::Proton>(params.identity, _argc > 0 ? _argv[0] : "proton", std::chrono::milliseconds(params.subscribeTimeout));
         proton::Proton & proton = *protonUP;
         proton::BootstrapConfig::SP configSnapshot = proton.init();
@@ -183,7 +181,6 @@ App::Main()
             if (stateIsDown(stateString)) {
                 LOG(error, "proton state string is %s", stateString.c_str());
             }
-            ioErrorHandler = std::make_unique<search::IOErrorHandler>(stateFile.get());
             if ( ! params.serviceidentity.empty()) {
                 proton.getMetricManager().init(params.serviceidentity, proton.getThreadPool());
             } else {
