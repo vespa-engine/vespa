@@ -1,26 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/storage/storageserver/statemanager.h>
-#include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/persistence/persistencethread.h>
-#include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/select/parser.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/document/select/parser.h>
-#include <vespa/vdslib/state/random.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/fastos/file.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/config/common/exceptions.h>
-#include <vespa/fastos/file.h>
+#include <vespa/storage/bucketdb/bucketmanager.h>
+#include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
+#include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
+#include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/storageserver/statemanager.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <atomic>
 #include <thread>
@@ -396,7 +397,7 @@ TEST_F(FileStorManagerTest, handler_priority) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId();
     ASSERT_EQ(0u, stripeId);
@@ -504,7 +505,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
 
     std::string content("Here is some content which is in all documents");
@@ -550,7 +551,7 @@ TEST_F(FileStorManagerTest, handler_pause) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId();
 
@@ -596,7 +597,7 @@ TEST_F(FileStorManagerTest, remap_split) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
 
     std::string content("Here is some content which is in all documents");
@@ -654,7 +655,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
     uint32_t stripeId = filestorHandler.getNextStripeId();
 
@@ -714,7 +715,7 @@ TEST_F(FileStorManagerTest, priority) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  2);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0]));
@@ -794,7 +795,7 @@ TEST_F(FileStorManagerTest, split1) {
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0]));
@@ -934,7 +935,7 @@ TEST_F(FileStorManagerTest, split_single_group) {
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
@@ -1046,7 +1047,7 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0]));
@@ -1111,7 +1112,7 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0]));
@@ -1152,7 +1153,7 @@ TEST_F(FileStorManagerTest, join) {
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0]));

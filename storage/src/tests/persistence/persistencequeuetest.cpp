@@ -49,8 +49,8 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
 
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
 
-    filestorHandler = std::make_unique<FileStorHandler>(messageSender, metrics,
-                                                        parent._node->getComponentRegister());
+    filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics,
+                                                            parent._node->getComponentRegister());
     // getNextMessage will time out if no unlocked buckets are present. Choose a timeout
     // that is large enough to fail tests with high probability if this is not the case,
     // and small enough to not slow down testing too much.
