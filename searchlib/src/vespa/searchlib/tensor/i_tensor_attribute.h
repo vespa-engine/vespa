@@ -7,7 +7,7 @@
 namespace vespalib::tensor {
 class MutableDenseTensorView;
 }
-namespace vespalib::eval { class ValueType; class Value; }
+namespace vespalib::eval { class ValueType; struct Value; }
 namespace vespalib::slime { struct Inserter; }
 
 namespace search::tensor {

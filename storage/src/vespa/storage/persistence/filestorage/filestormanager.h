@@ -40,7 +40,7 @@ struct FileStorManagerTest;
 class ReadBucketList;
 class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
-class DoneInitializeHandler;
+struct DoneInitializeHandler;
 
 class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,

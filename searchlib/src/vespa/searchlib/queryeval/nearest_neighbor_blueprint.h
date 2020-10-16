@@ -7,7 +7,7 @@
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 
 namespace search::tensor { class DenseTensorAttribute; }
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace search::queryeval {
 

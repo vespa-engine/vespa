@@ -8,7 +8,7 @@
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
 

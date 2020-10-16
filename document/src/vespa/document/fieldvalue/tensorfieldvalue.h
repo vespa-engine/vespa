@@ -5,7 +5,7 @@
 #include "fieldvalue.h"
 
 namespace vespalib { namespace tensor { class Tensor; } }
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace document {
 

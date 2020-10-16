@@ -6,7 +6,7 @@
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace search {
 

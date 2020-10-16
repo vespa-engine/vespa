@@ -14,11 +14,11 @@ namespace storage {
 
 namespace spi {
     class Context;
-    class PersistenceProvider;
+    struct PersistenceProvider;
 }
 class PersistenceThread;
 class ServiceLayerComponent;
-class PersistenceUtil;
+struct PersistenceUtil;
 
 class TestAndSetException : public std::runtime_error {
     api::ReturnCode _code;
