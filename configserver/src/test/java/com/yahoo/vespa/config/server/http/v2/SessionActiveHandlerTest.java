@@ -19,8 +19,8 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -141,7 +141,7 @@ public class SessionActiveHandlerTest {
             applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             Tenant tenant = applicationRepository.getTenant(applicationId());
-            LocalSession session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+            Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
             metaData = session.getMetaData();
             this.sessionId = sessionId;
         }

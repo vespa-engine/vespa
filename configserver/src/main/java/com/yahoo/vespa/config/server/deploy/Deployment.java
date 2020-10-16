@@ -14,9 +14,7 @@ import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InternalServerException;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Lock;
@@ -44,7 +42,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private static final Logger log = Logger.getLogger(Deployment.class.getName());
 
     /** The session containing the application instance to activate */
-    private final LocalSession session;
+    private final Session session;
     private final ApplicationRepository applicationRepository;
     private final Supplier<PrepareParams> params;
     private final Optional<Provisioner> provisioner;
@@ -56,7 +54,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private boolean prepared;
     private ConfigChangeActions configChangeActions;
 
-    private Deployment(LocalSession session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
+    private Deployment(Session session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
                        Optional<Provisioner> provisioner, Tenant tenant, DeployLogger deployLogger, Clock clock,
                        boolean internalRedeploy, boolean prepared) {
         this.session = session;
@@ -70,19 +68,19 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.prepared = prepared;
     }
 
-    public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
+    public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, PrepareParams params, DeployLogger logger, Clock clock) {
         return new Deployment(session, applicationRepository, () -> params, provisioner, tenant, logger, clock, false, false);
     }
 
-    public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
+    public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                         Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true, false);
     }
 
-    public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
+    public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force);
@@ -113,7 +111,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            RemoteSession previousActiveSession;
+            Session previousActiveSession;
             CompletionWaiter waiter;
             try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
                 previousActiveSession = applicationRepository.getActiveSession(applicationId);
@@ -165,7 +163,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     }
 
     /** Exposes the session of this for testing only */
-    public LocalSession session() { return session; }
+    public Session session() { return session; }
 
     /**
      * @return config change actions that need to be performed as result of prepare
@@ -176,12 +174,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         throw new IllegalArgumentException("No config change actions: " + (prepared ? "was already prepared" : "not yet prepared"));
     }
 
-    private void validateSessionStatus(LocalSession localSession) {
-        long sessionId = localSession.getSessionId();
-        if (Session.Status.NEW.equals(localSession.getStatus())) {
-            throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is not prepared");
-        } else if (Session.Status.ACTIVATE.equals(localSession.getStatus())) {
-            throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is already active");
+    private void validateSessionStatus(Session session) {
+        long sessionId = session.getSessionId();
+        if (Session.Status.NEW.equals(session.getStatus())) {
+            throw new IllegalStateException(session.logPre() + "Session " + sessionId + " is not prepared");
+        } else if (Session.Status.ACTIVATE.equals(session.getStatus())) {
+            throw new IllegalStateException(session.logPre() + "Session " + sessionId + " is already active");
         }
     }
 
@@ -194,7 +192,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
      * @param force whether activation of this model should be forced
      */
     private static Supplier<PrepareParams> createPrepareParams(
-            Clock clock, Duration timeout, LocalSession session,
+            Clock clock, Duration timeout, Session session,
             boolean isBootstrap, boolean ignoreValidationErrors, boolean force) {
 
         // Supplier because shouldn't/cant create this before validateSessionStatus() for prepared deployments

@@ -5,7 +5,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.session.RemoteSession;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
@@ -53,7 +53,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         try (var fileDownloader = new FileDownloader(connectionPool, downloadDirectory)) {
             for (var applicationId : applicationRepository.listApplications()) {
                 log.fine(() -> "Verifying application package for " + applicationId);
-                RemoteSession session = applicationRepository.getActiveSession(applicationId);
+                Session session = applicationRepository.getActiveSession(applicationId);
                 if (session == null) continue;  // App might be deleted after call to listApplications()
 
                 FileReference applicationPackage = session.getApplicationPackageReference();
