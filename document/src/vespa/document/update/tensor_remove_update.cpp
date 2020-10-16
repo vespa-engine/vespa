@@ -40,16 +40,6 @@ convertToCompatibleType(const TensorDataType &tensorType)
     return std::make_unique<const TensorDataType>(ValueType::tensor_type(std::move(list), tensorType.getTensorType().cell_type()));
 }
 
-std::unique_ptr<vespalib::eval::Value>
-old_remove(const vespalib::eval::Value *input,
-           const vespalib::eval::Value *remove_spec)
-{
-    auto a = dynamic_cast<const vespalib::tensor::Tensor *>(input);
-    auto b = dynamic_cast<const vespalib::tensor::SparseTensor *>(remove_spec);
-    vespalib::tensor::CellValues cellAddresses(*b);
-    return a->remove(cellAddresses);
-}
-
 }
 
 IMPLEMENT_IDENTIFIABLE(TensorRemoveUpdate, ValueUpdate);
@@ -123,11 +113,7 @@ TensorRemoveUpdate::applyTo(const vespalib::eval::Value &tensor) const
     auto addressTensor = _tensor->getAsTensorPtr();
     if (addressTensor) {
         auto engine = EngineOrFactory::get();
-        if (engine.is_factory()) {
-            return TensorPartialUpdate::remove(tensor, *addressTensor, engine.factory());
-        } else {
-            return old_remove(&tensor, addressTensor);
-        }
+        return TensorPartialUpdate::remove(tensor, *addressTensor, engine);
     }
     return {};
 }
@@ -177,14 +163,8 @@ verifyAddressTensorIsSparse(const vespalib::eval::Value *addressTensor)
         return;
     }
     auto engine = EngineOrFactory::get();
-    if (engine.is_factory()) {
-        if (addressTensor->type().is_sparse()) {
-            return;
-        }
-    } else {
-        if (dynamic_cast<const vespalib::tensor::SparseTensor *>(addressTensor)) {
-            return;
-        }
+    if (TensorPartialUpdate::check_suitably_sparse(*addressTensor, engine)) {
+        return;
     }
     vespalib::string err = make_string("Expected address tensor to be sparse, but has type '%s'",
                                        addressTensor->type().to_spec().c_str());

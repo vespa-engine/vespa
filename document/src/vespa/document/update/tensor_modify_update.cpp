@@ -160,30 +160,13 @@ TensorModifyUpdate::checkCompatibility(const Field& field) const
     }
 }
 
-
-std::unique_ptr<vespalib::eval::Value>
-old_modify(const vespalib::eval::Value *input,
-           const vespalib::eval::Value *modify_spec,
-           join_fun_t function)
-{
-    auto a = dynamic_cast<const vespalib::tensor::Tensor *>(input);
-    // Cells tensor being sparse was validated during deserialize().
-    auto b = dynamic_cast<const vespalib::tensor::SparseTensor *>(modify_spec);
-    vespalib::tensor::CellValues cellValues(*b);
-    return a->modify(function, cellValues);
-}
-
 std::unique_ptr<vespalib::eval::Value>
 TensorModifyUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto cellsTensor = _tensor->getAsTensorPtr();
     if (cellsTensor) {
         auto engine = EngineOrFactory::get();
-        if (engine.is_factory()) {
-            return TensorPartialUpdate::modify(tensor, getJoinFunction(_operation), *cellsTensor, engine.factory());
-        } else {
-            return old_modify(&tensor, cellsTensor, getJoinFunction(_operation));
-        }
+        return TensorPartialUpdate::modify(tensor, getJoinFunction(_operation), *cellsTensor, engine);
     }
     return {};
 }
@@ -233,14 +216,8 @@ verifyCellsTensorIsSparse(const vespalib::eval::Value *cellsTensor)
         return;
     }
     auto engine = EngineOrFactory::get();
-    if (engine.is_factory()) {
-        if (cellsTensor->type().is_sparse()) {
-            return;
-        }
-    } else {
-        if (dynamic_cast<const vespalib::tensor::SparseTensor *>(cellsTensor)) {
-            return;
-        }
+    if (TensorPartialUpdate::check_suitably_sparse(*cellsTensor, engine)) {
+        return;
     }
     vespalib::string err = make_string("Expected cells tensor to be sparse, but has type '%s'",
                                        cellsTensor->type().to_spec().c_str());

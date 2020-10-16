@@ -82,32 +82,13 @@ TensorAddUpdate::checkCompatibility(const Field& field) const
     }
 }
 
-namespace {
-
-std::unique_ptr<vespalib::eval::Value>
-old_add(const vespalib::eval::Value *input,
-        const vespalib::eval::Value *add_cells)
-{
-    auto a = dynamic_cast<const vespalib::tensor::Tensor *>(input);
-    assert(a);
-    auto b = dynamic_cast<const vespalib::tensor::Tensor *>(add_cells);
-    assert(b);
-    return a->add(*b);
-}
-
-} // namespace
-
 std::unique_ptr<vespalib::eval::Value>
 TensorAddUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto addTensor = _tensor->getAsTensorPtr();
     if (addTensor) {
         auto engine = EngineOrFactory::get();
-        if (engine.is_factory()) {
-            return TensorPartialUpdate::add(tensor, *addTensor, engine.factory());
-        } else {
-            return old_add(&tensor, addTensor);
-        }
+        return TensorPartialUpdate::add(tensor, *addTensor, engine);
     }
     return {};
 }
