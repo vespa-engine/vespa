@@ -180,8 +180,6 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     public final Object get(CompoundName name, Map<String, String> context, Properties substitution) {
         ValueWithSource value = entries.get(name, context);
         if (value == null) return null;
-        if (name.last().equals("streams"))
-            System.out.println(value);
         return substitute(value.value(), context, substitution);
     }
 
