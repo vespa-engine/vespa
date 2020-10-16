@@ -8,7 +8,6 @@
 #include <vespa/persistence/spi/read_consistency.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
-
 namespace storage {
 
 class GetIterCommand : public api::InternalCommand {
@@ -23,7 +22,7 @@ public:
     typedef std::shared_ptr<GetIterCommand> SP;
 
     GetIterCommand(const document::Bucket &bucket,
-                   const spi::IteratorId iteratorId,
+                   spi::IteratorId iteratorId,
                    uint32_t maxByteSize);
     ~GetIterCommand() override;
 
@@ -58,8 +57,8 @@ public:
     typedef std::shared_ptr<GetIterReply> SP;
     static const uint32_t ID = 1002;
 
-    GetIterReply(GetIterCommand& cmd);
-    ~GetIterReply();
+    explicit GetIterReply(GetIterCommand& cmd);
+    ~GetIterReply() override;
 
     bool hasSingleBucketId() const override { return true; }
     document::Bucket getBucket() const override { return _bucket; }
@@ -95,7 +94,7 @@ public:
                           const spi::Selection& selection,
                           const std::string& fields,
                           spi::IncludedVersions includedVersions);
-    ~CreateIteratorCommand();
+    ~CreateIteratorCommand() override;
     bool hasSingleBucketId() const override { return true; }
     document::Bucket getBucket() const override { return _bucket; }
     const spi::Selection& getSelection() const { return _selection; }
@@ -127,7 +126,7 @@ public:
     typedef std::shared_ptr<CreateIteratorReply> SP;
 
     CreateIteratorReply(const CreateIteratorCommand& cmd, spi::IteratorId iteratorId);
-    ~CreateIteratorReply();
+    ~CreateIteratorReply() override;
 
     bool hasSingleBucketId() const override { return true; }
     document::Bucket getBucket() const override { return _bucket; }
@@ -145,8 +144,8 @@ public:
     typedef std::unique_ptr<DestroyIteratorCommand> UP;
     typedef std::shared_ptr<DestroyIteratorCommand> SP;
 
-    DestroyIteratorCommand(spi::IteratorId iteratorId);
-    ~DestroyIteratorCommand();
+    explicit DestroyIteratorCommand(spi::IteratorId iteratorId);
+    ~DestroyIteratorCommand() override;
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
 
@@ -163,8 +162,8 @@ public:
     typedef std::unique_ptr<DestroyIteratorReply> UP;
     typedef std::shared_ptr<DestroyIteratorReply> SP;
 
-    DestroyIteratorReply(const DestroyIteratorCommand& cmd);
-    ~DestroyIteratorReply();
+    explicit DestroyIteratorReply(const DestroyIteratorCommand& cmd);
+    ~DestroyIteratorReply() override;
 
     void print(std::ostream& out, bool verbose, const std::string & indent) const override;
 };
@@ -177,8 +176,8 @@ public:
     typedef std::shared_ptr<RecheckBucketInfoCommand> SP;
     typedef std::unique_ptr<RecheckBucketInfoCommand> UP;
 
-    RecheckBucketInfoCommand(const document::Bucket &bucket);
-    ~RecheckBucketInfoCommand();
+    explicit RecheckBucketInfoCommand(const document::Bucket &bucket);
+    ~RecheckBucketInfoCommand() override;
 
     document::Bucket getBucket() const override { return _bucket; }
 
@@ -195,8 +194,8 @@ public:
     typedef std::shared_ptr<RecheckBucketInfoReply> SP;
     typedef std::unique_ptr<RecheckBucketInfoReply> UP;
 
-    RecheckBucketInfoReply(const RecheckBucketInfoCommand& cmd);
-    ~RecheckBucketInfoReply();
+    explicit RecheckBucketInfoReply(const RecheckBucketInfoCommand& cmd);
+    ~RecheckBucketInfoReply() override;
 
     document::Bucket getBucket() const override { return _bucket; }
 
@@ -221,8 +220,8 @@ public:
 private:
     std::unique_ptr<AbortPredicate> _predicate;
 public:
-    AbortBucketOperationsCommand(std::unique_ptr<AbortPredicate> predicate);
-    ~AbortBucketOperationsCommand();
+    explicit AbortBucketOperationsCommand(std::unique_ptr<AbortPredicate> predicate);
+    ~AbortBucketOperationsCommand() override;
 
     bool shouldAbort(const document::Bucket &bucket) const {
         return _predicate->shouldAbort(bucket);
@@ -240,8 +239,8 @@ public:
     typedef std::shared_ptr<AbortBucketOperationsReply> SP;
     typedef std::shared_ptr<const AbortBucketOperationsReply> CSP;
 
-    AbortBucketOperationsReply(const AbortBucketOperationsCommand& cmd);
-    ~AbortBucketOperationsReply();
+    explicit AbortBucketOperationsReply(const AbortBucketOperationsCommand& cmd);
+    ~AbortBucketOperationsReply() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };

@@ -134,7 +134,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         LOG(spam, "Setting up the disk");
         for (uint32_t j = 0; j < numThreads; j++) {
             _threads.push_back(std::make_shared<PersistenceThread>(*_sequencedExecutor, _compReg, _configUri, *_provider,
-                                                                   *_filestorHandler, *_metrics->disks[0]->threads[j]));
+                                                                   *_filestorHandler, *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[j]));
         }
     }
 }

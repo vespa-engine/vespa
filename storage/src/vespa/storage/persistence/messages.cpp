@@ -8,7 +8,7 @@ using document::BucketSpace;
 namespace storage {
 
 GetIterCommand::GetIterCommand(const document::Bucket &bucket,
-                               const spi::IteratorId iteratorId,
+                               spi::IteratorId iteratorId,
                                uint32_t maxByteSize)
     : api::InternalCommand(ID),
       _bucket(bucket),

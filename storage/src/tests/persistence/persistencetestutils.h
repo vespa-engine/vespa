@@ -6,6 +6,7 @@
 #include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storage/persistence/filestorage/filestorhandler.h>
 #include <vespa/storage/persistence/persistenceutil.h>
+#include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
@@ -71,10 +72,11 @@ public:
     std::unique_ptr<PersistenceTestEnvironment> _env;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequenceTaskExecutor;
     ReplySender _replySender;
+    BucketOwnershipNotifier _bucketOwnershipNotifier;
 
 
     PersistenceTestUtils();
-    virtual ~PersistenceTestUtils();
+    ~PersistenceTestUtils() override;
 
     document::Document::SP schedulePut(uint32_t location, spi::Timestamp timestamp, uint32_t minSize = 0, uint32_t maxSize = 128);
 
@@ -236,9 +238,6 @@ public:
 class SingleDiskPersistenceTestUtils : public PersistenceTestUtils
 {
 public:
-    void SetUp() override {
-        setupDisks();
-    }
 };
 
 } // storage
