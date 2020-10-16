@@ -8,6 +8,7 @@
 #include "asynchandler.h"
 #include "persistenceutil.h"
 #include "provider_error_wrapper.h"
+#include "splitjoinhandler.h"
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/statusmessages.h>
@@ -20,9 +21,9 @@ class BucketOwnershipNotifier;
 class PersistenceThread final : public DiskThread, public Types
 {
 public:
-    PersistenceThread(vespalib::ISequencedTaskExecutor &, ServiceLayerComponentRegister&,
-                      const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
-                      FileStorHandler& filestorHandler, FileStorThreadMetrics& metrics);
+    PersistenceThread(vespalib::ISequencedTaskExecutor &, ServiceLayerComponentRegister &,
+                      const config::ConfigUri &, spi::PersistenceProvider &,
+                      FileStorHandler &, BucketOwnershipNotifier &, FileStorThreadMetrics&);
     ~PersistenceThread() override;
 
     /** Waits for current operation to be finished. */
@@ -38,12 +39,11 @@ public:
     MessageTracker::UP handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleInternalBucketJoin(InternalBucketJoinCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTracker::UP tracker);
 
+    //TODO Rewrite tests to avoid this api leak
     const AsyncHandler & asyncHandler() const { return _asyncHandler; }
+    const SplitJoinHandler & splitjoinHandler() const { return _splitJoinHandler; }
 private:
     uint32_t                  _stripeId;
     ServiceLayerComponent::UP _component;
@@ -52,8 +52,8 @@ private:
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;
     AsyncHandler              _asyncHandler;
+    SplitJoinHandler          _splitJoinHandler;
     framework::Thread::UP     _thread;
-    std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
 
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
 

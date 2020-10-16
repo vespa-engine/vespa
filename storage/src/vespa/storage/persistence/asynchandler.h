@@ -13,8 +13,11 @@ namespace spi {
 }
 struct PersistenceUtil;
 
+/**
+ * Handle async operations that uses a sequenced executor
+ * It is stateless and thread safe
+ */
 class AsyncHandler : public Types {
-
 public:
     AsyncHandler(const PersistenceUtil&, spi::PersistenceProvider&, vespalib::ISequencedTaskExecutor & executor);
     MessageTrackerUP handlePut(api::PutCommand& cmd, MessageTrackerUP tracker) const;

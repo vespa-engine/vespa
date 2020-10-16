@@ -66,18 +66,18 @@ PersistenceTestEnvironment::~PersistenceTestEnvironment() {
     }
 }
 
-PersistenceTestUtils::PersistenceTestUtils() = default;
+PersistenceTestUtils::PersistenceTestUtils()
+    : _env(std::make_unique<PersistenceTestEnvironment>("todo-make-unique-persistencetestutils")),
+      _replySender(),
+      _bucketOwnershipNotifier(getEnv()._component, getEnv()._fileStorHandler)
+{
+    setupExecutor(1);
+}
 PersistenceTestUtils::~PersistenceTestUtils() = default;
 
 std::string
 PersistenceTestUtils::dumpBucket(const document::BucketId& bid) {
     return dynamic_cast<spi::dummy::DummyPersistence&>(_env->_node.getPersistenceProvider()).dumpBucket(makeSpiBucket(bid));
-}
-
-void
-PersistenceTestUtils::setupDisks() {
-    _env = std::make_unique<PersistenceTestEnvironment>("todo-make-unique-persistencetestutils");
-    setupExecutor(1);
 }
 
 void
@@ -90,7 +90,7 @@ PersistenceTestUtils::createPersistenceThread()
 {
     return std::make_unique<PersistenceThread>(*_sequenceTaskExecutor, _env->_node.getComponentRegister(),
                                                _env->_config.getConfigId(),getPersistenceProvider(),
-                                               getEnv()._fileStorHandler, getEnv()._metrics);
+                                               getEnv()._fileStorHandler, _bucketOwnershipNotifier, getEnv()._metrics);
 }
 
 document::Document::SP
@@ -100,8 +100,7 @@ PersistenceTestUtils::schedulePut(
         uint32_t minSize,
         uint32_t maxSize)
 {
-    document::Document::SP doc(createRandomDocumentAtLocation(
-            location, timestamp, minSize, maxSize));
+    document::Document::SP doc(createRandomDocumentAtLocation(location, timestamp, minSize, maxSize));
     auto msg = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, location)), doc, timestamp);
     fsHandler().schedule(msg);
     return doc;

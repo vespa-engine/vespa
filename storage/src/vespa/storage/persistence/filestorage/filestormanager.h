@@ -49,7 +49,7 @@ class FileStorManager : public StorageLinkQueued,
                         public MessageSender
 {
     ServiceLayerComponentRegister & _compReg;
-    ServiceLayerComponent          _component;
+    ServiceLayerComponent           _component;
     spi::PersistenceProvider      & _providerCore;
     ProviderErrorWrapper            _providerErrorWrapper;
     spi::PersistenceProvider      * _provider;
