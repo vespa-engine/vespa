@@ -51,11 +51,6 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the subset of nodes which satisfy the given resources */
     public NodeList satisfies(NodeResources resources) { return matching(node -> node.resources().satisfies(resources)); }
 
-    /** Returns the subset of nodes of the given flavor */
-    public NodeList flavor(String flavor) {
-        return matching(node -> node.flavor().name().equals(flavor));
-    }
-
     /** Returns the subset of nodes not in the given set */
     public NodeList except(Set<Node> nodes) {
         return matching(node -> ! nodes.contains(node));
