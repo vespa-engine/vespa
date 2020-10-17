@@ -766,6 +766,11 @@ public class NodeRepository extends AbstractComponent {
         });
     }
 
+    /** Retire nodes matching given filter */
+    public List<Node> retire(NodeFilter filter, Agent agent, Instant instant) {
+        return performOn(filter, (node, lock) -> write(node.withWantToRetire(true, agent, instant), lock));
+    }
+
     /**
      * Writes this node after it has changed some internal state but NOT changed its state field.
      * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
