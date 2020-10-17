@@ -146,6 +146,9 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the subset of nodes that are in any of the given state(s) */
     public NodeList state(Node.State first, Node.State... rest) {
+        if (rest.length == 0) {
+            return matching(node -> node.state() == first);
+        }
         return state(EnumSet.of(first, rest));
     }
 
