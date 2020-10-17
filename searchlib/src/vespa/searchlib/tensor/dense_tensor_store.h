@@ -7,7 +7,7 @@
 #include <vespa/eval/eval/typed_cells.h>
 
 namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
 

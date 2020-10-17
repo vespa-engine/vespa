@@ -2,7 +2,7 @@
 
 #include "valueupdate.h"
 
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace document {
 

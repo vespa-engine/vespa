@@ -5,7 +5,7 @@
 #include "tensor_store.h"
 #include <memory>
 
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
 
