@@ -168,7 +168,6 @@ PersistenceUtil::PersistenceUtil(
       _nodeIndex(component.getIndex()),
       _metrics(metrics),
       _bucketFactory(component.getBucketIdFactory()),
-      _repo(component.getTypeRepo()->documentTypeRepo),
       _spi(provider)
 {
 }

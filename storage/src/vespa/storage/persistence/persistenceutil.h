@@ -101,7 +101,6 @@ struct PersistenceUtil {
     uint16_t                                    _nodeIndex;
     FileStorThreadMetrics                      &_metrics;  // Needs a better solution for speed and thread safety
     const document::BucketIdFactory            &_bucketFactory;
-    const std::shared_ptr<const document::DocumentTypeRepo> _repo;
     spi::PersistenceProvider                   &_spi;
 
     PersistenceUtil(

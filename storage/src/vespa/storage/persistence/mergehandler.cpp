@@ -426,6 +426,7 @@ MergeHandler::fetchLocalData(
     }
 
     document::BucketIdFactory idFactory;
+    const std::shared_ptr<const document::DocumentTypeRepo> repo = _env._component.getTypeRepo()->documentTypeRepo;
 
     for (const auto& entry_ptr : entries) {
         const auto& docEntry = *entry_ptr;
@@ -460,7 +461,7 @@ MergeHandler::fetchLocalData(
                     e.toString().c_str(), docEntry.toString().c_str());
             }
         }
-        e._repo = _env._repo.get();
+        e._repo = repo.get();
      }
 
     for (auto& e : diff) {

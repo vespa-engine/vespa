@@ -47,8 +47,9 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil & env, const spi::Persi
       _docTypePtr(_cmd.getDocumentType()),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
-    resolveDocumentType(*env._repo);
-    parseDocumentSelection(*env._repo);
+    const std::shared_ptr<const document::DocumentTypeRepo> _repo = _env._component.getTypeRepo()->documentTypeRepo;
+    resolveDocumentType(*_repo);
+    parseDocumentSelection(*_repo);
 }
 
 TestAndSetHelper::~TestAndSetHelper() = default;
