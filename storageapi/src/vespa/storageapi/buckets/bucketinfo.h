@@ -14,21 +14,21 @@
 #pragma once
 
 #include <vespa/storageapi/defs.h>
-#include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/xmlserializable.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace storage::api {
 
 class BucketInfo
 {
     Timestamp _lastModified;
-    uint32_t _checksum;
-    uint32_t _docCount;
-    uint32_t _totDocSize;
-    uint32_t _metaCount;
-    uint32_t _usedFileSize;
-    bool _ready;
-    bool _active;
+    uint32_t  _checksum;
+    uint32_t  _docCount;
+    uint32_t  _totDocSize;
+    uint32_t  _metaCount;
+    uint32_t  _usedFileSize;
+    bool      _ready;
+    bool      _active;
 
 public:
     BucketInfo() noexcept;

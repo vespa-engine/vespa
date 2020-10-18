@@ -4,22 +4,21 @@
 #include <ostream>
 
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 InternalCommand::InternalCommand(uint32_t type)
     : StorageCommand(MessageType::INTERNAL),
       _type(type)
 { }
 
-InternalCommand::~InternalCommand() { }
+InternalCommand::~InternalCommand() = default;
 
 InternalReply::InternalReply(uint32_t type, const InternalCommand& cmd)
     : StorageReply(cmd),
       _type(type)
 { }
 
-InternalReply::~InternalReply() { }
+InternalReply::~InternalReply() = default;
 
 void
 InternalCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
@@ -42,6 +41,5 @@ InternalReply::print(std::ostream& out, bool verbose, const std::string& indent)
 }
 
 
-} // api
-} // storage
+}
 

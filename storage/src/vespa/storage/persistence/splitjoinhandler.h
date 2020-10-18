@@ -11,6 +11,7 @@ namespace spi { struct PersistenceProvider; }
 struct PersistenceUtil;
 class BucketOwnershipNotifier;
 class RecheckBucketInfoCommand;
+class InternalBucketJoinCommand;
 
 /**
  * Handle operations that uses changes bucket ownership operations
@@ -23,7 +24,15 @@ public:
     MessageTrackerUP handleSplitBucket(api::SplitBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTrackerUP tracker) const;
+    MessageTrackerUP handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTrackerUP tracker) const;
+    MessageTrackerUP handleInternalBucketJoin(InternalBucketJoinCommand& cmd, MessageTrackerUP tracker) const;
 private:
+    /**
+     * Sanity-checking of join command parameters. Invokes tracker.fail() with
+     * an appropriate error and returns false iff the command does not validate
+     * OK. Returns true and does not touch the tracker otherwise.
+     */
+    static bool validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker);
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
     BucketOwnershipNotifier  &_bucketOwnershipNotifier;

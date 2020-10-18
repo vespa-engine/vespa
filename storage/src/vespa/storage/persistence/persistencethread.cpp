@@ -278,133 +278,6 @@ PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd, MessageTrack
     return tracker;
 }
 
-bool
-PersistenceThread::validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker)
-{
-    if (cmd.getSourceBuckets().size() != 2) {
-        tracker.fail(ReturnCode::ILLEGAL_PARAMETERS,
-                     "Join needs exactly two buckets to be joined together" + cmd.getBucketId().toString());
-        return false;
-    }
-    // Verify that source and target buckets look sane.
-    for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
-        if (cmd.getSourceBuckets()[i] == cmd.getBucketId()) {
-            tracker.fail(ReturnCode::ILLEGAL_PARAMETERS,
-                         "Join had both source and target bucket " + cmd.getBucketId().toString());
-            return false;
-        }
-        if (!cmd.getBucketId().contains(cmd.getSourceBuckets()[i])) {
-            tracker.fail(ReturnCode::ILLEGAL_PARAMETERS,
-                         "Source bucket " + cmd.getSourceBuckets()[i].toString()
-                         + " is not contained in target " + cmd.getBucketId().toString());
-            return false;
-        }
-    }
-    return true;
-}
-
-MessageTracker::UP
-PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker::UP tracker)
-{
-    tracker->setMetric(_env._metrics.joinBuckets);
-    if (!validateJoinCommand(cmd, *tracker)) {
-        return tracker;
-    }
-    document::Bucket destBucket = cmd.getBucket();
-    // To avoid a potential deadlock all operations locking multiple
-    // buckets must lock their buckets in the same order (sort order of
-    // bucket id, lowest countbits, lowest location first).
-    // Sort buckets to join in order to ensure we lock in correct order
-    std::sort(cmd.getSourceBuckets().begin(), cmd.getSourceBuckets().end());
-    {
-        // Create empty bucket for target.
-        StorBucketDatabase::WrappedEntry entry =
-        _env.getBucketDatabase(destBucket.getBucketSpace()).get(destBucket.getBucketId(), "join",
-                                                                StorBucketDatabase::CREATE_IF_NONEXISTING);
-        entry.write();
-    }
-
-    document::Bucket firstBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[0]);
-    document::Bucket secondBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[1]);
-
-    PersistenceUtil::LockResult lock1(_env.lockAndGetDisk(firstBucket));
-    PersistenceUtil::LockResult lock2;
-    if (firstBucket != secondBucket) {
-        lock2 = _env.lockAndGetDisk(secondBucket);
-    }
-
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-    {
-        auto desc = fmt("join(%s, %s -> %s)",
-                        firstBucket.getBucketId().toString().c_str(),
-                        secondBucket.getBucketId().toString().c_str(),
-                        cmd.getBucketId().toString().c_str());
-        LOG_BUCKET_OPERATION(cmd.getBucketId(), desc);
-        LOG_BUCKET_OPERATION(firstBucket.getBucketId(), desc);
-        if (firstBucket != secondBucket) {
-            LOG_BUCKET_OPERATION(secondBucket.getBucketId(), desc);
-        }
-    }
-#endif
-    spi::Result result =
-        _spi.join(spi::Bucket(firstBucket),
-                  spi::Bucket(secondBucket),
-                  spi::Bucket(destBucket),
-                  tracker->context());
-    if (!tracker->checkForError(result)) {
-        return tracker;
-    }
-    uint64_t lastModified = 0;
-    for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
-        document::Bucket srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
-        FileStorHandler::RemapInfo target(cmd.getBucket());
-        _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket), target);
-        // Remove source from bucket db.
-        StorBucketDatabase::WrappedEntry entry =
-                _env.getBucketDatabase(srcBucket.getBucketSpace()).get(srcBucket.getBucketId(), "join-remove-source");
-        if (entry.exist()) {
-            lastModified = std::max(lastModified, entry->info.getLastModified());
-            entry.remove();
-        }
-    }
-    {
-        StorBucketDatabase::WrappedEntry entry =
-            _env.getBucketDatabase(destBucket.getBucketSpace()).get(destBucket.getBucketId(), "join",
-                                                                    StorBucketDatabase::CREATE_IF_NONEXISTING);
-        if (entry->info.getLastModified() == 0) {
-            entry->info.setLastModified(std::max(lastModified, entry->info.getLastModified()));
-        }
-        entry.write();
-    }
-    return tracker;
-}
-
-MessageTracker::UP
-PersistenceThread::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, MessageTracker::UP tracker)
-{
-    tracker->setMetric(_env._metrics.internalJoin);
-    document::Bucket destBucket = cmd.getBucket();
-    {
-        // Create empty bucket for target.
-        StorBucketDatabase::WrappedEntry entry =
-            _env.getBucketDatabase(destBucket.getBucketSpace()).get(
-                    destBucket.getBucketId(), "join", StorBucketDatabase::CREATE_IF_NONEXISTING);
-
-        entry.write();
-    }
-    assert(cmd.getDiskOfInstanceToJoin() == 0u);
-    assert(cmd.getDiskOfInstanceToKeep() == 0u);
-    spi::Result result =
-        _spi.join(spi::Bucket(destBucket),
-                  spi::Bucket(destBucket),
-                  spi::Bucket(destBucket),
-                  tracker->context());
-    if (tracker->checkForError(result)) {
-        tracker->setReply(std::make_shared<InternalBucketJoinReply>(cmd, _env.getBucketInfo(cmd.getBucket())));
-    }
-    return tracker;
-}
-
 MessageTracker::UP
 PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, MessageTracker::UP tracker)
 {
@@ -424,7 +297,7 @@ PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, MessageTra
     case api::MessageType::DELETEBUCKET_ID:
         return handleDeleteBucket(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::JOINBUCKETS_ID:
-        return handleJoinBuckets(static_cast<api::JoinBucketsCommand&>(msg), std::move(tracker));
+        return _splitJoinHandler.handleJoinBuckets(static_cast<api::JoinBucketsCommand&>(msg), std::move(tracker));
     case api::MessageType::SPLITBUCKET_ID:
         return _splitJoinHandler.handleSplitBucket(static_cast<api::SplitBucketCommand&>(msg), std::move(tracker));
        // Depends on iterators
@@ -451,7 +324,7 @@ PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg, MessageTra
         case ReadBucketInfo::ID:
             return handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg), std::move(tracker));
         case InternalBucketJoinCommand::ID:
-            return handleInternalBucketJoin(static_cast<InternalBucketJoinCommand&>(msg), std::move(tracker));
+            return _splitJoinHandler.handleInternalBucketJoin(static_cast<InternalBucketJoinCommand&>(msg), std::move(tracker));
         case RecheckBucketInfoCommand::ID:
             return _splitJoinHandler.handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg), std::move(tracker));
         default:

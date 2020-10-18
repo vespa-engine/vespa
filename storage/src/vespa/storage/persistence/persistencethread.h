@@ -39,8 +39,6 @@ public:
     MessageTracker::UP handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP tracker);
     MessageTracker::UP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleInternalBucketJoin(InternalBucketJoinCommand& cmd, MessageTracker::UP tracker);
 
     //TODO Rewrite tests to avoid this api leak
     const AsyncHandler & asyncHandler() const { return _asyncHandler; }
@@ -57,13 +55,6 @@ private:
     framework::Thread::UP     _thread;
 
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
-
-    /**
-     * Sanity-checking of join command parameters. Invokes tracker.fail() with
-     * an appropriate error and returns false iff the command does not validate
-     * OK. Returns true and does not touch the tracker otherwise.
-     */
-    static bool validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker);
 
     // Message handling functions
     MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker);
