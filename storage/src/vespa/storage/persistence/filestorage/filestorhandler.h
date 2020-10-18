@@ -49,7 +49,7 @@ public:
 
     class BucketLockInterface {
     public:
-        typedef std::shared_ptr<BucketLockInterface> SP;
+        using SP = std::shared_ptr<BucketLockInterface>;
 
         virtual const document::Bucket &getBucket() const = 0;
         virtual api::LockingRequirements lockingRequirements() const noexcept = 0;
@@ -57,7 +57,7 @@ public:
         virtual ~BucketLockInterface() = default;
     };
 
-    typedef std::pair<BucketLockInterface::SP, api::StorageMessage::SP> LockedMessage;
+    using LockedMessage = std::pair<BucketLockInterface::SP, api::StorageMessage::SP>;
 
     enum DiskState {
         AVAILABLE,
@@ -65,12 +65,8 @@ public:
         CLOSED
     };
 
-    FileStorHandler(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
-                    ServiceLayerComponentRegister&);
-    FileStorHandler(MessageSender&, FileStorMetrics&, ServiceLayerComponentRegister&);
-    ~FileStorHandler();
+    virtual ~FileStorHandler() = default;
 
-        // Commands used by file stor manager
 
     /**
      * Waits for the filestor queues to be empty. Providing no new load is
@@ -79,10 +75,10 @@ public:
      * @param killPendingMerges If true, clear out all pending merges and reply
      * to them with failure.
      */
-    void flush(bool killPendingMerges);
+    virtual void flush(bool killPendingMerges) = 0;
 
-    void setDiskState(DiskState state);
-    DiskState getDiskState();
+    virtual void setDiskState(DiskState state) = 0;
+    virtual DiskState getDiskState() const = 0;
 
     /** Check whether it is enabled or not. */
     bool enabled() { return (getDiskState() == AVAILABLE); }
@@ -93,26 +89,26 @@ public:
      */
     void disable() { setDiskState(DISABLED); }
     /** Closes all disk threads. */
-    void close();
+    virtual void close() = 0;
 
     /**
      * Makes sure no operations are active, then stops any new operations
      * from being performed, until the ResumeGuard is destroyed.
      */
-    ResumeGuard pause();
+    virtual ResumeGuard pause() = 0;
 
     /**
      * Schedule a storage message to be processed
      * @return True if we maanged to schedule operation. False if not
      */
-    bool schedule(const std::shared_ptr<api::StorageMessage>&);
+    virtual bool schedule(const std::shared_ptr<api::StorageMessage>&) = 0;
 
     /**
      * Used by file stor threads to get their next message to process.
      *
      * @param stripe The stripe to get messages for
      */
-    LockedMessage getNextMessage(uint32_t stripeId);
+    virtual LockedMessage getNextMessage(uint32_t stripeId) = 0;
 
     /**
      * Lock a bucket. By default, each file stor thread has the locks of all
@@ -128,7 +124,7 @@ public:
      *
      *
      */
-    BucketLockInterface::SP lock(const document::Bucket&, api::LockingRequirements lockReq);
+    virtual BucketLockInterface::SP lock(const document::Bucket&, api::LockingRequirements lockReq) = 0;
 
     /**
      * Called by FileStorThread::onBucketDiskMove() after moving file, in case
@@ -140,7 +136,7 @@ public:
      * requeststatus - Ignore
      * readbucketinfo/bucketdiskmove/internalbucketjoin - Fail and log errors
      */
-    void remapQueueAfterDiskMove(const document::Bucket &bucket);
+    virtual void remapQueueAfterDiskMove(const document::Bucket &bucket) = 0;
 
     /**
      * Called by FileStorThread::onJoin() after joining a bucket into another,
@@ -157,7 +153,7 @@ public:
      * requeststatus/deletebucket - Ignore
      * readbucketinfo/internalbucketjoin - Fail and log errors
      */
-    void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target);
+    virtual void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target) = 0;
 
     /**
      * Called by FileStorThread::onSplit() after splitting a bucket,
@@ -177,9 +173,9 @@ public:
      * requeststatus/deletebucket - Ignore
      * readbucketinfo/internalbucketjoin - Fail and log errors
      */
-    void remapQueueAfterSplit(const RemapInfo& source,
-                              RemapInfo& target1,
-                              RemapInfo& target2);
+    virtual void remapQueueAfterSplit(const RemapInfo& source,
+                                      RemapInfo& target1,
+                                      RemapInfo& target2) = 0;
 
     struct DeactivateCallback {
         virtual ~DeactivateCallback() {}
@@ -190,12 +186,12 @@ public:
      * Fail all operations towards a single bucket currently queued to the
      * given thread with the given error code.
      */
-    void failOperations(const document::Bucket&, const api::ReturnCode&);
+    virtual void failOperations(const document::Bucket&, const api::ReturnCode&) = 0;
 
     /**
      * Add a new merge state to the registry.
      */
-    void addMergeStatus(const document::Bucket&, MergeStatus::SP);
+    virtual void addMergeStatus(const document::Bucket&, MergeStatus::SP) = 0;
 
     /**
      * Returns the reference to the current merge status for the given bucket.
@@ -204,7 +200,7 @@ public:
      *
      * @param bucket The bucket to start merging.
      */
-    MergeStatus& editMergeStatus(const document::Bucket& bucket);
+    virtual MergeStatus& editMergeStatus(const document::Bucket& bucket) = 0;
 
     /**
      * Returns true if the bucket is currently being merged on this node.
@@ -212,41 +208,33 @@ public:
      * @param bucket The bucket to check merge status for
      * @return Returns true if the bucket is being merged.
      */
-    bool isMerging(const document::Bucket& bucket) const;
+    virtual bool isMerging(const document::Bucket& bucket) const = 0;
 
     /**
      * @return Returns the number of active merges on the node.
      */
-    uint32_t getNumActiveMerges() const;
+    virtual uint32_t getNumActiveMerges() const = 0;
 
     /// Provides the next stripe id for a certain disk.
-    uint32_t getNextStripeId();
+    virtual uint32_t getNextStripeId() = 0;
 
     /** Removes the merge status for the given bucket. */
-    void clearMergeStatus(const document::Bucket&);
-    void clearMergeStatus(const document::Bucket&, const api::ReturnCode&);
+    virtual void clearMergeStatus(const document::Bucket&) = 0;
+    virtual void clearMergeStatus(const document::Bucket&, const api::ReturnCode&) = 0;
 
-    void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
-
-    /** Send the given command back out of the persistence layer. */
-    void sendCommand(const api::StorageCommand::SP&) override;
-    /** Send the given reply back out of the persistence layer. */
-    void sendReply(const api::StorageReply::SP&) override;
-    void sendReplyDirectly(const std::shared_ptr<api::StorageReply>&) override;
+    virtual void abortQueuedOperations(const AbortBucketOperationsCommand& cmd) = 0;
 
     /** Writes status page. */
-    void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
+    virtual void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const = 0;
 
     /** Utility function to fetch total size of queue. */
-    uint32_t getQueueSize() const;
+    virtual uint32_t getQueueSize() const = 0;
 
     // Commands used by testing
-    void setGetNextMessageTimeout(vespalib::duration timeout);
+    virtual void setGetNextMessageTimeout(vespalib::duration timeout) = 0;
 
-    std::string dumpQueue() const;
+    virtual std::string dumpQueue() const = 0;
 
-private:
-    std::unique_ptr<FileStorHandlerImpl> _impl;
 };
 
 } // storage

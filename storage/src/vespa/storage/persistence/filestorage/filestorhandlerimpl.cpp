@@ -37,6 +37,12 @@ uint32_t per_stripe_merge_limit(uint32_t num_threads, uint32_t num_stripes) noex
 
 }
 
+FileStorHandlerImpl::FileStorHandlerImpl(MessageSender& sender, FileStorMetrics& metrics,
+                                         ServiceLayerComponentRegister& compReg)
+    : FileStorHandlerImpl(1, 1, sender, metrics, compReg)
+{
+}
+
 FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender& sender,
                                          FileStorMetrics& metrics,
                                          ServiceLayerComponentRegister& compReg)
@@ -103,6 +109,18 @@ FileStorHandlerImpl::getNumActiveMerges() const
 {
     std::lock_guard mlock(_mergeStatesLock);
     return _mergeStates.size();
+}
+
+void
+FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket)
+{
+    clearMergeStatus(bucket, nullptr);
+}
+
+void
+FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api::ReturnCode& code)
+{
+    clearMergeStatus(bucket, &code);
 }
 
 void
@@ -704,6 +722,25 @@ FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<Remap
         }
     }
 
+}
+
+void
+FileStorHandlerImpl::remapQueueAfterDiskMove(const document::Bucket& bucket)
+{
+    RemapInfo target(bucket);
+    remapQueue(RemapInfo(bucket), target, FileStorHandlerImpl::MOVE);
+}
+
+void
+FileStorHandlerImpl::remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target)
+{
+    remapQueue(source, target, FileStorHandlerImpl::JOIN);
+}
+
+void
+FileStorHandlerImpl::remapQueueAfterSplit(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2)
+{
+    remapQueue(source, target1, target2, FileStorHandlerImpl::SPLIT);
 }
 
 void

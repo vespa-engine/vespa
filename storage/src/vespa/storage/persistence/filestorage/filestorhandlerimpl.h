@@ -43,10 +43,8 @@ namespace bmi = boost::multi_index;
 
 class FileStorHandlerImpl : private framework::MetricUpdateHook,
                             private ResumeGuard::Callback,
-                            public MessageSender {
+                            public FileStorHandler {
 public:
-    typedef FileStorHandler::DiskState DiskState;
-    typedef FileStorHandler::RemapInfo RemapInfo;
 
     struct MessageEntry {
         std::shared_ptr<api::StorageMessage> _command;
@@ -172,54 +170,68 @@ public:
         api::LockingRequirements _lockReq;
     };
 
+
+    FileStorHandlerImpl(MessageSender& sender, FileStorMetrics& metrics,
+                        ServiceLayerComponentRegister& compReg);
     FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
                         ServiceLayerComponentRegister&);
 
     ~FileStorHandlerImpl();
-    void setGetNextMessageTimeout(vespalib::duration timeout) { _getNextMessageTimeout = timeout; }
+    void setGetNextMessageTimeout(vespalib::duration timeout) override { _getNextMessageTimeout = timeout; }
 
-    void flush(bool killPendingMerges);
-    void setDiskState(DiskState state);
-    DiskState getDiskState() const;
-    void close();
-    bool schedule(const std::shared_ptr<api::StorageMessage>&);
+    void flush(bool killPendingMerges) override;
+    void setDiskState(DiskState state) override;
+    DiskState getDiskState() const override;
+    void close() override;
+    bool schedule(const std::shared_ptr<api::StorageMessage>&) override;
 
-    FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId);
+    FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId) override;
+
+    void remapQueueAfterDiskMove(const document::Bucket& bucket) override;
+    void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target) override;
+    void remapQueueAfterSplit(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2) override;
 
     enum Operation { MOVE, SPLIT, JOIN };
     void remapQueue(const RemapInfo& source, RemapInfo& target, Operation op);
 
     void remapQueue(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2, Operation op);
 
-    void failOperations(const document::Bucket & bucket, const api::ReturnCode & code) {
+    void failOperations(const document::Bucket & bucket, const api::ReturnCode & code) override {
         stripe(bucket).failOperations(bucket, code);
     }
+
+    // Implements MessageSender
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
     void sendReplyDirectly(const api::StorageReply::SP& msg) override;
 
-    void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
+    void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const override;
 
-    uint32_t getQueueSize() const;
-    uint32_t getNextStripeId() {
+    uint32_t getQueueSize() const override;
+    uint32_t getNextStripeId() override {
         return (_nextStripeId++) % _stripes.size();
     }
 
     std::shared_ptr<FileStorHandler::BucketLockInterface>
-    lock(const document::Bucket & bucket, api::LockingRequirements lockReq) {
+    lock(const document::Bucket & bucket, api::LockingRequirements lockReq) override {
         return stripe(bucket).lock(bucket, lockReq);
     }
 
-    void addMergeStatus(const document::Bucket&, MergeStatus::SP);
-    MergeStatus& editMergeStatus(const document::Bucket&);
-    bool isMerging(const document::Bucket&) const;
-    uint32_t getNumActiveMerges() const;
+    void addMergeStatus(const document::Bucket&, MergeStatus::SP) override;
+    MergeStatus& editMergeStatus(const document::Bucket&) override;
+    bool isMerging(const document::Bucket&) const override;
+    uint32_t getNumActiveMerges() const override;
+    void clearMergeStatus(const document::Bucket& bucket) override;
+    void clearMergeStatus(const document::Bucket& bucket, const api::ReturnCode& code) override;
+
     void clearMergeStatus(const document::Bucket&, const api::ReturnCode*);
 
-    std::string dumpQueue() const;
-    ResumeGuard pause();
+    std::string dumpQueue() const override;
+    ResumeGuard pause() override;
+    void abortQueuedOperations(const AbortBucketOperationsCommand& cmd) override;
+
+    // Implements ResumeGuard::Callback
     void resume() override;
-    void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
 
 private:
     ServiceLayerComponent   _component;
@@ -269,7 +281,7 @@ private:
     static std::unique_ptr<api::StorageReply> makeQueueTimeoutReply(api::StorageMessage& msg);
     static bool messageMayBeAborted(const api::StorageMessage& msg);
 
-    // Update hook
+    // Implements framework::MetricUpdateHook
     void updateMetrics(const MetricLockGuard &) override;
 
     document::Bucket

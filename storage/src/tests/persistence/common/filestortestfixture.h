@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage {

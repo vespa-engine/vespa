@@ -2,13 +2,14 @@
 
 #include "persistencetestutils.h"
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/storageapi/message/persistence.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/persistence/spi/test.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/persistence/spi/test.h>
+#include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -54,7 +55,7 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(const std::string & rootO
 {
     _node.setupDummyPersistence();
     _metrics.initDiskMetrics(1, _node.getLoadTypes()->getMetricLoadTypes(), 1, 1);
-    _handler = std::make_unique<FileStorHandler>(_messageKeeper, _metrics, _node.getComponentRegister());
+    _handler = std::make_unique<FileStorHandlerImpl>(_messageKeeper, _metrics, _node.getComponentRegister());
     _diskEnv = std::make_unique<PersistenceUtil>(_config.getConfigId(), _component, *_handler,
                                                  *_metrics.disks[0]->threads[0], _node.getPersistenceProvider());
 }

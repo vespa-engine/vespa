@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "filestorhandlerimpl.h"
 #include "filestormanager.h"
 
 #include <vespa/storage/bucketdb/lockablemap.hpp>
@@ -126,7 +127,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
         _metrics->initDiskMetrics(1, _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
 
-        _filestorHandler = std::make_unique<FileStorHandler>(numThreads, numStripes, *this, *_metrics, _compReg);
+        _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
         _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResponseThreads, 10000, selectSequencer(_config->responseSequencerType));
         assert(_sequencedExecutor);
