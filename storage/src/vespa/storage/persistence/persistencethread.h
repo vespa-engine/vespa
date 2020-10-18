@@ -9,6 +9,7 @@
 #include "persistenceutil.h"
 #include "provider_error_wrapper.h"
 #include "splitjoinhandler.h"
+#include "simplemessagehandler.h"
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/statusmessages.h>
@@ -31,18 +32,10 @@ public:
     void flush() override;
     framework::Thread& getThread() override { return *_thread; }
 
-    MessageTracker::UP handleGet(api::GetCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP tracker);
-    MessageTracker::UP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTracker::UP tracker);
-
     //TODO Rewrite tests to avoid this api leak
     const AsyncHandler & asyncHandler() const { return _asyncHandler; }
     const SplitJoinHandler & splitjoinHandler() const { return _splitJoinHandler; }
+    const SimpleMessageHandler & simpleMessageHandler() const { return _simpleHandler; }
 private:
     uint32_t                  _stripeId;
     ServiceLayerComponent::UP _component;
@@ -52,9 +45,8 @@ private:
     MergeHandler              _mergeHandler;
     AsyncHandler              _asyncHandler;
     SplitJoinHandler          _splitJoinHandler;
+    SimpleMessageHandler      _simpleHandler;
     framework::Thread::UP     _thread;
-
-    bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
 
     // Message handling functions
     MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker);

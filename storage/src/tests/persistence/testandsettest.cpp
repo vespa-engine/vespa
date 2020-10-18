@@ -251,10 +251,11 @@ TestAndSetTest::createTestDocument()
     return doc;
 }
 
-document::Document::SP TestAndSetTest::retrieveTestDocument()
+document::Document::SP
+TestAndSetTest::retrieveTestDocument()
 {
     auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, document::AllFields::NAME);
-    auto tracker = thread->handleGet(*get, createTracker(get, BUCKET));
+    auto tracker = thread->simpleMessageHandler().handleGet(*get, createTracker(get, BUCKET));
     assert(tracker->getResult() == api::ReturnCode::Result::OK);
 
     auto & reply = static_cast<api::GetReply &>(tracker->getReply());

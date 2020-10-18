@@ -108,11 +108,11 @@ struct PersistenceUtil {
 
     ~PersistenceUtil();
 
-    StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) {
+    StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const {
         return _component.getBucketDatabase(bucketSpace);
     }
 
-    void updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& info);
+    void updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& info) const;
 
     uint16_t getPreferredAvailableDisk(const document::Bucket &bucket) const;
 

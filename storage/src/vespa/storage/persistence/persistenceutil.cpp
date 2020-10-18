@@ -171,7 +171,7 @@ PersistenceUtil::PersistenceUtil(
 PersistenceUtil::~PersistenceUtil() = default;
 
 void
-PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& i)
+PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& i) const
 {
     // Update bucket database
     StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(),

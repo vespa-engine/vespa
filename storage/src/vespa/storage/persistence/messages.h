@@ -6,7 +6,6 @@
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace storage {
 
