@@ -13,6 +13,7 @@
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <vespa/config-stor-filestor.h>
 
 namespace storage {
 
@@ -22,7 +23,7 @@ class PersistenceThread final : public DiskThread, public Types
 {
 public:
     PersistenceThread(vespalib::ISequencedTaskExecutor &, ServiceLayerComponentRegister &,
-                      const config::ConfigUri &, spi::PersistenceProvider &,
+                      const vespa::config::content::StorFilestorConfig &, spi::PersistenceProvider &,
                       FileStorHandler &, BucketOwnershipNotifier &, FileStorThreadMetrics&);
     ~PersistenceThread() override;
 

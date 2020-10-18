@@ -56,7 +56,7 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(const std::string & rootO
     _node.setupDummyPersistence();
     _metrics.initDiskMetrics(1, _node.getLoadTypes()->getMetricLoadTypes(), 1, 1);
     _handler = std::make_unique<FileStorHandlerImpl>(_messageKeeper, _metrics, _node.getComponentRegister());
-    _diskEnv = std::make_unique<PersistenceUtil>(_config.getConfigId(), _component, *_handler,
+    _diskEnv = std::make_unique<PersistenceUtil>(_component, *_handler,
                                                  *_metrics.disks[0]->threads[0], _node.getPersistenceProvider());
 }
 
@@ -89,8 +89,9 @@ PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
 std::unique_ptr<PersistenceThread>
 PersistenceTestUtils::createPersistenceThread()
 {
+    vespa::config::content::StorFilestorConfig cfg;
     return std::make_unique<PersistenceThread>(*_sequenceTaskExecutor, _env->_node.getComponentRegister(),
-                                               _env->_config.getConfigId(),getPersistenceProvider(),
+                                               cfg, getPersistenceProvider(),
                                                getEnv()._fileStorHandler, _bucketOwnershipNotifier, getEnv()._metrics);
 }
 

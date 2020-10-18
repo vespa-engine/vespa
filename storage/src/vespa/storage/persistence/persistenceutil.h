@@ -8,8 +8,6 @@
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/storageutil/utils.h>
-#include <vespa/config-stor-filestor.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
 
 namespace storage {
 
@@ -95,7 +93,6 @@ private:
 };
 
 struct PersistenceUtil {
-    vespa::config::content::StorFilestorConfig  _config;
     ServiceLayerComponent                      &_component;
     FileStorHandler                            &_fileStorHandler;
     uint16_t                                    _nodeIndex;
@@ -104,7 +101,6 @@ struct PersistenceUtil {
     spi::PersistenceProvider                   &_spi;
 
     PersistenceUtil(
-            const config::ConfigUri&,
             ServiceLayerComponent&,
             FileStorHandler& fileStorHandler,
             FileStorThreadMetrics& metrics,

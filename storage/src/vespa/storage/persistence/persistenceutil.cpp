@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistenceutil.h"
-#include <vespa/config/config.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -157,13 +155,11 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
 }
 
 PersistenceUtil::PersistenceUtil(
-        const config::ConfigUri & configUri,
         ServiceLayerComponent& component,
         FileStorHandler& fileStorHandler,
         FileStorThreadMetrics& metrics,
         spi::PersistenceProvider& provider)
-    : _config(*config::ConfigGetter<vespa::config::content::StorFilestorConfig>::getConfig(configUri.getConfigId(), configUri.getContext())),
-      _component(component),
+    : _component(component),
       _fileStorHandler(fileStorHandler),
       _nodeIndex(component.getIndex()),
       _metrics(metrics),

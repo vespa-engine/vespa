@@ -202,7 +202,8 @@ createThread(vdstestlib::DirConfig& config,
              FileStorThreadMetrics& metrics)
 {
     (void) config;
-    return std::make_unique<PersistenceThread>(node.executor(), node.getComponentRegister(), config.getConfigId(),
+    vespa::config::content::StorFilestorConfig cfg;
+    return std::make_unique<PersistenceThread>(node.executor(), node.getComponentRegister(), cfg,
                                                provider, filestorHandler, notifier, metrics);
 }
 

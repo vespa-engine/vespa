@@ -18,7 +18,8 @@ class RecheckBucketInfoCommand;
  */
 class SplitJoinHandler : public Types {
 public:
-    SplitJoinHandler(PersistenceUtil &, spi::PersistenceProvider &, BucketOwnershipNotifier &);
+    SplitJoinHandler(PersistenceUtil &, spi::PersistenceProvider &,
+                     BucketOwnershipNotifier &, bool enableMultibitSplitOptimalization);
     MessageTrackerUP handleSplitBucket(api::SplitBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTrackerUP tracker) const;
@@ -26,6 +27,7 @@ private:
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
     BucketOwnershipNotifier  &_bucketOwnershipNotifier;
+    bool                      _enableMultibitSplitOptimalization;
 };
 
 } // storage

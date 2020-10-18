@@ -13,10 +13,11 @@ LOG_SETUP(".persistence.splitjoinhandler");
 namespace storage {
 
 SplitJoinHandler::SplitJoinHandler(PersistenceUtil & env, spi::PersistenceProvider & spi,
-                                   BucketOwnershipNotifier & notifier)
+                                   BucketOwnershipNotifier & notifier, bool enableMultibitSplitOptimalization)
     : _env(env),
       _spi(spi),
-      _bucketOwnershipNotifier(notifier)
+      _bucketOwnershipNotifier(notifier),
+      _enableMultibitSplitOptimalization(enableMultibitSplitOptimalization)
 {
 }
 
@@ -40,11 +41,11 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
 
     spi::Bucket spiBucket(cmd.getBucket());
     SplitBitDetector::Result targetInfo;
-    if (_env._config.enableMultibitSplitOptimalization) {
+    if (_enableMultibitSplitOptimalization) {
         targetInfo = SplitBitDetector::detectSplit(_spi, spiBucket, cmd.getMaxSplitBits(),
                                                    tracker->context(), cmd.getMinDocCount(), cmd.getMinByteSize());
     }
-    if (targetInfo.empty() || !_env._config.enableMultibitSplitOptimalization) {
+    if (targetInfo.empty() || !_enableMultibitSplitOptimalization) {
         document::BucketId src(cmd.getBucketId());
         document::BucketId target1(src.getUsedBits() + 1, src.getId());
         document::BucketId target2(src.getUsedBits() + 1, src.getId() | (uint64_t(1) << src.getUsedBits()));

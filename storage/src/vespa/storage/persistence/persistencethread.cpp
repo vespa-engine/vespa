@@ -31,19 +31,21 @@ createThreadName(size_t stripeId) {
 
 PersistenceThread::PersistenceThread(vespalib::ISequencedTaskExecutor & sequencedExecutor,
                                      ServiceLayerComponentRegister& compReg,
-                                     const config::ConfigUri & configUri,
+                                     const vespa::config::content::StorFilestorConfig & cfg,
                                      spi::PersistenceProvider& provider,
                                      FileStorHandler& filestorHandler,
                                      BucketOwnershipNotifier & bucketOwnershipNotifier,
                                      FileStorThreadMetrics& metrics)
     : _stripeId(filestorHandler.getNextStripeId()),
       _component(std::make_unique<ServiceLayerComponent>(compReg, createThreadName(_stripeId))),
-      _env(configUri, *_component, filestorHandler, metrics, provider),
+      _env(*_component, filestorHandler, metrics, provider),
       _spi(provider),
       _processAllHandler(_env, provider),
-      _mergeHandler(_env, _spi),
+      _mergeHandler(_env, _spi, cfg.bucketMergeChunkSize,
+                    cfg.enableMergeLocalNodeChooseDocsOptimalization,
+                    cfg.commonMergeChainOptimalizationMinimumSize),
       _asyncHandler(_env, _spi, sequencedExecutor),
-      _splitJoinHandler(_env, provider, bucketOwnershipNotifier),
+      _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
       _thread()
 {
     _thread = _component->startThread(*this, 60s, 1s);

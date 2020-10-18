@@ -14,21 +14,16 @@ LOG_SETUP(".persistence.mergehandler");
 
 namespace storage {
 
-MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi)
+MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, uint32_t maxChunkSize,
+                           bool enableMergeLocalNodeChooseDocsOptimalization,
+                           uint32_t commonMergeChainOptimalizationMinimumSize)
     : _clock(env._component.getClock()),
       _clusterName(env._component.getClusterName()),
       _env(env),
       _spi(spi),
-      _maxChunkSize(env._config.bucketMergeChunkSize)
-{
-}
-
-MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, uint32_t maxChunkSize)
-    : _clock(env._component.getClock()),
-      _clusterName(env._component.getClusterName()),
-      _env(env),
-      _spi(spi),
-      _maxChunkSize(maxChunkSize)
+      _maxChunkSize(maxChunkSize),
+      _enableMergeLocalNodeChooseDocsOptimalization(enableMergeLocalNodeChooseDocsOptimalization),
+      _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize)
 {
 }
 
@@ -724,7 +719,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
         // Add all the metadata, and thus use big limit. Max
         // data to fetch parameter will control amount added.
         uint32_t maxSize =
-            (_env._config.enableMergeLocalNodeChooseDocsOptimalization
+            (_enableMergeLocalNodeChooseDocsOptimalization
              ? std::numeric_limits<uint32_t>::max()
              : _maxChunkSize);
 
@@ -763,7 +758,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
             ++counts[e._hasMask];
         }
         for (const auto& e : counts) {
-            if (e.second >= uint32_t(_env._config.commonMergeChainOptimalizationMinimumSize)
+            if (e.second >= uint32_t(_commonMergeChainOptimalizationMinimumSize)
                 || counts.size() == 1)
             {
                 LOG(spam, "Sending separate apply bucket diff for path %x "
@@ -793,7 +788,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
                 }
                 assert(nodes.size() > 1);
                 uint32_t maxSize =
-                    (_env._config.enableMergeLocalNodeChooseDocsOptimalization
+                    (_enableMergeLocalNodeChooseDocsOptimalization
                      ? std::numeric_limits<uint32_t>::max()
                      : _maxChunkSize);
                 cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes, maxSize);
