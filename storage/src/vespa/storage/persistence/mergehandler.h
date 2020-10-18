@@ -64,6 +64,8 @@ public:
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&);
 
 private:
+    const framework::Clock   &_clock;
+    const vespalib::string   &_clusterName;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
     uint32_t                  _maxChunkSize;

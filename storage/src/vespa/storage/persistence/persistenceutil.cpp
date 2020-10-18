@@ -47,7 +47,7 @@ MessageTracker::MessageTracker(PersistenceUtil & env,
       _replySender(replySender),
       _metric(nullptr),
       _result(api::ReturnCode::OK),
-      _timer(_env._component.getClock())
+      _timer(env._component.getClock())
 { }
 
 MessageTracker::UP

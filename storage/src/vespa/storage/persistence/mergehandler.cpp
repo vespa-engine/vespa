@@ -15,14 +15,18 @@ LOG_SETUP(".persistence.mergehandler");
 namespace storage {
 
 MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi)
-    : _env(env),
+    : _clock(env._component.getClock()),
+      _clusterName(env._component.getClusterName()),
+      _env(env),
       _spi(spi),
       _maxChunkSize(env._config.bucketMergeChunkSize)
 {
 }
 
 MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, uint32_t maxChunkSize)
-    : _env(env),
+    : _clock(env._component.getClock()),
+      _clusterName(env._component.getClusterName()),
+      _env(env),
       _spi(spi),
       _maxChunkSize(maxChunkSize)
 {
@@ -504,12 +508,12 @@ MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
         DocumentId docId = doc->getId();
-        framework::MilliSecTimer start_time(_env._component.getClock());
+        framework::MilliSecTimer start_time(_clock);
         checkResult(_spi.put(bucket, timestamp, std::move(doc), context), bucket, docId, "put");
         _env._metrics.merge_handler_metrics.put_latency.addValue(start_time.getElapsedTimeAsDouble());
     } else {
         DocumentId docId(e._docName);
-        framework::MilliSecTimer start_time(_env._component.getClock());
+        framework::MilliSecTimer start_time(_clock);
         checkResult(_spi.remove(bucket, timestamp, docId, context), bucket, docId, "remove");
         _env._metrics.merge_handler_metrics.remove_latency.addValue(start_time.getElapsedTimeAsDouble());
     }
@@ -724,7 +728,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
              : _maxChunkSize);
 
         cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes, maxSize);
-        cmd->setAddress(createAddress(_env._component.getClusterName(), nodes[1].index));
+        cmd->setAddress(createAddress(_clusterName, nodes[1].index));
         findCandidates(bucket.getBucketId(),
                        status,
                        true,
@@ -792,7 +796,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
                      ? std::numeric_limits<uint32_t>::max()
                      : _maxChunkSize);
                 cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes, maxSize);
-                cmd->setAddress(createAddress(_env._component.getClusterName(), nodes[1].index));
+                cmd->setAddress(createAddress(_clusterName, nodes[1].index));
                 // Add all the metadata, and thus use big limit. Max
                 // data to fetch parameter will control amount added.
                 findCandidates(bucket.getBucketId(), status, true, e.first, newMask, maxSize, *cmd);
@@ -805,13 +809,13 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     // merge to merge the remaining data.
     if ( ! cmd ) {
         cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), status.nodeList, _maxChunkSize);
-        cmd->setAddress(createAddress(_env._component.getClusterName(), status.nodeList[1].index));
+        cmd->setAddress(createAddress(_clusterName, status.nodeList[1].index));
         findCandidates(bucket.getBucketId(), status, false, 0, 0, _maxChunkSize, *cmd);
     }
     cmd->setPriority(status.context.getPriority());
     cmd->setTimeout(status.timeout);
     if (applyDiffNeedLocalData(cmd->getDiff(), 0, true)) {
-        framework::MilliSecTimer startTime(_env._component.getClock());
+        framework::MilliSecTimer startTime(_clock);
         fetchLocalData(bucket, cmd->getLoadType(), cmd->getDiff(), 0, context);
         _env._metrics.merge_handler_metrics.mergeDataReadLatency.addValue(startTime.getElapsedTimeAsDouble());
     }
@@ -891,13 +895,13 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
 
     MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
     auto s = std::make_shared<MergeStatus>(
-            _env._component.getClock(), cmd.getLoadType(),
+            _clock, cmd.getLoadType(),
             cmd.getPriority(), cmd.getTrace().getLevel());
     _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
     s->nodeList = cmd.getNodes();
     s->maxTimestamp = Timestamp(cmd.getMaxTimestamp());
     s->timeout = cmd.getTimeout();
-    s->startTime = framework::MilliSecTimer(_env._component.getClock());
+    s->startTime = framework::MilliSecTimer(_clock);
 
     auto cmd2 = std::make_shared<api::GetBucketDiffCommand>(bucket.getBucket(), s->nodeList, s->maxTimestamp.getTime());
     if (!buildBucketInfoList(bucket, cmd.getLoadType(), s->maxTimestamp, 0, cmd2->getDiff(), tracker->context())) {
@@ -912,7 +916,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
         bucket.toString().c_str(),
         s->nodeList[1].index,
         uint32_t(cmd2->getDiff().size()));
-    cmd2->setAddress(createAddress(_env._component.getClusterName(), s->nodeList[1].index));
+    cmd2->setAddress(createAddress(_clusterName, s->nodeList[1].index));
     cmd2->setPriority(s->context.getPriority());
     cmd2->setTimeout(s->timeout);
     cmd2->setSourceIndex(cmd.getSourceIndex());
@@ -1071,7 +1075,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
     // Merge info for retrieved and local info.
     std::vector<api::GetBucketDiffCommand::Entry>& remote(cmd.getDiff());
     std::vector<api::GetBucketDiffCommand::Entry> local;
-    framework::MilliSecTimer startTime(_env._component.getClock());
+    framework::MilliSecTimer startTime(_clock);
     if (!buildBucketInfoList(bucket, cmd.getLoadType(),
                              Timestamp(cmd.getMaxTimestamp()),
                              index, local, tracker->context()))
@@ -1113,7 +1117,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
         // When not the last node in merge chain, we must save reply, and
         // send command on.
         MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
-        auto s = std::make_shared<MergeStatus>(_env._component.getClock(),
+        auto s = std::make_shared<MergeStatus>(_clock,
                                           cmd.getLoadType(), cmd.getPriority(),
                                           cmd.getTrace().getLevel());
         _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
@@ -1125,7 +1129,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index,
             local.size() - remote.size());
         auto cmd2 = std::make_shared<api::GetBucketDiffCommand>(bucket.getBucket(), cmd.getNodes(), cmd.getMaxTimestamp());
-        cmd2->setAddress(createAddress(_env._component.getClusterName(), cmd.getNodes()[index + 1].index));
+        cmd2->setAddress(createAddress(_clusterName, cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(local);
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
@@ -1256,7 +1260,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     uint8_t index = findOwnIndex(cmd.getNodes(), _env._nodeIndex);
     bool lastInChain = index + 1u >= cmd.getNodes().size();
     if (applyDiffNeedLocalData(cmd.getDiff(), index, !lastInChain)) {
-       framework::MilliSecTimer startTime(_env._component.getClock());
+       framework::MilliSecTimer startTime(_clock);
         fetchLocalData(bucket, cmd.getLoadType(), cmd.getDiff(), index, tracker->context());
         _env._metrics.merge_handler_metrics.mergeDataReadLatency.addValue(startTime.getElapsedTimeAsDouble());
     } else {
@@ -1268,7 +1272,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
             index);
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
-       framework::MilliSecTimer startTime(_env._component.getClock());
+       framework::MilliSecTimer startTime(_clock);
        (void) applyDiffLocally(bucket, cmd.getLoadType(),
                                cmd.getDiff(), index, tracker->context());
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
@@ -1304,7 +1308,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
         // When not the last node in merge chain, we must save reply, and
         // send command on.
         MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
-        auto s = std::make_shared<MergeStatus>(_env._component.getClock(),
+        auto s = std::make_shared<MergeStatus>(_clock,
                                                cmd.getLoadType(), cmd.getPriority(),
                                                cmd.getTrace().getLevel());
         _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
@@ -1313,7 +1317,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
         LOG(spam, "Sending ApplyBucketDiff for %s on to node %d",
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index);
         auto cmd2 = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), cmd.getNodes(), cmd.getMaxBufferSize());
-        cmd2->setAddress(createAddress(_env._component.getClusterName(), cmd.getNodes()[index + 1].index));
+        cmd2->setAddress(createAddress(_clusterName, cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(cmd.getDiff());
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
@@ -1359,12 +1363,12 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
             assert(reply.getNodes().size() >= 2);
             uint8_t index = findOwnIndex(reply.getNodes(), _env._nodeIndex);
             if (applyDiffNeedLocalData(diff, index, false)) {
-                framework::MilliSecTimer startTime(_env._component.getClock());
+                framework::MilliSecTimer startTime(_clock);
                 fetchLocalData(bucket, reply.getLoadType(), diff, index, s.context);
                 _env._metrics.merge_handler_metrics.mergeDataReadLatency.addValue(startTime.getElapsedTimeAsDouble());
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
-                framework::MilliSecTimer startTime(_env._component.getClock());
+                framework::MilliSecTimer startTime(_clock);
                 (void) applyDiffLocally(bucket, reply.getLoadType(), diff, index, s.context);
                 _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
             } else {

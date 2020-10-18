@@ -65,7 +65,7 @@ private:
     typedef typename boost::multi_index
                         ::nth_index<CommandList, 1>::type timelist;
 
-    framework::Clock& _clock;
+    const framework::Clock& _clock;
     mutable CommandList _commands;
     uint64_t _sequenceId;
 
@@ -76,7 +76,7 @@ public:
     typedef typename CommandList::const_reverse_iterator const_reverse_iterator;
     typedef typename timelist::const_iterator const_titerator;
 
-    CommandQueue(framework::Clock& clock)
+    CommandQueue(const framework::Clock& clock)
         : _clock(clock),
           _sequenceId(0) {}
 

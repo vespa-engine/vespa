@@ -91,7 +91,7 @@ public:
     StorageComponent(StorageComponentRegister&, vespalib::stringref name);
     ~StorageComponent() override;
 
-    vespalib::string getClusterName() const { return _clusterName; }
+    const vespalib::string & getClusterName() const { return _clusterName; }
     const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     lib::Node getNode() const { return lib::Node(*_nodeType, _index); }
@@ -100,8 +100,7 @@ public:
 
     std::shared_ptr<Repos> getTypeRepo() const;
     LoadTypeSetSP getLoadTypes() const;
-    const document::BucketIdFactory& getBucketIdFactory() const
-        { return _bucketIdFactory; }
+    const document::BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }
     uint8_t getPriority(const documentapi::LoadType&) const;
     DistributionSP getDistribution() const;
     NodeStateUpdater& getStateUpdater() const;
