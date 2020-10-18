@@ -215,9 +215,6 @@ public:
      */
     virtual uint32_t getNumActiveMerges() const = 0;
 
-    /// Provides the next stripe id for a certain disk.
-    virtual uint32_t getNextStripeId() = 0;
-
     /** Removes the merge status for the given bucket. */
     virtual void clearMergeStatus(const document::Bucket&) = 0;
     virtual void clearMergeStatus(const document::Bucket&, const api::ReturnCode&) = 0;

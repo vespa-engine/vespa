@@ -7,6 +7,7 @@ vespa_add_library(storage_spersistence OBJECT
     fieldvisitor.cpp
     mergehandler.cpp
     messages.cpp
+    persistencehandler.cpp
     persistencethread.cpp
     persistenceutil.cpp
     processallhandler.cpp

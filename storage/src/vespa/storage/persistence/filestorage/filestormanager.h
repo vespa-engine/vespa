@@ -41,6 +41,7 @@ class ReadBucketList;
 class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
 struct DoneInitializeHandler;
+class PersistenceHandler;
 
 class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,
@@ -58,7 +59,9 @@ class FileStorManager : public StorageLinkQueued,
     const document::BucketIdFactory& _bucketIdFactory;
     config::ConfigUri                _configUri;
 
-    std::vector<DiskThread::SP>              _threads;
+    std::vector<std::unique_ptr<ServiceLayerComponent>> _persistenceComponents;
+    std::vector<std::unique_ptr<PersistenceHandler>> _persistenceHandlers;
+    std::vector<std::unique_ptr<DiskThread>>         _threads;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
 
     std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;

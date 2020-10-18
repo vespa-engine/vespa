@@ -25,6 +25,7 @@ LOG_SETUP(".persistence.filestor.manager");
 
 using std::shared_ptr;
 using document::BucketSpace;
+using vespalib::make_string_short::fmt;
 
 namespace storage {
 
@@ -41,6 +42,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _init_handler(init_handler),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _configUri(configUri),
+      _persistenceHandlers(),
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
       _configFetcher(_configUri.getContext()),
@@ -106,6 +108,11 @@ selectSequencer(vespa::config::content::StorFilestorConfig::ResponseSequencerTyp
     }
 }
 
+vespalib::string
+createThreadName(size_t stripeId) {
+    return fmt("PersistenceThread-%zu", stripeId);
+}
+
 }
 /**
  * If live configuration, assuming storageserver makes sure no messages are
@@ -133,8 +140,14 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         assert(_sequencedExecutor);
         LOG(spam, "Setting up the disk");
         for (uint32_t j = 0; j < numThreads; j++) {
-            _threads.push_back(std::make_shared<PersistenceThread>(*_sequencedExecutor, _compReg, *_config, *_provider,
-                                                                   *_filestorHandler, *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[j]));
+            _persistenceComponents.push_back(std::make_unique<ServiceLayerComponent>(_compReg, createThreadName(j)));
+            _persistenceHandlers.push_back(
+                    std::make_unique<PersistenceHandler>(*_sequencedExecutor,
+                                                         *_persistenceComponents.back(),
+                                                         *_config, *_provider, *_filestorHandler,
+                                                         *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[j]));
+            _threads.push_back(std::make_unique<PersistenceThread>(*_persistenceHandlers.back(), *_filestorHandler,
+                                                                   j % numStripes, _component));
         }
     }
 }
@@ -436,8 +449,8 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
     }
     _filestorHandler->failOperations(cmd->getBucket(),
                                      api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
-                                                     vespalib::make_string("Bucket %s about to be deleted anyway",
-                                                                           cmd->getBucketId().toString().c_str())));
+                                                     fmt("Bucket %s about to be deleted anyway",
+                                                         cmd->getBucketId().toString().c_str())));
     return true;
 }
 

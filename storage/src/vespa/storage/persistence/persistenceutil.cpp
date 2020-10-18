@@ -25,13 +25,13 @@ namespace {
     const vespalib::duration WARN_ON_SLOW_OPERATIONS = 5s;
 }
 
-MessageTracker::MessageTracker(PersistenceUtil & env,
+MessageTracker::MessageTracker(const PersistenceUtil & env,
                                MessageSender & replySender,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
                                api::StorageMessage::SP msg)
     : MessageTracker(env, replySender, true, std::move(bucketLock), std::move(msg))
 {}
-MessageTracker::MessageTracker(PersistenceUtil & env,
+MessageTracker::MessageTracker(const PersistenceUtil & env,
                                MessageSender & replySender,
                                bool updateBucketInfo,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
@@ -225,7 +225,7 @@ PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
 }
 
 void
-PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket)
+PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket) const
 {
     api::BucketInfo info = getBucketInfo(bucket);
 

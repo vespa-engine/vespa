@@ -70,9 +70,14 @@ PersistenceTestEnvironment::~PersistenceTestEnvironment() {
 PersistenceTestUtils::PersistenceTestUtils()
     : _env(std::make_unique<PersistenceTestEnvironment>("todo-make-unique-persistencetestutils")),
       _replySender(),
-      _bucketOwnershipNotifier(getEnv()._component, getEnv()._fileStorHandler)
+      _bucketOwnershipNotifier(getEnv()._component, getEnv()._fileStorHandler),
+      _persistenceHandler()
 {
     setupExecutor(1);
+    vespa::config::content::StorFilestorConfig cfg;
+    _persistenceHandler = std::make_unique<PersistenceHandler>(*_sequenceTaskExecutor, _env->_component, cfg,
+                                                               getPersistenceProvider(), getEnv()._fileStorHandler,
+                                                               _bucketOwnershipNotifier, getEnv()._metrics);
 }
 PersistenceTestUtils::~PersistenceTestUtils() = default;
 
@@ -84,15 +89,6 @@ PersistenceTestUtils::dumpBucket(const document::BucketId& bid) {
 void
 PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
     _sequenceTaskExecutor = vespalib::SequencedTaskExecutor::create(numThreads, 1000, vespalib::Executor::OptimizeFor::ADAPTIVE);
-}
-
-std::unique_ptr<PersistenceThread>
-PersistenceTestUtils::createPersistenceThread()
-{
-    vespa::config::content::StorFilestorConfig cfg;
-    return std::make_unique<PersistenceThread>(*_sequenceTaskExecutor, _env->_node.getComponentRegister(),
-                                               cfg, getPersistenceProvider(),
-                                               getEnv()._fileStorHandler, _bucketOwnershipNotifier, getEnv()._metrics);
 }
 
 document::Document::SP

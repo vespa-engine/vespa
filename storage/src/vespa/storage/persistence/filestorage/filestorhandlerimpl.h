@@ -208,9 +208,6 @@ public:
     void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const override;
 
     uint32_t getQueueSize() const override;
-    uint32_t getNextStripeId() override {
-        return (_nextStripeId++) % _stripes.size();
-    }
 
     std::shared_ptr<FileStorHandler::BucketLockInterface>
     lock(const document::Bucket & bucket, api::LockingRequirements lockReq) override {
@@ -236,7 +233,6 @@ public:
 private:
     ServiceLayerComponent   _component;
     std::atomic<DiskState>  _state;
-    uint32_t                _nextStripeId;
     FileStorDiskMetrics   * _metrics;
     std::vector<Stripe>     _stripes;
     MessageSender&          _messageSender;

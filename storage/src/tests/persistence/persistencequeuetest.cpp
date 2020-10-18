@@ -42,7 +42,8 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
       dummyManager(std::make_unique<DummyStorageLink>()),
       messageSender(*dummyManager),
       loadTypes("raw:"),
-      metrics(loadTypes.getMetricLoadTypes())
+      metrics(loadTypes.getMetricLoadTypes()),
+      stripeId(0)
 {
     top.push_back(std::move(dummyManager));
     top.open();
@@ -55,8 +56,6 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
     // that is large enough to fail tests with high probability if this is not the case,
     // and small enough to not slow down testing too much.
     filestorHandler->setGetNextMessageTimeout(20ms);
-
-    stripeId = filestorHandler->getNextStripeId();
 }
 
 PersistenceQueueTest::Fixture::~Fixture() = default;

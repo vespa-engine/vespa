@@ -204,7 +204,6 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
         spi.put(bucket, spi::Timestamp(1000 + i), std::move(doc), context);
     }
 
-    std::unique_ptr<PersistenceThread> thread(createPersistenceThread());
     getNode().getStateUpdater().setClusterState(
             std::make_shared<lib::ClusterState>("distributor:1 storage:1"));
     document::Bucket docBucket = makeDocumentBucket(document::BucketId(currentSplitLevel, 1));
@@ -214,7 +213,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
     cmd->setMinByteSize(maxSize);
     cmd->setMinDocCount(maxCount);
     cmd->setSourceIndex(0);
-    MessageTracker::UP result = thread->splitjoinHandler().handleSplitBucket(*cmd, createTracker(cmd, docBucket));
+    MessageTracker::UP result = _persistenceHandler->splitjoinHandler().handleSplitBucket(*cmd, createTracker(cmd, docBucket));
     api::ReturnCode code(result->getResult());
     EXPECT_EQ(error, code);
     if (!code.success()) {

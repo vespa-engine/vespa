@@ -111,7 +111,7 @@ MergeHandler::populateMetaData(
         const spi::Bucket& bucket,
         Timestamp maxTimestamp,
         std::vector<spi::DocEntry::UP>& entries,
-        spi::Context& context)
+        spi::Context& context) const
 {
     spi::DocumentSelection docSel("");
 
@@ -162,7 +162,7 @@ MergeHandler::buildBucketInfoList(
         Timestamp maxTimestamp,
         uint8_t myNodeIndex,
         std::vector<api::GetBucketDiffCommand::Entry>& output,
-        spi::Context& context)
+        spi::Context& context) const
 {
     assert(output.size() == 0);
     assert(myNodeIndex < 16);
@@ -336,7 +336,7 @@ MergeHandler::fetchLocalData(
         const documentapi::LoadType& /*loadType*/,
         std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
         uint8_t nodeIndex,
-        spi::Context& context)
+        spi::Context& context) const
 {
     uint32_t nodeMask = 1 << nodeIndex;
         // Preload documents in memory
@@ -497,7 +497,7 @@ void
 MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
                              const api::ApplyBucketDiffCommand::Entry& e,
                              spi::Context& context,
-                             const document::DocumentTypeRepo& repo)
+                             const document::DocumentTypeRepo& repo) const
 {
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
@@ -524,7 +524,7 @@ MergeHandler::applyDiffLocally(
         const documentapi::LoadType& /*loadType*/,
         std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
         uint8_t nodeIndex,
-        spi::Context& context)
+        spi::Context& context) const
 {
     // Sort the data to apply by which file they should be added to
     LOG(spam, "Merge(%s): Applying data locally. Diff has %zu entries",
@@ -683,7 +683,7 @@ namespace {
 
 api::StorageReply::SP
 MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
-                                 MessageSender& sender, spi::Context& context)
+                                 MessageSender& sender, spi::Context& context) const
 {
     // If last action failed, fail the whole merge
     if (status.reply->getResult().failed()) {
@@ -845,7 +845,7 @@ public:
 };
 
 MessageTracker::UP
-MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP tracker)
+MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.mergeBuckets);
 
@@ -1056,7 +1056,7 @@ namespace {
 }
 
 MessageTracker::UP
-MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker)
+MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.getBucketDiff);
     spi::Bucket bucket(cmd.getBucket());
@@ -1167,7 +1167,7 @@ namespace {
 } // End of anonymous namespace
 
 void
-MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSender& sender)
+MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSender& sender) const
 {
     _env._metrics.getBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket());
@@ -1240,7 +1240,7 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSe
 }
 
 MessageTracker::UP
-MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTracker::UP tracker)
+MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.applyBucketDiff);
 
@@ -1269,8 +1269,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        framework::MilliSecTimer startTime(_clock);
-       (void) applyDiffLocally(bucket, cmd.getLoadType(),
-                               cmd.getDiff(), index, tracker->context());
+       (void) applyDiffLocally(bucket, cmd.getLoadType(), cmd.getDiff(), index, tracker->context());
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
     } else {
@@ -1328,7 +1327,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
 }
 
 void
-MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,MessageSender& sender)
+MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,MessageSender& sender) const
 {
     _env._metrics.applyBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket());
