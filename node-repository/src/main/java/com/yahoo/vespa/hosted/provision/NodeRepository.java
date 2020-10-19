@@ -110,6 +110,7 @@ public class NodeRepository extends AbstractComponent {
     private final DockerImages dockerImages;
     private final JobControl jobControl;
     private final Applications applications;
+    private final boolean canProvisionHosts;
     private final int spareCount;
 
     /**
@@ -124,7 +125,7 @@ public class NodeRepository extends AbstractComponent {
                           Zone zone,
                           FlagSource flagSource) {
         this(flavors,
-             provisionServiceProvider,
+             provisionServiceProvider.getHostResourcesCalculator(),
              curator,
              Clock.systemUTC(),
              zone,
@@ -132,7 +133,8 @@ public class NodeRepository extends AbstractComponent {
              DockerImage.fromString(config.dockerImage()),
              flagSource,
              config.useCuratorClientCache(),
-             zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() ? 1 : 0,
+             provisionServiceProvider.getHostProvisioner().isPresent(),
+             zone.environment().isProduction() && provisionServiceProvider.getHostProvisioner().isEmpty() ? 1 : 0,
              config.nodeCacheSize());
     }
 
@@ -141,7 +143,7 @@ public class NodeRepository extends AbstractComponent {
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors,
-                          ProvisionServiceProvider provisionServiceProvider,
+                          HostResourcesCalculator resourcesCalculator,
                           Curator curator,
                           Clock clock,
                           Zone zone,
@@ -149,19 +151,14 @@ public class NodeRepository extends AbstractComponent {
                           DockerImage dockerImage,
                           FlagSource flagSource,
                           boolean useCuratorClientCache,
+                          boolean canProvisionHosts,
                           int spareCount,
                           long nodeCacheSize) {
-        // TODO (valerijf): Uncomment when exception for prod.cd-aws is removed
-//        if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.getCloud().dynamicProvisioning())
-//            throw new IllegalArgumentException(String.format(
-//                    "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
-//                    zone.getCloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
-
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;
-        this.resourcesCalculator = provisionServiceProvider.getHostResourcesCalculator();
+        this.resourcesCalculator = resourcesCalculator;
         this.nameResolver = nameResolver;
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
@@ -169,6 +166,7 @@ public class NodeRepository extends AbstractComponent {
         this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
+        this.canProvisionHosts = canProvisionHosts;
         this.spareCount = spareCount;
         rewriteNodes();
     }
@@ -839,11 +837,14 @@ public class NodeRepository extends AbstractComponent {
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
 
-        if (zone.getCloud().dynamicProvisioning())
+        if ( canProvisionHosts())
             return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
         else
             return host.state() == State.active;
     }
+
+    /** Returns whether this repository can provision hosts on demand */
+    public boolean canProvisionHosts() { return canProvisionHosts; }
 
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }

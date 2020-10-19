@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
@@ -61,7 +62,7 @@ public class NodeResourceLimits {
     }
 
     private double minAdvertisedVcpu(ClusterSpec.Type clusterType) {
-        if (zone().environment() == Environment.dev && !zone().getCloud().dynamicProvisioning()) return 0.1;
+        if (zone().environment() == Environment.dev && zone().getCloud().allowHostSharing()) return 0.1;
         return 0.5;
     }
 

@@ -35,7 +35,7 @@ public class MaintenanceTester {
     private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
-                                                                    new EmptyProvisionServiceProvider(),
+                                                                    new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
                                                                     curator,
                                                                     clock,
                                                                     zone,
@@ -43,6 +43,7 @@ public class MaintenanceTester {
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                                     new InMemoryFlagSource(),
                                                                     true,
+                                                                    false,
                                                                     0, 1000);
 
     public MaintenanceTester() {

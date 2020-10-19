@@ -58,7 +58,7 @@ public class MockNodeRepository extends NodeRepository {
      */
     public MockNodeRepository(MockCurator curator, NodeFlavors flavors) {
         super(flavors,
-              new EmptyProvisionServiceProvider(),
+              new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
               curator,
               Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
               Zone.defaultZone(),
@@ -66,6 +66,7 @@ public class MockNodeRepository extends NodeRepository {
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               new InMemoryFlagSource(),
               true,
+              false,
               0, 1000);
         this.flavors = flavors;
 
