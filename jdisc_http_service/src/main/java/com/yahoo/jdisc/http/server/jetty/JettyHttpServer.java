@@ -206,8 +206,9 @@ public class JettyHttpServer extends AbstractServerProvider {
         return ports.stream().map(Object::toString).collect(Collectors.joining(":"));
     }
 
+    // Separate threadpool for tasks that cannot be executed on the jdisc default threadpool due to risk of deadlock
     private static ExecutorService newJanitor() {
-        int threadPoolSize = Runtime.getRuntime().availableProcessors();
+        int threadPoolSize = Math.max(1, Runtime.getRuntime().availableProcessors()/8);
         log.info("Creating janitor executor with " + threadPoolSize + " threads");
         return Executors.newFixedThreadPool(
                 threadPoolSize,
