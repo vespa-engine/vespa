@@ -3,23 +3,17 @@
 #include "cell_values.h"
 #include "tensor_address_builder.h"
 #include "tensor_visitor.h"
-#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/memory_usage_stuff.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/instruction/generic_concat.h>
-#include <vespa/eval/instruction/generic_join.h>
-#include <vespa/eval/instruction/generic_merge.h>
-#include <vespa/eval/instruction/generic_reduce.h>
-#include <vespa/eval/instruction/generic_rename.h>
-#include <vespa/eval/tensor/default_value_builder_factory.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.tensor.wrapped_simple_value");
 
 using vespalib::eval::TensorSpec;
-using vespalib::eval::Value;
-using vespalib::eval::ValueBuilderFactory;
-using namespace vespalib::eval::instruction;
+using vespalib::eval::SimpleValueBuilderFactory;
 
 namespace vespalib::tensor {
 
@@ -52,46 +46,9 @@ extract_sparse_address(const TensorSpec::Address &address)
     return result;
 }
 
-Tensor::UP
-maybe_wrap(Value::UP value)
-{
-    Tensor::UP retval;
-    if (auto tensor = dynamic_cast<Tensor *>(value.get())) {
-        retval.reset(tensor);
-        value.release();
-        return retval;
-    }
+Tensor::UP wrap(eval::Value::UP value) {
     return std::make_unique<WrappedSimpleValue>(std::move(value));
 }
-
-struct PerformGenericApply {
-    template <typename CT>
-    static auto invoke(const Value &input, const CellFunction &func,
-                       const ValueBuilderFactory &factory)
-    {
-        const auto &type = input.type();
-        size_t subspace_size = type.dense_subspace_size();
-        size_t num_mapped = type.count_mapped_dimensions();
-        auto builder = factory.create_value_builder<CT>(type, num_mapped, subspace_size, input.index().size());
-        auto input_cells = input.cells().typify<CT>();
-        auto view = input.index().create_view({});
-        std::vector<vespalib::stringref> output_address(num_mapped);
-        std::vector<vespalib::stringref *> input_address;
-        for (auto & label : output_address) {
-            input_address.push_back(&label);
-        }
-        view->lookup({});
-        size_t subspace;
-        while (view->next_result(input_address, subspace)) {
-            auto dst = builder->add_subspace(output_address);
-            size_t input_offset = subspace_size * subspace;
-            for (size_t i = 0; i < subspace_size; ++i) {
-                dst[i] = func.apply(input_cells[input_offset + i]);
-            }
-        }
-        return builder->build(std::move(builder));
-    }
-};
 
 } // namespace <unnamed>
 
@@ -120,67 +77,37 @@ WrappedSimpleValue::accept(TensorVisitor &visitor) const
 MemoryUsage
 WrappedSimpleValue::get_memory_usage() const
 {
-    size_t used = sizeof(WrappedSimpleValue);
+    MemoryUsage rv = eval::self_memory_usage<WrappedSimpleValue>();
     if (_space) {
-        auto plus = _space->get_memory_usage();
-        plus.incUsedBytes(used);
-        plus.incAllocatedBytes(used);
-        return plus;
+        rv.merge(_space->get_memory_usage());
     }
-    return MemoryUsage(used, used, 0, 0);
+    return rv;
 }
 
 //-----------------------------------------------------------------------------
 
 Tensor::UP
-WrappedSimpleValue::apply(const CellFunction & func) const
+WrappedSimpleValue::apply(const CellFunction &) const
 {
-    auto up = typify_invoke<1,eval::TypifyCellType,PerformGenericApply>(
-            _tensor.type().cell_type(),
-            _tensor, func, DefaultValueBuilderFactory::get());
-    return maybe_wrap(std::move(up));
+    LOG_ABORT("should not be reached");
 }
 
 Tensor::UP
-WrappedSimpleValue::join(join_fun_t fun, const Tensor &rhs) const
+WrappedSimpleValue::join(join_fun_t, const Tensor &) const
 {
-    Tensor::UP retval;
-    auto up = GenericJoin::perform_join(*this, rhs, fun, DefaultValueBuilderFactory::get());
-    return maybe_wrap(std::move(up));
+    LOG_ABORT("should not be reached");
 }
 
 Tensor::UP
-WrappedSimpleValue::merge(join_fun_t fun, const Tensor &rhs) const
+WrappedSimpleValue::merge(join_fun_t, const Tensor &) const
 {
-    Tensor::UP retval;
-    auto up = GenericMerge::perform_merge(*this, rhs, fun, DefaultValueBuilderFactory::get());
-    return maybe_wrap(std::move(up));
+    LOG_ABORT("should not be reached");
 }
 
 Tensor::UP
-WrappedSimpleValue::reduce(eval::Aggr aggr, const std::vector<vespalib::string> & dimensions) const
+WrappedSimpleValue::reduce(join_fun_t, const std::vector<vespalib::string> &) const
 {
-    auto up = GenericReduce::perform_reduce(*this, aggr, dimensions, DefaultValueBuilderFactory::get());
-    return maybe_wrap(std::move(up));
-}
-
-Tensor::UP
-WrappedSimpleValue::reduce(join_fun_t fun, const std::vector<vespalib::string> &dims) const
-{
-    if (fun == eval::operation::Mul::f) {
-        return reduce(eval::Aggr::PROD, dims);
-    }
-    if (fun == eval::operation::Add::f) {
-        return reduce(eval::Aggr::SUM, dims);
-    }
-    if (fun == eval::operation::Max::f) {
-        return reduce(eval::Aggr::MAX, dims);
-    }
-    if (fun == eval::operation::Min::f) {
-        return reduce(eval::Aggr::MIN, dims);
-    }
-    // unknown join-expressible reduce operation
-    abort();
+    LOG_ABORT("should not be reached");
 }
 
 Tensor::UP
@@ -200,7 +127,7 @@ WrappedSimpleValue::modify(join_fun_t fun, const CellValues &cellValues) const
             result.add(cell.first, fun(v, iter->second));
         }
     }
-    return maybe_wrap(value_from_spec(result, DefaultValueBuilderFactory::get()));
+    return wrap(value_from_spec(result, SimpleValueBuilderFactory::get()));
 }
 
 Tensor::UP
@@ -222,7 +149,7 @@ WrappedSimpleValue::add(const Tensor &rhs) const
             result.add(cell.first, cell.second);
         }
     }
-    return maybe_wrap(value_from_spec(result, DefaultValueBuilderFactory::get()));
+    return wrap(value_from_spec(result, SimpleValueBuilderFactory::get()));
 }
 
 
@@ -240,21 +167,7 @@ WrappedSimpleValue::remove(const CellValues &rhs) const
             result.add(cell.first, cell.second);
         }
     }
-    return maybe_wrap(value_from_spec(result, DefaultValueBuilderFactory::get()));
-}
-
-Tensor::UP
-WrappedSimpleValue::concat(const Value &b, const vespalib::string &dimension) const
-{
-    auto up = GenericConcat::perform_concat(*this, b, dimension, DefaultValueBuilderFactory::get());
-    return maybe_wrap(std::move(up));
-}
-
-Tensor::UP
-WrappedSimpleValue::rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const
-{
-    auto up = GenericRename::perform_rename(*this, from, to, DefaultValueBuilderFactory::get());
-    return maybe_wrap(std::move(up));
+    return wrap(value_from_spec(result, SimpleValueBuilderFactory::get()));
 }
 
 }

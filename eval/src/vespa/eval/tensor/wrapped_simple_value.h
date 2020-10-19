@@ -43,16 +43,11 @@ public:
     Tensor::UP join(join_fun_t fun, const Tensor &rhs) const override;
     Tensor::UP merge(join_fun_t fun, const Tensor &rhs) const override;
     Tensor::UP reduce(join_fun_t fun, const std::vector<vespalib::string> &dims) const override;
-    Tensor::UP reduce(eval::Aggr aggr, const std::vector<vespalib::string> &dimensions) const;
 
     Tensor::UP apply(const CellFunction & func) const override;
     Tensor::UP modify(join_fun_t fun, const CellValues &cellValues) const override;
     Tensor::UP add(const Tensor &rhs) const override;
     Tensor::UP remove(const CellValues &rhs) const override;
-
-    // extra functionality
-    Tensor::UP concat(const Value &b, const vespalib::string &dimension) const;
-    Tensor::UP rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const;
 };
 
 } // namespace vespalib::tensor
