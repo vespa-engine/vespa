@@ -8,8 +8,13 @@ namespace vespalib::eval::instruction {
 
 struct GenericMerge {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &lhs_type, const ValueType &rhs_type, join_fun_t function,
+    make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
+                     join_fun_t function,
                      const ValueBuilderFactory &factory, Stash &stash);
+
+    static Value::UP
+    perform_merge(const Value &a, const Value &b, join_fun_t function,
+                  const ValueBuilderFactory &factory);
 };
 
 } // namespace

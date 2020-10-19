@@ -94,10 +94,9 @@ struct SparseReduceState {
 SparseReduceState::~SparseReduceState() = default;
 
 template <typename ICT, typename OCT, typename AGGR>
-void my_generic_reduce_op(State &state, uint64_t param_in) {
-    const auto &param = unwrap_param<ReduceParam>(param_in);
+Value::UP
+generic_reduce(const Value &value, const ReduceParam &param) {
     SparseReduceState sparse(param.sparse_plan);
-    const Value &value = state.peek(0);
     sparse.populate_map(value.index().create_view({}));
     auto cells = value.cells().typify<ICT>();
     AGGR aggr;
@@ -123,7 +122,15 @@ void my_generic_reduce_op(State &state, uint64_t param_in) {
             zero[i] = OCT{};
         }
     }
-    auto &result = state.stash.create<std::unique_ptr<Value>>(builder->build(std::move(builder)));
+    return builder->build(std::move(builder));
+}
+
+template <typename ICT, typename OCT, typename AGGR>
+void my_generic_reduce_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<ReduceParam>(param_in);
+    const Value &value = state.peek(0);
+    auto up = generic_reduce<ICT, OCT, AGGR>(value, param);
+    auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
     const Value &result_ref = *(result.get());
     state.pop_push(result_ref);
 };
@@ -131,6 +138,13 @@ void my_generic_reduce_op(State &state, uint64_t param_in) {
 struct SelectGenericReduceOp {
     template <typename ICT, typename OCT, typename AGGR> static auto invoke() {
         return my_generic_reduce_op<ICT, OCT, typename AGGR::template templ<ICT>>;
+    }
+};
+
+struct PerformGenericReduce {
+    template <typename ICT, typename OCT, typename AGGR>
+    static auto invoke(const Value &input, const ReduceParam &param) {
+        return generic_reduce<ICT, OCT, typename AGGR::template templ<ICT>>(input, param);
     }
 };
 
@@ -211,6 +225,18 @@ GenericReduce::make_instruction(const ValueType &type, Aggr aggr, const std::vec
     auto &param = stash.create<ReduceParam>(type, dimensions, factory);
     auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(type.cell_type(), param.res_type.cell_type(), aggr);
     return Instruction(fun, wrap_param<ReduceParam>(param));
+}
+
+
+Value::UP
+GenericReduce::perform_reduce(const Value &a, Aggr aggr,
+                              const std::vector<vespalib::string> &dimensions,
+                              const ValueBuilderFactory &factory)
+{
+    ReduceParam param(a.type(), dimensions, factory);
+    return typify_invoke<3,ReduceTypify,PerformGenericReduce>(
+            a.type().cell_type(), param.res_type.cell_type(), aggr,
+            a, param);
 }
 
 } // namespace

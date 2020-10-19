@@ -121,6 +121,15 @@ struct SelectGenericConcatOp {
     }
 };
 
+struct PerformGenericConcat {
+    template <typename LCT, typename RCT, typename OCT>
+    static auto invoke(const Value &a, const Value &b, const ConcatParam &param) {
+        return generic_concat<LCT, RCT, OCT>(a, b,
+                                             param.sparse_plan, param.dense_plan,
+                                             param.res_type, param.factory);
+    }
+};
+
 enum class Case { NONE, OUT, CONCAT, BOTH };
 
 } // namespace <unnamed>
@@ -183,18 +192,6 @@ DenseConcatPlan::InOutLoop::fill_from(const ValueType &in_type,
     return std::make_pair(offset_for_concat, output_size_for_concat);
 }
 
-InterpretedFunction::Instruction
-GenericConcat::make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
-                                const vespalib::string &dimension,
-                                const ValueBuilderFactory &factory, Stash &stash)
-{
-    auto &param = stash.create<ConcatParam>(lhs_type, rhs_type, dimension, factory);
-    auto fun = typify_invoke<3,TypifyCellType,SelectGenericConcatOp>(
-            lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(),
-            param);
-    return Instruction(fun, wrap_param<ConcatParam>(param));
-}
-
 DenseConcatPlan::DenseConcatPlan(const ValueType &lhs_type,
                                  const ValueType &rhs_type, 
                                  std::string concat_dimension,
@@ -208,5 +205,29 @@ DenseConcatPlan::DenseConcatPlan(const ValueType &lhs_type,
 
 DenseConcatPlan::~DenseConcatPlan() = default;
 DenseConcatPlan::InOutLoop::~InOutLoop() = default;
+
+
+InterpretedFunction::Instruction
+GenericConcat::make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
+                                const vespalib::string &dimension,
+                                const ValueBuilderFactory &factory, Stash &stash)
+{
+    auto &param = stash.create<ConcatParam>(lhs_type, rhs_type, dimension, factory);
+    auto fun = typify_invoke<3,TypifyCellType,SelectGenericConcatOp>(
+            lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(),
+            param);
+    return Instruction(fun, wrap_param<ConcatParam>(param));
+}
+
+Value::UP
+GenericConcat::perform_concat(const Value &a, const Value &b,
+                              const vespalib::string &dimension,
+                              const ValueBuilderFactory &factory)
+{
+    ConcatParam param(a.type(), b.type(), dimension, factory);
+    return typify_invoke<3,TypifyCellType,PerformGenericConcat>(
+            a.type().cell_type(), b.type().cell_type(), param.res_type.cell_type(),
+            a, b, param);
+}
 
 } // namespace

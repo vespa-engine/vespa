@@ -17,6 +17,11 @@ struct GenericConcat {
     make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
                      const vespalib::string &dimension,
                      const ValueBuilderFactory &factory, Stash &stash);
+
+    static Value::UP
+    perform_concat(const Value &a, const Value &b,
+                   const vespalib::string &dimension,
+                   const ValueBuilderFactory &factory);
 };
 
 struct DenseConcatPlan {
