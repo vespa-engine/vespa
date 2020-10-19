@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.util.ArrayList;
@@ -20,16 +21,18 @@ import static com.yahoo.component.ComponentSpecification.fromString;
  */
 public class JettyHttpServer extends SimpleComponent implements ServerConfig.Producer {
 
+    private final ContainerCluster<?> cluster;
     private final boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
 
-    public JettyHttpServer(ComponentId id, boolean isHostedVespa) {
+    public JettyHttpServer(ComponentId id, ContainerCluster<?> cluster, boolean isHostedVespa) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(id,
                                                      fromString("com.yahoo.jdisc.http.server.jetty.JettyHttpServer"),
                                                      fromString("jdisc_http_service"))
         ));
         this.isHostedVespa = isHostedVespa;
+        this.cluster = cluster;
         final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(id);
         addChild(filterBindingsProviderComponent);
         inject(filterBindingsProviderComponent);
@@ -68,6 +71,17 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
             builder.accessLog(new ServerConfig.AccessLog.Builder()
                     .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra", "yahooremoteip", "client-ip"))
                     .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
+        }
+        configureJettyThreadpool(builder);
+    }
+
+    private void configureJettyThreadpool(ServerConfig.Builder builder) {
+        if (cluster == null) return;
+        double vcpu = cluster.vcpu().orElse(0);
+        double scaleFactor = cluster.jettyThreadpoolSizeFactor().orElse(0);
+        if (vcpu > 0 && scaleFactor > 0) {
+            int threads = Math.max(8, (int) Math.ceil(vcpu * scaleFactor));
+            builder.maxWorkerThreads(threads).minWorkerThreads(threads);
         }
     }
 

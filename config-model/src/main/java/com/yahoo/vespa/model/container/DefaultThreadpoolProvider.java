@@ -40,7 +40,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
         }
 
         double threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
-        double vcpu = ContainerThreadpool.vcpu(cluster).orElse(0);
+        double vcpu = cluster.vcpu().orElse(0);
         if (threadPoolSizeFactor <= 0 || vcpu == 0) return;
 
         // Configuration is currently identical to the search handler's threadpool

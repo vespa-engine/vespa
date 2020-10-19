@@ -57,7 +57,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
             if (hasUserOptions()) return;
 
             double threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
-            double vcpu = vcpu(cluster).orElse(0);
+            double vcpu = cluster.vcpu().orElse(0);
             if (threadPoolSizeFactor <= 0 || vcpu == 0) {
                 builder.maxThreads(500);
                 builder.minThreads(500);

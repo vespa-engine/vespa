@@ -27,8 +27,11 @@ filter[].id string
 # The binding of a filter
 filter[].binding string
 
-# Max number of threads in pool
+# Max number of threads in underlying Jetty pool
 maxWorkerThreads                      int    default = 200
+
+# Min number of threads in underlying Jetty pool
+minWorkerThreads                      int    default = 8
 
 # Stop timeout in seconds. The maximum allowed time to process in-flight requests during server shutdown. Setting it to 0 disable graceful shutdown.
 stopTimeout                           double default = 30.0

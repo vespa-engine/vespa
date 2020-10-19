@@ -88,7 +88,7 @@ public abstract class Container extends AbstractService implements
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-        this.defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), isHostedVespa);
+        this.defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), containerClusterOrNull(parent), isHostedVespa);
         if (getHttp() == null) {
             addChild(defaultHttpServer);
         }
@@ -390,8 +390,12 @@ public abstract class Container extends AbstractService implements
         return containerCluster().isPresent() && containerCluster().get().rpcServerEnabled();
     }
 
-    private Optional<ContainerCluster> containerCluster() {
-        return (parent instanceof ContainerCluster) ? Optional.of((ContainerCluster) parent) : Optional.empty();
+    protected Optional<ContainerCluster> containerCluster() {
+        return Optional.ofNullable(containerClusterOrNull(parent));
+    }
+
+    private static ContainerCluster containerClusterOrNull(AbstractConfigProducer producer) {
+        return producer instanceof ContainerCluster<?> ? (ContainerCluster<?>) producer : null;
     }
 
 }

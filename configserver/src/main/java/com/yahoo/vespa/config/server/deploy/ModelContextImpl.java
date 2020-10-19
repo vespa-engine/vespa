@@ -171,6 +171,7 @@ public class ModelContextImpl implements ModelContext {
         private final String tlsCompressionType;
         private final boolean useNewRestapiHandler;
         private final boolean useAccessControlTlsHandshakeClientAuth;
+        private final double jettyThreadpoolSizeFactor;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -246,6 +247,9 @@ public class ModelContextImpl implements ModelContext {
                     Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION.bindTo(flagSource)
                             .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
                             .value();
+            this.jettyThreadpoolSizeFactor = Flags.JETTY_THREADPOOL_SCALE_FACTOR.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
+                    .value();
         }
 
         @Override
@@ -347,6 +351,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useNewRestapiHandler() { return useNewRestapiHandler; }
 
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
+
+        @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
     }
 
 }
