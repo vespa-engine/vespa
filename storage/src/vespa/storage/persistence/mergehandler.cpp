@@ -421,7 +421,7 @@ MergeHandler::fetchLocalData(
     }
 
     document::BucketIdFactory idFactory;
-    const std::shared_ptr<const document::DocumentTypeRepo> repo = _env._component.getTypeRepo()->documentTypeRepo;
+    const auto repo = _env._component.getTypeRepo()->documentTypeRepo;
 
     for (const auto& entry_ptr : entries) {
         const auto& docEntry = *entry_ptr;

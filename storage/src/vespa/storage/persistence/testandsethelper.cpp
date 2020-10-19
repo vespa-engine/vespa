@@ -35,7 +35,7 @@ void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo &
 }
 
 spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context) {
-    return _spi.get(_env.getBucket(_docId, _cmd.getBucket()), fieldSet, _cmd.getDocumentId(),context);
+    return _spi.get(_env.getBucket(_docId, _cmd.getBucket()), fieldSet, _cmd.getDocumentId(), context);
 }
 
 TestAndSetHelper::TestAndSetHelper(const PersistenceUtil & env, const spi::PersistenceProvider  & spi,
@@ -47,7 +47,7 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil & env, const spi::Persi
       _docTypePtr(_cmd.getDocumentType()),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
-    const std::shared_ptr<const document::DocumentTypeRepo> _repo = _env._component.getTypeRepo()->documentTypeRepo;
+    const auto _repo = _env._component.getTypeRepo()->documentTypeRepo;
     resolveDocumentType(*_repo);
     parseDocumentSelection(*_repo);
 }

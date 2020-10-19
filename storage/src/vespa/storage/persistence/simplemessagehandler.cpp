@@ -8,7 +8,7 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".persistence.processall");
+LOG_SETUP(".persistence.simplemessagehandler");
 
 using vespalib::make_string_short::fmt;
 using to_str = vespalib::string;

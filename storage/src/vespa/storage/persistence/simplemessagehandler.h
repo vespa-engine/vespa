@@ -12,6 +12,11 @@ namespace storage {
 namespace spi { struct PersistenceProvider; }
 struct PersistenceUtil;
 
+/**
+ * Handles most of the messages that are 'simple' to handle and do not
+ * logically belong together with any particular group.
+ * It is stateless and thread safe.
+ */
 class SimpleMessageHandler : public Types {
 public:
     SimpleMessageHandler(const PersistenceUtil&, spi::PersistenceProvider&);

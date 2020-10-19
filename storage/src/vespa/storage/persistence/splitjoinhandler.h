@@ -14,8 +14,8 @@ class RecheckBucketInfoCommand;
 class InternalBucketJoinCommand;
 
 /**
- * Handle operations that uses changes bucket ownership operations
- * It is stateless and thread safe
+ * Handle operations that might changes bucket ownership.
+ * It is stateless and thread safe.
  */
 class SplitJoinHandler : public Types {
 public:

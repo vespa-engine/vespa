@@ -14,8 +14,8 @@ namespace spi {
 struct PersistenceUtil;
 
 /**
- * Handle async operations that uses a sequenced executor
- * It is stateless and thread safe
+ * Handle async operations that uses a sequenced executor.
+ * It is stateless and thread safe.
  */
 class AsyncHandler : public Types {
 public:
