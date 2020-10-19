@@ -36,7 +36,7 @@ public class NodeRepositoryTester {
         curator = new MockCurator();
         curator.setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
         nodeRepository = new NodeRepository(nodeFlavors,
-                                            new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                            new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             Zone.defaultZone(),
@@ -44,7 +44,6 @@ public class NodeRepositoryTester {
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             new InMemoryFlagSource(),
                                             true,
-                                            false,
                                             0, 1000);
     }
     

@@ -59,7 +59,7 @@ public class GroupPreparer {
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups) {
-        boolean dynamicProvisioningEnabled = nodeRepository.canProvisionHosts() && nodeRepository.zone().getCloud().dynamicProvisioning();
+        boolean dynamicProvisioningEnabled = nodeRepository.zone().getCloud().dynamicProvisioning();
         boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
 
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we

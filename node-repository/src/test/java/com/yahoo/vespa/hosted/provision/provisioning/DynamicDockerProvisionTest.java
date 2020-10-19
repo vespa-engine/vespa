@@ -50,7 +50,7 @@ import static org.mockito.Mockito.verify;
 public class DynamicDockerProvisionTest {
 
     private static final Zone zone = new Zone(
-            Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
+            Cloud.builder().dynamicProvisioning(true).build(),
             SystemName.main,
             Environment.prod,
             RegionName.from("us-east"));
@@ -111,7 +111,6 @@ public class DynamicDockerProvisionTest {
 
     @Test
     public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).build();
         NodeResources resources = new NodeResources(10, 10, 10, 10);
         ApplicationId app = ProvisioningTester.makeApplicationId();
 
