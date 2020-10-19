@@ -2,7 +2,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/test/tensor_conformance.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/eval/simple_value_engine.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
@@ -11,7 +10,6 @@
 using vespalib::eval::SimpleValueBuilderFactory;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::SimpleTensorEngine;
-using vespalib::eval::SimpleValueEngine;
 using vespalib::eval::test::TensorConformance;
 using vespalib::tensor::DefaultTensorEngine;
 using vespalib::make_string;
@@ -29,10 +27,6 @@ TEST("require that production tensor implementation passes all conformance tests
 
 TEST("require that SimpleValue implementation passes all conformance tests") {
     TEST_DO(TensorConformance::run_tests(module_src_path, SimpleValueBuilderFactory::get()));
-}
-
-TEST("require that SimpleValueEngine passes all conformance tests") {
-    TEST_DO(TensorConformance::run_tests(module_src_path, SimpleValueEngine::ref()));
 }
 
 TEST("require that FastValue implementation passes all conformance tests") {
