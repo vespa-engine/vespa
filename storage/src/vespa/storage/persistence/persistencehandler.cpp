@@ -1,37 +1,26 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistencehandler.h"
 
-#include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/document/fieldset/fieldsetrepo.h>
-#include <vespa/document/base/exceptions.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
-#include <thread>
-
 #include <vespa/log/log.h>
-LOG_SETUP(".persistence.thread");
-
-using vespalib::make_string_short::fmt;
-using to_str = vespalib::string;
+LOG_SETUP(".persistence.persistencehandler");
 
 namespace storage {
 
 PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequencedExecutor,
-                                     ServiceLayerComponent & component,
-                                     const vespa::config::content::StorFilestorConfig & cfg,
-                                     spi::PersistenceProvider& provider,
-                                     FileStorHandler& filestorHandler,
-                                     BucketOwnershipNotifier & bucketOwnershipNotifier,
-                                     FileStorThreadMetrics& metrics)
+                                      ServiceLayerComponent & component,
+                                      const vespa::config::content::StorFilestorConfig & cfg,
+                                      spi::PersistenceProvider& provider,
+                                      FileStorHandler& filestorHandler,
+                                      BucketOwnershipNotifier & bucketOwnershipNotifier,
+                                      FileStorThreadMetrics& metrics)
     :
       _env(component, filestorHandler, metrics, provider),
-      _spi(provider),
       _processAllHandler(_env, provider),
-      _mergeHandler(_env, _spi, cfg.bucketMergeChunkSize,
+      _mergeHandler(_env, provider, cfg.bucketMergeChunkSize,
                     cfg.enableMergeLocalNodeChooseDocsOptimalization,
                     cfg.commonMergeChainOptimalizationMinimumSize),
-      _asyncHandler(_env, _spi, sequencedExecutor),
+      _asyncHandler(_env, provider, sequencedExecutor),
       _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
       _simpleHandler(_env, provider)
 {
@@ -89,7 +78,7 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
         case RecheckBucketInfoCommand::ID:
             return _splitJoinHandler.handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg), std::move(tracker));
         default:
-            LOG(warning, "Persistence thread received unhandled internal command %s", msg.toString().c_str());
+            LOG(warning, "Persistence handler received unhandled internal command %s", msg.toString().c_str());
             break;
         }
     default:

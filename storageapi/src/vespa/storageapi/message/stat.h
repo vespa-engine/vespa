@@ -5,9 +5,7 @@
 #include <vespa/storageapi/messageapi/bucketcommand.h>
 #include <vespa/storageapi/messageapi/bucketreply.h>
 
-namespace storage {
-
-namespace api {
+namespace storage::api {
 
 /**
  * \class StatBucketCommand
@@ -89,5 +87,4 @@ public:
 
 std::ostream& operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance);
 
-} // api
-} // storage
+}

@@ -18,8 +18,8 @@
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vdslib/state/random.h>

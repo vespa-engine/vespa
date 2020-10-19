@@ -3,6 +3,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <vespa/storage/persistence/provider_error_wrapper.h>
 
 using storage::spi::test::makeSpiBucket;
 

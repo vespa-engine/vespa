@@ -13,9 +13,6 @@
 #pragma once
 
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vector>
-#include <string>
-#include <memory>
 #include <mutex>
 
 namespace storage {

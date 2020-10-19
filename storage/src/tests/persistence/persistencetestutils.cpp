@@ -9,11 +9,13 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
+#include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/config-stor-filestor.h>
 #include <thread>
 
 using document::DocumentType;

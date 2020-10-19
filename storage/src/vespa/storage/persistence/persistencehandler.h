@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -17,6 +17,11 @@ namespace storage {
 
 class BucketOwnershipNotifier;
 
+/**
+ * Handle all messages destined for the persistence layer. The detailed handling
+ * happens in other handlers, but is forked out after common setup has been done.
+ * Currently metrics are updated so each thread should have its own instance.
+ */
 class PersistenceHandler : public Types
 {
 public:
@@ -39,7 +44,6 @@ private:
     MessageTracker::UP processMessage(api::StorageMessage& msg, MessageTracker::UP tracker) const;
 
     PersistenceUtil           _env;
-    spi::PersistenceProvider& _spi;
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;
     AsyncHandler              _asyncHandler;
