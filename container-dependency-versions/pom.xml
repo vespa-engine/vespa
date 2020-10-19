@@ -458,7 +458,7 @@
         <!-- and then verify  by doing: ' ls -l vespa/vespa_jersey2/target/dependency' -->
         <hk2.version>2.5.0-b32</hk2.version>
         <hk2.osgi-resource-locator.version>1.0.1</hk2.osgi-resource-locator.version>
-        <jackson2.version>2.8.11</jackson2.version>
+        <jackson2.version>2.11.3</jackson2.version>
         <jackson-databind.version>${jackson2.version}.6</jackson-databind.version>
         <javassist.version>3.20.0-GA</javassist.version>
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
