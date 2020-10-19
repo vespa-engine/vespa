@@ -52,61 +52,43 @@ SimpleValueEngine::decode(nbostream &input) const
 const Value &
 SimpleValueEngine::map(const Value &a, map_fun_t function, Stash &stash) const
 {
-    if (a.is_double()) {
-        return stash.create<DoubleValue>(function(a.as_double()));
-    }
-    auto up = GenericMap::perform_map(a, function, SimpleValueBuilderFactory::get());
-    auto &result = stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    return result_ref;
+    return *stash.create<Value::UP>(
+            GenericMap::perform_map(a, function, SimpleValueBuilderFactory::get()));
 }
 
 const Value &
 SimpleValueEngine::join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
-    if (a.is_double() && b.is_double()) {
-        return stash.create<DoubleValue>(function(a.as_double(), b.as_double()));
-    }
-    auto up = GenericJoin::perform_join(a, b, function, SimpleValueBuilderFactory::get());
-    auto &result = stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    return result_ref;
+    return *stash.create<Value::UP>(
+            GenericJoin::perform_join(a, b, function, SimpleValueBuilderFactory::get()));
 }
 
 const Value &
 SimpleValueEngine::merge(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
-    auto up = GenericMerge::perform_merge(a, b, function, SimpleValueBuilderFactory::get());
-    auto &result = stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    return result_ref;
+    return *stash.create<Value::UP>(
+            GenericMerge::perform_merge(a, b, function, SimpleValueBuilderFactory::get()));
 }
 
 const Value &
 SimpleValueEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
-    auto up = GenericReduce::perform_reduce(a, aggr, dimensions, SimpleValueBuilderFactory::get());
-    auto &result = stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    return result_ref;
+    return *stash.create<Value::UP>(
+            GenericReduce::perform_reduce(a, aggr, dimensions, SimpleValueBuilderFactory::get()));
 }
 
 const Value &
 SimpleValueEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
 {
-    auto up = GenericConcat::perform_concat(a, b, dimension, SimpleValueBuilderFactory::get());
-    auto &result = stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    return result_ref;
+    return *stash.create<Value::UP>(
+            GenericConcat::perform_concat(a, b, dimension, SimpleValueBuilderFactory::get()));
 }
 
 const Value &
 SimpleValueEngine::rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const
 {
-    auto up = GenericRename::perform_rename(a, from, to, SimpleValueBuilderFactory::get());
-    auto &result = stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    return result_ref;
+    return *stash.create<Value::UP>(
+            GenericRename::perform_rename(a, from, to, SimpleValueBuilderFactory::get()));
 }
 
 //-----------------------------------------------------------------------------
