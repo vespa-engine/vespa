@@ -2,13 +2,11 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -130,7 +128,7 @@ class NodeAllocation {
                     ++rejectedDueToClashingParentHost;
                     continue;
                 }
-                if ( ! exclusiveTo(application.tenant(), application.application(), candidate.parentHostname())) {
+                if ( ! exclusiveTo(application, candidate.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
@@ -187,12 +185,12 @@ class NodeAllocation {
      * If a parent host is given, and it hosts another application which requires exclusive access
      * to the physical host, then we cannot host this application on it.
      */
-    private boolean exclusiveTo(TenantName tenant, ApplicationName application, Optional<String> parentHostname) {
+    private boolean exclusiveTo(ApplicationId applicationId, Optional<String> parentHostname) {
         if (parentHostname.isEmpty()) return true;
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
             if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
-                 ! allocatedTo(tenant, application, nodeOnHost))
+                 ! allocatedTo(applicationId, nodeOnHost))
                 return false;
         }
         return true;
@@ -204,15 +202,14 @@ class NodeAllocation {
 
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( ! allocatedTo(application.tenant(), application.application(), nodeOnHost)) return false;
+            if ( ! allocatedTo(application, nodeOnHost)) return false;
         }
         return true;
     }
 
-    private boolean allocatedTo(TenantName tenant, ApplicationName application, Node node) {
+    private boolean allocatedTo(ApplicationId applicationId, Node node) {
         if (node.allocation().isEmpty()) return false;
-        ApplicationId owner = node.allocation().get().owner();
-        return owner.tenant().equals(tenant) && owner.application().equals(application);
+        return node.allocation().get().owner().equals(applicationId);
     }
 
     /**
