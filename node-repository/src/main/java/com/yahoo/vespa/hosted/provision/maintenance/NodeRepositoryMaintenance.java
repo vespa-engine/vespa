@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.google.inject.Inject;
@@ -66,7 +66,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
                                      NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
-        DefaultTimes defaults = new DefaultTimes(zone);
+        DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,
                                     defaults.nodeFailerInterval, clock, orchestrator, defaults.throttlePolicy, metric);
@@ -157,7 +157,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
-        DefaultTimes(Zone zone) {
+        DefaultTimes(Zone zone, Deployer deployer) {
             autoscalingInterval = Duration.ofMinutes(15);
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             failedExpirerInterval = Duration.ofMinutes(10);
@@ -175,8 +175,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             rebalancerInterval = Duration.ofMinutes(120);
             redeployMaintainerInterval = Duration.ofMinutes(1);
             // Need to be long enough for deployment to be finished for all config model versions
-            // Should be equal to timeout for deployments
-            reservationExpiry = zone.system().isCd() ? Duration.ofMinutes(5) : Duration.ofMinutes(30);
+            reservationExpiry = deployer.serverDeployTimeout();
             scalingSuggestionsInterval = Duration.ofMinutes(31);
             spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
             switchRebalancerInterval = Duration.ofHours(1);

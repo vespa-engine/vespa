@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
 import java.time.Duration;
@@ -66,6 +66,9 @@ public interface Deployer {
     Optional<Instant> lastDeployTime(ApplicationId application);
 
     /** Whether the deployer is bootstrapping, some users of the deployer will want to hold off with deployments in that case. */
-    default boolean bootstrapping() { return false; };
+    default boolean bootstrapping() { return false; }
+
+    /** Timeout in server, clients can use this to set correct client timeout */
+    default Duration serverDeployTimeout() { return Duration.ofMinutes(30); }
 
 }

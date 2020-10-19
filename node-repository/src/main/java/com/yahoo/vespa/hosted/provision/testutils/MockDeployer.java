@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.google.inject.Inject;
@@ -124,6 +124,9 @@ public class MockDeployer implements Deployer {
     public boolean bootstrapping() {
         return bootstrapping;
     }
+
+    @Override
+    public Duration serverDeployTimeout() { return Duration.ofSeconds(60); }
 
     public void removeApplication(ApplicationId applicationId) {
         new MockDeployment(provisioner, new ApplicationContext(applicationId, List.of())).activate();
