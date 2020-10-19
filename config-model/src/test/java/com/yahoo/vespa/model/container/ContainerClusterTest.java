@@ -18,6 +18,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -277,6 +278,28 @@ public class ContainerClusterTest {
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
         assertEquals(16, threadpoolConfig.maxthreads());
         assertEquals(320, threadpoolConfig.queueSize());
+    }
+
+    @Test
+    public void jetty_threadpool_scales_with_node_resources() {
+        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource();
+        MockRoot root = new MockRoot(
+                "foo",
+                new DeployState.Builder()
+                        .properties(new TestProperties().setJettyThreadpoolSizeFactor(4).setHostedVespa(true))
+                        .applicationPackage(new MockApplicationPackage.Builder().build())
+                        .modelHostProvisioner(hostProvisioner)
+                        .build());
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        HostResource hostResource = new HostResource(
+                new Host(null, "host-c1"),
+                hostProvisioner.allocateHost("host-c1"));
+        addContainerWithHostResource(root.deployLogger(), cluster, "c1", hostResource);
+        root.freezeModelTopology();
+
+        ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
+        assertEquals(16, cfg.maxWorkerThreads());
+        assertEquals(16, cfg.minWorkerThreads());
     }
 
     @Test

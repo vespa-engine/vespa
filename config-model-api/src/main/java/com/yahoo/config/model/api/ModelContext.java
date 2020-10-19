@@ -124,6 +124,9 @@ public interface ModelContext {
         // TODO(mortent): Temporary feature flag
         default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
 
+        // TODO(bjorncs): Temporary feature flag
+        default double jettyThreadpoolSizeFactor() { return 0.0; }
+
     }
 
 }

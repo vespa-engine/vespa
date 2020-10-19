@@ -161,11 +161,14 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private boolean deferChangesUntilRestart = false;
 
+    private double jettyThreadpoolSizeFactor;
+
     public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
+        this.jettyThreadpoolSizeFactor = deployState.getProperties().jettyThreadpoolSizeFactor();
 
         componentGroup = new ComponentGroup<>(this, "component");
 
@@ -639,4 +642,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
                 .max(); // Use highest vcpu as scale factor
     }
 
+    public OptionalDouble jettyThreadpoolSizeFactor() {
+        return jettyThreadpoolSizeFactor > 0 ? OptionalDouble.of(jettyThreadpoolSizeFactor) : OptionalDouble.empty();
+    }
 }
