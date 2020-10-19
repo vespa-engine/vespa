@@ -31,7 +31,7 @@ public class LockTest {
     private final InterProcessLock mutex = mock(InterProcessLock.class);
     private final String lockPath = "/lock/path";
     private final String lock2Path = "/lock2/path";
-    private static final Duration acquireTimeout = Duration.ofMinutes(10);
+    private static final Duration acquireTimeout = Duration.ofMillis(1000);
     private final Lock lock = new Lock(lockPath, mutex);
     private final Lock lock2 = new Lock(lock2Path, mutex);
 
@@ -93,6 +93,10 @@ public class LockTest {
         assertEquals(expected.getCumulativeReleaseCount(), actual.getCumulativeReleaseCount());
         assertEquals(expected.getCumulativeReleaseFailedCount(), actual.getCumulativeReleaseFailedCount());
         assertEquals(expected.getCumulativeReentryCount(), actual.getCumulativeReentryCount());
+        assertEquals(expected.getCumulativeDeadlockCount(), actual.getCumulativeDeadlockCount());
+        assertEquals(expected.getCumulativeNakedReleaseCount(), actual.getCumulativeNakedReleaseCount());
+        assertEquals(expected.getCumulativeAcquireWithoutReleaseCount(), actual.getCumulativeAcquireWithoutReleaseCount());
+        assertEquals(expected.getCumulativeForeignReleaseCount(), actual.getCumulativeForeignReleaseCount());
 
         assertEquals(expected.getAndResetAcquireCount(), actual.getAndResetAcquireCount());
         assertEquals(expected.getAndResetAcquireFailedCount(), actual.getAndResetAcquireFailedCount());
@@ -228,13 +232,12 @@ public class LockTest {
             lock1.acquire(acquireTimeout);
             fail();
         } catch (UncheckedTimeoutException e) {
-            assertEquals(
-                    "Unexpected timeout exception message: " + e.getMessage(),
-                    "Deadlock detected: Thread main, " +
-                            "trying to acquire lock /lock/path/1 held by thread LockTest-async-thread, " +
-                            "trying to acquire lock /lock/path/2 held by thread main",
-                    e.getMessage());
+            assertEquals("Timed out after waiting PT1S to acquire lock '/lock/path/1'", e.getMessage());
         }
+
+        LockMetrics lockMetrics = LockStats.getGlobal().getLockMetrics("/lock/path/1");
+        assertEquals(1, lockMetrics.getAndResetDeadlockCount());
+        assertEquals(1, lockMetrics.getCumulativeDeadlockCount());
 
         // Unlock, which unblocks thread
         lock2.close();
@@ -245,7 +248,9 @@ public class LockTest {
         lock1.acquire(acquireTimeout);
 
         // This will block
-        lock2.acquire(acquireTimeout);
+        try {
+            lock2.acquire(acquireTimeout);
+        } catch (UncheckedTimeoutException ignored) {}
 
         lock2.close();
 
@@ -255,7 +260,9 @@ public class LockTest {
     private static class InterProcessMutexMock implements InterProcessLock {
         private final ReentrantLock lock = new ReentrantLock();
         @Override public void acquire() throws Exception { lock.lock(); }
-        @Override public boolean acquire(long time, TimeUnit unit) throws Exception { acquire(); return true; }
+        @Override public boolean acquire(long time, TimeUnit unit) throws Exception {
+            return lock.tryLock(time, unit);
+        }
         @Override public void release() throws Exception { lock.unlock(); }
         @Override public boolean isAcquiredInThisProcess() { return lock.isLocked(); }
     }

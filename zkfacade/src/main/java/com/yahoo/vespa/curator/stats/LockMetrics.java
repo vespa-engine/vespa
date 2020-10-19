@@ -30,6 +30,16 @@ public class LockMetrics {
     private final LatencyStats acquireStats = new LatencyStats();
     private final LatencyStats lockedStats = new LatencyStats();
 
+    private final AtomicInteger deadlockCount = new AtomicInteger(0);
+    private final AtomicInteger acquireWithoutReleaseCount = new AtomicInteger(0);
+    private final AtomicInteger nakedReleaseCount = new AtomicInteger(0);
+    private final AtomicInteger foreignReleaseCount = new AtomicInteger(0);
+
+    private final AtomicInteger cumulativeDeadlockCount = new AtomicInteger(0);
+    private final AtomicInteger cumulativeAcquireWithoutReleaseCount = new AtomicInteger(0);
+    private final AtomicInteger cumulativeNakedReleaseCount = new AtomicInteger(0);
+    private final AtomicInteger cumulativeForeignReleaseCount = new AtomicInteger(0);
+
     /** Returns a Runnable that must be invoked when the acquire() finishes. */
     ActiveInterval acquireInvoked(boolean reentry) {
         if (reentry) {
@@ -78,6 +88,26 @@ public class LockMetrics {
         cumulativeReleaseFailedCount.incrementAndGet();
     }
 
+    void incrementDeadlockCount() {
+        deadlockCount.incrementAndGet();
+        cumulativeDeadlockCount.incrementAndGet();
+    }
+
+    void incrementAcquireWithoutReleaseCount() {
+        acquireWithoutReleaseCount.incrementAndGet();
+        cumulativeAcquireWithoutReleaseCount.incrementAndGet();
+    }
+
+    void incrementNakedReleaseCount() {
+        nakedReleaseCount.incrementAndGet();
+        cumulativeNakedReleaseCount.incrementAndGet();
+    }
+
+    void incrementForeignReleaseCount() {
+        foreignReleaseCount.incrementAndGet();
+        cumulativeForeignReleaseCount.incrementAndGet();
+    }
+
     public int getAndResetAcquireCount() { return acquireCount.getAndSet(0); }
     public int getAndResetAcquireFailedCount() { return acquireFailedCount.getAndSet(0); }
     public int getAndResetAcquireTimedOutCount() { return acquireTimedOutCount.getAndSet(0); }
@@ -85,6 +115,10 @@ public class LockMetrics {
     public int getAndResetReleaseCount() { return releaseCount.getAndSet(0); }
     public int getAndResetReleaseFailedCount() { return releaseFailedCount.getAndSet(0); }
     public int getAndResetReentryCount() { return reentryCount.getAndSet(0); }
+    public int getAndResetDeadlockCount() { return deadlockCount.getAndSet(0); }
+    public int getAndResetAcquireWithoutReleaseCount() { return acquireWithoutReleaseCount.getAndSet(0); }
+    public int getAndResetNakedReleaseCount() { return nakedReleaseCount.getAndSet(0); }
+    public int getAndResetForeignReleaseCount() { return foreignReleaseCount.getAndSet(0); }
 
     public int getCumulativeAcquireCount() { return cumulativeAcquireCount.get(); }
     public int getCumulativeAcquireFailedCount() { return cumulativeAcquireFailedCount.get(); }
@@ -93,6 +127,10 @@ public class LockMetrics {
     public int getCumulativeReleaseCount() { return cumulativeReleaseCount.get(); }
     public int getCumulativeReleaseFailedCount() { return cumulativeReleaseFailedCount.get(); }
     public int getCumulativeReentryCount() { return cumulativeReentryCount.get(); }
+    public int getCumulativeDeadlockCount() { return cumulativeDeadlockCount.get(); }
+    public int getCumulativeAcquireWithoutReleaseCount() { return cumulativeAcquireWithoutReleaseCount.get(); }
+    public int getCumulativeNakedReleaseCount() { return cumulativeNakedReleaseCount.get(); }
+    public int getCumulativeForeignReleaseCount() { return cumulativeForeignReleaseCount.get(); }
 
     public LatencyMetrics getAcquireLatencyMetrics() { return acquireStats.getLatencyMetrics(); }
     public LatencyMetrics getLockedLatencyMetrics() { return lockedStats.getLatencyMetrics(); }

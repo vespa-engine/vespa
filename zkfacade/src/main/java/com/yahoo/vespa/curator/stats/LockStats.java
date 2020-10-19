@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * This class manages statistics related to lock attempts on {@link com.yahoo.vespa.curator.Lock}.
@@ -14,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author hakon
  */
 public class LockStats {
+    private static final Logger logger = Logger.getLogger(LockStats.class.getName());
+
     // No 'volatile' is needed because field is only ever changed for testing which is single-threaded.
     private static LockStats stats = new LockStats();
 
@@ -64,7 +67,8 @@ public class LockStats {
     void notifyOfThreadHoldingLock(Thread currentThread, String lockPath) {
         Thread oldThread = lockPathsHeld.put(lockPath, currentThread);
         if (oldThread != null) {
-            throw new IllegalStateException("Thread " + currentThread.getName() +
+            getLockMetrics(lockPath).incrementAcquireWithoutReleaseCount();
+            logger.warning("Thread " + currentThread.getName() +
                     " reports it has the lock on " + lockPath + ", but thread " + oldThread.getName() +
                     " has not reported it released the lock");
         }
@@ -74,10 +78,12 @@ public class LockStats {
     void notifyOfThreadReleasingLock(Thread currentThread, String lockPath) {
         Thread oldThread = lockPathsHeld.remove(lockPath);
         if (oldThread == null) {
-            throw new IllegalStateException("Thread " + currentThread.getName() +
-                    " is releasing the lock " + lockPath + ", but nobody own that lock");
+            getLockMetrics(lockPath).incrementNakedReleaseCount();
+            logger.warning("Thread " + currentThread.getName() +
+                    " is releasing the lock " + lockPath + ", but nobody owns that lock");
         } else if (oldThread != currentThread) {
-            throw new IllegalStateException("Thread " + currentThread.getName() +
+            getLockMetrics(lockPath).incrementForeignReleaseCount();
+            logger.warning("Thread " + currentThread.getName() +
                     " is releasing the lock " + lockPath + ", but it was owned by thread "
                     + oldThread.getName());
         }

@@ -62,6 +62,10 @@ public class LocksResponse extends HttpResponse {
             lockPathCursor.setLong("releaseCount", lockMetrics.getCumulativeReleaseCount());
             lockPathCursor.setLong("releaseFailedCount", lockMetrics.getCumulativeReleaseFailedCount());
             lockPathCursor.setLong("reentryCount", lockMetrics.getCumulativeReentryCount());
+            lockPathCursor.setLong("deadlock", lockMetrics.getCumulativeDeadlockCount());
+            lockPathCursor.setLong("nakedRelease", lockMetrics.getCumulativeNakedReleaseCount());
+            lockPathCursor.setLong("acquireWithoutRelease", lockMetrics.getCumulativeAcquireWithoutReleaseCount());
+            lockPathCursor.setLong("foreignRelease", lockMetrics.getCumulativeForeignReleaseCount());
 
             setLatency(lockPathCursor, "acquire", lockMetrics.getAcquireLatencyMetrics());
             setLatency(lockPathCursor, "locked", lockMetrics.getLockedLatencyMetrics());

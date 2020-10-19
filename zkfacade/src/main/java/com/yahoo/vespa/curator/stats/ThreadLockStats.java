@@ -1,12 +1,13 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.stats;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -70,7 +71,7 @@ public class ThreadLockStats {
         boolean reentry = lockAttemptsStack.stream().anyMatch(lockAttempt -> lockAttempt.getLockPath().equals(lockPath));
 
         if (!reentry) {
-            throwOnDeadlock(lockPath);
+            testForDeadlock(lockPath);
         }
 
         LockAttempt lockAttempt = LockAttempt.invokingAcquire(this, lockPath, timeout,
@@ -151,40 +152,48 @@ public class ThreadLockStats {
     }
 
     /**
-     * Throws a timeout exception if acquiring the path would cause a deadlock.
+     * Tries to detect whether acquiring a given lock path would deadlock.
      *
      * <p>Thread T0 will deadlock if it tries to acquire a lock on a path L1 held by T1,
      * and T1 is waiting on L2 held by T2, and so forth, and TN is waiting on L0 held by T0.</p>
      *
+     *
+     * <p>Since the underlying data structures are concurrently being modified (as an optimization,
+     * no lock is taken for this calculation), a cycle may be detected not involving T0.</p>
+     *
      * <p>This method is a best-effort attempt at detecting deadlocks:  A deadlock may in fact be
      * resolved even though this method throws, if e.g. locks are released just after this
-     * method </p>
-     *
-     * @throws com.google.common.util.concurrent.UncheckedTimeoutException
+     * method.</p>
      */
-    private void throwOnDeadlock(String pathToAcquire) {
+    private void testForDeadlock(String pathToAcquire) {
         LockStats globalLockStats = LockStats.getGlobal();
         var errorMessage = new StringBuilder().append("Deadlock detected: Thread ").append(thread.getName());
 
+        // The set of all threads waiting.  If we're waiting in a cycle, there is a deadlock...
+        Set<Thread> threadsAcquiring = new HashSet<>();
+        Thread threadAcquiringLockPath = thread;
         String lockPath = pathToAcquire;
+
         while (true) {
             Optional<ThreadLockStats> threadLockStats = globalLockStats.getThreadLockStatsHolding(lockPath);
             if (threadLockStats.isEmpty()) {
                 return;
             }
 
+            Thread threadHoldingLockPath = threadLockStats.get().thread;
             errorMessage.append(", trying to acquire lock ")
                         .append(lockPath)
                         .append(" held by thread ")
-                        .append(threadLockStats.get().thread.getName());
+                        .append(threadHoldingLockPath.getName());
 
-            if (threadLockStats.get().thread == thread) {
-                if (lockPath.equals(pathToAcquire)) {
-                    // reentry, ignore
-                    return;
-                } else {
-                    throw new UncheckedTimeoutException(errorMessage.toString());
-                }
+            if (threadAcquiringLockPath == threadHoldingLockPath) {
+                // reentry
+                return;
+            } else if (threadsAcquiring.contains(threadAcquiringLockPath)) {
+                // deadlock
+                getGlobalLockMetrics(pathToAcquire).incrementDeadlockCount();
+                logger.warning(errorMessage.toString());
+                return;
             }
 
             Optional<String> nextLockPath = threadLockStats.get().acquiringLockPath();
@@ -192,7 +201,9 @@ public class ThreadLockStats {
                 return;
             }
 
+            threadsAcquiring.add(threadHoldingLockPath);
             lockPath = nextLockPath.get();
+            threadAcquiringLockPath = threadHoldingLockPath;
         }
     }
 

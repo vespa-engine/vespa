@@ -161,6 +161,10 @@ public class MetricsReporterTest {
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.release", 3);
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.releaseFailed", 0);
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.reentry", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.deadlock", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.nakedRelease", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireWithoutRelease", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.foreignRelease", 0);
         metric.remove("lockAttempt.acquireLatency");
         metric.remove("lockAttempt.acquireMaxActiveLatency");
         metric.remove("lockAttempt.acquireHz");
