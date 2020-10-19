@@ -14,11 +14,13 @@ LOG_SETUP(".persistence.mergehandler");
 
 namespace storage {
 
-MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, uint32_t maxChunkSize,
+MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
+                           const vespalib::string & clusterName, const framework::Clock & clock,
+                           uint32_t maxChunkSize,
                            bool enableMergeLocalNodeChooseDocsOptimalization,
                            uint32_t commonMergeChainOptimalizationMinimumSize)
-    : _clock(env._component.getClock()),
-      _clusterName(env._component.getClusterName()),
+    : _clock(clock),
+      _clusterName(clusterName),
       _env(env),
       _spi(spi),
       _maxChunkSize(maxChunkSize),

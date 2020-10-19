@@ -30,8 +30,8 @@ public:
     MessageTrackerUP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTrackerUP tracker) const;
 private:
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
-    const PersistenceUtil& _env;
-    spi::PersistenceProvider& _spi;
+    const PersistenceUtil    & _env;
+    spi::PersistenceProvider & _spi;
 };
 
 } // storage
