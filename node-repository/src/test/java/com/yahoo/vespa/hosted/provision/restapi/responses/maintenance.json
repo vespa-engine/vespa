@@ -56,6 +56,9 @@
     },
     {
       "name": "SpareCapacityMaintainer"
+    },
+    {
+      "name": "SwitchRebalancer"
     }
   ],
   "inactive": []

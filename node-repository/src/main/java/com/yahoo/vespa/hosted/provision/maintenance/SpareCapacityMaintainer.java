@@ -150,7 +150,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                 overcommittedHosts.size(),
                 overcommittedHosts.stream().map(Node::hostname).collect(Collectors.joining(", "))));
 
-        if (!Rebalancer.zoneIsStable(allNodes)) return;
+        if (!NodeMover.zoneIsStable(allNodes)) return;
 
         // Find an active node on a overcommited host and retire it
         Optional<Node> nodeToRetire = overcommittedHosts.stream().flatMap(parent -> allNodes.childrenOf(parent).stream())

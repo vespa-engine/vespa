@@ -48,6 +48,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final NodeMetricsDbMaintainer nodeMetricsDbMaintainer;
     private final AutoscalingMaintainer autoscalingMaintainer;
     private final ScalingSuggestionsMaintainer scalingSuggestionsMaintainer;
+    private final SwitchRebalancer switchRebalancer;
 
     @SuppressWarnings("unused")
     @Inject
@@ -87,10 +88,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric));
         spareCapacityMaintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval);
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval, metric);
-        rebalancer = new Rebalancer(deployer, nodeRepository, metric, clock, defaults.rebalancerInterval);
+        rebalancer = new Rebalancer(deployer, nodeRepository, metric, defaults.rebalancerInterval);
         nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval, metric);
         autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, nodeMetricsDb, deployer, metric, defaults.autoscalingInterval);
         scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, nodeMetricsDb, defaults.scalingSuggestionsInterval, metric);
+        switchRebalancer = new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();
@@ -118,11 +120,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeMetricsDbMaintainer.close();
         autoscalingMaintainer.close();
         scalingSuggestionsMaintainer.close();
+        switchRebalancer.close();
     }
 
     private static class DefaultTimes {
 
-        // TODO: Rename, kept now for compatibility reasons, want to change this and corresponding env variable
         /** Minimum time to wait between deployments by periodic application maintainer*/
         private final Duration periodicRedeployInterval;
         /** Time between each run of maintainer that does periodic redeployment */
@@ -130,7 +132,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         /** Applications are redeployed after manual operator changes within this time period */
         private final Duration operatorChangeRedeployInterval;
 
-        /** The time a node must be continuously nonresponsive before it is failed */
+        /** The time a node must be continuously unresponsive before it is failed */
         private final Duration failGrace;
         
         private final Duration reservationExpiry;
@@ -151,6 +153,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration nodeMetricsCollectionInterval;
         private final Duration autoscalingInterval;
         private final Duration scalingSuggestionsInterval;
+        private final Duration switchRebalancerInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -165,6 +168,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             nodeFailerInterval = Duration.ofMinutes(15);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             operatorChangeRedeployInterval = Duration.ofMinutes(3);
+            // Vespa upgrade frequency is higher in CD so (de)activate OS upgrades more frequently as well
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             periodicRedeployInterval = Duration.ofMinutes(30);
             provisionedExpiry = Duration.ofHours(4);
@@ -175,6 +179,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             reservationExpiry = zone.system().isCd() ? Duration.ofMinutes(5) : Duration.ofMinutes(30);
             scalingSuggestionsInterval = Duration.ofMinutes(31);
             spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
+            switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {

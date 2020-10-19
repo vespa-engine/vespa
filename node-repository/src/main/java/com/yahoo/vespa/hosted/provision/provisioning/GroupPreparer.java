@@ -62,8 +62,8 @@ public class GroupPreparer {
         boolean dynamicProvisioningEnabled = nodeRepository.canProvisionHosts() && nodeRepository.zone().getCloud().dynamicProvisioning();
         boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
 
-        // Try preparing in memory without lock. Most of the time there should be no changes and we can return nodes
-        // previously allocated.
+        // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
+        // can return nodes previously allocated.
         {
             MutableInteger probePrepareHighestIndex = new MutableInteger(highestIndex.get());
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
@@ -121,20 +121,14 @@ public class GroupPreparer {
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                           List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups,
-                                           boolean allocateFully, Mutex allocationLock) {
+                                             List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups,
+                                             boolean allocateFully, Mutex allocationLock) {
         LockedNodeList allNodes = nodeRepository.list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
                 highestIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                 application, cluster, requestedNodes, wantedGroups, allocateFully, nodeRepository);
-
-        prioritizer.addApplicationNodes();
-        prioritizer.addSurplusNodes(surplusActiveNodes);
-        prioritizer.addReadyNodes();
-        prioritizer.addNewDockerNodes();
-        allocation.offer(prioritizer.prioritize());
-
+        allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
     }
 

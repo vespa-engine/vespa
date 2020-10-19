@@ -324,7 +324,7 @@ public class NodeRepository extends AbstractComponent {
                 trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
                 trustedNodes.addAll(candidates.nodeType(NodeType.proxy).asList());
                 node.allocation().ifPresent(allocation ->
-                        trustedNodes.addAll(candidates.parentsOf(candidates.owner(allocation.owner()).asList()).asList()));
+                        trustedNodes.addAll(candidates.parentsOf(candidates.owner(allocation.owner())).asList()));
 
                 if (node.state() == State.ready) {
                     // Tenant nodes in state ready, trust:

@@ -45,7 +45,8 @@ public class NodeHistory {
         Rebalancer,
         ReservationExpirer,
         RetiringUpgrader,
-        SpareCapacityMaintainer
+        SpareCapacityMaintainer,
+        SwitchRebalancer,
     }
 
 }

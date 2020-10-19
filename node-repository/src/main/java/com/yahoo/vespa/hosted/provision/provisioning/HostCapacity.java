@@ -12,8 +12,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Capacity calculation for docker hosts.
- * <p>
+ * Capacity calculation for hosts.
+ *
  * The calculations are based on an immutable copy of nodes that represents
  * all capacities in the system - i.e. all nodes in the node repo.
  *
