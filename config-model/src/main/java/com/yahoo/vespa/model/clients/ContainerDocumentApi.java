@@ -128,13 +128,13 @@ public class ContainerDocumentApi {
         }
 
         private int maxPoolSize() {
-            double vcpu = vcpu(cluster).orElse(0);
+            double vcpu = cluster.vcpu().orElse(0);
             if (vcpu == 0) return FALLBACK_MAX_POOL_SIZE;
             return Math.max(2, (int)Math.ceil(vcpu * feedThreadPoolSizeFactor));
         }
 
         private int minPoolSize() {
-            double vcpu = vcpu(cluster).orElse(0);
+            double vcpu = cluster.vcpu().orElse(0);
             if (vcpu == 0) return FALLBACK_CORE_POOL_SIZE;
             return Math.max(1, (int)Math.ceil(vcpu * feedThreadPoolSizeFactor * 0.5));
         }

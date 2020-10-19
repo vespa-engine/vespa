@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 
 /**
@@ -629,5 +630,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public boolean getDeferChangesUntilRestart() { return deferChangesUntilRestart; }
+
+    /** Effective vcpu for the containers in cluster. Use this value as scale factor for performance/resource tuning. **/
+    public OptionalDouble vcpu() {
+        return getContainers().stream()
+                .filter(c -> c.getHostResource() != null && c.getHostResource().realResources() != null)
+                .mapToDouble(c -> c.getHostResource().realResources().vcpu())
+                .max(); // Use highest vcpu as scale factor
+    }
 
 }
