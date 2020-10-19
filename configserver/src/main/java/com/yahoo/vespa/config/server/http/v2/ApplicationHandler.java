@@ -274,8 +274,8 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static boolean isQuotaUsageRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() > 7 &&
-                request.getUri().getPath().contains("/quota");
+        return getBindingMatch(request).groupCount() == 7 &&
+                request.getUri().getPath().endsWith("/quota");
     }
 
     private static String getHostNameFromRequest(HttpRequest req) {
