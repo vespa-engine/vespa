@@ -5,15 +5,24 @@
 #include "simple_value.h"
 #include "value_codec.h"
 #include "simple_tensor_engine.h"
+#include <vespa/eval/instruction/generic_concat.h>
+#include <vespa/eval/instruction/generic_join.h>
+#include <vespa/eval/instruction/generic_map.h>
+#include <vespa/eval/instruction/generic_merge.h>
+#include <vespa/eval/instruction/generic_reduce.h>
+#include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/default_value_builder_factory.h>
 #include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string_short::fmt;
+
+using namespace vespalib::eval::instruction;
 
 namespace vespalib::eval {
 
@@ -88,32 +97,56 @@ EngineOrFactory::copy(const Value &value)
 
 const Value &
 EngineOrFactory::map(const Value &a, operation::op1_t function, Stash &stash) const {
-    return engine().map(a, function, stash);
+    if (is_engine()) {
+        return engine().map(a, function, stash);
+    } else {
+        return *stash.create<Value::UP>(GenericMap::perform_map(a, function, factory()));
+    }
 }
 
 const Value &
 EngineOrFactory::join(const Value &a, const Value &b, operation::op2_t function, Stash &stash) const {
-    return engine().join(a, b, function, stash);
+    if (is_engine()) {
+        return engine().join(a, b, function, stash);
+    } else {
+        return *stash.create<Value::UP>(GenericJoin::perform_join(a, b, function, factory()));
+    }
 }
 
 const Value &
 EngineOrFactory::merge(const Value &a, const Value &b, operation::op2_t function, Stash &stash) const {
-    return engine().merge(a, b, function, stash);
+    if (is_engine()) {
+        return engine().merge(a, b, function, stash);
+    } else {
+        return *stash.create<Value::UP>(GenericMerge::perform_merge(a, b, function, factory()));
+    }
 }
 
 const Value &
 EngineOrFactory::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const {
-    return engine().reduce(a, aggr, dimensions, stash);
+    if (is_engine()) {
+        return engine().reduce(a, aggr, dimensions, stash);
+    } else {
+        return *stash.create<Value::UP>(GenericReduce::perform_reduce(a, aggr, dimensions, factory()));
+    }
 }
 
 const Value &
 EngineOrFactory::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const {
-    return engine().concat(a, b, dimension, stash);
+    if (is_engine()) {
+        return engine().concat(a, b, dimension, stash);
+    } else {
+        return *stash.create<Value::UP>(GenericConcat::perform_concat(a, b, dimension, factory()));
+    }
 }
 
 const Value &
 EngineOrFactory::rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const {
-    return engine().rename(a, from, to, stash);
+    if (is_engine()) {
+        return engine().rename(a, from, to, stash);
+    } else {
+        return *stash.create<Value::UP>(GenericRename::perform_rename(a, from, to, factory()));
+    }
 }
 
 void
