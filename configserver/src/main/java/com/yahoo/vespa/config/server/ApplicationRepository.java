@@ -993,6 +993,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .sum();
     }
 
+    @Override
+    public Duration serverDeployTimeout() { return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()); }
+
     private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
         RestartActions restartActions = actions.getRestartActions();
         if ( ! restartActions.isEmpty()) {
