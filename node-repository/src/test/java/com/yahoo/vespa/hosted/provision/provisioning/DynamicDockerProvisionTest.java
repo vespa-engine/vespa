@@ -79,19 +79,6 @@ public class DynamicDockerProvisionTest {
     }
 
     @Test
-    public void does_not_allocate_to_available_empty_hosts() {
-        tester.makeReadyNodes(3, "small", NodeType.host, 10);
-        tester.activateTenantHosts();
-
-        ApplicationId application = ProvisioningTester.makeApplicationId();
-        NodeResources flavor = new NodeResources(1, 4, 10, 1);
-
-        mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
-        tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101), flavor, application, Version.emptyVersion);
-    }
-
-    @Test
     public void allocates_to_hosts_already_hosting_nodes_by_this_tenant() {
         ApplicationId application = ProvisioningTester.makeApplicationId();
         NodeResources flavor = new NodeResources(1, 4, 10, 1);
