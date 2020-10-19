@@ -61,7 +61,7 @@ public class PeriodicApplicationMaintainerTest {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         this.clock = new ManualClock();
         this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                 new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                 new EmptyProvisionServiceProvider(),
                                                  curator,
                                                  clock,
                                                  zone,

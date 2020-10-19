@@ -36,7 +36,7 @@ public class NodeRepositoryTester {
         curator = new MockCurator();
         curator.setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
         nodeRepository = new NodeRepository(nodeFlavors,
-                                            new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                            new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             Zone.defaultZone(),

@@ -76,7 +76,7 @@ public class NodeFailTester {
         clock = new ManualClock();
         curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors,
-                                            new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                            new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             zone,

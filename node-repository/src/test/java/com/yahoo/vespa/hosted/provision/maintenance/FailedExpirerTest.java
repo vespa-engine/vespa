@@ -252,7 +252,7 @@ public class FailedExpirerTest {
         public FailureScenario(SystemName system, Environment environment) {
             Zone zone = new Zone(system, environment, RegionName.defaultName());
             this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                     new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                     new EmptyProvisionServiceProvider(),
                                                      curator,
                                                      clock,
                                                      zone,

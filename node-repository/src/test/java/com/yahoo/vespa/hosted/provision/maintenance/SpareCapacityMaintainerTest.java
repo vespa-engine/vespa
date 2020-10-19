@@ -256,7 +256,7 @@ public class SpareCapacityMaintainerTest {
         private SpareCapacityMaintainerTester(int maxIterations) {
             NodeFlavors flavors = new NodeFlavors(new FlavorConfigBuilder().build());
             nodeRepository = new NodeRepository(flavors,
-                                                new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                new EmptyProvisionServiceProvider(),
                                                 new MockCurator(),
                                                 new ManualClock(),
                                                 new Zone(Environment.prod, RegionName.from("us-east-3")),

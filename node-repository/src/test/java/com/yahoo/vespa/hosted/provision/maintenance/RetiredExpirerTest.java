@@ -65,7 +65,7 @@ public class RetiredExpirerTest {
     private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     private final NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
-                                                                     new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                                     new EmptyProvisionServiceProvider(),
                                                                      curator,
                                                                      clock,
                                                                      zone,

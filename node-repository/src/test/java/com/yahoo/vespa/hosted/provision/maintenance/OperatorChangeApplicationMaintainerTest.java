@@ -55,7 +55,7 @@ public class OperatorChangeApplicationMaintainerTest {
         Curator curator = new MockCurator();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                 new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                 new EmptyProvisionServiceProvider(),
                                                  curator,
                                                  clock,
                                                  zone,

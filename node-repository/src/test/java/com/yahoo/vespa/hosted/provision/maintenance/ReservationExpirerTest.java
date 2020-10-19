@@ -46,7 +46,7 @@ public class ReservationExpirerTest {
         ManualClock clock = new ManualClock();
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(flavors,
-                                                           new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                           new EmptyProvisionServiceProvider(),
                                                            curator,
                                                            clock,
                                                            Zone.defaultZone(),

@@ -82,7 +82,7 @@ public class MetricsReporterTest {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
-                                                           new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                           new EmptyProvisionServiceProvider(),
                                                            curator,
                                                            Clock.systemUTC(),
                                                            Zone.defaultZone(),
@@ -186,7 +186,7 @@ public class MetricsReporterTest {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
-                                                           new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                           new EmptyProvisionServiceProvider(),
                                                            curator,
                                                            Clock.systemUTC(),
                                                            Zone.defaultZone(),

@@ -63,7 +63,7 @@ public class CapacityCheckerTester {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
         nodeRepository = new NodeRepository(f,
-                                            new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                            new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             zone,

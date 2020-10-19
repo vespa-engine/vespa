@@ -58,7 +58,7 @@ public class MockNodeRepository extends NodeRepository {
      */
     public MockNodeRepository(MockCurator curator, NodeFlavors flavors) {
         super(flavors,
-              new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+              new EmptyProvisionServiceProvider(),
               curator,
               Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
               Zone.defaultZone(),

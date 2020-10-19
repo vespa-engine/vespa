@@ -102,7 +102,7 @@ public class ProvisioningTester {
         this.clock = new ManualClock();
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator);
         this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                 resourcesCalculator,
+                                                 provisionServiceProvider,
                                                  curator,
                                                  clock,
                                                  zone,
