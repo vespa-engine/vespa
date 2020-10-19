@@ -122,6 +122,13 @@ struct SelectGenericMergeOp {
     }
 };
 
+struct PerformGenericMerge {
+    template <typename LCT, typename RCT, typename OCT, typename Fun>
+    static auto invoke(const Value &a, const Value &b, const MergeParam &param) {
+        return generic_mixed_merge<LCT,RCT,OCT,Fun>(a, b, param);
+    }
+};
+
 //-----------------------------------------------------------------------------
 
 } // namespace <unnamed>
@@ -136,5 +143,19 @@ GenericMerge::make_instruction(const ValueType &lhs_type, const ValueType &rhs_t
     auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
     return Instruction(fun, wrap_param<MergeParam>(param));
 }
+
+
+Value::UP
+GenericMerge::perform_merge(const Value &a, const Value &b, join_fun_t function,
+                            const ValueBuilderFactory &factory)
+{
+    MergeParam param(a.type(), b.type(), function, factory);
+    return typify_invoke<4,MergeTypify,PerformGenericMerge>(
+            a.type().cell_type(),
+            b.type().cell_type(),
+            param.res_type.cell_type(), function,
+            a, b, param);
+}
+
 
 } // namespace

@@ -24,8 +24,9 @@ namespace {
 //-----------------------------------------------------------------------------
 
 template <typename LCT, typename RCT, typename OCT, typename Fun>
-void my_mixed_join_op(State &state, uint64_t param_in) {
-    const auto &param = unwrap_param<JoinParam>(param_in);
+Value::UP
+generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param)
+{
     Fun fun(param.function);
     auto dense_join = [&](const LCT *my_lhs, const RCT *my_rhs, OCT *my_res)
                       {
@@ -33,8 +34,6 @@ void my_mixed_join_op(State &state, uint64_t param_in) {
                                       *my_res++ = fun(my_lhs[lhs_idx], my_rhs[rhs_idx]);
                                   });
                       };
-    const Value &lhs = state.peek(1);
-    const Value &rhs = state.peek(0);
     auto lhs_cells = lhs.cells().typify<LCT>();
     auto rhs_cells = rhs.cells().typify<RCT>();
     SparseJoinState sparse(param.sparse_plan, lhs.index(), rhs.index());
@@ -50,7 +49,16 @@ void my_mixed_join_op(State &state, uint64_t param_in) {
                        builder->add_subspace(sparse.full_address).begin());
         }
     }
-    auto &result = state.stash.create<std::unique_ptr<Value>>(builder->build(std::move(builder)));
+    return builder->build(std::move(builder));
+};
+
+template <typename LCT, typename RCT, typename OCT, typename Fun>
+void my_mixed_join_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<JoinParam>(param_in);
+    const Value &lhs = state.peek(1);
+    const Value &rhs = state.peek(0);
+    auto up = generic_mixed_join<LCT, RCT, OCT, Fun>(lhs, rhs, param);
+    auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
     const Value &result_ref = *(result.get());
     state.pop_pop_push(result_ref);
 };
@@ -140,6 +148,16 @@ struct SelectGenericJoinOp {
         return my_mixed_join_op<LCT,RCT,OCT,Fun>;
     }
 };
+
+struct PerformGenericJoin {
+    template <typename LCT, typename RCT, typename OCT, typename Fun>
+    static auto invoke(const Value &a, const Value &b, const JoinParam &param)
+    {
+        return generic_mixed_join<LCT, RCT, OCT, Fun>(a, b, param);
+    }
+};
+
+
 
 //-----------------------------------------------------------------------------
 
@@ -261,6 +279,17 @@ GenericJoin::make_instruction(const ValueType &lhs_type, const ValueType &rhs_ty
     auto &param = stash.create<JoinParam>(lhs_type, rhs_type, function, factory);
     auto fun = typify_invoke<4,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
     return Instruction(fun, wrap_param<JoinParam>(param));
+}
+
+
+Value::UP
+GenericJoin::perform_join(const Value &a, const Value &b, join_fun_t function,
+                          const ValueBuilderFactory &factory)
+{
+    JoinParam param(a.type(), b.type(), function, factory);
+    return typify_invoke<4,JoinTypify,PerformGenericJoin>(
+            a.type().cell_type(), b.type().cell_type(), param.res_type.cell_type(), function,
+            a, b, param);
 }
 
 } // namespace
