@@ -206,7 +206,7 @@ public class NodePrioritizer {
     /** Returns whether we are allocating to replace a failed node */
     private boolean isReplacement(int nodesInCluster, int failedNodesInCluster) {
         if (failedNodesInCluster == 0) return false;
-        return requestedNodes.fulfilledBy(nodesInCluster - failedNodesInCluster);
+        return ! requestedNodes.fulfilledBy(nodesInCluster - failedNodesInCluster);
     }
 
     /**
