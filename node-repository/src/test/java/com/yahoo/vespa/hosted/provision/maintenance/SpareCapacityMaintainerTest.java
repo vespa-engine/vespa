@@ -256,7 +256,7 @@ public class SpareCapacityMaintainerTest {
         private SpareCapacityMaintainerTester(int maxIterations) {
             NodeFlavors flavors = new NodeFlavors(new FlavorConfigBuilder().build());
             nodeRepository = new NodeRepository(flavors,
-                                                new EmptyProvisionServiceProvider(),
+                                                new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
                                                 new MockCurator(),
                                                 new ManualClock(),
                                                 new Zone(Environment.prod, RegionName.from("us-east-3")),
@@ -264,6 +264,7 @@ public class SpareCapacityMaintainerTest {
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 new InMemoryFlagSource(),
                                                 true,
+                                                false,
                                                 1, 1000);
             deployer = new MockDeployer(nodeRepository);
             maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofDays(1), maxIterations);

@@ -6,8 +6,8 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
@@ -61,7 +61,7 @@ public class PeriodicApplicationMaintainerTest {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         this.clock = new ManualClock();
         this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                 new EmptyProvisionServiceProvider(),
+                                                 new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
                                                  curator,
                                                  clock,
                                                  zone,
@@ -69,6 +69,7 @@ public class PeriodicApplicationMaintainerTest {
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  new InMemoryFlagSource(),
                                                  true,
+                                                 false,
                                                  0, 1000);
         this.fixture = new Fixture(zone, nodeRepository);
 

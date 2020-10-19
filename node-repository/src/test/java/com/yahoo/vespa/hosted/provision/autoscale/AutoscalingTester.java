@@ -63,7 +63,7 @@ class AutoscalingTester {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
                                                              .resourcesCalculator(resourcesCalculator)
-                                                             .hostProvisioner(zone.getCloud().dynamicProvisioning() ? new MockHostProvisioner(flavors) : null)
+                                                             .hostProvisioner(new MockHostProvisioner(flavors))
                                                              .build();
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);

@@ -252,7 +252,7 @@ public class FailedExpirerTest {
         public FailureScenario(SystemName system, Environment environment) {
             Zone zone = new Zone(system, environment, RegionName.defaultName());
             this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                     new EmptyProvisionServiceProvider(),
+                                                     new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
                                                      curator,
                                                      clock,
                                                      zone,
@@ -260,6 +260,7 @@ public class FailedExpirerTest {
                                                      DockerImage.fromString("docker-image"),
                                                      new InMemoryFlagSource(),
                                                      true,
+                                                     false,
                                                      0, 1000);
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30), new TestMetric());

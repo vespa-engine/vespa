@@ -35,7 +35,7 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
     @Override
     protected boolean maintain() {
         boolean success = true;
-        if (nodeRepository().zone().getCloud().dynamicProvisioning()) return success; // Rebalancing not necessary
+        if ( ! nodeRepository().zone().getCloud().allowHostSharing()) return success; // Rebalancing not necessary
         if (nodeRepository().zone().environment().isTest()) return success; // Short lived deployments; no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
