@@ -15,8 +15,7 @@ ServiceLayerComponentRegisterImpl::ServiceLayerComponentRegisterImpl(bool use_bt
 { }
 
 void
-ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(
-        ServiceLayerManagedComponent& smc)
+ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(ServiceLayerManagedComponent& smc)
 {
     std::lock_guard lock(_componentLock);
     _components.push_back(&smc);

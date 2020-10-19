@@ -93,7 +93,7 @@ class Component : private ManagedComponent
     ThreadPool* _threadPool;
     MetricRegistrator* _metricReg;
     std::pair<MetricUpdateHook*, SecondTime> _metricUpdateHook;
-    Clock* _clock;
+    const Clock* _clock;
     ComponentStateListener* _listener;
     std::atomic<UpgradeFlags> _upgradeFlag;
 
@@ -169,7 +169,7 @@ public:
      * encourated to register a clock implementation before adding components to
      * avoid needing components to delay using it.
      */
-    Clock& getClock() const { return *_clock; }
+    const Clock& getClock() const { return *_clock; }
 
     /**
      * Helper functions for components wanting to start a single thread.

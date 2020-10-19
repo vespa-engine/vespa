@@ -8,8 +8,6 @@
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/storageutil/utils.h>
-#include <vespa/config-stor-filestor.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
 
 namespace storage {
 
@@ -95,17 +93,14 @@ private:
 };
 
 struct PersistenceUtil {
-    vespa::config::content::StorFilestorConfig  _config;
     ServiceLayerComponent                      &_component;
     FileStorHandler                            &_fileStorHandler;
     uint16_t                                    _nodeIndex;
     FileStorThreadMetrics                      &_metrics;  // Needs a better solution for speed and thread safety
     const document::BucketIdFactory            &_bucketFactory;
-    const std::shared_ptr<const document::DocumentTypeRepo> _repo;
     spi::PersistenceProvider                   &_spi;
 
     PersistenceUtil(
-            const config::ConfigUri&,
             ServiceLayerComponent&,
             FileStorHandler& fileStorHandler,
             FileStorThreadMetrics& metrics,
@@ -113,11 +108,11 @@ struct PersistenceUtil {
 
     ~PersistenceUtil();
 
-    StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) {
+    StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const {
         return _component.getBucketDatabase(bucketSpace);
     }
 
-    void updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& info);
+    void updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& info) const;
 
     uint16_t getPreferredAvailableDisk(const document::Bucket &bucket) const;
 

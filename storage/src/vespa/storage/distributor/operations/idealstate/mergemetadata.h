@@ -4,6 +4,8 @@
 
 #include <vespa/storage/bucketdb/bucketcopy.h>
 
+namespace vespalib { class asciistream; }
+
 namespace storage::distributor {
 
 struct MergeMetaData {

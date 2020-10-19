@@ -34,9 +34,10 @@ public:
         DELETED_IN_PLACE           = 0x04
     };
 
-    MergeHandler(PersistenceUtil&, spi::PersistenceProvider& spi);
-    /** Used for unit testing */
-    MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, uint32_t maxChunkSize);
+    MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
+                 uint32_t maxChunkSize = 4190208,
+                 bool enableMergeLocalNodeChooseDocsOptimalization = true,
+                 uint32_t commonMergeChainOptimalizationMinimumSize = 64);
 
     bool buildBucketInfoList(
             const spi::Bucket& bucket,
@@ -64,9 +65,13 @@ public:
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&);
 
 private:
+    const framework::Clock   &_clock;
+    const vespalib::string   &_clusterName;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
     uint32_t                  _maxChunkSize;
+    bool                      _enableMergeLocalNodeChooseDocsOptimalization;
+    uint32_t                  _commonMergeChainOptimalizationMinimumSize;
 
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,

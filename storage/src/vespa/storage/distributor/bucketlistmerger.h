@@ -3,10 +3,9 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
+#include <vector>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 /**
    Merges two sorted lists of buckets.
@@ -18,27 +17,18 @@ namespace distributor {
 class BucketListMerger
 {
 public:
-    typedef std::pair<document::BucketId, api::BucketInfo> BucketEntry;
-    typedef std::vector<BucketEntry> BucketList;
+    using BucketEntry = std::pair<document::BucketId, api::BucketInfo>;
+    using BucketList = std::vector<BucketEntry>;
 
-    BucketListMerger(const BucketList& newList, const BucketList& oldList,
-                     uint64_t timestamp);
+    BucketListMerger(const BucketList& newList, const BucketList& oldList, uint64_t timestamp);
 
-    const std::vector<BucketEntry>& getAddedEntries()
-    { return _addedEntries; }
-
-    const std::vector<document::BucketId>& getRemovedEntries()
-    { return _removedEntries; }
-
+    const std::vector<BucketEntry>& getAddedEntries() const { return _addedEntries; }
+    const std::vector<document::BucketId>& getRemovedEntries() const { return _removedEntries; }
     uint64_t getTimestamp() const { return _timestamp; }
-
 private:
-    std::vector<BucketEntry> _addedEntries;
+    std::vector<BucketEntry>        _addedEntries;
     std::vector<document::BucketId> _removedEntries;
-    uint64_t _timestamp;
+    uint64_t                        _timestamp;
 };
 
 }
-
-}
-

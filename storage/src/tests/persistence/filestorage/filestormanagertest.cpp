@@ -15,6 +15,7 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
+#include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
@@ -197,11 +198,13 @@ createThread(vdstestlib::DirConfig& config,
              TestServiceLayerApp& node,
              spi::PersistenceProvider& provider,
              FileStorHandler& filestorHandler,
+             BucketOwnershipNotifier & notifier,
              FileStorThreadMetrics& metrics)
 {
     (void) config;
-    return std::make_unique<PersistenceThread>(node.executor(), node.getComponentRegister(), config.getConfigId(),
-                                               provider, filestorHandler, metrics);
+    vespa::config::content::StorFilestorConfig cfg;
+    return std::make_unique<PersistenceThread>(node.executor(), node.getComponentRegister(), cfg,
+                                               provider, filestorHandler, notifier, metrics);
 }
 
 namespace {
@@ -716,12 +719,14 @@ TEST_F(FileStorManagerTest, priority) {
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  2);
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    ServiceLayerComponent component(_node->getComponentRegister(), "test");
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0]));
+            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
     std::unique_ptr<DiskThread> thread2(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[1]));
+            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[1]));
 
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
@@ -796,9 +801,11 @@ TEST_F(FileStorManagerTest, split1) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    ServiceLayerComponent component(_node->getComponentRegister(), "test");
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0]));
+            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
@@ -936,6 +943,8 @@ TEST_F(FileStorManagerTest, split_single_group) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    ServiceLayerComponent component(_node->getComponentRegister(), "test");
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
@@ -945,7 +954,7 @@ TEST_F(FileStorManagerTest, split_single_group) {
 
         std::unique_ptr<DiskThread> thread(createThread(
                 *config, *_node, _node->getPersistenceProvider(),
-                filestorHandler, *metrics.disks[0]->threads[0]));
+                filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
         // Creating documents to test with. Different gids, 2 locations.
         std::vector<document::Document::SP> documents;
         for (uint32_t i=0; i<20; ++i) {
@@ -1048,9 +1057,11 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    ServiceLayerComponent component(_node->getComponentRegister(), "test");
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0]));
+            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
 
     document::BucketId source(16, 0x10001);
 
@@ -1113,9 +1124,11 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    ServiceLayerComponent component(_node->getComponentRegister(), "test");
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0]));
+            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
 
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
     createBucket(source, 0);
@@ -1154,9 +1167,11 @@ TEST_F(FileStorManagerTest, join) {
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
+    ServiceLayerComponent component(_node->getComponentRegister(), "test");
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0]));
+            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
