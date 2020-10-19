@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 
@@ -74,7 +73,7 @@ public class AllocationVisualizer extends JPanel {
         // Find number of docker hosts (to calculate start, and width of each)
         // Draw the docker hosts - and color each container according to application
         AllocationSnapshot simStep = steps.get(step);
-        NodeList hosts = simStep.nodes.nodeType(NodeType.host);
+        NodeList hosts = simStep.nodes.hosts();
         for (Node host : hosts) {
 
             // Paint the host

@@ -73,7 +73,7 @@ public class LoadBalancerProvisionerTest {
         assertEquals(4443, get(lbApp1.get().get(0).instance().reals(), 1).port());
 
         // A container is failed
-        Supplier<List<Node>> containers = () -> tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
+        Supplier<List<Node>> containers = () -> tester.getNodes(app1).container().asList();
         Node toFail = containers.get().get(0);
         tester.nodeRepository().fail(toFail.hostname(), Agent.system, this.getClass().getSimpleName());
 
@@ -101,7 +101,7 @@ public class LoadBalancerProvisionerTest {
         // Load balancer is provisioned for second container cluster
         assertEquals(2, lbApp1.get().size());
         List<HostName> activeContainers = tester.getNodes(app1, Node.State.active)
-                                                .type(ClusterSpec.Type.container).asList()
+                                                .container().asList()
                                                 .stream()
                                                 .map(Node::hostname)
                                                 .map(HostName::from)
