@@ -766,6 +766,11 @@ public class NodeRepository extends AbstractComponent {
         });
     }
 
+    /** Retire nodes matching given filter */
+    public List<Node> retire(NodeFilter filter, Agent agent, Instant instant) {
+        return performOn(filter, (node, lock) -> write(node.withWantToRetire(true, agent, instant), lock));
+    }
+
     /**
      * Writes this node after it has changed some internal state but NOT changed its state field.
      * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
@@ -809,13 +814,19 @@ public class NodeRepository extends AbstractComponent {
         // perform operation while holding locks
         List<Node> resultingNodes = new ArrayList<>();
         try (Mutex lock = lockUnallocated()) {
-            for (Node node : unallocatedNodes)
-                resultingNodes.add(action.apply(node, lock));
+            for (Node node : unallocatedNodes) {
+                Optional<Node> currentNode = db.readNode(node.hostname()); // Re-read while holding lock
+                if (currentNode.isEmpty()) continue;
+                resultingNodes.add(action.apply(currentNode.get(), lock));
+            }
         }
         for (Map.Entry<ApplicationId, List<Node>> applicationNodes : allocatedNodes.entrySet()) {
             try (Mutex lock = lock(applicationNodes.getKey())) {
-                for (Node node : applicationNodes.getValue())
-                    resultingNodes.add(action.apply(node, lock));
+                for (Node node : applicationNodes.getValue()) {
+                    Optional<Node> currentNode = db.readNode(node.hostname());  // Re-read while holding lock
+                    if (currentNode.isEmpty()) continue;
+                    resultingNodes.add(action.apply(currentNode.get(), lock));
+                }
             }
         }
         return resultingNodes;
