@@ -24,13 +24,13 @@ public class SessionStateWatcher {
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
-    private volatile Session session;
+    private volatile RemoteSession session;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
     private final SessionRepository sessionRepository;
 
     SessionStateWatcher(Curator.FileCache fileCache,
-                        Session session,
+                        RemoteSession session,
                         MetricUpdater metrics,
                         Executor zkWatcherExecutor,
                         SessionRepository sessionRepository) {
@@ -51,7 +51,7 @@ public class SessionStateWatcher {
                 break;
             case PREPARE:
                 createLocalSession(sessionId);
-                sessionRepository.prepare(session);
+                sessionRepository.prepareRemoteSession(session);
                 break;
             case ACTIVATE:
                 createLocalSession(sessionId);
@@ -66,7 +66,7 @@ public class SessionStateWatcher {
     }
 
     private void createLocalSession(long sessionId) {
-        sessionRepository.createSessionFromDistributedApplicationPackage(sessionId);
+        sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
     }
 
     public long getSessionId() {
@@ -100,7 +100,7 @@ public class SessionStateWatcher {
         });
     }
 
-    public synchronized void updateRemoteSession(Session session) {
+    public synchronized void updateRemoteSession(RemoteSession session) {
         this.session = session;
     }
 
