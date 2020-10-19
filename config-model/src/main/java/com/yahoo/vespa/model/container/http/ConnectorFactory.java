@@ -7,6 +7,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.SslProvider;
 
 import static com.yahoo.component.ComponentSpecification.fromString;
 
@@ -19,7 +20,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
     private final String name;
     private final int listenPort;
-    private final SimpleComponent sslProviderComponent;
+    private final SslProvider sslProviderComponent;
 
     public ConnectorFactory(String name, int listenPort) {
         this(name, listenPort, new DefaultSslProvider(name));
@@ -27,7 +28,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
     public ConnectorFactory(String name,
                             int listenPort,
-                            SimpleComponent sslProviderComponent) {
+                            SslProvider sslProviderComponent) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(name),
                                                      fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
@@ -43,7 +44,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
         connectorBuilder.listenPort(listenPort);
         connectorBuilder.name(name);
-        ((ConnectorConfig.Producer)sslProviderComponent).getConfig(connectorBuilder);
+        sslProviderComponent.amendConnectorConfig(connectorBuilder);
     }
 
     public String getName() {

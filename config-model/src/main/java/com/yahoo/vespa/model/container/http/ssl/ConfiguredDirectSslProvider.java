@@ -1,17 +1,12 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http.ssl;
 
-import com.yahoo.component.ComponentId;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider;
-import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.util.Optional;
 
-import static com.yahoo.component.ComponentSpecification.fromString;
-import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.*;
+import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
 
 /**
  * Configure SSL with PEM encoded certificate/key strings
@@ -19,7 +14,7 @@ import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.*;
  * @author mortent
  * @author andreer
  */
-public class ConfiguredDirectSslProvider extends SimpleComponent implements ConnectorConfig.Producer {
+public class ConfiguredDirectSslProvider extends SslProvider {
     public static final String COMPONENT_ID_PREFIX = "configured-ssl-provider@";
     public static final String COMPONENT_CLASS = ConfiguredSslContextFactoryProvider.class.getName();
     public static final String COMPONENT_BUNDLE = "jdisc_http_service";
@@ -31,10 +26,7 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
     private final ClientAuth.Enum clientAuthentication;
 
     public ConfiguredDirectSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String caCertificate, ClientAuth.Enum clientAuthentication) {
-        super(new ComponentModel(
-                new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX+servername),
-                                                     fromString(COMPONENT_CLASS),
-                                                     fromString(COMPONENT_BUNDLE))));
+        super(COMPONENT_ID_PREFIX, servername, COMPONENT_CLASS, COMPONENT_BUNDLE);
         this.privateKey = privateKey;
         this.certificate = certificate;
         this.caCertificatePath = caCertificatePath;
@@ -43,7 +35,7 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
     }
 
     @Override
-    public void getConfig(ConnectorConfig.Builder builder) {
+    public void amendConnectorConfig(ConnectorConfig.Builder builder) {
         builder.ssl.enabled(true);
         builder.ssl.privateKey(privateKey);
         builder.ssl.certificate(certificate);
@@ -51,9 +43,4 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
         builder.ssl.caCertificate(Optional.ofNullable(caCertificate).orElse(""));
         builder.ssl.clientAuth(clientAuthentication);
     }
-
-    public SimpleComponent getComponent() {
-        return new SimpleComponent(new ComponentModel(getComponentId().stringValue(), COMPONENT_CLASS, COMPONENT_BUNDLE));
-    }
-
 }
