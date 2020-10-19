@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -54,23 +56,20 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
 
     /** Move reserved load balancer that have expired to inactive */
     private void expireReserved() {
-        var now = nodeRepository().clock().instant();
-        withLoadBalancersIn(State.reserved, lb -> {
-            var gracePeriod = now.minus(reservedExpiry);
-            if (!lb.changedAt().isBefore(gracePeriod)) return; // Should not move to inactive yet
-            db.writeLoadBalancer(lb.with(State.inactive, now));
-        });
+        var expiry = nodeRepository().clock().instant().minus(reservedExpiry);
+        patchLoadBalancers(lb -> lb.state() == State.reserved &&
+                                 lb.changedAt().isBefore(expiry),
+                           lb -> db.writeLoadBalancer(lb.with(State.inactive, nodeRepository().clock().instant())));
     }
 
     /** Deprovision inactive load balancers that have expired */
     private boolean removeInactive() {
         var failed = new ArrayList<LoadBalancerId>();
         var lastException = new AtomicReference<Exception>();
-        var now = nodeRepository().clock().instant();
-        withLoadBalancersIn(State.inactive, lb -> {
-            var gracePeriod = now.minus(inactiveExpiry);
-            if (!lb.changedAt().isBefore(gracePeriod)) return; // Should not be removed yet
-            if (!allocatedNodes(lb.id()).isEmpty()) return;    // Still has nodes, do not remove
+        var expiry = nodeRepository().clock().instant().minus(inactiveExpiry);
+        patchLoadBalancers(lb -> lb.state() == State.inactive &&
+                                 lb.changedAt().isBefore(expiry) &&
+                                 allocatedNodes(lb.id()).isEmpty(), lb -> {
             try {
                 service.remove(lb.id().application(), lb.id().cluster());
                 db.removeLoadBalancer(lb.id());
@@ -95,7 +94,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     private boolean pruneReals() {
         var failed = new ArrayList<LoadBalancerId>();
         var lastException = new AtomicReference<Exception>();
-        withLoadBalancersIn(State.inactive, lb -> {
+        patchLoadBalancers(lb -> lb.state() == State.inactive, lb -> {
             var allocatedNodes = allocatedNodes(lb.id()).stream().map(Node::hostname).collect(Collectors.toSet());
             var reals = new LinkedHashSet<>(lb.instance().reals());
             // Remove any real no longer allocated to this application
@@ -120,14 +119,15 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
         return lastException.get() == null;
     }
 
-    /** Apply operation to all load balancers that exist in given state, while holding lock */
-    private void withLoadBalancersIn(LoadBalancer.State state, Consumer<LoadBalancer> operation) {
+    /** Patch load balancers matching given filter, while holding lock */
+    private void patchLoadBalancers(Predicate<LoadBalancer> filter, Consumer<LoadBalancer> patcher) {
         for (var id : db.readLoadBalancerIds()) {
+            Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
+            if (loadBalancer.isEmpty() || !filter.test(loadBalancer.get())) continue;
             try (var lock = db.lock(id.application(), Duration.ofSeconds(1))) {
-                var loadBalancer = db.readLoadBalancer(id);
-                if (loadBalancer.isEmpty()) continue;              // Load balancer was removed during loop
-                if (loadBalancer.get().state() != state) continue; // Wrong state
-                operation.accept(loadBalancer.get());
+                loadBalancer = db.readLoadBalancer(id);
+                if (loadBalancer.isEmpty() || !filter.test(loadBalancer.get())) continue;
+                patcher.accept(loadBalancer.get());
             }
         }
     }
