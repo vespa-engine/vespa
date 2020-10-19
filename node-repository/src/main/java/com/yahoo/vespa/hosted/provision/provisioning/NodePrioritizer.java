@@ -134,18 +134,7 @@ public class NodePrioritizer {
                                         .filter(node -> node.type() != NodeType.host || nodeRepository.canAllocateTenantNodeTo(node))
                                         .filter(node -> node.reservedTo().isEmpty() || node.reservedTo().get().equals(application.tenant()))
                                         .collect(Collectors.toList());
-        if (allocateFully) {
-            Set<String> hostsOfThisTenant = candidates.stream()
-                                                      .filter(node -> node.type() == NodeType.tenant)
-                                                      .filter(node -> node.allocation()
-                                                                          .map(a -> a.owner().tenant().equals(this.application.tenant()))
-                                                                          .orElse(false))
-                                                      .flatMap(node -> node.parentHostname().stream())
-                                                      .collect(Collectors.toSet());
-            candidates = candidates.stream()
-                                   .filter(node -> hostsOfThisTenant.contains(node.hostname()))
-                                   .collect(Collectors.toList());
-        }
+
         for (Node host : candidates) {
             if ( spareHosts.contains(host) && !allocateForReplacement) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
