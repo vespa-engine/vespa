@@ -84,7 +84,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         server.setRequestLog(new AccessLogRequestLog(accessLog, serverConfig.accessLog()));
         setupJmx(server, serverConfig);
-        ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
+        configureJettyThreadpool(server, serverConfig);
 
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
@@ -133,6 +133,12 @@ public class JettyHttpServer extends AbstractServerProvider {
             server.addBean(new ConnectorServer(createJmxLoopbackOnlyServiceUrl(serverConfig.jmx().listenPort()),
                                                "org.eclipse.jetty.jmx:name=rmiconnectorserver"));
         }
+    }
+
+    private static void configureJettyThreadpool(Server server, ServerConfig config) {
+        QueuedThreadPool pool = (QueuedThreadPool) server.getThreadPool();
+        pool.setMaxThreads(config.maxWorkerThreads());
+        pool.setMinThreads(config.minWorkerThreads());
     }
 
     private static JMXServiceURL createJmxLoopbackOnlyServiceUrl(int port) {
