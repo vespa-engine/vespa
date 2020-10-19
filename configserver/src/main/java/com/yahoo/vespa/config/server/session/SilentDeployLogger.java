@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 import com.yahoo.config.application.api.DeployLogger;
 
 /**
- * The purpose of this is to mute the log messages from model and application building in {@link RemoteSession} that
+ * The purpose of this is to mute the log messages from model and application building that
  * is triggered by {@link SessionStateWatcher}, since those messages already have been emitted by the prepare
  * handler, for the same prepare operation.
  * 

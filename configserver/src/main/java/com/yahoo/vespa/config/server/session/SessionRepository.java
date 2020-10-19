@@ -73,8 +73,7 @@ public class SessionRepository {
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSessionId = 0;
 
-    private final Map<Long, LocalSession> localSessionCache = new ConcurrentHashMap<>();
-    private final Map<Long, RemoteSession> remoteSessionCache = new ConcurrentHashMap<>();
+    private final Map<Long, Session> sessionCache = new ConcurrentHashMap<>();
     private final Map<Long, SessionStateWatcher> sessionStateWatchers = new HashMap<>();
     private final Duration sessionLifetime;
     private final Clock clock;
@@ -104,36 +103,27 @@ public class SessionRepository {
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
         this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
-        loadSessions(); // Needs to be done before creating cache below
+        loadAll(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
 
-    private void loadSessions() {
-        loadLocalSessions();
-        loadRemoteSessions();
+    private void loadAll() {
+        loadSessionsFromFileSystem();
+        loadSessions();
     }
 
-    // ---------------- Local sessions ----------------------------------------------------------------
-
-    public synchronized void addLocalSession(LocalSession session) {
+    public synchronized void addSession(Session session) {
         long sessionId = session.getSessionId();
-        localSessionCache.put(sessionId, session);
-        if (remoteSessionCache.get(sessionId) == null) {
-            createRemoteSession(sessionId);
-        }
+        sessionCache.put(sessionId, session);
     }
 
-    public LocalSession getLocalSession(long sessionId) {
-        return localSessionCache.get(sessionId);
+    public Collection<Session> getSessions() {
+        return sessionCache.values();
     }
 
-    public Collection<LocalSession> getLocalSessions() {
-        return localSessionCache.values();
-    }
-
-    private void loadLocalSessions() {
+    private void loadSessionsFromFileSystem() {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
         if (sessions == null) return;
 
@@ -147,7 +137,7 @@ public class SessionRepository {
         }
     }
 
-    public ConfigChangeActions prepareLocalSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
+    public ConfigChangeActions prepareSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
@@ -171,10 +161,10 @@ public class SessionRepository {
      * @param timeoutBudget timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSessionFromExisting(Session existingSession, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
+    public Session createSessionFromExisting(Session existingSession, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
         ApplicationId existingApplicationId = existingSession.getApplicationId();
         File existingApp = getSessionAppDir(existingSession.getSessionId());
-        LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, internalRedeploy, timeoutBudget);
+        Session session = createSessionFromApplication(existingApp, existingApplicationId, internalRedeploy, timeoutBudget);
         // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
         session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
@@ -192,91 +182,57 @@ public class SessionRepository {
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSessionFromApplicationPackage(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+    public Session createSessionFromApplicationPackage(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
         applicationRepo.createApplication(applicationId);
         return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget);
     }
 
-    /**
-     * This method is used when creating a session based on a remote session and the distributed application package
-     * It does not wait for session being created on other servers
-     */
-    private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
-        try {
-            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, sessionId, false);
-            createLocalSession(sessionId, applicationPackage);
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating session " + sessionId, e);
-        }
-    }
-
     // Will delete session data in ZooKeeper and file system
-    public void deleteLocalSession(LocalSession session) {
+    public void deleteLocalSession(Session session) {
         long sessionId = session.getSessionId();
-        log.log(Level.FINE, () -> "Deleting local session " + sessionId);
+        log.log(Level.FINE, () -> "Deleting session " + sessionId);
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
-        localSessionCache.remove(sessionId);
+        sessionCache.remove(sessionId);
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
         transaction.commit();
     }
 
     private void deleteAllSessions() {
-        List<LocalSession> sessions = new ArrayList<>(localSessionCache.values());
-        for (LocalSession session : sessions) {
+        List<Session> sessions = new ArrayList<>(sessionCache.values());
+        for (Session session : sessions) {
             deleteLocalSession(session);
         }
     }
 
-    // ---------------- Remote sessions ----------------------------------------------------------------
-
-    public RemoteSession getRemoteSession(long sessionId) {
-        return remoteSessionCache.get(sessionId);
+    public Session getSession(long sessionId) {
+        return sessionCache.get(sessionId);
     }
 
     public List<Long> getRemoteSessionsFromZooKeeper() {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public synchronized RemoteSession createRemoteSession(long sessionId) {
+    public synchronized Session createSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
-        remoteSessionCache.put(sessionId, session);
+        Session session = new Session(tenantName, sessionId, sessionZKClient, Optional.empty(), Optional.empty());
+        sessionCache.put(sessionId, session);
         loadSessionIfActive(session);
         updateSessionStateWatcher(sessionId, session);
         return session;
     }
 
-    public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
-        int deleted = 0;
-        for (long sessionId : getRemoteSessionsFromZooKeeper()) {
-            Session session = remoteSessionCache.get(sessionId);
-            if (session == null) continue; // Internal sessions not in sync with zk, continue
-            if (session.getStatus() == Session.Status.ACTIVATE) continue;
-            if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
-                log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
-                deleteRemoteSessionFromZooKeeper(session);
-                deleted++;
-            }
-        }
-        return deleted;
+    public void deactivateAndUpdateCache(Session session) {
+        Session deactivated = session.deactivated();
+        sessionCache.put(deactivated.getSessionId(), deactivated);
     }
 
-    public void deactivateAndUpdateCache(RemoteSession remoteSession) {
-        RemoteSession session = remoteSession.deactivated();
-        remoteSessionCache.put(session.getSessionId(), session);
-    }
-
-    public void deleteRemoteSessionFromZooKeeper(Session session) {
+    public void deleteSessionFromZooKeeper(Session session) {
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         Transaction transaction = sessionZooKeeperClient.deleteTransaction();
         transaction.commit();
         transaction.close();
-    }
-
-    private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
-        return (created.plus(expiryTime).isBefore(clock.instant()));
     }
 
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
@@ -289,7 +245,7 @@ public class SessionRepository {
         return children.stream().map(Long::parseLong).collect(Collectors.toList());
     }
 
-    private void loadRemoteSessions() throws NumberFormatException {
+    private void loadSessions() throws NumberFormatException {
         getRemoteSessionsFromZooKeeper().forEach(this::sessionAdded);
     }
 
@@ -299,16 +255,16 @@ public class SessionRepository {
      * @param sessionId session id for the new session
      */
     public synchronized void sessionAdded(long sessionId) {
-        log.log(Level.FINE, () -> "Adding remote session " + sessionId);
-        Session session = createRemoteSession(sessionId);
+        log.log(Level.FINE, () -> "Adding session " + sessionId);
+        Session session = createSession(sessionId);
         if (session.getStatus() == Session.Status.NEW) {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
         }
-        createLocalSessionFromDistributedApplicationPackage(sessionId);
+        createSessionFromDistributedApplicationPackage(sessionId);
     }
 
-    void activate(RemoteSession session) {
+    void activate(Session session) {
         long sessionId = session.getSessionId();
         Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
         log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + session);
@@ -320,28 +276,21 @@ public class SessionRepository {
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
-    public void delete(Session remoteSession) {
-        long sessionId = remoteSession.getSessionId();
-        // TODO: Change log level to FINE when debugging is finished
-        log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
-        deleteRemoteSessionFromZooKeeper(remoteSession);
-        remoteSessionCache.remove(sessionId);
-        LocalSession localSession = getLocalSession(sessionId);
-        if (localSession != null) {
-            // TODO: Change log level to FINE when debugging is finished
-            log.log(Level.INFO, () -> localSession.logPre() + "Deleting local session " + sessionId);
-            deleteLocalSession(localSession);
-        }
+    public void delete(Session session) {
+        long sessionId = session.getSessionId();
+        deleteSessionFromZooKeeper(session);
+        sessionCache.remove(sessionId);
+        deleteLocalSession(session);
     }
 
     private void sessionRemoved(long sessionId) {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
-        remoteSessionCache.remove(sessionId);
+        sessionCache.remove(sessionId);
         metrics.incRemovedSessions();
     }
 
-    private void loadSessionIfActive(RemoteSession session) {
+    private void loadSessionIfActive(Session session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
@@ -352,22 +301,22 @@ public class SessionRepository {
         }
     }
 
-    void prepareRemoteSession(RemoteSession session) {
+    void prepare(Session session) {
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         Curator.CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
         ensureApplicationLoaded(session);
         notifyCompletion(waiter, session);
     }
 
-    public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
+    public ApplicationSet ensureApplicationLoaded(Session session) {
         if (session.applicationSet().isPresent()) {
             return session.applicationSet().get();
         }
 
         ApplicationSet applicationSet = loadApplication(session);
-        RemoteSession activated = session.activated(applicationSet);
+        Session activated = session.activated(applicationSet);
         long sessionId = activated.getSessionId();
-        remoteSessionCache.put(sessionId, activated);
+        sessionCache.put(sessionId, activated);
         updateSessionStateWatcher(sessionId, activated);
 
         return applicationSet;
@@ -427,7 +376,7 @@ public class SessionRepository {
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
             Multiset<Session.Status> sessionMetrics = HashMultiset.create();
-            for (Session session : remoteSessionCache.values()) {
+            for (Session session : sessionCache.values()) {
                 sessionMetrics.add(session.getStatus());
             }
             metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
@@ -458,20 +407,20 @@ public class SessionRepository {
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         try {
-            for (LocalSession candidate : localSessionCache.values()) {
+            for (Session candidate : sessionCache.values()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
                 // Sessions with state other than ACTIVATE
                 if (hasExpired(candidate) && !isActiveSession(candidate)) {
-                    deleteLocalSession(candidate);
+                    delete(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
                     //  Sessions with state ACTIVATE, but which are not actually active
                     Optional<ApplicationId> applicationId = candidate.getOptionalApplicationId();
                     if (applicationId.isEmpty()) continue;
                     Long activeSession = activeSessions.get(applicationId.get());
                     if (activeSession == null || activeSession != candidate.getSessionId()) {
-                        deleteLocalSession(candidate);
+                        delete(candidate);
                         log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " created " +
                                             createTime + " for '" + applicationId + "'");
                     }
@@ -484,11 +433,11 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Done purging old sessions");
     }
 
-    private boolean hasExpired(LocalSession candidate) {
-        return (candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant()));
+    private boolean hasExpired(Session candidate) {
+        return candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant());
     }
 
-    private boolean isActiveSession(LocalSession candidate) {
+    private boolean isActiveSession(Session candidate) {
         return candidate.getStatus() == Session.Status.ACTIVATE;
     }
 
@@ -515,10 +464,10 @@ public class SessionRepository {
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 
-    private LocalSession createSessionFromApplication(File applicationFile,
-                                                      ApplicationId applicationId,
-                                                      boolean internalRedeploy,
-                                                      TimeoutBudget timeoutBudget) {
+    private Session createSessionFromApplication(File applicationFile,
+                                                 ApplicationId applicationId,
+                                                 boolean internalRedeploy,
+                                                 TimeoutBudget timeoutBudget) {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
@@ -527,9 +476,9 @@ public class SessionRepository {
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
             sessionZKClient.createNewSession(clock.instant());
             Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-            LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
+            Session session = new Session(tenantName, sessionId, sessionZKClient, app);
             waiter.awaitCompletion(timeoutBudget.timeLeft());
-            addLocalSession(session);
+            addSession(session);
             return session;
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -555,8 +504,8 @@ public class SessionRepository {
         Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
         try {
             long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
-            RemoteSession currentActiveSession = getRemoteSession(currentActiveSessionId);
-            currentActiveApplicationSet = Optional.ofNullable(ensureApplicationLoaded(currentActiveSession));
+            Session activeSession = getSession(currentActiveSessionId);
+            currentActiveApplicationSet = Optional.ofNullable(ensureApplicationLoaded(activeSession));
         } catch (IllegalArgumentException e) {
             // Do nothing if we have no currently active session
         }
@@ -590,29 +539,29 @@ public class SessionRepository {
     void createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
-        createLocalSession(sessionId, applicationPackage);
+        createSessionWithApplicationPackage(sessionId, applicationPackage);
     }
 
-    void createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
+    void createSessionWithApplicationPackage(long sessionId, ApplicationPackage applicationPackage) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
-        addLocalSession(session);
+        Session session = new Session(tenantName, sessionId, sessionZKClient, applicationPackage);
+        addSession(session);
     }
 
     /**
-     * Returns a new local session for the given session id if it does not already exist.
-     * Will also add the session to the local session cache if necessary
+     * Returns a new session for the given session id if it does not already exist.
+     * Will also add the session to the session cache if necessary
      */
-    public void createLocalSessionFromDistributedApplicationPackage(long sessionId) {
+    public void createSessionFromDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
-            log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
+            log.log(Level.FINE, () -> "Session " + sessionId + " already exists");
             createSessionFromId(sessionId);
             return;
         }
 
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
-        log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
+        log.log(Level.FINE, () -> "File reference for session " + sessionId + ": " + fileReference);
         if (fileReference != null) {
             File rootDir = new File(Defaults.getDefaults().underVespaHome(componentRegistry.getConfigserverConfig().fileReferencesDir()));
             File sessionDir;
@@ -622,13 +571,18 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.FINE, "File reference for session " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
-            log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            createLocalSession(sessionDir, applicationId, sessionId);
+            log.log(Level.FINE, () -> "Creating session for tenant '" + tenantName + "' with id " + sessionId);
+            try {
+                ApplicationPackage applicationPackage = createApplicationPackage(sessionDir, applicationId, sessionId, false);
+                createSessionWithApplicationPackage(sessionId, applicationPackage);
+            } catch (Exception e) {
+                throw new RuntimeException("Error creating session " + sessionId, e);
+            }
         }
     }
 
@@ -668,20 +622,20 @@ public class SessionRepository {
         return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
     }
 
-    private void updateSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
+    private void updateSessionStateWatcher(long sessionId, Session session) {
         SessionStateWatcher sessionStateWatcher = sessionStateWatchers.get(sessionId);
         if (sessionStateWatcher == null) {
             Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metrics, zkWatcherExecutor, this));
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, session, metrics, zkWatcherExecutor, this));
         } else {
-            sessionStateWatcher.updateRemoteSession(remoteSession);
+            sessionStateWatcher.updateRemoteSession(session);
         }
     }
 
     @Override
     public String toString() {
-        return getLocalSessions().toString();
+        return getSessions().toString();
     }
 
     public Clock clock() { return clock; }
@@ -707,14 +661,14 @@ public class SessionRepository {
     }
 
     private void checkForRemovedSessions(List<Long> sessions) {
-        for (Session session : remoteSessionCache.values())
+        for (Session session : sessionCache.values())
             if ( ! sessions.contains(session.getSessionId()))
                 sessionRemoved(session.getSessionId());
     }
 
     private void checkForAddedSessions(List<Long> sessions) {
         for (Long sessionId : sessions)
-            if (remoteSessionCache.get(sessionId) == null)
+            if (sessionCache.get(sessionId) == null)
                 sessionAdded(sessionId);
     }
 
