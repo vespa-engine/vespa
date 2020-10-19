@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -187,8 +188,11 @@ public class MockDeployer implements Deployer {
         public long activate() {
             lastDeployTimes.put(applicationId, clock.instant());
 
-            for (Node node : nodeRepository.list().owner(applicationId).state(Node.State.active).wantToRetire().asList())
-                nodeRepository.write(node.retire(nodeRepository.clock().instant()), nodeRepository.lock(node));
+            for (Node node : nodeRepository.list().owner(applicationId).state(Node.State.active).wantToRetire().asList()) {
+                try (Mutex lock = nodeRepository.lock(node)) {
+                    nodeRepository.write(node.retire(nodeRepository.clock().instant()), lock);
+                }
+            }
             return redeployments++;
         }
 

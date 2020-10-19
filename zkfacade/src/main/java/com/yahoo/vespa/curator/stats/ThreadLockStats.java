@@ -4,8 +4,10 @@ package com.yahoo.vespa.curator.stats;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -59,12 +61,18 @@ public class ThreadLockStats {
     }
 
     public List<LockAttempt> getOngoingLockAttempts() { return List.copyOf(lockAttemptsStack); }
-    public Optional<LockAttempt> getTopMostOngoingLockAttempt() { return lockAttemptsStack.stream().findFirst(); }
+    public Optional<LockAttempt> getTopMostOngoingLockAttempt() { return Optional.ofNullable(lockAttemptsStack.peekFirst()); }
+    /** The most recent and deeply nested ongoing lock attempt. */
+    public Optional<LockAttempt> getBottomMostOngoingLockAttempt() { return Optional.ofNullable(lockAttemptsStack.peekLast()); }
     public Optional<RecordedLockAttempts> getOngoingRecording() { return ongoingRecording; }
 
     /** Mutable method (see class doc) */
     public void invokingAcquire(String lockPath, Duration timeout) {
         boolean reentry = lockAttemptsStack.stream().anyMatch(lockAttempt -> lockAttempt.getLockPath().equals(lockPath));
+
+        if (!reentry) {
+            testForDeadlock(lockPath);
+        }
 
         LockAttempt lockAttempt = LockAttempt.invokingAcquire(this, lockPath, timeout,
                 getGlobalLockMetrics(lockPath), reentry);
@@ -90,12 +98,30 @@ public class ThreadLockStats {
 
     /** Mutable method (see class doc) */
     public void lockAcquired() {
-        withLastLockAttempt(LockAttempt::lockAcquired);
+        withLastLockAttempt(lockAttempt -> {
+            // Note on the order of lockAcquired() vs notifyOfThreadHoldingLock(): When the latter is
+            // invoked, other threads may query e.g. isAcquired() on the lockAttempt, which would
+            // return false in a small window if these two statements were reversed.  Not a biggie,
+            // but seems better to ensure LockAttempt is updated first.
+            lockAttempt.lockAcquired();
+
+            if (!lockAttempt.getReentry()) {
+                LockStats.getGlobal().notifyOfThreadHoldingLock(thread, lockAttempt.getLockPath());
+            }
+        });
     }
 
     /** Mutable method (see class doc) */
     public void preRelease() {
-        withLastLockAttempt(LockAttempt::preRelease);
+        withLastLockAttempt(lockAttempt -> {
+            // Note on the order of these two statement: Same concerns apply here as in lockAcquired().
+
+            if (!lockAttempt.getReentry()) {
+                LockStats.getGlobal().notifyOfThreadReleasingLock(thread, lockAttempt.getLockPath());
+            }
+
+            lockAttempt.preRelease();
+        });
     }
 
     /** Mutable method (see class doc) */
@@ -125,8 +151,70 @@ public class ThreadLockStats {
         }
     }
 
+    /**
+     * Tries to detect whether acquiring a given lock path would deadlock.
+     *
+     * <p>Thread T0 will deadlock if it tries to acquire a lock on a path L1 held by T1,
+     * and T1 is waiting on L2 held by T2, and so forth, and TN is waiting on L0 held by T0.</p>
+     *
+     *
+     * <p>Since the underlying data structures are concurrently being modified (as an optimization,
+     * no lock is taken for this calculation), a cycle may be detected not involving T0.</p>
+     *
+     * <p>This method is a best-effort attempt at detecting deadlocks:  A deadlock may in fact be
+     * resolved even though this method throws, if e.g. locks are released just after this
+     * method.</p>
+     */
+    private void testForDeadlock(String pathToAcquire) {
+        LockStats globalLockStats = LockStats.getGlobal();
+        var errorMessage = new StringBuilder().append("Deadlock detected: Thread ").append(thread.getName());
+
+        // The set of all threads waiting.  If we're waiting in a cycle, there is a deadlock...
+        Set<Thread> threadsAcquiring = new HashSet<>();
+        Thread threadAcquiringLockPath = thread;
+        String lockPath = pathToAcquire;
+
+        while (true) {
+            Optional<ThreadLockStats> threadLockStats = globalLockStats.getThreadLockStatsHolding(lockPath);
+            if (threadLockStats.isEmpty()) {
+                return;
+            }
+
+            Thread threadHoldingLockPath = threadLockStats.get().thread;
+            errorMessage.append(", trying to acquire lock ")
+                        .append(lockPath)
+                        .append(" held by thread ")
+                        .append(threadHoldingLockPath.getName());
+
+            if (threadAcquiringLockPath == threadHoldingLockPath) {
+                // reentry
+                return;
+            } else if (threadsAcquiring.contains(threadAcquiringLockPath)) {
+                // deadlock
+                getGlobalLockMetrics(pathToAcquire).incrementDeadlockCount();
+                logger.warning(errorMessage.toString());
+                return;
+            }
+
+            Optional<String> nextLockPath = threadLockStats.get().acquiringLockPath();
+            if (nextLockPath.isEmpty()) {
+                return;
+            }
+
+            threadsAcquiring.add(threadHoldingLockPath);
+            lockPath = nextLockPath.get();
+            threadAcquiringLockPath = threadHoldingLockPath;
+        }
+    }
+
     private LockMetrics getGlobalLockMetrics(String lockPath) {
         return LockStats.getGlobal().getLockMetrics(lockPath);
+    }
+
+    private Optional<String> acquiringLockPath() {
+        return Optional.ofNullable(lockAttemptsStack.peekLast())
+                .filter(LockAttempt::isAcquiring)
+                .map(LockAttempt::getLockPath);
     }
 
     private void withLastLockAttempt(Consumer<LockAttempt> lockAttemptConsumer) {

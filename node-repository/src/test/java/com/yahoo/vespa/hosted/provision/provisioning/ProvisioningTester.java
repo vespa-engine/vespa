@@ -23,6 +23,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -187,7 +188,9 @@ public class ProvisioningTester {
             Node node = nodeRepository.getNode(prepared.hostname()).get();
             if (node.ipConfig().primary().isEmpty()) {
                 node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
-                nodeRepository.write(node, nodeRepository.lock(node));
+                try (Mutex lock = nodeRepository.lock(node)) {
+                    nodeRepository.write(node, lock);
+                }
             }
             if (node.parentHostname().isEmpty()) continue;
             Node parent = nodeRepository.getNode(node.parentHostname().get()).get();

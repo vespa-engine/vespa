@@ -245,6 +245,10 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     metric.set("lockAttempt.release", lockMetrics.getAndResetReleaseCount(), context);
                     metric.set("lockAttempt.releaseFailed", lockMetrics.getAndResetReleaseFailedCount(), context);
                     metric.set("lockAttempt.reentry", lockMetrics.getAndResetReentryCount(), context);
+                    metric.set("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
+                    metric.set("lockAttempt.nakedRelease", lockMetrics.getAndResetNakedReleaseCount(), context);
+                    metric.set("lockAttempt.acquireWithoutRelease", lockMetrics.getAndResetAcquireWithoutReleaseCount(), context);
+                    metric.set("lockAttempt.foreignRelease", lockMetrics.getAndResetForeignReleaseCount(), context);
 
                     setLockLatencyMetrics("acquire", lockMetrics.getAndResetAcquireLatencyMetrics(), context);
                     setLockLatencyMetrics("locked", lockMetrics.getAndResetLockedLatencyMetrics(), context);
