@@ -63,7 +63,6 @@ public class OperatorChangeApplicationMaintainerTest {
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  new InMemoryFlagSource(),
                                                  true,
-                                                 false,
                                                  0, 1000);
         this.fixture = new Fixture(zone, nodeRepository);
 

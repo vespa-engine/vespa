@@ -90,7 +90,6 @@ public class MetricsReporterTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            new InMemoryFlagSource(),
                                                            true,
-                                                           false,
                                                            0, 1000);
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(List.of(node), Agent.system);
@@ -195,7 +194,6 @@ public class MetricsReporterTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            new InMemoryFlagSource(),
                                                            true,
-                                                           false,
                                                            0, 1000);
 
         // Allow 4 containers

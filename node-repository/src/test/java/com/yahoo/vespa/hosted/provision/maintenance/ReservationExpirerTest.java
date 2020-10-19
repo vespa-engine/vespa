@@ -54,7 +54,6 @@ public class ReservationExpirerTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            new InMemoryFlagSource(),
                                                            true,
-                                                           false,
                                                            0, 1000);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
 

@@ -264,7 +264,6 @@ public class SpareCapacityMaintainerTest {
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 new InMemoryFlagSource(),
                                                 true,
-                                                false,
                                                 1, 1000);
             deployer = new MockDeployer(nodeRepository);
             maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofDays(1), maxIterations);
