@@ -104,7 +104,6 @@ private:
     [[nodiscard]] virtual StorBucketDatabase& content_bucket_db(document::BucketSpace) { abort(); }
     virtual StorBucketDatabase& getStorageBucketDatabase() { abort(); }
     virtual BucketDatabase& getBucketDatabase() { abort(); }
-    virtual uint16_t getDiskCount() const { abort(); }
 };
 
 class TestServiceLayerApp : public TestStorageApp
@@ -134,11 +133,6 @@ public:
         return _compReg.getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).bucketDatabase();
     }
     vespalib::ISequencedTaskExecutor & executor() { return *_executor; }
-
-private:
-    // For storage server interface implementation we'll get rid of soon.
-    // Use getPartitions().size() instead.
-    uint16_t getDiskCount() const override { return _compReg.getDiskCount(); }
 };
 
 class TestDistributorApp : public TestStorageApp,

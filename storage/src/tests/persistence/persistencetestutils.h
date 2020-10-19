@@ -110,7 +110,8 @@ public:
 
     MessageTracker::UP
     createTracker(api::StorageMessage::SP cmd, document::Bucket bucket) {
-        return MessageTracker::createForTesting(getEnv(), _replySender, NoBucketLock::make(bucket), std::move(cmd));
+        return MessageTracker::createForTesting(framework::MilliSecTimer(getEnv()._component.getClock()), getEnv(),
+                                                _replySender, NoBucketLock::make(bucket), std::move(cmd));
     }
 
     api::ReturnCode

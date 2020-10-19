@@ -20,7 +20,6 @@ class ServiceLayerComponentRegisterImpl
 {
     std::mutex _componentLock;
     std::vector<ServiceLayerManagedComponent*> _components;
-    uint16_t _diskCount;
     ContentBucketSpaceRepo _bucketSpaceRepo;
     MinimumUsedBitsTracker _minUsedBitsTracker;
 
@@ -29,14 +28,12 @@ public:
 
     ServiceLayerComponentRegisterImpl(bool use_btree_db = false);
 
-    uint16_t getDiskCount() const { return _diskCount; }
     ContentBucketSpaceRepo& getBucketSpaceRepo() { return _bucketSpaceRepo; }
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {
         return _minUsedBitsTracker;
     }
 
     void registerServiceLayerComponent(ServiceLayerManagedComponent&) override;
-    void setDiskCount(uint16_t count);
     void setDistribution(lib::Distribution::SP distribution) override;
 };
 

@@ -141,7 +141,6 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(1))
 {
-    _compReg.setDiskCount(1);
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     ns.setDiskCount(1);
     _nodeStateUpdater.setReportedNodeState(ns);
@@ -155,7 +154,6 @@ TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(1))
 {
-    _compReg.setDiskCount(1);
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     ns.setDiskCount(1);
     _nodeStateUpdater.setReportedNodeState(ns);
@@ -166,7 +164,6 @@ TestServiceLayerApp::~TestServiceLayerApp() = default;
 void
 TestServiceLayerApp::setupDummyPersistence()
 {
-    assert(_compReg.getDiskCount() == 1u);
     auto provider = std::make_unique<spi::dummy::DummyPersistence>(getTypeRepo());
     provider->initialize();
     setPersistenceProvider(std::move(provider));

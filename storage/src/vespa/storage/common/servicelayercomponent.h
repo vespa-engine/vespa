@@ -38,7 +38,6 @@ struct ServiceLayerManagedComponent
 {
     virtual ~ServiceLayerManagedComponent() = default;
 
-    virtual void setDiskCount(uint16_t count) = 0;
     virtual void setBucketSpaceRepo(ContentBucketSpaceRepo&) = 0;
     virtual void setMinUsedBitsTracker(MinimumUsedBitsTracker&) = 0;
 };
@@ -51,12 +50,10 @@ struct ServiceLayerComponentRegister : public virtual StorageComponentRegister
 class ServiceLayerComponent : public StorageComponent,
                               private ServiceLayerManagedComponent
 {
-    uint16_t _diskCount;
     ContentBucketSpaceRepo* _bucketSpaceRepo;
     MinimumUsedBitsTracker* _minUsedBitsTracker;
 
     // ServiceLayerManagedComponent implementation
-    void setDiskCount(uint16_t count) override { _diskCount = count; }
     void setBucketSpaceRepo(ContentBucketSpaceRepo& repo) override { _bucketSpaceRepo = &repo; }
     void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) override {
         _minUsedBitsTracker = &tracker;
@@ -67,14 +64,12 @@ public:
     ServiceLayerComponent(ServiceLayerComponentRegister& compReg,
                           vespalib::stringref name)
         : StorageComponent(compReg, name),
-          _diskCount(0),
           _bucketSpaceRepo(nullptr),
           _minUsedBitsTracker(nullptr)
     {
         compReg.registerServiceLayerComponent(*this);
     }
 
-    uint16_t getDiskCount() const { return _diskCount; }
     const ContentBucketSpaceRepo &getBucketSpaceRepo() const;
     StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const;
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {
@@ -83,8 +78,6 @@ public:
     const MinimumUsedBitsTracker& getMinUsedBitsTracker() const {
         return *_minUsedBitsTracker;
     }
-    uint16_t getIdealPartition(const document::Bucket&) const;
-    uint16_t getPreferredAvailablePartition(const document::Bucket&) const;
 };
 
 } // storage

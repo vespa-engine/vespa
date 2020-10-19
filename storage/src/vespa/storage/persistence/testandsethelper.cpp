@@ -24,8 +24,9 @@ void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo & do
     }
 }
 
-void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo) {
-    document::select::Parser parser(documentTypeRepo, _env._bucketFactory);
+void TestAndSetHelper::parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo,
+                                              const document::BucketIdFactory & bucketIdFactory) {
+    document::select::Parser parser(documentTypeRepo, bucketIdFactory);
 
     try {
         _docSelectionUp = parser.parse(_cmd.getCondition().getSelection());
@@ -39,6 +40,7 @@ spi::GetResult TestAndSetHelper::retrieveDocument(const document::FieldSet & fie
 }
 
 TestAndSetHelper::TestAndSetHelper(const PersistenceUtil & env, const spi::PersistenceProvider  & spi,
+                                   const document::BucketIdFactory & bucketFactory,
                                    const api::TestAndSetCommand & cmd, bool missingDocumentImpliesMatch)
     : _env(env),
       _spi(spi),
@@ -49,7 +51,7 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil & env, const spi::Persi
 {
     const auto _repo = _env._component.getTypeRepo()->documentTypeRepo;
     resolveDocumentType(*_repo);
-    parseDocumentSelection(*_repo);
+    parseDocumentSelection(*_repo, bucketFactory);
 }
 
 TestAndSetHelper::~TestAndSetHelper() = default;

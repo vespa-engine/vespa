@@ -10,8 +10,7 @@ namespace storage {
 using vespalib::IllegalStateException;
 
 ServiceLayerComponentRegisterImpl::ServiceLayerComponentRegisterImpl(bool use_btree_db)
-    : _diskCount(0),
-      _bucketSpaceRepo(use_btree_db)
+    : _bucketSpaceRepo(use_btree_db)
 { }
 
 void
@@ -19,22 +18,8 @@ ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(ServiceLayerMan
 {
     std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
-    smc.setDiskCount(_diskCount);
     smc.setBucketSpaceRepo(_bucketSpaceRepo);
     smc.setMinUsedBitsTracker(_minUsedBitsTracker);
-}
-
-void
-ServiceLayerComponentRegisterImpl::setDiskCount(uint16_t count)
-{
-    std::lock_guard lock(_componentLock);
-    if (_diskCount != 0) {
-        throw IllegalStateException("Disk count already set. Cannot be updated live", VESPA_STRLOC);
-    }
-    _diskCount = count;
-    for (uint32_t i=0; i<_components.size(); ++i) {
-        _components[i]->setDiskCount(count);
-    }
 }
 
 void

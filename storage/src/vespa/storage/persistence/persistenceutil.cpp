@@ -25,13 +25,15 @@ namespace {
     const vespalib::duration WARN_ON_SLOW_OPERATIONS = 5s;
 }
 
-MessageTracker::MessageTracker(const PersistenceUtil & env,
+MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
+                               const PersistenceUtil & env,
                                MessageSender & replySender,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
                                api::StorageMessage::SP msg)
-    : MessageTracker(env, replySender, true, std::move(bucketLock), std::move(msg))
+    : MessageTracker(timer, env, replySender, true, std::move(bucketLock), std::move(msg))
 {}
-MessageTracker::MessageTracker(const PersistenceUtil & env,
+MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
+                               const PersistenceUtil & env,
                                MessageSender & replySender,
                                bool updateBucketInfo,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
@@ -45,12 +47,14 @@ MessageTracker::MessageTracker(const PersistenceUtil & env,
       _replySender(replySender),
       _metric(nullptr),
       _result(api::ReturnCode::OK),
-      _timer(env._component.getClock())
+      _timer(timer)
 { }
 
 MessageTracker::UP
-MessageTracker::createForTesting(PersistenceUtil &env, MessageSender &replySender, FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg) {
-    return MessageTracker::UP(new MessageTracker(env, replySender, false, std::move(bucketLock), std::move(msg)));
+MessageTracker::createForTesting(const framework::MilliSecTimer & timer, PersistenceUtil &env, MessageSender &replySender,
+                                 FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg)
+{
+    return MessageTracker::UP(new MessageTracker(timer, env, replySender, false, std::move(bucketLock), std::move(msg)));
 }
 
 void
@@ -161,9 +165,9 @@ PersistenceUtil::PersistenceUtil(
         spi::PersistenceProvider& provider)
     : _component(component),
       _fileStorHandler(fileStorHandler),
-      _nodeIndex(component.getIndex()),
       _metrics(metrics),
-      _bucketFactory(component.getBucketIdFactory()),
+      _nodeIndex(component.getIndex()),
+      _bucketIdFactory(component.getBucketIdFactory()),
       _spi(provider)
 {
 }
@@ -189,12 +193,6 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api:
     } else {
         LOG(debug, "Bucket(%s).getBucketInfo: Bucket does not exist.", bucket.getBucketId().toString().c_str());
     }
-}
-
-uint16_t
-PersistenceUtil::getPreferredAvailableDisk(const document::Bucket &bucket) const
-{
-    return _component.getPreferredAvailablePartition(bucket);
 }
 
 PersistenceUtil::LockResult
@@ -275,19 +273,13 @@ PersistenceUtil::convertErrorCode(const spi::Result& response)
     return 0;
 }
 
-void
-PersistenceUtil::shutdown(const std::string& reason)
-{
-    _component.requestShutdown(reason);
-}
-
 spi::Bucket
 PersistenceUtil::getBucket(const document::DocumentId& id, const document::Bucket &bucket) const
 {
-    document::BucketId docBucket(_bucketFactory.getBucketId(id));
+    document::BucketId docBucket(_bucketIdFactory.getBucketId(id));
     docBucket.setUsedBits(bucket.getBucketId().getUsedBits());
     if (bucket.getBucketId() != docBucket) {
-        docBucket = _bucketFactory.getBucketId(id);
+        docBucket = _bucketIdFactory.getBucketId(id);
         throw vespalib::IllegalStateException("Document " + id.toString()
                                               + " (bucket " + docBucket.toString() + ") does not belong in "
                                               + "bucket " + bucket.getBucketId().toString() + ".", VESPA_STRLOC);

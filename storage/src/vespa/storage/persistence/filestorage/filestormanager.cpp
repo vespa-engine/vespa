@@ -130,7 +130,6 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
 
     if (!liveUpdate) {
         _config = std::move(config);
-        assert(_component.getDiskCount() == 1);
         size_t numThreads = _config->numThreads;
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
         _metrics->initDiskMetrics(1, _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);

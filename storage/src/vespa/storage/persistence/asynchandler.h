@@ -4,6 +4,7 @@
 #include "types.h"
 #include <vespa/storageapi/message/persistence.h>
 
+namespace document { class BucketIdFactory; }
 namespace vespalib { class ISequencedTaskExecutor; }
 namespace storage {
 
@@ -19,7 +20,8 @@ struct PersistenceUtil;
  */
 class AsyncHandler : public Types {
 public:
-    AsyncHandler(const PersistenceUtil&, spi::PersistenceProvider&, vespalib::ISequencedTaskExecutor & executor);
+    AsyncHandler(const PersistenceUtil&, spi::PersistenceProvider&, vespalib::ISequencedTaskExecutor & executor,
+                 const document::BucketIdFactory & bucketIdFactory);
     MessageTrackerUP handlePut(api::PutCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRemove(api::RemoveCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleUpdate(api::UpdateCommand& cmd, MessageTrackerUP tracker) const;
@@ -30,6 +32,7 @@ private:
     const PersistenceUtil            & _env;
     spi::PersistenceProvider         & _spi;
     vespalib::ISequencedTaskExecutor & _sequencedExecutor;
+    const document::BucketIdFactory  & _bucketIdFactory;
 };
 
 } // storage

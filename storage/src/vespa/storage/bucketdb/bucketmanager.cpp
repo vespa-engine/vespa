@@ -50,7 +50,7 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
       _metrics(std::make_shared<BucketManagerMetrics>(_component.getBucketSpaceRepo())),
       _simulated_processing_delay(0)
 {
-    _metrics->setDisks(_component.getDiskCount());
+    _metrics->setDisks(1);
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(300));
@@ -231,7 +231,7 @@ BucketManager::updateMetrics(bool updateDocCount)
         updateDocCount ? "" : ", minusedbits only",
         _doneInitialized ? "" : ", server is not done initializing");
 
-    uint16_t diskCount = _component.getDiskCount();
+    const uint16_t diskCount = 1;
     assert(diskCount >= 1);
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater total(diskCount);
@@ -275,7 +275,7 @@ void BucketManager::update_bucket_db_memory_usage_metrics() {
 
 void BucketManager::updateMinUsedBits()
 {
-    MetricsUpdater m(_component.getDiskCount());
+    MetricsUpdater m(1);
     _component.getBucketSpaceRepo().for_each_bucket(std::ref(m));
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());

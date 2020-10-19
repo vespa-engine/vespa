@@ -11,13 +11,13 @@
 
 namespace storage {
 
-struct PersistenceUtil;
+class PersistenceUtil;
 
 class MessageTracker : protected Types {
 public:
     typedef std::unique_ptr<MessageTracker> UP;
 
-    MessageTracker(const PersistenceUtil & env, MessageSender & replySender,
+    MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender,
                    FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
     ~MessageTracker();
@@ -70,11 +70,11 @@ public:
     bool checkForError(const spi::Result& response);
 
     static MessageTracker::UP
-    createForTesting(PersistenceUtil & env, MessageSender & replySender,
+    createForTesting(const framework::MilliSecTimer & timer, PersistenceUtil & env, MessageSender & replySender,
                      FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
 private:
-    MessageTracker(const PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
+    MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
                    FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
     [[nodiscard]] bool count_result_as_failure() const noexcept;
@@ -92,13 +92,15 @@ private:
     framework::MilliSecTimer                 _timer;
 };
 
-struct PersistenceUtil {
-    ServiceLayerComponent                      &_component;
-    FileStorHandler                            &_fileStorHandler;
-    uint16_t                                    _nodeIndex;
-    FileStorThreadMetrics                      &_metrics;  // Needs a better solution for speed and thread safety
-    const document::BucketIdFactory            &_bucketFactory;
-    spi::PersistenceProvider                   &_spi;
+class PersistenceUtil {
+public:
+    /** Lock the given bucket in the file stor handler. */
+    struct LockResult {
+        std::shared_ptr<FileStorHandler::BucketLockInterface> lock;
+        LockResult() : lock() {}
+
+        bool bucketExisted() const { return bool(lock); }
+    };
 
     PersistenceUtil(
             ServiceLayerComponent&,
@@ -111,34 +113,22 @@ struct PersistenceUtil {
     StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const {
         return _component.getBucketDatabase(bucketSpace);
     }
-
+    spi::Bucket getBucket(const document::DocumentId& id, const document::Bucket &bucket) const;
+    void setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket) const;
     void updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& info) const;
-
-    uint16_t getPreferredAvailableDisk(const document::Bucket &bucket) const;
-
-    /** Lock the given bucket in the file stor handler. */
-    struct LockResult {
-        std::shared_ptr<FileStorHandler::BucketLockInterface> lock;
-        LockResult() : lock() {}
-
-        bool bucketExisted() const { return bool(lock); }
-    };
-
-    LockResult lockAndGetDisk(
-            const document::Bucket &bucket,
-            StorBucketDatabase::Flag flags = StorBucketDatabase::NONE);
-
+    LockResult lockAndGetDisk(const document::Bucket &bucket, StorBucketDatabase::Flag flags = StorBucketDatabase::NONE);
     api::BucketInfo getBucketInfo(const document::Bucket &bucket) const;
 
     static api::BucketInfo convertBucketInfo(const spi::BucketInfo&);
-
-    void setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket) const;
-
-    spi::Bucket getBucket(const document::DocumentId& id, const document::Bucket &bucket) const;
-
     static uint32_t convertErrorCode(const spi::Result& response);
-
-    void shutdown(const std::string& reason);
+public:
+    ServiceLayerComponent                      &_component;
+    FileStorHandler                            &_fileStorHandler;
+    FileStorThreadMetrics                      &_metrics;  // Needs a better solution for speed and thread safety
+    uint16_t                                    _nodeIndex;
+private:
+    const document::BucketIdFactory            &_bucketIdFactory;
+    spi::PersistenceProvider                   &_spi;
 };
 
 } // storage

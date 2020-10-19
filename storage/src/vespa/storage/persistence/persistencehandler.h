@@ -43,6 +43,7 @@ private:
 
     MessageTracker::UP processMessage(api::StorageMessage& msg, MessageTracker::UP tracker) const;
 
+    const framework::Clock  & _clock;
     PersistenceUtil           _env;
     ProcessAllHandler         _processAllHandler;
     MergeHandler              _mergeHandler;

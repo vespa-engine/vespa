@@ -14,13 +14,13 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
                                       FileStorHandler& filestorHandler,
                                       BucketOwnershipNotifier & bucketOwnershipNotifier,
                                       FileStorThreadMetrics& metrics)
-    :
+    : _clock(component.getClock()),
       _env(component, filestorHandler, metrics, provider),
       _processAllHandler(_env, provider),
       _mergeHandler(_env, provider, cfg.bucketMergeChunkSize,
                     cfg.enableMergeLocalNodeChooseDocsOptimalization,
                     cfg.commonMergeChainOptimalizationMinimumSize),
-      _asyncHandler(_env, provider, sequencedExecutor),
+      _asyncHandler(_env, provider, sequencedExecutor, component.getBucketIdFactory()),
       _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
       _simpleHandler(_env, provider)
 {
@@ -141,7 +141,7 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
 
     // Important: we _copy_ the message shared_ptr instead of moving to ensure that `msg` remains
     // valid even if the tracker is destroyed by an exception in processMessage().
-    auto tracker = std::make_unique<MessageTracker>(_env, _env._fileStorHandler, std::move(lock.first), lock.second);
+    auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, _env._fileStorHandler, std::move(lock.first), lock.second);
     tracker = processMessage(msg, std::move(tracker));
     if (tracker) {
         tracker->sendReply();
