@@ -216,7 +216,7 @@
                                         <include>com.yahoo.vespa:vsm:*:jar:test</include>
 
                                         <!-- 3rd party test dependencies -->
-                                        <include>com.amazonaws:aws-java-sdk-core:1.11.542:jar:test</include>
+                                        <include>com.amazonaws:aws-java-sdk-core:1.11.879:jar:test</include>
                                         <include>com.auth0:java-jwt:3.10.0:jar:test</include>
                                         <include>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.6.7:jar:test</include>
                                         <include>com.fasterxml.jackson.dataformat:jackson-dataformat-xml:[${jackson2.version}]:jar:test</include>
