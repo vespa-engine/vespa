@@ -339,9 +339,7 @@ struct TestContext {
                 vespalib::string expr = make_string("reduce(a,%s,%s)",
                         AggrNames::name_of(aggr)->c_str(), domain.dimension.c_str());
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
-                if (engine.is_engine()) {
-                    TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
-                }
+                TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
             }
             {
                 Eval::Result expect = ImmediateReduce(aggr).eval(ref_engine, input);
@@ -349,9 +347,7 @@ struct TestContext {
                                        infer_type(layout).c_str()).c_str());
                 vespalib::string expr = make_string("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
-                if (engine.is_engine()) {
-                    TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
-                }
+                TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
             }
         }
     }
@@ -388,9 +384,7 @@ struct TestContext {
     }
 
     void test_map_op(const vespalib::string &expr, map_fun_t op, const Sequence &seq) {
-        if (engine.is_engine()) {
-            TEST_DO(test_map_op(ImmediateMap(op), op, seq));
-        }
+        TEST_DO(test_map_op(ImmediateMap(op), op, seq));
         TEST_DO(test_map_op(Expr_T(expr), op, seq));
         TEST_DO(test_map_op(Expr_T(make_string("map(x,f(a)(%s))", expr.c_str())), op, seq));
     }
@@ -667,9 +661,7 @@ struct TestContext {
     }
 
     void test_apply_op(const vespalib::string &expr, join_fun_t op, const Sequence &seq) {
-        if (engine.is_engine()) {
-            TEST_DO(test_apply_op(ImmediateJoin(op), op, seq));
-        }
+        TEST_DO(test_apply_op(ImmediateJoin(op), op, seq));
         TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
         TEST_DO(test_apply_op(Expr_TT(make_string("join(x,y,f(a,b)(%s))", expr.c_str())), op, seq));
     }
@@ -732,10 +724,8 @@ struct TestContext {
                      const TensorSpec &expect)
     {
         vespalib::string expr = make_string("concat(a,b,%s)", dimension.c_str());
-        if (engine.is_engine()) {
-            ImmediateConcat eval(dimension);
-            TEST_DO(verify_result(eval.eval(engine, a, b), expect));
-        }
+        ImmediateConcat eval(dimension);
+        TEST_DO(verify_result(eval.eval(engine, a, b), expect));
         TEST_DO(verify_result(Expr_TT(expr).eval(engine, a, b), expect));
     }
 
@@ -773,10 +763,8 @@ struct TestContext {
                      const std::vector<vespalib::string> &to,
                      const TensorSpec &expect)
     {
-        if (engine.is_engine()) {
-            ImmediateRename eval(from, to);
-            TEST_DO(verify_result(eval.eval(engine, input), expect));
-        }
+        ImmediateRename eval(from, to);
+        TEST_DO(verify_result(eval.eval(engine, input), expect));
         TEST_DO(verify_result(Expr_T(expr).eval(engine, input), expect));
     }
 

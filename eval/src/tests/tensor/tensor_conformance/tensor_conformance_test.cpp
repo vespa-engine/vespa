@@ -25,11 +25,11 @@ TEST("require that production tensor implementation passes all conformance tests
     TEST_DO(TensorConformance::run_tests(module_src_path, DefaultTensorEngine::ref()));
 }
 
-TEST("require that SimpleValue implementation passes all conformance tests (except ImmediateAPI tests)") {
+TEST("require that SimpleValue implementation passes all conformance tests") {
     TEST_DO(TensorConformance::run_tests(module_src_path, SimpleValueBuilderFactory::get()));
 }
 
-TEST("require that FastValue implementation passes all conformance tests (except ImmediateAPI tests)") {
+TEST("require that FastValue implementation passes all conformance tests") {
     TEST_DO(TensorConformance::run_tests(module_src_path, FastValueBuilderFactory::get()));
 }
 

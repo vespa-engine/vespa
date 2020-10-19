@@ -14,14 +14,6 @@ namespace vespalib::eval::instruction {
 
 //-----------------------------------------------------------------------------
 
-struct GenericReduce {
-    static InterpretedFunction::Instruction
-    make_instruction(const ValueType &type, Aggr aggr, const std::vector<vespalib::string> &dimensions,
-                     const ValueBuilderFactory &factory, Stash &stash);
-};
-
-//-----------------------------------------------------------------------------
-
 struct DenseReducePlan {
     size_t in_size;
     size_t out_size;
@@ -47,6 +39,20 @@ struct SparseReducePlan {
     std::vector<size_t> keep_dims;
     SparseReducePlan(const ValueType &type, const ValueType &res_type);
     ~SparseReducePlan();
+};
+
+//-----------------------------------------------------------------------------
+
+struct GenericReduce {
+    static InterpretedFunction::Instruction
+    make_instruction(const ValueType &type, Aggr aggr,
+                     const std::vector<vespalib::string> &dimensions,
+                     const ValueBuilderFactory &factory, Stash &stash);
+
+    static Value::UP
+    perform_reduce(const Value &a, Aggr aggr,
+                   const std::vector<vespalib::string> &dimensions,
+                   const ValueBuilderFactory &factory);
 };
 
 //-----------------------------------------------------------------------------
