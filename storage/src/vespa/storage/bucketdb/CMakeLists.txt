@@ -11,7 +11,6 @@ vespa_add_library(storage_bucketdb OBJECT
     generic_btree_bucket_database.cpp
     judyarray.cpp
     lockablemap.cpp
-    storagebucketdbinitializer.cpp
     storbucketdb.cpp
     DEPENDS
 )

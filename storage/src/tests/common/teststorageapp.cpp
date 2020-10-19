@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "teststorageapp.h"
-#include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-load-type.h>
@@ -12,6 +11,7 @@
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <thread>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.servicelayerapp");
@@ -116,7 +116,6 @@ TestStorageApp::waitUntilInitialized(
                   << timeout << " seconds.";
             if (initializer != 0) {
                 error << " ";
-                initializer->reportStatus(error, framework::HttpUrlPath(""));
                 LOG(error, "%s", error.str().c_str());
                 throw std::runtime_error(error.str());
             }
