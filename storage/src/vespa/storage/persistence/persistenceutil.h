@@ -17,7 +17,7 @@ class MessageTracker : protected Types {
 public:
     typedef std::unique_ptr<MessageTracker> UP;
 
-    MessageTracker(PersistenceUtil & env, MessageSender & replySender,
+    MessageTracker(const PersistenceUtil & env, MessageSender & replySender,
                    FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
     ~MessageTracker();
@@ -74,7 +74,7 @@ public:
                      FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
 private:
-    MessageTracker(PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
+    MessageTracker(const PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
                    FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
 
     [[nodiscard]] bool count_result_as_failure() const noexcept;
@@ -84,7 +84,7 @@ private:
     FileStorHandler::BucketLockInterface::SP _bucketLock;
     api::StorageMessage::SP                  _msg;
     spi::Context                             _context;
-    PersistenceUtil                         &_env;
+    const PersistenceUtil                   &_env;
     MessageSender                           &_replySender;
     FileStorThreadMetrics::Op               *_metric; // needs a better and thread safe solution
     api::StorageReply::SP                    _reply;
@@ -132,7 +132,7 @@ struct PersistenceUtil {
 
     static api::BucketInfo convertBucketInfo(const spi::BucketInfo&);
 
-    void setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket);
+    void setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket) const;
 
     spi::Bucket getBucket(const document::DocumentId& id, const document::Bucket &bucket) const;
 

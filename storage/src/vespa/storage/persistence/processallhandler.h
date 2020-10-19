@@ -14,8 +14,8 @@ struct PersistenceUtil;
 class ProcessAllHandler : public Types {
 public:
     ProcessAllHandler(const PersistenceUtil&, spi::PersistenceProvider&);
-    MessageTrackerUP handleRemoveLocation(api::RemoveLocationCommand&, MessageTrackerUP tracker);
-    MessageTrackerUP handleStatBucket(api::StatBucketCommand&, MessageTrackerUP tracker);
+    MessageTrackerUP handleRemoveLocation(api::RemoveLocationCommand&, MessageTrackerUP tracker) const;
+    MessageTrackerUP handleStatBucket(api::StatBucketCommand&, MessageTrackerUP tracker) const;
 private:
     const PersistenceUtil& _env;
     spi::PersistenceProvider& _spi;

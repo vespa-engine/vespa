@@ -18,8 +18,8 @@
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vdslib/state/random.h>
@@ -194,17 +194,11 @@ bool fileExistsWithin(const std::string& path, const std::string& file) {
 }
 
 std::unique_ptr<DiskThread>
-createThread(vdstestlib::DirConfig& config,
-             TestServiceLayerApp& node,
-             spi::PersistenceProvider& provider,
+createThread(PersistenceHandler & persistenceHandler,
              FileStorHandler& filestorHandler,
-             BucketOwnershipNotifier & notifier,
-             FileStorThreadMetrics& metrics)
+             framework::Component & component)
 {
-    (void) config;
-    vespa::config::content::StorFilestorConfig cfg;
-    return std::make_unique<PersistenceThread>(node.executor(), node.getComponentRegister(), cfg,
-                                               provider, filestorHandler, notifier, metrics);
+    return std::make_unique<PersistenceThread>(persistenceHandler, filestorHandler, 0, component);
 }
 
 namespace {
@@ -402,8 +396,7 @@ TEST_F(FileStorManagerTest, handler_priority) {
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
-    uint32_t stripeId = filestorHandler.getNextStripeId();
-    ASSERT_EQ(0u, stripeId);
+    uint32_t stripeId = 0;
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -469,7 +462,7 @@ public:
     std::atomic<bool> _threadDone;
 
     explicit MessageFetchingThread(FileStorHandler& handler)
-        : _threadId(handler.getNextStripeId()), _handler(handler), _config(0), _fetchedCount(0), _done(false),
+        : _threadId(0), _handler(handler), _config(0), _fetchedCount(0), _done(false),
           _failed(false), _threadDone(false)
     {}
 
@@ -556,7 +549,7 @@ TEST_F(FileStorManagerTest, handler_pause) {
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
-    uint32_t stripeId = filestorHandler.getNextStripeId();
+    uint32_t stripeId = 0;
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -660,7 +653,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
-    uint32_t stripeId = filestorHandler.getNextStripeId();
+    uint32_t stripeId = 0;
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -721,12 +714,14 @@ TEST_F(FileStorManagerTest, priority) {
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
-    std::unique_ptr<DiskThread> thread(createThread(
-            *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
-    std::unique_ptr<DiskThread> thread2(createThread(
-            *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[1]));
+    vespa::config::content::StorFilestorConfig cfg;
+    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
+
+    PersistenceHandler persistenceHandler2(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+                                           filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[1]);
+    std::unique_ptr<DiskThread> thread2(createThread(persistenceHandler2, filestorHandler, component));
 
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
@@ -803,9 +798,10 @@ TEST_F(FileStorManagerTest, split1) {
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
-    std::unique_ptr<DiskThread> thread(createThread(
-            *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
+    vespa::config::content::StorFilestorConfig cfg;
+    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
@@ -814,8 +810,7 @@ TEST_F(FileStorManagerTest, split1) {
 
         uri << "id:footype:testdoctype1:n=" << (i % 3 == 0 ? 0x10001 : 0x0100001)
                                << ":mydoc-" << i;
-        Document::SP doc(createDocument(
-                content, uri.str()).release());
+        Document::SP doc(createDocument(content, uri.str()).release());
         documents.push_back(doc);
     }
     document::BucketIdFactory factory;
@@ -824,11 +819,9 @@ TEST_F(FileStorManagerTest, split1) {
     {
         // Populate bucket with the given data
         for (uint32_t i=0; i<documents.size(); ++i) {
-            document::BucketId bucket(16, factory.getBucketId(
-                                             documents[i]->getId()).getRawId());
+            document::BucketId bucket(16, factory.getBucketId(documents[i]->getId()).getRawId());
 
-            _node->getPersistenceProvider().createBucket(
-                    makeSpiBucket(bucket), context);
+            _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket), context);
 
             auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), documents[i], 100 + i);
             auto address = std::make_unique<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
@@ -946,15 +939,16 @@ TEST_F(FileStorManagerTest, split_single_group) {
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
+    vespa::config::content::StorFilestorConfig cfg;
+    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
         // splitbit set, and once where all the data ends up in file with
         // splitbit unset
         bool state = (j == 0);
 
-        std::unique_ptr<DiskThread> thread(createThread(
-                *config, *_node, _node->getPersistenceProvider(),
-                filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
+        std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
         // Creating documents to test with. Different gids, 2 locations.
         std::vector<document::Document::SP> documents;
         for (uint32_t i=0; i<20; ++i) {
@@ -1059,9 +1053,10 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
-    std::unique_ptr<DiskThread> thread(createThread(
-            *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
+    vespa::config::content::StorFilestorConfig cfg;
+    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     document::BucketId source(16, 0x10001);
 
@@ -1126,9 +1121,10 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
-    std::unique_ptr<DiskThread> thread(createThread(
-            *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
+    vespa::config::content::StorFilestorConfig cfg;
+    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
     createBucket(source, 0);
@@ -1158,8 +1154,7 @@ TEST_F(FileStorManagerTest, join) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                dummyManager = new DummyStorageLink));
+    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
     top.open();
     ForwardingMessageSender messageSender(*dummyManager);
 
@@ -1169,9 +1164,10 @@ TEST_F(FileStorManagerTest, join) {
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
-    std::unique_ptr<DiskThread> thread(createThread(
-            *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]));
+    vespa::config::content::StorFilestorConfig cfg;
+    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
@@ -1259,8 +1255,7 @@ createIterator(DummyStorageLink& link,
 {
     spi::Bucket bucket(makeSpiBucket(bucketId));
 
-    spi::Selection selection =
-        spi::Selection(spi::DocumentSelection(docSel));
+    spi::Selection selection = spi::Selection(spi::DocumentSelection(docSel));
     selection.setFromTimestamp(spi::Timestamp(fromTime.getTime()));
     selection.setToTimestamp(spi::Timestamp(toTime.getTime()));
     auto createIterCmd = std::make_shared<CreateIteratorCommand>(

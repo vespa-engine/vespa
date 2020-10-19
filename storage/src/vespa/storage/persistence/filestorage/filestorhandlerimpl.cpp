@@ -48,7 +48,6 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
                                          ServiceLayerComponentRegister& compReg)
     : _component(compReg, "filestorhandlerimpl"),
       _state(FileStorHandler::AVAILABLE),
-      _nextStripeId(0),
       _metrics(nullptr),
       _stripes(),
       _messageSender(sender),

@@ -73,7 +73,7 @@ public:
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequenceTaskExecutor;
     ReplySender _replySender;
     BucketOwnershipNotifier _bucketOwnershipNotifier;
-
+    std::unique_ptr<PersistenceHandler> _persistenceHandler;
 
     PersistenceTestUtils();
     ~PersistenceTestUtils() override;
@@ -223,11 +223,6 @@ public:
      *
      */
     void createTestBucket(const document::Bucket&);
-
-    /**
-     * Create a new persistence thread.
-     */
-    std::unique_ptr<PersistenceThread> createPersistenceThread();
 
     /**
      * In-place modify doc so that it has no more body fields.

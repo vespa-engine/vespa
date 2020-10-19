@@ -2,11 +2,9 @@
 
 #include "filestorhandlerimpl.h"
 #include "filestormanager.h"
-
 #include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
@@ -14,9 +12,12 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
@@ -25,6 +26,7 @@ LOG_SETUP(".persistence.filestor.manager");
 
 using std::shared_ptr;
 using document::BucketSpace;
+using vespalib::make_string_short::fmt;
 
 namespace storage {
 
@@ -41,6 +43,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _init_handler(init_handler),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _configUri(configUri),
+      _persistenceHandlers(),
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
       _configFetcher(_configUri.getContext()),
@@ -106,6 +109,11 @@ selectSequencer(vespa::config::content::StorFilestorConfig::ResponseSequencerTyp
     }
 }
 
+vespalib::string
+createThreadName(size_t stripeId) {
+    return fmt("PersistenceThread-%zu", stripeId);
+}
+
 }
 /**
  * If live configuration, assuming storageserver makes sure no messages are
@@ -132,9 +140,15 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _sequencedExecutor = vespalib::SequencedTaskExecutor::create(numResponseThreads, 10000, selectSequencer(_config->responseSequencerType));
         assert(_sequencedExecutor);
         LOG(spam, "Setting up the disk");
-        for (uint32_t j = 0; j < numThreads; j++) {
-            _threads.push_back(std::make_shared<PersistenceThread>(*_sequencedExecutor, _compReg, *_config, *_provider,
-                                                                   *_filestorHandler, *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[j]));
+        for (uint32_t i = 0; i < numThreads; i++) {
+            _persistenceComponents.push_back(std::make_unique<ServiceLayerComponent>(_compReg, createThreadName(i)));
+            _persistenceHandlers.push_back(
+                    std::make_unique<PersistenceHandler>(*_sequencedExecutor,
+                                                         *_persistenceComponents.back(),
+                                                         *_config, *_provider, *_filestorHandler,
+                                                         *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[i]));
+            _threads.push_back(std::make_unique<PersistenceThread>(*_persistenceHandlers.back(), *_filestorHandler,
+                                                                   i % numStripes, _component));
         }
     }
 }
@@ -436,8 +450,8 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
     }
     _filestorHandler->failOperations(cmd->getBucket(),
                                      api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
-                                                     vespalib::make_string("Bucket %s about to be deleted anyway",
-                                                                           cmd->getBucketId().toString().c_str())));
+                                                     fmt("Bucket %s about to be deleted anyway",
+                                                         cmd->getBucketId().toString().c_str())));
     return true;
 }
 

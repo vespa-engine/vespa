@@ -45,24 +45,24 @@ public:
             Timestamp maxTimestamp,
             uint8_t myNodeIndex,
             std::vector<api::GetBucketDiffCommand::Entry>& output,
-            spi::Context& context);
+            spi::Context& context) const;
     void fetchLocalData(const spi::Bucket& bucket,
                         const documentapi::LoadType&,
                         std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                         uint8_t nodeIndex,
-                        spi::Context& context);
+                        spi::Context& context) const;
     api::BucketInfo applyDiffLocally(
                           const spi::Bucket& bucket,
                           const documentapi::LoadType&,
                           std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                           uint8_t nodeIndex,
-                          spi::Context& context);
+                          spi::Context& context) const;
 
-    MessageTrackerUP handleMergeBucket(api::MergeBucketCommand&, MessageTrackerUP);
-    MessageTrackerUP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTrackerUP);
-    void handleGetBucketDiffReply(api::GetBucketDiffReply&, MessageSender&);
-    MessageTrackerUP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTrackerUP);
-    void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&);
+    MessageTrackerUP handleMergeBucket(api::MergeBucketCommand&, MessageTrackerUP) const;
+    MessageTrackerUP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTrackerUP) const;
+    void handleGetBucketDiffReply(api::GetBucketDiffReply&, MessageSender&) const;
+    MessageTrackerUP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTrackerUP) const;
+    void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&) const;
 
 private:
     const framework::Clock   &_clock;
@@ -77,7 +77,7 @@ private:
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,
                                              MergeStatus& status,
                                              MessageSender& sender,
-                                             spi::Context& context);
+                                             spi::Context& context) const;
 
     /**
      * Invoke either put, remove or unrevertable remove on the SPI
@@ -86,7 +86,7 @@ private:
     void applyDiffEntry(const spi::Bucket&,
                         const api::ApplyBucketDiffCommand::Entry&,
                         spi::Context& context,
-                        const document::DocumentTypeRepo& repo);
+                        const document::DocumentTypeRepo& repo) const;
 
     /**
      * Fill entries-vector with metadata for bucket up to maxTimestamp,
@@ -96,7 +96,7 @@ private:
     void populateMetaData(const spi::Bucket&,
                           Timestamp maxTimestamp,
                           std::vector<spi::DocEntry::UP>& entries,
-                          spi::Context& context);
+                          spi::Context& context) const;
 
     Document::UP deserializeDiffDocument(
             const api::ApplyBucketDiffCommand::Entry& e,

@@ -74,7 +74,7 @@ public:
 }
 
 MessageTracker::UP
-ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTracker::UP tracker)
+ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.removeLocation[cmd.getLoadType()]);
 
@@ -93,7 +93,7 @@ ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, Message
 }
 
 MessageTracker::UP
-ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd, MessageTracker::UP tracker)
+ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.statBucket[cmd.getLoadType()]);
     std::ostringstream ost;
