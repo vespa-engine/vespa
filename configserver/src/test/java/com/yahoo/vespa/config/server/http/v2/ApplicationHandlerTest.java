@@ -174,6 +174,22 @@ public class ApplicationHandlerTest {
     }
 
     @Test
+    public void testGetQuota() throws Exception {
+        PrepareParams prepareParams = new PrepareParams.Builder()
+                .applicationId(applicationId)
+                .vespaVersion(vespaVersion)
+                .build();
+        applicationRepository.deploy(testApp, prepareParams).sessionId();
+
+        var url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/quota";
+        var response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, GET));
+        assertEquals(200, response.getStatus());
+        var renderedString = SessionHandlerTest.getRenderedString(response);
+
+        assertEquals("{\"rate\":0.0}", renderedString);
+    }
+
+    @Test
     public void testRestart() throws Exception {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         assertFalse(provisioner.restarted());
