@@ -28,25 +28,9 @@ public:
     size_t getBucketMemoryUsage() const;
 
     template <typename Functor>
-    void forEachBucket(Functor &functor,
-                       const char *clientId) const {
-        for (const auto &elem : _map) {
-            elem.second->bucketDatabase().for_each(std::ref(functor), clientId);
-        }
-    }
-
-    template <typename Functor>
-    void forEachBucketChunked(Functor &functor,
-                              const char *clientId) const {
-        for (const auto &elem : _map) {
-            elem.second->bucketDatabase().for_each_chunked(std::ref(functor), clientId);
-        }
-    }
-
-    template <typename Functor>
     void for_each_bucket(Functor functor) const {
         for (const auto& elem : _map) {
-            elem.second->bucketDatabase().acquire_read_guard()->for_each(std::move(functor));
+            elem.second->bucketDatabase().acquire_read_guard()->for_each(functor);
         }
     }
 
