@@ -12,7 +12,7 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
-import com.yahoo.jdisc.handler.ResponseDispatch;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -121,7 +121,7 @@ public class FeedHandler extends LoggingRequestHandler {
     @Override
     protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
         int responseCode = request.headers().getFirst(Headers.SILENTUPGRADE) != null ? 299 : 429;
-        ResponseDispatch.newInstance(responseCode).dispatch(responseHandler);
+        responseHandler.handleResponse(new Response(responseCode)).close(null);
     }
 
     private static Optional<String> findClientVersion(HttpRequest request) {
