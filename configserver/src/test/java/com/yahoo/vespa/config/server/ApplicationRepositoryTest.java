@@ -33,7 +33,6 @@ import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
@@ -309,10 +308,10 @@ public class ApplicationRepositoryTest {
         {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
-            Session applicationData = sessionRepository.getLocalSession(sessionId);
+            Session applicationData = sessionRepository.getSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
-            assertNotNull(sessionRepository.getLocalSession(sessionId));
+            assertNotNull(sessionRepository.getSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
             String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
             assertTrue(configCurator.exists(sessionNode));
@@ -323,8 +322,8 @@ public class ApplicationRepositoryTest {
             // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertNull(sessionRepository.getLocalSession(sessionId));
-            assertNull(sessionRepository.getLocalSession(sessionId));
+            assertNull(sessionRepository.getSession(sessionId));
+            assertNull(sessionRepository.getSession(sessionId));
             assertTrue(provisioner.removed());
             assertEquals(tenant.getName(), provisioner.lastApplicationId().tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId());
@@ -383,54 +382,48 @@ public class ApplicationRepositoryTest {
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
         SessionRepository sessionRepository = tester.tenant().getSessionRepository();
-        assertEquals(3, sessionRepository.getLocalSessions().size());
+        assertEquals(3, sessionRepository.getSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
-        // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
-        tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = sessionRepository.getLocalSessions();
+        // All sessions except 3 should be removed after the call to deleteExpiredSessions
+        tester.applicationRepository().deleteExpiredSessions();
+        Collection<Session> sessions = sessionRepository.getSessions();
         assertEquals(1, sessions.size());
-        ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
-        LocalSession localSession = localSessions.get(0);
+        ArrayList<Session> sessionList = new ArrayList<>(sessions);
+        Session localSession = sessionList.get(0);
         assertEquals(3, localSession.getSessionId());
-
-        // All sessions except 3 should be removed after the call to deleteExpiredRemoteSessions
-        assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
-        ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessionsFromZooKeeper());
-        Session remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
-        assertEquals(3, remoteSession.getSessionId());
 
         // Deploy, but do not activate
         Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
         assertTrue(deployment4.isPresent());
         deployment4.get().prepare();  // session 5 (not activated)
 
-        assertEquals(2, sessionRepository.getLocalSessions().size());
+        assertEquals(sessionRepository.getSessions().toString(), 2, sessionRepository.getSessions().size());
         sessionRepository.deleteLocalSession(localSession);
-        assertEquals(1, sessionRepository.getLocalSessions().size());
+        assertEquals(1, sessionRepository.getSessions().size());
 
-        // Create a local session without any data in zookeeper (corner case seen in production occasionally)
-        // and check that expiring local sessions still work
+        // Create a session without any data in zookeeper (corner case seen in production occasionally)
+        // and check that expiring sessions still works
         int sessionId = 6;
         Files.createDirectory(new TenantFileSystemDirs(serverdb, tenant1).getUserApplicationDir(sessionId).toPath());
-        LocalSession localSession2 = new LocalSession(tenant1,
-                                                      sessionId,
-                                                      FilesApplicationPackage.fromFile(testApp),
-                                                      new SessionZooKeeperClient(curator,
-                                                                                 configCurator,
-                                                                                 tenant1,
-                                                                                 sessionId,
-                                                                                 ConfigUtils.getCanonicalHostName()));
-        sessionRepository.addLocalSession(localSession2);
-        assertEquals(2, sessionRepository.getLocalSessions().size());
+        Session localSession2 = new Session(tenant1,
+                                            sessionId,
+                                            new SessionZooKeeperClient(curator,
+                                                                       configCurator,
+                                                                       tenant1,
+                                                                       sessionId,
+                                                                       ConfigUtils.getCanonicalHostName()),
+                                            FilesApplicationPackage.fromFile(testApp));
+        sessionRepository.addSession(localSession2);
+        assertEquals(2, sessionRepository.getSessions().size());
 
-        // Check that trying to expire local session when there exists a local session with no zookeeper data works
-        tester.applicationRepository().deleteExpiredLocalSessions();
-        assertEquals(1, sessionRepository.getLocalSessions().size());
+        // Check that trying to expire session when there exists a session with no zookeeper data works
+        tester.applicationRepository().deleteExpiredSessions();
+        assertEquals(1, sessionRepository.getSessions().size());
 
         // Check that trying to expire when there are no active sessions works
-        tester.applicationRepository().deleteExpiredLocalSessions();
+        tester.applicationRepository().deleteExpiredSessions();
     }
 
     @Test

@@ -70,7 +70,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                             continue;
                         }
                     }
-                    createLocalSessionIfMissing(applicationId, sessionId);
+                    createSessionIfMissing(applicationId, sessionId);
                 }
             }
         }
@@ -83,11 +83,11 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         super.close();
     }
 
-    private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {
+    private void createSessionIfMissing(ApplicationId applicationId, long sessionId) {
         Tenant tenant = applicationRepository.getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
-        if (sessionRepository.getLocalSession(sessionId) == null)
-            sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
+        if (sessionRepository.getSession(sessionId) == null)
+            sessionRepository.createSessionFromDistributedApplicationPackage(sessionId);
     }
 
 }
