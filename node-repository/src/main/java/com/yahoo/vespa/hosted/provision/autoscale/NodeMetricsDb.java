@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -35,10 +36,10 @@ public class NodeMetricsDb {
     }
 
     /** Adds snapshots to this. */
-    public void add(Collection<MetricsFetcher.NodeMetrics> nodeMetrics) {
+    public void add(Collection<Pair<String, MetricSnapshot>> nodeMetrics) {
         synchronized (lock) {
             for (var value : nodeMetrics) {
-                add(value.hostname(), new MetricSnapshot(value));
+                add(value.getFirst(), value.getSecond());
             }
         }
     }

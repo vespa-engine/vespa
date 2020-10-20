@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -12,6 +13,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -35,11 +37,9 @@ public class MetricsFetcherDbTest {
 
         ManualClock clock = tester.clock();
         NodeMetricsDb db = new NodeMetricsDb(tester.nodeRepository());
-        List<MetricsFetcher.NodeMetrics> values = new ArrayList<>();
+        Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new MetricsFetcher.NodeMetrics(node0,
-                                                      clock.instant().getEpochSecond(),
-                                                      0.9f, 0.6f, 0.6f, 0));
+            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0)));
             clock.advance(Duration.ofMinutes(10));
         }
         db.add(values);

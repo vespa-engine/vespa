@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -129,14 +130,13 @@ class AutoscalingTester {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
                 float cpu = value * oneExtraNodeFactor;
-                float mem  = (float) Resource.memory.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                float memory  = (float) Resource.memory.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
                 float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
-                db.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
-                                                              clock().instant().toEpochMilli(),
-                                                           cpu * 100,
-                                                           mem * 100,
-                                                           disk * 100,
-                                                              0)));
+                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
+                                                                              cpu,
+                                                                              memory,
+                                                                              disk,
+                                                                              0))));
             }
         }
     }
@@ -161,12 +161,11 @@ class AutoscalingTester {
                 float cpu  = (float) Resource.cpu.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
                 float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
-                db.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
-                                                              clock().instant().toEpochMilli(),
-                                                           cpu * 100,
-                                                           memory * 100,
-                                                           disk * 100,
-                                                              0)));
+                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
+                                                                              cpu,
+                                                                              memory,
+                                                                              disk,
+                                                                              0))));
             }
         }
     }
@@ -176,12 +175,11 @@ class AutoscalingTester {
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                db.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
-                                                              clock().instant().toEpochMilli(),
-                                                           cpu * 100,
-                                                           memory * 100,
-                                                           disk * 100,
-                                                              generation))); // the metrics are in %
+                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
+                                                                              cpu,
+                                                                              memory,
+                                                                              disk,
+                                                                              generation))));
             }
         }
     }

@@ -1,15 +1,17 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,17 +21,13 @@ import java.util.Map;
  */
 public class MetricsResponse {
 
-    private final List<MetricsFetcher.NodeMetrics> nodeMetrics = new ArrayList<>();
-
-    public MetricsResponse(byte[] response) {
-        this(SlimeUtils.jsonToSlime(response));
-    }
+    private final Collection<Pair<String, MetricSnapshot>> nodeMetrics = new ArrayList<>();
 
     public MetricsResponse(String response) {
         this(SlimeUtils.jsonToSlime(response));
     }
 
-    public List<MetricsFetcher.NodeMetrics> metrics() { return nodeMetrics; }
+    public Collection<Pair<String, MetricSnapshot>> metrics() { return nodeMetrics; }
 
     private MetricsResponse(Slime response) {
         Inspector root = response.get();
@@ -46,12 +44,11 @@ public class MetricsResponse {
     private void consumeNodeMetrics(String hostname, Inspector node) {
         long timestampSecond = node.field("timestamp").asLong();
         Map<String, Double> values = consumeMetrics(node.field("metrics"));
-        nodeMetrics.add(new MetricsFetcher.NodeMetrics(hostname,
-                                                       timestampSecond,
-                                                       values.getOrDefault(Metric.cpu.fullName(), 0.0),
-                                                       values.getOrDefault(Metric.memory.fullName(), 0.0),
-                                                       values.getOrDefault(Metric.disk.fullName(), 0.0),
-                                                       values.getOrDefault(Metric.generation.fullName(), 0.0)));
+        nodeMetrics.add(new Pair<>(hostname, new MetricSnapshot(Instant.ofEpochMilli(timestampSecond * 1000),
+                                                                Metric.cpu.from(values),
+                                                                Metric.memory.from(values),
+                                                                Metric.disk.from(values),
+                                                                (long)Metric.generation.from(values))));
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
@@ -68,6 +65,38 @@ public class MetricsResponse {
 
     private void consumeMetricsItem(Inspector item, Map<String, Double> values) {
         item.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
+    }
+
+    /** The metrics this can read */
+    private enum Metric {
+
+        cpu { // a node resource
+            public String metricResponseName() { return "cpu.util"; }
+            double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
+        },
+        memory { // a node resource
+            public String metricResponseName() { return "mem_total.util"; }
+            double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
+        },
+        disk { // a node resource
+            public String metricResponseName() { return "disk.util"; }
+            double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
+        },
+        generation { // application config generation active on the node
+            public String metricResponseName() { return "application_generation"; }
+            double convertValue(double metricValue) { return (float)metricValue; } // Really a long
+        };
+
+        /** The name of this metric as emitted from its source */
+        public abstract String metricResponseName();
+
+        /** Convert from the emitted value of this metric to the value we want to use here */
+        abstract double convertValue(double metricValue);
+
+        public double from(Map<String, Double> values) {
+            return convertValue(values.getOrDefault(metricResponseName(), 0.0));
+        }
+
     }
 
 }

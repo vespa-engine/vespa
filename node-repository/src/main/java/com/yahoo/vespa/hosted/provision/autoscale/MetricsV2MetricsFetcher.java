@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.google.inject.Inject;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -51,7 +52,7 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
     }
 
     @Override
-    public Collection<NodeMetrics> fetchMetrics(ApplicationId application) {
+    public Collection<Pair<String, MetricSnapshot>> fetchMetrics(ApplicationId application) {
         NodeList applicationNodes = nodeRepository.list(application).state(Node.State.active);
 
         // Do not try to draw conclusions from utilization while unstable
