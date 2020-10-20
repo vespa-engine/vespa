@@ -87,7 +87,7 @@ public class AllocatedHostsSerializer {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
             membership.cluster().dockerImageRepo().ifPresent(repo -> {
-                object.setString(hostSpecDockerImageRepoKey, repo.repository());
+                object.setString(hostSpecDockerImageRepoKey, repo.untagged());
             });
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));

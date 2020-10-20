@@ -205,7 +205,7 @@ public class SessionZooKeeperClient {
     }
 
     public void writeDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
-        dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo.repository()));
+        dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo.untagged()));
     }
 
     public Instant readCreateTime() {

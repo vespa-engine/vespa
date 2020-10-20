@@ -16,7 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * Multithread safe class to get and set docker images for given node types.
+ * Multi-thread safe class to get and set container images for given node types. Images are stored in ZooKeeper so that
+ * nodes receive the same image from all config servers.
  *
  * @author freva
  */
