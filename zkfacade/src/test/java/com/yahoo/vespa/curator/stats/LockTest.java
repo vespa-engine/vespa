@@ -105,6 +105,10 @@ public class LockTest {
         assertEquals(expected.getAndResetReleaseCount(), actual.getAndResetReleaseCount());
         assertEquals(expected.getAndResetReleaseFailedCount(), actual.getAndResetReleaseFailedCount());
         assertEquals(expected.getAndResetReentryCount(), actual.getAndResetReentryCount());
+        assertEquals(expected.getAndResetDeadlockCount(), actual.getAndResetDeadlockCount());
+        assertEquals(expected.getAndResetNakedReleaseCount(), actual.getAndResetNakedReleaseCount());
+        assertEquals(expected.getAndResetAcquireWithoutReleaseCount(), actual.getAndResetAcquireWithoutReleaseCount());
+        assertEquals(expected.getAndResetForeignReleaseCount(), actual.getAndResetForeignReleaseCount());
     }
 
     @Test
