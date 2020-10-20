@@ -32,9 +32,6 @@ public class NodeMetricsDb {
     /** Measurements by key. Each list of measurements is sorted by increasing timestamp */
     private final Map<NodeMeasurementsKey, NodeMeasurements> db = new HashMap<>();
 
-    /** Events */
-    private final List<AutoscalingEvent> events = new ArrayList<>();
-
     /** Lock all access for now since we modify lists inside a map */
     private final Object lock = new Object();
 
@@ -62,13 +59,6 @@ public class NodeMetricsDb {
                 measurements.add(new Measurement(value.timestampSecond() * 1000,
                                                  metric.valueFromMetric(value.value())));
             }
-        }
-    }
-
-    /** Adds an event to this */
-    public void add(AutoscalingEvent event) {
-        synchronized (lock) {
-            events.add(event);
         }
     }
 
@@ -103,12 +93,6 @@ public class NodeMetricsDb {
                 measurementsList.add(measurements);
             }
             return measurementsList;
-        }
-    }
-
-    public List<AutoscalingEvent> getEvents(ApplicationId application) {
-        synchronized (lock) {
-            return events.stream().filter(event -> event.application().equals(application)).collect(Collectors.toList());
         }
     }
 
@@ -207,29 +191,6 @@ public class NodeMetricsDb {
 
         @Override
         public String toString() { return "measurement at " + timestamp + ": " + value; }
-
-    }
-
-    public static class AutoscalingEvent {
-
-        private final ApplicationId application;
-        private final long generation;
-        private final long timestamp;
-
-        public AutoscalingEvent(ApplicationId application, long generation, Instant times) {
-            this.application = application;
-            this.generation = generation;
-            this.timestamp = times.toEpochMilli();
-        }
-
-        /** Returns the deployed application */
-        public ApplicationId application() { return application; }
-
-        /** Returns the application config generation resulting from this deployment */
-        public long generation() { return generation; }
-
-        /** Returns the time of this deployment */
-        public Instant time() { return Instant.ofEpochMilli(timestamp); }
 
     }
 

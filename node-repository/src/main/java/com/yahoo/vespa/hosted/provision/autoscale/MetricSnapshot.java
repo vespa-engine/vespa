@@ -1,10 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -25,29 +25,29 @@ public class MetricSnapshot {
     private final NodeRepository nodeRepository;
     private final Map<String, Instant> startTimePerHost;
 
-    public MetricSnapshot(List<Node> clusterNodes, NodeMetricsDb db, NodeRepository nodeRepository) {
+    public MetricSnapshot(Cluster cluster, List<Node> clusterNodes, NodeMetricsDb db, NodeRepository nodeRepository) {
         this.clusterNodes = clusterNodes;
         this.db = db;
         this.nodeRepository = nodeRepository;
-        this.startTimePerHost = metricStartTimes(clusterNodes, db, nodeRepository);
+        this.startTimePerHost = metricStartTimes(cluster, clusterNodes, db, nodeRepository);
+        startTimePerHost.forEach((a,b) -> System.out.println(a + " = " + b));
     }
 
     /**
      * Returns the instant of the oldest metric to consider for each node, or an empty map if metrics from the
      * entire (max) window should be considered.
      */
-    private static Map<String, Instant> metricStartTimes(List<Node> clusterNodes,
+    private static Map<String, Instant> metricStartTimes(Cluster cluster,
+                                                         List<Node> clusterNodes,
                                                          NodeMetricsDb db,
                                                          NodeRepository nodeRepository) {
-        ApplicationId application = clusterNodes.get(0).allocation().get().owner();
-        List<NodeMetricsDb.AutoscalingEvent> deployments = db.getEvents(application);
         Map<String, Instant> startTimePerHost = new HashMap<>();
-        if (!deployments.isEmpty()) {
-            var deployment = deployments.get(deployments.size() - 1);
+        if ( ! cluster.scalingEvents().isEmpty()) {
+            var deployment = cluster.scalingEvents().get(cluster.scalingEvents().size() - 1);
             List<NodeMetricsDb.NodeMeasurements> generationMeasurements =
-                    db.getMeasurements(deployment.time(),
-                                              Metric.generation,
-                                              clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
+                    db.getMeasurements(deployment.at(),
+                                       Metric.generation,
+                                       clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
             for (Node node : clusterNodes) {
                 startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
                 var nodeGenerationMeasurements =

@@ -11,13 +11,16 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Application JSON serializer
@@ -43,6 +46,11 @@ public class ApplicationSerializer {
     private static final String nodesKey = "nodes";
     private static final String groupsKey = "groups";
     private static final String nodeResourcesKey = "resources";
+    private static final String scalingEventsKey = "scalingEvents";
+    private static final String fromKey = "from";
+    private static final String toKey = "to";
+    private static final String generationKey = "generation";
+    private static final String atKey = "at";
 
     public static byte[] toJson(Application application) {
         Slime slime = new Slime();
@@ -86,6 +94,7 @@ public class ApplicationSerializer {
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
         cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject(suggestedResourcesKey)));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject(targetResourcesKey)));
+        scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray(scalingEventsKey));
     }
 
     private static Cluster clusterFromSlime(String id, Inspector clusterObject) {
@@ -94,7 +103,8 @@ public class ApplicationSerializer {
                            clusterResourcesFromSlime(clusterObject.field(minResourcesKey)),
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
                            optionalClusterResourcesFromSlime(clusterObject.field(suggestedResourcesKey)),
-                           optionalClusterResourcesFromSlime(clusterObject.field(targetResourcesKey)));
+                           optionalClusterResourcesFromSlime(clusterObject.field(targetResourcesKey)),
+                           scalingEventsFromSlime(clusterObject.field(scalingEventsKey)));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -112,6 +122,28 @@ public class ApplicationSerializer {
     private static Optional<ClusterResources> optionalClusterResourcesFromSlime(Inspector clusterResourcesObject) {
         return clusterResourcesObject.valid() ? Optional.of(clusterResourcesFromSlime(clusterResourcesObject))
                                               : Optional.empty();
+    }
+
+    private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor eventArray) {
+        scalingEvents.forEach(event -> toSlime(event, eventArray.addObject()));
+    }
+
+    private static List<ScalingEvent> scalingEventsFromSlime(Inspector eventArray) {
+        return SlimeUtils.entriesStream(eventArray).map(item -> scalingEventFromSlime(item)).collect(Collectors.toList());
+    }
+
+    private static void toSlime(ScalingEvent event, Cursor object) {
+        toSlime(event.from(), object.setObject(fromKey));
+        toSlime(event.to(), object.setObject(toKey));
+        object.setLong(generationKey, event.generation());
+        object.setLong(atKey, event.at().toEpochMilli());
+    }
+
+    private static ScalingEvent scalingEventFromSlime(Inspector inspector) {
+        return new ScalingEvent(clusterResourcesFromSlime(inspector.field(fromKey)),
+                                clusterResourcesFromSlime(inspector.field(toKey)),
+                                inspector.field(generationKey).asLong(),
+                                Instant.ofEpochMilli(inspector.field(atKey).asLong()));
     }
 
 }

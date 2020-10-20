@@ -2,8 +2,10 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -209,7 +211,7 @@ public class ProvisioningTester {
         try (var lock = provisioner.lock(application)) {
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(new CuratorTransaction(curator));
-            provisioner.activate(transaction, hosts, lock);
+            provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
         assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
@@ -239,7 +241,8 @@ public class ProvisioningTester {
     public void deactivate(ApplicationId applicationId) {
         try (var lock = nodeRepository.lock(applicationId)) {
             NestedTransaction deactivateTransaction = new NestedTransaction();
-            nodeRepository.deactivate(deactivateTransaction, new ProvisionLock(applicationId, lock));
+            nodeRepository.deactivate(new ApplicationTransaction(new ProvisionLock(applicationId, lock),
+                                                                 deactivateTransaction));
             deactivateTransaction.commit();
         }
     }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
@@ -49,7 +50,6 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(Parameterized.class)
 public class InfraDeployerImplTest {
-
 
     @Parameterized.Parameters(name = "application={0}")
     public static Iterable<Object[]> parameters() {
@@ -136,15 +136,15 @@ public class InfraDeployerImplTest {
     private void verifyActivated(String... hostnames) {
         verify(duperModelInfraApi).infraApplicationActivated(
                 eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::from).collect(Collectors.toList())));
-        ArgumentMatcher<ProvisionLock> lockMatcher = lock -> {
-            assertEquals(application.getApplicationId(), lock.application());
+        ArgumentMatcher<ApplicationTransaction> transactionMatcher = t -> {
+            assertEquals(application.getApplicationId(), t.application());
             return true;
         };
         ArgumentMatcher<Collection<HostSpec>> hostsMatcher = hostSpecs -> {
             assertEquals(Set.of(hostnames), hostSpecs.stream().map(HostSpec::hostname).collect(Collectors.toSet()));
             return true;
         };
-        verify(provisioner).activate(any(), argThat(hostsMatcher), argThat(lockMatcher));
+        verify(provisioner).activate(argThat(hostsMatcher), any(), argThat(transactionMatcher));
     }
 
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {

@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -380,10 +381,10 @@ public class CuratorDatabaseClient {
                                         ApplicationSerializer.toJson(application)));
     }
 
-    public void deleteApplication(ApplicationId application, NestedTransaction transaction) {
-        if (db.exists(applicationPath(application)))
-            db.newCuratorTransactionIn(transaction)
-              .add(CuratorOperations.delete(applicationPath(application).getAbsolute()));
+    public void deleteApplication(ApplicationTransaction transaction) {
+        if (db.exists(applicationPath(transaction.application())))
+            db.newCuratorTransactionIn(transaction.nested())
+              .add(CuratorOperations.delete(applicationPath(transaction.application()).getAbsolute()));
     }
 
     private Path applicationPath(ApplicationId id) {

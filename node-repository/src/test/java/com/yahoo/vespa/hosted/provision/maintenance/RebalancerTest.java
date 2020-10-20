@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -82,7 +83,8 @@ public class RebalancerTest {
 
         // --- Making the system stable enables rebalancing
         NestedTransaction tx = new NestedTransaction();
-        tester.nodeRepository().deactivate(List.of(cpuSkewedNode), tx, new ProvisionLock(cpuApp, () -> {}));
+        tester.nodeRepository().deactivate(List.of(cpuSkewedNode),
+                                           new ApplicationTransaction(new ProvisionLock(cpuApp, () -> {}), tx));
         tx.commit();
 
         //     ... if activation fails when trying, we clean up the state

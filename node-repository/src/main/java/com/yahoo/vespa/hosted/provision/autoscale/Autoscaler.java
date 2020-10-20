@@ -42,7 +42,7 @@ public class Autoscaler {
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
     public Optional<ClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
-        return autoscale(clusterNodes, Limits.empty(), cluster.exclusive())
+        return autoscale(cluster, clusterNodes, Limits.empty(), cluster.exclusive())
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
 
     }
@@ -55,16 +55,17 @@ public class Autoscaler {
      */
     public Optional<ClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Optional.empty(); // Shortcut
-        return autoscale(clusterNodes, Limits.of(cluster), cluster.exclusive())
+        return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive())
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
     }
 
-    private Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes, Limits limits, boolean exclusive) {
+    private Optional<AllocatableClusterResources> autoscale(Cluster cluster,
+                                                            List<Node> clusterNodes, Limits limits, boolean exclusive) {
         if (unstable(clusterNodes)) return Optional.empty();
 
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
 
-        MetricSnapshot metricSnapshot = new MetricSnapshot(clusterNodes, metricsDb, nodeRepository);
+        MetricSnapshot metricSnapshot = new MetricSnapshot(cluster, clusterNodes, metricsDb, nodeRepository);
 
         Optional<Double> cpuLoad    = metricSnapshot.averageLoad(Resource.cpu);
         Optional<Double> memoryLoad = metricSnapshot.averageLoad(Resource.memory);

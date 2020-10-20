@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -330,7 +332,7 @@ public class FailedExpirerTest {
                                                                (level, message) -> System.out.println(level + ": " + message) );
             try (var lock = provisioner.lock(applicationId)) {
                 NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-                provisioner.activate(transaction, Set.copyOf(preparedNodes), lock);
+                provisioner.activate(Set.copyOf(preparedNodes), new ActivationContext(0), new ApplicationTransaction(lock, transaction));
                 transaction.commit();
             }
             return this;

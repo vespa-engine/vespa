@@ -245,7 +245,7 @@ public class IP {
         /**
          * Finds all unused addresses in this pool
          *
-         * @param nodes Locked list of all nodes in the repository
+         * @param nodes a list of all nodes in the repository
          */
         public Set<String> findUnused(NodeList nodes) {
             var unusedAddresses = new LinkedHashSet<>(asSet());

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
@@ -30,7 +31,7 @@ public class ApplicationsTest {
         assertEquals(app1, applications.get(app1).get().id());
         assertEquals(List.of(app1), applications.ids());
         NestedTransaction t = new NestedTransaction();
-        applications.remove(app1, t, provisionLock(app1));
+        applications.remove(new ApplicationTransaction(provisionLock(app1), t));
         t.commit();
         assertTrue(applications.get(app1).isEmpty());
         assertEquals(List.of(), applications.ids());
@@ -38,14 +39,14 @@ public class ApplicationsTest {
         applications.put(new Application(app1), () -> {});
         applications.put(new Application(app2), () -> {});
         t = new NestedTransaction();
-        applications.put(new Application(app3), t, () -> {});
+        applications.put(new Application(app3), new ApplicationTransaction(provisionLock(app1), t));
         assertEquals(List.of(app1, app2), applications.ids());
         t.commit();
         assertEquals(List.of(app1, app2, app3), applications.ids());
         t = new NestedTransaction();
-        applications.remove(app1, t, provisionLock(app1));
-        applications.remove(app2, t, provisionLock(app2));
-        applications.remove(app3, t, provisionLock(app3));
+        applications.remove(new ApplicationTransaction(provisionLock(app1), t));
+        applications.remove(new ApplicationTransaction(provisionLock(app2), t));
+        applications.remove(new ApplicationTransaction(provisionLock(app3), t));
         assertEquals(List.of(app1, app2, app3), applications.ids());
         t.commit();
         assertTrue(applications.get(app1).isEmpty());

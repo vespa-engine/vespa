@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
@@ -96,24 +97,24 @@ public class LoadBalancerProvisioner {
      *
      * Calling this when no load balancer has been prepared for given cluster is a no-op.
      */
-    public void activate(NestedTransaction transaction, Set<ClusterSpec> clusters, ProvisionLock lock) {
-        for (var cluster : loadBalancedClustersOf(lock.application()).entrySet()) {
+    public void activate(Set<ClusterSpec> clusters, ApplicationTransaction transaction) {
+        for (var cluster : loadBalancedClustersOf(transaction.application()).entrySet()) {
             // Provision again to ensure that load balancer instance is re-configured with correct nodes
-            provision(lock.application(), cluster.getKey(), cluster.getValue(), true, lock);
+            provision(transaction.application(), cluster.getKey(), cluster.getValue(), true, transaction.lock());
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
-        var surplusLoadBalancers = surplusLoadBalancersOf(lock.application(), clusters.stream()
+        var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), clusters.stream()
                                                                                       .map(LoadBalancerProvisioner::effectiveId)
                                                                                       .collect(Collectors.toSet()));
-        deactivate(surplusLoadBalancers, transaction);
+        deactivate(surplusLoadBalancers, transaction.nested());
     }
 
     /**
      * Deactivate all load balancers assigned to given application. This is a no-op if an application does not have any
      * load balancer(s).
      */
-    public void deactivate(NestedTransaction transaction, ProvisionLock lock) {
-        deactivate(nodeRepository.loadBalancers(lock.application()).asList(), transaction);
+    public void deactivate(ApplicationTransaction transaction) {
+        deactivate(nodeRepository.loadBalancers(transaction.application()).asList(), transaction.nested());
     }
 
     /** Returns load balancers of given application that are no longer referenced by given clusters */
