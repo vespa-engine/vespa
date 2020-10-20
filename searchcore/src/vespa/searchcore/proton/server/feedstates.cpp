@@ -79,7 +79,7 @@ public:
           _bucketDBHandler(bucketDBHandler),
           _replay_config(replay_config),
           _config_store(config_store),
-          _commitTimeTracker(100ms)
+          _commitTimeTracker(5ms)
     { }
 
     ~TransactionLogReplayPacketHandler() override = default;
