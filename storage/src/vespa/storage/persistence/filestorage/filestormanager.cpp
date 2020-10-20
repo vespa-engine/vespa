@@ -114,7 +114,13 @@ createThreadName(size_t stripeId) {
     return fmt("PersistenceThread-%zu", stripeId);
 }
 
-thread_local PersistenceHandler * _G_threadLocalHandler = nullptr;
+#ifdef __PIC__
+#define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("initial-exec")))
+#else
+#define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("local-exec")))
+#endif
+
+thread_local PersistenceHandler * _G_threadLocalHandler TLS_LINKAGE = nullptr;
 
 }
 

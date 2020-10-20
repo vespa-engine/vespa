@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <vespa/vespalib/util/alloc.h>
 
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+
 namespace vespalib {
 
 /**
@@ -567,7 +569,7 @@ private:
     bool isAllocated() const { return _buf != _stack; }
     char * buffer() { return _buf; }
     const char * buffer() const { return _buf; }
-    void appendAlloc(const void * s, size_type sz) __attribute__((noinline));
+    VESPA_DLL_LOCAL void appendAlloc(const void * s, size_type sz) __attribute__((noinline));
     void init(const void *s) noexcept {
         if (__builtin_expect(_sz < StackSize, true)) {
             _bufferSize = StackSize;

@@ -45,10 +45,10 @@ private:
     std::atomic<size_t>        _threadCountAccum;
     ThreadPool                 _threadVector[NUM_THREADS];
     AllocPoolT<MemBlockPtrT> & _allocPool;
-    static __thread ThreadPool * _myPool TLS_LINKAGE;
+    static thread_local ThreadPool * _myPool TLS_LINKAGE;
 };
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-__thread ThreadPoolT<MemBlockPtrT, ThreadStatT> * ThreadListT<MemBlockPtrT, ThreadStatT>::_myPool TLS_LINKAGE = nullptr;
+thread_local ThreadPoolT<MemBlockPtrT, ThreadStatT> * ThreadListT<MemBlockPtrT, ThreadStatT>::_myPool TLS_LINKAGE = nullptr;
 
 }
