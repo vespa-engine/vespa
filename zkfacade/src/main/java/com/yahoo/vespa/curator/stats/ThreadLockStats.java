@@ -68,6 +68,8 @@ public class ThreadLockStats {
 
     /** Mutable method (see class doc) */
     public void invokingAcquire(String lockPath, Duration timeout) {
+        LockStats.getGlobal().invokingAcquire(thread);
+
         boolean reentry = lockAttemptsStack.stream().anyMatch(lockAttempt -> lockAttempt.getLockPath().equals(lockPath));
 
         if (!reentry) {
