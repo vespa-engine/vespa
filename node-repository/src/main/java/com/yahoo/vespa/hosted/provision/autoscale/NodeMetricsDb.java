@@ -10,10 +10,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * An in-memory time-series "database" of node metrics.
@@ -55,7 +55,7 @@ public class NodeMetricsDb {
                                               new ArrayList<>());
             db.put(hostname, timeseries);
         }
-        timeseries.add(snapshot);
+        db.put(hostname, timeseries.add(snapshot));
     }
 
     /** Must be called intermittently (as long as any add methods are called) to gc old data */
@@ -63,11 +63,13 @@ public class NodeMetricsDb {
         synchronized (lock) {
             // Each measurement is Object + long + float = 16 + 8 + 4 = 28 bytes
             // 12 hours with 1k nodes and 3 resources and 1 measurement/sec is about 5Gb
-            for (Iterator<NodeTimeseries> i = db.values().iterator(); i.hasNext(); ) {
-                var snapshot = i.next();
-                snapshot.removeOlderThan(clock.instant().minus(Autoscaler.scalingWindow(snapshot.type())).toEpochMilli());
-                if (snapshot.isEmpty())
-                    i.remove();
+            for (String hostname : db.keySet()) {
+                var timeseries = db.get(hostname);
+                timeseries = timeseries.justAfter(clock.instant().minus(Autoscaler.scalingWindow(timeseries.type())));
+                if (timeseries.isEmpty())
+                    db.remove(hostname);
+                else
+                    db.put(hostname, timeseries);
             }
         }
     }
@@ -82,7 +84,7 @@ public class NodeMetricsDb {
             for (String hostname : hostnames) {
                 NodeTimeseries measurements = db.get(hostname);
                 if (measurements == null) continue;
-                measurements = measurements.copyAfter(startTime);
+                measurements = measurements.justAfter(startTime);
                 if (measurements.isEmpty()) continue;
                 measurementsList.add(measurements);
             }

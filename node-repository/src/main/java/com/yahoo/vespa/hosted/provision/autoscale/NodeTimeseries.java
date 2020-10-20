@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.config.provision.ClusterSpec;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,8 +27,6 @@ public class NodeTimeseries {
         this.snapshots = snapshots;
     }
 
-    // Public access
-
     public boolean isEmpty() { return snapshots.isEmpty(); }
 
     public int size() { return snapshots.size(); }
@@ -40,20 +39,17 @@ public class NodeTimeseries {
 
     public String hostname() { return hostname; }
 
-    public NodeTimeseries copyAfter(Instant oldestTime) {
-        return new NodeTimeseries(hostname, type,
-                                  snapshots.stream()
-                                           .filter(measurement -> measurement.at().equals(oldestTime) || measurement.at().isAfter(oldestTime))
-                                           .collect(Collectors.toList()));
+    public NodeTimeseries add(MetricSnapshot snapshot) {
+        List<MetricSnapshot> list = new ArrayList<>(snapshots);
+        list.add(snapshot);
+        return new NodeTimeseries(hostname(), type(), list);
     }
 
-    // Restricted mutation
-
-    void add(MetricSnapshot snapshot) { snapshots.add(snapshot); }
-
-    void removeOlderThan(long oldestTimestamp) {
-        while (!snapshots.isEmpty() && snapshots.get(0).at().toEpochMilli() < oldestTimestamp)
-            snapshots.remove(0);
+    public NodeTimeseries justAfter(Instant oldestTime) {
+        return new NodeTimeseries(hostname, type,
+                                  snapshots.stream()
+                                           .filter(snapshot -> snapshot.at().equals(oldestTime) || snapshot.at().isAfter(oldestTime))
+                                           .collect(Collectors.toList()));
     }
 
 }
