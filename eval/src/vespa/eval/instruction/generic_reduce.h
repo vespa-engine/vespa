@@ -23,8 +23,8 @@ struct DenseReducePlan {
     std::vector<size_t> reduce_stride;
     DenseReducePlan(const ValueType &type, const ValueType &res_type);
     ~DenseReducePlan();
-    template <typename F> void execute_keep(const F &f) const {
-        run_nested_loop(0, keep_loop, keep_stride, f);
+    template <typename F> void execute_keep(size_t offset, const F &f) const {
+        run_nested_loop(offset, keep_loop, keep_stride, f);
     }
     template <typename F> void execute_reduce(size_t offset, const F &f) const {
         run_nested_loop(offset, reduce_loop, reduce_stride, f);

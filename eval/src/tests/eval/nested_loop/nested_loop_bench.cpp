@@ -10,7 +10,33 @@ using vespalib::eval::run_nested_loop;
 using LIST = std::vector<size_t>;
 using call_t = void (*)(const LIST &loop, const LIST &stride);
 
-void perform_direct(const LIST &loop, const LIST &stride) {
+void perform_direct_1(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 1) && (stride.size() == 1));
+    size_t idx1 = 0;
+    size_t expect = 0;
+    for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
+        assert(idx1 == expect);
+        ++expect;
+    }
+    assert(expect == 4096);
+}
+
+void perform_direct_2(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 2) && (stride.size() == 2));
+    size_t idx1 = 0;
+    size_t expect = 0;
+    for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
+        size_t idx2 = idx1;
+        for (size_t j = 0; j < loop[1]; ++j, idx2 += stride[1]) {
+            assert(idx2 == expect);
+            ++expect;
+        }
+    }
+    assert(expect == 4096);
+}
+
+void perform_direct_3(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 3) && (stride.size() == 3));
     size_t idx1 = 0;
     size_t expect = 0;
     for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
@@ -26,7 +52,61 @@ void perform_direct(const LIST &loop, const LIST &stride) {
     assert(expect == 4096);
 }
 
-void perform_direct_lambda(const LIST &loop, const LIST &stride) {
+void perform_direct_4(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 4) && (stride.size() == 4));
+    size_t idx1 = 0;
+    size_t expect = 0;
+    for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
+        size_t idx2 = idx1;
+        for (size_t j = 0; j < loop[1]; ++j, idx2 += stride[1]) {
+            size_t idx3 = idx2;
+            for (size_t k = 0; k < loop[2]; ++k, idx3 += stride[2]) {
+                size_t idx4 = idx3;
+                for (size_t l = 0; l < loop[3]; ++l, idx4 += stride[3]) {
+                    assert(idx4 == expect);
+                    ++expect;
+                }
+            }
+        }
+    }
+    assert(expect == 4096);
+}
+
+void perform_direct_lambda_1(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 1) && (stride.size() == 1));
+    size_t expect = 0;
+    auto fun = [&](size_t idx) {
+        (void) idx;
+        assert(idx == expect);
+        ++expect;
+    };
+    size_t idx1 = 0;
+    for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
+        fun(idx1);
+    }
+    assert(expect == 4096);
+}
+
+void perform_direct_lambda_2(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 2) && (stride.size() == 2));
+    size_t expect = 0;
+    auto fun = [&](size_t idx) {
+        (void) idx;
+        assert(idx == expect);
+        ++expect;
+    };
+    size_t idx1 = 0;
+    for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
+        size_t idx2 = idx1;
+        for (size_t j = 0; j < loop[1]; ++j, idx2 += stride[1]) {
+            fun(idx2);
+        }
+    }
+    assert(expect == 4096);
+}
+
+void perform_direct_lambda_3(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 3) && (stride.size() == 3));
     size_t expect = 0;
     auto fun = [&](size_t idx) {
         (void) idx;
@@ -40,6 +120,30 @@ void perform_direct_lambda(const LIST &loop, const LIST &stride) {
             size_t idx3 = idx2;
             for (size_t k = 0; k < loop[2]; ++k, idx3 += stride[2]) {
                 fun(idx3);
+            }
+        }
+    }
+    assert(expect == 4096);
+}
+
+void perform_direct_lambda_4(const LIST &loop, const LIST &stride) {
+    assert((loop.size() == 4) && (stride.size() == 4));
+    size_t expect = 0;
+    auto fun = [&](size_t idx) {
+        (void) idx;
+        assert(idx == expect);
+        ++expect;
+    };
+    size_t idx1 = 0;
+    for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
+        size_t idx2 = idx1;
+        for (size_t j = 0; j < loop[1]; ++j, idx2 += stride[1]) {
+            size_t idx3 = idx2;
+            for (size_t k = 0; k < loop[2]; ++k, idx3 += stride[2]) {
+                size_t idx4 = idx3;
+                for (size_t l = 0; l < loop[3]; ++l, idx4 += stride[3]) {
+                    fun(idx4);
+                }
             }
         }
     }
@@ -70,19 +174,54 @@ void perform_generic_isolate_first(const LIST &loop, const LIST &stride) {
 
 void nop() {}
 
-double estimate_cost_us(call_t perform_fun) {
+double estimate_cost_1_us(call_t perform_fun) {
+    LIST loop({4096});
+    LIST stride({1});
+    return BenchmarkTimer::benchmark([&](){ perform_fun(loop, stride); }, nop, 10000, 5.0) * 1000.0 * 1000.0;
+}
+
+double estimate_cost_2_us(call_t perform_fun) {
+    LIST loop({64,64});
+    LIST stride({64,1});
+    return BenchmarkTimer::benchmark([&](){ perform_fun(loop, stride); }, nop, 10000, 5.0) * 1000.0 * 1000.0;
+}
+
+double estimate_cost_3_us(call_t perform_fun) {
     LIST loop({16,16,16});
     LIST stride({256,16,1});
-    return BenchmarkTimer::benchmark([&](){ perform_fun(loop, stride); }, nop, 100000, 5.0) * 1000.0 * 1000.0;
+    return BenchmarkTimer::benchmark([&](){ perform_fun(loop, stride); }, nop, 10000, 5.0) * 1000.0 * 1000.0;
+}
+
+double estimate_cost_4_us(call_t perform_fun) {
+    LIST loop({8,8,8,8});
+    LIST stride({512,64,8,1});
+    return BenchmarkTimer::benchmark([&](){ perform_fun(loop, stride); }, nop, 10000, 5.0) * 1000.0 * 1000.0;
 }
 
 //-----------------------------------------------------------------------------
 
 TEST(NestedLoopBenchmark, single_loop) {
-    fprintf(stderr, "manual direct single loop: %g us\n", estimate_cost_us(perform_direct));
-    fprintf(stderr, "manual call lambda single loop: %g us\n", estimate_cost_us(perform_direct_lambda));
-    fprintf(stderr, "generic single loop: %g us\n", estimate_cost_us(perform_generic));
-    fprintf(stderr, "generic single loop (isolate first): %g us\n", estimate_cost_us(perform_generic_isolate_first));
+    fprintf(stderr, "---------------------------------------------------------------\n");
+    fprintf(stderr, "manual direct single loop (1 layer): %g us\n", estimate_cost_1_us(perform_direct_1));
+    fprintf(stderr, "manual call lambda single loop (1 layer): %g us\n", estimate_cost_1_us(perform_direct_lambda_1));
+    fprintf(stderr, "generic single loop (1 layer): %g us\n", estimate_cost_1_us(perform_generic));
+    fprintf(stderr, "generic single loop (1 layer, isolate first): %g us\n", estimate_cost_1_us(perform_generic_isolate_first));
+    fprintf(stderr, "---------------------------------------------------------------\n");
+    fprintf(stderr, "manual direct single loop (2 layers): %g us\n", estimate_cost_2_us(perform_direct_2));
+    fprintf(stderr, "manual call lambda single loop (2 layers): %g us\n", estimate_cost_2_us(perform_direct_lambda_2));
+    fprintf(stderr, "generic single loop (2 layers): %g us\n", estimate_cost_2_us(perform_generic));
+    fprintf(stderr, "generic single loop (2 layers, isolate first): %g us\n", estimate_cost_2_us(perform_generic_isolate_first));
+    fprintf(stderr, "---------------------------------------------------------------\n");
+    fprintf(stderr, "manual direct single loop (3 layers): %g us\n", estimate_cost_3_us(perform_direct_3));
+    fprintf(stderr, "manual call lambda single loop (3 layers): %g us\n", estimate_cost_3_us(perform_direct_lambda_3));
+    fprintf(stderr, "generic single loop (3 layers): %g us\n", estimate_cost_3_us(perform_generic));
+    fprintf(stderr, "generic single loop (3 layers, isolate first): %g us\n", estimate_cost_3_us(perform_generic_isolate_first));
+    fprintf(stderr, "---------------------------------------------------------------\n");
+    fprintf(stderr, "manual direct single loop (4 layers): %g us\n", estimate_cost_4_us(perform_direct_4));
+    fprintf(stderr, "manual call lambda single loop (4 layers): %g us\n", estimate_cost_4_us(perform_direct_lambda_4));
+    fprintf(stderr, "generic single loop (4 layers): %g us\n", estimate_cost_4_us(perform_generic));
+    fprintf(stderr, "generic single loop (4 layers, isolate first): %g us\n", estimate_cost_4_us(perform_generic_isolate_first));
+    fprintf(stderr, "---------------------------------------------------------------\n");
 }
 
 //-----------------------------------------------------------------------------

@@ -12,6 +12,7 @@ vespa_define_module(
     TESTS
     src/tests/ann
     src/tests/eval/aggr
+    src/tests/eval/array_array_map
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
     src/tests/eval/engine_or_factory

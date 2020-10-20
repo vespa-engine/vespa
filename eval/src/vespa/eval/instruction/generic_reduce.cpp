@@ -3,6 +3,7 @@
 #include "generic_reduce.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
+#include <vespa/eval/eval/array_array_map.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <cassert>
@@ -41,17 +42,6 @@ ReduceParam::~ReduceParam() = default;
 //-----------------------------------------------------------------------------
 
 struct SparseReduceState {
-
-    // TODO(havardpe): Optimize using vespalib::hash_map with
-    // reference to slice of external vector of vespalib::stringref as
-    // key. Track matching subspaces as linked lists contained in a
-    // single shared vector.
-
-    using MapKey = std::vector<vespalib::string>;
-    using MapValue = std::vector<size_t>;
-    using Map = std::map<MapKey,MapValue>;
-
-    Map                               map;
     std::vector<vespalib::stringref>  full_address;
     std::vector<vespalib::stringref*> fetch_address;
     std::vector<vespalib::stringref*> keep_address;
@@ -60,7 +50,8 @@ struct SparseReduceState {
     SparseReduceState(const SparseReducePlan &plan)
         : full_address(plan.keep_dims.size() + plan.num_reduce_dims),
           fetch_address(full_address.size(), nullptr),
-          keep_address(plan.keep_dims.size(), nullptr)
+          keep_address(plan.keep_dims.size(), nullptr),
+          subspace()
     {
         for (size_t i = 0; i < keep_address.size(); ++i) {
             keep_address[i] = &full_address[plan.keep_dims[i]];
@@ -69,54 +60,49 @@ struct SparseReduceState {
             fetch_address[i] = &full_address[i];
         }
     }
+    ConstArrayRef<vespalib::stringref*> keep_addr() const { return {keep_address}; }
     ~SparseReduceState();
-    void populate_map(std::unique_ptr<Value::Index::View> full_view) {
-        full_view->lookup({});
-        while (full_view->next_result(fetch_address, subspace)) {
-            std::vector<vespalib::string> key;
-            key.reserve(keep_address.size());
-            for (const vespalib::stringref *label: keep_address) {
-                key.emplace_back(*label);
-            }
-            map[key].push_back(subspace);
-        }
-    }
-    template <typename T>
-    std::vector<vespalib::stringref> make_addr(const T &map_entry) {
-        std::vector<vespalib::stringref> addr;
-        addr.reserve(map_entry.first.size());
-        for (const vespalib::string &label: map_entry.first) {
-            addr.push_back(label);
-        }
-        return addr;
-    }
 };
 SparseReduceState::~SparseReduceState() = default;
 
 template <typename ICT, typename OCT, typename AGGR>
 Value::UP
 generic_reduce(const Value &value, const ReduceParam &param) {
-    SparseReduceState sparse(param.sparse_plan);
-    sparse.populate_map(value.index().create_view({}));
     auto cells = value.cells().typify<ICT>();
-    AGGR aggr;
-    auto first = [&](size_t idx) { aggr.first(cells[idx]); };
-    auto next = [&](size_t idx) { aggr.next(cells[idx]); };
-    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.keep_dims.size(), param.dense_plan.out_size, sparse.map.size());
-    for (const auto &entry: sparse.map) {
-        OCT *dst = builder->add_subspace(sparse.make_addr(entry)).begin();
-        auto reduce_cells = [&](size_t rel_idx)
-                            {
-                                auto pos = entry.second.begin();
-                                param.dense_plan.execute_reduce((*pos * param.dense_plan.in_size) + rel_idx, first, next);
-                                for (++pos; pos != entry.second.end(); ++pos) {
-                                    param.dense_plan.execute_reduce((*pos * param.dense_plan.in_size) + rel_idx, next);
-                                }
-                                *dst++ = aggr.result();
-                            };
-        param.dense_plan.execute_keep(reduce_cells);
+    ArrayArrayMap<vespalib::stringref,AGGR> map(param.sparse_plan.keep_dims.size(),
+                                                param.dense_plan.out_size,
+                                                value.index().size());
+    SparseReduceState sparse(param.sparse_plan);
+    auto full_view = value.index().create_view({});
+    full_view->lookup({});
+    while (full_view->next_result(sparse.fetch_address, sparse.subspace)) {
+        auto res = map.lookup_or_add_entry(sparse.keep_addr());
+        AGGR *dst = nullptr;
+        auto first = [&](size_t idx) { (dst++)->first(cells[idx]); };
+        auto next = [&](size_t idx) { (dst++)->next(cells[idx]); };
+        auto init_aggrs = [&](size_t idx) {
+            dst = map.get_values(res.first).begin();
+            param.dense_plan.execute_keep(idx, first);
+        };
+        auto fill_aggrs = [&](size_t idx) {
+            dst = map.get_values(res.first).begin();
+            param.dense_plan.execute_keep(idx, next);
+        };
+        if (res.second) {
+            param.dense_plan.execute_reduce((sparse.subspace * param.dense_plan.in_size), init_aggrs, fill_aggrs);
+        } else {
+            param.dense_plan.execute_reduce((sparse.subspace * param.dense_plan.in_size), fill_aggrs);
+        }
     }
-    if (sparse.map.empty() && param.sparse_plan.keep_dims.empty()) {
+    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.keep_dims.size(), param.dense_plan.out_size, map.size());
+    map.each_entry([&](const auto &keys, const auto &values)
+                   {
+                       OCT *dst = builder->add_subspace(keys).begin();
+                       for (const AGGR &aggr: values) {
+                           *dst++ = aggr.result();
+                       }
+                   });
+    if ((map.size() == 0) && param.sparse_plan.keep_dims.empty()) {
         auto zero = builder->add_subspace({});
         for (size_t i = 0; i < zero.size(); ++i) {
             zero[i] = OCT{};
@@ -135,8 +121,28 @@ void my_generic_reduce_op(State &state, uint64_t param_in) {
     state.pop_push(result_ref);
 };
 
+template <typename ICT, typename AGGR>
+void my_full_reduce_op(State &state, uint64_t) {
+    auto cells = state.peek(0).cells().typify<ICT>();
+    if (cells.size() > 0) {
+        AGGR aggr;
+        aggr.first(cells[0]);
+        for (size_t i = 1; i < cells.size(); ++i) {
+            aggr.next(cells[i]);
+        }
+        state.pop_push(state.stash.create<DoubleValue>(aggr.result()));
+    } else {
+        state.pop_push(state.stash.create<DoubleValue>(0.0));
+    }
+};
+
 struct SelectGenericReduceOp {
-    template <typename ICT, typename OCT, typename AGGR> static auto invoke() {
+    template <typename ICT, typename OCT, typename AGGR> static auto invoke(const ReduceParam &param) {
+        if (param.res_type.is_double()) {
+            bool output_is_double = std::is_same_v<OCT, double>;
+            assert(output_is_double);
+            return my_full_reduce_op<ICT, typename AGGR::template templ<ICT>>;
+        }
         return my_generic_reduce_op<ICT, OCT, typename AGGR::template templ<ICT>>;
     }
 };
@@ -223,7 +229,7 @@ GenericReduce::make_instruction(const ValueType &type, Aggr aggr, const std::vec
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
     auto &param = stash.create<ReduceParam>(type, dimensions, factory);
-    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(type.cell_type(), param.res_type.cell_type(), aggr);
+    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(type.cell_type(), param.res_type.cell_type(), aggr, param);
     return Instruction(fun, wrap_param<ReduceParam>(param));
 }
 
