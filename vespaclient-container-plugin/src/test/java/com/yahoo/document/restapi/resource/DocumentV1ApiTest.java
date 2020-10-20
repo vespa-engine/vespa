@@ -178,9 +178,9 @@ public class DocumentV1ApiTest {
                        "/document/v1/{namespace}/{documentType}/docid/\\n" +
                        "/document/v1/{namespace}/{documentType}/group/{group}/\\n" +
                        "/document/v1/{namespace}/{documentType}/number/{number}/\\n" +
-                       "/document/v1/{namespace}/{documentType}/docid/{docid}\\n" +
-                       "/document/v1/{namespace}/{documentType}/group/{group}/{docid}\\n" +
-                       "/document/v1/{namespace}/{documentType}/number/{number}/{docid}\"" +
+                       "/document/v1/{namespace}/{documentType}/docid/{*}\\n" +
+                       "/document/v1/{namespace}/{documentType}/group/{group}/{*}\\n" +
+                       "/document/v1/{namespace}/{documentType}/number/{number}/{*}\"" +
                        "}", response.readAll());
         assertEquals("application/json; charset=UTF-8", response.getResponse().headers().getFirst("Content-Type"));
         assertEquals(404, response.getStatus());
@@ -293,10 +293,18 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
-        // GET with not encoded / in user specified part of document id is a 404
-        access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
+        // GET with not encoded / in user specified part of document id is perfectly OK ... щ(ಥДಥщ)
+        access.session.expect((id, parameters) -> {
+            assertEquals(new DocumentId("id:space:music::one/two/three"), id);
+            assertEquals(parameters(), parameters);
+            parameters.responseHandler().get().handleResponse(new DocumentResponse(0));
+            return new Result(Result.ResultType.SUCCESS, null);
+        });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one/two/three");
-        response.readAll(); // Must drain body.
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid/one/two/three\"," +
+                       "  \"id\": \"id:space:music::one/two/three\"" +
+                       "}", response.readAll());
         assertEquals(404, response.getStatus());
 
         // POST with a document payload is a document put operation.
