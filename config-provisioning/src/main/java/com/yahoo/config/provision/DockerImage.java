@@ -86,6 +86,10 @@ public class DockerImage {
         return Objects.hash(registry, repository, tag);
     }
 
+    public static DockerImage from(String registry, String repository) {
+        return new DockerImage(registry, repository, Optional.empty());
+    }
+
     public static DockerImage fromString(String s) {
         if (s.isEmpty()) return EMPTY;
 

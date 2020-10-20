@@ -130,7 +130,7 @@ public class NodeRepository extends AbstractComponent {
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.dockerImage()),
+             DockerImage.fromString(config.containerImage()),
              flagSource,
              config.useCuratorClientCache(),
              provisionServiceProvider.getHostProvisioner().isPresent(),
