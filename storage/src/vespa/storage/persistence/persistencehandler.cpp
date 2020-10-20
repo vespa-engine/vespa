@@ -8,7 +8,7 @@ LOG_SETUP(".persistence.persistencehandler");
 namespace storage {
 
 PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequencedExecutor,
-                                      ServiceLayerComponent & component,
+                                      const ServiceLayerComponent & component,
                                       const vespa::config::content::StorFilestorConfig & cfg,
                                       spi::PersistenceProvider& provider,
                                       FileStorHandler& filestorHandler,
