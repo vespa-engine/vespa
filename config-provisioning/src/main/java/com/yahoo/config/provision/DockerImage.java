@@ -11,6 +11,7 @@ import java.util.Optional;
  *
  * @author mpolden
  */
+// TODO: Rename to ContainerImage. Compatibility with older config-models must be preserved.
 public class DockerImage {
 
     public static final DockerImage EMPTY = new DockerImage("", "", Optional.empty());
@@ -50,9 +51,14 @@ public class DockerImage {
         return tag.map(Version::new).orElse(Version.emptyVersion);
     }
 
-    /** Returns the Docker image tagged with the given version */
+    /** Returns a copy of this tagged with the given version */
     public DockerImage withTag(Version version) {
         return new DockerImage(registry, repository, Optional.of(version.toFullString()));
+    }
+
+    /** Returns a copy of this with registry set to given value */
+    public DockerImage withRegistry(String registry) {
+        return new DockerImage(registry, repository, tag);
     }
 
     public String asString() {

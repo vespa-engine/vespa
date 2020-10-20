@@ -19,9 +19,9 @@ import java.util.TreeMap;
  *
  * @author freva
  */
-public class NodeTypeDockerImagesSerializer {
+public class NodeTypeContainerImagesSerializer {
 
-    private NodeTypeDockerImagesSerializer() {}
+    private NodeTypeContainerImagesSerializer() {}
 
     public static byte[] toJson(Map<NodeType, DockerImage> dockerImages) {
         Slime slime = new Slime();
@@ -36,11 +36,11 @@ public class NodeTypeDockerImagesSerializer {
     }
 
     public static Map<NodeType, DockerImage> fromJson(byte[] data) {
-        Map<NodeType, DockerImage> dockerImages = new TreeMap<>(); // Use TreeMap to sort by node type
+        Map<NodeType, DockerImage> images = new TreeMap<>(); // Use TreeMap to sort by node type
         Inspector inspector = SlimeUtils.jsonToSlime(data).get();
         inspector.traverse((ObjectTraverser) (key, value) ->
-                dockerImages.put(NodeSerializer.nodeTypeFromString(key), DockerImage.fromString(value.asString())));
-        return dockerImages;
+                images.put(NodeSerializer.nodeTypeFromString(key), DockerImage.fromString(value.asString())));
+        return images;
     }
 
 }

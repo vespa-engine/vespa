@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author mpolden
  */
-public class DockerImagesTest {
+public class ContainerImagesTest {
 
     @Test
     public void image_selection() {
@@ -22,14 +22,14 @@ public class DockerImagesTest {
         var tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
 
         var proxyImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/proxy");
-        tester.nodeRepository().dockerImages().setDockerImage(NodeType.proxy, Optional.of(proxyImage));
+        tester.nodeRepository().containerImages().setImage(NodeType.proxy, Optional.of(proxyImage));
 
         // Host uses tenant default image (for preload purposes)
         var defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
         var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
         tester.activateTenantHosts();
         for (var host : hosts) {
-            assertEquals(defaultImage, tester.nodeRepository().dockerImages().dockerImageFor(host.type()));
+            assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(host.type()));
         }
 
         // Tenant node uses tenant default image
@@ -37,14 +37,14 @@ public class DockerImagesTest {
         for (var host : hosts) {
             var nodes = tester.makeReadyVirtualDockerNodes(2, resources, host.hostname());
             for (var node : nodes) {
-                assertEquals(defaultImage, tester.nodeRepository().dockerImages().dockerImageFor(node.type()));
+                assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(node.type()));
             }
         }
 
         // Proxy host uses image used by child nodes (proxy nodes), which is overridden in this case (for preload purposes)
         var proxyHosts = tester.makeReadyNodes(2, "default", NodeType.proxyhost);
         for (var host : proxyHosts) {
-            assertEquals(proxyImage, tester.nodeRepository().dockerImages().dockerImageFor(host.type()));
+            assertEquals(proxyImage, tester.nodeRepository().containerImages().imageFor(host.type()));
         }
     }
 

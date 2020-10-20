@@ -118,7 +118,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         if (pathS.equals(    "/nodes/v2/command/")) return new ResourceResponse(request.getUri(), "restart", "reboot");
         if (pathS.equals(    "/nodes/v2/locks")) return new LocksResponse();
         if (pathS.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
-        if (pathS.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
+        if (pathS.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.containerImages());
         if (pathS.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
         if (path.matches("/nodes/v2/application")) return applicationList(request.getUri());
         if (path.matches("/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
@@ -363,7 +363,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         boolean force = inspector.field("force").asBool();
         Inspector versionField = inspector.field("version");
         Inspector osVersionField = inspector.field("osVersion");
-        Inspector dockerImageField = inspector.field("dockerImage");
+        Inspector containerImageField = inspector.field("dockerImage");
         Inspector upgradeBudgetField = inspector.field("upgradeBudget");
 
         if (versionField.valid()) {
@@ -395,12 +395,12 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             }
         }
 
-        if (dockerImageField.valid()) {
-            Optional<DockerImage> dockerImage = Optional.of(dockerImageField.asString())
+        if (containerImageField.valid()) {
+            Optional<DockerImage> dockerImage = Optional.of(containerImageField.asString())
                     .filter(s -> !s.isEmpty())
                     .map(DockerImage::fromString);
-            nodeRepository.dockerImages().setDockerImage(nodeType, dockerImage);
-            messageParts.add("docker image to " + dockerImage.map(DockerImage::asString).orElse(null));
+            nodeRepository.containerImages().setImage(nodeType, dockerImage);
+            messageParts.add("container image to " + dockerImage.map(DockerImage::asString).orElse(null));
         }
 
         if (messageParts.isEmpty()) {
