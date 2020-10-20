@@ -78,7 +78,7 @@ public class NodeMetricsDb {
      * Returns a list of measurements with one entry for each of the given host names
      * which have any values after startTime, in the same order
      */
-    public List<NodeMeasurements> getMeasurements(Instant startTime, Metric metric, List<String> hostnames) {
+    public List<NodeMeasurements> getMeasurements(Instant startTime, List<String> hostnames) {
         synchronized (lock) {
             List<NodeMeasurements> measurementsList = new ArrayList<>(hostnames.size());
             for (String hostname : hostnames) {
@@ -136,6 +136,7 @@ public class NodeMetricsDb {
 
     }
 
+    /** A single measurement of all values we measure, for one node */
     public static class Measurement {
 
         // TODO: Order by timestamp
@@ -154,18 +155,6 @@ public class NodeMetricsDb {
             this.disk = Metric.disk.valueFromMetric(metrics.diskUtil());
             this.generation = (long)Metric.generation.valueFromMetric(metrics.applicationGeneration());
 
-        }
-
-        public Measurement(long timestamp,
-                           float cpu,
-                           float memory,
-                           float disk,
-                           float generation) {
-            this.timestamp = timestamp;
-            this.cpu = cpu;
-            this.memory = memory;
-            this.disk = disk;
-            this.generation = (long) generation;
         }
 
         public double cpu() { return cpu; }
