@@ -7,11 +7,11 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.CustomSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.SslProvider;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
@@ -31,11 +31,11 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
         String name = XmlHelper.getIdString(serverSpec);
         int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted(), deployState.getDeployLogger());
 
-        SimpleComponent sslProviderComponent = getSslConfigComponents(name, serverSpec);
+        SslProvider sslProviderComponent = getSslConfigComponents(name, serverSpec);
         return new ConnectorFactory(name, port, sslProviderComponent);
     }
 
-    SimpleComponent getSslConfigComponents(String serverName, Element serverSpec) {
+    SslProvider getSslConfigComponents(String serverName, Element serverSpec) {
         Element sslConfigurator = XML.getChild(serverSpec, "ssl");
         Element sslProviderConfigurator = XML.getChild(serverSpec, "ssl-provider");
 

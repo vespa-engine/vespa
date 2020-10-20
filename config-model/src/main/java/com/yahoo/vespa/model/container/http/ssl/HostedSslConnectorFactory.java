@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container.http.ssl;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
 import java.time.Duration;
@@ -47,8 +46,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false);
     }
 
-    private HostedSslConnectorFactory(SimpleComponent sslProviderComponent, boolean enforceClientAuth, boolean enforceHandshakeClientAuth) {
-        super("tls4443", 4443, sslProviderComponent);
+    private HostedSslConnectorFactory(SslProvider sslProvider, boolean enforceClientAuth, boolean enforceHandshakeClientAuth) {
+        super("tls4443", 4443, sslProvider);
         this.enforceClientAuth = enforceClientAuth;
         this.enforceHandshakeClientAuth = enforceHandshakeClientAuth;
     }
