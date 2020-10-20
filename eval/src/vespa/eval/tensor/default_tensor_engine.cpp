@@ -2,7 +2,7 @@
 
 #include "default_tensor_engine.h"
 #include "tensor.h"
-#include "wrapped_simple_tensor.h"
+#include "wrapped_simple_value.h"
 #include "serialization/typed_binary_format.h"
 #include "sparse/sparse_tensor_address_builder.h"
 #include "sparse/direct_sparse_tensor_builder.h"
@@ -28,8 +28,7 @@
 #include "dense/dense_tensor_peek_function.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -58,19 +57,22 @@ namespace {
 
 constexpr size_t UNDEFINED_IDX = std::numeric_limits<size_t>::max();
 
-const eval::TensorEngine &simple_engine() { return eval::SimpleTensorEngine::ref(); }
+const eval::EngineOrFactory &simple_engine() {
+    static eval::EngineOrFactory engine(eval::SimpleValueBuilderFactory::get());
+    return engine;
+}
 const eval::TensorEngine &default_engine() { return DefaultTensorEngine::ref(); }
 
 // map tensors to simple tensors before fall-back evaluation
 
 const Value &to_simple(const Value &value, Stash &stash) {
     if (auto tensor = value.as_tensor()) {
-        if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(tensor)) {
-            return wrapped->get();
+        if (auto wrapped = dynamic_cast<const WrappedSimpleValue *>(tensor)) {
+            return wrapped->unwrap();
         }
         nbostream data;
         tensor->engine().encode(*tensor, data);
-        return *stash.create<Value::UP>(eval::SimpleTensor::decode(data));
+        return *stash.create<Value::UP>(simple_engine().decode(data));
     }
     return value;
 }
@@ -78,14 +80,12 @@ const Value &to_simple(const Value &value, Stash &stash) {
 // map tensors to default tensors after fall-back evaluation
 
 const Value &to_default(const Value &value, Stash &stash) {
-    if (auto tensor = value.as_tensor()) {
-        if (auto simple = dynamic_cast<const eval::SimpleTensor *>(tensor)) {
-            if (!Tensor::supported({simple->type()})) {
-                return stash.create<WrappedSimpleTensor>(*simple);
-            }
+    if (! value.type().is_double()) {
+        if (! Tensor::supported({value.type()})) {
+            return stash.create<WrappedSimpleValue>(value);
         }
         nbostream data;
-        tensor->engine().encode(*tensor, data);
+        simple_engine().encode(value, data);
         return *stash.create<Value::UP>(default_engine().decode(data));
     }
     return value;
@@ -229,7 +229,7 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
     } else if (type.is_sparse()) {
         return typify_invoke<1,MyTypify,CallSparseTensorBuilder>(type.cell_type(), type, spec);
     }
-    return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
+    return std::make_unique<WrappedSimpleValue>(simple_engine().from_spec(spec));
 }
 
 struct CellFunctionFunAdapter : tensor::CellFunction {
