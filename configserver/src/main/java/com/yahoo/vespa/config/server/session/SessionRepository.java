@@ -255,6 +255,8 @@ public class SessionRepository {
      * @param sessionId session id for the new session
      */
     public synchronized void sessionAdded(long sessionId) {
+        if (sessionCache.containsKey(sessionId)) return;
+
         log.log(Level.FINE, () -> "Adding session " + sessionId);
         Session session = createSession(sessionId);
         if (session.getStatus() == Session.Status.NEW) {
