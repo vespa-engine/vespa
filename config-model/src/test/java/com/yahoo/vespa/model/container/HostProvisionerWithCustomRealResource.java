@@ -19,6 +19,11 @@ import java.util.Optional;
  */
 public class HostProvisionerWithCustomRealResource implements HostProvisioner {
 
+    private final int vcpu;
+
+    public HostProvisionerWithCustomRealResource(int vcpu) { this.vcpu = vcpu; }
+    public HostProvisionerWithCustomRealResource() { this(4); }
+
     @Override
     public HostSpec allocateHost(String alias) {
         Host host = new Host(HostName.getLocalhost());
@@ -32,7 +37,7 @@ public class HostProvisionerWithCustomRealResource implements HostProvisioner {
                         .build(),
                 0);
         return new HostSpec(
-                host.hostname(), new NodeResources(4, 0, 0, 0), NodeResources.unspecified(), NodeResources.unspecified(),
+                host.hostname(), new NodeResources(vcpu, 0, 0, 0), NodeResources.unspecified(), NodeResources.unspecified(),
                 membership, Optional.empty(), Optional.empty(), Optional.empty());
     }
 

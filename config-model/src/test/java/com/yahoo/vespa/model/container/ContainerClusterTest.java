@@ -282,7 +282,7 @@ public class ContainerClusterTest {
 
     @Test
     public void jetty_threadpool_scales_with_node_resources() {
-        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource();
+        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource(12);
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
@@ -298,8 +298,8 @@ public class ContainerClusterTest {
         root.freezeModelTopology();
 
         ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
-        assertEquals(16, cfg.maxWorkerThreads());
-        assertEquals(16, cfg.minWorkerThreads());
+        assertEquals(48, cfg.maxWorkerThreads());
+        assertEquals(48, cfg.minWorkerThreads());
     }
 
     @Test
