@@ -63,7 +63,7 @@ public class CapacityCheckerTester {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
         nodeRepository = new NodeRepository(f,
-                                            new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                            new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             zone,
@@ -71,7 +71,6 @@ public class CapacityCheckerTester {
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             new InMemoryFlagSource(),
                                             true,
-                                            false,
                                             0, 1000);
     }
 

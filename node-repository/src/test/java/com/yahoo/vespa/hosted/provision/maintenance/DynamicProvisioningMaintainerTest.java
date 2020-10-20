@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -145,6 +146,7 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue(tester.nodeRepository.getNode(host2.hostname()).isPresent());
     }
 
+    @Ignore // TODO (hakon): Fix or replace with spare-hosts flag
     @Test
     public void provision_exact_capacity() {
         var tester = new DynamicProvisioningTester(Cloud.builder().dynamicProvisioning(false).build());

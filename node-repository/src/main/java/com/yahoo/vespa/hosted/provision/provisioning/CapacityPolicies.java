@@ -45,7 +45,7 @@ public class CapacityPolicies {
         if (capacity.isRequired()) return target;
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
-        if (zone.environment() == Environment.dev && zone.getCloud().allowHostSharing())
+        if (zone.environment() == Environment.dev && !zone.getCloud().dynamicProvisioning())
             target = target.withVcpu(0.1);
 
         // Allow slow storage in zones which are not performance sensitive
@@ -61,14 +61,14 @@ public class CapacityPolicies {
                 // Use small logserver in dev system
                 return new NodeResources(0.1, 1, 10, 0.3);
             }
-            return zone.getCloud().allowHostSharing() ?
-                   new NodeResources(0.5, 2, 50, 0.3) :
-                   new NodeResources(0.5, 4, 50, 0.3);
+            return zone.getCloud().dynamicProvisioning() ?
+                   new NodeResources(0.5, 4, 50, 0.3) :
+                   new NodeResources(0.5, 2, 50, 0.3);
         }
 
-        return zone.getCloud().allowHostSharing() ?
-                new NodeResources(1.5, 8, 50, 0.3) :
-                new NodeResources(2.0, 8, 50, 0.3);
+        return zone.getCloud().dynamicProvisioning() ?
+                new NodeResources(2.0, 8, 50, 0.3) :
+                new NodeResources(1.5, 8, 50, 0.3);
     }
 
     /**
