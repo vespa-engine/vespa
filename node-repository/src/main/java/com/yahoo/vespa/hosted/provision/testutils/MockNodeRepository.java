@@ -2,8 +2,10 @@
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -199,7 +201,7 @@ public class MockNodeRepository extends NodeRepository {
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {
         try (var lock = provisioner.lock(application)) {
             NestedTransaction transaction = new NestedTransaction();
-            provisioner.activate(transaction, hosts, lock);
+            provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
     }

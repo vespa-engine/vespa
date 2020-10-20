@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostName;
@@ -105,7 +107,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                     removeApplication(application.getApplicationId());
                 } else {
                     NestedTransaction nestedTransaction = new NestedTransaction();
-                    provisioner.activate(nestedTransaction, hostSpecs, lock);
+                    provisioner.activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(lock, nestedTransaction));
                     nestedTransaction.commit();
 
                     duperModel.infraApplicationActivated(

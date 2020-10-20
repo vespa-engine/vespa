@@ -357,7 +357,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private boolean failActive(Node node, String reason) {
         Optional<Deployment> deployment =
             deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
-        if (deployment.isEmpty()) return false; // this will be done at another config server
+        if (deployment.isEmpty()) return false;
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             // If the active node that we are trying to fail is of type host, we need to successfully fail all

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
@@ -31,7 +32,7 @@ public class ApplicationsTest {
         assertEquals(app1, applications.get(app1).get().id());
         assertEquals(List.of(app1), applications.ids());
         NestedTransaction t = new NestedTransaction();
-        applications.remove(app1, t, provisionLock(app1, tester));
+        applications.remove(new ApplicationTransaction(provisionLock(app1, tester), t));
         t.commit();
         assertTrue(applications.get(app1).isEmpty());
         assertEquals(List.of(), applications.ids());
@@ -39,14 +40,15 @@ public class ApplicationsTest {
         applications.put(new Application(app1), tester.nodeRepository().lock(app1));
         applications.put(new Application(app2), tester.nodeRepository().lock(app1));
         t = new NestedTransaction();
-        applications.put(new Application(app3), t, tester.nodeRepository().lock(app1));
+        applications.put(new Application(app3),
+                         new ApplicationTransaction(new ProvisionLock(app1, tester.nodeRepository().lock(app1)), t));
         assertEquals(List.of(app1, app2), applications.ids());
         t.commit();
         assertEquals(List.of(app1, app2, app3), applications.ids());
         t = new NestedTransaction();
-        applications.remove(app1, t, provisionLock(app1, tester));
-        applications.remove(app2, t, provisionLock(app2, tester));
-        applications.remove(app3, t, provisionLock(app3, tester));
+        applications.remove(new ApplicationTransaction(provisionLock(app1, tester), t));
+        applications.remove(new ApplicationTransaction(provisionLock(app2, tester), t));
+        applications.remove(new ApplicationTransaction(provisionLock(app3, tester), t));
         assertEquals(List.of(app1, app2, app3), applications.ids());
         t.commit();
         assertTrue(applications.get(app1).isEmpty());

@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
@@ -73,12 +74,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             applications().put(application.with(cluster.get().withTarget(target)), deployment.applicationLock().get());
             if (target.isPresent()) {
                 logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
-                Optional<Long> resultingGeneration = deployment.activate();
-                if (resultingGeneration.isEmpty()) return; // Failed to activate
-
-                metricsDb.add(new NodeMetricsDb.AutoscalingEvent(applicationId,
-                                                                 resultingGeneration.get(),
-                                                                 nodeRepository().clock().instant()));
+                deployment.activate();
             }
         }
     }

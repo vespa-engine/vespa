@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -23,13 +24,15 @@ public class Cluster {
     private final ClusterResources min, max;
     private final Optional<ClusterResources> suggested;
     private final Optional<ClusterResources> target;
+    private final List<ScalingEvent> scalingEvents;
 
     public Cluster(ClusterSpec.Id id,
                    boolean exclusive,
                    ClusterResources minResources,
                    ClusterResources maxResources,
                    Optional<ClusterResources> suggestedResources,
-                   Optional<ClusterResources> targetResources) {
+                   Optional<ClusterResources> targetResources,
+                   List<ScalingEvent> scalingEvents) {
         this.id = Objects.requireNonNull(id);
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
@@ -40,6 +43,7 @@ public class Cluster {
             this.target = Optional.empty();
         else
             this.target = targetResources;
+        this.scalingEvents = scalingEvents;
     }
 
     public ClusterSpec.Id id() { return id; }
@@ -66,16 +70,24 @@ public class Cluster {
      */
     public Optional<ClusterResources> suggestedResources() { return suggested; }
 
+    /** Returns the recent scaling events in this cluster */
+    public List<ScalingEvent> scalingEvents() { return scalingEvents; }
+
     public Cluster withConfiguration(boolean exclusive, ClusterResources min, ClusterResources max) {
-        return new Cluster(id, exclusive, min, max, suggested, target);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents);
     }
 
     public Cluster withSuggested(Optional<ClusterResources> suggested) {
-        return new Cluster(id, exclusive, min, max, suggested, target);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents);
     }
 
     public Cluster withTarget(Optional<ClusterResources> target) {
-        return new Cluster(id, exclusive, min, max, suggested, target);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents);
+    }
+
+    public Cluster with(ScalingEvent scalingEvent) {
+        // NOTE: We're just storing the latest scaling event so far
+        return new Cluster(id, exclusive, min, max, suggested, target, List.of(scalingEvent));
     }
 
     @Override

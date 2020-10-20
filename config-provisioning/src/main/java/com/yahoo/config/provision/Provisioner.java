@@ -41,7 +41,11 @@ public interface Provisioner {
      * @param hosts       a set of {@link HostSpec}.
      * @param lock        A provision lock for the relevant application. This must be held when calling this.
      */
+    // TODO: Remove after November 2020
     void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock);
+
+    /** Activates the allocation of nodes to this application captured in the hosts argument. */
+    void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction);
 
     /**
      * Transactionally remove this application.
@@ -58,7 +62,12 @@ public interface Provisioner {
      * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
      * @param lock        A provision lock for the relevant application. This must be held when calling this.
      */
+    // TODO: Remove after November 2020
     void remove(NestedTransaction transaction, ProvisionLock lock);
+
+    /** Transactionally remove an application under lock. */
+    // TODO: Remove after November 2020
+    void remove(ApplicationTransaction transaction);
 
     /**
      * Requests a restart of the services of the given application

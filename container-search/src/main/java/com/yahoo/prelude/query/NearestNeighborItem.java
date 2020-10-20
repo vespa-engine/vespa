@@ -24,7 +24,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     private int hnswExploreAdditionalHits = 0;
     private boolean approximate = true;
     private String field;
-    private String queryTensorName;
+    private final String queryTensorName;
 
     public NearestNeighborItem(String fieldName, String queryTensorName) {
         this.field = fieldName;

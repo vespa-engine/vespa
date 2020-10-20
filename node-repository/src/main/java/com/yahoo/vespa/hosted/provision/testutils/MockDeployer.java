@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
@@ -35,7 +37,7 @@ public class MockDeployer implements Deployer {
     // For mock deploy anything, changing wantToRetire to retired only
     private final NodeRepository nodeRepository;
 
-    /** The number of redeployments done to this */
+    /** The number of redeployments done to this, which is also the config generation */
     public int redeployments = 0;
 
     private final Map<ApplicationId, Instant> lastDeployTimes = new HashMap<>();
@@ -155,14 +157,16 @@ public class MockDeployer implements Deployer {
                 prepare();
             if (failActivate)
                 throw new IllegalStateException("failActivate is true");
+
+            redeployments++;
             try (var lock = provisioner.lock(application.id)) {
                 try (NestedTransaction t = new NestedTransaction()) {
-                    provisioner.activate(t, preparedHosts, lock);
+                    provisioner.activate(preparedHosts, new ActivationContext(redeployments), new ApplicationTransaction(lock, t));
                     t.commit();
                     lastDeployTimes.put(application.id, clock.instant());
                 }
             }
-            return redeployments++;
+            return redeployments;
         }
 
         @Override
