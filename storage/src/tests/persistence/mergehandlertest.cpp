@@ -208,8 +208,7 @@ MergeHandlerTest::setUpChain(ChainPos pos) {
 // Test a regular merge bucket command fetching data, including
 // puts, removes, unrevertable removes & duplicates.
 TEST_F(MergeHandlerTest, merge_bucket_command) {
-    MergeHandler handler(getEnv(), getPersistenceProvider(),
-                         getEnv()._component.getClusterName(), getEnv()._component.getClock());
+    MergeHandler handler = createHandler();
 
     LOG(debug, "Handle a merge bucket command");
     auto cmd = std::make_shared<api::MergeBucketCommand>(_bucket, _nodes, _maxTimestamp);

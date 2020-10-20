@@ -49,15 +49,13 @@ class FileStorManager : public StorageLinkQueued,
                         private config::IFetcherCallback<vespa::config::content::StorFilestorConfig>,
                         public MessageSender
 {
-    ServiceLayerComponentRegister & _compReg;
-    ServiceLayerComponent           _component;
-    spi::PersistenceProvider      & _providerCore;
-    ProviderErrorWrapper            _providerErrorWrapper;
-    spi::PersistenceProvider      * _provider;
-    DoneInitializeHandler&          _init_handler;
-    
-    const document::BucketIdFactory& _bucketIdFactory;
-    config::ConfigUri                _configUri;
+    ServiceLayerComponentRegister   & _compReg;
+    ServiceLayerComponent             _component;
+    spi::PersistenceProvider        & _providerCore;
+    ProviderErrorWrapper              _providerErrorWrapper;
+    spi::PersistenceProvider        * _provider;
+    DoneInitializeHandler&            _init_handler;
+    const document::BucketIdFactory & _bucketIdFactory;
 
     std::vector<std::unique_ptr<ServiceLayerComponent>> _persistenceComponents;
     std::vector<std::unique_ptr<PersistenceHandler>> _persistenceHandlers;
@@ -71,7 +69,8 @@ class FileStorManager : public StorageLinkQueued,
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
-    bool                      _closed;
+    bool       _closed;
+    std::mutex _lock;
 
     friend struct FileStorManagerTest;
 
@@ -109,7 +108,8 @@ public:
 
 private:
     void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
-    PersistenceHandler & createRegisteredHandler(ServiceLayerComponent & component);
+    PersistenceHandler & createRegisteredHandler(const ServiceLayerComponent & component);
+    PersistenceHandler & getThreadLocalHandler();
 
     void replyWithBucketNotFound(api::StorageMessage&, const document::Bucket&);
 
