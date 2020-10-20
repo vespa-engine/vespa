@@ -30,6 +30,10 @@ public class QuotaUsage {
         return new QuotaUsage(rate);
     }
 
+    public static QuotaUsage sum(QuotaUsage a, QuotaUsage b) {
+        return new QuotaUsage(a.rate + b.rate);
+    }
+
     @Override
     public String toString() {
         return "QuotaUsage{" +

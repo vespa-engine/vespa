@@ -61,6 +61,11 @@ public class Quota {
         return budget;
     }
 
+    public Quota subtractUsage(double rate) {
+        if (budget().isEmpty()) return this; // (unlimited - rate) is still unlimited
+        return this.withBudget(budget().get().subtract(BigDecimal.valueOf(rate)));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
