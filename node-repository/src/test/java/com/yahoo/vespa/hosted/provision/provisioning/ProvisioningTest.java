@@ -18,7 +18,6 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.maintenance.ReservationExpirer;
@@ -711,6 +710,29 @@ public class ProvisioningTest {
         // ... old nodes are now retired
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+    }
+
+    @Test
+    public void retired_but_cannot_fail() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
+
+        ApplicationId application = ProvisioningTester.makeApplicationId();
+        Capacity capacityCanFail = Capacity.from(new ClusterResources(5, 1, defaultResources), false, true);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+
+        tester.activate(application, tester.prepare(application, cluster, capacityCanFail));
+        assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+
+        tester.patchNode(tester.nodeRepository().getNodes(application).stream().findAny().orElseThrow(), n -> n.withWantToRetire(true, Agent.system, tester.clock().instant()));
+        tester.activate(application, tester.prepare(application, cluster, capacityCanFail));
+        assertEquals(1, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(6, tester.nodeRepository().getNodes(application, Node.State.active).size());
+
+        Capacity capacityCannotFail = Capacity.from(new ClusterResources(5, 1, defaultResources), false, false);
+        tester.activate(application, tester.prepare(application, cluster, capacityCannotFail));
+        assertEquals(1, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(6, tester.nodeRepository().getNodes(application, Node.State.active).size());
     }
 
     @Test

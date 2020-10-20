@@ -109,12 +109,8 @@ class NodeAllocation {
                 if ( candidate.state() == Node.State.active && allocation.isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
-                boolean resizeable = false;
-                boolean acceptToRetire = false;
-                if (requestedNodes.considerRetiring()) {
-                    resizeable = candidate.isResizable;
-                    acceptToRetire = acceptToRetire(candidate);
-                }
+                boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
+                boolean acceptToRetire = acceptToRetire(candidate);
 
                 if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire)
                     accepted.add(acceptNode(candidate, shouldRetire(candidate), resizeable));
@@ -152,7 +148,9 @@ class NodeAllocation {
     }
 
     private boolean shouldRetire(NodeCandidate candidate) {
-        if ( ! requestedNodes.considerRetiring()) return false;
+        if ( ! requestedNodes.considerRetiring())
+            return candidate.allocation().map(a -> a.membership().retired()).orElse(false); // don't second-guess if already retired
+
         if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) return true;
         if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
@@ -231,6 +229,7 @@ class NodeAllocation {
         if (candidate.state() != Node.State.active) return false;
         if (! candidate.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
         if (candidate.allocation().get().membership().retired()) return true; // don't second-guess if already retired
+        if (! requestedNodes.considerRetiring()) return false;
 
         return cluster.type().isContent() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(candidate));
