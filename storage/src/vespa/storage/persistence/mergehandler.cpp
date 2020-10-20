@@ -423,7 +423,7 @@ MergeHandler::fetchLocalData(
     }
 
     document::BucketIdFactory idFactory;
-    const auto repo = _env._component.getTypeRepo()->documentTypeRepo;
+    const document::DocumentTypeRepo & repo = _env.getDocumentTypeRepo();
 
     for (const auto& entry_ptr : entries) {
         const auto& docEntry = *entry_ptr;
@@ -458,7 +458,7 @@ MergeHandler::fetchLocalData(
                     e.toString().c_str(), docEntry.toString().c_str());
             }
         }
-        e._repo = repo.get();
+        e._repo = &repo;
      }
 
     for (auto& e : diff) {
@@ -540,8 +540,7 @@ MergeHandler::applyDiffLocally(
     std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
 
-    std::shared_ptr<const document::DocumentTypeRepo> repo(_env._component.getTypeRepo()->documentTypeRepo);
-    assert(repo);
+    const document::DocumentTypeRepo & repo = _env.getDocumentTypeRepo();
 
     uint32_t existingCount = entries.size();
     uint32_t i = 0, j = 0;
@@ -575,7 +574,7 @@ MergeHandler::applyDiffLocally(
             ++i;
             LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
                 bucket.toString().c_str(), e.toString().c_str());
-            applyDiffEntry(bucket, e, context, *repo);
+            applyDiffEntry(bucket, e, context, repo);
         } else {
             assert(spi::Timestamp(e._entry._timestamp) == existing.getTimestamp());
             // Diffing for existing timestamp; should either both be put
@@ -588,7 +587,7 @@ MergeHandler::applyDiffLocally(
                     "timestamp in %s. Diff slot: %s. Existing slot: %s",
                     bucket.toString().c_str(), e.toString().c_str(),
                     existing.toString().c_str());
-                applyDiffEntry(bucket, e, context, *repo);
+                applyDiffEntry(bucket, e, context, repo);
             } else {
                 // Duplicate put, just ignore it.
                 LOG(debug, "During diff apply, attempting to add slot "
@@ -620,7 +619,7 @@ MergeHandler::applyDiffLocally(
         LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
             bucket.toString().c_str(), e.toString().c_str());
 
-        applyDiffEntry(bucket, e, context, *repo);
+        applyDiffEntry(bucket, e, context, repo);
         byteCount += e._headerBlob.size() + e._bodyBlob.size();
     }
 

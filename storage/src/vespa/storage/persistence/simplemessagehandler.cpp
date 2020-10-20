@@ -67,7 +67,7 @@ SimpleMessageHandler::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker
     tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    auto fieldSet = getFieldSet(*_env._component.getTypeRepo()->fieldSetRepo, cmd.getFieldSet(), *tracker);
+    auto fieldSet = getFieldSet(_env.getFieldSetRepo(), cmd.getFieldSet(), *tracker);
     if ( ! fieldSet) { return tracker; }
 
     tracker->context().setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
@@ -224,7 +224,7 @@ MessageTracker::UP
 SimpleMessageHandler::handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.createIterator);
-    auto fieldSet = getFieldSet(*_env._component.getTypeRepo()->fieldSetRepo, cmd.getFields(), *tracker);
+    auto fieldSet = getFieldSet(_env.getFieldSetRepo(), cmd.getFields(), *tracker);
     if ( ! fieldSet) { return tracker; }
 
     tracker->context().setReadConsistency(cmd.getReadConsistency());

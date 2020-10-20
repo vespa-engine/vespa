@@ -109,11 +109,6 @@ selectSequencer(vespa::config::content::StorFilestorConfig::ResponseSequencerTyp
     }
 }
 
-vespalib::string
-createThreadName(size_t stripeId) {
-    return fmt("PersistenceThread-%zu", stripeId);
-}
-
 #ifdef __PIC__
 #define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("initial-exec")))
 #else
@@ -170,8 +165,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         assert(_sequencedExecutor);
         LOG(spam, "Setting up the disk");
         for (uint32_t i = 0; i < numThreads; i++) {
-            _persistenceComponents.push_back(std::make_unique<ServiceLayerComponent>(_compReg, createThreadName(i)));
-            _threads.push_back(std::make_unique<PersistenceThread>(createRegisteredHandler(*_persistenceComponents.back()),
+            _threads.push_back(std::make_unique<PersistenceThread>(createRegisteredHandler(_component),
                                                                    *_filestorHandler, i % numStripes, _component));
         }
     }

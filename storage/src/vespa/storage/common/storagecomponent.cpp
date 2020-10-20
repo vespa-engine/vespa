@@ -36,6 +36,7 @@ StorageComponent::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTy
     auto repo = std::make_shared<Repos>(std::move(docTypeRepo));
     std::lock_guard guard(_lock);
     _repos = std::move(repo);
+    _generation++;
 }
 
 void
@@ -43,6 +44,7 @@ StorageComponent::setLoadTypes(LoadTypeSetSP loadTypes)
 {
     std::lock_guard guard(_lock);
     _loadTypes = loadTypes;
+    _generation++;
 }
 
 
@@ -65,6 +67,7 @@ StorageComponent::setDistribution(DistributionSP distribution)
 {
     std::lock_guard guard(_lock);
     _distribution = distribution;
+    _generation++;
 }
 
 void
@@ -90,7 +93,8 @@ StorageComponent::StorageComponent(StorageComponentRegister& compReg,
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
-      _lock()
+      _lock(),
+      _generation(0)
 {
     compReg.registerStorageComponent(*this);
 }
