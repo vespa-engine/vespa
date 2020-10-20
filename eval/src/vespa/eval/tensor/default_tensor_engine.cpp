@@ -80,39 +80,15 @@ const Value &to_simple(const Value &value, Stash &stash) {
 // map tensors to default tensors after fall-back evaluation
 
 const Value &to_default(const Value &value, Stash &stash) {
-    // case 1 : a tensor with an engine
-    if (auto tensor = value.as_tensor()) {
-        // case [1A]: it's already one of "our" tensors
-        if (&tensor->engine() == &default_engine()) {
-            return value;
+    if (! value.type().is_double()) {
+        if (! Tensor::supported({value.type()})) {
+            return stash.create<WrappedSimpleValue>(value);
         }
-        // case [1B]: it belongs to some other engine
         nbostream data;
-        tensor->engine().encode(*tensor, data);
+        simple_engine().encode(value, data);
         return *stash.create<Value::UP>(default_engine().decode(data));
     }
-    // case 2 : some kind of double (possibly in a SimpleValue or DenseTensor)
-    if (value.type().is_double()) {
-        // case [2A]: already OK
-        if (dynamic_cast<const DoubleValue *>(&value)) {
-            return value;
-        }
-        // case [2B]: simplify to DoubleValue
-        return stash.create<DoubleValue>(value.as_double());
-    }
-    // case 3 : it's a (possibly mixed) SimpleValue
-    if (auto simple = dynamic_cast<const eval::SimpleValue *>(&value)) {
-        // case [3A]: not one of our supported types, just wrap it
-        if (!Tensor::supported({simple->type()})) {
-            return stash.create<WrappedSimpleValue>(*simple);
-        }
-        // case [3B]: we should convert to one of our supported types
-    }
-    // case [4]: some other kind of Value, convert to one of our
-    // supported types or make a WrappedSimpleValue
-    nbostream data;
-    simple_engine().encode(value, data);
-    return *stash.create<Value::UP>(default_engine().decode(data));
+    return value;
 }
 
 const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
