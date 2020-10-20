@@ -71,4 +71,22 @@ ThreadingServiceConfig::make(uint32_t indexingThreads) {
     return ThreadingServiceConfig(indexingThreads, 100, 1000, OptimizeFor::LATENCY, 0, 10ms);
 }
 
+void
+ThreadingServiceConfig::update(const ThreadingServiceConfig& cfg)
+{
+    _defaultTaskLimit = cfg._defaultTaskLimit;
+    _semiUnboundTaskLimit = cfg._semiUnboundTaskLimit;
+}
+
+bool
+ThreadingServiceConfig::operator==(const ThreadingServiceConfig &rhs) const
+{
+    return _indexingThreads == rhs._indexingThreads &&
+        _defaultTaskLimit == rhs._defaultTaskLimit &&
+        _semiUnboundTaskLimit == rhs._semiUnboundTaskLimit &&
+        _optimize == rhs._optimize &&
+        _kindOfWatermark == rhs._kindOfWatermark &&
+        _reactionTime == rhs._reactionTime;
+}
+
 }

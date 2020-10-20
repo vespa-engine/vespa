@@ -125,14 +125,14 @@ indexing.optimize enum {LATENCY, THROUGHPUT, ADAPTIVE} default=LATENCY restart
 
 ## Maximum number of pending operations for each of the internal
 ## indexing threads.  Only used when visibility delay is zero.
-indexing.tasklimit int default=1000 restart
+indexing.tasklimit int default=1000
 
 ## Parameter used to calculate maximum number of pending operations
 ## for each of the internal indexing threads when visibility delay is
 ## nonzero. The number is divided by the number of indexing threads,
 ## i.e.  when indexing.threads is 4 and indexing.semiunboundtasklimit
 ## is 40000 then effective task limit is 10000.
-indexing.semiunboundtasklimit int default = 1000 restart
+indexing.semiunboundtasklimit int default = 1000
 
 ## Kind of watermark for when to activate extra manpower
 ## Utilized if optimize is set to either THROUGHPUT or ADAPTIVE

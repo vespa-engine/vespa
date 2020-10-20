@@ -2,6 +2,7 @@
 
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
+#include "threading_service_config.h"
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
@@ -225,6 +226,30 @@ filterImportedAttributes(const AttributesConfigSP &attrCfg)
     return result;
 }
 
+const ProtonConfig::Documentdb default_document_db_config_entry;
+
+const ProtonConfig::Documentdb&
+find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs, const vespalib::string& doc_type_name) {
+    for (const auto & db_cfg : document_dbs) {
+        if (db_cfg.inputdoctypename == doc_type_name) {
+            return db_cfg;
+        }
+    }
+    return default_document_db_config_entry;
+}
+
+std::shared_ptr<const ThreadingServiceConfig>
+build_threading_service_config(const ProtonConfig &proton_config,
+                               const HwInfo &hw_info,
+                               const vespalib::string& doc_type_name)
+{
+    auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
+    return std::make_shared<const ThreadingServiceConfig>
+        (ThreadingServiceConfig::make(proton_config,
+                                      document_db_config_entry.feeding.concurrency,
+                                      hw_info.cpu()));
+}
+
 }
 
 void
@@ -247,6 +272,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     IndexschemaConfigSP newIndexschemaConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;
+    std::shared_ptr<const ThreadingServiceConfig> old_threading_service_config;
 
     if (!_ignoreForwardedConfig) {
         if (!(_bootstrapConfig->getDocumenttypesConfigSP() &&
@@ -270,6 +296,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newOnnxModels = current->getOnnxModelsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
+        old_threading_service_config = current->get_threading_service_config_shared_ptr();
         currentGeneration = current->getGeneration();
     }
 
@@ -348,6 +375,11 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     if (newMaintenanceConfig && oldMaintenanceConfig && (*newMaintenanceConfig == *oldMaintenanceConfig)) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
+    auto new_threading_service_config = build_threading_service_config(_bootstrapConfig->getProtonConfig(), _bootstrapConfig->getHwInfo(), _docTypeName);
+    if (new_threading_service_config && old_threading_service_config &&
+        (*new_threading_service_config == *old_threading_service_config)) {
+        new_threading_service_config = old_threading_service_config;
+    }
     auto newSnapshot = std::make_shared<DocumentDBConfig>(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
@@ -364,6 +396,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  schema,
                                  newMaintenanceConfig,
                                  storeConfig,
+                                 new_threading_service_config,
                                  _configId,
                                  _docTypeName);
     assert(newSnapshot->valid());

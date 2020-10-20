@@ -136,10 +136,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _bucketSpace(bucketSpace),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
-      _writeServiceConfig(
-              ThreadingServiceConfig::make(protonCfg,
-                      findDocumentDB(protonCfg.documentdb, docTypeName.getName())->feeding.concurrency,
-                      hwInfo.cpu())),
+      _writeServiceConfig(configSnapshot->get_threading_service_config()),
       _writeService(sharedExecutor, _writeServiceConfig, indexing_thread_stack_size),
       _initializeThreads(std::move(initializeThreads)),
       _initConfigSnapshot(),
@@ -454,6 +451,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         vespalib::duration visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
         hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
         _visibility.setVisibilityDelay(visibilityDelay);
+    }
+    if (_state.getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
+        _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
     if (_visibility.hasVisibilityDelay()) {
         _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());

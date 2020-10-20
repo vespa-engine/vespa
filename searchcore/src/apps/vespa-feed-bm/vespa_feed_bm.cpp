@@ -51,6 +51,7 @@
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
+#include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -146,6 +147,7 @@ using storage::rpc::StorageApiRpcService;
 using storage::spi::PersistenceProvider;
 using vespalib::compression::CompressionConfig;
 using vespalib::makeLambdaTask;
+using proton::ThreadingServiceConfig;
 
 using DocumentDBMap = std::map<DocTypeName, std::shared_ptr<DocumentDB>>;
 
@@ -196,6 +198,7 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
             schema,
             std::make_shared<DocumentDBMaintenanceConfig>(),
             search::LogDocumentStore::Config(),
+            std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1)),
             "client",
             doc_type_name.getName());
 }

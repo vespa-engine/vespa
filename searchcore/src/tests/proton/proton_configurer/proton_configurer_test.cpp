@@ -17,6 +17,7 @@
 #include <vespa/searchcore/proton/server/proton_configurer.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer_owner.h>
 #include <vespa/searchcore/proton/server/i_proton_disk_layout.h>
+#include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
@@ -101,6 +102,7 @@ struct DBConfigFixture {
              buildSchema(),
              std::make_shared<DocumentDBMaintenanceConfig>(),
              search::LogDocumentStore::Config(),
+             std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1)),
              configId,
              docTypeName);
     }

@@ -24,6 +24,7 @@
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
+#include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -140,6 +141,7 @@ public:
                         schema,
                         std::make_shared<DocumentDBMaintenanceConfig>(),
                         search::LogDocumentStore::Config(),
+                        std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1)),
                         "client",
                         docTypeName.getName());
     }

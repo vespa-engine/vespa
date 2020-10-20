@@ -14,15 +14,15 @@ using ProtonConfigBuilder = vespa::config::search::core::ProtonConfigBuilder;
 
 struct Fixture {
     ProtonConfig cfg;
-    Fixture(uint32_t baseLineIndexingThreads = 2)
-        : cfg(makeConfig(baseLineIndexingThreads))
+    Fixture(uint32_t baseLineIndexingThreads = 2, uint32_t task_limit = 500, uint32_t semi_unbound_task_limit = 50000)
+        : cfg(makeConfig(baseLineIndexingThreads, task_limit, semi_unbound_task_limit))
     {
     }
-    ProtonConfig makeConfig(uint32_t baseLineIndexingThreads) {
+    ProtonConfig makeConfig(uint32_t baseLineIndexingThreads, uint32_t task_limit, uint32_t semi_unbound_task_limit) {
         ProtonConfigBuilder builder;
         builder.indexing.threads = baseLineIndexingThreads;
-        builder.indexing.tasklimit = 500;
-        builder.indexing.semiunboundtasklimit = 50000;
+        builder.indexing.tasklimit = task_limit;
+        builder.indexing.semiunboundtasklimit = semi_unbound_task_limit;
         return builder;
     }
     ThreadingServiceConfig make(uint32_t cpuCores) {
@@ -59,6 +59,26 @@ TEST_F("require that default task limit is set", Fixture)
 TEST_F("require that semiunbound task limit is scaled based on indexing threads", Fixture)
 {
     EXPECT_EQUAL(12500u, f.make(24).semiUnboundTaskLimit());
+}
+
+namespace {
+
+void assertConfig(uint32_t exp_indexing_threads, uint32_t exp_default_task_limit, uint32_t exp_semi_unbound_task_limit, const ThreadingServiceConfig &config) {
+    EXPECT_EQUAL(exp_indexing_threads, config.indexingThreads());
+    EXPECT_EQUAL(exp_default_task_limit, config.defaultTaskLimit());
+    EXPECT_EQUAL(exp_semi_unbound_task_limit, config.semiUnboundTaskLimit());
+}
+
+}
+
+TEST_FF("require that config can be somewhat updated", Fixture(), Fixture(2, 1000, 100000))
+{
+    auto cfg1 = f1.make(1);
+    assertConfig(2u, 500u, 25000u, cfg1);
+    const auto cfg2 = f2.make(13);
+    assertConfig(3u, 1000u, 33333u, cfg2);
+    cfg1.update(cfg2);
+    assertConfig(2u, 1000u, 33333u, cfg1); // Indexing threads not changed
 }
 
 TEST_MAIN()
