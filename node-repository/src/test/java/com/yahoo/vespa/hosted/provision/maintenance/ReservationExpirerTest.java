@@ -46,7 +46,7 @@ public class ReservationExpirerTest {
         ManualClock clock = new ManualClock();
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(flavors,
-                                                           new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                           new EmptyProvisionServiceProvider(),
                                                            curator,
                                                            clock,
                                                            Zone.defaultZone(),
@@ -54,7 +54,6 @@ public class ReservationExpirerTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            new InMemoryFlagSource(),
                                                            true,
-                                                           false,
                                                            0, 1000);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
 

@@ -11,7 +11,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -332,7 +330,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void test_autoscaling_without_host_sharing() {
+    public void test_autoscaling_with_dynamic_provisioning() {
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         List<Flavor> flavors = new ArrayList<>();
@@ -342,7 +340,6 @@ public class AutoscalingTest {
         flavors.add(new Flavor("aws-small",  new NodeResources(3,  80, 100, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote)));
         AutoscalingTester tester = new AutoscalingTester(new Zone(Cloud.builder()
                                                                        .dynamicProvisioning(true)
-                                                                       .allowHostSharing(false)
                                                                        .build(),
                                                                   SystemName.main,
                                                                   Environment.prod, RegionName.from("us-east")),

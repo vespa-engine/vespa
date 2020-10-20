@@ -13,15 +13,12 @@ public class Cloud {
     private final CloudName name;
 
     private final boolean dynamicProvisioning;
-    private final boolean allowHostSharing;
     private final boolean reprovisionToUpgradeOs;
     private final boolean requireAccessControl;
 
-    private Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean reprovisionToUpgradeOs,
-                  boolean requireAccessControl) {
+    private Cloud(CloudName name, boolean dynamicProvisioning, boolean reprovisionToUpgradeOs, boolean requireAccessControl) {
         this.name = Objects.requireNonNull(name);
         this.dynamicProvisioning = dynamicProvisioning;
-        this.allowHostSharing = allowHostSharing;
         this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
         this.requireAccessControl = requireAccessControl;
     }
@@ -34,11 +31,6 @@ public class Cloud {
     /** Returns whether this can provision hosts dynamically */
     public boolean dynamicProvisioning() {
         return dynamicProvisioning;
-    }
-
-    /** Returns whether this allows different applications to share the same host */
-    public boolean allowHostSharing() {
-        return allowHostSharing;
     }
 
     /** Returns whether upgrading OS on hosts in this requires the host to be reprovisioned */
@@ -64,7 +56,6 @@ public class Cloud {
 
         private CloudName name = CloudName.defaultName();
         private boolean dynamicProvisioning = false;
-        private boolean allowHostSharing = true;
         private boolean reprovisionToUpgradeOs = false;
         private boolean requireAccessControl = false;
 
@@ -80,11 +71,6 @@ public class Cloud {
             return this;
         }
 
-        public Builder allowHostSharing(boolean allowHostSharing) {
-            this.allowHostSharing = allowHostSharing;
-            return this;
-        }
-
         public Builder reprovisionToUpgradeOs(boolean reprovisionToUpgradeOs) {
             this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
             return this;
@@ -96,7 +82,7 @@ public class Cloud {
         }
 
         public Cloud build() {
-            return new Cloud(name, dynamicProvisioning, allowHostSharing, reprovisionToUpgradeOs, requireAccessControl);
+            return new Cloud(name, dynamicProvisioning, reprovisionToUpgradeOs, requireAccessControl);
         }
 
     }

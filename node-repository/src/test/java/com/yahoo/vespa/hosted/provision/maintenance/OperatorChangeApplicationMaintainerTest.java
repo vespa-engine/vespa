@@ -55,7 +55,7 @@ public class OperatorChangeApplicationMaintainerTest {
         Curator curator = new MockCurator();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                 new EmptyProvisionServiceProvider().getHostResourcesCalculator(),
+                                                 new EmptyProvisionServiceProvider(),
                                                  curator,
                                                  clock,
                                                  zone,
@@ -63,7 +63,6 @@ public class OperatorChangeApplicationMaintainerTest {
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  new InMemoryFlagSource(),
                                                  true,
-                                                 false,
                                                  0, 1000);
         this.fixture = new Fixture(zone, nodeRepository);
 
