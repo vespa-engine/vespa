@@ -109,7 +109,7 @@ public:
 private:
     void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
     PersistenceHandler & createRegisteredHandler(const ServiceLayerComponent & component);
-    PersistenceHandler & getThreadLocalHandler();
+    VESPA_DLL_LOCAL PersistenceHandler & getThreadLocalHandler();
 
     void replyWithBucketNotFound(api::StorageMessage&, const document::Bucket&);
 
