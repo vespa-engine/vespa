@@ -4,13 +4,10 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.Test;
 
@@ -32,9 +29,9 @@ public class AutoscalingIntegrationTest {
         NodeResources hosts = new NodeResources(3, 20, 200, 1);
 
         AutoscalingTester tester = new AutoscalingTester(hosts);
-        NodeMetricsFetcher fetcher = new NodeMetricsFetcher(tester.nodeRepository(),
-                                                            new OrchestratorMock(),
-                                                            new MockHttpClient(tester.clock()));
+        MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(),
+                                                                      new OrchestratorMock(),
+                                                                      new MockHttpClient(tester.clock()));
         Autoscaler autoscaler = new Autoscaler(tester.nodeMetricsDb(), tester.nodeRepository());
 
         ApplicationId application1 = tester.applicationId("test1");
@@ -63,7 +60,7 @@ public class AutoscalingIntegrationTest {
         assertTrue(scaledResources.isPresent());
     }
 
-    private static class MockHttpClient implements NodeMetricsFetcher.HttpClient {
+    private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
 
         private final ManualClock clock;
 

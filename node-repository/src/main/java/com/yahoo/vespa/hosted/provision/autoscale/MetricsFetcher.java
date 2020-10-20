@@ -11,16 +11,16 @@ import java.util.Collection;
  *
  * @author bratseth
  */
-public interface NodeMetrics {
+public interface MetricsFetcher {
 
     /**
      * Fetches metrics for an application. This call may be expensive.
      *
      * @param application the application to fetch metrics from
      */
-    Collection<MetricValue> fetchMetrics(ApplicationId application);
+    Collection<NodeMetrics> fetchMetrics(ApplicationId application);
 
-    final class MetricValue {
+    final class NodeMetrics {
 
         private final String hostname;
         private final long timestampSecond;
@@ -29,7 +29,7 @@ public interface NodeMetrics {
         private final double diskUtil;
         private final double applicationGeneration;
 
-        public MetricValue(String hostname, long timestampSecond,
+        public NodeMetrics(String hostname, long timestampSecond,
                            double cpuUtil, double totalMemUtil, double diskUtil, double applicationGeneration) {
             this.hostname = hostname;
             this.timestampSecond = timestampSecond;
