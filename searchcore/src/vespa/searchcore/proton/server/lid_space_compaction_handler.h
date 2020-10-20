@@ -29,7 +29,7 @@ public:
     virtual IDocumentScanIterator::UP getIterator() const override;
     virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const override;
     virtual void handleMove(const MoveOperation &op, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<search::IDestructorCallback> compact_done_context) override;
 };
 
 } // namespace proton

@@ -76,15 +76,26 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
     return false; // more work to do (scan documents or compact lid space)
 }
 
+namespace {
+
+template <typename T>
+struct KeepAlive : public search::IDestructorCallback {
+    explicit KeepAlive(T toKeep) noexcept : _toKeep(std::move(toKeep)) { }
+    ~KeepAlive() override = default;
+    T _toKeep;
+};
+
+}
+
 void
 LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
 {
     uint32_t wantedLidLimit = stats.getHighestUsedLid() + 1;
     CompactLidSpaceOperation op(_handler.getSubDbId(), wantedLidLimit);
     vespalib::Gate gate;
-    _opStorer.appendAndCommitOperation(op, std::make_shared<search::GateCallback>(gate));
+    auto commit_result = _opStorer.appendAndCommitOperation(op, std::make_shared<search::GateCallback>(gate));
     gate.await();
-    _handler.handleCompactLidSpace(op);
+    _handler.handleCompactLidSpace(op, std::make_shared<KeepAlive<decltype(commit_result)>>(std::move(commit_result)));
     EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);
     _shouldCompactLidSpace = false;
 }

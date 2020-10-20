@@ -235,7 +235,7 @@ public:
     void syncTls(SerialNum syncTo);
     void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
     [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override;
-    void storeOperationSync(const FeedOperation & op);
+    [[nodiscard]] CommitResult storeOperationSync(const FeedOperation & op);
     void considerDelayedPrune();
 };
 

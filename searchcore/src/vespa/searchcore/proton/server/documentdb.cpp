@@ -101,6 +101,13 @@ findDocumentDB(const ProtonConfig::DocumentdbVector & documentDBs, const vespali
     return &_G_defaultProtonDocumentDBConfig;
 }
 
+template <typename T>
+struct KeepAlive : public search::IDestructorCallback {
+    explicit KeepAlive(T toKeep) noexcept : _toKeep(std::move(toKeep)) { }
+    ~KeepAlive() override = default;
+    T _toKeep;
+};
+
 }
 
 template <typename FunctionType>
@@ -346,7 +353,7 @@ DocumentDB::enterReprocessState()
     if (!runner.empty()) {
         runner.run();
         NoopOperation op;
-        _feedHandler->storeOperationSync(op);
+        (void) _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
         _subDBs.pruneRemovedFields(op.getSerialNum());
     }
@@ -433,20 +440,21 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         *DocumentDBConfig::makeReplayConfig(configSnapshot) ==
         *DocumentDBConfig::makeReplayConfig(_activeConfigSnapshot);
     bool tlsReplayDone = _feedHandler->getTransactionLogReplayDone();
+    FeedHandler::CommitResult commit_result;
     if (!equalReplayConfig && tlsReplayDone) {
         sync(_feedHandler->getSerialNum());
         serialNum = _feedHandler->incSerialNum();
         _config_store->saveConfig(*configSnapshot, serialNum);
         // save entry in transaction log
         NewConfigOperation op(serialNum, *_config_store);
-        _feedHandler->storeOperationSync(op);
+        commit_result = _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
     }
     bool hasVisibilityDelayChanged = false;
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
-        _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1);
+        _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
         _writeService.sync();
         vespalib::duration visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
         hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
@@ -631,7 +639,7 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
     // pruned at once anyway.
     // save noop entry in transaction log
     NoopOperation op;
-    _feedHandler->storeOperationSync(op);
+    (void) _feedHandler->storeOperationSync(op);
     sync(op.getSerialNum());
     // Wipe everything in transaction log before initial config.
     try {
@@ -655,7 +663,7 @@ DocumentDB::resumeSaveConfig()
     SerialNum confSerial = _feedHandler->incSerialNum();
     // resume operation, i.e. save config entry in transaction log
     NewConfigOperation op(confSerial, *_config_store);
-    _feedHandler->storeOperationSync(op);
+    (void) _feedHandler->storeOperationSync(op);
     sync(op.getSerialNum());
 }
 
@@ -816,7 +824,7 @@ DocumentDB::enterRedoReprocessState()
         runner.run();
         _subDBs.onReprocessDone(_feedHandler->getSerialNum());
         NoopOperation op;
-        _feedHandler->storeOperationSync(op);
+        (void) _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
         _subDBs.pruneRemovedFields(op.getSerialNum());
     }

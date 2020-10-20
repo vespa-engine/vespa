@@ -350,7 +350,7 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
     IDocumentScanIterator::UP getIterator() const override { return IDocumentScanIterator::UP(); }
     MoveOperation::UP createMoveOperation(const search::DocumentMetaData &, uint32_t) const override { return MoveOperation::UP(); }
     void handleMove(const MoveOperation &, IDestructorCallback::SP) override {}
-    void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
+    void handleCompactLidSpace(const CompactLidSpaceOperation &, std::shared_ptr<IDestructorCallback>) override {}
 };
 
 
