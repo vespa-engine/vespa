@@ -550,11 +550,12 @@ FeedHandler::startCommit(DoneCallback onDone) {
     return _tlsWriter->startCommit(std::move(onDone));
 }
 
-void
+FeedHandler::CommitResult
 FeedHandler::storeOperationSync(const FeedOperation &op) {
     vespalib::Gate gate;
-    appendAndCommitOperation(op, make_shared<search::GateCallback>(gate));
+    auto commit_result = appendAndCommitOperation(op, make_shared<search::GateCallback>(gate));
     gate.await();
+    return commit_result;
 }
 
 void
@@ -756,7 +757,7 @@ performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp)
 {
     const LidVectorContext::SP lids_to_remove = pruneOp.getLidsToRemove();
     if (lids_to_remove && lids_to_remove->getNumLids() != 0) {
-        storeOperationSync(pruneOp);
+        appendOperation(pruneOp, DoneCallback());
         _activeFeedView->handlePruneRemovedDocuments(pruneOp);
     }
 }

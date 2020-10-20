@@ -66,7 +66,7 @@ struct ILidSpaceCompactionHandler
     /**
      * Compacts the underlying lid space by starting using the new lid limit.
      */
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) = 0;
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<search::IDestructorCallback> compact_done_context) = 0;
 };
 
 } // namespace proton

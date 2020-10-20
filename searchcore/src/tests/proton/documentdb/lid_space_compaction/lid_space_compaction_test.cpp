@@ -136,7 +136,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
             _moveDoneContexts.push_back(std::move(moveDoneCtx));
         }
     }
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<IDestructorCallback>) override {
         _wantedSubDbId = op.getSubDbId();
         _wantedLidLimit = op.getLidLimit();
     }
