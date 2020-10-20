@@ -37,7 +37,9 @@ public class NodeMetricsDbTest {
         NodeMetricsDb db = new NodeMetricsDb(tester.nodeRepository());
         List<NodeMetrics.MetricValue> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new NodeMetrics.MetricValue(node0, "cpu.util", clock.instant().getEpochSecond(), 0.9f));
+            values.add(new NodeMetrics.MetricValue(node0,
+                                                   clock.instant().getEpochSecond(),
+                                                   0.9f, 0.6f, 0.6f, 0));
             clock.advance(Duration.ofMinutes(10));
         }
         db.add(values);
@@ -46,10 +48,8 @@ public class NodeMetricsDbTest {
         clock.advance(Duration.ofMinutes(1));
 
         assertEquals(35, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
-        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
         db.gc(clock);
         assertEquals( 5, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
-        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
     }
 
     private int measurementCount(List<NodeMetricsDb.NodeMeasurements> measurements) {

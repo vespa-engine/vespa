@@ -16,8 +16,6 @@ import java.time.Instant;
 import java.util.List;
 
 
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
-import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -60,12 +58,8 @@ public class AutoscalingMaintainerTest {
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty());
         assertTrue(tester.deployer().lastDeployTime(app2).isEmpty());
 
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app1);
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app2);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app2);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app2);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app2);
 
         tester.maintainer().maintain();
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty()); // since autoscaling is off
@@ -90,10 +84,7 @@ public class AutoscalingMaintainerTest {
         tester.clock().advance(Duration.ofSeconds(1));
         System.out.println("Advance by 1 second to " + tester.clock().instant());
         System.out.println("Emit metrics");
-        tester.addMeasurements(Metric.generation, 0, 1, app1);
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
 
         // Causes autoscaling
         tester.clock().advance(Duration.ofSeconds(1));
@@ -112,28 +103,21 @@ public class AutoscalingMaintainerTest {
 
         // Measure overload still, since change is not applied, but metrics are discarded
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
         tester.clock().advance(Duration.ofSeconds(1));
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
-        // Measure underload, but no autoscaling since we haven't measured we're on the new config generation
+        // Measure underload, but no autoscaling since we still haven't measured we're on the new config generation
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.addMeasurements(Metric.cpu,    0.1f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.1f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.1f, 500, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 0, 500, app1);
         tester.clock().advance(Duration.ofSeconds(1));
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
         // Add measurement of the expected generation, leading to rescaling
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.addMeasurements(Metric.generation, 1, 1, app1);
-        tester.addMeasurements(Metric.cpu,    0.1f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.1f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.1f, 500, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 500, app1);
         //tester.clock().advance(Duration.ofSeconds(1));
         Instant lastMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();

@@ -43,23 +43,29 @@ public class NodeMetricsDb {
     public void add(Collection<NodeMetrics.MetricValue> metricValues) {
         synchronized (lock) {
             for (var value : metricValues) {
-                Metric metric =  Metric.fromFullName(value.name());
-                NodeMeasurementsKey key = new NodeMeasurementsKey(value.hostname(), metric);
-                NodeMeasurements measurements = db.get(key);
-                if (measurements == null) { // new node
-                    Optional<Node> node = nodeRepository.getNode(value.hostname());
-                    if (node.isEmpty()) continue;
-                    if (node.get().allocation().isEmpty()) continue;
-                    measurements = new NodeMeasurements(value.hostname(),
-                                                        metric,
-                                                        node.get().allocation().get().membership().cluster().type(),
-                                                        new ArrayList<>());
-                    db.put(key, measurements);
-                }
-                measurements.add(new Measurement(value.timestampSecond() * 1000,
-                                                 metric.valueFromMetric(value.value())));
+                add(value.hostname(), value.timestampSecond(), value.cpuUtil(), Metric.cpu);
+                add(value.hostname(), value.timestampSecond(), value.totalMemUtil(), Metric.memory);
+                add(value.hostname(), value.timestampSecond(), value.diskUtil(), Metric.disk);
+                add(value.hostname(), value.timestampSecond(), value.applicationGeneration(), Metric.generation);
             }
         }
+    }
+
+    private void add(String hostname, long timestampSeconds, double value, Metric metric) {
+        NodeMeasurementsKey key = new NodeMeasurementsKey(hostname, metric);
+        NodeMeasurements measurements = db.get(key);
+        if (measurements == null) { // new node
+            Optional<Node> node = nodeRepository.getNode(hostname);
+            if (node.isEmpty()) return;
+            if (node.get().allocation().isEmpty()) return;
+            measurements = new NodeMeasurements(hostname,
+                                                metric,
+                                                node.get().allocation().get().membership().cluster().type(),
+                                                new ArrayList<>());
+            db.put(key, measurements);
+        }
+        measurements.add(new Measurement(timestampSeconds * 1000,
+                                         metric.valueFromMetric(value)));
     }
 
     /** Must be called intermittently (as long as any add methods are called) to gc old data */
