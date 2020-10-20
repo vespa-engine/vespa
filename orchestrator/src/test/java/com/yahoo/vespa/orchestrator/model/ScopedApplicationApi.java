@@ -3,6 +3,9 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
+/**
+ * @author hakon
+ */
 class ScopedApplicationApi implements AutoCloseable {
     private final ApplicationApi applicationApi;
     private final ApplicationLock lock;

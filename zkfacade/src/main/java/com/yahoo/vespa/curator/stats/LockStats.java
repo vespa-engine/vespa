@@ -4,7 +4,6 @@ package com.yahoo.vespa.curator.stats;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -119,69 +118,5 @@ public class LockStats {
             }
         }
 
-    }
-
-    private static volatile String CURRENT_TEST_ID = null;
-
-    public void invokingAcquire(Thread thread) {
-        // HACK: Try to see if this is the first invocation on a new test method.  If so verify
-        // the #acquires = #releases, or otherwise some intervening tests broke them
-        getTestId(thread).ifPresent(testId -> {
-            if (Objects.equals(testId, CURRENT_TEST_ID)) {
-                return;
-            }
-
-            // New test, verify balance between acquired and released.
-            metricsByLockPath.forEach((lockPath, lockMetrics) -> {
-                int numAcquired = lockMetrics.getCumulativeAcquireSucceededCount();
-                int numReleased = lockMetrics.getCumulativeReleaseCount();
-                if (numAcquired != numReleased) {
-                    // ensure next test does not fail
-                    clearForTesting();
-
-                    throw new IllegalStateException("Detected in " + testId + ": lock path " +
-                            lockPath + " has been acquired " + numAcquired + " times and released " +
-                            numReleased + " times.  The problem is the test " + CURRENT_TEST_ID +
-                            ", or later tests leading up to this");
-                }
-            });
-
-            CURRENT_TEST_ID = testId;
-        });
-    }
-
-    private static Optional<String> getTestId(Thread thread) {
-        // The stack trace is of the following form:
-        //
-        // ...
-        // com.yahoo.vespa.curator.stats.LockTest.nestedLocks(LockTest.java:191)
-        // ...
-        // org.junit.runner.JUnitCore.run(JUnitCore.java:xyz)
-        // ...
-        //
-        // And we'd like to return the test ID "com.yahoo.vespa.curator.stats.LockTest.nestedLocks".
-
-        StackTraceElement[] elements = thread.getStackTrace();
-        for (int index = 0; index < elements.length; ++index) {
-            if (stackFrameMethod(elements[index]).equals("org.junit.runner.JUnitCore.run")) {
-                while (index --> 0) {
-                    String qualifiedMethod = stackFrameMethod(elements[index]);
-                    if (qualifiedMethod.startsWith("com.yahoo.vespa.")) {
-                        return Optional.of(qualifiedMethod);
-                    }
-                }
-
-                // Failed to find jdk.internal.reflect.NativeMethodAccessorImpl.invoke0
-                throw new IllegalStateException("Bad stack trace!?");
-            }
-        }
-
-        // Failed to find org.junit.runners.model.FrameworkMethod$1.runReflectiveCall, which may happen
-        // in a spawned thread.
-        return Optional.empty();
-    }
-
-    private static String stackFrameMethod(StackTraceElement element) {
-        return element.getClassName() + "." + element.getMethodName();
     }
 }
