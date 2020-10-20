@@ -97,10 +97,10 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                  "\nfrom " + toString(current) + "\nto   " + toString(target));
     }
 
-    private String toString(ClusterResources r) {
-        return String.format(r.nodes() + (r.groups() > 1 ? " (in " + r.groups() + " groups)" : "") +
-                             " * [vcpu: %0$.1f, memory: %1$.1f Gb, disk %2$.1f Gb]" +
-                             " (total: [vcpu: %3$.1f, memory: %4$.1f Gb, disk: %5$.1f Gb])",
+    static String toString(ClusterResources r) {
+        return String.format("%d%s * [vcpu: %.1f, memory: %.1f Gb, disk %.1f Gb]" +
+                             " (total: [vcpu: %.1f, memory: %.1f Gb, disk: %.1f Gb])",
+                             r.nodes(), r.groups() > 1 ? " (in " + r.groups() + " groups)" : "",
                              r.nodeResources().vcpu(), r.nodeResources().memoryGb(), r.nodeResources().diskGb(),
                              r.nodes() * r.nodeResources().vcpu(), r.nodes() * r.nodeResources().memoryGb(), r.nodes() * r.nodeResources().diskGb());
     }

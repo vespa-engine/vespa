@@ -129,4 +129,13 @@ public class AutoscalingMaintainerTest {
         assertEquals(1, tester.nodeMetricsDb().getEvents(app1).get(1).generation());
     }
 
+    @Test
+    public void test_toString() {
+        assertEquals("4 * [vcpu: 1.0, memory: 2.0 Gb, disk 4.0 Gb] (total: [vcpu: 4.0, memory: 8.0 Gb, disk: 16.0 Gb])",
+                AutoscalingMaintainer.toString(new ClusterResources(4, 1, new NodeResources(1, 2, 4, 1))));
+
+        assertEquals("4 (in 2 groups) * [vcpu: 1.0, memory: 2.0 Gb, disk 4.0 Gb] (total: [vcpu: 4.0, memory: 8.0 Gb, disk: 16.0 Gb])",
+                AutoscalingMaintainer.toString(new ClusterResources(4, 2, new NodeResources(1, 2, 4, 1))));
+    }
+
 }
