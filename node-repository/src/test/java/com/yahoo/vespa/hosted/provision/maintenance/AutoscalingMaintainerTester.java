@@ -70,14 +70,16 @@ public class AutoscalingMaintainerTester {
         return provisioningTester.deploy(application, cluster, capacity);
     }
 
-    public void addMeasurements(Metric metric, float value, int count, ApplicationId applicationId) {
+    public void addMeasurements(float cpu, float mem, float disk, int generation, int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 nodeMetricsDb.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           metric.fullName(),
-                                                           clock().instant().getEpochSecond(),
-                                                           value * 100))); // the metrics are in %
+                                                                      clock().instant().getEpochSecond(),
+                                                                      cpu * 100,
+                                                                      mem * 100,
+                                                                      disk * 100,
+                                                                      generation)));
         }
     }
 

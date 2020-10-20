@@ -57,12 +57,8 @@ public class ScalingSuggestionsMaintainerTest {
                                                     new ClusterResources(10, 1, new NodeResources(6.5, 5, 15, 0.1)),
                                                     false, true));
 
-        addMeasurements(Resource.cpu,    0.9f, 500, app1, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.memory, 0.9f, 500, app1, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.disk,   0.9f, 500, app1, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.cpu,    0.99f, 500, app2, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.memory, 0.99f, 500, app2, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.disk,   0.99f, 500, app2, tester.nodeRepository(), nodeMetricsDb);
+        addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository(), nodeMetricsDb);
+        addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository(), nodeMetricsDb);
 
         ScalingSuggestionsMaintainer maintainer = new ScalingSuggestionsMaintainer(tester.nodeRepository(),
                                                                                    nodeMetricsDb,
@@ -76,15 +72,17 @@ public class ScalingSuggestionsMaintainerTest {
                      tester.nodeRepository().applications().get(app2).get().cluster(cluster2.id()).get().suggestedResources().get().toString());
     }
 
-    public void addMeasurements(Resource resource, float value, int count, ApplicationId applicationId,
+    public void addMeasurements(float cpu, float mem, float disk, int generation, int count, ApplicationId applicationId,
                                 NodeRepository nodeRepository, NodeMetricsDb db) {
         List<Node> nodes = nodeRepository.getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           Metric.from(resource).fullName(),
                                                            nodeRepository.clock().instant().toEpochMilli(),
-                                                          value * 100))); // the metrics are in %
+                                                          cpu * 100,
+                                                           mem * 100,
+                                                           disk * 100,
+                                                           generation)));
         }
     }
 

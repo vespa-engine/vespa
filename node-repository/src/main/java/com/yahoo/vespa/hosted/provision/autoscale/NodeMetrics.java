@@ -23,25 +23,36 @@ public interface NodeMetrics {
     final class MetricValue {
 
         private final String hostname;
-        private final String name;
         private final long timestampSecond;
-        private final double value;
+        private final double cpuUtil;
+        private final double totalMemUtil;
+        private final double diskUtil;
+        private final double applicationGeneration;
 
-        public MetricValue(String hostname, String name, long timestampSecond, double value) {
+        public MetricValue(String hostname, long timestampSecond,
+                           double cpuUtil, double totalMemUtil, double diskUtil, double applicationGeneration) {
             this.hostname = hostname;
-            this.name = name;
             this.timestampSecond = timestampSecond;
-            this.value = value;
+            this.cpuUtil = cpuUtil;
+            this.totalMemUtil = totalMemUtil;
+            this.diskUtil = diskUtil;
+            this.applicationGeneration = applicationGeneration;
         }
 
         public String hostname() { return hostname; }
-        public String name() { return name; }
         public long timestampSecond() { return timestampSecond; }
-        public double value() { return value; }
+        public double cpuUtil() { return cpuUtil; }
+        public double totalMemUtil() { return totalMemUtil; }
+        public double diskUtil() { return diskUtil; }
+        public double applicationGeneration() { return applicationGeneration; }
 
         @Override
         public String toString() {
-            return "metric value " + name + ": " + value + " at " + Instant.ofEpochSecond(timestampSecond) + " for " + hostname;
+            return "node metrics for " + hostname + " at " + Instant.ofEpochSecond(timestampSecond) + ": " +
+                   "cpuUtil: " + cpuUtil + ", " +
+                   "totalMemUtil: " + totalMemUtil + ", " +
+                   "diskUtil: " + diskUtil + ", " +
+                   "applicationGeneration: " + applicationGeneration;
         }
 
     }

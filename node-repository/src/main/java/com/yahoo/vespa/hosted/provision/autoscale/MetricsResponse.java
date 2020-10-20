@@ -40,16 +40,26 @@ public class MetricsResponse {
     private void consumeNode(Inspector node) {
         String hostname = node.field("hostname").asString();
         consumeNodeMetrics(hostname, node.field("node"));
-        consumeServiceMetrics(hostname, node.field("services"));
+        // consumeServiceMetrics(hostname, node.field("services"));
     }
 
     private void consumeNodeMetrics(String hostname, Inspector node) {
         long timestampSecond = node.field("timestamp").asLong();
         Map<String, Double> values = consumeMetrics(node.field("metrics"));
-        for (Metric metric : Metric.values())
+        metricValues.add(new NodeMetrics.MetricValue(hostname,
+                                                     timestampSecond,
+                                                     values.getOrDefault(Metric.cpu.fullName(), 0.0),
+                                                     values.getOrDefault(Metric.memory.fullName(), 0.0),
+                                                     values.getOrDefault(Metric.disk.fullName(), 0.0),
+                                                     values.getOrDefault(Metric.generation.fullName(), 0.0)));
+        /*
+        for (Metric metric : Metric.values()) {
             addMetricIfPresent(hostname, metric, timestampSecond, values);
+        }
+         */
     }
 
+    /*
     private void addMetricIfPresent(String hostname, Metric metric, long timestampSecond, Map<String, Double> values) {
         if (values.containsKey(metric.fullName()))
             metricValues.add(new NodeMetrics.MetricValue(hostname,
@@ -57,6 +67,7 @@ public class MetricsResponse {
                                                          timestampSecond,
                                                          values.get(metric.fullName())));
     }
+     */
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
         String name = node.field("name").asString();

@@ -117,39 +117,71 @@ class AutoscalingTester {
      * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
      * wanting to see the ideal load with one node missing.)
      *
-     * @param resource the resource we are explicitly setting the value of
      * @param otherResourcesLoad the load factor relative to ideal to use for other resources
      * @param count the number of measurements
      * @param applicationId the application we're adding measurements for all nodes of
      */
-    public void addMeasurements(Resource resource, float value, float otherResourcesLoad,
-                                int count, ApplicationId applicationId) {
+    public void addCpuMeasurements(float value, float otherResourcesLoad,
+                                   int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                for (Resource r : Resource.values()) {
-                    float effectiveValue = (r == resource ? value : (float) r.idealAverageLoad() * otherResourcesLoad)
-                                           * oneExtraNodeFactor;
-                    db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                               Metric.from(r).fullName(),
-                                                               clock().instant().toEpochMilli(),
-                                                               effectiveValue * 100))); // the metrics are in %
-                }
+                float cpu = value * oneExtraNodeFactor;
+                float mem  = (float) Resource.memory.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
+                                                           clock().instant().toEpochMilli(),
+                                                           cpu * 100,
+                                                           mem * 100,
+                                                           disk * 100,
+                                                           0)));
             }
         }
     }
 
-    public void addMeasurements(Resource resource, float value, int count, ApplicationId applicationId) {
+    /**
+     * Adds measurements with the given resource value and ideal values for the other resources,
+     * scaled to take one node redundancy into account.
+     * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
+     * wanting to see the ideal load with one node missing.)
+     *
+     * @param otherResourcesLoad the load factor relative to ideal to use for other resources
+     * @param count the number of measurements
+     * @param applicationId the application we're adding measurements for all nodes of
+     */
+    public void addMemMeasurements(float value, float otherResourcesLoad,
+                                   int count, ApplicationId applicationId) {
+        List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
+        float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        for (int i = 0; i < count; i++) {
+            clock().advance(Duration.ofMinutes(1));
+            for (Node node : nodes) {
+                float cpu  = (float) Resource.cpu.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                float memory = value * oneExtraNodeFactor;
+                float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
+                                                           clock().instant().toEpochMilli(),
+                                                           cpu * 100,
+                                                           memory * 100,
+                                                           disk * 100,
+                                                           0)));
+            }
+        }
+    }
+
+    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
                 db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           Metric.from(resource).fullName(),
                                                            clock().instant().toEpochMilli(),
-                                                           value * 100))); // the metrics are in %
+                                                           cpu * 100,
+                                                           memory * 100,
+                                                           disk * 100,
+                                                           generation))); // the metrics are in %
             }
         }
     }

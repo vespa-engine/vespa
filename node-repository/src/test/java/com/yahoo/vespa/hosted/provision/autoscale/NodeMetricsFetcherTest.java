@@ -42,12 +42,11 @@ public class NodeMetricsFetcherTest {
             List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application1));
             assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(0));
-            assertEquals(5, values.size());
-            assertEquals("metric value cpu.util: 16.2 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem_total.util: 23.1 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(1).toString());
-            assertEquals("metric value disk.util: 82.0 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(2).toString());
-            assertEquals("metric value cpu.util: 20.0 at 1970-01-01T00:20:00Z for host-2.yahoo.com", values.get(3).toString());
-            assertEquals("metric value disk.util: 40.0 at 1970-01-01T00:20:00Z for host-2.yahoo.com", values.get(4).toString());
+            assertEquals(2, values.size());
+            assertEquals("node metrics for host-1.yahoo.com at 1970-01-01T00:20:34Z: cpuUtil: 16.2, totalMemUtil: 23.1, diskUtil: 82.0, applicationGeneration: 0.0",
+                         values.get(0).toString());
+            assertEquals("node metrics for host-2.yahoo.com at 1970-01-01T00:20:00Z: cpuUtil: 20.0, totalMemUtil: 0.0, diskUtil: 40.0, applicationGeneration: 0.0",
+                         values.get(1).toString());
         }
 
         {
@@ -55,10 +54,9 @@ public class NodeMetricsFetcherTest {
             List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application2));
             assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(1));
-            assertEquals(3, values.size());
-            assertEquals("metric value cpu.util: 10.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem_total.util: 15.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(1).toString());
-            assertEquals("metric value disk.util: 20.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(2).toString());
+            assertEquals(1, values.size());
+            assertEquals("node metrics for host-3.yahoo.com at 1970-01-01T00:21:40Z: cpuUtil: 10.0, totalMemUtil: 15.0, diskUtil: 20.0, applicationGeneration: 3.0",
+                         values.get(0).toString());
         }
 
         {
@@ -140,7 +138,8 @@ public class NodeMetricsFetcherTest {
             "            \"values\": {\n" +
             "              \"cpu.util\": 10,\n" +
             "              \"mem_total.util\": 15,\n" +
-            "              \"disk.util\": 20\n" +
+            "              \"disk.util\": 20,\n" +
+            "              \"application_generation\": 3\n" +
             "            },\n" +
             "            \"dimensions\": {\n" +
             "              \"state\": \"active\"\n" +
