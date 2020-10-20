@@ -357,7 +357,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ALWAYS_ACQUIRE_PROVISION_LOCK = defineFeatureFlag(
             "always-acquire-provision-lock",
-            false,
+            true,
             "Whether provision lock should always be taken when writing nodes",
             "Takes effect on config server restart");
 
