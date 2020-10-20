@@ -33,10 +33,4 @@ public enum Resource {
 
     abstract double valueFrom(NodeResources resources);
 
-    public static Resource from(Metric metric) {
-        for (Resource resource : values())
-            if (resource.name().equals(metric.name())) return resource;
-        throw new IllegalArgumentException("Metric '" + metric + "' does not map to a resource");
-    }
-
 }
