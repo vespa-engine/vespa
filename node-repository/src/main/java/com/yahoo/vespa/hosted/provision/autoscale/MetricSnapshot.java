@@ -22,37 +22,33 @@ import java.util.stream.Collectors;
 public class MetricSnapshot {
 
     private final List<Node> clusterNodes;
-    private final NodeMetricsDb db;
-    private final NodeRepository nodeRepository;
     private final Map<String, Instant> startTimePerHost;
+
+    /** The measurements for all hosts in this snapshot */
+    private final List<NodeMetricsDb.NodeMeasurements> measurements;
 
     public MetricSnapshot(Cluster cluster, List<Node> clusterNodes, NodeMetricsDb db, NodeRepository nodeRepository) {
         this.clusterNodes = clusterNodes;
-        this.db = db;
-        this.nodeRepository = nodeRepository;
-        this.startTimePerHost = metricStartTimes(cluster, clusterNodes, db, nodeRepository);
-        startTimePerHost.forEach((a,b) -> System.out.println(a + " = " + b));
+        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
+        this.measurements = db.getMeasurements(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterType)),
+                                               clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
+        this.startTimePerHost = metricStartTimes(cluster, clusterNodes, nodeRepository);
     }
 
     /**
      * Returns the instant of the oldest metric to consider for each node, or an empty map if metrics from the
      * entire (max) window should be considered.
      */
-    private static Map<String, Instant> metricStartTimes(Cluster cluster,
-                                                         List<Node> clusterNodes,
-                                                         NodeMetricsDb db,
-                                                         NodeRepository nodeRepository) {
+    private Map<String, Instant> metricStartTimes(Cluster cluster,
+                                                  List<Node> clusterNodes,
+                                                  NodeRepository nodeRepository) {
         Map<String, Instant> startTimePerHost = new HashMap<>();
         if ( ! cluster.scalingEvents().isEmpty()) {
             var deployment = cluster.scalingEvents().get(cluster.scalingEvents().size() - 1);
-            List<NodeMetricsDb.NodeMeasurements> generationMeasurements =
-                    db.getMeasurements(deployment.at(),
-                                       Metric.generation,
-                                       clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
             for (Node node : clusterNodes) {
                 startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
                 var nodeGenerationMeasurements =
-                        generationMeasurements.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
+                        measurements.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
                 if (nodeGenerationMeasurements.isPresent()) {
                     var firstMeasurementOfCorrectGeneration =
                             nodeGenerationMeasurements.get().asList().stream()
@@ -74,20 +70,15 @@ public class MetricSnapshot {
     public Optional<Double> averageLoad(Resource resource) {
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
 
-        List<NodeMetricsDb.NodeMeasurements> measurements =
-                db.getMeasurements(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterType)),
-                                          Metric.from(resource),
-                                          clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
-        measurements = filterStale(measurements, startTimePerHost);
+        List<NodeMetricsDb.NodeMeasurements> currentMeasurements = filterStale(measurements, startTimePerHost);
 
         // Require a total number of measurements scaling with the number of nodes,
         // but don't require that we have at least that many from every node
-        int measurementCount = measurements.stream().mapToInt(m -> m.size()).sum();
+        int measurementCount = currentMeasurements.stream().mapToInt(m -> m.size()).sum();
         if (measurementCount / clusterNodes.size() < Autoscaler.minimumMeasurementsPerNode(clusterType)) return Optional.empty();
-        if (measurements.size() != clusterNodes.size()) return Optional.empty();
+        if (currentMeasurements.size() != clusterNodes.size()) return Optional.empty();
 
-
-        double measurementSum = measurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
+        double measurementSum = currentMeasurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return Optional.of(measurementSum / measurementCount);
     }
 
