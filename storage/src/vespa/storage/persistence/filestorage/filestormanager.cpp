@@ -129,11 +129,11 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
 {
     std::lock_guard guard(_lock);
     size_t index = _persistenceHandlers.size();
-    assert(index < _metrics->disks[0]->threads.size());
+    assert(index < _metrics->disk->threads.size());
     _persistenceHandlers.push_back(
             std::make_unique<PersistenceHandler>(*_sequencedExecutor, component,
                                                  *_config, *_provider, *_filestorHandler,
-                                                 *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[index]));
+                                                 *_bucketOwnershipNotifier, *_metrics->disk->threads[index]));
     return *_persistenceHandlers.back();
 }
 
@@ -161,7 +161,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _config = std::move(config);
         size_t numThreads = _config->numThreads;
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
-        _metrics->initDiskMetrics(1, _component.getLoadTypes()->getMetricLoadTypes(), numStripes,
+        _metrics->initDiskMetrics(_component.getLoadTypes()->getMetricLoadTypes(), numStripes,
                                   numThreads + _config->numResponseThreads + _config->numNetworkThreads);
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg);
@@ -259,30 +259,28 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd, const docu
 }
 
 bool
-FileStorManager::handlePersistenceMessage( const shared_ptr<api::StorageMessage>& msg)
+FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMessage>& msg)
 {
     api::ReturnCode errorCode(api::ReturnCode::OK);
-    do {
-        LOG(spam, "Received %s. Attempting to queue it.", msg->getType().getName().c_str());
+    LOG(spam, "Received %s. Attempting to queue it.", msg->getType().getName().c_str());
 
-        if (_filestorHandler->schedule(msg)) {
-            LOG(spam, "Received persistence message %s. Queued it to disk",
-                msg->getType().getName().c_str());
-            return true;
-        }
-        switch (_filestorHandler->getDiskState()) {
-            case FileStorHandler::DISABLED:
-                errorCode = api::ReturnCode(api::ReturnCode::DISK_FAILURE, "Disk disabled");
-                break;
-            case FileStorHandler::CLOSED:
-                errorCode = api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node.");
-                break;
-            case FileStorHandler::AVAILABLE:
-                assert(false);
-        }
-    } while (false);
-        // If we get here, we failed to schedule message. errorCode says why
-        // We need to reply to message (while not having bucket lock)
+    if (_filestorHandler->schedule(msg)) {
+        LOG(spam, "Received persistence message %s. Queued it to disk",
+            msg->getType().getName().c_str());
+        return true;
+    }
+    switch (_filestorHandler->getDiskState()) {
+        case FileStorHandler::DISABLED:
+            errorCode = api::ReturnCode(api::ReturnCode::DISK_FAILURE, "Disk disabled");
+            break;
+        case FileStorHandler::CLOSED:
+            errorCode = api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node.");
+            break;
+        case FileStorHandler::AVAILABLE:
+            assert(false);
+    }
+    // If we get here, we failed to schedule message. errorCode says why
+    // We need to reply to message (while not having bucket lock)
     if (!msg->getType().isReply()) {
         std::shared_ptr<api::StorageReply> reply = static_cast<api::StorageCommand&>(*msg).makeReply();
         reply->setResult(errorCode);

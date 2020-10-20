@@ -262,24 +262,14 @@ FileStorMetrics::FileStorMetrics(const LoadTypeSet&)
 
 FileStorMetrics::~FileStorMetrics() = default;
 
-void FileStorMetrics::initDiskMetrics(uint16_t numDisks, const LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk)
+void FileStorMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk)
 {
-    if (!disks.empty()) {
-        throw vespalib::IllegalStateException("Can't initialize disks twice", VESPA_STRLOC);
-    }
-    disks.clear();
-    disks.resize(numDisks);
-    for (uint32_t i=0; i<numDisks; ++i) {
-        // Currently FileStorHandlerImpl expects metrics to exist for
-        // disks that are not in use too.
-        std::ostringstream desc;
-        std::ostringstream name;
-        name << "disk_" << i;
-        desc << "Disk " << i;
-        disks[i] = std::make_shared<FileStorDiskMetrics>( name.str(), desc.str(), loadTypes, this);
-        sum.addMetricToSum(*disks[i]);
-        disks[i]->initDiskMetrics(loadTypes, numStripes, threadsPerDisk);
-    }
+    assert( ! disk);
+    // Currently FileStorHandlerImpl expects metrics to exist for
+    // disks that are not in use too.
+    disk = std::make_shared<FileStorDiskMetrics>( "disk_0", "Disk 0", loadTypes, this);
+    sum.addMetricToSum(*disk);
+    disk->initDiskMetrics(loadTypes, numStripes, threadsPerDisk);
 }
 
 }

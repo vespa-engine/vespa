@@ -43,7 +43,7 @@ BucketSpaceMetrics::~BucketSpaceMetrics() = default;
 
 BucketManagerMetrics::BucketManagerMetrics(const ContentBucketSpaceRepo& repo)
     : metrics::MetricSet("datastored", {}, ""),
-      disks(),
+      disk(std::make_shared<DataStoredMetrics>("disk0", this)),
       bucket_spaces(),
       total("alldisks", {{"sum"}}, "Sum of data stored metrics for all disks", this),
       simpleBucketInfoRequestSize("simplebucketinforeqsize", {},
@@ -58,20 +58,9 @@ BucketManagerMetrics::BucketManagerMetrics(const ContentBucketSpaceRepo& repo)
         bucket_spaces.emplace(space.first, std::make_unique<BucketSpaceMetrics>(
                 document::FixedBucketSpaces::to_string(space.first), this));
     }
+    total.addMetricToSum(*disk);
 }
 
 BucketManagerMetrics::~BucketManagerMetrics() = default;
-
-void
-BucketManagerMetrics::setDisks(uint16_t numDisks) {
-    assert(numDisks > 0);
-    if (!disks.empty()) {
-        throw IllegalStateException("Cannot initialize disks twice", VESPA_STRLOC);
-    }
-    for (uint16_t i = 0; i<numDisks; i++) {
-        disks.push_back(std::make_shared<DataStoredMetrics>(make_string("disk%d", i), this));
-        total.addMetricToSum(*disks.back());
-    }
-}
 
 }

@@ -69,7 +69,7 @@ rpc.num_network_threads int default=1
 ## This ensures the same RPC target is used for all messages to the same bucket to the same node,
 ## and the RPC target itself handles sequencing of these messages.
 ## NB !! It is vital that this number is kept in sync with stor-filestor:num_network_threads.
-## Only skilled vespa core devolpers should touch this.
+## Only skilled vespa core developers should touch this.
 rpc.num_targets_per_node int default=1
 
 # Minimum size of packets to compress (0 means no compression)

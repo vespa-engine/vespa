@@ -163,7 +163,7 @@ struct FileStorManagerTest : Test{
                                  const Metric& metric);
 
     auto& thread_metrics_of(FileStorManager& manager) {
-        return manager._metrics->disks[0]->threads[0];
+        return manager._metrics->disk->threads[0];
     }
 };
 
@@ -392,7 +392,7 @@ TEST_F(FileStorManagerTest, handler_priority) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
@@ -499,7 +499,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
@@ -545,7 +545,7 @@ TEST_F(FileStorManagerTest, handler_pause) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
@@ -591,7 +591,7 @@ TEST_F(FileStorManagerTest, remap_split) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
@@ -649,7 +649,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(),1,  1);
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50ms);
@@ -709,18 +709,18 @@ TEST_F(FileStorManagerTest, priority) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  2);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(),1,  2);
 
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     PersistenceHandler persistenceHandler2(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                           filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[1]);
+                                           filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[1]);
     std::unique_ptr<DiskThread> thread2(createThread(persistenceHandler2, filestorHandler, component));
 
     // Creating documents to test with. Different gids, 2 locations.
@@ -776,8 +776,8 @@ TEST_F(FileStorManagerTest, priority) {
 
     // Verify that thread 1 gets documents over 50 pri
     EXPECT_EQ(documents.size(),
-              metrics.disks[0]->threads[0]->operations.getValue()
-              + metrics.disks[0]->threads[1]->operations.getValue());
+              metrics.disk->threads[0]->operations.getValue()
+              + metrics.disk->threads[1]->operations.getValue());
     // Closing file stor handler before threads are deleted, such that
     // file stor threads getNextMessage calls returns.
     filestorHandler.close();
@@ -794,13 +794,13 @@ TEST_F(FileStorManagerTest, split1) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
@@ -934,14 +934,14 @@ TEST_F(FileStorManagerTest, split_single_group) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(),1,  1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(),1,  1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
         // splitbit set, and once where all the data ends up in file with
@@ -1049,13 +1049,13 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     document::BucketId source(16, 0x10001);
@@ -1117,13 +1117,13 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
     ForwardingMessageSender messageSender(*dummyManager);
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
@@ -1160,13 +1160,13 @@ TEST_F(FileStorManagerTest, join) {
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
     FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disks[0]->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
