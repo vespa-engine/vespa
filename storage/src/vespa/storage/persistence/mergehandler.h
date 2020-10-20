@@ -35,6 +35,7 @@ public:
     };
 
     MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
+                 const vespalib::string & clusterName, const framework::Clock & clock,
                  uint32_t maxChunkSize = 4190208,
                  bool enableMergeLocalNodeChooseDocsOptimalization = true,
                  uint32_t commonMergeChainOptimalizationMinimumSize = 64);

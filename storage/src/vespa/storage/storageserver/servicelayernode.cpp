@@ -88,7 +88,6 @@ ServiceLayerNode::subscribeToConfigs()
             << " disks but persistence provider states it has 1 disk.";
         throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
     }
-    _context.getComponentRegister().setDiskCount(1u);
 }
 
 void

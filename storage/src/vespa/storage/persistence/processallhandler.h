@@ -17,8 +17,8 @@ public:
     MessageTrackerUP handleRemoveLocation(api::RemoveLocationCommand&, MessageTrackerUP tracker) const;
     MessageTrackerUP handleStatBucket(api::StatBucketCommand&, MessageTrackerUP tracker) const;
 private:
-    const PersistenceUtil& _env;
-    spi::PersistenceProvider& _spi;
+    const PersistenceUtil    & _env;
+    spi::PersistenceProvider & _spi;
 };
 
 } // storage

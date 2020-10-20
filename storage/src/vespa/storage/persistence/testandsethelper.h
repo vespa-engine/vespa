@@ -8,7 +8,10 @@
 #include <stdexcept>
 
 namespace document::select { class Node; }
-namespace document { class FieldSet; }
+namespace document {
+    class FieldSet;
+    class BucketIdFactory;
+}
 
 namespace storage {
 
@@ -42,11 +45,13 @@ class TestAndSetHelper {
     bool                                    _missingDocumentImpliesMatch;
 
     void resolveDocumentType(const document::DocumentTypeRepo & documentTypeRepo);
-    void parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo);
+    void parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo,
+                                const document::BucketIdFactory & bucketIdFactory);
     spi::GetResult retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context);
 
 public:
     TestAndSetHelper(const PersistenceUtil & env, const spi::PersistenceProvider & _spi,
+                     const document::BucketIdFactory & bucketIdFactory,
                      const api::TestAndSetCommand & cmd, bool missingDocumentImpliesMatch = false);
     ~TestAndSetHelper();
     api::ReturnCode retrieveAndMatch(spi::Context & context);

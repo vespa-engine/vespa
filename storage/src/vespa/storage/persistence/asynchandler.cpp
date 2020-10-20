@@ -86,10 +86,12 @@ private:
 
 }
 AsyncHandler::AsyncHandler(const PersistenceUtil & env, spi::PersistenceProvider & spi,
-                           vespalib::ISequencedTaskExecutor & executor)
+                           vespalib::ISequencedTaskExecutor & executor,
+                           const document::BucketIdFactory & bucketIdFactory)
     : _env(env),
       _spi(spi),
-      _sequencedExecutor(executor)
+      _sequencedExecutor(executor),
+      _bucketIdFactory(bucketIdFactory)
 {}
 
 MessageTracker::UP
@@ -188,7 +190,7 @@ bool
 AsyncHandler::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
                                   spi::Context & context, bool missingDocumentImpliesMatch) const {
     try {
-        TestAndSetHelper helper(_env, _spi, cmd, missingDocumentImpliesMatch);
+        TestAndSetHelper helper(_env, _spi, _bucketIdFactory, cmd, missingDocumentImpliesMatch);
 
         auto code = helper.retrieveAndMatch(context);
         if (code.failed()) {
