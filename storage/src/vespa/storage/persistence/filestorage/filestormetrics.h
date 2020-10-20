@@ -159,7 +159,7 @@ public:
 
 struct FileStorMetrics : public metrics::MetricSet
 {
-    std::vector<FileStorDiskMetrics::SP> disks;
+    FileStorDiskMetrics::SP disk;
     metrics::SumMetric<MetricSet> sum;
     metrics::LongCountMetric directoryEvents;
     metrics::LongCountMetric partitionEvents;
@@ -169,7 +169,7 @@ struct FileStorMetrics : public metrics::MetricSet
     explicit FileStorMetrics(const metrics::LoadTypeSet&);
     ~FileStorMetrics() override;
 
-    void initDiskMetrics(uint16_t numDisks, const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
+    void initDiskMetrics(const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
 };
 
 }

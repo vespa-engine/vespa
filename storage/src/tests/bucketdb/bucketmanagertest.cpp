@@ -450,8 +450,8 @@ TEST_F(BucketManagerTest, metrics_generation) {
     _top->doneInit();
     trigger_metric_manager_update();
 
-    ASSERT_EQ(1u, bucket_manager_metrics().disks.size());
-    const DataStoredMetrics& m(*bucket_manager_metrics().disks[0]);
+    ASSERT_TRUE(bucket_manager_metrics().disk);
+    const DataStoredMetrics& m(*bucket_manager_metrics().disk);
     EXPECT_EQ(3, m.buckets.getLast());
     EXPECT_EQ(300, m.docs.getLast());
     EXPECT_EQ(600, m.bytes.getLast());

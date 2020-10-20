@@ -48,7 +48,7 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
     top.push_back(std::move(dummyManager));
     top.open();
 
-    metrics.initDiskMetrics(1u, loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
 
     filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics,
                                                             parent._node->getComponentRegister());

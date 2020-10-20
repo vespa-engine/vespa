@@ -50,7 +50,6 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
       _metrics(std::make_shared<BucketManagerMetrics>(_component.getBucketSpaceRepo())),
       _simulated_processing_delay(0)
 {
-    _metrics->setDisks(1);
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(300));
@@ -232,7 +231,6 @@ BucketManager::updateMetrics(bool updateDocCount)
         _doneInitialized ? "" : ", server is not done initializing");
 
     const uint16_t diskCount = 1;
-    assert(diskCount >= 1);
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater total(diskCount);
         for (auto& space : _component.getBucketSpaceRepo()) {
@@ -253,13 +251,13 @@ BucketManager::updateMetrics(bool updateDocCount)
             }
         }
         if (updateDocCount) {
-            for (uint16_t i = 0; i< diskCount; i++) {
-                _metrics->disks[i]->buckets.addValue(total.disk[i].buckets);
-                _metrics->disks[i]->docs.addValue(total.disk[i].docs);
-                _metrics->disks[i]->bytes.addValue(total.disk[i].bytes);
-                _metrics->disks[i]->active.addValue(total.disk[i].active);
-                _metrics->disks[i]->ready.addValue(total.disk[i].ready);
-            }
+            auto & dest = *_metrics->disk;
+            const auto & src = total.disk[0];
+            dest.buckets.addValue(src.buckets);
+            dest.docs.addValue(src.docs);
+            dest.bytes.addValue(src.bytes);
+            dest.active.addValue(src.active);
+            dest.ready.addValue(src.ready);
         }
     }
     update_bucket_db_memory_usage_metrics();

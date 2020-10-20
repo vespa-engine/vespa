@@ -62,7 +62,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
         _stripes.emplace_back(*this, sender);
     }
 
-    _metrics = metrics.disks[0].get();
+    _metrics = metrics.disk.get();
     assert(_metrics != nullptr);
     uint32_t j(0);
     for (Stripe & stripe : _stripes) {
