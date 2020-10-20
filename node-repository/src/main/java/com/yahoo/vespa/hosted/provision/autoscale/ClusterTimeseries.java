@@ -93,7 +93,7 @@ public class ClusterTimeseries {
     private List<NodeTimeseries> filterStale(List<NodeTimeseries> timeseries,
                                              Map<String, Instant> startTimePerHost) {
         if (startTimePerHost.isEmpty()) return timeseries; // Map is either empty or complete
-        return timeseries.stream().map(m -> m.copyAfter(startTimePerHost.get(m.hostname()))).collect(Collectors.toList());
+        return timeseries.stream().map(m -> m.justAfter(startTimePerHost.get(m.hostname()))).collect(Collectors.toList());
     }
 
 }
