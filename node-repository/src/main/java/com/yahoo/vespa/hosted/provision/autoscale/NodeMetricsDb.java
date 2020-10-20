@@ -41,12 +41,12 @@ public class NodeMetricsDb {
     public void add(Collection<MetricsFetcher.NodeMetrics> nodeMetrics) {
         synchronized (lock) {
             for (var value : nodeMetrics) {
-                add(value.hostname(), new Measurement(value));
+                add(value.hostname(), new Measurements(value));
             }
         }
     }
 
-    private void add(String hostname, Measurement measurement) {
+    private void add(String hostname, Measurements measurement) {
         NodeMeasurements measurements = db.get(hostname);
         if (measurements == null) { // new node
             Optional<Node> node = nodeRepository.getNode(hostname);
@@ -92,14 +92,15 @@ public class NodeMetricsDb {
         }
     }
 
+    /** A list of measurements from a host */
     public static class NodeMeasurements {
 
         private final String hostname;
         private final ClusterSpec.Type type;
-        private final List<Measurement> measurements;
+        private final List<Measurements> measurements;
 
         // Note: This transfers ownership of the measurement list to this
-        private NodeMeasurements(String hostname, ClusterSpec.Type type, List<Measurement> measurements) {
+        private NodeMeasurements(String hostname, ClusterSpec.Type type, List<Measurements> measurements) {
             this.hostname = hostname;
             this.type = type;
             this.measurements = measurements;
@@ -111,9 +112,9 @@ public class NodeMetricsDb {
 
         public int size() { return measurements.size(); }
 
-        public Measurement get(int index) { return measurements.get(index); }
+        public Measurements get(int index) { return measurements.get(index); }
 
-        public List<Measurement> asList() { return Collections.unmodifiableList(measurements); }
+        public List<Measurements> asList() { return Collections.unmodifiableList(measurements); }
 
         public String hostname() { return hostname; }
 
@@ -127,7 +128,7 @@ public class NodeMetricsDb {
 
         // Private mutation
 
-        private void add(Measurement measurement) { measurements.add(measurement); }
+        private void add(Measurements measurement) { measurements.add(measurement); }
 
         private void removeOlderThan(long oldestTimestamp) {
             while (!measurements.isEmpty() && measurements.get(0).timestamp < oldestTimestamp)
@@ -137,7 +138,7 @@ public class NodeMetricsDb {
     }
 
     /** A single measurement of all values we measure, for one node */
-    public static class Measurement {
+    public static class Measurements {
 
         // TODO: Order by timestamp
         /** The time of this measurement in epoch millis */
@@ -148,17 +149,17 @@ public class NodeMetricsDb {
         private final double disk;
         private final long generation;
 
-        public Measurement(MetricsFetcher.NodeMetrics metrics) {
+        public Measurements(MetricsFetcher.NodeMetrics metrics) {
             this.timestamp = metrics.timestampSecond() * 1000;
-            this.cpu = Metric.cpu.valueFromMetric(metrics.cpuUtil());
-            this.memory = Metric.memory.valueFromMetric(metrics.totalMemUtil());
-            this.disk = Metric.disk.valueFromMetric(metrics.diskUtil());
-            this.generation = (long)Metric.generation.valueFromMetric(metrics.applicationGeneration());
+            this.cpu = Metric.cpu.measurementFromMetric(metrics.cpuUtil());
+            this.memory = Metric.memory.measurementFromMetric(metrics.totalMemUtil());
+            this.disk = Metric.disk.measurementFromMetric(metrics.diskUtil());
+            this.generation = (long)Metric.generation.measurementFromMetric(metrics.applicationGeneration());
 
         }
 
         public double cpu() { return cpu; }
-        public double memopry() { return memory; }
+        public double memory() { return memory; }
         public double disk() { return disk; }
         public long generation() { return generation; }
         public Instant at() { return Instant.ofEpochMilli(timestamp); }

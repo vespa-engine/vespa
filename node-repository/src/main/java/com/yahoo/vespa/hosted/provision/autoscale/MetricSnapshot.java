@@ -82,10 +82,10 @@ public class MetricSnapshot {
         return Optional.of(measurementSum / measurementCount);
     }
 
-    private double value(Resource resource, NodeMetricsDb.Measurement measurement) {
+    private double value(Resource resource, NodeMetricsDb.Measurements measurement) {
         switch (resource) {
             case cpu: return measurement.cpu();
-            case memory: return measurement.memopry();
+            case memory: return measurement.memory();
             case disk: return measurement.disk();
             default: throw new IllegalArgumentException("Got an unknown resource " + resource);
         }
