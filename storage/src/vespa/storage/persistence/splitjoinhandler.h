@@ -8,7 +8,7 @@
 namespace storage {
 
 namespace spi { struct PersistenceProvider; }
-struct PersistenceUtil;
+class PersistenceUtil;
 class BucketOwnershipNotifier;
 class RecheckBucketInfoCommand;
 class InternalBucketJoinCommand;

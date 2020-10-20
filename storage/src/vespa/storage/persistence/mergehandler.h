@@ -23,7 +23,7 @@
 namespace storage {
 
 namespace spi { struct PersistenceProvider; }
-struct PersistenceUtil;
+class PersistenceUtil;
 
 class MergeHandler : public Types {
 

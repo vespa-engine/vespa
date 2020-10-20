@@ -21,7 +21,7 @@ namespace spi {
 }
 class PersistenceThread;
 class ServiceLayerComponent;
-struct PersistenceUtil;
+class PersistenceUtil;
 
 class TestAndSetException : public std::runtime_error {
     api::ReturnCode _code;
