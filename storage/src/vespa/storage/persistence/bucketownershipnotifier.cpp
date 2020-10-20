@@ -17,8 +17,7 @@ using document::BucketSpace;
 namespace storage {
 
 uint16_t
-BucketOwnershipNotifier::getOwnerDistributorForBucket(
-        const document::Bucket &bucket) const
+BucketOwnershipNotifier::getOwnerDistributorForBucket(const document::Bucket &bucket) const
 {
     try {
         auto distribution(_component.getBucketSpaceRepo().get(bucket.getBucketSpace()).getDistribution());
@@ -28,24 +27,19 @@ BucketOwnershipNotifier::getOwnerDistributorForBucket(
         // If we get exceptions there aren't any distributors, so they'll have
         // to explicitly fetch all bucket info eventually anyway.
     } catch (lib::TooFewBucketBitsInUseException& e) {
-        LOGBP(debug, "Too few bucket bits used for %s to be assigned "
-              "to a distributor. Not notifying any distributor of "
-              "bucket change.",
-              bucket.toString().c_str());
+        LOGBP(debug, "Too few bucket bits used for %s to be assigned to a distributor."
+                     " Not notifying any distributor of bucket change.",
+                     bucket.toString().c_str());
     } catch (lib::NoDistributorsAvailableException& e) {
-        LOGBP(debug, "No distributors available. Not notifying any "
-              "distributor of bucket change.");
+        LOGBP(debug, "No distributors available. Not notifying any distributor of bucket change.");
     } catch (const std::exception& e) {
-        LOG(error,
-            "Got unknown exception while resolving distributor: %s",
-            e.what());
+        LOG(error, "Got unknown exception while resolving distributor: %s", e.what());
     }
     return FAILED_TO_RESOLVE;
 }
 
 bool
-BucketOwnershipNotifier::distributorOwns(uint16_t distributor,
-                                         const document::Bucket &bucket) const
+BucketOwnershipNotifier::distributorOwns(uint16_t distributor, const document::Bucket &bucket) const
 {
     return (distributor == getOwnerDistributorForBucket(bucket));
 }
@@ -64,8 +58,7 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
             vespalib::getStackTrace(0).c_str());
         return;
     }
-    api::NotifyBucketChangeCommand::SP notifyCmd(
-                new api::NotifyBucketChangeCommand(bucket, infoToSend));
+    auto notifyCmd = std::make_shared<api::NotifyBucketChangeCommand>(bucket, infoToSend);
 
     notifyCmd->setAddress(api::StorageMessageAddress(
                                   _component.getClusterName(),

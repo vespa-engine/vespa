@@ -12,40 +12,30 @@ namespace storage {
 
 class BucketOwnershipNotifier
 {
-    ServiceLayerComponent& _component;
-    MessageSender& _sender;
+    const ServiceLayerComponent & _component;
+    MessageSender               & _sender;
 public:
-    BucketOwnershipNotifier(ServiceLayerComponent& component,
-                            MessageSender& sender)
+    BucketOwnershipNotifier(const ServiceLayerComponent& component, MessageSender& sender)
         : _component(component),
           _sender(sender)
     {}
 
-    bool distributorOwns(uint16_t distributor,
-                         const document::Bucket &bucket) const;
-
-    void notifyIfOwnershipChanged(const document::Bucket &bucket,
-                                  uint16_t sourceIndex,
-                                  const api::BucketInfo& infoToSend);
-
-    void sendNotifyBucketToCurrentOwner(const document::Bucket &bucket,
-                                        const api::BucketInfo& infoToSend);
+    bool distributorOwns(uint16_t distributor, const document::Bucket &bucket) const;
+    void notifyIfOwnershipChanged(const document::Bucket &bucket, uint16_t sourceIndex, const api::BucketInfo& infoToSend);
+    void sendNotifyBucketToCurrentOwner(const document::Bucket &bucket, const api::BucketInfo& infoToSend);
 private:
     enum IndexMeta {
         FAILED_TO_RESOLVE = 0xffff
     };
 
-    void sendNotifyBucketToDistributor(uint16_t distributorIndex,
-                                       const document::Bucket &bucket,
+    void sendNotifyBucketToDistributor(uint16_t distributorIndex, const document::Bucket &bucket,
                                        const api::BucketInfo& infoToSend);
 
     // Returns either index or FAILED_TO_RESOLVE
     uint16_t getOwnerDistributorForBucket(const document::Bucket &bucket) const;
 
-    void logNotification(const document::Bucket &bucket,
-                         uint16_t sourceIndex,
-                         uint16_t currentOwnerIndex,
-                         const api::BucketInfo& newInfo);
+    void logNotification(const document::Bucket &bucket, uint16_t sourceIndex,
+                         uint16_t currentOwnerIndex, const api::BucketInfo& newInfo);
 };
 
 /**
@@ -56,9 +46,7 @@ class NotificationGuard
 {
     struct BucketToCheck
     {
-        BucketToCheck(const document::Bucket& _bucket,
-                      uint16_t _sourceIndex,
-                      const api::BucketInfo& _info)
+        BucketToCheck(const document::Bucket& _bucket, uint16_t _sourceIndex, const api::BucketInfo& _info)
           : bucket(_bucket),
             info(_info),
             sourceIndex(_sourceIndex),
@@ -66,29 +54,24 @@ class NotificationGuard
         {}
 
         document::Bucket bucket;
-        api::BucketInfo info;
-        uint16_t sourceIndex;
-        bool alwaysSend;
+        api::BucketInfo  info;
+        uint16_t         sourceIndex;
+        bool             alwaysSend;
     };
     BucketOwnershipNotifier& _notifier;
     std::vector<BucketToCheck> _bucketsToCheck;
-
-    NotificationGuard(const NotificationGuard&);
-    NotificationGuard& operator=(const NotificationGuard&);
 public:
     NotificationGuard(BucketOwnershipNotifier& notifier)
         : _notifier(notifier),
           _bucketsToCheck()
     {}
+    NotificationGuard(const NotificationGuard&) = delete;
+    NotificationGuard& operator=(const NotificationGuard&) = delete;
 
     ~NotificationGuard();
 
-    void notifyIfOwnershipChanged(const document::Bucket &bucket,
-                                  uint16_t sourceIndex,
-                                  const api::BucketInfo& infoToSend);
-
-    void notifyAlways(const document::Bucket &bucket,
-                      const api::BucketInfo& infoToSend);
+    void notifyIfOwnershipChanged(const document::Bucket &bucket, uint16_t sourceIndex, const api::BucketInfo& infoToSend);
+    void notifyAlways(const document::Bucket &bucket, const api::BucketInfo& infoToSend);
 };
 
 } // storage

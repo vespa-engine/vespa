@@ -158,11 +158,8 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
     }
 }
 
-PersistenceUtil::PersistenceUtil(
-        ServiceLayerComponent& component,
-        FileStorHandler& fileStorHandler,
-        FileStorThreadMetrics& metrics,
-        spi::PersistenceProvider& provider)
+PersistenceUtil::PersistenceUtil(const ServiceLayerComponent& component, FileStorHandler& fileStorHandler,
+                                 FileStorThreadMetrics& metrics, spi::PersistenceProvider& provider)
     : _component(component),
       _fileStorHandler(fileStorHandler),
       _metrics(metrics),
@@ -196,8 +193,7 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api:
 }
 
 PersistenceUtil::LockResult
-PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket,
-                                StorBucketDatabase::Flag flags)
+PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket, StorBucketDatabase::Flag flags)
 {
     // To lock the bucket, we need to ensure that we don't conflict with
     // bucket disk move command. First we fetch current disk index from

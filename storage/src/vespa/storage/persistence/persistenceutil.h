@@ -102,12 +102,8 @@ public:
         bool bucketExisted() const { return bool(lock); }
     };
 
-    PersistenceUtil(
-            ServiceLayerComponent&,
-            FileStorHandler& fileStorHandler,
-            FileStorThreadMetrics& metrics,
-            spi::PersistenceProvider& provider);
-
+    PersistenceUtil(const ServiceLayerComponent&, FileStorHandler& fileStorHandler,
+                    FileStorThreadMetrics& metrics, spi::PersistenceProvider& provider);
     ~PersistenceUtil();
 
     StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const {
@@ -122,7 +118,7 @@ public:
     static api::BucketInfo convertBucketInfo(const spi::BucketInfo&);
     static uint32_t convertErrorCode(const spi::Result& response);
 public:
-    ServiceLayerComponent                      &_component;
+    const ServiceLayerComponent                &_component;
     FileStorHandler                            &_fileStorHandler;
     FileStorThreadMetrics                      &_metrics;  // Needs a better solution for speed and thread safety
     uint16_t                                    _nodeIndex;
