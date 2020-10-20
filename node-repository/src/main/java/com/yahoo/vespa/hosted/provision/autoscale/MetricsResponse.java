@@ -52,22 +52,7 @@ public class MetricsResponse {
                                                        values.getOrDefault(Metric.memory.fullName(), 0.0),
                                                        values.getOrDefault(Metric.disk.fullName(), 0.0),
                                                        values.getOrDefault(Metric.generation.fullName(), 0.0)));
-        /*
-        for (Metric metric : Metric.values()) {
-            addMetricIfPresent(hostname, metric, timestampSecond, values);
-        }
-         */
     }
-
-    /*
-    private void addMetricIfPresent(String hostname, Metric metric, long timestampSecond, Map<String, Double> values) {
-        if (values.containsKey(metric.fullName()))
-            metricValues.add(new NodeMetrics.MetricValue(hostname,
-                                                         metric.fullName(),
-                                                         timestampSecond,
-                                                         values.get(metric.fullName())));
-    }
-     */
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
         String name = node.field("name").asString();
