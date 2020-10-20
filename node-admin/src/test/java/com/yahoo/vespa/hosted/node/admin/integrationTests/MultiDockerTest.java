@@ -20,9 +20,10 @@ public class MultiDockerTest {
     @Test
     public void test() {
         try (DockerTester tester = new DockerTester()) {
-            addAndWaitForNode(tester, "host1.test.yahoo.com", DockerImage.fromString("image1"));
+            DockerImage image1 = DockerImage.fromString("registry.example.com/image1");
+            addAndWaitForNode(tester, "host1.test.yahoo.com", image1);
             NodeSpec nodeSpec2 = addAndWaitForNode(
-                    tester, "host2.test.yahoo.com", DockerImage.fromString("image2"));
+                    tester, "host2.test.yahoo.com", DockerImage.fromString("registry.example.com/image2"));
 
             tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(nodeSpec2.hostname(), NodeState.dirty).build());
 
@@ -31,7 +32,7 @@ public class MultiDockerTest {
                     argThat(context -> context.containerName().equals(new ContainerName("host2"))));
             tester.inOrder(tester.nodeRepository).setNodeState(eq(nodeSpec2.hostname()), eq(NodeState.ready));
 
-            addAndWaitForNode(tester, "host3.test.yahoo.com", DockerImage.fromString("image1"));
+            addAndWaitForNode(tester, "host3.test.yahoo.com", image1);
         }
     }
 

@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.eq;
 public class RebootTest {
 
     private final String hostname = "host1.test.yahoo.com";
-    private final DockerImage dockerImage = DockerImage.fromString("dockerImage");
+    private final DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage");
 
     @Test
     public void test() {

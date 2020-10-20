@@ -19,7 +19,7 @@ public class DockerFailTest {
     @Test
     public void dockerFailTest() {
         try (DockerTester tester = new DockerTester()) {
-            final DockerImage dockerImage = DockerImage.fromString("dockerImage");
+            final DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage");
             final ContainerName containerName = new ContainerName("host1");
             final String hostname = "host1.test.yahoo.com";
             tester.addChildNodeRepositoryNode(NodeSpec.Builder
