@@ -62,7 +62,11 @@ public class ContainerImages {
      * if it is a Docker host, or default */
     public DockerImage imageFor(NodeType type) {
         NodeType typeToUseForLookup = type.isHost() ? type.childNodeType() : type;
-        return getImages().getOrDefault(typeToUseForLookup, defaultImage);
+        DockerImage image = getImages().get(typeToUseForLookup);
+        if (image == null) {
+            return defaultImage;
+        }
+        return image.withRegistry(defaultImage.registry()); // Always use the registry configured for this zone.
     }
 
     /** Set the docker image for nodes of given type */
