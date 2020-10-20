@@ -278,19 +278,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         handlers.put("/document/v1/{namespace}/{documentType}/number/{number}/",
                      Map.of(GET, this::getDocuments));
 
-        handlers.put("/document/v1/{namespace}/{documentType}/docid/{docid}",
+        handlers.put("/document/v1/{namespace}/{documentType}/docid/{*}",
                      Map.of(GET, this::getDocument,
                             POST, this::postDocument,
                             PUT, this::putDocument,
                             DELETE, this::deleteDocument));
 
-        handlers.put("/document/v1/{namespace}/{documentType}/group/{group}/{docid}",
+        handlers.put("/document/v1/{namespace}/{documentType}/group/{group}/{*}",
                      Map.of(GET, this::getDocument,
                             POST, this::postDocument,
                             PUT, this::putDocument,
                             DELETE, this::deleteDocument));
 
-        handlers.put("/document/v1/{namespace}/{documentType}/number/{number}/{docid}",
+        handlers.put("/document/v1/{namespace}/{documentType}/number/{number}/{*}",
                      Map.of(GET, this::getDocument,
                             POST, this::postDocument,
                             PUT, this::putDocument,
@@ -982,7 +982,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return new DocumentId("id:" + requireNonNull(path.get("namespace")) +
                                   ":" + requireNonNull(path.get("documentType")) +
                                   ":" + group.map(Group::docIdPart).orElse("") +
-                                  ":" + requireNonNull(path.get("docid")));
+                                  ":" + requireNonNull(path.getRest()));
         }
 
         String rawPath() { return path.asString(); }
