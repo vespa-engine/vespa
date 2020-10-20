@@ -11,7 +11,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -56,7 +56,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
+                                     MetricsFetcher nodeMetrics, NodeMetricsDb nodeMetricsDb) {
         this(nodeRepository, deployer, infraDeployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
              orchestrator, metric, provisionServiceProvider, flagSource, nodeMetrics, nodeMetricsDb);
     }
@@ -65,7 +65,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
+                                     MetricsFetcher nodeMetrics, NodeMetricsDb nodeMetricsDb) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,

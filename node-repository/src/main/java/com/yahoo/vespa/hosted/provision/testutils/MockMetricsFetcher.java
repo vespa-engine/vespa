@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,10 +10,10 @@ import java.util.Collection;
 /**
  * @author bratseth
  */
-public class MockNodeMetrics implements NodeMetrics {
+public class MockMetricsFetcher implements MetricsFetcher {
 
     @Override
-    public Collection<MetricValue> fetchMetrics(ApplicationId application) {
+    public Collection<NodeMetrics> fetchMetrics(ApplicationId application) {
         return new ArrayList<>();
     }
 

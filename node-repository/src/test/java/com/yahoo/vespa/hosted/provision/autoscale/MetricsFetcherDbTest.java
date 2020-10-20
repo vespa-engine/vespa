@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class NodeMetricsDbTest {
+public class MetricsFetcherDbTest {
 
     @Test
     public void testNodeMetricsDb() {
@@ -35,11 +35,11 @@ public class NodeMetricsDbTest {
 
         ManualClock clock = tester.clock();
         NodeMetricsDb db = new NodeMetricsDb(tester.nodeRepository());
-        List<NodeMetrics.MetricValue> values = new ArrayList<>();
+        List<MetricsFetcher.NodeMetrics> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new NodeMetrics.MetricValue(node0,
-                                                   clock.instant().getEpochSecond(),
-                                                   0.9f, 0.6f, 0.6f, 0));
+            values.add(new MetricsFetcher.NodeMetrics(node0,
+                                                      clock.instant().getEpochSecond(),
+                                                      0.9f, 0.6f, 0.6f, 0));
             clock.advance(Duration.ofMinutes(10));
         }
         db.add(values);

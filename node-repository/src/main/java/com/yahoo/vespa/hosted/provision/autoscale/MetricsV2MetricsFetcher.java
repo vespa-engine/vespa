@@ -28,9 +28,9 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics {
+public class MetricsV2MetricsFetcher extends AbstractComponent implements MetricsFetcher {
 
-    private static final Logger log = Logger.getLogger(NodeMetricsFetcher.class.getName());
+    private static final Logger log = Logger.getLogger(MetricsV2MetricsFetcher.class.getName());
 
     private static final String apiPath = "/metrics/v2/values";
 
@@ -40,18 +40,18 @@ public class NodeMetricsFetcher extends AbstractComponent implements NodeMetrics
 
     @Inject
     @SuppressWarnings("unused")
-    public NodeMetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator) {
+    public MetricsV2MetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator) {
         this(nodeRepository, orchestrator, new ApacheHttpClient());
     }
 
-    NodeMetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator, HttpClient httpClient) {
+    MetricsV2MetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator, HttpClient httpClient) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.httpClient = httpClient;
     }
 
     @Override
-    public Collection<MetricValue> fetchMetrics(ApplicationId application) {
+    public Collection<NodeMetrics> fetchMetrics(ApplicationId application) {
         NodeList applicationNodes = nodeRepository.list(application).state(Node.State.active);
 
         // Do not try to draw conclusions from utilization while unstable

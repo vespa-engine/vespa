@@ -131,12 +131,12 @@ class AutoscalingTester {
                 float cpu = value * oneExtraNodeFactor;
                 float mem  = (float) Resource.memory.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
                 float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
-                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           clock().instant().toEpochMilli(),
+                db.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
+                                                              clock().instant().toEpochMilli(),
                                                            cpu * 100,
                                                            mem * 100,
                                                            disk * 100,
-                                                           0)));
+                                                              0)));
             }
         }
     }
@@ -161,12 +161,12 @@ class AutoscalingTester {
                 float cpu  = (float) Resource.cpu.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
                 float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
-                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           clock().instant().toEpochMilli(),
+                db.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
+                                                              clock().instant().toEpochMilli(),
                                                            cpu * 100,
                                                            memory * 100,
                                                            disk * 100,
-                                                           0)));
+                                                              0)));
             }
         }
     }
@@ -176,12 +176,12 @@ class AutoscalingTester {
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           clock().instant().toEpochMilli(),
+                db.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
+                                                              clock().instant().toEpochMilli(),
                                                            cpu * 100,
                                                            memory * 100,
                                                            disk * 100,
-                                                           generation))); // the metrics are in %
+                                                              generation))); // the metrics are in %
             }
         }
     }

@@ -30,9 +30,9 @@ public class AutoscalingIntegrationTest {
         NodeResources hosts = new NodeResources(3, 20, 200, 1);
 
         AutoscalingTester tester = new AutoscalingTester(hosts);
-        NodeMetricsFetcher fetcher = new NodeMetricsFetcher(tester.nodeRepository(),
-                                                            new OrchestratorMock(),
-                                                            new MockHttpClient(tester.clock()));
+        MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(),
+                                                                      new OrchestratorMock(),
+                                                                      new MockHttpClient(tester.clock()));
         Autoscaler autoscaler = new Autoscaler(tester.nodeMetricsDb(), tester.nodeRepository());
 
         ApplicationId application1 = tester.applicationId("test1");
@@ -63,7 +63,7 @@ public class AutoscalingIntegrationTest {
         assertTrue(scaledResources.isPresent());
     }
 
-    private static class MockHttpClient implements NodeMetricsFetcher.HttpClient {
+    private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
 
         private final ManualClock clock;
 

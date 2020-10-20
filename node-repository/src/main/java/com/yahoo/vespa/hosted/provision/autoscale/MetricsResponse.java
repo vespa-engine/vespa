@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class MetricsResponse {
 
-    private final List<NodeMetrics.MetricValue> metricValues = new ArrayList<>();
+    private final List<MetricsFetcher.NodeMetrics> nodeMetrics = new ArrayList<>();
 
     public MetricsResponse(byte[] response) {
         this(SlimeUtils.jsonToSlime(response));
@@ -29,7 +29,7 @@ public class MetricsResponse {
         this(SlimeUtils.jsonToSlime(response));
     }
 
-    public List<NodeMetrics.MetricValue> metrics() { return metricValues; }
+    public List<MetricsFetcher.NodeMetrics> metrics() { return nodeMetrics; }
 
     private MetricsResponse(Slime response) {
         Inspector root = response.get();
@@ -46,12 +46,12 @@ public class MetricsResponse {
     private void consumeNodeMetrics(String hostname, Inspector node) {
         long timestampSecond = node.field("timestamp").asLong();
         Map<String, Double> values = consumeMetrics(node.field("metrics"));
-        metricValues.add(new NodeMetrics.MetricValue(hostname,
-                                                     timestampSecond,
-                                                     values.getOrDefault(Metric.cpu.fullName(), 0.0),
-                                                     values.getOrDefault(Metric.memory.fullName(), 0.0),
-                                                     values.getOrDefault(Metric.disk.fullName(), 0.0),
-                                                     values.getOrDefault(Metric.generation.fullName(), 0.0)));
+        nodeMetrics.add(new MetricsFetcher.NodeMetrics(hostname,
+                                                       timestampSecond,
+                                                       values.getOrDefault(Metric.cpu.fullName(), 0.0),
+                                                       values.getOrDefault(Metric.memory.fullName(), 0.0),
+                                                       values.getOrDefault(Metric.disk.fullName(), 0.0),
+                                                       values.getOrDefault(Metric.generation.fullName(), 0.0)));
         /*
         for (Metric metric : Metric.values()) {
             addMetricIfPresent(hostname, metric, timestampSecond, values);

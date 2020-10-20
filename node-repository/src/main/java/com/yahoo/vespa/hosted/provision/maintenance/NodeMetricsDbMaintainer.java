@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.yolean.Exceptions;
 
@@ -21,11 +21,11 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
 
     private static final int maxWarningsPerInvocation = 2;
 
-    private final NodeMetrics nodeMetrics;
+    private final MetricsFetcher nodeMetrics;
     private final NodeMetricsDb nodeMetricsDb;
 
     public NodeMetricsDbMaintainer(NodeRepository nodeRepository,
-                                   NodeMetrics nodeMetrics,
+                                   MetricsFetcher nodeMetrics,
                                    NodeMetricsDb nodeMetricsDb,
                                    Duration interval,
                                    Metric metric) {

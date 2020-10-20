@@ -18,7 +18,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class NodeMetricsFetcherTest {
+public class MetricsV2MetricsFetcherTest {
 
     @Test
     public void testMetricsFetch() {
@@ -26,7 +26,7 @@ public class NodeMetricsFetcherTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         OrchestratorMock orchestrator = new OrchestratorMock();
         MockHttpClient httpClient = new MockHttpClient();
-        NodeMetricsFetcher fetcher = new NodeMetricsFetcher(tester.nodeRepository(), orchestrator, httpClient);
+        MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(), orchestrator, httpClient);
 
         tester.makeReadyNodes(4, resources); // Creates (in order) host-1.yahoo.com, host-2.yahoo.com, host-3.yahoo.com, host-4.yahoo.com
         tester.activateTenantHosts();
@@ -40,7 +40,7 @@ public class NodeMetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication1;
-            List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application1));
+            List<MetricsFetcher.NodeMetrics> values = new ArrayList<>(fetcher.fetchMetrics(application1));
             assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(0));
             assertEquals(2, values.size());
@@ -52,7 +52,7 @@ public class NodeMetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication2;
-            List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application2));
+            List<MetricsFetcher.NodeMetrics> values = new ArrayList<>(fetcher.fetchMetrics(application2));
             assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(1));
             assertEquals(1, values.size());
@@ -69,7 +69,7 @@ public class NodeMetricsFetcherTest {
         }
     }
 
-    private static class MockHttpClient implements NodeMetricsFetcher.HttpClient {
+    private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
 
         List<String> requestsReceived = new ArrayList<>();
 

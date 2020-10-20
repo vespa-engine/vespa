@@ -3,11 +3,9 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
@@ -15,8 +13,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.Metric;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -74,12 +71,12 @@ public class AutoscalingMaintainerTester {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                nodeMetricsDb.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                                      clock().instant().getEpochSecond(),
+                nodeMetricsDb.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
+                                                                         clock().instant().getEpochSecond(),
                                                                       cpu * 100,
                                                                       mem * 100,
                                                                       disk * 100,
-                                                                      generation)));
+                                                                         generation)));
         }
     }
 
