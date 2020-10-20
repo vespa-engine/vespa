@@ -32,6 +32,7 @@
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -100,13 +101,6 @@ findDocumentDB(const ProtonConfig::DocumentdbVector & documentDBs, const vespali
     }
     return &_G_defaultProtonDocumentDBConfig;
 }
-
-template <typename T>
-struct KeepAlive : public search::IDestructorCallback {
-    explicit KeepAlive(T toKeep) noexcept : _toKeep(std::move(toKeep)) { }
-    ~KeepAlive() override = default;
-    T _toKeep;
-};
 
 }
 
@@ -454,7 +448,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
-        _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
+        _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<search::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
         _writeService.sync();
         vespalib::duration visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
         hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());

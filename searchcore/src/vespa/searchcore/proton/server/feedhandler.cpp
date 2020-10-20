@@ -120,12 +120,6 @@ private:
     std::unique_ptr<Executor::Task> _task;
 };
 
-template <typename T>
-struct KeepAlive : public search::IDestructorCallback {
-    explicit KeepAlive(T toKeep) : _toKeep(std::move(toKeep)) { }
-    ~KeepAlive() override = default;
-    T _toKeep;
-};
 }  // namespace
 
 void
@@ -528,7 +522,7 @@ FeedHandler::initiateCommit() {
             }));
     auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
     if (_activeFeedView && ! _activeFeedView->allowEarlyAck()) {
-        using KeepAlivePair = KeepAlive<std::pair<CommitResult, DoneCallback>>;
+        using KeepAlivePair = search::KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
         _activeFeedView->forceCommit(_serialNum, std::make_shared<KeepAlivePair>(std::move(pair)));
     }
