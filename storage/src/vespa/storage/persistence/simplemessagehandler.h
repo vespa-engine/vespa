@@ -10,7 +10,7 @@
 namespace storage {
 
 namespace spi { struct PersistenceProvider; }
-struct PersistenceUtil;
+class PersistenceUtil;
 
 /**
  * Handles most of the messages that are 'simple' to handle and do not

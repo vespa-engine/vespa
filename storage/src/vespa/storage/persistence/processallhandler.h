@@ -9,7 +9,7 @@
 namespace storage {
 
 namespace spi { struct PersistenceProvider; }
-struct PersistenceUtil;
+class PersistenceUtil;
 
 class ProcessAllHandler : public Types {
 public:

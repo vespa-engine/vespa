@@ -12,7 +12,7 @@ namespace spi {
     struct PersistenceProvider;
     class Context;
 }
-struct PersistenceUtil;
+class PersistenceUtil;
 
 /**
  * Handle async operations that uses a sequenced executor.
