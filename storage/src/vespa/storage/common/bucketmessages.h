@@ -15,16 +15,14 @@ namespace storage {
  */
 class ReadBucketList : public api::InternalCommand {
     document::BucketSpace _bucketSpace;
-    spi::PartitionId _partition;
 
 public:
     typedef std::unique_ptr<ReadBucketList> UP;
     static const uint32_t ID = 2003;
 
-    ReadBucketList(document::BucketSpace bucketSpace, spi::PartitionId partition);
+    ReadBucketList(document::BucketSpace bucketSpace);
     ~ReadBucketList();
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
-    spi::PartitionId getPartition() const { return _partition; }
     document::Bucket getBucket() const override;
 
     std::unique_ptr<api::StorageReply> makeReply() override;
@@ -39,7 +37,6 @@ public:
  */
 class ReadBucketListReply : public api::InternalReply {
     document::BucketSpace _bucketSpace;
-    spi::PartitionId _partition;
     spi::BucketIdListResult::List _buckets;
 
 public:
@@ -51,7 +48,6 @@ public:
     ~ReadBucketListReply();
 
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
-    spi::PartitionId getPartition() const { return _partition; }
     document::Bucket getBucket() const override;
 
     spi::BucketIdListResult::List& getBuckets() { return _buckets; }

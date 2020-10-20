@@ -63,12 +63,6 @@ namespace storage::spi {
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeIndex);
 
 /**
- * \class storage::spi::PartitionId
- * \ingroup spi
- */
-DEFINE_PRIMITIVE_WRAPPER(uint16_t, PartitionId);
-
-/**
  * \class storage::spi::IteratorId
  * \ingroup spi
  */

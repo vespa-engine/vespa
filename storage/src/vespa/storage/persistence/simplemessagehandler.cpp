@@ -202,7 +202,6 @@ SimpleMessageHandler::handleReadBucketList(ReadBucketList& cmd, MessageTracker::
 {
     tracker->setMetric(_env._metrics.readBucketList);
 
-    assert(cmd.getPartition() == 0u);
     spi::BucketIdListResult result(_spi.listBuckets(cmd.getBucketSpace()));
     if (tracker->checkForError(result)) {
         auto reply = std::make_shared<ReadBucketListReply>(cmd);

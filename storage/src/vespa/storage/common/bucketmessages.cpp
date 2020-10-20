@@ -8,10 +8,9 @@ using document::BucketSpace;
 
 namespace storage {
 
-ReadBucketList::ReadBucketList(BucketSpace bucketSpace, spi::PartitionId partition)
+ReadBucketList::ReadBucketList(BucketSpace bucketSpace)
     : api::InternalCommand(ID),
-      _bucketSpace(bucketSpace),
-      _partition(partition)
+      _bucketSpace(bucketSpace)
 { }
 
 ReadBucketList::~ReadBucketList() = default;
@@ -24,7 +23,7 @@ ReadBucketList::getBucket() const
 
 void
 ReadBucketList::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    out << "ReadBucketList(" << _partition << ")";
+    out << "ReadBucketList()";
 
     if (verbose) {
         out << " : ";
@@ -34,8 +33,7 @@ ReadBucketList::print(std::ostream& out, bool verbose, const std::string& indent
 
 ReadBucketListReply::ReadBucketListReply(const ReadBucketList& cmd)
     : api::InternalReply(ID, cmd),
-      _bucketSpace(cmd.getBucketSpace()),
-      _partition(cmd.getPartition())
+      _bucketSpace(cmd.getBucketSpace())
 { }
 
 ReadBucketListReply::~ReadBucketListReply() = default;
