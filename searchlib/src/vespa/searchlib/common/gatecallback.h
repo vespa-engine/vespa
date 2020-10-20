@@ -21,4 +21,11 @@ public:
     ~IgnoreCallback() override = default;
 };
 
+template <typename T>
+struct KeepAlive : public search::IDestructorCallback {
+    explicit KeepAlive(T toKeep) noexcept : _toKeep(std::move(toKeep)) { }
+    ~KeepAlive() override = default;
+    T _toKeep;
+};
+
 } // namespace search
