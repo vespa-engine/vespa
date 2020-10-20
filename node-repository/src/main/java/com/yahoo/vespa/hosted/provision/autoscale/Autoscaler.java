@@ -65,11 +65,11 @@ public class Autoscaler {
 
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
 
-        MetricSnapshot metricSnapshot = new MetricSnapshot(cluster, clusterNodes, metricsDb, nodeRepository);
+        ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
-        Optional<Double> cpuLoad    = metricSnapshot.averageLoad(Resource.cpu);
-        Optional<Double> memoryLoad = metricSnapshot.averageLoad(Resource.memory);
-        Optional<Double> diskLoad   = metricSnapshot.averageLoad(Resource.disk);
+        Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
+        Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
+        Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
