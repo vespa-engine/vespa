@@ -47,12 +47,12 @@ public class MetricsFetcherDbTest {
         // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
         clock.advance(Duration.ofMinutes(1));
 
-        assertEquals(35, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), List.of(node0))));
+        assertEquals(35, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(6)), List.of(node0))));
         db.gc(clock);
-        assertEquals( 5, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), List.of(node0))));
+        assertEquals( 5, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(6)), List.of(node0))));
     }
 
-    private int measurementCount(List<NodeMetricsDb.NodeMeasurements> measurements) {
+    private int measurementCount(List<NodeTimeseries> measurements) {
         return measurements.stream().mapToInt(m -> m.size()).sum();
     }
 
