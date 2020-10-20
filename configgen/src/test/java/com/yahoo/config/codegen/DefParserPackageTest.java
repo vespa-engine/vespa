@@ -5,14 +5,13 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
 import static com.yahoo.config.codegen.DefParserTest.assertLineFails;
 import static com.yahoo.config.codegen.DefParserTest.createDefTemplate;
 import static com.yahoo.config.codegen.DefParserTest.createParser;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests setting explicit java package in the def file.
@@ -91,12 +90,12 @@ public class DefParserPackageTest {
     }
 
     @Test
-    public void number_is_not_allowed_as_package_start_char() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_package_start_char() {
         assertLineFails("package=2.a.b");
     }
 
     @Test
-    public void number_is_not_allowed_as_leading_char_in_package_token() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_leading_char_in_package_token() {
         assertLineFails("package=a.b.2c");
     }
 

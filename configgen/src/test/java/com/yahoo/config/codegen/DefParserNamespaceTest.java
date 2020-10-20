@@ -10,7 +10,7 @@ import static com.yahoo.config.codegen.DefParserTest.createDefTemplate;
 import static com.yahoo.config.codegen.DefParserTest.createParser;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author gjoranv
@@ -82,12 +82,12 @@ public class DefParserNamespaceTest {
     }
 
     @Test
-    public void number_is_not_allowed_as_namespace_start_char() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_namespace_start_char() {
         assertLineFails("namespace=2.a.b");
     }
 
     @Test
-    public void number_is_not_allowed_as_leading_char_in_namespace_token() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_leading_char_in_namespace_token() {
         assertLineFails("namespace=a.b.2c");
     }
 
