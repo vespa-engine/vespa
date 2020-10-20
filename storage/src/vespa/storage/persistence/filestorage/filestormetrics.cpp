@@ -264,9 +264,7 @@ FileStorMetrics::~FileStorMetrics() = default;
 
 void FileStorMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk)
 {
-    if (disk) {
-        throw vespalib::IllegalStateException("Can't initialize disk twice", VESPA_STRLOC);
-    }
+    assert( ! disk);
     // Currently FileStorHandlerImpl expects metrics to exist for
     // disks that are not in use too.
     disk = std::make_shared<FileStorDiskMetrics>( "disk_0", "Disk 0", loadTypes, this);
