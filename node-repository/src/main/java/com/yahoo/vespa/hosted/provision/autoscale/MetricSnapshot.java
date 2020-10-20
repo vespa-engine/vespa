@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.metrics.simple.Measurement;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
@@ -55,7 +56,7 @@ public class MetricSnapshot {
                 if (nodeGenerationMeasurements.isPresent()) {
                     var firstMeasurementOfCorrectGeneration =
                             nodeGenerationMeasurements.get().asList().stream()
-                                                      .filter(m -> m.value() >= deployment.generation())
+                                                      .filter(m -> m.generation() >= deployment.generation())
                                                       .findFirst();
                     if (firstMeasurementOfCorrectGeneration.isPresent()) {
                         startTimePerHost.put(node.hostname(), firstMeasurementOfCorrectGeneration.get().at());
@@ -85,8 +86,18 @@ public class MetricSnapshot {
         if (measurementCount / clusterNodes.size() < Autoscaler.minimumMeasurementsPerNode(clusterType)) return Optional.empty();
         if (measurements.size() != clusterNodes.size()) return Optional.empty();
 
-        double measurementSum = measurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> m.value()).sum();
+
+        double measurementSum = measurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return Optional.of(measurementSum / measurementCount);
+    }
+
+    private double value(Resource resource, NodeMetricsDb.Measurement measurement) {
+        switch (resource) {
+            case cpu: return measurement.cpu();
+            case memory: return measurement.memopry();
+            case disk: return measurement.disk();
+            default: throw new IllegalArgumentException("Got an unknown resource " + resource);
+        }
     }
 
     private List<NodeMetricsDb.NodeMeasurements> filterStale(List<NodeMetricsDb.NodeMeasurements> measurements,
