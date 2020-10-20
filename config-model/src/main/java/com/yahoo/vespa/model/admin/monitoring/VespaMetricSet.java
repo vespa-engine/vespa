@@ -130,6 +130,13 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverActiveThreads.count"));
         metrics.add(new Metric("serverActiveThreads.last"));
 
+        metrics.add(new Metric("serverNumOpenConnections.average"));
+        metrics.add(new Metric("serverNumOpenConnections.max"));
+        metrics.add(new Metric("serverNumOpenConnections.last"));
+        metrics.add(new Metric("serverNumConnections.average"));
+        metrics.add(new Metric("serverNumConnections.max"));
+        metrics.add(new Metric("serverNumConnections.last"));
+
         {
             List<String> suffices = List.of("sum", "count", "last", "min", "max");
             addMetric(metrics, "jdisc.thread_pool.unhandled_exceptions", suffices);
