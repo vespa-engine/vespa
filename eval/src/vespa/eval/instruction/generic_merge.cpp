@@ -2,10 +2,12 @@
 
 #include "generic_merge.h"
 #include <vespa/eval/eval/inline_operation.h>
+#include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <cassert>
+#include <typeindex>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -116,9 +118,39 @@ void my_mixed_merge_op(State &state, uint64_t param_in) {
     state.pop_pop_push(result_ref);
 };
 
+template <typename LCT, typename RCT, typename OCT, typename Fun>
+void my_sparse_merge_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<MergeParam>(param_in);
+    const Value &lhs = state.peek(1);
+    const Value &rhs = state.peek(0);
+    const Value::Index &lhs_index = lhs.index();
+    const Value::Index &rhs_index = rhs.index();
+    if ((std::type_index(typeid(lhs_index)) == std::type_index(typeid(FastValueIndex))) &&
+        (std::type_index(typeid(rhs_index)) == std::type_index(typeid(FastValueIndex))))
+    {
+        const FastValueIndex &lhs_fast = static_cast<const FastValueIndex&>(lhs_index);
+        const FastValueIndex &rhs_fast = static_cast<const FastValueIndex&>(rhs_index);
+        auto lhs_cells = lhs.cells().typify<LCT>();
+        auto rhs_cells = rhs.cells().typify<RCT>();
+        return state.pop_pop_push(
+                FastValueIndex::sparse_only_merge<LCT,RCT,OCT,Fun>(
+                        param.res_type, Fun(param.function), lhs_fast, rhs_fast, lhs_cells, rhs_cells, state.stash));
+    }
+    auto up = generic_mixed_merge<LCT, RCT, OCT, Fun>(lhs, rhs, param);
+    auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
+    const Value &result_ref = *(result.get());
+    state.pop_pop_push(result_ref);
+};
+
 struct SelectGenericMergeOp {
     template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke() {
         return my_mixed_merge_op<LCT,RCT,OCT,Fun>;
+    }
+};
+
+struct SelectSparseMergeOp {
+    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke() {
+        return my_sparse_merge_op<LCT,RCT,OCT,Fun>;
     }
 };
 
@@ -140,6 +172,10 @@ GenericMerge::make_instruction(const ValueType &lhs_type, const ValueType &rhs_t
                                const ValueBuilderFactory &factory, Stash &stash)
 {
     const auto &param = stash.create<MergeParam>(lhs_type, rhs_type, function, factory);
+    if (param.dense_subspace_size == 1) {
+        auto fun = typify_invoke<4,MergeTypify,SelectSparseMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
+        return Instruction(fun, wrap_param<MergeParam>(param));
+    }
     auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
     return Instruction(fun, wrap_param<MergeParam>(param));
 }
