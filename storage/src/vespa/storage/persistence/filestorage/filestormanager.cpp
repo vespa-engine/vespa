@@ -155,7 +155,8 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _config = std::move(config);
         size_t numThreads = _config->numThreads;
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
-        _metrics->initDiskMetrics(1, _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
+        _metrics->initDiskMetrics(1, _component.getLoadTypes()->getMetricLoadTypes(), numStripes,
+                                  numThreads + config->numResponseThreads + config->numNetworkThreads);
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
