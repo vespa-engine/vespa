@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
@@ -41,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DockerEngine implements ContainerEngine {
@@ -320,20 +321,21 @@ public class DockerEngine implements ContainerEngine {
         }
     }
 
-    void deleteImage(DockerImage dockerImage) {
+    void deleteImage(String imageReference) {
         try {
-            dockerClient.removeImageCmd(dockerImage.asString()).exec();
+            dockerClient.removeImageCmd(imageReference).exec();
         } catch (NotFoundException ignored) {
             // Image was already deleted, ignore
         } catch (RuntimeException e) {
             numberOfDockerApiFails.increment();
-            throw new DockerException("Failed to delete docker image " + dockerImage.asString(), e);
+            throw new DockerException("Failed to delete image by reference '" + imageReference + "'", e);
         }
     }
 
     @Override
     public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
-        return dockerImageGC.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
+        List<String> excludedRefs = excludes.stream().map(DockerImage::asString).collect(Collectors.toList());
+        return dockerImageGC.deleteUnusedDockerImages(excludedRefs, minImageAgeToDelete);
     }
 
     private class ImagePullCallback extends PullImageResultCallback {
