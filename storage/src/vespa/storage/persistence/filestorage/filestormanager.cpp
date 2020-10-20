@@ -42,17 +42,17 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _provider(&_providerErrorWrapper),
       _init_handler(init_handler),
       _bucketIdFactory(_component.getBucketIdFactory()),
-      _configUri(configUri),
       _persistenceHandlers(),
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
-      _configFetcher(_configUri.getContext()),
+      _configFetcher(configUri.getContext()),
       _threadLockCheckInterval(60),
       _failDiskOnError(false),
       _metrics(std::make_unique<FileStorMetrics>(_component.getLoadTypes()->getMetricLoadTypes())),
-      _closed(false)
+      _closed(false),
+      _lock()
 {
-    _configFetcher.subscribe(_configUri.getConfigId(), this);
+    _configFetcher.subscribe(configUri.getConfigId(), this);
     _configFetcher.start();
     _component.registerMetric(*_metrics);
     _component.registerStatusPage(*this);
@@ -114,11 +114,14 @@ createThreadName(size_t stripeId) {
     return fmt("PersistenceThread-%zu", stripeId);
 }
 
+thread_local PersistenceHandler * _G_threadLocalHandler = nullptr;
+
 }
 
 PersistenceHandler &
-FileStorManager::createRegisteredHandler(ServiceLayerComponent & component)
+FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component)
 {
+    std::lock_guard guard(_lock);
     size_t index = _persistenceHandlers.size();
     assert(index < _metrics->disks[0]->threads.size());
     _persistenceHandlers.push_back(
@@ -126,6 +129,14 @@ FileStorManager::createRegisteredHandler(ServiceLayerComponent & component)
                                                  *_config, *_provider, *_filestorHandler,
                                                  *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[index]));
     return *_persistenceHandlers.back();
+}
+
+PersistenceHandler &
+FileStorManager::getThreadLocalHandler() {
+    if (_G_threadLocalHandler == nullptr) {
+        _G_threadLocalHandler = & createRegisteredHandler(_component);
+    }
+    return *_G_threadLocalHandler;
 }
 /**
  * If live configuration, assuming storageserver makes sure no messages are
