@@ -11,31 +11,29 @@ import java.time.Instant;
 public class MetricSnapshot {
 
     // TODO: Order by timestamp
-    /** The time of this measurement in epoch millis */
-    private final long timestamp;
+    private final Instant at;
 
     private final double cpu;
     private final double memory;
     private final double disk;
     private final long generation;
 
-    public MetricSnapshot(MetricsFetcher.NodeMetrics metrics) {
-        this.timestamp = metrics.timestampSecond() * 1000;
-        this.cpu = Metric.cpu.measurementFromMetric(metrics.cpuUtil());
-        this.memory = Metric.memory.measurementFromMetric(metrics.totalMemUtil());
-        this.disk = Metric.disk.measurementFromMetric(metrics.diskUtil());
-        this.generation = (long)Metric.generation.measurementFromMetric(metrics.applicationGeneration());
-
+    public MetricSnapshot(Instant at, double cpu, double memory, double disk, long generation) {
+        this.at = at;
+        this.cpu = cpu;
+        this.memory = memory;
+        this.disk = disk;
+        this.generation = generation;
     }
 
     public double cpu() { return cpu; }
     public double memory() { return memory; }
     public double disk() { return disk; }
     public long generation() { return generation; }
-    public Instant at() { return Instant.ofEpochMilli(timestamp); }
+    public Instant at() { return at; }
 
     @Override
-    public String toString() { return "metrics at " + timestamp + ": " +
+    public String toString() { return "metrics at " + at + ": " +
                                       "cpu: " + cpu +
                                       "memory: " + memory +
                                       "disk: " + disk +

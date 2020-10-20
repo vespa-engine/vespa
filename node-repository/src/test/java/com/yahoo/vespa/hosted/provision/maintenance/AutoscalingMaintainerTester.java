@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -13,6 +14,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -71,12 +73,11 @@ public class AutoscalingMaintainerTester {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                nodeMetricsDb.add(List.of(new MetricsFetcher.NodeMetrics(node.hostname(),
-                                                                         clock().instant().getEpochSecond(),
-                                                                      cpu * 100,
-                                                                      mem * 100,
-                                                                      disk * 100,
-                                                                         generation)));
+                nodeMetricsDb.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
+                                                                                         cpu,
+                                                                                         mem,
+                                                                                         disk,
+                                                                                         generation))));
         }
     }
 
