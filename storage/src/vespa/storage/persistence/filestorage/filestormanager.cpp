@@ -115,6 +115,18 @@ createThreadName(size_t stripeId) {
 }
 
 }
+
+PersistenceHandler &
+FileStorManager::createRegisteredHandler(ServiceLayerComponent & component)
+{
+    size_t index = _persistenceHandlers.size();
+    assert(index < _metrics->disks[0]->threads.size());
+    _persistenceHandlers.push_back(
+            std::make_unique<PersistenceHandler>(*_sequencedExecutor, component,
+                                                 *_config, *_provider, *_filestorHandler,
+                                                 *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[index]));
+    return *_persistenceHandlers.back();
+}
 /**
  * If live configuration, assuming storageserver makes sure no messages are
  * incoming during reconfiguration
@@ -141,13 +153,8 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         LOG(spam, "Setting up the disk");
         for (uint32_t i = 0; i < numThreads; i++) {
             _persistenceComponents.push_back(std::make_unique<ServiceLayerComponent>(_compReg, createThreadName(i)));
-            _persistenceHandlers.push_back(
-                    std::make_unique<PersistenceHandler>(*_sequencedExecutor,
-                                                         *_persistenceComponents.back(),
-                                                         *_config, *_provider, *_filestorHandler,
-                                                         *_bucketOwnershipNotifier, *_metrics->disks[0]->threads[i]));
-            _threads.push_back(std::make_unique<PersistenceThread>(*_persistenceHandlers.back(), *_filestorHandler,
-                                                                   i % numStripes, _component));
+            _threads.push_back(std::make_unique<PersistenceThread>(createRegisteredHandler(*_persistenceComponents.back()),
+                                                                   *_filestorHandler, i % numStripes, _component));
         }
     }
 }
