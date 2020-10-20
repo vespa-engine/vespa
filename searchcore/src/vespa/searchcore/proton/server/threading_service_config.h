@@ -31,12 +31,14 @@ private:
 public:
     static ThreadingServiceConfig make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo);
     static ThreadingServiceConfig make(uint32_t indexingThreads);
+    void update(const ThreadingServiceConfig& cfg);
     uint32_t indexingThreads() const { return _indexingThreads; }
     uint32_t defaultTaskLimit() const { return _defaultTaskLimit; }
     uint32_t semiUnboundTaskLimit() const { return _semiUnboundTaskLimit; }
     OptimizeFor optimize() const { return _optimize; }
     uint32_t kindOfwatermark() const { return _kindOfWatermark; }
     vespalib::duration reactionTime() const { return _reactionTime; }
+    bool operator==(const ThreadingServiceConfig &rhs) const;
 };
 
 }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdbconfig.h"
+#include "threading_service_config.h"
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
@@ -47,7 +48,8 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       maintenanceChanged(false),
       storeChanged(false),
       visibilityDelayChanged(false),
-      flushChanged(false)
+      flushChanged(false),
+      threading_service_config_changed(false)
 { }
 
 DocumentDBConfig::DocumentDBConfig(
@@ -67,6 +69,7 @@ DocumentDBConfig::DocumentDBConfig(
                const Schema::SP &schema,
                const DocumentDBMaintenanceConfig::SP &maintenance,
                const search::LogDocumentStore::Config & storeConfig,
+               std::shared_ptr<const ThreadingServiceConfig> threading_service_config,
                const vespalib::string &configId,
                const vespalib::string &docTypeName)
     : _configId(configId),
@@ -87,6 +90,7 @@ DocumentDBConfig::DocumentDBConfig(
       _schema(schema),
       _maintenance(maintenance),
       _storeConfig(storeConfig),
+      _threading_service_config(std::move(threading_service_config)),
       _orig(),
       _delayedAttributeAspects(false)
 { }
@@ -112,6 +116,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _schema(cfg._schema),
       _maintenance(cfg._maintenance),
       _storeConfig(cfg._storeConfig),
+      _threading_service_config(cfg._threading_service_config),
       _orig(cfg._orig),
       _delayedAttributeAspects(false)
 { }
@@ -135,7 +140,8 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
            equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get()) &&
            equals<Schema>(_schema.get(), rhs._schema.get()) &&
            equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get()) &&
-           _storeConfig == rhs._storeConfig;
+           _storeConfig == rhs._storeConfig &&
+           equals<ThreadingServiceConfig>(_threading_service_config.get(), rhs._threading_service_config.get());
 }
 
 
@@ -160,6 +166,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.storeChanged = (_storeConfig != rhs._storeConfig);
     retval.visibilityDelayChanged = (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
     retval.flushChanged = !equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get(), [](const auto &l, const auto &r) { return l.getFlushConfig() == r.getFlushConfig(); });
+    retval.threading_service_config_changed = !equals<ThreadingServiceConfig>(_threading_service_config.get(), rhs._threading_service_config.get());
     return retval;
 }
 
@@ -180,7 +187,8 @@ DocumentDBConfig::valid() const
            _importedFields &&
            _tuneFileDocumentDB &&
            _schema &&
-           _maintenance;
+           _maintenance &&
+           _threading_service_config;
 }
 
 namespace
@@ -223,6 +231,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._schema,
                 o._maintenance,
                 o._storeConfig,
+                o._threading_service_config,
                 o._configId,
                 o._docTypeName);
     ret->_orig = orig;
@@ -264,6 +273,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _schema,
             _maintenance,
             _storeConfig,
+            _threading_service_config,
             _configId,
             _docTypeName);
 }
@@ -300,6 +310,7 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._schema,
                    n._maintenance,
                    n._storeConfig,
+                   n._threading_service_config,
                    n._configId,
                    n._docTypeName);
     result->_delayedAttributeAspects = true;
