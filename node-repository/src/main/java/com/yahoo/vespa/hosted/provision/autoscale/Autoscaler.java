@@ -24,11 +24,11 @@ public class Autoscaler {
     /** What difference factor for a resource is worth a reallocation? */
     private static final double resourceDifferenceWorthReallocation = 0.1;
 
-    private final NodeMetricsDb metricsDb;
+    private final MetricsDb metricsDb;
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
 
-    public Autoscaler(NodeMetricsDb metricsDb, NodeRepository nodeRepository) {
+    public Autoscaler(MetricsDb metricsDb, NodeRepository nodeRepository) {
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);

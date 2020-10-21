@@ -26,7 +26,7 @@ public class ClusterTimeseries {
     /** The measurements for all hosts in this snapshot */
     private final List<NodeTimeseries> nodeTimeseries;
 
-    public ClusterTimeseries(Cluster cluster, List<Node> clusterNodes, NodeMetricsDb db, NodeRepository nodeRepository) {
+    public ClusterTimeseries(Cluster cluster, List<Node> clusterNodes, MetricsDb db, NodeRepository nodeRepository) {
         this.clusterNodes = clusterNodes;
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         this.nodeTimeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterType)),

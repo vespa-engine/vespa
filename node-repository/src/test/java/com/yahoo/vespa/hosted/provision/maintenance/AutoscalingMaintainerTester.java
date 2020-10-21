@@ -14,9 +14,9 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class AutoscalingMaintainerTester {
 
     private final ProvisioningTester provisioningTester;
-    private final NodeMetricsDb nodeMetricsDb;
+    private final MetricsDb metricsDb;
     private final AutoscalingMaintainer maintainer;
     private final MockDeployer deployer;
 
@@ -46,9 +46,9 @@ public class AutoscalingMaintainerTester {
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Arrays.stream(appContexts)
                                                                          .collect(Collectors.toMap(c -> c.id(), c -> c));
         deployer = new MockDeployer(provisioningTester.provisioner(), provisioningTester.clock(), apps);
-        nodeMetricsDb = new NodeMetricsDb(provisioningTester.nodeRepository());
+        metricsDb = MetricsDb.createTestInstance(provisioningTester.nodeRepository());
         maintainer = new AutoscalingMaintainer(provisioningTester.nodeRepository(),
-                                               nodeMetricsDb,
+                                               metricsDb,
                                                deployer,
                                                new TestMetric(),
                                                Duration.ofMinutes(1));
@@ -60,7 +60,7 @@ public class AutoscalingMaintainerTester {
     public ManualClock clock() { return provisioningTester.clock(); }
     public MockDeployer deployer() { return deployer; }
     public AutoscalingMaintainer maintainer() { return maintainer; }
-    public NodeMetricsDb nodeMetricsDb() { return nodeMetricsDb; }
+    public MetricsDb nodeMetricsDb() { return metricsDb; }
 
     public static ApplicationId makeApplicationId(String name) { return ProvisioningTester.makeApplicationId(name); }
     public static ClusterSpec containerClusterSpec() { return ProvisioningTester.containerClusterSpec(); }
@@ -73,11 +73,11 @@ public class AutoscalingMaintainerTester {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                nodeMetricsDb.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
-                                                                                         cpu,
-                                                                                         mem,
-                                                                                         disk,
-                                                                                         generation))));
+                metricsDb.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
+                                                                                     cpu,
+                                                                                     mem,
+                                                                                     disk,
+                                                                                     generation))));
         }
     }
 

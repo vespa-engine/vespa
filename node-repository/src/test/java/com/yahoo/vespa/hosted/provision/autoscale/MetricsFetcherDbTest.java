@@ -36,7 +36,7 @@ public class MetricsFetcherDbTest {
         String node0 = hosts.iterator().next().hostname();
 
         ManualClock clock = tester.clock();
-        NodeMetricsDb db = new NodeMetricsDb(tester.nodeRepository());
+        MetricsDb db = MetricsDb.createTestInstance(tester.nodeRepository());
         Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
             values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0)));

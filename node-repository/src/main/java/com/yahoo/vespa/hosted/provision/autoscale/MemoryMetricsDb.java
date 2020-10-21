@@ -13,15 +13,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
- * An in-memory time-series "database" of node metrics.
+ * An in-memory implementation of the metrics Db.
  * Thread model: One writer, many readers.
  *
  * @author bratseth
  */
-public class NodeMetricsDb {
+public class MemoryMetricsDb implements MetricsDb {
 
     private final NodeRepository nodeRepository;
 
@@ -31,11 +30,11 @@ public class NodeMetricsDb {
     /** Lock all access for now since we modify lists inside a map */
     private final Object lock = new Object();
 
-    public NodeMetricsDb(NodeRepository nodeRepository) {
+    public MemoryMetricsDb(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
     }
 
-    /** Adds snapshots to this. */
+    @Override
     public void add(Collection<Pair<String, MetricSnapshot>> nodeMetrics) {
         synchronized (lock) {
             for (var value : nodeMetrics) {
@@ -44,21 +43,7 @@ public class NodeMetricsDb {
         }
     }
 
-    private void add(String hostname, MetricSnapshot snapshot) {
-        NodeTimeseries timeseries = db.get(hostname);
-        if (timeseries == null) { // new node
-            Optional<Node> node = nodeRepository.getNode(hostname);
-            if (node.isEmpty()) return;
-            if (node.get().allocation().isEmpty()) return;
-            timeseries = new NodeTimeseries(hostname,
-                                              node.get().allocation().get().membership().cluster().type(),
-                                              new ArrayList<>());
-            db.put(hostname, timeseries);
-        }
-        db.put(hostname, timeseries.add(snapshot));
-    }
-
-    /** Must be called intermittently (as long as any add methods are called) to gc old data */
+    @Override
     public void gc(Clock clock) {
         synchronized (lock) {
             // Each measurement is Object + long + float = 16 + 8 + 4 = 28 bytes
@@ -74,10 +59,7 @@ public class NodeMetricsDb {
         }
     }
 
-    /**
-     * Returns a list of measurements with one entry for each of the given host names
-     * which have any values after startTime, in the same order
-     */
+    @Override
     public List<NodeTimeseries> getNodeTimeseries(Instant startTime, List<String> hostnames) {
         synchronized (lock) {
             List<NodeTimeseries> measurementsList = new ArrayList<>(hostnames.size());
@@ -90,6 +72,23 @@ public class NodeMetricsDb {
             }
             return measurementsList;
         }
+    }
+
+    @Override
+    public void close() {}
+
+    private void add(String hostname, MetricSnapshot snapshot) {
+        NodeTimeseries timeseries = db.get(hostname);
+        if (timeseries == null) { // new node
+            Optional<Node> node = nodeRepository.getNode(hostname);
+            if (node.isEmpty()) return;
+            if (node.get().allocation().isEmpty()) return;
+            timeseries = new NodeTimeseries(hostname,
+                                            node.get().allocation().get().membership().cluster().type(),
+                                            new ArrayList<>());
+            db.put(hostname, timeseries);
+        }
+        db.put(hostname, timeseries.add(snapshot));
     }
 
 }

@@ -16,8 +16,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
@@ -45,7 +44,7 @@ public class ScalingSuggestionsMaintainerTest {
         ApplicationId app2 = ProvisioningTester.makeApplicationId("app2");
         ClusterSpec cluster2 = ProvisioningTester.contentClusterSpec();
 
-        NodeMetricsDb nodeMetricsDb = new NodeMetricsDb(tester.nodeRepository());
+        MetricsDb metricsDb = MetricsDb.createTestInstance(tester.nodeRepository());
 
         tester.makeReadyNodes(20, "flt", NodeType.host, 8);
         tester.activateTenantHosts();
@@ -57,11 +56,11 @@ public class ScalingSuggestionsMaintainerTest {
                                                     new ClusterResources(10, 1, new NodeResources(6.5, 5, 15, 0.1)),
                                                     false, true));
 
-        addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository(), nodeMetricsDb);
+        addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository(), metricsDb);
 
         ScalingSuggestionsMaintainer maintainer = new ScalingSuggestionsMaintainer(tester.nodeRepository(),
-                                                                                   nodeMetricsDb,
+                                                                                   metricsDb,
                                                                                    Duration.ofMinutes(1),
                                                                                    new TestMetric());
         maintainer.maintain();
@@ -73,7 +72,7 @@ public class ScalingSuggestionsMaintainerTest {
     }
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,
-                                NodeRepository nodeRepository, NodeMetricsDb db) {
+                                NodeRepository nodeRepository, MetricsDb db) {
         List<Node> nodes = nodeRepository.getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)

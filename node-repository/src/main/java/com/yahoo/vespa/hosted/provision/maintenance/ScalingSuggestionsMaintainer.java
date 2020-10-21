@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
 import java.time.Duration;
 import java.util.List;
@@ -30,7 +30,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
     private final Autoscaler autoscaler;
 
     public ScalingSuggestionsMaintainer(NodeRepository nodeRepository,
-                                        NodeMetricsDb metricsDb,
+                                        MetricsDb metricsDb,
                                         Duration interval,
                                         Metric metric) {
         super(nodeRepository, interval, metric);
