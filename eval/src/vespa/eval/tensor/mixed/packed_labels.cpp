@@ -38,7 +38,7 @@ PackedLabels::get_label(uint32_t index) const
 }
 
 MemoryUsage
-PackedLabels::estimate_extra_memory_usage() const
+PackedLabels::extra_memory_usage() const
 {
     MemoryUsage extra_usage;
     size_t offsets_size = _offsets.size() * sizeof(uint32_t);

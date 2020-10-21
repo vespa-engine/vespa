@@ -27,11 +27,7 @@ private:
 
     PackedMixedTensor(const ValueType &type,
                       TypedCells cells,
-                      const PackedMappings &mappings)
-      : _type(type),
-        _cells(cells),
-        _mappings(mappings)
-    {}
+                      const PackedMappings &mappings);
 
     template<typename T> friend class PackedMixedTensorBuilder;
 
@@ -48,7 +44,19 @@ public:
     // Value::Index API:
     size_t size() const override { return _mappings.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
-    static void operator delete(void* ptr) { ::operator delete(ptr); }
+
+    // memory management:
+    static size_t add_for_alignment(size_t sz) {
+        size_t unalign = sz & 15;
+        return (unalign == 0) ? unalign : (16 - unalign);
+    }
+    static void operator delete(void *ptr, size_t sz) {
+        if (sz != sizeof(PackedMixedTensor)) {
+            abort();
+        }
+        size_t allocated_sz = ((PackedMixedTensor *)ptr)->get_memory_usage().usedBytes();
+        ::operator delete(ptr, allocated_sz);
+    }
 };
 
 } // namespace

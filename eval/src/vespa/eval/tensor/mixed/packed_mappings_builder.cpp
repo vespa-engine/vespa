@@ -26,7 +26,7 @@ PackedMappingsBuilder::add_mapping_for(ConstArrayRef<vespalib::stringref> addres
 size_t
 PackedMappingsBuilder::extra_memory() const
 {
-    size_t int_store_cnt = (2 + _num_dims) * _mappings.size();
+    size_t int_store_cnt = (1 + _num_dims) * _mappings.size();
     size_t int_store_size = int_store_cnt * sizeof(uint32_t);
     size_t label_cnt = _labels.size();
     size_t label_offsets_size = (1 + label_cnt) * sizeof(uint32_t);

@@ -203,14 +203,26 @@ PackedMixedTensorAllMappings::next_result(ConstArrayRef<vespalib::stringref*> ad
 
 /*********************************************************************************/
 
+PackedMixedTensor::PackedMixedTensor(const ValueType &type,
+                                     TypedCells cells,
+                                     const PackedMappings &mappings)
+    : _type(type),
+      _cells(cells),
+      _mappings(mappings)
+{
+    assert(type.cell_type() == _cells.type);
+}
+
 PackedMixedTensor::~PackedMixedTensor() = default;
 
 MemoryUsage
 PackedMixedTensor::get_memory_usage() const {
     MemoryUsage usage = self_memory_usage<PackedMixedTensor>();
-    size_t cells_size = typify_invoke<1,TypifyCellType,MySize>(type().cell_type(), cells());
+    usage.merge(_mappings.extra_memory_usage());
+    size_t plus = add_for_alignment(usage.usedBytes());
+    usage.merge(MemoryUsage(plus, plus, 0, 0));
+    size_t cells_size = typify_invoke<1,TypifyCellType,MySize>(_cells.type, _cells);
     usage.merge(MemoryUsage(cells_size, cells_size, 0, 0));
-    usage.merge(_mappings.estimate_extra_memory_usage());
     return usage;
 }
 

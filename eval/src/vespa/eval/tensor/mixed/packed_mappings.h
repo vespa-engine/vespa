@@ -48,7 +48,8 @@ public:
     // mapping from label enum to stringref (and vice versa)
     const PackedLabels & label_store() const { return _label_store; }
 
-    MemoryUsage estimate_extra_memory_usage() const;
+    MemoryUsage extra_memory_usage() const;
+
 private:
     PackedMappings(uint32_t num_dims, uint32_t num_mappings,
                    ConstArrayRef<uint32_t> int_store,
@@ -101,7 +102,13 @@ private:
     int32_t sortid_of_address(const Address &address) const;
     int32_t sortid_of_enums(const InternalAddress &address) const;
 public:
-    static void operator delete(void* ptr) { ::operator delete(ptr); }
+    static void operator delete(void *ptr, size_t sz) {
+        if (sz != sizeof(PackedMappings)) {
+            abort();
+        }
+        size_t extra = ((const PackedMappings *)ptr)->extra_memory_usage().usedBytes();
+        ::operator delete(ptr, sz + extra);
+    }
 };
 
 } // namespace
