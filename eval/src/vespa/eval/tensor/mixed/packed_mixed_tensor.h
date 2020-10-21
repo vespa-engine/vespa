@@ -48,6 +48,7 @@ public:
     // Value::Index API:
     size_t size() const override { return _mappings.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
+    static void operator delete(void* ptr) { ::operator delete(ptr); }
 };
 
 } // namespace

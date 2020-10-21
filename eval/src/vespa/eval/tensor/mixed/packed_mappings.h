@@ -100,6 +100,8 @@ private:
 
     int32_t sortid_of_address(const Address &address) const;
     int32_t sortid_of_enums(const InternalAddress &address) const;
+public:
+    static void operator delete(void* ptr) { ::operator delete(ptr); }
 };
 
 } // namespace
