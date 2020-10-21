@@ -23,7 +23,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": 14503000,
@@ -38,7 +38,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": 14503000,
@@ -53,7 +53,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": 14503000,
@@ -92,7 +92,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": 14503000,

@@ -293,7 +293,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Test
     public void test_docker_image_repository() {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        String dockerImageRepository = "https://foo.bar.com:4443/baz";
+        String dockerImageRepository = "foo.bar.com:4443/baz";
         request(HttpRequest.Method.PUT, sessionId, Map.of("dockerImageRepository", dockerImageRepository,
                                                           "applicationName", applicationId().application().value()));
         applicationRepository.activate(tenantRepository.getTenant(tenant), sessionId, timeoutBudget, false);

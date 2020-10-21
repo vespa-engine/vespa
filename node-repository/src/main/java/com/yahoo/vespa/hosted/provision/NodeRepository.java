@@ -39,7 +39,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
-import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
+import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
@@ -107,7 +107,7 @@ public class NodeRepository extends AbstractComponent {
     private final OsVersions osVersions;
     private final InfrastructureVersions infrastructureVersions;
     private final FirmwareChecks firmwareChecks;
-    private final DockerImages dockerImages;
+    private final ContainerImages containerImages;
     private final JobControl jobControl;
     private final Applications applications;
     private final int spareCount;
@@ -129,7 +129,7 @@ public class NodeRepository extends AbstractComponent {
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.dockerImage()),
+             DockerImage.fromString(config.containerImage()),
              flagSource,
              config.useCuratorClientCache(),
              zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() ? 1 : 0,
@@ -166,7 +166,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.dockerImages = new DockerImages(db, dockerImage);
+        this.containerImages = new ContainerImages(db, dockerImage);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.spareCount = spareCount;
@@ -190,9 +190,6 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the curator database client used by this */
     public CuratorDatabaseClient database() { return db; }
 
-    /** Returns the Docker image to use for given node */
-    public DockerImage dockerImage(Node node) { return dockerImages.dockerImageFor(node.type()); }
-
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }
 
@@ -206,7 +203,7 @@ public class NodeRepository extends AbstractComponent {
     public FirmwareChecks firmwareChecks() { return firmwareChecks; }
 
     /** Returns the docker images to use for nodes in this. */
-    public DockerImages dockerImages() { return dockerImages; }
+    public ContainerImages containerImages() { return containerImages; }
 
     /** Returns the status of maintenance jobs managed by this. */
     public JobControl jobControl() { return jobControl; }

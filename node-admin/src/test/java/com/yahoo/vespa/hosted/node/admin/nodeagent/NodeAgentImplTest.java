@@ -55,7 +55,7 @@ public class NodeAgentImplTest {
     private static final String hostName = "host1.test.yahoo.com";
 
     private final NodeAgentContextSupplier contextSupplier = mock(NodeAgentContextSupplier.class);
-    private final DockerImage dockerImage = DockerImage.fromString("dockerImage");
+    private final DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage");
     private final ContainerOperations containerOperations = mock(ContainerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
@@ -175,7 +175,7 @@ public class NodeAgentImplTest {
 
     @Test
     public void containerIsNotStoppedIfNewImageMustBePulled() {
-        final DockerImage newDockerImage = DockerImage.fromString("new-image");
+        final DockerImage newDockerImage = DockerImage.fromString("registry.example.com/new-image");
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(newDockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)

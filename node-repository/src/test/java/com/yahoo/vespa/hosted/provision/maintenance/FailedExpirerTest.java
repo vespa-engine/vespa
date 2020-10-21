@@ -257,7 +257,7 @@ public class FailedExpirerTest {
                                                      clock,
                                                      zone,
                                                      new MockNameResolver().mockAnyLookup(),
-                                                     DockerImage.fromString("docker-image"),
+                                                     DockerImage.fromString("registry.example.com/docker-image"),
                                                      new InMemoryFlagSource(),
                                                      true,
                                                      0, 1000);

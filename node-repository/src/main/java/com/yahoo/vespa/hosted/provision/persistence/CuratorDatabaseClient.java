@@ -66,7 +66,7 @@ public class CuratorDatabaseClient {
     private static final Path inactiveJobsPath = root.append("inactiveJobs");
     private static final Path infrastructureVersionsPath = root.append("infrastructureVersions");
     private static final Path osVersionsPath = root.append("osVersions");
-    private static final Path dockerImagesPath = root.append("dockerImages");
+    private static final Path containerImagesPath = root.append("dockerImages");
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
 
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
@@ -99,7 +99,7 @@ public class CuratorDatabaseClient {
         db.create(inactiveJobsPath);
         db.create(infrastructureVersionsPath);
         db.create(osVersionsPath);
-        db.create(dockerImagesPath);
+        db.create(containerImagesPath);
         db.create(firmwareCheckPath);
         db.create(loadBalancersPath);
         provisionIndexCounter.initialize(100);
@@ -432,21 +432,21 @@ public class CuratorDatabaseClient {
         return db.lock(lockPath.append("osVersionsLock"), defaultLockTimeout);
     }
 
-    // Docker images -----------------------------------------------------------
+    // Container images -----------------------------------------------------------
 
-    public Map<NodeType, DockerImage> readDockerImages() {
-        return read(dockerImagesPath, NodeTypeDockerImagesSerializer::fromJson).orElseGet(TreeMap::new);
+    public Map<NodeType, DockerImage> readContainerImages() {
+        return read(containerImagesPath, NodeTypeContainerImagesSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
-    public void writeDockerImages(Map<NodeType, DockerImage> dockerImages) {
+    public void writeContainerImages(Map<NodeType, DockerImage> images) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(dockerImagesPath.getAbsolute(),
-                NodeTypeDockerImagesSerializer.toJson(dockerImages)));
+        curatorTransaction.add(CuratorOperations.setData(containerImagesPath.getAbsolute(),
+                                                         NodeTypeContainerImagesSerializer.toJson(images)));
         transaction.commit();
     }
 
-    public Lock lockDockerImages() {
+    public Lock lockContainerImages() {
         return db.lock(lockPath.append("dockerImagesLock"), defaultLockTimeout);
     }
 

@@ -1,9 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=config.provisioning
 
-# Docker image to use in REST API responses. This must be a fully qualified name, including registry, but excluding
-# version. Example: my-docker-registry.domain.tld:8080/dist/vespa
-dockerImage string default="dummyImage"
+# Default container image to use for nodes.
+containerImage string default="registry.example.com:9999/myorg/vespa"
 
 # Whether to cache data read from ZooKeeper in-memory.
 useCuratorClientCache bool default=false

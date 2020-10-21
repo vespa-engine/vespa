@@ -28,7 +28,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -43,7 +43,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -58,7 +58,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -73,7 +73,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -112,7 +112,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -127,7 +127,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -142,7 +142,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -157,7 +157,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -172,7 +172,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -187,7 +187,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform dockerImage:6.1"
+        "message": "--- platform registry.example.com/vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",

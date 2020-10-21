@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author freva
  */
-public class NodeTypeDockerImagesSerializerTest {
+public class NodeTypeContainerImagesSerializerTest {
 
     @Test
     public void test_serialization() {
@@ -21,7 +21,7 @@ public class NodeTypeDockerImagesSerializerTest {
         images.put(NodeType.host, DockerImage.fromString("docker.domain.tld/my/repo:1.2.3"));
         images.put(NodeType.confighost, DockerImage.fromString("docker.domain.tld/my/image:2.1"));
 
-        Map<NodeType, DockerImage> serialized = NodeTypeDockerImagesSerializer.fromJson(NodeTypeDockerImagesSerializer.toJson(images));
+        Map<NodeType, DockerImage> serialized = NodeTypeContainerImagesSerializer.fromJson(NodeTypeContainerImagesSerializer.toJson(images));
         assertEquals(images, serialized);
     }
 

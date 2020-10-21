@@ -75,7 +75,7 @@ public class DockerEngineTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void pullImageAsyncIfNeededSuccessfully() {
-        final DockerImage image = DockerImage.fromString("test:1.2.3");
+        final DockerImage image = DockerImage.fromString("registry.example.com/test:1.2.3");
 
         InspectImageResponse inspectImageResponse = mock(InspectImageResponse.class);
         when(inspectImageResponse.getId()).thenReturn(image.asString());
@@ -104,7 +104,7 @@ public class DockerEngineTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void pullImageAsyncIfNeededWithError() {
-        final DockerImage image = DockerImage.fromString("test:1.2.3");
+        final DockerImage image = DockerImage.fromString("registry.example.com/test:1.2.3");
 
         InspectImageCmd imageInspectCmd = mock(InspectImageCmd.class);
         when(imageInspectCmd.exec()).thenThrow(new NotFoundException("Image not found"));
@@ -127,4 +127,5 @@ public class DockerEngineTest {
         assertFalse(docker.imageIsDownloaded(image));
         assertTrue("Should return true, new pull scheduled", docker.pullImageAsyncIfNeeded(image));
     }
+
 }

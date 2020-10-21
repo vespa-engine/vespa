@@ -1,11 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.model.Image;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -147,7 +146,7 @@ public class DockerImageGarbageCollectionTest {
                     ImageBuilder.forId("image-2").withParentId("parent-image"))
                 // Normally, image-1 and parent-image should also be deleted, but because we exclude image-1
                 // we cannot delete parent-image, so only image-2 is deleted
-                .expectDeletedImages(Collections.singletonList("image-1"), "image-2");
+                .expectDeletedImages(List.of("image-1"), "image-2");
     }
 
     /** Same as in {@link #doesNotDeleteExcludedByIdImages()} but with tags */
@@ -157,7 +156,7 @@ public class DockerImageGarbageCollectionTest {
                     ImageBuilder.forId("parent-image").withTags("rhel-6"),
                     ImageBuilder.forId("image-1").withParentId("parent-image").withTags("vespa:6.288.16"),
                     ImageBuilder.forId("image-2").withParentId("parent-image").withTags("vespa:6.289.94"))
-                .expectDeletedImages(Collections.singletonList("vespa:6.288.16"), "vespa:6.289.94");
+                .expectDeletedImages(List.of("vespa:6.288.16"), "vespa:6.289.94");
     }
 
     @Test
@@ -166,14 +165,14 @@ public class DockerImageGarbageCollectionTest {
                     ImageBuilder.forId("parent-image").withTags("rhel-6"),
                     ImageBuilder.forId("image-1").withParentId("parent-image").withTags("vespa:6.288.16"),
                     ImageBuilder.forId("image-2").withParentId("parent-image").withTags("vespa:6.289.94"))
-                .expectDeletedImages(Collections.singletonList("vespa:6.300.1"), "vespa:6.288.16", "vespa:6.289.94", "rhel-6");
+                .expectDeletedImages(List.of("vespa:6.300.1"), "vespa:6.288.16", "vespa:6.289.94", "rhel-6");
     }
 
     private class ImageGcTester {
         private final DockerEngine docker = mock(DockerEngine.class);
         private final ManualClock clock = new ManualClock();
         private final DockerImageGarbageCollector imageGC = new DockerImageGarbageCollector(docker, clock);
-        private final Map<DockerImage, Integer> numDeletes = new HashMap<>();
+        private final Map<String, Integer> numDeletes = new HashMap<>();
         private boolean initialized = false;
 
         private ImageGcTester withExistingImages(ImageBuilder... images) {
@@ -210,17 +209,14 @@ public class DockerImageGarbageCollectionTest {
 
             clock.advance(Duration.ofMinutes(minutesAfter));
 
-            imageGC.deleteUnusedDockerImages(
-                    except.stream().map(DockerImage::fromString).collect(Collectors.toList()),
-                    Duration.ofHours(1).minusSeconds(1));
+            imageGC.deleteUnusedDockerImages(except, Duration.ofHours(1).minusSeconds(1));
 
             Arrays.stream(imageIds)
-                    .map(DockerImage::fromString)
-                    .forEach(image -> {
-                        int newValue = numDeletes.getOrDefault(image, 0) + 1;
-                        numDeletes.put(image, newValue);
-                        verify(docker, times(newValue)).deleteImage(eq(image));
-                    });
+                  .forEach(imageId -> {
+                      int newValue = numDeletes.getOrDefault(imageId, 0) + 1;
+                      numDeletes.put(imageId, newValue);
+                      verify(docker, times(newValue)).deleteImage(eq(imageId));
+                  });
 
             verify(docker, times(numDeletes.values().stream().mapToInt(i -> i).sum())).deleteImage(any());
             return this;
