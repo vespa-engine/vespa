@@ -161,17 +161,6 @@ void perform_generic(const LIST &loop, const LIST &stride) {
     assert(expect == 4096);
 }
 
-void perform_generic_isolate_first(const LIST &loop, const LIST &stride) {
-    size_t expect = 0;
-    auto fun = [&](size_t idx) {
-        (void) idx;
-        assert(idx == expect);
-        ++expect;
-    };
-    run_nested_loop(0, loop, stride, fun, fun);
-    assert(expect == 4096);
-}
-
 void nop() {}
 
 double estimate_cost_1_us(call_t perform_fun) {
@@ -205,22 +194,18 @@ TEST(NestedLoopBenchmark, single_loop) {
     fprintf(stderr, "manual direct single loop (1 layer): %g us\n", estimate_cost_1_us(perform_direct_1));
     fprintf(stderr, "manual call lambda single loop (1 layer): %g us\n", estimate_cost_1_us(perform_direct_lambda_1));
     fprintf(stderr, "generic single loop (1 layer): %g us\n", estimate_cost_1_us(perform_generic));
-    fprintf(stderr, "generic single loop (1 layer, isolate first): %g us\n", estimate_cost_1_us(perform_generic_isolate_first));
     fprintf(stderr, "---------------------------------------------------------------\n");
     fprintf(stderr, "manual direct single loop (2 layers): %g us\n", estimate_cost_2_us(perform_direct_2));
     fprintf(stderr, "manual call lambda single loop (2 layers): %g us\n", estimate_cost_2_us(perform_direct_lambda_2));
     fprintf(stderr, "generic single loop (2 layers): %g us\n", estimate_cost_2_us(perform_generic));
-    fprintf(stderr, "generic single loop (2 layers, isolate first): %g us\n", estimate_cost_2_us(perform_generic_isolate_first));
     fprintf(stderr, "---------------------------------------------------------------\n");
     fprintf(stderr, "manual direct single loop (3 layers): %g us\n", estimate_cost_3_us(perform_direct_3));
     fprintf(stderr, "manual call lambda single loop (3 layers): %g us\n", estimate_cost_3_us(perform_direct_lambda_3));
     fprintf(stderr, "generic single loop (3 layers): %g us\n", estimate_cost_3_us(perform_generic));
-    fprintf(stderr, "generic single loop (3 layers, isolate first): %g us\n", estimate_cost_3_us(perform_generic_isolate_first));
     fprintf(stderr, "---------------------------------------------------------------\n");
     fprintf(stderr, "manual direct single loop (4 layers): %g us\n", estimate_cost_4_us(perform_direct_4));
     fprintf(stderr, "manual call lambda single loop (4 layers): %g us\n", estimate_cost_4_us(perform_direct_lambda_4));
     fprintf(stderr, "generic single loop (4 layers): %g us\n", estimate_cost_4_us(perform_generic));
-    fprintf(stderr, "generic single loop (4 layers, isolate first): %g us\n", estimate_cost_4_us(perform_generic_isolate_first));
     fprintf(stderr, "---------------------------------------------------------------\n");
 }
 

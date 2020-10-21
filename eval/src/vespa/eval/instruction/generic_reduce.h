@@ -29,9 +29,6 @@ struct DenseReducePlan {
     template <typename F> void execute_reduce(size_t offset, const F &f) const {
         run_nested_loop(offset, reduce_loop, reduce_stride, f);
     }
-    template <typename FIRST, typename NEXT> void execute_reduce(size_t offset, const FIRST &first, const NEXT &next) const {
-        run_nested_loop(offset, reduce_loop, reduce_stride, first, next);
-    }
 };
 
 struct SparseReducePlan {

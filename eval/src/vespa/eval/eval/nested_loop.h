@@ -42,38 +42,6 @@ template <typename F> void execute_many(size_t idx, const size_t *loop, const si
 
 //-----------------------------------------------------------------------------
 
-template <typename FIRST, typename NEXT, size_t N>
-void execute_few(size_t idx, const size_t *loop, const size_t *stride, const FIRST &first, const NEXT &next) {
-    if constexpr (N == 0) {
-        first(idx);
-    } else {
-        execute_few<FIRST, NEXT, N - 1>(idx, loop + 1, stride + 1, first, next);
-        idx += *stride;
-        for (size_t i = 1; i < *loop; ++i, idx += *stride) {
-            execute_few<NEXT, N - 1>(idx, loop + 1, stride + 1, next);
-        }
-    }
-}
-
-template <typename FIRST, typename NEXT>
-void execute_many(size_t idx, const size_t *loop, const size_t *stride, size_t levels, const FIRST &first, const NEXT &next) {
-    if ((levels - 1) == 3) {
-        execute_few<FIRST, NEXT, 3>(idx, loop + 1, stride + 1, first, next);
-    } else {
-        execute_many<FIRST, NEXT>(idx, loop + 1, stride + 1, levels - 1, first, next);
-    }
-    idx += *stride;
-    for (size_t i = 1; i < *loop; ++i, idx += *stride) {
-        if ((levels - 1) == 3) {
-            execute_few<NEXT, 3>(idx, loop + 1, stride + 1, next);
-        } else {
-            execute_many<NEXT>(idx, loop + 1, stride + 1, levels - 1, next);
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
-
 template <typename F, size_t N> void execute_few(size_t idx1, size_t idx2, const size_t *loop, const size_t *stride1, const size_t *stride2, const F &f) {
     if constexpr (N == 0) {
         f(idx1, idx2);
@@ -108,20 +76,6 @@ void run_nested_loop(size_t idx, const std::vector<size_t> &loop, const std::vec
     case 2: return nested_loop::execute_few<F, 2>(idx, &loop[0], &stride[0], f);
     case 3: return nested_loop::execute_few<F, 3>(idx, &loop[0], &stride[0], f);
     default: return nested_loop::execute_many<F>(idx, &loop[0], &stride[0], levels, f);
-    }
-}
-
-// Run a nested loop and pass the first index to 'first' and all
-// subsequent indexes to 'next'
-template <typename FIRST, typename NEXT>
-void run_nested_loop(size_t idx, const std::vector<size_t> &loop, const std::vector<size_t> &stride, const FIRST &first, const NEXT &next) {
-    size_t levels = loop.size();
-    switch(levels) {
-    case 0: return first(idx);
-    case 1: return nested_loop::execute_few<FIRST, NEXT, 1>(idx, &loop[0], &stride[0], first, next);
-    case 2: return nested_loop::execute_few<FIRST, NEXT, 2>(idx, &loop[0], &stride[0], first, next);
-    case 3: return nested_loop::execute_few<FIRST, NEXT, 3>(idx, &loop[0], &stride[0], first, next);
-    default: return nested_loop::execute_many<FIRST, NEXT>(idx, &loop[0], &stride[0], levels, first, next);
     }
 }
 
