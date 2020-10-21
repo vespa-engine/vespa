@@ -152,6 +152,12 @@ struct FastValueIndex final : Value::Index {
                 const FastValueIndex &lhs, const FastValueIndex &rhs,
                 ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash);
 
+    template <typename LCT, typename RCT, typename OCT, typename Fun>
+        static const Value &sparse_only_merge(const ValueType &res_type, const Fun &fun,
+                                         const FastValueIndex &lhs, const FastValueIndex &rhs,
+                                         ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells,
+                                         Stash &stash) __attribute((noinline));
+
     size_t size() const override { return map.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 };
@@ -217,6 +223,37 @@ FastValueIndex::sparse_full_overlap_join(const ValueType &res_type, const Fun &f
                                    result.my_cells.push_back(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
                                }
                            });
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+
+template <typename LCT, typename RCT, typename OCT, typename Fun>
+const Value &
+FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
+                             const FastValueIndex &lhs, const FastValueIndex &rhs,
+                             ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash)
+{
+    auto &result = stash.create<FastValue<OCT>>(res_type, lhs.map.num_dims(), 1, lhs.map.size()+rhs.map.size());
+    lhs.map.each_map_entry([&](auto lhs_subspace, auto hash)
+                           {
+                               auto rhs_subspace = rhs.map.lookup(hash);
+                               result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
+                               if (rhs_subspace != FastSparseMap::npos()) {
+                                   result.my_cells.push_back(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
+                               } else {
+                                   result.my_cells.push_back(lhs_cells[lhs_subspace]);
+                               }
+                           });
+    rhs.map.each_map_entry([&](auto rhs_subspace, auto hash)
+                           {
+                               auto lhs_subspace = lhs.map.lookup(hash);
+                               if (lhs_subspace == FastSparseMap::npos()) {
+                                   result.my_index.map.add_mapping(rhs.map.make_addr(rhs_subspace), hash);
+                                   result.my_cells.push_back(rhs_cells[rhs_subspace]);
+                               }
+                           });
+
     return result;
 }
 
