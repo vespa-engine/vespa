@@ -102,6 +102,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 servletResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 asyncContext.complete();
             }
+            request.setHandled(true);
         } else {
             _handler.handle(target, request, servletRequest, servletResponse);
         }
