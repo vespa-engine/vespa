@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <limits>
 #include <vector>
 #include <map>
 
