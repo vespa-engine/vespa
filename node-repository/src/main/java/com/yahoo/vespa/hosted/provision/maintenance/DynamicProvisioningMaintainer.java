@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
@@ -79,6 +80,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
             Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
             try {
                 List<Node> updatedNodes = hostProvisioner.provision(host, children);
+                verifyDns(updatedNodes);
                 nodeRepository().write(updatedNodes, lock);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.INFO, "Failed to provision " + host.hostname() + " with " + children.size() + " children: " +
@@ -166,6 +168,15 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                                  })
                                  .sorted(NodeResourceComparator.memoryDiskCpuOrder().reversed())
                                  .collect(Collectors.toList());
+    }
+
+    /** Verify DNS configuration of given nodes */
+    private void verifyDns(List<Node> nodes) {
+        for (var node : nodes) {
+            for (var ipAddress : node.ipConfig().primary()) {
+                IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver());
+            }
+        }
     }
 
     /** Returns hosts that are considered available, i.e. not parked or flagged for deprovisioning */

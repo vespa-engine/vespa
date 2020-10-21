@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver.RecordType;
 
 import java.net.InetAddress;
 import java.util.Collections;
@@ -403,13 +404,30 @@ public class IP {
 
     }
 
-    /** Validate IP address*/
+    /** Parse given IP address string */
     public static InetAddress parse(String ipAddress) {
         try {
             return InetAddresses.forString(ipAddress);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid IP address '" + ipAddress + "'", e);
         }
+    }
+
+    /** Verify DNS configuration of given hostname and IP address */
+    public static void verifyDns(String hostname, String ipAddress, NameResolver resolver) {
+        RecordType recordType = isV6(ipAddress) ? RecordType.AAAA : RecordType.A;
+        Set<String> addresses = resolver.resolve(hostname, recordType);
+        if (!addresses.equals(Set.of(ipAddress)))
+            throw new IllegalArgumentException("Expected " + hostname + " to resolve to " + ipAddress +
+                                               ", but got " + addresses);
+
+        Optional<String> reverseHostname = resolver.resolveHostname(ipAddress);
+        if (reverseHostname.isEmpty())
+            throw new IllegalArgumentException(ipAddress + " did not resolve to a hostname");
+
+        if (!reverseHostname.get().equals(hostname))
+            throw new IllegalArgumentException(ipAddress + " resolved to " + reverseHostname.get() +
+                                               ", which does not match expected hostname " + hostname);
     }
 
     /** Convert IP address to string. This uses :: for zero compression in IPv6 addresses.  */
