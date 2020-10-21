@@ -232,6 +232,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
                 renderInstrument(root.setObject("payment"), card)
             );
 
+            root.setString("collection", billingController.getCollectionMethod(tenantId).name());
             return new SlimeJsonResponse(slimeResponse);
         } catch (DateTimeParseException e) {
             return ErrorResponse.badRequest("Could not parse date: " + until);

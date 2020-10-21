@@ -34,5 +34,6 @@
                 }
             ]
         }
-    ]
+    ],
+    "collection":"AUTO"
 }
