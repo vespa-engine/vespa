@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.TransportSecurityOptions;
@@ -15,7 +15,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -23,10 +22,8 @@ import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.net.ssl.SSLContext;
-import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -35,11 +32,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
@@ -53,7 +49,6 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     private static final String HEALTH_CHECK_PATH = "/status.html";
 
-    private final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("health-check-proxy-client"));
     private final Map<Integer, ProxyTarget> portToProxyTargetMapping;
 
     HealthCheckProxyHandler(List<JDiscServerConnector> connectors) {
@@ -94,13 +89,27 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         int localPort = getConnectorLocalPort(servletRequest);
         ProxyTarget proxyTarget = portToProxyTargetMapping.get(localPort);
         if (proxyTarget != null) {
-            AsyncContext asyncContext = request.startAsync();
-            ServletOutputStream out = servletResponse.getOutputStream();
             if (servletRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
-                executor.execute(new ProxyRequestTask(asyncContext, proxyTarget, servletResponse, out));
+                try (CloseableHttpResponse proxyResponse = proxyTarget.requestStatusHtml()) {
+                    servletResponse.setStatus(proxyResponse.getStatusLine().getStatusCode());
+                    servletResponse.setHeader("Vespa-Health-Check-Proxy-Target", Integer.toString(proxyTarget.port));
+                    HttpEntity entity = proxyResponse.getEntity();
+                    if (entity != null) {
+                        Header contentType = entity.getContentType();
+                        if (contentType != null) {
+                            servletResponse.addHeader("Content-Type", contentType.getValue());
+                        }
+                        try (ServletOutputStream output = servletResponse.getOutputStream()) {
+                            entity.getContent().transferTo(output);
+                        }
+                    }
+                } catch (Exception e) { // Typically timeouts which are reported as SSLHandshakeException
+                    String message = String.format("Health check request from port %d to %d failed: %s", localPort, proxyTarget.port, e.getMessage());
+                    log.log(Level.FINE, message, e);
+                    servletResponse.sendError(Response.Status.INTERNAL_SERVER_ERROR, message);
+                }
             } else {
-                servletResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                asyncContext.complete();
+                servletResponse.sendError(NOT_FOUND);
             }
         } else {
             _handler.handle(target, request, servletRequest, servletResponse);
@@ -115,53 +124,11 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         super.doStop();
     }
 
-    private static class ProxyRequestTask implements Runnable {
-
-        final AsyncContext asyncContext;
-        final ProxyTarget target;
-        final HttpServletResponse servletResponse;
-        final ServletOutputStream output;
-
-        ProxyRequestTask(AsyncContext asyncContext, ProxyTarget target, HttpServletResponse servletResponse, ServletOutputStream output) {
-            this.asyncContext = asyncContext;
-            this.target = target;
-            this.servletResponse = servletResponse;
-            this.output = output;
-        }
-
-        @Override
-        public void run() {
-            StatusResponse statusResponse = target.requestStatusHtml();
-            servletResponse.setStatus(statusResponse.statusCode);
-            if (statusResponse.contentType != null) {
-                servletResponse.setHeader("Content-Type", statusResponse.contentType);
-            }
-            output.setWriteListener(new WriteListener() {
-                @Override
-                public void onWritePossible() throws IOException {
-                    if (output.isReady()) {
-                        if (statusResponse.content != null) {
-                            output.write(statusResponse.content);
-                        }
-                        asyncContext.complete();
-                    }
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    log.log(Level.FINE, t, () -> "Failed to write status response: " + t.getMessage());
-                    asyncContext.complete();
-                }
-            });
-        }
-    }
-
     private static class ProxyTarget implements AutoCloseable {
         final int port;
         final Duration timeout;
         final SslContextFactory.Server sslContextFactory;
         volatile CloseableHttpClient client;
-        volatile StatusResponse lastResponse;
 
         ProxyTarget(int port, Duration timeout, SslContextFactory.Server sslContextFactory) {
             this.port = port;
@@ -169,32 +136,9 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             this.sslContextFactory = sslContextFactory;
         }
 
-        StatusResponse requestStatusHtml() {
-            StatusResponse response = lastResponse;
-            if (response != null && !response.isExpired()) {
-                return response;
-            }
-            StatusResponse statusResponse = getStatusResponse();
-            lastResponse = statusResponse;
-            return statusResponse;
-        }
-
-        private StatusResponse getStatusResponse() {
-            try (CloseableHttpResponse clientResponse = client().execute(new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH))) {
-                int statusCode = clientResponse.getStatusLine().getStatusCode();
-                HttpEntity entity = clientResponse.getEntity();
-                if (entity != null) {
-                    Header contentTypeHeader = entity.getContentType();
-                    String contentType = contentTypeHeader != null ? contentTypeHeader.getValue() : null;
-                    byte[] content = EntityUtils.toByteArray(entity);
-                    return new StatusResponse(statusCode, contentType, content);
-                } else {
-                    return new StatusResponse(statusCode, null, null);
-                }
-            } catch (Exception e) {
-                log.log(Level.FINE, e, () -> "Proxy request failed" + e.getMessage());
-                return new StatusResponse(500, "text/plain", e.getMessage().getBytes());
-            }
+        CloseableHttpResponse requestStatusHtml() throws IOException {
+            return client()
+                    .execute(new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH));
         }
 
         // Client construction must be delayed to ensure that the SslContextFactory is started before calling getSslContext().
@@ -255,20 +199,5 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 }
             }
         }
-    }
-
-    private static class StatusResponse {
-        final long createdAt = System.nanoTime();
-        final int statusCode;
-        final String contentType;
-        final byte[] content;
-
-        StatusResponse(int statusCode, String contentType, byte[] content) {
-            this.statusCode = statusCode;
-            this.contentType = contentType;
-            this.content = content;
-        }
-
-        boolean isExpired() { return System.nanoTime() - createdAt > Duration.ofSeconds(1).toNanos(); }
     }
 }
