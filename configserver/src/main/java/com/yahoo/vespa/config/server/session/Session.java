@@ -17,34 +17,38 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A session represents an instance of an application that can be edited, prepared and activated.
+ * A session represents an instance of an application that can be edited, prepared and activated. This
+ * class represents the common stuff between sessions working on the local file
+ * system ({@link LocalSession}s) and sessions working on zookeeper ({@link RemoteSession}s).
  *
  * @author Ulf Lilleengen
  * @author hmusum
  */
-public class Session implements Comparable<Session>  {
+public abstract class Session implements Comparable<Session>  {
 
     protected final long sessionId;
     protected final TenantName tenant;
     protected final SessionZooKeeperClient sessionZooKeeperClient;
     protected final Optional<ApplicationPackage> applicationPackage;
-    private final Optional<ApplicationSet> applicationSet;
 
-    public Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient, ApplicationPackage applicationPackage) {
-        this(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationPackage), Optional.empty());
+    protected Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient) {
+        this(tenant, sessionId, sessionZooKeeperClient, Optional.empty());
     }
 
-    public Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient,
-                   Optional<ApplicationPackage> applicationPackage, Optional<ApplicationSet> applicationSet) {
+    protected Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient,
+                      ApplicationPackage applicationPackage) {
+        this(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationPackage));
+    }
+
+    private Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient,
+                      Optional<ApplicationPackage> applicationPackage) {
         this.tenant = tenant;
         this.sessionId = sessionId;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
         this.applicationPackage = applicationPackage;
-        this.applicationSet = applicationSet;
     }
 
     public final long getSessionId() {
@@ -59,18 +63,9 @@ public class Session implements Comparable<Session>  {
         return sessionZooKeeperClient;
     }
 
-    public synchronized Session activated(ApplicationSet applicationSet) {
-        Objects.requireNonNull(applicationSet, "applicationSet cannot be null");
-        return new Session(tenant, sessionId, sessionZooKeeperClient, applicationPackage, Optional.of(applicationSet));
-    }
-
-    public synchronized Session deactivated() {
-        return new Session(tenant, sessionId, sessionZooKeeperClient, applicationPackage, Optional.empty());
-    }
-
     @Override
     public String toString() {
-        return "Session,id=" + sessionId + ",application set=" + applicationSet + ",application package=" + applicationPackage;
+        return "Session,id=" + sessionId;
     }
 
     public long getActiveSessionAtCreate() {
@@ -186,14 +181,14 @@ public class Session implements Comparable<Session>  {
         return applicationPackage.orElseThrow(() -> new RuntimeException("No application package found for " + this));
     }
 
-    public ApplicationFile getApplicationFile(Path relativePath, Session.Mode mode) {
+    public ApplicationFile getApplicationFile(Path relativePath, LocalSession.Mode mode) {
         if (mode.equals(Session.Mode.WRITE)) {
             markSessionEdited();
         }
         return getApplicationPackage().getFile(relativePath);
     }
 
-    Optional<ApplicationSet> applicationSet() { return applicationSet; }
+    Optional<ApplicationSet> applicationSet() { return Optional.empty(); };
 
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);
