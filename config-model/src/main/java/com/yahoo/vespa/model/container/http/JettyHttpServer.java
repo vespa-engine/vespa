@@ -81,7 +81,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         double scaleFactor = cluster.jettyThreadpoolSizeFactor().orElse(0);
         if (vcpu > 0 && scaleFactor > 0) {
             int minThreads = 16;
-            int threads = Math.max(minThreads, (int) Math.ceil(vcpu * scaleFactor));
+            int threads = minThreads + (int) Math.ceil(vcpu * scaleFactor);
             builder.maxWorkerThreads(threads).minWorkerThreads(threads);
         }
     }

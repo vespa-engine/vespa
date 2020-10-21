@@ -298,8 +298,8 @@ public class ContainerClusterTest {
         root.freezeModelTopology();
 
         ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
-        assertEquals(48, cfg.maxWorkerThreads());
-        assertEquals(48, cfg.minWorkerThreads());
+        assertEquals(64, cfg.maxWorkerThreads());
+        assertEquals(64, cfg.minWorkerThreads());
     }
 
     @Test
