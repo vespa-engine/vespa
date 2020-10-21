@@ -53,7 +53,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     private static final String HEALTH_CHECK_PATH = "/status.html";
 
-    private final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("health-check-proxy-client-"));
+    private final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("health-check-proxy-client"));
     private final Map<Integer, ProxyTarget> portToProxyTargetMapping;
 
     HealthCheckProxyHandler(List<JDiscServerConnector> connectors) {
@@ -174,7 +174,9 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             if (response != null && !response.isExpired()) {
                 return response;
             }
-            return this.lastResponse = getStatusResponse();
+            StatusResponse statusResponse = getStatusResponse();
+            lastResponse = statusResponse;
+            return statusResponse;
         }
 
         private StatusResponse getStatusResponse() {
