@@ -11,10 +11,9 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
 import java.time.Duration;
 import java.util.List;
@@ -29,13 +28,13 @@ import java.util.stream.Collectors;
  */
 public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
-    private final NodeMetricsDb metricsDb;
+    private final MetricsDb metricsDb;
     private final Autoscaler autoscaler;
     private final Deployer deployer;
     private final Metric metric;
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
-                                 NodeMetricsDb metricsDb,
+                                 MetricsDb metricsDb,
                                  Deployer deployer,
                                  Metric metric,
                                  Duration interval) {

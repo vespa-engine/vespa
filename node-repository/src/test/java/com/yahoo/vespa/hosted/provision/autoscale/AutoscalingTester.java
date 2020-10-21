@@ -41,7 +41,7 @@ class AutoscalingTester {
 
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
-    private final NodeMetricsDb db;
+    private final MetricsDb db;
     private final MockHostResourcesCalculator hostResourcesCalculator;
 
     /** Creates an autoscaling tester with a single host type ready */
@@ -68,7 +68,7 @@ class AutoscalingTester {
                                                              .build();
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);
-        db = new NodeMetricsDb(provisioningTester.nodeRepository());
+        db = MetricsDb.createTestInstance(provisioningTester.nodeRepository());
         autoscaler = new Autoscaler(db, nodeRepository());
     }
 
@@ -225,7 +225,7 @@ class AutoscalingTester {
         return provisioningTester.nodeRepository();
     }
 
-    public NodeMetricsDb nodeMetricsDb() { return db; }
+    public MetricsDb nodeMetricsDb() { return db; }
 
     private static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
