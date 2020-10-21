@@ -20,7 +20,7 @@ TEST("require that aggregator list returns appropriate entries") {
 TEST("require that AVG aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::AVG, stash);
-    EXPECT_EQUAL(aggr.result(), 0.0);
+    EXPECT_TRUE(std::isnan(aggr.result()));
     aggr.first(10.0),  EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.next(20.0),   EXPECT_EQUAL(aggr.result(), 15.0);
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 20.0);
@@ -42,7 +42,7 @@ TEST("require that COUNT aggregator works as expected") {
 TEST("require that PROD aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::PROD, stash);
-    EXPECT_EQUAL(aggr.result(), 0.0);
+    EXPECT_EQUAL(aggr.result(), 1.0);
     aggr.first(10.0),  EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.next(20.0),   EXPECT_EQUAL(aggr.result(), 200.0);
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 6000.0);
@@ -64,7 +64,7 @@ TEST("require that SUM aggregator works as expected") {
 TEST("require that MAX aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::MAX, stash);
-    EXPECT_EQUAL(aggr.result(), 0.0);
+    EXPECT_EQUAL(aggr.result(), -std::numeric_limits<double>::infinity());
     aggr.first(10.0),  EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.next(20.0),   EXPECT_EQUAL(aggr.result(), 20.0);
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 30.0);
@@ -75,7 +75,7 @@ TEST("require that MAX aggregator works as expected") {
 TEST("require that MIN aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::MIN, stash);
-    EXPECT_EQUAL(aggr.result(), 0.0);
+    EXPECT_EQUAL(aggr.result(), std::numeric_limits<double>::infinity());
     aggr.first(10.0),  EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.next(20.0),   EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 10.0);

@@ -60,7 +60,6 @@ struct SparseReduceState {
             fetch_address[i] = &full_address[i];
         }
     }
-    ConstArrayRef<vespalib::stringref*> keep_addr() const { return {keep_address}; }
     ~SparseReduceState();
 };
 SparseReduceState::~SparseReduceState() = default;
@@ -75,24 +74,16 @@ generic_reduce(const Value &value, const ReduceParam &param) {
     SparseReduceState sparse(param.sparse_plan);
     auto full_view = value.index().create_view({});
     full_view->lookup({});
+    ConstArrayRef<vespalib::stringref*> keep_addr(sparse.keep_address);
     while (full_view->next_result(sparse.fetch_address, sparse.subspace)) {
-        auto res = map.lookup_or_add_entry(sparse.keep_addr());
+        auto [tag, ignore] = map.lookup_or_add_entry(keep_addr);
         AGGR *dst = nullptr;
-        auto first = [&](size_t idx) { (dst++)->first(cells[idx]); };
         auto next = [&](size_t idx) { (dst++)->next(cells[idx]); };
-        auto init_aggrs = [&](size_t idx) {
-            dst = map.get_values(res.first).begin();
-            param.dense_plan.execute_keep(idx, first);
-        };
         auto fill_aggrs = [&](size_t idx) {
-            dst = map.get_values(res.first).begin();
+            dst = map.get_values(tag).begin();
             param.dense_plan.execute_keep(idx, next);
         };
-        if (res.second) {
-            param.dense_plan.execute_reduce((sparse.subspace * param.dense_plan.in_size), init_aggrs, fill_aggrs);
-        } else {
-            param.dense_plan.execute_reduce((sparse.subspace * param.dense_plan.in_size), fill_aggrs);
-        }
+        param.dense_plan.execute_reduce((sparse.subspace * param.dense_plan.in_size), fill_aggrs);
     }
     auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.keep_dims.size(), param.dense_plan.out_size, map.size());
     map.each_entry([&](const auto &keys, const auto &values)

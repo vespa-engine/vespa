@@ -13,16 +13,6 @@ std::vector<size_t> run_single(size_t idx_in, const std::vector<size_t> &loop, c
     return result;
 }
 
-std::pair<std::vector<size_t>,std::vector<size_t>> run_single_isolated(size_t idx_in, const std::vector<size_t> &loop, const std::vector<size_t> &stride) {
-    std::vector<size_t> res1;
-    std::vector<size_t> res2;
-    auto capture1 = [&](size_t idx_out) { res1.push_back(idx_out); };
-    auto capture2 = [&](size_t idx_out) { res2.push_back(idx_out); };
-    assert(loop.size() == stride.size());
-    run_nested_loop(idx_in, loop, stride, capture1, capture2);
-    return std::make_pair(res1, res2);
-}
-
 std::vector<std::pair<size_t,size_t>> run_double(size_t idx1_in, size_t idx2_in, const std::vector<size_t> &loop,
                                                  const std::vector<size_t> &stride1, const std::vector<size_t> &stride2)
 {
@@ -32,16 +22,6 @@ std::vector<std::pair<size_t,size_t>> run_double(size_t idx1_in, size_t idx2_in,
     assert(loop.size() == stride2.size());
     run_nested_loop(idx1_in, idx2_in, loop, stride1, stride2, capture);
     return result;
-}
-
-void verify_isolated(size_t idx_in, const std::vector<size_t> &loop, const std::vector<size_t> &stride) {
-    auto full = run_single(idx_in, loop, stride);
-    auto actual = run_single_isolated(idx_in, loop, stride);
-    ASSERT_EQ(actual.first.size(), 1);
-    ASSERT_EQ(actual.second.size(), full.size() - 1);
-    EXPECT_EQ(actual.first[0], full[0]);
-    full.erase(full.begin());
-    EXPECT_EQ(actual.second, full);
 }
 
 void verify_double(size_t idx1_in, size_t idx2_in, const std::vector<size_t> &loop,
@@ -67,14 +47,6 @@ TEST(NestedLoopTest, single_nested_loop_can_be_executed) {
     EXPECT_EQ(v({100,110,100,110,101,111,101,111}), run_single(100, {2,2,2}, {1,0,10}));
     EXPECT_EQ(v({100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115}),
               run_single(100, {2,2,2,2}, {8,4,2,1}));
-}
-
-TEST(NestedLoopTest, single_nested_loop_with_first_entry_isolated_can_be_executed) {
-    verify_isolated(10, {}, {});
-    verify_isolated(10, {3}, {5});
-    verify_isolated(10, {3,3}, {2,3});
-    verify_isolated(10, {3,3,2}, {2,0,3});
-    verify_isolated(10, {2,3,2,3}, {7,2,1,3});
 }
 
 TEST(NestedLoopTest, double_nested_loop_can_be_executed) {

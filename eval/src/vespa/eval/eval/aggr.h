@@ -60,7 +60,7 @@ namespace aggr {
 template <typename T> class Avg {
 private:
     T _sum = 0.0;
-    size_t _cnt = 1;
+    size_t _cnt = 0;
 public:
     void first(T value) {
         _sum = value;
@@ -84,7 +84,7 @@ public:
 
 template <typename T> class Prod {
 private:
-    T _prod = 0.0;
+    T _prod = 1.0;
 public:
     void first(T value) { _prod = value; }
     void next(T value) { _prod *= value; }
@@ -102,7 +102,7 @@ public:
 
 template <typename T> class Max {
 private:
-    T _max = 0.0;
+    T _max = -std::numeric_limits<T>::infinity();
 public:
     void first(T value) { _max = value; }
     void next(T value) { _max = std::max(_max, value); }
@@ -111,7 +111,7 @@ public:
 
 template <typename T> class Min {
 private:
-    T _min = 0.0;
+    T _min = std::numeric_limits<T>::infinity();
 public:
     void first(T value) { _min = value; }
     void next(T value) { _min = std::min(_min, value); }
