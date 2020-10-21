@@ -105,11 +105,11 @@ public class SessionRepositoryTest {
         setup();
         long firstSessionId = deploy();
         long secondSessionId = deploy();
-        assertNotNull(sessionRepository.getSession(firstSessionId));
-        assertNotNull(sessionRepository.getSession(secondSessionId));
-        assertNull(sessionRepository.getSession(secondSessionId + 1));
+        assertNotNull(sessionRepository.getLocalSession(firstSessionId));
+        assertNotNull(sessionRepository.getLocalSession(secondSessionId));
+        assertNull(sessionRepository.getLocalSession(secondSessionId + 1));
 
-        ApplicationSet applicationSet = sessionRepository.ensureApplicationLoaded(sessionRepository.getSession(firstSessionId));
+        ApplicationSet applicationSet = sessionRepository.ensureApplicationLoaded(sessionRepository.getRemoteSession(firstSessionId));
         assertNotNull(applicationSet);
         assertEquals(2, applicationSet.getApplicationGeneration());
         assertEquals(applicationId.application(), applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application());
@@ -117,8 +117,8 @@ public class SessionRepositoryTest {
 
         sessionRepository.close();
         // All created sessions are deleted
-        assertNull(sessionRepository.getSession(firstSessionId));
-        assertNull(sessionRepository.getSession(secondSessionId));
+        assertNull(sessionRepository.getLocalSession(firstSessionId));
+        assertNull(sessionRepository.getLocalSession(secondSessionId));
     }
 
     @Test
@@ -128,16 +128,16 @@ public class SessionRepositoryTest {
 
         long firstSessionId = deploy();
         long secondSessionId = deploy();
-        assertNotNull(sessionRepository.getSession(firstSessionId));
-        assertNotNull(sessionRepository.getSession(secondSessionId));
-        assertNull(sessionRepository.getSession(secondSessionId + 1));
+        assertNotNull(sessionRepository.getLocalSession(firstSessionId));
+        assertNotNull(sessionRepository.getLocalSession(secondSessionId));
+        assertNull(sessionRepository.getLocalSession(secondSessionId + 1));
 
         // tenant is "newTenant"
         TenantName newTenant = TenantName.from("newTenant");
         tenantRepository.addTenant(newTenant);
         long sessionId = deploy(ApplicationId.from(newTenant.value(), "testapp", "default"));
         SessionRepository sessionRepository2 = tenantRepository.getTenant(newTenant).getSessionRepository();
-        assertNotNull(sessionRepository2.getSession(sessionId));
+        assertNotNull(sessionRepository2.getLocalSession(sessionId));
     }
 
     @Test
@@ -158,9 +158,9 @@ public class SessionRepositoryTest {
         assertStatusChange(sessionId, Session.Status.PREPARE);
         assertStatusChange(sessionId, Session.Status.ACTIVATE);
 
-        sessionRepository.delete(sessionRepository.getSession(sessionId));
+        sessionRepository.delete(sessionRepository.getRemoteSession(sessionId));
         assertSessionRemoved(sessionId);
-        assertNull(sessionRepository.getSession(sessionId));
+        assertNull(sessionRepository.getRemoteSession(sessionId));
     }
 
     // If reading a session throws an exception it should be handled and not prevent other applications
@@ -277,8 +277,8 @@ public class SessionRepositoryTest {
     }
 
     private void assertSessionRemoved(long sessionId) {
-        waitFor(p -> sessionRepository.getSession(sessionId) == null, sessionId);
-        assertNull(sessionRepository.getSession(sessionId));
+        waitFor(p -> sessionRepository.getRemoteSession(sessionId) == null, sessionId);
+        assertNull(sessionRepository.getRemoteSession(sessionId));
     }
 
     private void assertRemoteSessionExists(long sessionId) {
@@ -286,10 +286,10 @@ public class SessionRepositoryTest {
     }
 
     private void assertRemoteSessionStatus(long sessionId, Session.Status status) {
-        waitFor(p -> sessionRepository.getSession(sessionId) != null &&
-                     sessionRepository.getSession(sessionId).getStatus() == status, sessionId);
-        assertNotNull(sessionRepository.getSession(sessionId));
-        assertThat(sessionRepository.getSession(sessionId).getStatus(), is(status));
+        waitFor(p -> sessionRepository.getRemoteSession(sessionId) != null &&
+                     sessionRepository.getRemoteSession(sessionId).getStatus() == status, sessionId);
+        assertNotNull(sessionRepository.getRemoteSession(sessionId));
+        assertThat(sessionRepository.getRemoteSession(sessionId).getStatus(), is(status));
     }
 
     private void waitFor(LongPredicate predicate, long sessionId) {

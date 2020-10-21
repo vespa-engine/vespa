@@ -50,7 +50,9 @@ import com.yahoo.vespa.config.server.http.v2.ProtonMetricsResponse;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.ProtonMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
@@ -480,10 +482,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
-            // Deleting an application is done by deleting the session, other config
+            // Deleting an application is done by deleting the remote session, other config
             // servers will pick this up and clean up through the watcher in this class
             try {
-                Session session = getSession(tenant, activeSession.get());
+                Session session = getRemoteSession(tenant, activeSession.get());
                 tenant.getSessionRepository().delete(session);
             } catch (NotFoundException e) {
                 log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
@@ -607,7 +609,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             Tenant tenant = getTenant(applicationId);
             if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
-            Session session = getSession(tenant, sessionId);
+            RemoteSession session = getRemoteSession(tenant, sessionId);
             SessionRepository sessionRepository = tenant.getSessionRepository();
             return sessionRepository.ensureApplicationLoaded(session).getForVersionOrLatest(version, clock.instant());
         } catch (NotFoundException e) {
@@ -759,7 +761,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      *
      * @return the active session, or null if there is no active session for the given application id.
      */
-    public Session getActiveRemoteSession(ApplicationId applicationId) {
+    public RemoteSession getActiveRemoteSession(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new IllegalArgumentException("Could not find any tenant for '" + applicationId + "'");
         return getActiveSession(tenant, applicationId);
@@ -779,14 +781,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void validateThatSessionIsNotActive(Tenant tenant, long sessionId) {
-        Session session = getSession(tenant, sessionId);
+        Session session = getRemoteSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
             throw new IllegalStateException("Session is active: " + sessionId);
         }
     }
 
     public void validateThatSessionIsPrepared(Tenant tenant, long sessionId) {
-        Session session = getSession(tenant, sessionId);
+        Session session = getRemoteSession(tenant, sessionId);
         if ( ! Session.Status.PREPARE.equals(session.getStatus()))
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
@@ -817,9 +819,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public void deleteExpiredSessions() {
-        Map<Tenant, Collection<Session>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getSessions()));
+    public void deleteExpiredLocalSessions() {
+        Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
+        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()
@@ -835,6 +837,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 activeSessions.put(applicationId, activeSession.getSessionId());
         });
         sessionsPerTenant.keySet().forEach(tenant -> tenant.getSessionRepository().deleteExpiredSessions(activeSessions));
+    }
+
+    public int deleteExpiredRemoteSessions(Duration expiryTime) {
+        return deleteExpiredRemoteSessions(clock, expiryTime);
+    }
+
+    public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
+        return tenantRepository.getAllTenants()
+                .stream()
+                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock, expiryTime))
+                .mapToInt(i -> i)
+                .sum();
     }
 
     // ---------------- Tenant operations ----------------------------------------------------------------
@@ -909,14 +923,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Session getLocalSession(Tenant tenant, long sessionId) {
-        Session session = tenant.getSessionRepository().getSession(sessionId);
+        Session session = tenant.getSessionRepository().getLocalSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
     }
 
-    private Session getSession(Tenant tenant, long sessionId) {
-        Session session = tenant.getSessionRepository().getSession(sessionId);
+    private RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
+        RemoteSession session = tenant.getSessionRepository().getRemoteSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
@@ -952,13 +966,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // TODO: Merge this and getActiveSession(), they are almost identical
     private Session getExistingSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return getSession(tenant, applicationRepo.requireActiveSessionOf(applicationId));
+        return getRemoteSession(tenant, applicationRepo.requireActiveSessionOf(applicationId));
     }
 
-    public Session getActiveSession(Tenant tenant, ApplicationId applicationId) {
+    public RemoteSession getActiveSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
-            return tenant.getSessionRepository().getSession(applicationRepo.requireActiveSessionOf(applicationId));
+            return tenant.getSessionRepository().getRemoteSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
     }
@@ -966,7 +980,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Session getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
-            return tenant.getSessionRepository().getSession(applicationRepo.requireActiveSessionOf(applicationId));
+            return tenant.getSessionRepository().getLocalSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
     }
