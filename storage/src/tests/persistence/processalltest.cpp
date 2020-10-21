@@ -3,9 +3,9 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/persistence/processallhandler.h>
 #include <vespa/storage/persistence/messages.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -14,6 +14,20 @@ namespace storage {
 
 class ProcessAllHandlerTest : public SingleDiskPersistenceTestUtils {
 };
+
+TEST_F(ProcessAllHandlerTest, change_of_repos_is_reflected) {
+    EXPECT_EQ(3u, getComponent().getGeneration());
+    auto old = getComponent().getTypeRepo()->documentTypeRepo;
+    auto old2 = &getEnv().getDocumentTypeRepo();
+    EXPECT_EQ(old.get(), old2);
+
+    auto newDocRepo = std::make_shared<document::DocumentTypeRepo>(*old->getDocumentType("testdoctype1"));
+    getComponent().setDocumentTypeRepo(newDocRepo);
+
+    EXPECT_EQ(4u, getComponent().getGeneration());
+    EXPECT_EQ(newDocRepo.get(), getComponent().getTypeRepo()->documentTypeRepo.get());
+    EXPECT_EQ(newDocRepo.get(), &getEnv().getDocumentTypeRepo());
+}
 
 TEST_F(ProcessAllHandlerTest, remove_location) {
     document::BucketId bucketId(16, 4);
