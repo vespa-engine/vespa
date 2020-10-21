@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -226,6 +227,11 @@ public class NodeRepositoryMock implements NodeRepository {
         nodeRepository.get(zoneId).remove(HostName.from(hostName));
     }
 
+    @Override
+    public void patchNode(ZoneId zoneId, String hostName, NodeRepositoryNode node) {
+        throw new UnsupportedOperationException();
+    }
+
     public Optional<Duration> osUpgradeBudget(ZoneId zone, NodeType type, Version version) {
         return Optional.ofNullable(osUpgradeBudgets.get(Objects.hash(zone, type, version)));
     }
@@ -262,6 +268,10 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void doReboot(DeploymentId deployment, Optional<HostName> hostname) {
         modifyNodes(deployment, hostname, node -> new Node.Builder(node).rebootGeneration(node.rebootGeneration() + 1).build());
+    }
+
+    public void addReport(ZoneId zoneId, HostName hostName, String reportId, JsonNode report) {
+        nodeRepository.get(zoneId).get(hostName).reports().put(reportId, report);
     }
 
 }
