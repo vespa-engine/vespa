@@ -118,23 +118,44 @@ void my_mixed_merge_op(State &state, uint64_t param_in) {
     state.pop_pop_push(result_ref);
 };
 
+/** possible generic utility */
+template<typename T, typename U>
+const T *
+recognize_by_type_index(const U & object)
+{
+    if (std::type_index(typeid(object)) == std::type_index(typeid(T))) {
+        return static_cast<const T *>(&object);
+    }
+    return nullptr;
+}
+
+/** possible FastValue-specific utility */
+class Indexes {
+private:
+    const FastValueIndex *_a;
+    const FastValueIndex *_b;
+public:
+    Indexes(const Value::Index &a_in, const Value::Index &b_in)
+        : _a(recognize_by_type_index<FastValueIndex>(a_in)),
+          _b(recognize_by_type_index<FastValueIndex>(b_in))
+    {
+    }
+    operator bool() const { return _a && _b; }
+    const FastValueIndex &a() const { return *_a; }
+    const FastValueIndex &b() const { return *_b; }
+};
+
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 void my_sparse_merge_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<MergeParam>(param_in);
     const Value &lhs = state.peek(1);
     const Value &rhs = state.peek(0);
-    const Value::Index &lhs_index = lhs.index();
-    const Value::Index &rhs_index = rhs.index();
-    if ((std::type_index(typeid(lhs_index)) == std::type_index(typeid(FastValueIndex))) &&
-        (std::type_index(typeid(rhs_index)) == std::type_index(typeid(FastValueIndex))))
-    {
-        const FastValueIndex &lhs_fast = static_cast<const FastValueIndex&>(lhs_index);
-        const FastValueIndex &rhs_fast = static_cast<const FastValueIndex&>(rhs_index);
+    if (auto indexes = Indexes(lhs.index(), rhs.index())) {
         auto lhs_cells = lhs.cells().typify<LCT>();
         auto rhs_cells = rhs.cells().typify<RCT>();
         return state.pop_pop_push(
                 FastValueIndex::sparse_only_merge<LCT,RCT,OCT,Fun>(
-                        param.res_type, Fun(param.function), lhs_fast, rhs_fast, lhs_cells, rhs_cells, state.stash));
+                        param.res_type, Fun(param.function), indexes.a(), indexes.b(), lhs_cells, rhs_cells, state.stash));
     }
     auto up = generic_mixed_merge<LCT, RCT, OCT, Fun>(lhs, rhs, param);
     auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
