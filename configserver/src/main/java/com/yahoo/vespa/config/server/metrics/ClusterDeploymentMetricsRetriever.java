@@ -4,12 +4,17 @@ package com.yahoo.vespa.config.server.metrics;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -89,18 +94,11 @@ public class ClusterDeploymentMetricsRetriever {
     }
 
     private static void getHostMetrics(URI hostURI, Map<ClusterInfo, DeploymentMetricsAggregator> clusterMetricsMap) {
-        Slime responseBody;
-        try {
-            responseBody = MetricsSlime.doMetricsRequest(hostURI, httpClient);
-        } catch (IOException e) {
-            // Usually caused by applications being deleted during metric retrieval
-            log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
-            responseBody = new Slime();
-        }
-        var parseError = responseBody.get().field("error_message");
+        Slime responseBody = doMetricsRequest(hostURI);
+        Cursor error = responseBody.get().field("error_message");
 
-        if (parseError.valid()) {
-            log.info("Failed to retrieve metrics from " + hostURI + ": " + parseError.asString());
+        if (error.valid()) {
+            log.info("Failed to retrieve metrics from " + hostURI + ": " + error.asString());
         }
 
         Inspector services = responseBody.get().field("services");
@@ -108,8 +106,6 @@ public class ClusterDeploymentMetricsRetriever {
             parseService(servicesInspector, clusterMetricsMap)
         );
     }
-
-
 
     private static void parseService(Inspector service, Map<ClusterInfo, DeploymentMetricsAggregator> clusterMetricsMap) {
         String serviceName = service.field("name").asString();
@@ -121,7 +117,7 @@ public class ClusterDeploymentMetricsRetriever {
     private static void addMetricsToAggeregator(String serviceName, Inspector metric, Map<ClusterInfo, DeploymentMetricsAggregator> clusterMetricsMap) {
         if (!WANTED_METRIC_SERVICES.contains(serviceName)) return;
         Inspector values = metric.field("values");
-        ClusterInfo clusterInfo = MetricsSlime.getClusterInfoFromDimensions(metric.field("dimensions"));
+        ClusterInfo clusterInfo = getClusterInfoFromDimensions(metric.field("dimensions"));
         DeploymentMetricsAggregator deploymentMetricsAggregator = clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
 
         switch (serviceName) {
@@ -141,6 +137,21 @@ public class ClusterDeploymentMetricsRetriever {
             case "vespa.distributor":
                 deploymentMetricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
                 break;
+        }
+    }
+
+    private static ClusterInfo getClusterInfoFromDimensions(Inspector dimensions) {
+        return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
+    }
+
+    private static Slime doMetricsRequest(URI hostURI) {
+        HttpGet get = new HttpGet(hostURI);
+        try (CloseableHttpResponse response = httpClient.execute(get)) {
+            byte[] body = EntityUtils.toByteArray(response.getEntity());
+            return SlimeUtils.jsonToSlime(body);
+        } catch (IOException e) {
+            log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
+            return new Slime();
         }
     }
 }
