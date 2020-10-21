@@ -453,7 +453,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         @Override
         public Node toNode() {
-            throw new IllegalStateException("Candidate node on " + parent + " is invalid");
+            throw new IllegalStateException("Candidate node on " + parent.get() + " is invalid");
         }
 
         @Override
