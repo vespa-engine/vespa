@@ -79,7 +79,7 @@ generic_reduce(const Value &value, const ReduceParam &param) {
         auto [tag, ignore] = map.lookup_or_add_entry(keep_addr);
         AGGR *dst = nullptr;
         auto next = [&](size_t idx) { (dst++)->next(cells[idx]); };
-        auto fill_aggrs = [&](size_t idx) {
+        auto fill_aggrs = [&,tag = tag](size_t idx) {
             dst = map.get_values(tag).begin();
             param.dense_plan.execute_keep(idx, next);
         };
