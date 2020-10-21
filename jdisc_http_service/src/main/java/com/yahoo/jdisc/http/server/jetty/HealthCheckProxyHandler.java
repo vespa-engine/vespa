@@ -137,6 +137,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             if (statusResponse.contentType != null) {
                 servletResponse.setHeader("Content-Type", statusResponse.contentType);
             }
+            servletResponse.setHeader("Vespa-Health-Check-Proxy-Target", Integer.toString(target.port));
             output.setWriteListener(new WriteListener() {
                 @Override
                 public void onWritePossible() throws IOException {
