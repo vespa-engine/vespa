@@ -2,8 +2,10 @@ package com.yahoo.vespa.config.server.metrics;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.net.URI;
@@ -12,10 +14,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-
-import static com.yahoo.vespa.config.server.metrics.MetricsSlime.doMetricsRequest;
+import org.apache.http.util.EntityUtils;
 
 public class ClusterProtonMetricsRetriever {
 
@@ -60,17 +63,11 @@ public class ClusterProtonMetricsRetriever {
     }
 
     private static void addMetricsFromHost(URI hostURI, Map<String, ProtonMetricsAggregator> clusterMetricsMap) {
-        Slime hostResponseBody;
-        try {
-            hostResponseBody = doMetricsRequest(hostURI, httpClient);
-        } catch (IOException e) {
-            log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
-            hostResponseBody = new Slime();
-        }
-        var parseError = hostResponseBody.get().field("error_message");
+        Slime hostResponseBody = doMetricsRequest(hostURI);
+        Cursor error = hostResponseBody.get().field("error_message");
 
-        if (parseError.valid()) {
-            log.info("Failed to retrieve metrics from " + hostURI + ": " + parseError.asString());
+        if (error.valid()) {
+            log.info("Failed to retrieve metrics from " + hostURI + ": " + error.asString());
         }
 
         Inspector nodes = hostResponseBody.get().field("nodes");
@@ -98,5 +95,16 @@ public class ClusterProtonMetricsRetriever {
 
     private static void addMetricsToAggregator(Inspector metrics, ProtonMetricsAggregator aggregator) {
         aggregator.addAll(metrics.field("values"));
+    }
+
+    private static Slime doMetricsRequest(URI hostURI) {
+        HttpGet get = new HttpGet(hostURI);
+        try (CloseableHttpResponse response = httpClient.execute(get)) {
+            byte[] body = EntityUtils.toByteArray(response.getEntity());
+            return SlimeUtils.jsonToSlime(body);
+        } catch (IOException e) {
+            log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
+            return new Slime();
+        }
     }
 }
