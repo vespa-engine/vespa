@@ -143,14 +143,11 @@ void my_sparse_merge_op(State &state, uint64_t param_in) {
 };
 
 struct SelectGenericMergeOp {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke() {
+    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke(const MergeParam &param) {
+        if (param.dense_subspace_size == 1) {
+            return my_sparse_merge_op<LCT,RCT,OCT,Fun>;
+        }
         return my_mixed_merge_op<LCT,RCT,OCT,Fun>;
-    }
-};
-
-struct SelectSparseMergeOp {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke() {
-        return my_sparse_merge_op<LCT,RCT,OCT,Fun>;
     }
 };
 
@@ -172,11 +169,7 @@ GenericMerge::make_instruction(const ValueType &lhs_type, const ValueType &rhs_t
                                const ValueBuilderFactory &factory, Stash &stash)
 {
     const auto &param = stash.create<MergeParam>(lhs_type, rhs_type, function, factory);
-    if (param.dense_subspace_size == 1) {
-        auto fun = typify_invoke<4,MergeTypify,SelectSparseMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
-        return Instruction(fun, wrap_param<MergeParam>(param));
-    }
-    auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
+    auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
     return Instruction(fun, wrap_param<MergeParam>(param));
 }
 
