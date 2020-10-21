@@ -335,8 +335,8 @@ public class IP {
          * @return An allocation containing 1 IPv6 address and 1 IPv4 address (if hostname is dual-stack)
          */
         private static Allocation ofIpv6(String ipAddress, NameResolver resolver) {
-            String hostname6 = resolver.getHostname(ipAddress).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipAddress));
-            List<String> ipv4Addresses = resolver.getAllByNameOrThrow(hostname6).stream()
+            String hostname6 = resolver.resolveHostname(ipAddress).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipAddress));
+            List<String> ipv4Addresses = resolver.resolveAll(hostname6).stream()
                                                  .filter(IP::isV4)
                                                  .collect(Collectors.toList());
             if (ipv4Addresses.size() > 1) {
@@ -344,7 +344,7 @@ public class IP {
             }
             Optional<String> ipv4Address = ipv4Addresses.stream().findFirst();
             ipv4Address.ifPresent(addr -> {
-                String hostname4 = resolver.getHostname(addr).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + addr));
+                String hostname4 = resolver.resolveHostname(addr).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + addr));
                 if (!hostname6.equals(hostname4)) {
                     throw new IllegalArgumentException(String.format("Hostnames resolved from each IP address do not " +
                                                                      "point to the same hostname [%s -> %s, %s -> %s]",
@@ -362,8 +362,8 @@ public class IP {
          * @return An allocation containing 1 IPv4 address.
          */
         private static Allocation ofIpv4(String ipAddress, NameResolver resolver) {
-            String hostname4 = resolver.getHostname(ipAddress).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipAddress));
-            List<String> addresses = resolver.getAllByNameOrThrow(hostname4).stream()
+            String hostname4 = resolver.resolveHostname(ipAddress).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipAddress));
+            List<String> addresses = resolver.resolveAll(hostname4).stream()
                                              .filter(IP::isV4)
                                              .collect(Collectors.toList());
             if (addresses.size() != 1) {

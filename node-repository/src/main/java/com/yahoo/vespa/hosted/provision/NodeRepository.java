@@ -49,7 +49,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
@@ -381,9 +380,9 @@ public class NodeRepository extends AbstractComponent {
         if (children) {
             return candidates.childrenOf(node).asList().stream()
                              .map(childNode -> getNodeAcl(childNode, candidates))
-                             .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                             .collect(Collectors.toUnmodifiableList());
         }
-        return Collections.singletonList(getNodeAcl(node, candidates));
+        return List.of(getNodeAcl(node, candidates));
     }
 
     // ----------------- Node lifecycle -----------------------------------------------------------
@@ -392,7 +391,7 @@ public class NodeRepository extends AbstractComponent {
     public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
                            Flavor flavor, Optional<TenantName> reservedTo, NodeType type) {
         if (ipConfig.primary().isEmpty()) // TODO: Remove this. Only test code hits this path
-            ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
+            ipConfig = ipConfig.with(nameResolver.resolveAll(hostname));
         return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, reservedTo, type, Optional.empty());
     }
 
@@ -474,7 +473,7 @@ public class NodeRepository extends AbstractComponent {
                 new NoSuchNodeException("Could not move " + hostname + " to ready: Node not found"));
 
         if (nodeToReady.state() == State.ready) return nodeToReady;
-        return setReady(Collections.singletonList(nodeToReady), agent, reason).get(0);
+        return setReady(List.of(nodeToReady), agent, reason).get(0);
     }
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
@@ -658,7 +657,7 @@ public class NodeRepository extends AbstractComponent {
         if ( ! failureReasons.isEmpty())
             illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
 
-        return setReady(Collections.singletonList(node), agent, reason).get(0);
+        return setReady(List.of(node), agent, reason).get(0);
     }
 
     /**

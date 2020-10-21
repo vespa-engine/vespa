@@ -393,7 +393,7 @@ public class ProvisioningTester {
             // name resolver already contains the next host - if this is the case - bump the indices and move on
             String testIp = String.format("127.0.0.%d", nextIP);
             MockNameResolver nameResolver = (MockNameResolver)nodeRepository().nameResolver();
-            if (nameResolver.getHostname(testIp).isPresent()) {
+            if (nameResolver.resolveHostname(testIp).isPresent()) {
                 nextHost += 100;
                 nextIP += 100;
             }

@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import java.util.logging.Level;
 
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -12,9 +10,12 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Implementation of a name resolver that always uses a DNS server to resolve the given name. The intention is to avoid
@@ -24,60 +25,46 @@ import java.util.logging.Logger;
  */
 public class DnsNameResolver implements NameResolver {
 
-    private static final Logger logger = Logger.getLogger(DnsNameResolver.class.getName());
-
     @Override
-    public Set<String> getAllByNameOrThrow(String hostname) {
-        try {
-            Optional<String> cname = lookupName(hostname, Type.CNAME);
-            if (cname.isPresent()) {
-                hostname = cname.get();
-            }
-            Optional<String> inet4Address = lookupName(hostname, Type.A);
-            Optional<String> inet6Address = lookupName(hostname, Type.AAAA);
-
-            ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
-            inet4Address.ifPresent(ipAddresses::add);
-            inet6Address.ifPresent(ipAddresses::add);
-            return ipAddresses.build();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public Set<String> resolveAll(String name) {
+        return resolve(name, RecordType.A, RecordType.AAAA);
     }
 
     @Override
-    public Optional<String> getHostname(String ipAddress) {
+    public Set<String> resolve(String name, RecordType first, RecordType... rest) {
+        Set<String> results = new HashSet<>();
+        for (var type : EnumSet.of(first, rest)) {
+            try {
+                results.addAll(lookupName(name, type));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return Collections.unmodifiableSet(results);
+    }
+
+    @Override
+    public Optional<String> resolveHostname(String ipAddress) {
         try {
+            // TODO(mpolden): Use lookupName instead. IP address must be translated to its reverse
+            //                notation first.
             String hostname = InetAddress.getByName(ipAddress).getHostName();
             return InetAddresses.isInetAddress(hostname) ? Optional.empty() : Optional.of(hostname);
-        } catch (UnknownHostException e) {
-            // This is not an exceptional state hence the debug level
-            logger.log(Level.FINE, "Unable to resolve ipaddress", e);
+        } catch (UnknownHostException ignored) {
         }
         return Optional.empty();
     }
 
-    private Optional<String> lookupName(String name, Type type) throws NamingException {
+    private Set<String> lookupName(String name, RecordType type) throws NamingException {
         DirContext ctx = new InitialDirContext();
-        Attributes attributes = ctx.getAttributes("dns:/" + name, new String[]{type.value});
-        Optional<Attribute> attribute = Optional.ofNullable(attributes.get(type.value));
-        if (attribute.isPresent()) {
-            return Optional.ofNullable(attribute.get().get()).map(Object::toString);
+        Attributes attributes = ctx.getAttributes("dns:/" + name, new String[]{type.value()});
+        Attribute attribute = attributes.get(type.value());
+        if (attribute == null) {
+            return Set.of();
         }
-        return Optional.empty();
-    }
-
-    private enum Type {
-
-        A("A"),
-        AAAA("AAAA"),
-        CNAME("CNAME");
-
-        private final String value;
-
-        Type(String value) {
-            this.value = value;
-        }
+        Set<String> results = new HashSet<>();
+        attribute.getAll().asIterator().forEachRemaining(value -> results.add(Objects.toString(value)));
+        return results;
     }
 
 }
