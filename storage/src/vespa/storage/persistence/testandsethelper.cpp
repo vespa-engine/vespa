@@ -49,9 +49,9 @@ TestAndSetHelper::TestAndSetHelper(const PersistenceUtil & env, const spi::Persi
       _docTypePtr(_cmd.getDocumentType()),
       _missingDocumentImpliesMatch(missingDocumentImpliesMatch)
 {
-    const auto _repo = _env._component.getTypeRepo()->documentTypeRepo;
-    resolveDocumentType(*_repo);
-    parseDocumentSelection(*_repo, bucketFactory);
+    const auto & repo = _env.getDocumentTypeRepo();
+    resolveDocumentType(repo);
+    parseDocumentSelection(repo, bucketFactory);
 }
 
 TestAndSetHelper::~TestAndSetHelper() = default;

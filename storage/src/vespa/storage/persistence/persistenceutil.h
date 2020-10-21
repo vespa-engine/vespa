@@ -114,6 +114,18 @@ public:
     void updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& info) const;
     LockResult lockAndGetDisk(const document::Bucket &bucket, StorBucketDatabase::Flag flags = StorBucketDatabase::NONE);
     api::BucketInfo getBucketInfo(const document::Bucket &bucket) const;
+    const document::DocumentTypeRepo & getDocumentTypeRepo() const {
+        if (componentHasChanged()) {
+            reloadComponent();
+        }
+        return *_repos->documentTypeRepo;
+    }
+    const document::FieldSetRepo & getFieldSetRepo() const {
+        if (componentHasChanged()) {
+            reloadComponent();
+        }
+        return *_repos->fieldSetRepo;
+    }
 
     static api::BucketInfo convertBucketInfo(const spi::BucketInfo&);
     static uint32_t convertErrorCode(const spi::Result& response);
@@ -123,8 +135,15 @@ public:
     FileStorThreadMetrics                      &_metrics;  // Needs a better solution for speed and thread safety
     uint16_t                                    _nodeIndex;
 private:
-    const document::BucketIdFactory            &_bucketIdFactory;
-    spi::PersistenceProvider                   &_spi;
+    bool componentHasChanged() const {
+        return _lastGeneration != _component.getGeneration();
+    }
+    void reloadComponent() const;
+
+    const document::BucketIdFactory                 &_bucketIdFactory;
+    spi::PersistenceProvider                        &_spi;
+    mutable uint64_t                                 _lastGeneration;
+    mutable std::shared_ptr<StorageComponent::Repos> _repos;
 };
 
 } // storage

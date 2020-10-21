@@ -165,7 +165,9 @@ PersistenceUtil::PersistenceUtil(const ServiceLayerComponent& component, FileSto
       _metrics(metrics),
       _nodeIndex(component.getIndex()),
       _bucketIdFactory(component.getBucketIdFactory()),
-      _spi(provider)
+      _spi(provider),
+      _lastGeneration(0),
+      _repos()
 {
 }
 
@@ -282,6 +284,15 @@ PersistenceUtil::getBucket(const document::DocumentId& id, const document::Bucke
     }
 
     return spi::Bucket(bucket);
+}
+
+void
+PersistenceUtil::reloadComponent() const {
+    // Thread safe as it is only called from the same thread
+    while (componentHasChanged()) {
+        _lastGeneration = _component.getGeneration();
+        _repos = _component.getTypeRepo();
+    }
 }
 
 } // storage

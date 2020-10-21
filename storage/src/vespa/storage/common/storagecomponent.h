@@ -104,7 +104,7 @@ public:
     uint8_t getPriority(const documentapi::LoadType&) const;
     DistributionSP getDistribution() const;
     NodeStateUpdater& getStateUpdater() const;
-
+    uint64_t getGeneration() const { return _generation.load(std::memory_order_relaxed); }
 private:
     vespalib::string _clusterName;
     const lib::NodeType* _nodeType;
@@ -117,6 +117,7 @@ private:
     DistributionSP _distribution;
     NodeStateUpdater* _nodeStateUpdater;
     mutable std::mutex _lock;
+    std::atomic<uint64_t> _generation;
 };
 
 struct StorageComponentRegister : public virtual framework::ComponentRegister

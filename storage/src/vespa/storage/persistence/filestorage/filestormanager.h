@@ -57,7 +57,6 @@ class FileStorManager : public StorageLinkQueued,
     DoneInitializeHandler&            _init_handler;
     const document::BucketIdFactory & _bucketIdFactory;
 
-    std::vector<std::unique_ptr<ServiceLayerComponent>> _persistenceComponents;
     std::vector<std::unique_ptr<PersistenceHandler>> _persistenceHandlers;
     std::vector<std::unique_ptr<DiskThread>>         _threads;
     std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
