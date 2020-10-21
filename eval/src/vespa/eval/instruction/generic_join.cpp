@@ -37,7 +37,11 @@ generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param)
     auto lhs_cells = lhs.cells().typify<LCT>();
     auto rhs_cells = rhs.cells().typify<RCT>();
     SparseJoinState sparse(param.sparse_plan, lhs.index(), rhs.index());
-    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, sparse.first_index.size());
+    size_t expected_subspaces = sparse.first_index.size();
+    if (param.sparse_plan.lhs_overlap.empty() && param.sparse_plan.rhs_overlap.empty()) {
+        expected_subspaces = sparse.first_index.size() * sparse.second_index.size();
+    }
+    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, expected_subspaces);
     auto outer = sparse.first_index.create_view({});
     auto inner = sparse.second_index.create_view(sparse.second_view_dims);
     outer->lookup({});
