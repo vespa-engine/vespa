@@ -135,7 +135,7 @@ class RecognizedValues
 private:
     std::array<const T *, N> _pointers;
 public:
-    RecognizedValues(std::array<const T *, N> pointers)
+    RecognizedValues(std::array<const T *, N> && pointers)
         : _pointers(std::move(pointers))
     {}
     bool all_converted() const {
@@ -149,16 +149,13 @@ public:
         static_assert(idx < N);
         return *_pointers[idx];
     }
-    const T& first() const { return get<0>(); }
-    const T& second() const { return get<1>(); }
 };
 
 template<typename T, typename... Args>
 RecognizedValues<T, sizeof...(Args)>
 detect_type(const Args &... args)
 {
-    RecognizedValues<T, sizeof...(Args)> result({(recognize_by_type_index<T>(args))...});
-    return result;
+    return RecognizedValues<T, sizeof...(Args)>({(recognize_by_type_index<T>(args))...});
 }
 
 template <typename LCT, typename RCT, typename OCT, typename Fun>
@@ -171,7 +168,7 @@ void my_sparse_merge_op(State &state, uint64_t param_in) {
         auto rhs_cells = rhs.cells().typify<RCT>();
         return state.pop_pop_push(
                 FastValueIndex::sparse_only_merge<LCT,RCT,OCT,Fun>(
-                        param.res_type, Fun(param.function), indexes.first(), indexes.second(), lhs_cells, rhs_cells, state.stash));
+                        param.res_type, Fun(param.function), indexes.get<0>(), indexes.get<1>(), lhs_cells, rhs_cells, state.stash));
     }
     auto up = generic_mixed_merge<LCT, RCT, OCT, Fun>(lhs, rhs, param);
     auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
