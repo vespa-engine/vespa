@@ -161,7 +161,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_CONTENT_NODE_BTREE_DB = defineFeatureFlag(
-            "use-content-node-btree-db", false,
+            "use-content-node-btree-db", true,
             "Whether to use the new B-tree bucket database on the content node.",
             "Takes effect at restart of content node process",
             ZONE_ID, APPLICATION_ID);
