@@ -2,6 +2,7 @@
 vespa_add_library(eval_eval OBJECT
     SOURCES
     aggr.cpp
+    array_array_map.cpp
     basic_nodes.cpp
     call_nodes.cpp
     compile_tensor_function.cpp
