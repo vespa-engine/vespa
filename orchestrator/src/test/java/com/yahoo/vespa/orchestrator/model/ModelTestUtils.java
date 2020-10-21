@@ -114,14 +114,16 @@ class ModelTestUtils {
         return hostName;
     }
 
-    ApplicationApi createApplicationApiImpl(
+    ScopedApplicationApi createScopedApplicationApi(
             ApplicationInstance applicationInstance,
             HostName... hostnames) {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostnames);
         ApplicationLock lock = statusService.lockApplication(
                 OrchestratorContext.createContextForSingleAppOp(Clock.systemUTC()),
                 applicationInstance.reference());
-        return applicationApiFactory().create(nodeGroup, lock, clusterControllerClientFactory);
+        return new ScopedApplicationApi(
+                applicationApiFactory().create(nodeGroup, lock, clusterControllerClientFactory),
+                lock);
     }
 
     ApplicationInstance createApplicationInstance(
