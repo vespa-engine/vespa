@@ -246,6 +246,30 @@ struct FileStorHandlerComponents {
     ~FileStorHandlerComponents() {}
 };
 
+struct PersistenceHandlerComponents : public FileStorHandlerComponents {
+    ServiceLayerComponent component;
+    BucketOwnershipNotifier bucketOwnershipNotifier;
+    std::unique_ptr<PersistenceHandler> persistenceHandler;
+
+    PersistenceHandlerComponents(FileStorManagerTest& test)
+        : FileStorHandlerComponents(test),
+          component(test._node->getComponentRegister(), "test"),
+          bucketOwnershipNotifier(component, messageSender),
+          persistenceHandler()
+    {
+        vespa::config::content::StorFilestorConfig cfg;
+        persistenceHandler =
+                std::make_unique<PersistenceHandler>(test._node->executor(), component, cfg,
+                                                     test._node->getPersistenceProvider(),
+                                                     *filestorHandler, bucketOwnershipNotifier,
+                                                     *metrics.disk->threads[0]);
+    }
+    std::unique_ptr<DiskThread> make_disk_thread() {
+        return createThread(*persistenceHandler, *filestorHandler, component);
+    }
+    ~PersistenceHandlerComponents() {}
+};
+
 }
 
 void
@@ -713,17 +737,12 @@ TEST_F(FileStorManagerTest, priority) {
 }
 
 TEST_F(FileStorManagerTest, split1) {
-    FileStorHandlerComponents c(*this);
+    PersistenceHandlerComponents c(*this);
     auto& filestorHandler = *c.filestorHandler;
     auto& top = c.top;
+    auto thread = c.make_disk_thread();
 
     setClusterState("storage:2 distributor:1");
-    ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
-    vespa::config::content::StorFilestorConfig cfg;
-    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
-    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
@@ -840,30 +859,25 @@ TEST_F(FileStorManagerTest, split1) {
             top.reset();
         }
     }
-        // Closing file stor handler before threads are deleted, such that
-        // file stor threads getNextMessage calls returns.
+    // Closing file stor handler before threads are deleted, such that
+    // file stor threads getNextMessage calls returns.
     filestorHandler.close();
 }
 
 TEST_F(FileStorManagerTest, split_single_group) {
-    FileStorHandlerComponents c(*this);
+    PersistenceHandlerComponents c(*this);
     auto& filestorHandler = *c.filestorHandler;
     auto& top = c.top;
 
     setClusterState("storage:2 distributor:1");
-    ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
-    vespa::config::content::StorFilestorConfig cfg;
-    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
         // splitbit set, and once where all the data ends up in file with
         // splitbit unset
         bool state = (j == 0);
 
-        std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
+        auto thread = c.make_disk_thread();
         // Creating documents to test with. Different gids, 2 locations.
         std::vector<document::Document::SP> documents;
         for (uint32_t i=0; i<20; ++i) {
@@ -922,8 +936,8 @@ TEST_F(FileStorManagerTest, split_single_group) {
             EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
         }
-            // Closing file stor handler before threads are deleted, such that
-            // file stor threads getNextMessage calls returns.
+        // Closing file stor handler before threads are deleted, such that
+        // file stor threads getNextMessage calls returns.
         filestorHandler.close();
     }
 }
@@ -956,17 +970,12 @@ FileStorManagerTest::putDoc(DummyStorageLink& top,
 }
 
 TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
-    FileStorHandlerComponents c(*this);
+    PersistenceHandlerComponents c(*this);
     auto& filestorHandler = *c.filestorHandler;
     auto& top = c.top;
 
     setClusterState("storage:2 distributor:1");
-    ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
-    vespa::config::content::StorFilestorConfig cfg;
-    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
-    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
+    auto thread = c.make_disk_thread();
 
     document::BucketId source(16, 0x10001);
 
@@ -1018,17 +1027,12 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
 }
 
 TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
-    FileStorHandlerComponents c(*this);
+    PersistenceHandlerComponents c(*this);
     auto& filestorHandler = *c.filestorHandler;
     auto& top = c.top;
 
     setClusterState("storage:2 distributor:2");
-    ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
-    vespa::config::content::StorFilestorConfig cfg;
-    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
-    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
+    auto thread = c.make_disk_thread();
 
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
     createBucket(source, 0);
@@ -1055,16 +1059,11 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
 }
 
 TEST_F(FileStorManagerTest, join) {
-    FileStorHandlerComponents c(*this);
+    PersistenceHandlerComponents c(*this);
     auto& filestorHandler = *c.filestorHandler;
     auto& top = c.top;
 
-    ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
-    vespa::config::content::StorFilestorConfig cfg;
-    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
-    std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
+    auto thread = c.make_disk_thread();
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
