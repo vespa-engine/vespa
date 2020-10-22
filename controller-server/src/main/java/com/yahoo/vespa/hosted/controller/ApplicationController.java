@@ -34,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -353,13 +354,25 @@ public class ApplicationController {
             // Carry out deployment without holding the application lock.
             ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, endpoints, endpointCertificateMetadata, applicationRoles);
 
+            // Record the quota usage for this application
+            var quotaUsage = deploymentQuotaUsage(zone, job.application());
+
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
                                            instance -> instance.withNewDeployment(zone, revision, platform,
                                                                                   clock.instant(), warningsFrom(result),
-                                                                                  QuotaUsage.create(result.quotaUsageRate())))));
+                                                                                  quotaUsage))));
             return result;
         }
+    }
+
+    private QuotaUsage deploymentQuotaUsage(ZoneId zoneId, ApplicationId applicationId) {
+        var quotaUsage = configServer.nodeRepository().getApplication(zoneId, applicationId)
+                .clusters().values().stream()
+                .map(Cluster::max)
+                .mapToDouble(max -> max.nodes() * max.nodeResources().cost())
+                .sum();
+        return QuotaUsage.create(quotaUsage);
     }
 
     private ApplicationPackage getApplicationPackage(ApplicationId application, ZoneId zone, ApplicationVersion revision) {
@@ -429,11 +442,14 @@ public class ApplicationController {
             ActivateResult result = deploy(instanceId, applicationPackage, zone, platformVersion,
                                            endpoints, endpointCertificateMetadata, Optional.empty());
 
+            // Record the quota usage for this application
+            var quotaUsage = deploymentQuotaUsage(zone, instanceId);
+
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(instanceId.instance(),
                                            instance -> instance.withNewDeployment(zone, applicationVersion, platformVersion,
                                                                                   clock.instant(), warningsFrom(result),
-                                                                                  QuotaUsage.create(result.quotaUsageRate())))));
+                                                                                  quotaUsage))));
             return result;
         }
     }
@@ -547,10 +563,8 @@ public class ApplicationController {
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
                                                            applicationRoles, quota));
 
-            var quotaUsage = configServer.getQuotaUsage(new DeploymentId(application, zone));
-
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
-                                      applicationPackage.zippedContent().length, quotaUsage.rate);
+                                      applicationPackage.zippedContent().length);
         } finally {
             // Even if prepare fails, a load balancer may have been provisioned. Always refresh routing policies so that
             // any DNS updates can be propagated as early as possible.
@@ -567,7 +581,7 @@ public class ApplicationController {
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = List.of(logEntry);
         prepareResponse.configChangeActions = new ConfigChangeActions(List.of(), List.of());
-        return new ActivateResult(new RevisionId("0"), prepareResponse, 0, 0.0);
+        return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
     private LockedApplication withoutDeletedDeployments(LockedApplication application, InstanceName instance) {
