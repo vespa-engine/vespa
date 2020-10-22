@@ -4,8 +4,6 @@ package com.yahoo.vespa.defaults;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-
-
 /**
  * The defaults of basic Vespa configuration variables.
  * Use Defaults.getDefaults() to access the defaults of this runtime environment.
