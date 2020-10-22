@@ -183,7 +183,9 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     public ClusterResources toResources() {
         if (isEmpty()) return new ClusterResources(0, 0, NodeResources.unspecified());
         return new ClusterResources(size(),
-                                    (int)stream().distinct().count(),
+                                    (int)stream().map(node -> node.allocation().get().membership().cluster().group().get())
+                                                 .distinct()
+                                                 .count(),
                                     first().get().resources());
     }
 
