@@ -60,63 +60,75 @@ namespace aggr {
 
 template <typename T> class Avg {
 private:
-    T _sum = 0.0;
-    size_t _cnt = 0;
+    T _sum;
+    size_t _cnt;
 public:
-    void first(T value) {
-        _sum = value;
-        _cnt = 1;
-    }
-    void next(T value) {
+    constexpr Avg() : _sum{0}, _cnt{0} {}
+    constexpr Avg(T value) : _sum{value}, _cnt{1} {}
+    constexpr void sample(T value) {
         _sum += value;
         ++_cnt;
     }
-    T result() const { return (_sum / _cnt); }
+    constexpr void merge(const Avg &rhs) {
+        _sum += rhs._sum;
+        _cnt += rhs._cnt;
+    };
+    constexpr T result() const { return (_sum / _cnt); }
 };
 
 template <typename T> class Count {
 private:
-    size_t _cnt = 0;
+    size_t _cnt;
 public:
-    void first(T) { _cnt = 1; }
-    void next(T) { ++_cnt; }
-    T result() const { return _cnt; }
+    constexpr Count() : _cnt{0} {}
+    constexpr Count(T) : _cnt{1} {}
+    constexpr void sample(T) { ++_cnt; }
+    constexpr void merge(const Count &rhs) { _cnt += rhs._cnt; }
+    constexpr T result() const { return _cnt; }
 };
 
 template <typename T> class Prod {
 private:
-    T _prod = 1.0;
+    T _prod;
 public:
-    void first(T value) { _prod = value; }
-    void next(T value) { _prod *= value; }
-    T result() const { return _prod; }
+    constexpr Prod() : _prod{1} {}
+    constexpr Prod(T value) : _prod{value} {}
+    constexpr void sample(T value) { _prod *= value; }
+    constexpr void merge(const Prod &rhs) { _prod *= rhs._prod; }
+    constexpr T result() const { return _prod; }
 };
 
 template <typename T> class Sum {
 private:
-    T _sum = 0.0;
+    T _sum;
 public:
-    void first(T value) { _sum = value; }
-    void next(T value) { _sum += value; }
-    T result() const { return _sum; }
+    constexpr Sum() : _sum{0} {}
+    constexpr Sum(T value) : _sum{value} {}
+    constexpr void sample(T value) { _sum += value; }
+    constexpr void merge(const Sum &rhs) { _sum += rhs._sum; }
+    constexpr T result() const { return _sum; }
 };
 
 template <typename T> class Max {
 private:
-    T _max = -std::numeric_limits<T>::infinity();
+    T _max;
 public:
-    void first(T value) { _max = value; }
-    void next(T value) { _max = std::max(_max, value); }
-    T result() const { return _max; }
+    constexpr Max() : _max{-std::numeric_limits<T>::infinity()} {}
+    constexpr Max(T value) : _max{value} {}
+    constexpr void sample(T value) { _max = std::max(_max, value); }
+    constexpr void merge(const Max &rhs) { _max = std::max(_max, rhs._max); }
+    constexpr T result() const { return _max; }
 };
 
 template <typename T> class Min {
 private:
-    T _min = std::numeric_limits<T>::infinity();
+    T _min;
 public:
-    void first(T value) { _min = value; }
-    void next(T value) { _min = std::min(_min, value); }
-    T result() const { return _min; }
+    constexpr Min() : _min{std::numeric_limits<T>::infinity()} {}
+    constexpr Min(T value) : _min{value} {}
+    constexpr void sample(T value) { _min = std::min(_min, value); }
+    constexpr void merge(const Min &rhs) { _min = std::min(_min, rhs._min); }
+    constexpr T result() const { return _min; }
 };
 
 } // namespave vespalib::eval::aggr

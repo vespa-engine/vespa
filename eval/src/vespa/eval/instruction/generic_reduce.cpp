@@ -6,6 +6,8 @@
 #include <vespa/eval/eval/array_array_map.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 #include <cassert>
 
 using namespace vespalib::eval::tensor_function;
@@ -77,13 +79,9 @@ generic_reduce(const Value &value, const ReduceParam &param) {
     ConstArrayRef<vespalib::stringref*> keep_addr(sparse.keep_address);
     while (full_view->next_result(sparse.fetch_address, sparse.subspace)) {
         auto [tag, ignore] = map.lookup_or_add_entry(keep_addr);
-        AGGR *dst = nullptr;
-        auto next = [&](size_t idx) { (dst++)->next(cells[idx]); };
-        auto fill_aggrs = [&,tag = tag](size_t idx) {
-            dst = map.get_values(tag).begin();
-            param.dense_plan.execute_keep(idx, next);
-        };
-        param.dense_plan.execute_reduce((sparse.subspace * param.dense_plan.in_size), fill_aggrs);
+        AGGR *dst = map.get_values(tag).begin();
+        auto sample = [&](size_t src_idx, size_t dst_idx) { dst[dst_idx].sample(cells[src_idx]); };
+        param.dense_plan.execute(sparse.subspace * param.dense_plan.in_size, sample);
     }
     auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.keep_dims.size(), param.dense_plan.out_size, map.size());
     map.each_entry([&](const auto &keys, const auto &values)
@@ -116,12 +114,21 @@ template <typename ICT, typename AGGR>
 void my_full_reduce_op(State &state, uint64_t) {
     auto cells = state.peek(0).cells().typify<ICT>();
     if (cells.size() > 0) {
-        AGGR aggr;
-        aggr.first(cells[0]);
-        for (size_t i = 1; i < cells.size(); ++i) {
-            aggr.next(cells[i]);
+        AGGR aggr[4];
+        size_t i = 0;
+        for (; (i + 3) < cells.size(); i += 4) {
+            aggr[0].sample(cells[i+0]);
+            aggr[1].sample(cells[i+1]);
+            aggr[2].sample(cells[i+2]);
+            aggr[3].sample(cells[i+3]);
         }
-        state.pop_push(state.stash.create<DoubleValue>(aggr.result()));
+        for (; i < cells.size(); ++i) {
+            aggr[0].sample(cells[i]);
+        }
+        aggr[0].merge(aggr[1]);
+        aggr[0].merge(aggr[2]);
+        aggr[0].merge(aggr[3]);
+        state.pop_push(state.stash.create<DoubleValue>(aggr[0].result()));
     } else {
         state.pop_push(state.stash.create<DoubleValue>(0.0));
     }
@@ -154,39 +161,48 @@ struct PerformGenericReduce {
 DenseReducePlan::DenseReducePlan(const ValueType &type, const ValueType &res_type)
     : in_size(1),
       out_size(1),
-      keep_loop(),
-      keep_stride(),
-      reduce_loop(),
-      reduce_stride()
+      loop_cnt(),
+      in_stride(),
+      out_stride()
 {
-    std::vector<bool> keep;
-    std::vector<size_t> size;
-    for (const auto &dim: type.nontrivial_indexed_dimensions()) {
-        keep.push_back(res_type.dimension_index(dim.name) != ValueType::Dimension::npos);
-        size.push_back(dim.size);
-    }
-    std::vector<size_t> stride(size.size(), 0);
-    for (size_t i = stride.size(); i-- > 0; ) {
-        stride[i] = in_size;
-        in_size *= size[i];
-        if (keep[i]) {
-            out_size *= size[i];
-        }
-    }
-    int prev_case = 2;
-    for (size_t i = 0; i < size.size(); ++i) {
-        int my_case = keep[i] ? 1 : 0;
-        auto &my_loop = keep[i] ? keep_loop : reduce_loop;
-        auto &my_stride = keep[i] ? keep_stride : reduce_stride;
+    enum class Case { NONE, KEEP, REDUCE };
+    Case prev_case = Case::NONE;
+    auto update_plan = [&](Case my_case, size_t my_size) {
         if (my_case == prev_case) {
-            assert(!my_loop.empty());
-            my_loop.back() *= size[i];
-            my_stride.back() = stride[i];
+            assert(!loop_cnt.empty());
+            loop_cnt.back() *= my_size;
         } else {
-            my_loop.push_back(size[i]);
-            my_stride.push_back(stride[i]);
+            loop_cnt.push_back(my_size);
+            in_stride.push_back(1);
+            out_stride.push_back((my_case == Case::KEEP) ? 1 : 0);
+            prev_case = my_case;
         }
-        prev_case = my_case;
+    };
+    auto visitor = overload
+                   {
+                       [&](visit_ranges_either, const auto &a) { update_plan(Case::REDUCE, a.size); },
+                       [&](visit_ranges_both, const auto &a, const auto &) { update_plan(Case::KEEP, a.size); }
+                   };
+    auto in_dims = type.nontrivial_indexed_dimensions();
+    auto out_dims = res_type.nontrivial_indexed_dimensions();
+    visit_ranges(visitor, in_dims.begin(), in_dims.end(), out_dims.begin(), out_dims.end(),
+                 [](const auto &a, const auto &b){ return (a.name < b.name); });
+    for (size_t i = loop_cnt.size(); i-- > 0; ) {
+        in_stride[i] = in_size;
+        in_size *= loop_cnt[i];
+        if (out_stride[i] != 0) {
+            out_stride[i] = out_size;
+            out_size *= loop_cnt[i];
+        }
+    }
+    for (size_t i = 1; i < loop_cnt.size(); ++i) {
+        for (size_t j = i; j > 0; --j) {
+            if ((out_stride[j] == 0) && (out_stride[j - 1] > 0)) {
+                std::swap(loop_cnt[j], loop_cnt[j - 1]);
+                std::swap(in_stride[j], in_stride[j - 1]);
+                std::swap(out_stride[j], out_stride[j - 1]);
+            }
+        }
     }
 }
 
