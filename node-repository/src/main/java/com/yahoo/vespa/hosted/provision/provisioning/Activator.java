@@ -98,25 +98,25 @@ class Activator {
 
     private void rememberResourceChange(ApplicationTransaction transaction, long generation,
                                         NodeList oldNodes, NodeList newNodes) {
-        if (nodeRepository.applications().get(transaction.application()).isEmpty()) return; // infrastructure app, hopefully
-        Application application = nodeRepository.applications().get(transaction.application()).get();
+        Optional<Application> application = nodeRepository.applications().get(transaction.application());
+        if (application.isEmpty()) return; // infrastructure app, hopefully :-|
 
         var currentNodesByCluster = newNodes.stream()
                                             .collect(Collectors.groupingBy(node -> node.allocation().get().membership().cluster().id()));
-        Application modified = application;
+        Application modified = application.get();
         for (var clusterEntry : currentNodesByCluster.entrySet()) {
             var previousResources = oldNodes.cluster(clusterEntry.getKey()).toResources();
             var currentResources = NodeList.copyOf(clusterEntry.getValue()).toResources();
             if ( ! previousResources.equals(currentResources)) {
-                modified = modified.with(application.cluster(clusterEntry.getKey()).get()
-                                                    .with(new ScalingEvent(previousResources,
-                                                                           currentResources,
-                                                                           generation,
-                                                                           nodeRepository.clock().instant())));
+                modified = modified.with(application.get().cluster(clusterEntry.getKey()).get()
+                                                          .with(new ScalingEvent(previousResources,
+                                                                                 currentResources,
+                                                                                 generation,
+                                                                                 nodeRepository.clock().instant())));
             }
         }
 
-        if (modified != application)
+        if (modified != application.get())
             nodeRepository.applications().put(modified, transaction);
     }
 
