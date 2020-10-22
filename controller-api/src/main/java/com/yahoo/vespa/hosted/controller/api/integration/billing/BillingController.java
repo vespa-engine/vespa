@@ -17,7 +17,7 @@ public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
 
-    Optional<Quota> getQuota(TenantName tenant, Environment environment);
+    Quota getQuota(TenantName tenant, Environment environment);
 
     /**
      * @return String containing error message if something went wrong. Empty otherwise

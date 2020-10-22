@@ -351,7 +351,7 @@ public class ApplicationController {
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
-            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, endpoints, endpointCertificateMetadata, QuotaUsage.none, applicationRoles);
+            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, endpoints, endpointCertificateMetadata, applicationRoles);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
@@ -384,7 +384,6 @@ public class ApplicationController {
             ApplicationPackage applicationPackage;
             Set<ContainerEndpoint> endpoints;
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
-            QuotaUsage usageOutsideDeploymentZone;
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
@@ -424,21 +423,11 @@ public class ApplicationController {
                         application.get().require(instance), zone, applicationPackage.deploymentSpec().instance(instance));
 
                 endpoints = controller.routing().registerEndpointsInDns(application.get(), instance, zone);
-
-                usageOutsideDeploymentZone =
-                        application.get().instances().values().stream()
-                                .map(Instance::deployments)
-                                .map(Map::values)
-                                .flatMap(Collection::stream)
-                                .filter(d -> !d.zone().equals(zone))  // Exclude zone we are deploying to!
-                                .map(Deployment::quota)
-                                .reduce(QuotaUsage::sum).orElse(QuotaUsage.none);
-
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
             ActivateResult result = deploy(instanceId, applicationPackage, zone, platformVersion,
-                                           endpoints, endpointCertificateMetadata, usageOutsideDeploymentZone, Optional.empty());
+                                           endpoints, endpointCertificateMetadata, Optional.empty());
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(instanceId.instance(),
@@ -511,7 +500,7 @@ public class ApplicationController {
             ApplicationPackage applicationPackage = new ApplicationPackage(
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
-            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty(), QuotaUsage.none, Optional.empty());
+            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty(), Optional.empty());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -519,13 +508,12 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty(), QuotaUsage.none, Optional.empty());
+        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty(), Optional.empty());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
                                   ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                                  QuotaUsage usageOutsideZone,
                                   Optional<ApplicationRoles> applicationRoles) {
         try {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
@@ -540,15 +528,17 @@ public class ApplicationController {
                     .filter(tenant-> tenant instanceof AthenzTenant)
                     .map(tenant -> ((AthenzTenant)tenant).domain());
 
-            Optional<Quota> quota = billingController.getQuota(application.tenant(), zone.environment())
-                    .map(q -> q.subtractUsage(usageOutsideZone.rate()));
+            var tenantQuota = billingController.getQuota(application.tenant(), zone.environment());
 
-            if (platform.isBefore(Version.fromString("7.299"))) {
-                // there is a bug in the configuration model that makes the QuotaValidator fail if the budget
-                // parameter is used.  make sure we don't send budget to deployments with these old versions.
-                // TODO: Remove once < 7.299 is no longer deployed in public and publiccd
-                quota = quota.map(Quota::withoutBudget);
-            }
+            var tenantUsage = asList(application.tenant()).stream()
+                    .map(Application::quotaUsage)
+                    .reduce(QuotaUsage::add)
+                    .orElse(QuotaUsage.none);
+
+            var currentDeploymentUsage = getInstance(application)
+                    .flatMap(i -> Optional.ofNullable(i.deployments().get(zone)).map(Deployment::quota)).orElse(QuotaUsage.none);
+
+            var quotaForDeployment = tenantQuota.subtractUsage(tenantUsage.sub(currentDeploymentUsage).rate());
 
             if (zone.environment().isManuallyDeployed())
                 controller.applications().applicationStore().putMeta(new DeploymentId(application, zone),
@@ -558,7 +548,7 @@ public class ApplicationController {
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           applicationRoles, quota));
+                                                           applicationRoles, quotaForDeployment));
 
             var quotaUsage = configServer.getQuotaUsage(new DeploymentId(application, zone));
 

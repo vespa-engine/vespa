@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -177,6 +178,14 @@ public class Application {
         return productionDeployments().values().stream().flatMap(List::stream)
                                       .map(Deployment::applicationVersion)
                                       .min(Comparator.naturalOrder());
+    }
+
+    /** Returns the total quota usage for this application */
+    public QuotaUsage quotaUsage() {
+        return instances().values().stream()
+                .flatMap(instance -> instance.deployments().values().stream())
+                .map(Deployment::quota)
+                .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
     /** Returns the set of deploy keys for this application. */

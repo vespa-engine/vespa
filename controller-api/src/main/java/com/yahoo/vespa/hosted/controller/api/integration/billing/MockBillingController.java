@@ -32,8 +32,8 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public Optional<Quota> getQuota(TenantName tenant, Environment environment) {
-        return Optional.of(Quota.unlimited().withMaxClusterSize(5));
+    public Quota getQuota(TenantName tenant, Environment environment) {
+        return Quota.unlimited().withMaxClusterSize(5);
     }
 
     @Override

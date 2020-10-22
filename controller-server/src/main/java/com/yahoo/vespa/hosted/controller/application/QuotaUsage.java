@@ -19,6 +19,14 @@ public class QuotaUsage {
         return rate;
     }
 
+    public QuotaUsage add(QuotaUsage addend) {
+        return create(rate + addend.rate);
+    }
+
+    public QuotaUsage sub(QuotaUsage subtrahend) {
+        return create(rate - subtrahend.rate);
+    }
+
     public static QuotaUsage create(OptionalDouble rate) {
         if (rate.isEmpty()) {
             return QuotaUsage.none;
@@ -28,10 +36,6 @@ public class QuotaUsage {
 
     public static QuotaUsage create(double rate) {
         return new QuotaUsage(rate);
-    }
-
-    public static QuotaUsage sum(QuotaUsage a, QuotaUsage b) {
-        return new QuotaUsage(a.rate + b.rate);
     }
 
     @Override
