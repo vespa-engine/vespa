@@ -74,6 +74,8 @@ public class Processing {
                 ReferenceFieldsProcessor::new,
                 FastAccessValidator::new,
                 ReservedFunctionNames::new,
+                OnnxModelConfigGenerator::new,
+                OnnxModelTypeResolver::new,
                 RankingExpressionTypeResolver::new,
                 // These should be last:
                 IndexingValidation::new,

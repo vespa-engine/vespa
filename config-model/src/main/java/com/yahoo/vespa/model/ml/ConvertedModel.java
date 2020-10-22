@@ -150,7 +150,7 @@ public class ConvertedModel {
      */
     public ExpressionNode expression(FeatureArguments arguments, RankProfileTransformContext context) {
         ExpressionFunction expression = selectExpression(arguments);
-        if (sourceModel.isPresent()) // we should verify
+        if (sourceModel.isPresent() && context != null) // we should verify
             verifyInputs(expression.getBody(), sourceModel.get(), context.rankProfile(), context.queryProfiles());
         return expression.getBody().getRoot();
     }

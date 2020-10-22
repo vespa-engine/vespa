@@ -1,0 +1,34 @@
+create_model.py:í
+4
+first_input
+second/input:0path/to/output:0"Add
+4
+third_input
+second/input:0path/to/output:1"Add
+;
+path/to/output:0
+path/to/output:1path/to/output:2"Addsimple_scoringZ
+first_input
+
+
+Z
+second/input:0
+
+
+Z
+third_input
+
+
+b
+path/to/output:0
+
+
+b
+path/to/output:1
+
+
+b
+path/to/output:2
+
+
+B
