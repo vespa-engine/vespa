@@ -72,11 +72,13 @@ class JDiscServerConnector extends ServerConnector {
     public Metric.Context getRequestMetricContext(HttpServletRequest request) {
         String method = request.getMethod();
         String scheme = request.getScheme();
-        var requestDimensions = new RequestDimensions(method, scheme);
+        boolean clientAuthenticated = request.getAttribute(com.yahoo.jdisc.http.servlet.ServletRequest.SERVLET_REQUEST_X509CERT) != null;
+        var requestDimensions = new RequestDimensions(method, scheme, clientAuthenticated);
         return requestMetricContextCache.computeIfAbsent(requestDimensions, ignored -> {
             Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName);
             dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
             dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
+            dimensions.put(MetricDefinitions.CLIENT_AUTHENTICATED_DIMENSION, Boolean.toString(clientAuthenticated));
             return metric.createContext(dimensions);
         });
     }
@@ -103,10 +105,12 @@ class JDiscServerConnector extends ServerConnector {
     private static class RequestDimensions {
         final String method;
         final String scheme;
+        final boolean clientAuthenticated;
 
-        RequestDimensions(String method, String scheme) {
+        RequestDimensions(String method, String scheme, boolean clientAuthenticated) {
             this.method = method;
             this.scheme = scheme;
+            this.clientAuthenticated = clientAuthenticated;
         }
 
         @Override
@@ -114,12 +118,14 @@ class JDiscServerConnector extends ServerConnector {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             RequestDimensions that = (RequestDimensions) o;
-            return Objects.equals(method, that.method) && Objects.equals(scheme, that.scheme);
+            return clientAuthenticated == that.clientAuthenticated &&
+                    Objects.equals(method, that.method) &&
+                    Objects.equals(scheme, that.scheme);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(method, scheme);
+            return Objects.hash(method, scheme, clientAuthenticated);
         }
     }
 
