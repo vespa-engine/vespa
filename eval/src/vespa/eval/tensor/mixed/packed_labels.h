@@ -33,7 +33,7 @@ public:
 
     vespalib::stringref get_label(uint32_t index) const;
 
-    MemoryUsage estimate_extra_memory_usage() const;
+    MemoryUsage extra_memory_usage() const;
 private:
     const ConstArrayRef<uint32_t> _offsets;
     const ConstArrayRef<char> _label_store;

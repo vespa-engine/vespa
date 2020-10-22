@@ -25,9 +25,8 @@ PackedMixedTensorBuilder<T>::build(std::unique_ptr<ValueBuilder<T>>)
 {
     size_t self_size = sizeof(PackedMixedTensor);
     size_t mappings_size = _mappings_builder.extra_memory();
-    // align:
-    mappings_size += 15ul;
-    mappings_size &= ~15ul;
+    // align cells:
+    mappings_size += PackedMixedTensor::add_for_alignment(self_size + mappings_size);
     size_t cells_size = sizeof(T) * _cells.size();
     size_t total_size = self_size + mappings_size + cells_size;
 

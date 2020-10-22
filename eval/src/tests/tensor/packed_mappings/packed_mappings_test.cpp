@@ -35,8 +35,7 @@ const char *float_tensor_types[] = {
     "tensor<float>(x{},y{})",
     "tensor<float>(x{},z[3])",
     "tensor<float>(w[5],x{},y{},z[3])",
-    "tensor<float>(z[2])",
-    "tensor<float>()"
+    "tensor<float>(z[2])"
 };
 
     vespalib::string label1(""),
