@@ -110,7 +110,8 @@ public class ProvisioningTester {
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  flagSource,
                                                  true,
-                                                 spareCount, 1000);
+                                                 spareCount,
+                                                 1000);
         this.orchestrator = orchestrator;
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
@@ -383,6 +384,13 @@ public class ProvisioningTester {
         return makeProvisionedNodes(n, asFlavor(flavor, type), Optional.empty(), type, ipAddressPoolSize, dualStack);
     }
     public List<Node> makeProvisionedNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        return makeProvisionedNodes(n, (index) -> "host-" + index + ".yahoo.com", flavor, reservedTo, type, ipAddressPoolSize, dualStack);
+    }
+
+    public List<Node> makeProvisionedNodes(int n, Function<Integer, String> nodeNamer, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        if (ipAddressPoolSize == 0 && type == NodeType.host) {
+            ipAddressPoolSize = 1; // Tenant hosts must have at least one IP in their pool
+        }
         List<Node> nodes = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
@@ -398,7 +406,7 @@ public class ProvisioningTester {
                 nextIP += 100;
             }
 
-            String hostname = String.format("host-%d.yahoo.com", nextHost);
+            String hostname = nodeNamer.apply(nextHost);
             String ipv4 = String.format("127.0.0.%d", nextIP);
             String ipv6 = String.format("::%d", nextIP);
 
@@ -499,12 +507,6 @@ public class ProvisioningTester {
                                      i -> String.format("%s-%03d", dockerHostId, i));
     }
 
-    /** Creates a single of virtual docker node on a single parent host */
-    public List<Node> makeReadyVirtualDockerNode(int index, NodeResources resources, String dockerHostId) {
-        return makeReadyVirtualNodes(1, index, resources, Optional.of(dockerHostId),
-                                     i -> String.format("%s-%03d", dockerHostId, i));
-    }
-
     /** Creates a set of virtual nodes without a parent host */
     public List<Node> makeReadyVirtualNodes(int n, NodeResources resources) {
         return makeReadyVirtualNodes(n, 0, resources, Optional.empty(),
@@ -512,13 +514,13 @@ public class ProvisioningTester {
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    private List<Node> makeReadyVirtualNodes(int count, int startIndex, NodeResources flavor, Optional<String> parentHostId,
+    public List<Node> makeReadyVirtualNodes(int count, int startIndex, NodeResources resources, Optional<String> parentHostname,
                                              Function<Integer, String> nodeNamer) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
-            nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
-                                                new Flavor(flavor), NodeType.tenant));
+            nodes.add(nodeRepository.createNode("node-id", hostname, IP.Config.EMPTY, parentHostname,
+                                                new Flavor(resources), Optional.empty(), NodeType.tenant));
         }
         nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());

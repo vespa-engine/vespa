@@ -29,7 +29,7 @@ public class AclProvisioningTest {
 
     private final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
 
-    private ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
     public void trusted_nodes_for_allocated_node() {

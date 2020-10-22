@@ -89,7 +89,7 @@ public final class Node implements Nodelike {
             requireNonEmpty(ipConfig.primary(), "Active node " + hostname + " must have at least one valid IP address");
 
         if (parentHostname.isPresent()) {
-            if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
+            if (!ipConfig.pool().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
         }

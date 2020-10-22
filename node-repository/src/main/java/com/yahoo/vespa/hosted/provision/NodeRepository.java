@@ -460,6 +460,8 @@ public class NodeRepository extends AbstractComponent {
                     .map(node -> {
                         if (node.state() != State.provisioned && node.state() != State.dirty)
                             illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
+                        if (node.type() == NodeType.host && node.ipConfig().pool().isEmpty())
+                            illegal("Can not set host " + node + " ready. Its IP address pool is empty.");
                         return node.withWantToRetire(false, false, Agent.system, clock.instant());
                     })
                     .collect(Collectors.toList());

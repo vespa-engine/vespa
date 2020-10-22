@@ -258,6 +258,10 @@ public class IP {
             return addresses.asSet();
         }
 
+        public boolean isEmpty() {
+            return asSet().isEmpty();
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
@@ -80,21 +81,10 @@ public class MetricsReporterTest {
     @Test
     public void test_registered_metric() {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        Curator curator = new MockCurator();
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors,
-                                                           new EmptyProvisionServiceProvider(),
-                                                           curator,
-                                                           Clock.systemUTC(),
-                                                           Zone.defaultZone(),
-                                                           new MockNameResolver().mockAnyLookup(),
-                                                           DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           new InMemoryFlagSource(),
-                                                           true,
-                                                           0, 1000);
-        Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
-        nodeRepository.addNodes(List.of(node), Agent.system);
-        Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
-        nodeRepository.addNodes(List.of(hostNode), Agent.system);
+        ProvisioningTester tester = new ProvisioningTester.Builder().flavors(nodeFlavors.getFlavors()).build();
+        NodeRepository nodeRepository = tester.nodeRepository();
+        tester.makeProvisionedNodes(1, "default", NodeType.tenant, 0);
+        tester.makeProvisionedNodes(1, "default", NodeType.proxy, 0);
 
         Map<String, Number> expectedMetrics = new TreeMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
