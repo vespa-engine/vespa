@@ -74,14 +74,19 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
+    public void remove(ApplicationTransaction transaction) {
+        removed = true;
+        lastApplicationId = transaction.application();
+    }
+
+    @Override
     public void remove(NestedTransaction transaction, ApplicationId application) {
-        remove(transaction, lock(application));
+        remove(new ApplicationTransaction(lock(application), transaction));
     }
 
     @Override
     public void remove(NestedTransaction transaction, ProvisionLock lock) {
-        removed = true;
-        lastApplicationId = lock.application();
+        remove(new ApplicationTransaction(lock, transaction));
     }
 
     @Override
