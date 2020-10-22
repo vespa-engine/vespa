@@ -47,7 +47,7 @@ public class AutoscalingIntegrationTest {
             tester.clock().advance(Duration.ofSeconds(10));
             tester.nodeMetricsDb().add(fetcher.fetchMetrics(application1));
             tester.clock().advance(Duration.ofSeconds(10));
-            tester.nodeMetricsDb().gc(tester.clock());
+            tester.nodeMetricsDb().gc();
         }
 
         ClusterResources min = new ClusterResources(2, 1, nodes);

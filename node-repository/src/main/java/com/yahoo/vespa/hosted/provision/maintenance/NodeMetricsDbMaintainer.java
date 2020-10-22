@@ -47,7 +47,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                     log.log(Level.WARNING, "Could not update metrics for " + application + ": " + Exceptions.toMessageString(e));
             }
         }
-        metricsDb.gc(nodeRepository().clock());
+        metricsDb.gc();
 
         // Suppress failures for manual zones for now to avoid noise
         if (nodeRepository().zone().environment().isManuallyDeployed()) return true;

@@ -17,21 +17,17 @@ import java.util.stream.Collectors;
 public class NodeTimeseries {
 
     private final String hostname;
-    private final ClusterSpec.Type type;
     private final List<MetricSnapshot> snapshots;
 
     // Note: This transfers ownership of the snapshot list to this
-    NodeTimeseries(String hostname, ClusterSpec.Type type, List<MetricSnapshot> snapshots) {
+    NodeTimeseries(String hostname, List<MetricSnapshot> snapshots) {
         this.hostname = hostname;
-        this.type = type;
         this.snapshots = snapshots;
     }
 
     public boolean isEmpty() { return snapshots.isEmpty(); }
 
     public int size() { return snapshots.size(); }
-
-    public ClusterSpec.Type type() { return type; }
 
     public MetricSnapshot get(int index) { return snapshots.get(index); }
 
@@ -42,11 +38,11 @@ public class NodeTimeseries {
     public NodeTimeseries add(MetricSnapshot snapshot) {
         List<MetricSnapshot> list = new ArrayList<>(snapshots);
         list.add(snapshot);
-        return new NodeTimeseries(hostname(), type(), list);
+        return new NodeTimeseries(hostname(), list);
     }
 
     public NodeTimeseries justAfter(Instant oldestTime) {
-        return new NodeTimeseries(hostname, type,
+        return new NodeTimeseries(hostname,
                                   snapshots.stream()
                                            .filter(snapshot -> snapshot.at().equals(oldestTime) || snapshot.at().isAfter(oldestTime))
                                            .collect(Collectors.toList()));

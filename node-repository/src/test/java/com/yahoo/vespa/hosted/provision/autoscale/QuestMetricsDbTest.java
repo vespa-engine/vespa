@@ -1,136 +1,105 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
-import io.questdb.cairo.CairoConfiguration;
-import io.questdb.cairo.CairoEngine;
-import io.questdb.cairo.DefaultCairoConfiguration;
-import io.questdb.cairo.TableWriter;
-import io.questdb.cairo.sql.Record;
-import io.questdb.cairo.sql.RecordCursor;
-import io.questdb.cairo.sql.RecordCursorFactory;
-import io.questdb.griffin.SqlCompiler;
-import io.questdb.griffin.SqlException;
-import io.questdb.griffin.SqlExecutionContextImpl;
-import io.questdb.std.str.Path;
+import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * Standalone test of setting up a Quest Db partitioned by days,
- * writing data over the days and then removing old entries.
+ * Tests the Quest metrics db.
  *
  * @author bratseth
  */
 public class QuestMetricsDbTest {
 
-    private final Instant now = Instant.from(DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"))
-                                       .parse("2020-10-05T00:00:00"));
-
+    private static final double delta = 0.0000001;
 
     @Test
-    public void testQuestMetricsDb() throws SqlException {
-        System.setProperty("questdbLog", "etc/quest-log.conf"); // silence Questdb's custom logging system
-        String dataDir = "data/QuestMetricsDbTest";
-        IOUtils.recursiveDeleteDir(new File(dataDir)); // Without this, dropping partitions sometimes fail
+    public void testReadWrite() {
+        String dataDir = "data/QuestMetricsDbReadWrite";
+        IOUtils.recursiveDeleteDir(new File(dataDir));
         IOUtils.createDirectory(dataDir + "/metrics");
-        CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
-        try (CairoEngine engine = new CairoEngine(configuration)) { // process-wide singleton
-            try (SqlCompiler compiler = new SqlCompiler(engine)) {
-                SqlExecutionContextImpl context = new SqlExecutionContextImpl(engine, 1); // for single thread
-                initDb("metrics", engine, context, compiler);
+        ManualClock clock = new ManualClock("2020-10-01T00:00:00");
+        QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
+        Instant startTime = clock.instant();
+        clock.advance(Duration.ofSeconds(1));
+        db.add(timeseries(1000, Duration.ofSeconds(1), clock, "host1", "host2", "host3"));
 
-                assertEquals(0, readRows("metrics", context, compiler));
+        clock.advance(Duration.ofSeconds(1));
 
-                writeRows(1000, 10, "metrics", engine, context);
-                assertEquals(1000, readRows("metrics", context, compiler));
+        // Read all of one host
+        List<NodeTimeseries> nodeTimeSeries1 = db.getNodeTimeseries(startTime, Set.of("host1"));
+        assertEquals(1, nodeTimeSeries1.size());
+        assertEquals("host1", nodeTimeSeries1.get(0).hostname());
+        assertEquals(1000, nodeTimeSeries1.get(0).size());
+        MetricSnapshot snapshot = nodeTimeSeries1.get(0).asList().get(0);
+        assertEquals(startTime.plus(Duration.ofSeconds(1)), snapshot.at());
+        assertEquals(0.1, snapshot.cpu(), delta);
+        assertEquals(0.2, snapshot.memory(), delta);
+        assertEquals(0.4, snapshot.disk(), delta);
+        assertEquals(1, snapshot.generation(), delta);
 
-                deleteData(3, "metrics", dataDir, context, compiler);
-                assertEquals(300, readRows("metrics", context, compiler));
-            }
+        // Read all from 2 hosts
+        List<NodeTimeseries> nodeTimeSeries2 = db.getNodeTimeseries(startTime, Set.of("host2", "host3"));
+        assertEquals(2, nodeTimeSeries2.size());
+        assertEquals(Set.of("host2", "host3"), nodeTimeSeries2.stream().map(ts -> ts.hostname()).collect(Collectors.toSet()));
+        assertEquals(1000, nodeTimeSeries2.get(0).size());
+        assertEquals(1000, nodeTimeSeries2.get(1).size());
+
+        // Read a short interval from 3 hosts
+        List<NodeTimeseries> nodeTimeSeries3 = db.getNodeTimeseries(clock.instant().minus(Duration.ofSeconds(3)),
+                                                                    Set.of("host1", "host2", "host3"));
+        assertEquals(3, nodeTimeSeries3.size());
+        assertEquals(Set.of("host1", "host2", "host3"), nodeTimeSeries3.stream().map(ts -> ts.hostname()).collect(Collectors.toSet()));
+        assertEquals(2, nodeTimeSeries3.get(0).size());
+        assertEquals(2, nodeTimeSeries3.get(1).size());
+        assertEquals(2, nodeTimeSeries3.get(2).size());
+    }
+
+    @Test
+    public void testGc() {
+        String dataDir = "data/QuestMetricsDbGc";
+        IOUtils.recursiveDeleteDir(new File(dataDir));
+        IOUtils.createDirectory(dataDir + "/metrics");
+        ManualClock clock = new ManualClock("2020-10-01T00:00:00");
+        QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
+        Instant startTime = clock.instant();
+        int dayOffset = 3;
+        clock.advance(Duration.ofHours(dayOffset));
+        db.add(timeseries(24 * 10, Duration.ofHours(1), clock, "host1", "host2", "host3"));
+
+        assertEquals(24 * 10, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
+        db.gc();
+        assertEquals(24 * 1 + dayOffset, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
+        db.gc(); // no-op
+        assertEquals(24 * 1 + dayOffset, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
+    }
+
+    private Collection<Pair<String, MetricSnapshot>> timeseries(int countPerHost, Duration sampleRate, ManualClock clock,
+                                                                String ... hosts) {
+        Collection<Pair<String, MetricSnapshot>> timeseries = new ArrayList<>();
+        for (int i = 1; i <= countPerHost; i++) {
+            for (String host : hosts)
+                timeseries.add(new Pair<>(host, new MetricSnapshot(clock.instant(),
+                                                                   i * 0.1,
+                                                                   i * 0.2,
+                                                                   i * 0.4,
+                                                                   i % 100)));
+            clock.advance(sampleRate);
         }
-    }
-
-    private void initDb(String tableName, CairoEngine engine, SqlExecutionContextImpl context, SqlCompiler compiler) throws SqlException {
-        if ( ! exists(tableName, engine, context))
-            create(tableName, context, compiler);
-        else
-            clear(tableName, context, compiler);
-    }
-
-    private void writeRows(int rows, int days, String tableName, CairoEngine engine, SqlExecutionContextImpl context) {
-        long oldest = now.minus(Duration.ofDays(days)).toEpochMilli();
-        long timeStep = (now.toEpochMilli() - oldest) / rows;
-
-        try (TableWriter writer = engine.getWriter(context.getCairoSecurityContext(), tableName)) {
-            for (int i = 0; i < rows; i++) {
-                long time = oldest + i * timeStep;
-                TableWriter.Row row = writer.newRow(time * 1000); // in microseconds
-                row.putStr(0, "host" + i);
-                row.putTimestamp(1, time);
-                row.putFloat(2, i * 1.1F);
-                row.putFloat(3, i * 2.2F);
-                row.putFloat(4, i * 3.3F);
-                row.putFloat(5, i); // really a long, but keep this uniform?
-                row.append();
-            }
-            writer.commit();
-        }
-    }
-
-    private boolean exists(String tableName, CairoEngine engine, SqlExecutionContextImpl context) {
-        return 0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), tableName);
-    }
-
-    private void create(String tableName, SqlExecutionContextImpl context, SqlCompiler compiler) throws SqlException {
-        compiler.compile("create table " + tableName +
-                         " (host string, at timestamp, cpu_util float, mem_total_util float, disk_util float, application_generation float)" +
-                         " timestamp(at)" +
-                         "PARTITION BY DAY;",
-                         context);
-    }
-
-    private void clear(String tableName, SqlExecutionContextImpl context, SqlCompiler compiler) throws SqlException {
-        compiler.compile("truncate table " + tableName, context);
-    }
-
-    private int readRows(String tableName, SqlExecutionContextImpl context, SqlCompiler compiler) throws SqlException {
-        try (RecordCursorFactory factory = compiler.compile(tableName, context).getRecordCursorFactory()) {
-            try (RecordCursor cursor = factory.getCursor(context)) {
-                Record record = cursor.getRecord();
-                int rowCount = 0;
-                while (cursor.hasNext()) {
-                    rowCount++;
-                }
-                return rowCount;
-            }
-        }
-    }
-
-    private void deleteData(int maxAgeDays, String tableName, String dataDir, SqlExecutionContextImpl context, SqlCompiler compiler) throws SqlException {
-        File tableRoot = new File(dataDir, tableName);
-        List<String> removeList = new ArrayList<>();
-        for (String dirEntry : tableRoot.list()) {
-            File partitionDir = new File(tableRoot, dirEntry);
-            if ( ! partitionDir.isDirectory()) continue;
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
-            Instant partitionDay = Instant.from(formatter.parse(dirEntry + "T00:00:00"));
-            if (partitionDay.isBefore(now.minus(Duration.ofDays(maxAgeDays))))
-                removeList.add(dirEntry);
-        }
-        compiler.compile("alter table " + tableName + " drop partition " +
-                         removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
-                         context);
+        return timeseries;
     }
 
 }

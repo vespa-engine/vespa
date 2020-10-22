@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * An in-memory time-series database of node metrics.
@@ -19,14 +20,14 @@ public interface MetricsDb {
     /** Adds snapshots to this. */
     void add(Collection<Pair<String, MetricSnapshot>> nodeMetrics);
 
-    /** Must be called intermittently (as long as add is called) to gc old data */
-    void gc(Clock clock);
-
     /**
-     * Returns a list of time series for each of the given host names
-     * which have any values after startTime.
+     * Returns a list with one entry for each hostname containing
+     * the snapshots recorded after the given time (or an empty snapshot if none).
      */
-    List<NodeTimeseries> getNodeTimeseries(Instant startTime, List<String> hostnames);
+    List<NodeTimeseries> getNodeTimeseries(Instant startTime, Set<String> hostnames);
+
+    /** Must be called intermittently (as long as add is called) to gc old data */
+    void gc();
 
     void close();
 

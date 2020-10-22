@@ -30,7 +30,7 @@ public class ClusterTimeseries {
         this.clusterNodes = clusterNodes;
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         this.nodeTimeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterType)),
-                                                   clusterNodes.stream().map(Node::hostname).collect(Collectors.toList()));
+                                                   clusterNodes.stream().map(Node::hostname).collect(Collectors.toSet()));
         this.startTimePerNode = metricStartTimes(cluster, clusterNodes, nodeRepository);
     }
 

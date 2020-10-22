@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,16 +41,16 @@ public class MetricsFetcherDbTest {
         Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
             values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0)));
-            clock.advance(Duration.ofMinutes(10));
+            clock.advance(Duration.ofMinutes(120));
         }
         db.add(values);
 
         // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
         clock.advance(Duration.ofMinutes(1));
 
-        assertEquals(35, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(6)), List.of(node0))));
-        db.gc(clock);
-        assertEquals( 5, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(6)), List.of(node0))));
+        assertEquals(35, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
+        db.gc();
+        assertEquals( 5, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
     }
 
     private int measurementCount(List<NodeTimeseries> measurements) {
