@@ -124,6 +124,7 @@ public class Defaults {
     /**
      * Returns the path to the root under which Vespa should read and write files.
      * Will not end with a "/".
+     *
      * @return the vespa home directory
      */
     public String vespaHome() { return vespaHome; }

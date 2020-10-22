@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
@@ -18,7 +19,6 @@ import io.questdb.griffin.SqlExecutionContext;
 import io.questdb.griffin.SqlExecutionContextImpl;
 import io.questdb.std.str.Path;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.time.Clock;
 import java.time.Duration;
@@ -56,9 +56,18 @@ public class QuestMetricsDb implements MetricsDb {
 
     public QuestMetricsDb(String dataDir, Clock clock) {
         this.clock = clock;
+
+        if (dataDir.startsWith(Defaults.getDefaults().vespaHome())
+            && ! new File(Defaults.getDefaults().vespaHome()).exists())
+            dataDir = "data"; // We're injected, but not on a node with Vespa installed
         this.dataDir = dataDir;
-        System.setProperty("questdbLog", "etc/quest-log.conf"); // silence Questdb's custom logging system
+
         IOUtils.createDirectory(dataDir + "/" + tableName);
+
+        // silence Questdb's custom logging system
+        IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
+        System.setProperty("questdbLog", dataDir + "/quest-log.conf");
+
         CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
         engine = new CairoEngine(configuration);
         ensureExists(tableName);

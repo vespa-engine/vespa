@@ -5,8 +5,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import javax.inject.Inject;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
