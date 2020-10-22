@@ -106,6 +106,8 @@ public class VespaMetricSet {
     private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
+        addMetric(metrics, "jdisc.http.requests", List.of("rate", "count"));
+
         metrics.add(new Metric("handled.requests.count"));
         metrics.add(new Metric("handled.latency.max"));
         metrics.add(new Metric("handled.latency.sum"));
