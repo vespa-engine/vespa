@@ -79,9 +79,9 @@ public class NodeResourceLimits {
     private long getThinPoolSize(NodeResources.StorageType storageType) {
         if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning()) {
             if (zone().system() == SystemName.Public)
-                return 21;
+                return 12;
             else
-                return 47;
+                return 24;
         }
         return 4;
     }
