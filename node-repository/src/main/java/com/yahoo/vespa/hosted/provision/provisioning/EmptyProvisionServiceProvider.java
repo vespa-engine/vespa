@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
@@ -41,7 +40,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
         public NodeResources advertisedResourcesOf(Flavor flavor) { return flavor.resources(); }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources) { return resources; }
+        public NodeResources requestToReal(NodeResources resources, boolean exclusive) { return resources; }
 
         @Override
         public NodeResources realToRequest(NodeResources resources) { return resources; }
