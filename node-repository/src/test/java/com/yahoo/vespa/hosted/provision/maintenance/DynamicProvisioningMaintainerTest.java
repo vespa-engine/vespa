@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -200,6 +201,24 @@ public class DynamicProvisioningMaintainerTest {
         tester.assertNodesUnchanged();
     }
 
+    @Test
+    public void defer_writing_ip_addresses_until_dns_resolves() {
+        var tester = new DynamicProvisioningTester().addInitialNodes();
+        tester.hostProvisioner.with(Behaviour.failDnsUpdate);
+
+        Supplier<List<Node>> provisioning = () -> tester.nodeRepository.getNodes(NodeType.host, Node.State.provisioned);
+        assertEquals(2, provisioning.get().size());
+        tester.maintainer.maintain();
+
+        assertTrue("No IP addresses written as DNS updates are failing",
+                   provisioning.get().stream().allMatch(host -> host.ipConfig().pool().isEmpty()));
+
+        tester.hostProvisioner.without(Behaviour.failDnsUpdate);
+        tester.maintainer.maintain();
+        assertTrue("IP addresses written as DNS updates are succeeding",
+                   provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().isEmpty()));
+    }
+
     private static class DynamicProvisioningTester {
 
         private static final ApplicationId tenantApp = ApplicationId.from("mytenant", "myapp", "default");
@@ -222,7 +241,7 @@ public class DynamicProvisioningMaintainerTest {
         }
 
         public DynamicProvisioningTester(Cloud cloud) {
-            MockNameResolver nameResolver = new MockNameResolver().mockAnyLookup();
+            MockNameResolver nameResolver = new MockNameResolver();
             this.hostProvisioner = new MockHostProvisioner(flavors, nameResolver);
             this.provisioningTester = new ProvisioningTester.Builder().zone(new Zone(cloud, SystemName.defaultSystem(),
                                                                                      Environment.defaultEnvironment(),
@@ -352,16 +371,25 @@ public class DynamicProvisioningMaintainerTest {
             return this;
         }
 
+        private MockHostProvisioner without(Behaviour first, Behaviour... rest) {
+            Set<Behaviour> behaviours = new HashSet<>(this.behaviours);
+            behaviours.removeAll(EnumSet.of(first, rest));
+            this.behaviours = behaviours.isEmpty() ? EnumSet.noneOf(Behaviour.class) : EnumSet.copyOf(behaviours);
+            return this;
+        }
+
         private Node withIpAssigned(Node node) {
             if (node.parentHostname().isPresent()) return node;
             int hostIndex = Integer.parseInt(node.hostname().replaceAll("^[a-z]+|-\\d+$", ""));
             Set<String> addresses = Set.of("::" + hostIndex + ":0");
-            nameResolver.addRecord(node.hostname(), addresses.iterator().next());
             Set<String> pool = new HashSet<>();
-            for (int i = 1; i <= 2; i++) {
-                String ip = "::" + hostIndex + ":" + i;
-                pool.add(ip);
-                nameResolver.addRecord(node.hostname() + "-" + i, ip);
+            if (!behaviours.contains(Behaviour.failDnsUpdate)) {
+                nameResolver.addRecord(node.hostname(), addresses.iterator().next());
+                for (int i = 1; i <= 2; i++) {
+                    String ip = "::" + hostIndex + ":" + i;
+                    pool.add(ip);
+                    nameResolver.addRecord(node.hostname() + "-" + i, ip);
+                }
             }
             return node.with(node.ipConfig().with(addresses).with(IP.Pool.of(pool)));
         }
@@ -369,6 +397,7 @@ public class DynamicProvisioningMaintainerTest {
         enum Behaviour {
             failProvisioning,
             failDeprovisioning,
+            failDnsUpdate,
         }
 
     }

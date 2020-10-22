@@ -5,26 +5,37 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Interface for a hostname/ip resolver.
+ * Interface for a basic DNS name resolver.
  *
  * @author mpolden
  */
 public interface NameResolver {
 
-    /**
-     * Get IP addresses for given host name
-     *
-     * @param hostname The hostname to resolve
-     * @return A set of IPv4 or IPv6 addresses
-     */
-    Set<String> getAllByNameOrThrow(String hostname);
+    /** Resolve {@link RecordType#A} and {@link RecordType#AAAA} records for given name */
+    Set<String> resolveAll(String name);
 
-    /**
-     * Get hostname from IP address.
-     *
-     * @param ipAddress The IPv4 or IPv6 address for the host
-     * @return Empty if the IP does not resolve or the hostname if it does
-     */
-    Optional<String> getHostname(String ipAddress);
+    /** Resolve given record type(s) for given name */
+    Set<String> resolve(String name, RecordType first, RecordType... rest);
+
+    /** Resolve hostname from given IP address, if any exist */
+    Optional<String> resolveHostname(String ipAddress);
+
+    /** DNS record types */
+    enum RecordType {
+
+        A("A"),
+        AAAA("AAAA");
+
+        private final String value;
+
+        public String value() {
+            return value;
+        }
+
+        RecordType(String value) {
+            this.value = value;
+        }
+
+    }
 
 }

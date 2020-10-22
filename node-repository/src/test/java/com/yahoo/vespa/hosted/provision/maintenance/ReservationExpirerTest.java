@@ -5,31 +5,18 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
-import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,37 +26,23 @@ import static org.junit.Assert.assertFalse;
  */
 public class ReservationExpirerTest {
 
-    private final Curator curator = new MockCurator();
-
     @Test
     public void ensure_reservation_times_out() {
-        ManualClock clock = new ManualClock();
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(flavors,
-                                                           new EmptyProvisionServiceProvider(),
-                                                           curator,
-                                                           clock,
-                                                           Zone.defaultZone(),
-                                                           new MockNameResolver().mockAnyLookup(),
-                                                           DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           new InMemoryFlagSource(),
-                                                           true,
-                                                           0, 1000);
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
+        ProvisioningTester tester = new ProvisioningTester.Builder().flavors(flavors.getFlavors()).build();
+        ManualClock clock = tester.clock();
+        NodeRepository nodeRepository = tester.nodeRepository();
 
-        List<Node> nodes = new ArrayList<>(2);
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant));
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant));
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
+        NodeResources hostResources = nodeResources.add(nodeResources).add(nodeResources);
+        tester.makeReadyNodes(2, nodeResources);
+        tester.makeReadyHosts(1, hostResources);
 
         // Reserve 2 nodes
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        provisioner.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1))), null);
+        tester.provisioner().prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)), null);
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
 
         // Reservation times out

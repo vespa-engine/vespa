@@ -5,31 +5,24 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
-import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
 import com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker;
@@ -57,12 +50,12 @@ public class NodeFailTester {
     public static final ApplicationId app1 = ApplicationId.from("foo1", "bar", "fuz");
     public static final ApplicationId app2 = ApplicationId.from("foo2", "bar", "fuz");
     public static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "docker");
-    private static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private static final Duration downtimeLimitOneHour = Duration.ofMinutes(60);
 
     // Components with state
     public final ManualClock clock;
     public final NodeRepository nodeRepository;
+    public final ProvisioningTester tester;
     public NodeFailer failer;
     public ServiceMonitorStub serviceMonitor;
     public MockDeployer deployer;
@@ -73,21 +66,13 @@ public class NodeFailTester {
     private final Curator curator;
 
     private NodeFailTester() {
-        clock = new ManualClock();
-        curator = new MockCurator();
-        nodeRepository = new NodeRepository(nodeFlavors,
-                                            new EmptyProvisionServiceProvider(),
-                                            curator,
-                                            clock,
-                                            zone,
-                                            new MockNameResolver().mockAnyLookup(),
-                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            new InMemoryFlagSource(),
-                                            true,
-                                            0, 1000);
-        provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
-        hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();
+        tester = new ProvisioningTester.Builder().orchestrator(orchestrator).flavors(nodeFlavors.getFlavors()).build();
+        clock = tester.clock();
+        curator = tester.getCurator();
+        nodeRepository = tester.nodeRepository();
+        provisioner = tester.provisioner();
+        hostLivenessTracker = new TestHostLivenessTracker(clock);
     }
 
     public static NodeFailTester withTwoApplications() {
@@ -123,7 +108,7 @@ public class NodeFailTester {
         int nodesPerHost = 3;
         List<Node> hosts = tester.createHostNodes(numberOfHosts);
         for (int i = 0; i < hosts.size(); i++) {
-            tester.createReadyNodes(nodesPerHost, i * nodesPerHost, Optional.of("parent" + i),
+            tester.createReadyNodes(nodesPerHost, i * nodesPerHost, Optional.of("parent" + (i + 1)),
                                    new NodeResources(1, 4, 100, 0.3), NodeType.tenant);
         }
 
@@ -246,7 +231,7 @@ public class NodeFailTester {
     private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < startIndex + count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, parentHostname, flavor, nodeType));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, IP.Config.EMPTY, parentHostname, flavor, Optional.empty(), nodeType));
 
         nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
@@ -254,10 +239,9 @@ public class NodeFailTester {
     }
 
     private List<Node> createHostNodes(int count) {
-        List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
+        List<Node> nodes = tester.makeProvisionedNodes(count, (index) -> "parent" + index,
+                                                       nodeFlavors.getFlavorOrThrow("default"),
+                                                       Optional.empty(), NodeType.host, 10, false);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }

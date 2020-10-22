@@ -6,36 +6,20 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
-import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,31 +28,16 @@ import static org.junit.Assert.assertEquals;
  */
 public class OperatorChangeApplicationMaintainerTest {
 
-    private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-
-    private NodeRepository nodeRepository;
-    private Fixture fixture;
-
     @Test
     public void test_application_maintenance() {
-        ManualClock clock = new ManualClock();
-        Curator curator = new MockCurator();
-        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
-        this.nodeRepository = new NodeRepository(nodeFlavors,
-                                                 new EmptyProvisionServiceProvider(),
-                                                 curator,
-                                                 clock,
-                                                 zone,
-                                                 new MockNameResolver().mockAnyLookup(),
-                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                 new InMemoryFlagSource(),
-                                                 true,
-                                                 0, 1000);
-        this.fixture = new Fixture(zone, nodeRepository);
+        NodeResources hostResources = new NodeResources(64, 128, 2000, 10);
+        Fixture fixture = new Fixture();
+        ManualClock clock = fixture.tester.clock();
+        NodeRepository nodeRepository = fixture.nodeRepository;
 
-        createReadyNodes(15, this.fixture.nodeResources, nodeRepository);
-        createHostNodes(2, nodeRepository, nodeFlavors);
-        createProxyNodes(2, nodeRepository, nodeFlavors);
+        fixture.tester.makeReadyNodes(15, fixture.nodeResources);
+        fixture.tester.makeReadyNodes(2, hostResources);
+        fixture.tester.makeReadyNodes(2, fixture.nodeResources, NodeType.proxy);
 
         // Create applications
         fixture.activate();
@@ -104,39 +73,9 @@ public class OperatorChangeApplicationMaintainerTest {
         assertEquals("No further operator changes -> no (new) redeployments", 5, fixture.deployer.redeployments);
     }
 
-    private void createReadyNodes(int count, NodeResources resources, NodeRepository nodeRepository) {
-        createReadyNodes(count, new Flavor(resources), nodeRepository);
-    }
-
-    private void createReadyNodes(int count, Flavor flavor, NodeRepository nodeRepository) {
-        List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, NodeType.tenant));
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
-    }
-
-    private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
-        List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
-    }
-
-    private void createProxyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
-        List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("proxyNode" + i, "proxyHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy));
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
-    }
-
     private static class Fixture {
 
+        final ProvisioningTester tester;
         final NodeRepository nodeRepository;
         final MockDeployer deployer;
 
@@ -151,18 +90,14 @@ public class OperatorChangeApplicationMaintainerTest {
         final int wantedNodesApp2 = 7;
         final int wantedNodesApp3 = 2;
 
-        Fixture(Zone zone, NodeRepository nodeRepository) {
-            this.nodeRepository = nodeRepository;
-            NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository,
-                                                                                  zone,
-                                                                                  new MockProvisionServiceProvider(),
-                                                                                  new InMemoryFlagSource());
-
+        Fixture() {
+            this.tester = new ProvisioningTester.Builder().build();
+            this.nodeRepository = tester.nodeRepository();
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                     app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.from(new ClusterResources(wantedNodesApp1, 1, nodeResources))),
                     app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.from(new ClusterResources(wantedNodesApp2, 1, nodeResources))),
                     app3, new MockDeployer.ApplicationContext(app3, clusterApp3, Capacity.fromRequiredNodeType(NodeType.proxy))) ;
-            this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
+            this.deployer = new MockDeployer(tester.provisioner(), nodeRepository.clock(), apps);
         }
 
         void activate() {

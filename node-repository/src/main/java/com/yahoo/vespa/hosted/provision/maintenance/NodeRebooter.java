@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -44,7 +43,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
     protected boolean maintain() {
         // Reboot candidates: Nodes in long-term states, where we know we can safely orchestrate a reboot
         List<Node> nodesToReboot = nodeRepository().getNodes(Node.State.active, Node.State.ready).stream()
-                .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                .filter(node -> node.type().isHost())
                 .filter(this::shouldReboot)
                 .collect(Collectors.toList());
 
