@@ -26,17 +26,17 @@ public class MetricSnapshot {
         this.generation = generation;
     }
 
+    public Instant at() { return at; }
     public double cpu() { return cpu; }
     public double memory() { return memory; }
     public double disk() { return disk; }
     public long generation() { return generation; }
-    public Instant at() { return at; }
 
     @Override
-    public String toString() { return "metrics at " + at + ": " +
-                                      "cpu: " + cpu +
-                                      "memory: " + memory +
-                                      "disk: " + disk +
-                                      "generation: " + generation; }
+    public String toString() { return "metrics at " + at + ":" +
+                                      " cpu: " + cpu +
+                                      " memory: " + memory +
+                                      " disk: " + disk +
+                                      " generation: " + generation; }
 
 }

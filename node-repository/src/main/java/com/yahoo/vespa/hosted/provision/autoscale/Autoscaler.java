@@ -101,6 +101,10 @@ public class Autoscaler {
         return Duration.ofHours(1);
     }
 
+    static Duration maxScalingWindow() {
+        return Duration.ofHours(12);
+    }
+
     /** Measurements are currently taken once a minute. See also scalingWindow */
     static int minimumMeasurementsPerNode(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return 60;

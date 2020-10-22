@@ -67,7 +67,7 @@ public class GroupPreparer {
         {
             MutableInteger probePrepareHighestIndex = new MutableInteger(highestIndex.get());
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                    probePrepareHighestIndex, wantedGroups, allocateFully, PROBE_LOCK);
+                                                               probePrepareHighestIndex, wantedGroups, allocateFully, PROBE_LOCK);
             if (probeAllocation.fulfilledAndNoChanges()) {
                 List<Node> acceptedNodes = probeAllocation.finalNodes();
                 surplusActiveNodes.removeAll(acceptedNodes);
@@ -125,9 +125,9 @@ public class GroupPreparer {
                                            boolean allocateFully, Mutex allocationLock) {
         LockedNodeList allNodes = nodeRepository.list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
-                highestIndex, nodeRepository);
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
-                application, cluster, requestedNodes, wantedGroups, allocateFully, nodeRepository);
+                                                       highestIndex, nodeRepository);
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, application, cluster, requestedNodes,
+                                                          wantedGroups, allocateFully, nodeRepository);
 
         prioritizer.addApplicationNodes();
         prioritizer.addSurplusNodes(surplusActiveNodes);

@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import javax.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -13,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An in-memory implementation of the metrics Db.
@@ -44,33 +47,27 @@ public class MemoryMetricsDb implements MetricsDb {
     }
 
     @Override
-    public void gc(Clock clock) {
+    public List<NodeTimeseries> getNodeTimeseries(Instant startTime, Set<String> hostnames) {
+        synchronized (lock) {
+            return hostnames.stream()
+                            .map(hostname -> db.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))
+                            .collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public void gc() {
         synchronized (lock) {
             // Each measurement is Object + long + float = 16 + 8 + 4 = 28 bytes
             // 12 hours with 1k nodes and 3 resources and 1 measurement/sec is about 5Gb
             for (String hostname : db.keySet()) {
                 var timeseries = db.get(hostname);
-                timeseries = timeseries.justAfter(clock.instant().minus(Autoscaler.scalingWindow(timeseries.type())));
+                timeseries = timeseries.justAfter(nodeRepository.clock().instant().minus(Autoscaler.maxScalingWindow()));
                 if (timeseries.isEmpty())
                     db.remove(hostname);
                 else
                     db.put(hostname, timeseries);
             }
-        }
-    }
-
-    @Override
-    public List<NodeTimeseries> getNodeTimeseries(Instant startTime, List<String> hostnames) {
-        synchronized (lock) {
-            List<NodeTimeseries> measurementsList = new ArrayList<>(hostnames.size());
-            for (String hostname : hostnames) {
-                NodeTimeseries measurements = db.get(hostname);
-                if (measurements == null) continue;
-                measurements = measurements.justAfter(startTime);
-                if (measurements.isEmpty()) continue;
-                measurementsList.add(measurements);
-            }
-            return measurementsList;
         }
     }
 
@@ -83,9 +80,7 @@ public class MemoryMetricsDb implements MetricsDb {
             Optional<Node> node = nodeRepository.getNode(hostname);
             if (node.isEmpty()) return;
             if (node.get().allocation().isEmpty()) return;
-            timeseries = new NodeTimeseries(hostname,
-                                            node.get().allocation().get().membership().cluster().type(),
-                                            new ArrayList<>());
+            timeseries = new NodeTimeseries(hostname, new ArrayList<>());
             db.put(hostname, timeseries);
         }
         db.put(hostname, timeseries.add(snapshot));
