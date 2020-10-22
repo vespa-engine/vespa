@@ -80,8 +80,8 @@ public class RankingExpressionConstantsTestCase extends SchemaTestCase {
                                                                        queryProfileRegistry,
                                                                        new ImportedMlModels(),
                                                                        new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(foo).rankingScript,14.0)", rankProperties.get(0).toString());
-        assertEquals("(rankingExpression(firstphase).rankingScript,16.6)", rankProperties.get(2).toString());
+        assertEquals("(rankingExpression(foo).rankingScript, 14.0)", rankProperties.get(0).toString());
+        assertEquals("(rankingExpression(firstphase).rankingScript, 16.6)", rankProperties.get(2).toString());
     }
 
     @Test
