@@ -32,8 +32,19 @@ void my_generic_map_op(State &state, uint64_t param_in) {
     state.pop_push(result_ref);
 }
 
+template <typename Func>
+void my_double_map_op(State &state, uint64_t param_in) {
+    Func function(to_map_fun(param_in));
+    const Value &a = state.peek(0);
+    state.pop_push(state.stash.create<DoubleValue>(function(a.as_double())));
+}
+
 struct SelectGenericMapOp {
-    template <typename CT, typename Func> static auto invoke() {
+    template <typename CT, typename Func> static auto invoke(const ValueType &type) {
+        if (type.is_double()) {
+            assert((std::is_same<CT,double>::value));
+            return my_double_map_op<Func>;
+        }
         return my_generic_map_op<CT, Func>;
     }
 };
@@ -75,7 +86,7 @@ using MapTypify = TypifyValue<TypifyCellType,operation::TypifyOp1>;
 InterpretedFunction::Instruction
 GenericMap::make_instruction(const ValueType &lhs_type, map_fun_t function)
 {
-    auto op = typify_invoke<2,MapTypify,SelectGenericMapOp>(lhs_type.cell_type(), function);
+    auto op = typify_invoke<2,MapTypify,SelectGenericMapOp>(lhs_type.cell_type(), function, lhs_type);
     return Instruction(op, to_param(function));
 }
 
