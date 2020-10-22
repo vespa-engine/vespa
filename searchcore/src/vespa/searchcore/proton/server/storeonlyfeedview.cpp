@@ -273,6 +273,12 @@ StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneTyp
     }
 }
 
+IPendingLidTracker::Token
+StoreOnlyFeedView::get_pending_lid_token(const DocumentOperation &op)
+{
+    return (op.getValidDbdId(_params._subDbId) ? _pendingLidsForCommit->produce(op.getLid()) : IPendingLidTracker::Token());
+}
+
 void
 StoreOnlyFeedView::considerEarlyAck(FeedToken & token)
 {
@@ -322,7 +328,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
          _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(putOp, docId.getGlobalId(), docId);
-    auto uncommitted = _pendingLidsForCommit->produce(putOp.getLid());
+    auto uncommitted = get_pending_lid_token(putOp);
     considerEarlyAck(token);
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
@@ -486,7 +492,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         (void) updateOk;
         _metaStore.commit(serialNum, serialNum);
     }
-    auto uncommitted = _pendingLidsForCommit->produce(updOp.getLid());
+    auto uncommitted = get_pending_lid_token(updOp);
     considerEarlyAck(token);
 
     bool immediateCommit = needImmediateCommit();
@@ -611,7 +617,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
          rmOp.getSubDbId(), rmOp.getLid(), rmOp.getPrevSubDbId(), rmOp.getPrevLid(), _params._subDbId);
 
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, docId.getGlobalId(), docId);
-    auto uncommitted = _pendingLidsForCommit->produce(rmOp.getLid());
+    auto uncommitted = get_pending_lid_token(rmOp);
     considerEarlyAck(token);
 
     if (rmOp.getValidDbdId(_params._subDbId)) {

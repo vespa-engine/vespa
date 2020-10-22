@@ -188,6 +188,8 @@ private:
                         PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
                         Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
+    IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
+    
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedToken &token);
 
