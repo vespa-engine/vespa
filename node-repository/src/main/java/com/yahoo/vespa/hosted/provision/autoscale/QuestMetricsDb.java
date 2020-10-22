@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.defaults.Defaults;
 import io.questdb.cairo.CairoConfiguration;
 import io.questdb.cairo.CairoEngine;
 import io.questdb.cairo.DefaultCairoConfiguration;
@@ -50,7 +51,7 @@ public class QuestMetricsDb implements MetricsDb {
 
     @Inject
     public QuestMetricsDb() {
-        this("data", Clock.systemUTC());
+        this(Defaults.getDefaults().underVespaHome("var/db/vespa/autoscaling"), Clock.systemUTC());
     }
 
     public QuestMetricsDb(String dataDir, Clock clock) {
