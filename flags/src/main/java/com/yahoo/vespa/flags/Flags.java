@@ -232,12 +232,6 @@ public class Flags {
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
-            "enable-disk-write-test", true,
-            "Regularly issue a small write to disk and fail the host if it is not successful",
-            "Takes effect on next node agent tick (but does not clear existing failure reports)",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag VALIDATE_ENDPOINT_CERTIFICATES = defineFeatureFlag(
             "validate-endpoint-certificates", false,
             "Whether endpoint certificates should be validated before use",
