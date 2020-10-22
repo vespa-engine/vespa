@@ -39,6 +39,10 @@ public class Quota {
         return UNLIMITED;
     }
 
+    public boolean isUnlimited() {
+        return budget.isEmpty() && maxClusterSize().isEmpty();
+    }
+
     public Quota withBudget(BigDecimal budget) {
         return new Quota(maxClusterSize, Optional.ofNullable(budget));
     }
