@@ -14,8 +14,8 @@ namespace {
 template <typename T>
 struct Wrapper : Aggregator {
     T aggr;
-    virtual void first(double value) final override { aggr.first(value); }
-    virtual void next(double value) final override { aggr.next(value); }
+    virtual void first(double value) final override { aggr = T{value}; }
+    virtual void next(double value) final override { aggr.sample(value); }
     virtual double result() const final override { return aggr.result(); }
 };
 

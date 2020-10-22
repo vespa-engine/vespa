@@ -5,6 +5,7 @@
 
 using vespalib::Stash;
 using namespace vespalib::eval;
+using namespace vespalib::eval::aggr;
 
 TEST("require that aggregator list returns appropriate entries") {
     auto list = Aggregator::list();
@@ -81,6 +82,33 @@ TEST("require that MIN aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 100.0);
+}
+
+template <template <typename T> typename A>
+float aggr_merge(const std::vector<float> &a, const std::vector<float> &b) {
+    A<float> aggr0;
+    A<float> aggr1;
+    A<float> aggr2;
+    A<float> aggr3;
+    for (float v: a) {
+        aggr1.sample(v);
+    }
+    for (float v: b) {
+        aggr2.sample(v);
+    }
+    aggr0.merge(aggr1);
+    aggr2.merge(aggr3);
+    aggr0.merge(aggr2);
+    return aggr0.result();
+}
+
+TEST("require that aggregator merge works") {
+    EXPECT_EQUAL(aggr_merge<Avg>({1,2},{3,4}), 2.5);
+    EXPECT_EQUAL(aggr_merge<Count>({1,2},{3,4}), 4.0);
+    EXPECT_EQUAL(aggr_merge<Prod>({1,2},{3,4}), 24.0);
+    EXPECT_EQUAL(aggr_merge<Sum>({1,2},{3,4}), 10.0);
+    EXPECT_EQUAL(aggr_merge<Max>({1,2},{3,4}), 4.0);
+    EXPECT_EQUAL(aggr_merge<Min>({1,2},{3,4}), 1.0);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

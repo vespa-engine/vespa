@@ -43,11 +43,11 @@ struct Params {
 };
 
 template <typename CT, typename AGGR>
-CT reduce_cells(const CT *src, size_t dim_size, size_t stride, AGGR &aggr) {
-    aggr.first(*src);
+CT reduce_cells(const CT *src, size_t dim_size, size_t stride) {
+    AGGR aggr(*src);
     for (size_t i = 1; i < dim_size; ++i) {
         src += stride;
-        aggr.next(*src);
+        aggr.sample(*src);
     }
     return aggr.result();
 }
@@ -57,12 +57,11 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &params = unwrap_param<Params>(param);
     const CT *src = state.peek(0).cells().typify<CT>().cbegin();
     auto dst_cells = state.stash.create_array<CT>(params.outer_size * params.inner_size);
-    AGGR aggr;
     CT *dst = dst_cells.begin();
     const size_t block_size = (params.dim_size * params.inner_size);
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
-            *dst++ = reduce_cells<CT, AGGR>(src + inner, params.dim_size, params.inner_size, aggr);
+            *dst++ = reduce_cells<CT, AGGR>(src + inner, params.dim_size, params.inner_size);
         }
         src += block_size;
     }
