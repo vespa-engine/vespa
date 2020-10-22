@@ -76,20 +76,15 @@ public class AutoscalingMaintainerTest {
         var tester = new AutoscalingMaintainerTester(new MockDeployer.ApplicationContext(app1, cluster1, app1Capacity));
 
         // Initial deployment at time 0
-        System.out.println("Initial deploy");
         tester.deploy(app1, cluster1, app1Capacity);
 
         // Measure overload
         tester.clock().advance(Duration.ofSeconds(1));
-        System.out.println("Advance by 1 second to " + tester.clock().instant());
-        System.out.println("Emit metrics");
         tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
 
         // Causes autoscaling
         tester.clock().advance(Duration.ofSeconds(1));
-        System.out.println("Advance by 1 second to " + tester.clock().instant());
         Instant firstMaintenanceTime = tester.clock().instant();
-        System.out.println("Run maintenance");
         tester.maintainer().maintain();
         assertTrue(tester.deployer().lastDeployTime(app1).isPresent());
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
