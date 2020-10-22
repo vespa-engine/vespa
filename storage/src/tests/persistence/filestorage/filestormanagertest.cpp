@@ -243,8 +243,10 @@ struct FileStorHandlerComponents {
         filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics, test._node->getComponentRegister());
         filestorHandler->setGetNextMessageTimeout(50ms);
     }
-    ~FileStorHandlerComponents() {}
+    ~FileStorHandlerComponents();
 };
+
+FileStorHandlerComponents::~FileStorHandlerComponents() = default;
 
 struct PersistenceHandlerComponents : public FileStorHandlerComponents {
     ServiceLayerComponent component;
@@ -264,11 +266,13 @@ struct PersistenceHandlerComponents : public FileStorHandlerComponents {
                                                      *filestorHandler, bucketOwnershipNotifier,
                                                      *metrics.disk->threads[0]);
     }
+    ~PersistenceHandlerComponents();
     std::unique_ptr<DiskThread> make_disk_thread() {
         return createThread(*persistenceHandler, *filestorHandler, component);
     }
-    ~PersistenceHandlerComponents() {}
 };
+
+PersistenceHandlerComponents::~PersistenceHandlerComponents() = default;
 
 }
 
