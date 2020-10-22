@@ -219,6 +219,33 @@ struct TestFileStorComponents {
     }
 };
 
+struct FileStorHandlerComponents {
+    DummyStorageLink top;
+    DummyStorageLink* dummyManager;
+    ForwardingMessageSender messageSender;
+    documentapi::LoadTypeSet loadTypes;
+    FileStorMetrics metrics;
+    std::unique_ptr<FileStorHandler> filestorHandler;
+
+    FileStorHandlerComponents(FileStorManagerTest& test, uint32_t threadsPerDisk = 1)
+        : top(),
+          dummyManager(new DummyStorageLink),
+          messageSender(*dummyManager),
+          loadTypes("raw:"),
+          metrics(loadTypes.getMetricLoadTypes()),
+          filestorHandler()
+    {
+        top.push_back(std::unique_ptr<StorageLink>(dummyManager));
+        top.open();
+
+        metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, threadsPerDisk);
+
+        filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics, test._node->getComponentRegister());
+        filestorHandler->setGetNextMessageTimeout(50ms);
+    }
+    ~FileStorHandlerComponents() {}
+};
+
 }
 
 void
@@ -361,22 +388,8 @@ TEST_F(FileStorManagerTest, flush) {
 }
 
 TEST_F(FileStorManagerTest, handler_priority) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                          dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    // Since we fake time with small numbers, we need to make sure we dont
-    // compact them away, as they will seem to be from 1970
-
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50ms);
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
     uint32_t stripeId = 0;
 
     std::string content("Here is some content which is in all documents");
@@ -468,22 +481,8 @@ public:
 };
 
 TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                          dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    // Since we fake time with small numbers, we need to make sure we dont
-    // compact them away, as they will seem to be from 1970
-
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50ms);
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -515,21 +514,8 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
 }
 
 TEST_F(FileStorManagerTest, handler_pause) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    // Since we fake time with small numbers, we need to make sure we dont
-    // compact them away, as they will seem to be from 1970
-
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50ms);
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
     uint32_t stripeId = 0;
 
     std::string content("Here is some content which is in all documents");
@@ -561,21 +547,8 @@ TEST_F(FileStorManagerTest, handler_pause) {
 }
 
 TEST_F(FileStorManagerTest, remap_split) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    // Since we fake time with small numbers, we need to make sure we dont
-    // compact them away, as they will seem to be from 1970
-
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50ms);
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
 
     std::string content("Here is some content which is in all documents");
 
@@ -618,22 +591,8 @@ TEST_F(FileStorManagerTest, remap_split) {
 }
 
 TEST_F(FileStorManagerTest, handler_timeout) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-
-    // Since we fake time with small numbers, we need to make sure we dont
-    // compact them away, as they will seem to be from 1970
-
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(),1,  1);
-
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
-    filestorHandler.setGetNextMessageTimeout(50ms);
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
     uint32_t stripeId = 0;
 
     std::string content("Here is some content which is in all documents");
@@ -672,29 +631,18 @@ TEST_F(FileStorManagerTest, handler_timeout) {
         }
     }
 
-    ASSERT_EQ(1, top.getNumReplies());
+    ASSERT_EQ(1, c.top.getNumReplies());
     EXPECT_EQ(api::ReturnCode::TIMEOUT,
-              static_cast<api::StorageReply&>(*top.getReply(0)).getResult().getResult());
+              static_cast<api::StorageReply&>(*c.top.getReply(0)).getResult().getResult());
 }
 
 TEST_F(FileStorManagerTest, priority) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                          dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    // Since we fake time with small numbers, we need to make sure we dont
-    // compact them away, as they will seem to be from 1970
+    FileStorHandlerComponents c(*this, 2);
+    auto& filestorHandler = *c.filestorHandler;
+    auto& metrics = c.metrics;
 
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(),1,  2);
-
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
                                           filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
@@ -741,7 +689,7 @@ TEST_F(FileStorManagerTest, priority) {
 
     // Wait until everything is done.
     int count = 0;
-    while (documents.size() != top.getNumReplies() && count < 10000) {
+    while (documents.size() != c.top.getNumReplies() && count < 10000) {
         std::this_thread::sleep_for(10ms);
         count++;
     }
@@ -750,7 +698,7 @@ TEST_F(FileStorManagerTest, priority) {
     for (uint32_t i = 0; i < documents.size(); i++) {
         std::shared_ptr<api::PutReply> reply(
                 std::dynamic_pointer_cast<api::PutReply>(
-                        top.getReply(i)));
+                        c.top.getReply(i)));
         ASSERT_TRUE(reply.get());
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
@@ -765,23 +713,16 @@ TEST_F(FileStorManagerTest, priority) {
 }
 
 TEST_F(FileStorManagerTest, split1) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                dummyManager = new DummyStorageLink));
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
+    auto& top = c.top;
+
     setClusterState("storage:2 distributor:1");
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
@@ -905,24 +846,17 @@ TEST_F(FileStorManagerTest, split1) {
 }
 
 TEST_F(FileStorManagerTest, split_single_group) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                dummyManager = new DummyStorageLink));
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
+    auto& top = c.top;
+
     setClusterState("storage:2 distributor:1");
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(),1,  1);
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
         // splitbit set, and once where all the data ends up in file with
@@ -1022,21 +956,16 @@ FileStorManagerTest::putDoc(DummyStorageLink& top,
 }
 
 TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
+    auto& top = c.top;
+
     setClusterState("storage:2 distributor:1");
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     document::BucketId source(16, 0x10001);
@@ -1089,22 +1018,16 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
 }
 
 TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
+    auto& top = c.top;
+
     setClusterState("storage:2 distributor:2");
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
@@ -1132,22 +1055,15 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
 }
 
 TEST_F(FileStorManagerTest, join) {
-    // Setup a filestorthread to test
-    DummyStorageLink top;
-    DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
-    top.open();
-    ForwardingMessageSender messageSender(*dummyManager);
+    FileStorHandlerComponents c(*this);
+    auto& filestorHandler = *c.filestorHandler;
+    auto& top = c.top;
 
-    documentapi::LoadTypeSet loadTypes("raw:");
-    FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
-    FileStorHandlerImpl filestorHandler(messageSender, metrics, _node->getComponentRegister());
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
-    BucketOwnershipNotifier bucketOwnershipNotifier(component, messageSender);
+    BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *c.metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
