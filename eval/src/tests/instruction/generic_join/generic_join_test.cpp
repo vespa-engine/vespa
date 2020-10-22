@@ -70,19 +70,10 @@ TensorSpec reference_join(const TensorSpec &a, const TensorSpec &b, join_fun_t f
     return result;
 }
 
-TensorSpec perform_generic_join(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
+TensorSpec perform_generic_join(const TensorSpec &a, const TensorSpec &b,
+                                join_fun_t function, const ValueBuilderFactory &factory)
+{
     Stash stash;
-    const auto &factory = SimpleValueBuilderFactory::get();
-    auto lhs = value_from_spec(a, factory);
-    auto rhs = value_from_spec(b, factory);
-    auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
-    InterpretedFunction::EvalSingle single(factory, my_op);
-    return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
-}
-
-TensorSpec perform_generic_join_fast(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
-    Stash stash;
-    const auto &factory = FastValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
     auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
@@ -140,9 +131,9 @@ TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
         for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
             SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
             auto expect = reference_join(lhs, rhs, fun);
-            auto actual = perform_generic_join(lhs, rhs, fun);
-            auto fast = perform_generic_join_fast(lhs, rhs, fun); 
-            EXPECT_EQ(actual, expect);
+            auto simple = perform_generic_join(lhs, rhs, fun, SimpleValueBuilderFactory::get());
+            auto fast = perform_generic_join(lhs, rhs, fun, FastValueBuilderFactory::get());
+            EXPECT_EQ(simple, expect);
             EXPECT_EQ(fast, expect);
         }
     }

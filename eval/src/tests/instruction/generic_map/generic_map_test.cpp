@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -47,7 +48,7 @@ TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueB
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }
 
-void test_generic_map(const ValueBuilderFactory &factory) {
+void test_generic_map_with(const ValueBuilderFactory &factory) {
     for (const auto & layout : map_layouts) {
         TensorSpec lhs = spec(layout, Div16(N()));
         ValueType lhs_type = ValueType::from_spec(lhs.type());
@@ -61,7 +62,11 @@ void test_generic_map(const ValueBuilderFactory &factory) {
 }
 
 TEST(GenericMapTest, generic_map_works_for_simple_values) {
-    test_generic_map(SimpleValueBuilderFactory::get());
+    test_generic_map_with(SimpleValueBuilderFactory::get());
+}
+
+TEST(GenericMapTest, generic_map_works_for_fast_values) {
+    test_generic_map_with(FastValueBuilderFactory::get());
 }
 
 TensorSpec immediate_generic_map(const TensorSpec &a, map_fun_t func, const ValueBuilderFactory &factory)

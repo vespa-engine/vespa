@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -62,9 +63,10 @@ TensorSpec reference_reduce(const TensorSpec &a, const std::vector<vespalib::str
     return spec_from_value(*value_from_spec(result, factory));
 }
 
-TensorSpec perform_generic_reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims, Aggr aggr) {
+TensorSpec perform_generic_reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims,
+                                  Aggr aggr, const ValueBuilderFactory &factory)
+{
     Stash stash;
-    const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto my_op = GenericReduce::make_instruction(lhs->type(), aggr, dims, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
@@ -94,20 +96,28 @@ TEST(GenericReduceTest, sparse_reduce_plan_can_be_created) {
     EXPECT_EQ(plan.keep_dims, expect_keep_dims);
 }
 
-TEST(GenericReduceTest, generic_reduce_works_for_simple_values) {
+void test_generic_reduce_with(const ValueBuilderFactory &factory) {
     for (const Layout &layout: layouts) {
         TensorSpec input = spec(layout, Div16(N()));
         for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
             for (const Domain &domain: layout) {
                 auto expect = reference_reduce(input, {domain.dimension}, aggr);
-                auto actual = perform_generic_reduce(input, {domain.dimension}, aggr);
+                auto actual = perform_generic_reduce(input, {domain.dimension}, aggr, factory);
                 EXPECT_EQ(actual, expect);
             }
             auto expect = reference_reduce(input, {}, aggr);
-            auto actual = perform_generic_reduce(input, {}, aggr);
+            auto actual = perform_generic_reduce(input, {}, aggr, factory);
             EXPECT_EQ(actual, expect);
         }
     }
+}
+
+TEST(GenericReduceTest, generic_reduce_works_for_simple_values) {
+    test_generic_reduce_with(SimpleValueBuilderFactory::get());
+}
+
+TEST(GenericReduceTest, generic_reduce_works_for_fast_values) {
+    test_generic_reduce_with(FastValueBuilderFactory::get());
 }
 
 TensorSpec immediate_generic_reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims, Aggr aggr) {

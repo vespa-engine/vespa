@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -121,7 +122,7 @@ TensorSpec perform_generic_rename(const TensorSpec &a,
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }
 
-void test_generic_rename(const ValueBuilderFactory &factory) {
+void test_generic_rename_with(const ValueBuilderFactory &factory) {
     for (const auto & layout : rename_layouts) {
         TensorSpec lhs = spec(layout, N());
         ValueType lhs_type = ValueType::from_spec(lhs.type());
@@ -139,7 +140,11 @@ void test_generic_rename(const ValueBuilderFactory &factory) {
 }
 
 TEST(GenericRenameTest, generic_rename_works_for_simple_values) {
-    test_generic_rename(SimpleValueBuilderFactory::get());
+    test_generic_rename_with(SimpleValueBuilderFactory::get());
+}
+
+TEST(GenericRenameTest, generic_rename_works_for_fast_values) {
+    test_generic_rename_with(FastValueBuilderFactory::get());
 }
 
 TensorSpec immediate_generic_rename(const TensorSpec &a, const FromTo &ft)
