@@ -66,7 +66,6 @@ public interface Provisioner {
     void remove(NestedTransaction transaction, ProvisionLock lock);
 
     /** Transactionally remove an application under lock. */
-    // TODO: Remove after November 2020
     void remove(ApplicationTransaction transaction);
 
     /**
