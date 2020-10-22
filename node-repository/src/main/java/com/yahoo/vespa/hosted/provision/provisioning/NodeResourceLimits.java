@@ -72,13 +72,18 @@ public class NodeResourceLimits {
     }
 
     private double minAdvertisedDiskGb(NodeResources requested) {
-        if (requested.storageType() == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning()) {
+        return minRealDiskGb() + getThinPoolSize(requested.storageType());
+    }
+
+    // TODO: Calculate thin pool size instead of hardcoding
+    private long getThinPoolSize(NodeResources.StorageType storageType) {
+        if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning()) {
             if (zone().system() == SystemName.Public)
-                return 10 + minRealDiskGb();
+                return 21;
             else
-                return 55 + minRealDiskGb();
+                return 47;
         }
-        return 4 + minRealDiskGb();
+        return 4;
     }
 
     private double minRealVcpu() { return minAdvertisedVcpu(); }
