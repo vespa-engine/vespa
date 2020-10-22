@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ClusterSpec;
@@ -28,8 +28,8 @@ public class NodeResourceLimits {
     public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ClusterSpec cluster) {
         if (requested.isUnspecified()) return;
 
-        if (requested.vcpu() < minAdvertisedVcpu(cluster.type()))
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster.type()));
+        if (requested.vcpu() < minAdvertisedVcpu())
+            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu());
         if (requested.memoryGb() < minAdvertisedMemoryGb(cluster.type()))
             illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster.type()));
         if (requested.diskGb() < minAdvertisedDiskGb(requested))
@@ -46,7 +46,7 @@ public class NodeResourceLimits {
     public boolean isWithinRealLimits(NodeResources realResources, ClusterSpec.Type clusterType) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu(clusterType)) return false;
+        if (realResources.vcpu() < minRealVcpu()) return false;
         if (realResources.memoryGb() < minRealMemoryGb(clusterType)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
@@ -55,12 +55,12 @@ public class NodeResourceLimits {
     public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType) {
         if (requested.isUnspecified()) return requested;
 
-        return requested.withVcpu(Math.max(minAdvertisedVcpu(clusterType), requested.vcpu()))
+        return requested.withVcpu(Math.max(minAdvertisedVcpu(), requested.vcpu()))
                         .withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), requested.memoryGb()))
                         .withDiskGb(Math.max(minAdvertisedDiskGb(requested), requested.diskGb()));
     }
 
-    private double minAdvertisedVcpu(ClusterSpec.Type clusterType) {
+    private double minAdvertisedVcpu() {
         if (zone().environment() == Environment.dev && !zone().getCloud().dynamicProvisioning()) return 0.1;
         return 0.5;
     }
@@ -81,17 +81,13 @@ public class NodeResourceLimits {
         return 4 + minRealDiskGb();
     }
 
-    private double minRealVcpu(ClusterSpec.Type clusterType) {
-        return minAdvertisedVcpu(clusterType);
-    }
+    private double minRealVcpu() { return minAdvertisedVcpu(); }
 
     private double minRealMemoryGb(ClusterSpec.Type clusterType) {
         return minAdvertisedMemoryGb(clusterType) - 1.7;
     }
 
-    private double minRealDiskGb() {
-        return 6;
-    }
+    private double minRealDiskGb() { return 6; }
 
     private Zone zone() { return nodeRepository.zone(); }
 
