@@ -10,7 +10,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import org.junit.Test;
@@ -65,7 +64,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         var calculator = new CompleteResourcesCalculator(hostFlavor);
         var originalReal = new NodeResources(0.7, 6.0, 12.9, 1.0);
         var realToRequest = calculator.realToRequest(originalReal);
-        var requestToReal = calculator.requestToReal(realToRequest);
+        var requestToReal = calculator.requestToReal(realToRequest, false);
         var realResourcesOf = calculator.realResourcesOf(realToRequest);
         assertEquals(originalReal, requestToReal);
         assertEquals(originalReal, realResourcesOf);
@@ -101,7 +100,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources advertisedResources) {
+        public NodeResources requestToReal(NodeResources advertisedResources, boolean exclusive) {
             double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), advertisedResources, false);
             double diskOverhead = diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), advertisedResources, false);
             return advertisedResources.withMemoryGb(advertisedResources.memoryGb() - memoryOverhead)

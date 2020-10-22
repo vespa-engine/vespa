@@ -182,7 +182,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         boolean firstDeployment = nodes.isEmpty();
         AllocatableClusterResources currentResources =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type(), nodeRepository)
+                ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type(), clusterSpec.isExclusive(), nodeRepository)
                 : new AllocatableClusterResources(nodes, nodeRepository);
         return within(Limits.of(requested), clusterSpec.isExclusive(), currentResources, firstDeployment);
     }

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 
@@ -27,7 +26,7 @@ public interface HostResourcesCalculator {
      * Used with exclusive hosts:
      * Returns the lowest possible real resources we'll get if requesting the given advertised resources
      */
-    NodeResources requestToReal(NodeResources advertisedResources);
+    NodeResources requestToReal(NodeResources advertisedResources, boolean exclusive);
 
     /**
      * Used with shared hosts:

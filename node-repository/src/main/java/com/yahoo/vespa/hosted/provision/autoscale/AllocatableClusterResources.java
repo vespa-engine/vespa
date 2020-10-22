@@ -33,10 +33,11 @@ public class AllocatableClusterResources {
     /** Fake allocatable resources from requested capacity */
     public AllocatableClusterResources(ClusterResources requested,
                                        ClusterSpec.Type clusterType,
+                                       boolean exclusive,
                                        NodeRepository nodeRepository) {
         this.nodes = requested.nodes();
         this.groups = requested.groups();
-        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources());
+        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), exclusive);
         this.advertisedResources = requested.nodeResources();
         this.clusterType = clusterType;
         this.fulfilment = 1;
@@ -142,7 +143,7 @@ public class AllocatableClusterResources {
             NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources());
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterType); // Attempt to ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
-            NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources); // ... thus, what we really get may change
+            NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // ... thus, what we really get may change
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterType)) return Optional.empty();
             if (matchesAny(nodeRepository.flavors().getFlavors(), advertisedResources))
                     return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
@@ -158,7 +159,7 @@ public class AllocatableClusterResources {
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources);
+                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive);
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {

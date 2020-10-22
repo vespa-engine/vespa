@@ -390,7 +390,7 @@ public class AutoscalingTest {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources) {
+        public NodeResources requestToReal(NodeResources resources, boolean exclusive) {
             return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
         }
 

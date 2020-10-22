@@ -226,7 +226,7 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources) {
+        public NodeResources requestToReal(NodeResources resources, boolean exclusive) {
             return resources.withMemoryGb(resources.memoryGb() - 3);
         }
 
