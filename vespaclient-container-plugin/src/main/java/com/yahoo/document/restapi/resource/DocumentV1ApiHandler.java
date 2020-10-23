@@ -729,13 +729,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         jsonResponse.commit(Response.Status.PRECONDITION_FAILED);
                         break;
                     case INSUFFICIENT_STORAGE:
-                        log.log(WARNING, "Insufficient storage left in cluster: " + response.getTextMessage());
                         jsonResponse.commit(Response.Status.INSUFFICIENT_STORAGE);
                         break;
                     default:
                         log.log(WARNING, "Unexpected document API operation outcome '" + response.outcome() + "'");
                     case ERROR:
-                        log.log(WARNING, "Exception performing document operation: " + response.getTextMessage());
+                        log.log(FINE, () -> "Exception performing document operation: " + response.getTextMessage());
                         jsonResponse.commit(Response.Status.INTERNAL_SERVER_ERROR);
                 }
             }
