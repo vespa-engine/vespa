@@ -56,7 +56,7 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
         NodeList applicationNodes = nodeRepository.list(application).state(Node.State.active);
 
         // Do not try to draw conclusions from utilization while unstable
-        if (Autoscaler.unstable(applicationNodes.asList())) return Collections.emptyList();
+        if (Autoscaler.unstable(applicationNodes.asList(), nodeRepository)) return Collections.emptyList();
 
         Optional<Node> metricsV2Container = applicationNodes.container()
                                                             .matching(node -> expectedUp(node))
