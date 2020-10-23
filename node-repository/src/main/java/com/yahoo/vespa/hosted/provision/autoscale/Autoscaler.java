@@ -61,7 +61,7 @@ public class Autoscaler {
 
     private Optional<AllocatableClusterResources> autoscale(Cluster cluster,
                                                             List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        if (unstable(clusterNodes)) return Optional.empty();
+        if (unstable(clusterNodes, nodeRepository)) return Optional.empty();
 
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
 
@@ -111,10 +111,18 @@ public class Autoscaler {
         return 20;
     }
 
-    public static boolean unstable(List<Node> nodes) {
-        return nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
-                                               node.allocation().get().membership().retired() ||
-                                               node.allocation().get().isRemovable());
+    public static boolean unstable(List<Node> nodes, NodeRepository nodeRepository) {
+        // The cluster is processing recent changes
+        if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
+                                            node.allocation().get().membership().retired() ||
+                                            node.allocation().get().isRemovable()))
+            return true;
+
+        // A deployment is ongoing
+        if (nodeRepository.getNodes(nodes.get(0).allocation().get().owner(), Node.State.reserved).size() > 0)
+            return true;
+
+        return false;
     }
 
 }
