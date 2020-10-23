@@ -112,8 +112,11 @@ class NodeAllocation {
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
                 boolean acceptToRetire = acceptToRetire(candidate);
 
-                if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire)
-                    accepted.add(acceptNode(candidate, shouldRetire(candidate), resizeable));
+                if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
+                    candidate = candidate.withNode();
+                    if (candidate.isValid())
+                        accepted.add(acceptNode(candidate, shouldRetire(candidate), resizeable));
+                }
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {
                 if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
@@ -240,7 +243,6 @@ class NodeAllocation {
     }
 
     private Node acceptNode(NodeCandidate candidate, boolean wantToRetire, boolean resizeable) {
-        candidate = candidate.withNode();
         Node node = candidate.toNode();
 
         if (node.allocation().isPresent()) // Record the currently requested resources
@@ -356,7 +358,7 @@ class NodeAllocation {
             candidate = candidate.withNode();
             Allocation allocation = candidate.allocation().get();
             candidate = candidate.withNode(candidate.toNode().with(allocation.with(allocation.membership()
-                                .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive())))));
+                                 .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive())))));
             nodes.put(candidate.toNode().hostname(), candidate);
         }
 

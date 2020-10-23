@@ -87,7 +87,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** Returns a copy of this with exclusive switch set to given value */
     public abstract NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch);
 
-    /** Returns the node instance of this candidate, or an invalid node if it cannot be created */
+    /**
+     * Returns the node instance of this candidate, allocating it if necessary.
+     *
+     * @throws IllegalStateException if the node candidate is invalid
+     */
     public abstract Node toNode();
 
     /** Returns whether this node can - as far as we know - be used to run the application workload */
@@ -358,10 +362,12 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
             Optional<IP.Allocation> allocation;
             try {
                 allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
-                if (allocation.isEmpty()) return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get());
+                if (allocation.isEmpty()) return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get(),
+                                                                          "No IP addresses available on parent host");
             } catch (Exception e) {
                 log.warning("Failed allocating IP address on " + parent.get() +": " + Exceptions.toMessageString(e));
-                return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get());
+                return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get(),
+                                                "Failed when allocating IP address on host");
             }
 
             Node node = Node.createDockerNode(allocation.get().addresses(),
@@ -409,10 +415,13 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     static class InvalidNodeCandidate extends NodeCandidate {
 
         private final NodeResources resources;
+        private final String invalidReason;
 
-        private InvalidNodeCandidate(NodeResources resources, NodeResources freeParentCapacity, Node parent) {
+        private InvalidNodeCandidate(NodeResources resources, NodeResources freeParentCapacity, Node parent,
+                                     String invalidReason) {
             super(freeParentCapacity, Optional.of(parent), false, false, false, true, false);
             this.resources = resources;
+            this.invalidReason = invalidReason;
         }
 
         @Override
@@ -453,7 +462,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         @Override
         public Node toNode() {
-            throw new IllegalStateException("Candidate node on " + parent.get() + " is invalid");
+            throw new IllegalStateException("Candidate node on " + parent.get() + " is invalid: " + invalidReason);
         }
 
         @Override
