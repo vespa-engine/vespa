@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.jdisc.Metric;
@@ -39,32 +40,39 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        boolean success = true;
-        if ( ! nodeRepository().zone().environment().isProduction()) return success;
+        if ( ! nodeRepository().zone().environment().isProduction()) return true;
 
-        activeNodesByApplication().forEach((applicationId, nodes) -> suggest(applicationId, nodes));
-        return success;
+        int successes = 0;
+        for (var application : activeNodesByApplication().entrySet())
+            successes += suggest(application.getKey(), application.getValue());
+        return successes > 0;
     }
 
-    private void suggest(ApplicationId application, List<Node> applicationNodes) {
-        nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) ->
-                                                         suggest(application, clusterId, clusterNodes));
+    private int suggest(ApplicationId application, List<Node> applicationNodes) {
+        int successes = 0;
+        for (var cluster : nodesByCluster(applicationNodes).entrySet())
+            successes += suggest(application, cluster.getKey(), cluster.getValue()) ? 1 : 0;
+        return successes;
     }
 
     private Applications applications() {
         return nodeRepository().applications();
     }
 
-    private void suggest(ApplicationId applicationId,
-                         ClusterSpec.Id clusterId,
-                         List<Node> clusterNodes) {
+    private boolean suggest(ApplicationId applicationId,
+                            ClusterSpec.Id clusterId,
+                            List<Node> clusterNodes) {
         Application application = applications().get(applicationId).orElse(new Application(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
-        if (cluster.isEmpty()) return;
+        if (cluster.isEmpty()) return true;
         Optional<ClusterResources> suggestion = autoscaler.suggest(cluster.get(), clusterNodes);
         // Wait only a short time for the lock to avoid interfering with change deployments
         try (Mutex lock = nodeRepository().lock(applicationId, Duration.ofSeconds(1))) {
             applications().get(applicationId).ifPresent(a -> storeSuggestion(suggestion, clusterId, a, lock));
+            return true;
+        }
+        catch (ApplicationLockException e) {
+            return false;
         }
     }
 

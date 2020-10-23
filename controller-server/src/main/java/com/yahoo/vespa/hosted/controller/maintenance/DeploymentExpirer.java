@@ -25,10 +25,10 @@ public class DeploymentExpirer extends ControllerMaintainer {
     @Override
     protected boolean maintain() {
         boolean success = true;
-        for (Application application : controller().applications().readable())
+        for (Application application : controller().applications().readable()) {
             for (Instance instance : application.instances().values())
                 for (Deployment deployment : instance.deployments().values()) {
-                    if ( ! isExpired(deployment)) continue;
+                    if (!isExpired(deployment)) continue;
 
                     try {
                         log.log(Level.INFO, "Expiring deployment of " + instance.id() + " in " + deployment.zone());
@@ -40,6 +40,7 @@ public class DeploymentExpirer extends ControllerMaintainer {
                                                interval());
                     }
                 }
+        }
         return success;
     }
 
