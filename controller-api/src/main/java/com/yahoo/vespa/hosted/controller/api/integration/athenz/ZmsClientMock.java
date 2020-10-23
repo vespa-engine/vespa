@@ -136,6 +136,17 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
+    public void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
+
+    }
+
+    @Override
+    public boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
+        return false;
+    }
+
+
+    @Override
     public void close() {}
 
     private static AthenzDomain getTenantDomain(AthenzResourceName resource) {

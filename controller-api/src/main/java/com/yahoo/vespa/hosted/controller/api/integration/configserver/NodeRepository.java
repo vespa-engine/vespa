@@ -90,6 +90,8 @@ public interface NodeRepository {
 
     void retireAndDeprovision(ZoneId zoneId, String hostName);
 
+    void patchNode(ZoneId zoneId, String hostName, NodeRepositoryNode node);
+
     private static Node toNode(NodeRepositoryNode node) {
         var application = Optional.ofNullable(node.getOwner())
                                   .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
@@ -128,7 +130,8 @@ public interface NodeRepository {
                         node.getWantToDeprovision(),
                         Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
                         dockerImageFrom(node.getWantedDockerImage()),
-                        dockerImageFrom(node.getCurrentDockerImage()));
+                        dockerImageFrom(node.getCurrentDockerImage()),
+                        node.getReports());
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {

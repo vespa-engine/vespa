@@ -38,5 +38,9 @@ public interface ZmsClient extends AutoCloseable {
 
     boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity);
 
+    void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole);
+
+    boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole);
+
     void close();
 }

@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
@@ -10,6 +11,8 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,13 +51,14 @@ public class Node {
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
     private final Optional<TenantName> reservedTo;
+    private final Map<String, JsonNode> reports;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
                 Optional<Instant> currentFirmwareCheck, Optional<Instant> wantedFirmwareCheck, ServiceState serviceState,
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
-                Optional<TenantName> reservedTo, DockerImage wantedDockerImage, DockerImage currentDockerImage) {
+                Optional<TenantName> reservedTo, DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -82,6 +86,7 @@ public class Node {
         this.reservedTo = reservedTo;
         this.wantedDockerImage = wantedDockerImage;
         this.currentDockerImage = currentDockerImage;
+        this.reports = reports;
     }
 
     public HostName hostname() {
@@ -188,6 +193,10 @@ public class Node {
 
     public Optional<TenantName> reservedTo() { return reservedTo; }
 
+    public Map<String, JsonNode> reports() {
+        return reports;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -258,6 +267,7 @@ public class Node {
         private boolean wantToRetire;
         private boolean wantToDeprovision;
         private Optional<TenantName> reservedTo = Optional.empty();
+        private Map<String, JsonNode> reports = new HashMap<>();
 
         public Builder() { }
 
@@ -289,6 +299,7 @@ public class Node {
             this.wantToRetire = node.wantToRetire;
             this.wantToDeprovision = node.wantToDeprovision;
             this.reservedTo = node.reservedTo;
+            this.reports = node.reports;
         }
 
         public Builder hostname(HostName hostname) {
@@ -431,7 +442,7 @@ public class Node {
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
                             cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo,
-                            wantedDockerImage, currentDockerImage);
+                            wantedDockerImage, currentDockerImage, reports);
         }
 
     }

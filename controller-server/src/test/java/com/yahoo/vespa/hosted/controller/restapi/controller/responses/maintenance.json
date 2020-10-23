@@ -28,6 +28,9 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
+      "name": "HostRepairMaintainer"
+    },
+    {
       "name": "JobRunner"
     },
     {
