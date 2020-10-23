@@ -202,7 +202,7 @@ public class NodePrioritizer {
      */
     private boolean canStillAllocateToParentOf(Node node) {
         if (node.parentHostname().isEmpty()) return true;
-        Optional<Node> parent = node.parentHostname().flatMap(nodeRepository::getNode);
+        Optional<Node> parent = allNodes.parentOf(node);
         if (parent.isEmpty()) return false;
         return nodeRepository.canAllocateTenantNodeTo(parent.get());
     }
