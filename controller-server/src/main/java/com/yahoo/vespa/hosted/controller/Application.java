@@ -5,7 +5,9 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -180,11 +182,10 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    /** Returns the total quota usage for this application */
-    public QuotaUsage quotaUsage() {
+    /** Returns the total quota usage for this application, excluding one specific deployment */
+    public QuotaUsage quotaUsageExcluding(ApplicationId application, ZoneId zone) {
         return instances().values().stream()
-                .flatMap(instance -> instance.deployments().values().stream())
-                .map(Deployment::quota)
+                .map(instance -> instance.quotaUsageExcluding(application, zone))
                 .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 

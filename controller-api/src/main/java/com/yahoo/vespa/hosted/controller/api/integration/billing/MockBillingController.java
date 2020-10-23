@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 
@@ -32,7 +31,7 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public Quota getQuota(TenantName tenant, Environment environment) {
+    public Quota getQuota(TenantName tenant) {
         return Quota.unlimited().withMaxClusterSize(5);
     }
 

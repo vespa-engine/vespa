@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 
@@ -17,7 +16,7 @@ public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
 
-    Quota getQuota(TenantName tenant, Environment environment);
+    Quota getQuota(TenantName tenant);
 
     /**
      * @return String containing error message if something went wrong. Empty otherwise

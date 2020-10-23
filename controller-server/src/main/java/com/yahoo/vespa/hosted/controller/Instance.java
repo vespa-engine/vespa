@@ -166,6 +166,14 @@ public class Instance {
         return change;
     }
 
+    /** Returns the total quota usage for this instance, excluding one zone */
+    public QuotaUsage quotaUsageExcluding(ApplicationId application, ZoneId zone) {
+        return deployments.values().stream()
+                .filter(d -> !(application.equals(id) && d.zone().equals(zone)))
+                .map(Deployment::quota)
+                .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

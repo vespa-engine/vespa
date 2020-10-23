@@ -52,6 +52,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -528,27 +529,18 @@ public class ApplicationController {
                     .filter(tenant-> tenant instanceof AthenzTenant)
                     .map(tenant -> ((AthenzTenant)tenant).domain());
 
-            var tenantQuota = billingController.getQuota(application.tenant(), zone.environment());
-
-            var tenantUsage = asList(application.tenant()).stream()
-                    .map(Application::quotaUsage)
-                    .reduce(QuotaUsage::add)
-                    .orElse(QuotaUsage.none);
-
-            var currentDeploymentUsage = getInstance(application)
-                    .flatMap(i -> Optional.ofNullable(i.deployments().get(zone)).map(Deployment::quota)).orElse(QuotaUsage.none);
-
-            var quotaForDeployment = tenantQuota.subtractUsage(tenantUsage.sub(currentDeploymentUsage).rate());
-
             if (zone.environment().isManuallyDeployed())
                 controller.applications().applicationStore().putMeta(new DeploymentId(application, zone),
                                                                      clock.instant(),
                                                                      applicationPackage.metaDataZip());
 
+            Quota deploymentQuota = DeploymentQuotaCalculator.calculate(
+                    billingController.getQuota(application.tenant()), asList(application.tenant()), application, zone);
+
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           applicationRoles, quotaForDeployment));
+                                                           applicationRoles, deploymentQuota));
 
             var quotaUsage = configServer.getQuotaUsage(new DeploymentId(application, zone));
 
