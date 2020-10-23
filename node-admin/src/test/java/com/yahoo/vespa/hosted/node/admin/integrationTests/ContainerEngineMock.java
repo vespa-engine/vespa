@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
@@ -75,7 +76,7 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(DockerImage image) {
+    public boolean pullImageAsyncIfNeeded(DockerImage image, RegistryCredentials credentials) {
         synchronized (monitor) {
             return false;
         }

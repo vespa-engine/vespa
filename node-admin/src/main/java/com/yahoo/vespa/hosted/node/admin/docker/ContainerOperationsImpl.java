@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -209,8 +210,8 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(DockerImage dockerImage) {
-        return containerEngine.pullImageAsyncIfNeeded(dockerImage);
+    public boolean pullImageAsyncIfNeeded(DockerImage dockerImage, RegistryCredentials registryCredentials) {
+        return containerEngine.pullImageAsyncIfNeeded(dockerImage, registryCredentials);
     }
 
     @Override

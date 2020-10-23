@@ -10,6 +10,7 @@ import com.github.dockerjava.api.command.UpdateContainerCmd;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Statistics;
@@ -72,7 +73,7 @@ public class DockerEngine implements ContainerEngine {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(DockerImage image) {
+    public boolean pullImageAsyncIfNeeded(DockerImage image, RegistryCredentials registryCredentials) {
         try {
             synchronized (monitor) {
                 if (scheduledPulls.contains(image)) return true;
@@ -81,7 +82,14 @@ public class DockerEngine implements ContainerEngine {
                 scheduledPulls.add(image);
 
                 logger.log(Level.INFO, "Starting download of " + image.asString());
-
+                if (!registryCredentials.equals(RegistryCredentials.none)) {
+                    AuthConfig authConfig = new AuthConfig().withUsername(registryCredentials.username())
+                                                            .withPassword(registryCredentials.password())
+                                                            .withRegistryAddress(registryCredentials.registryAddress());
+                    dockerClient.authCmd()
+                                .withAuthConfig(authConfig)
+                                .exec();
+                }
                 dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
                 return true;
             }

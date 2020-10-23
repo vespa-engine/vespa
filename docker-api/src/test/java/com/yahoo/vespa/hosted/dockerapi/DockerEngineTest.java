@@ -93,12 +93,12 @@ public class DockerEngineTest {
         when(dockerClient.inspectImageCmd(image.asString())).thenReturn(imageInspectCmd);
         when(dockerClient.pullImageCmd(eq(image.asString()))).thenReturn(pullImageCmd);
 
-        assertTrue("Should return true, we just scheduled the pull", docker.pullImageAsyncIfNeeded(image));
-        assertTrue("Should return true, the pull i still ongoing", docker.pullImageAsyncIfNeeded(image));
+        assertTrue("Should return true, we just scheduled the pull", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
+        assertTrue("Should return true, the pull i still ongoing", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
 
         assertTrue(docker.imageIsDownloaded(image));
         resultCallback.getValue().onComplete();
-        assertFalse(docker.pullImageAsyncIfNeeded(image));
+        assertFalse(docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
     }
 
     @Test
@@ -117,15 +117,15 @@ public class DockerEngineTest {
         when(dockerClient.inspectImageCmd(image.asString())).thenReturn(imageInspectCmd);
         when(dockerClient.pullImageCmd(eq(image.asString()))).thenReturn(pullImageCmd);
 
-        assertTrue("Should return true, we just scheduled the pull", docker.pullImageAsyncIfNeeded(image));
-        assertTrue("Should return true, the pull i still ongoing", docker.pullImageAsyncIfNeeded(image));
+        assertTrue("Should return true, we just scheduled the pull", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
+        assertTrue("Should return true, the pull i still ongoing", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
 
         try {
             resultCallback.getValue().onComplete();
         } catch (Exception ignored) { }
 
         assertFalse(docker.imageIsDownloaded(image));
-        assertTrue("Should return true, new pull scheduled", docker.pullImageAsyncIfNeeded(image));
+        assertTrue("Should return true, new pull scheduled", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
     }
 
 }
