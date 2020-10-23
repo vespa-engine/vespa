@@ -183,7 +183,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
             return false;
         }
 
-        uri = zmsUrl.resolve(String.format("domain/%s/policy/%s/assertion/d",
+        uri = zmsUrl.resolve(String.format("domain/%s/policy/%s/assertion/%d",
                 athenzDomain.getName(), athenzPolicy, assertionId.getAsInt()));
 
         request = RequestBuilder.delete()
