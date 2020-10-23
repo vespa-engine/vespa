@@ -177,7 +177,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .filter(assertionEntity -> assertionEntity.getAction().equals(action) &&
                         assertionEntity.getResource().equals(resourceName.toResourceNameString()) &&
                         assertionEntity.getRole().equals(athenzRole.toResourceNameString()))
-                .mapToInt(AssertionEntity::getAssertionId).findFirst();
+                .mapToInt(AssertionEntity::getId).findFirst();
 
         if (assertionId.isEmpty()) {
             return false;

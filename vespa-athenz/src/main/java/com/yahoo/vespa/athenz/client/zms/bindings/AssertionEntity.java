@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.client.zms.bindings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -9,12 +10,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author olaa
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AssertionEntity {
 
     private final String role;
     private final String resource;
     private final String action;
-    private final Integer assertionId;
+    private final Integer id;
 
 
     public AssertionEntity(String role, String resource, String action) {
@@ -24,11 +26,11 @@ public class AssertionEntity {
     public AssertionEntity(@JsonProperty("role") String role,
                            @JsonProperty("resource") String resource,
                            @JsonProperty("action") String action,
-                           @JsonProperty("assertionId") Integer assertionId) {
+                           @JsonProperty("id") Integer id) {
         this.role = role;
         this.resource = resource;
         this.action = action;
-        this.assertionId = assertionId;
+        this.id = id;
     }
 
     public String getRole() {
@@ -44,7 +46,7 @@ public class AssertionEntity {
     }
 
     @JsonIgnore
-    public int getAssertionId() {
-        return assertionId;
+    public int getId() {
+        return id;
     }
 }
