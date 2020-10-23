@@ -10,7 +10,9 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -734,10 +736,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (hostProvisioner.isPresent()) {
            if (acquireProvisionLock.value()) {
                try (var lock = hostProvisioner.get().lock(applicationId)) {
-                   hostProvisioner.get().activate(transaction, session.getAllocatedHosts().getHosts(), lock);
+                   hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
+                                                  new ActivationContext(session.getSessionId()),
+                                                  new ApplicationTransaction(lock, transaction));
                    transaction.commit();
                }
-           } else { // TODO(mpolden): Remove when feature flag is removed
+           } else { // TODO(mpolden): Remove when feature flag is removed.
                hostProvisioner.get().activate(transaction, applicationId, session.getAllocatedHosts().getHosts());
                transaction.commit();
            }

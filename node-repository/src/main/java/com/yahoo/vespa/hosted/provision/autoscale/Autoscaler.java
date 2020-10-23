@@ -24,11 +24,11 @@ public class Autoscaler {
     /** What difference factor for a resource is worth a reallocation? */
     private static final double resourceDifferenceWorthReallocation = 0.1;
 
-    private final NodeMetricsDb metricsDb;
+    private final MetricsDb metricsDb;
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
 
-    public Autoscaler(NodeMetricsDb metricsDb, NodeRepository nodeRepository) {
+    public Autoscaler(MetricsDb metricsDb, NodeRepository nodeRepository) {
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
@@ -42,7 +42,7 @@ public class Autoscaler {
      * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
      */
     public Optional<ClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
-        return autoscale(clusterNodes, Limits.empty(), cluster.exclusive())
+        return autoscale(cluster, clusterNodes, Limits.empty(), cluster.exclusive())
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
 
     }
@@ -55,20 +55,21 @@ public class Autoscaler {
      */
     public Optional<ClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Optional.empty(); // Shortcut
-        return autoscale(clusterNodes, Limits.of(cluster), cluster.exclusive())
+        return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive())
                        .map(AllocatableClusterResources::toAdvertisedClusterResources);
     }
 
-    private Optional<AllocatableClusterResources> autoscale(List<Node> clusterNodes, Limits limits, boolean exclusive) {
+    private Optional<AllocatableClusterResources> autoscale(Cluster cluster,
+                                                            List<Node> clusterNodes, Limits limits, boolean exclusive) {
         if (unstable(clusterNodes)) return Optional.empty();
 
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
 
-        MetricSnapshot metricSnapshot = new MetricSnapshot(clusterNodes, metricsDb, nodeRepository);
+        ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
-        Optional<Double> cpuLoad    = metricSnapshot.averageLoad(Resource.cpu);
-        Optional<Double> memoryLoad = metricSnapshot.averageLoad(Resource.memory);
-        Optional<Double> diskLoad   = metricSnapshot.averageLoad(Resource.disk);
+        Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
+        Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
+        Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
@@ -98,6 +99,10 @@ public class Autoscaler {
     static Duration scalingWindow(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return Duration.ofHours(12);
         return Duration.ofHours(1);
+    }
+
+    static Duration maxScalingWindow() {
+        return Duration.ofHours(12);
     }
 
     /** Measurements are currently taken once a minute. See also scalingWindow */

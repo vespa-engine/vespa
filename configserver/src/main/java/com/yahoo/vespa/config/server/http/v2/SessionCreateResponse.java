@@ -10,7 +10,6 @@ import com.yahoo.slime.Slime;
  * Creates a response for SessionCreateHandler.
  *
  * @author hmusum
- * @since 5.1.27
  */
 public class SessionCreateResponse extends SlimeJsonResponse {
 

@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -21,17 +21,17 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
 
     private static final int maxWarningsPerInvocation = 2;
 
-    private final NodeMetrics nodeMetrics;
-    private final NodeMetricsDb nodeMetricsDb;
+    private final MetricsFetcher nodeMetrics;
+    private final MetricsDb metricsDb;
 
     public NodeMetricsDbMaintainer(NodeRepository nodeRepository,
-                                   NodeMetrics nodeMetrics,
-                                   NodeMetricsDb nodeMetricsDb,
+                                   MetricsFetcher nodeMetrics,
+                                   MetricsDb metricsDb,
                                    Duration interval,
                                    Metric metric) {
         super(nodeRepository, interval, metric);
         this.nodeMetrics = nodeMetrics;
-        this.nodeMetricsDb = nodeMetricsDb;
+        this.metricsDb = metricsDb;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
         int warnings = 0;
         for (ApplicationId application : activeNodesByApplication().keySet()) {
             try {
-                nodeMetricsDb.add(nodeMetrics.fetchMetrics(application));
+                metricsDb.add(nodeMetrics.fetchMetrics(application));
             }
             catch (Exception e) {
                 // TODO: Don't warn if this only happens occasionally
@@ -47,7 +47,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                     log.log(Level.WARNING, "Could not update metrics for " + application + ": " + Exceptions.toMessageString(e));
             }
         }
-        nodeMetricsDb.gc(nodeRepository().clock());
+        metricsDb.gc();
 
         // Suppress failures for manual zones for now to avoid noise
         if (nodeRepository().zone().environment().isManuallyDeployed()) return true;

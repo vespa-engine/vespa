@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -122,14 +124,21 @@ public class NodeRepositoryProvisioner implements Provisioner {
     // TODO(mpolden): Remove
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
         try (var lock = lock(application)) {
-            activate(transaction, hosts, lock);
+            activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
         }
     }
 
     @Override
+    // TODO: Remove after November 2020
     public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) {
         validate(hosts);
-        activator.activate(hosts, transaction, lock);
+        activator.activate(hosts, 0, new ApplicationTransaction(lock, transaction));
+    }
+
+    @Override
+    public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
+        validate(hosts);
+        activator.activate(hosts, context.generation(), transaction);
     }
 
     @Override
@@ -137,18 +146,24 @@ public class NodeRepositoryProvisioner implements Provisioner {
         nodeRepository.restart(ApplicationFilter.from(application, NodeHostFilter.from(filter)));
     }
 
-    @Override
     // TODO(mpolden): Remove
+    @Override
     public void remove(NestedTransaction transaction, ApplicationId application) {
         try (var lock = lock(application)) {
-            remove(transaction, lock);
+            remove(new ApplicationTransaction(lock, transaction));
         }
     }
 
+    // TODO: Remove after November 2020
     @Override
     public void remove(NestedTransaction transaction, ProvisionLock lock) {
-        nodeRepository.deactivate(transaction, lock);
-        loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(transaction, lock));
+        remove(new ApplicationTransaction(lock, transaction));
+    }
+
+    @Override
+    public void remove(ApplicationTransaction transaction) {
+        nodeRepository.deactivate(transaction);
+        loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(transaction));
     }
 
     @Override

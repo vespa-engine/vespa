@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -12,14 +13,16 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class NodeMetricsDbTest {
+public class MetricsFetcherDbTest {
 
     @Test
     public void testNodeMetricsDb() {
@@ -34,25 +37,23 @@ public class NodeMetricsDbTest {
         String node0 = hosts.iterator().next().hostname();
 
         ManualClock clock = tester.clock();
-        NodeMetricsDb db = new NodeMetricsDb(tester.nodeRepository());
-        List<NodeMetrics.MetricValue> values = new ArrayList<>();
+        MetricsDb db = MetricsDb.createTestInstance(tester.nodeRepository());
+        Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new NodeMetrics.MetricValue(node0, "cpu.util", clock.instant().getEpochSecond(), 0.9f));
-            clock.advance(Duration.ofMinutes(10));
+            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0)));
+            clock.advance(Duration.ofMinutes(120));
         }
         db.add(values);
 
         // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
         clock.advance(Duration.ofMinutes(1));
 
-        assertEquals(35, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
-        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
-        db.gc(clock);
-        assertEquals( 5, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.cpu, List.of(node0))));
-        assertEquals( 0, measurementCount(db.getMeasurements(clock.instant().minus(Duration.ofHours(6)), Metric.memory, List.of(node0))));
+        assertEquals(35, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
+        db.gc();
+        assertEquals( 5, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
     }
 
-    private int measurementCount(List<NodeMetricsDb.NodeMeasurements> measurements) {
+    private int measurementCount(List<NodeTimeseries> measurements) {
         return measurements.stream().mapToInt(m -> m.size()).sum();
     }
 

@@ -67,7 +67,7 @@ public class GroupPreparer {
         {
             MutableInteger probePrepareHighestIndex = new MutableInteger(highestIndex.get());
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                    probePrepareHighestIndex, wantedGroups, allocateFully, PROBE_LOCK);
+                                                               probePrepareHighestIndex, wantedGroups, allocateFully, PROBE_LOCK);
             if (probeAllocation.fulfilledAndNoChanges()) {
                 List<Node> acceptedNodes = probeAllocation.finalNodes();
                 surplusActiveNodes.removeAll(acceptedNodes);

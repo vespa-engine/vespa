@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
@@ -42,17 +43,16 @@ public class Applications {
     // TODO: Require ProvisionLock instead of Mutex
     public void put(Application application, Mutex applicationLock) {
         NestedTransaction transaction = new NestedTransaction();
-        put(application, transaction, applicationLock);
+        db.writeApplication(application, transaction);
         transaction.commit();
     }
 
-    // TODO: Require ProvisionLock instead of Mutex
-    public void put(Application application, NestedTransaction transaction, Mutex applicationLock) {
-        db.writeApplication(application, transaction);
+    public void put(Application application, ApplicationTransaction transaction) {
+        db.writeApplication(application, transaction.nested());
     }
 
-    public void remove(ApplicationId application, NestedTransaction transaction, @SuppressWarnings("unused") ProvisionLock lock) {
-        db.deleteApplication(application, transaction);
+    public void remove(ApplicationTransaction transaction) {
+        db.deleteApplication(transaction);
     }
 
 }

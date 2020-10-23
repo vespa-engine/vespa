@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -84,7 +85,7 @@ public class SwitchRebalancerTest {
             // Retired node becomes inactive and makes zone stable
             try (var lock = tester.provisioner().lock(app)) {
                 NestedTransaction removeTransaction = new NestedTransaction();
-                tester.nodeRepository().deactivate(clusterNodes.retired().asList(), removeTransaction, lock);
+                tester.nodeRepository().deactivate(clusterNodes.retired().asList(), new ApplicationTransaction(lock, removeTransaction));
                 removeTransaction.commit();
             }
         }

@@ -6,12 +6,14 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vespa.hosted.provision.autoscale.Metric;
+import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -55,12 +57,8 @@ public class AutoscalingMaintainerTest {
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty());
         assertTrue(tester.deployer().lastDeployTime(app2).isEmpty());
 
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app1);
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app2);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app2);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app2);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app2);
 
         tester.maintainer().maintain();
         assertTrue(tester.deployer().lastDeployTime(app1).isEmpty()); // since autoscaling is off
@@ -82,9 +80,7 @@ public class AutoscalingMaintainerTest {
 
         // Measure overload
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
 
         // Causes autoscaling
         tester.clock().advance(Duration.ofSeconds(1));
@@ -92,41 +88,36 @@ public class AutoscalingMaintainerTest {
         tester.maintainer().maintain();
         assertTrue(tester.deployer().lastDeployTime(app1).isPresent());
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
-        assertEquals(1, tester.nodeMetricsDb().getEvents(app1).size());
-        assertEquals(app1, tester.nodeMetricsDb().getEvents(app1).get(0).application());
-        assertEquals(0, tester.nodeMetricsDb().getEvents(app1).get(0).generation());
-        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.nodeMetricsDb().getEvents(app1).get(0).time().toEpochMilli());
+        List<ScalingEvent> events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
+        assertEquals(1, events.size());
+        assertEquals(2, events.get(0).from().nodes());
+        assertEquals(4, events.get(0).to().nodes());
+        assertEquals(1, events.get(0).generation());
+        assertEquals(firstMaintenanceTime.toEpochMilli(), events.get(0).at().toEpochMilli());
 
         // Measure overload still, since change is not applied, but metrics are discarded
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.addMeasurements(Metric.cpu,    0.9f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.9f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.9f, 500, app1);
+        tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
         tester.clock().advance(Duration.ofSeconds(1));
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
-        // Measure underload, but no autoscaling since we haven't measured we're on the new config generation
+        // Measure underload, but no autoscaling since we still haven't measured we're on the new config generation
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.addMeasurements(Metric.cpu,    0.1f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.1f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.1f, 500, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 0, 500, app1);
         tester.clock().advance(Duration.ofSeconds(1));
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
         // Add measurement of the expected generation, leading to rescaling
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.addMeasurements(Metric.generation, 0, 1, app1);
-        tester.addMeasurements(Metric.cpu,    0.1f, 500, app1);
-        tester.addMeasurements(Metric.memory, 0.1f, 500, app1);
-        tester.addMeasurements(Metric.disk,   0.1f, 500, app1);
+        tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 500, app1);
         //tester.clock().advance(Duration.ofSeconds(1));
         Instant lastMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();
         assertEquals(lastMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
-        assertEquals(2, tester.nodeMetricsDb().getEvents(app1).size());
-        assertEquals(1, tester.nodeMetricsDb().getEvents(app1).get(1).generation());
+        events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
+        assertEquals(2, events.get(0).generation());
     }
 
     @Test

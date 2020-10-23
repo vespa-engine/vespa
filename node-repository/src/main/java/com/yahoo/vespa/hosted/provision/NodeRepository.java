@@ -7,6 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
@@ -504,17 +505,17 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Deactivate nodes owned by application guarded by given lock */
-    public void deactivate(NestedTransaction transaction, ProvisionLock lock) {
-        deactivate(db.readNodes(lock.application(), State.reserved, State.active), transaction, lock);
-        applications.remove(lock.application(), transaction, lock);
+    public void deactivate(ApplicationTransaction transaction) {
+        deactivate(db.readNodes(transaction.application(), State.reserved, State.active), transaction);
+        applications.remove(transaction);
     }
 
     /**
      * Deactivates these nodes in a transaction and returns the nodes in the new state which will hold if the
      * transaction commits.
      */
-    public List<Node> deactivate(List<Node> nodes, NestedTransaction transaction, @SuppressWarnings("unused") ProvisionLock lock) {
-        return db.writeTo(State.inactive, nodes, Agent.application, Optional.empty(), transaction);
+    public List<Node> deactivate(List<Node> nodes, ApplicationTransaction transaction) {
+        return db.writeTo(State.inactive, nodes, Agent.application, Optional.empty(), transaction.nested());
     }
 
     /** Move nodes to the dirty state */

@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -18,7 +19,9 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class NodeMetricsFetcherTest {
+public class MetricsV2MetricsFetcherTest {
+
+    private static final double delta = 0.00000001;
 
     @Test
     public void testMetricsFetch() {
@@ -26,7 +29,7 @@ public class NodeMetricsFetcherTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         OrchestratorMock orchestrator = new OrchestratorMock();
         MockHttpClient httpClient = new MockHttpClient();
-        NodeMetricsFetcher fetcher = new NodeMetricsFetcher(tester.nodeRepository(), orchestrator, httpClient);
+        MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(), orchestrator, httpClient);
 
         tester.makeReadyNodes(4, resources); // Creates (in order) host-1.yahoo.com, host-2.yahoo.com, host-3.yahoo.com, host-4.yahoo.com
         tester.activateTenantHosts();
@@ -40,26 +43,33 @@ public class NodeMetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication1;
-            List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application1));
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application1));
             assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(0));
-            assertEquals(5, values.size());
-            assertEquals("metric value cpu.util: 16.2 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem_total.util: 23.1 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(1).toString());
-            assertEquals("metric value disk.util: 82.0 at 1970-01-01T00:20:34Z for host-1.yahoo.com", values.get(2).toString());
-            assertEquals("metric value cpu.util: 20.0 at 1970-01-01T00:20:00Z for host-2.yahoo.com", values.get(3).toString());
-            assertEquals("metric value disk.util: 40.0 at 1970-01-01T00:20:00Z for host-2.yahoo.com", values.get(4).toString());
+            assertEquals(2, values.size());
+
+            assertEquals("host-1.yahoo.com", values.get(0).getFirst());
+            assertEquals(0.162, values.get(0).getSecond().cpu(), delta);
+            assertEquals(0.231, values.get(0).getSecond().memory(), delta);
+            assertEquals(0.820, values.get(0).getSecond().disk(), delta);
+
+            assertEquals("host-2.yahoo.com", values.get(1).getFirst());
+            assertEquals(0.2, values.get(1).getSecond().cpu(), delta);
+            assertEquals(0.0, values.get(1).getSecond().memory(), delta);
+            assertEquals(0.4, values.get(1).getSecond().disk(), delta);
         }
 
         {
             httpClient.cannedResponse = cannedResponseForApplication2;
-            List<NodeMetrics.MetricValue> values = new ArrayList<>(fetcher.fetchMetrics(application2));
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2));
             assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(1));
-            assertEquals(3, values.size());
-            assertEquals("metric value cpu.util: 10.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(0).toString());
-            assertEquals("metric value mem_total.util: 15.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(1).toString());
-            assertEquals("metric value disk.util: 20.0 at 1970-01-01T00:21:40Z for host-3.yahoo.com", values.get(2).toString());
+            assertEquals(1, values.size());
+            assertEquals("host-3.yahoo.com", values.get(0).getFirst());
+            assertEquals(0.10, values.get(0).getSecond().cpu(), delta);
+            assertEquals(0.15, values.get(0).getSecond().memory(), delta);
+            assertEquals(0.20, values.get(0).getSecond().disk(), delta);
+            assertEquals(3, values.get(0).getSecond().generation(), delta);
         }
 
         {
@@ -71,11 +81,12 @@ public class NodeMetricsFetcherTest {
         }
     }
 
-    private static class MockHttpClient implements NodeMetricsFetcher.HttpClient {
+    private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
 
         List<String> requestsReceived = new ArrayList<>();
 
         String cannedResponse = null;
+
         @Override
         public String get(String url) {
             requestsReceived.add(url);
@@ -143,7 +154,8 @@ public class NodeMetricsFetcherTest {
             "            \"values\": {\n" +
             "              \"cpu.util\": 10,\n" +
             "              \"mem_total.util\": 15,\n" +
-            "              \"disk.util\": 20\n" +
+            "              \"disk.util\": 20,\n" +
+            "              \"application_generation\": 3\n" +
             "            },\n" +
             "            \"dimensions\": {\n" +
             "              \"state\": \"active\"\n" +

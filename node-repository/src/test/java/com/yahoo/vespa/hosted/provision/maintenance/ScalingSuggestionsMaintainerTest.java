@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -14,10 +15,8 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.Metric;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
-import com.yahoo.vespa.hosted.provision.autoscale.Resource;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
@@ -45,7 +44,7 @@ public class ScalingSuggestionsMaintainerTest {
         ApplicationId app2 = ProvisioningTester.makeApplicationId("app2");
         ClusterSpec cluster2 = ProvisioningTester.contentClusterSpec();
 
-        NodeMetricsDb nodeMetricsDb = new NodeMetricsDb(tester.nodeRepository());
+        MetricsDb metricsDb = MetricsDb.createTestInstance(tester.nodeRepository());
 
         tester.makeReadyNodes(20, "flt", NodeType.host, 8);
         tester.activateTenantHosts();
@@ -57,15 +56,11 @@ public class ScalingSuggestionsMaintainerTest {
                                                     new ClusterResources(10, 1, new NodeResources(6.5, 5, 15, 0.1)),
                                                     false, true));
 
-        addMeasurements(Resource.cpu,    0.9f, 500, app1, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.memory, 0.9f, 500, app1, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.disk,   0.9f, 500, app1, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.cpu,    0.99f, 500, app2, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.memory, 0.99f, 500, app2, tester.nodeRepository(), nodeMetricsDb);
-        addMeasurements(Resource.disk,   0.99f, 500, app2, tester.nodeRepository(), nodeMetricsDb);
+        addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository(), metricsDb);
 
         ScalingSuggestionsMaintainer maintainer = new ScalingSuggestionsMaintainer(tester.nodeRepository(),
-                                                                                   nodeMetricsDb,
+                                                                                   metricsDb,
                                                                                    Duration.ofMinutes(1),
                                                                                    new TestMetric());
         maintainer.maintain();
@@ -76,15 +71,16 @@ public class ScalingSuggestionsMaintainerTest {
                      tester.nodeRepository().applications().get(app2).get().cluster(cluster2.id()).get().suggestedResources().get().toString());
     }
 
-    public void addMeasurements(Resource resource, float value, int count, ApplicationId applicationId,
-                                NodeRepository nodeRepository, NodeMetricsDb db) {
+    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,
+                                NodeRepository nodeRepository, MetricsDb db) {
         List<Node> nodes = nodeRepository.getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                db.add(List.of(new NodeMetrics.MetricValue(node.hostname(),
-                                                           Metric.from(resource).fullName(),
-                                                           nodeRepository.clock().instant().toEpochMilli(),
-                                                          value * 100))); // the metrics are in %
+                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(nodeRepository.clock().instant(),
+                                                                              cpu,
+                                                                              memory,
+                                                                              disk,
+                                                                              generation))));
         }
     }
 

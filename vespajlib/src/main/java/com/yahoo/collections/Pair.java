@@ -46,7 +46,7 @@ public class Pair<F, S> {
 
     @Override
     public String toString() {
-        return "(" + first + "," + second + ")";
+        return "(" + first + ", " + second + ")";
     }
 
 }

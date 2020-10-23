@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -177,6 +178,15 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return child.parentHostname()
                     .flatMap(parentHostname -> stream().filter(node -> node.hostname().equals(parentHostname))
                                                        .findFirst());
+    }
+
+    public ClusterResources toResources() {
+        if (isEmpty()) return new ClusterResources(0, 0, NodeResources.unspecified());
+        return new ClusterResources(size(),
+                                    (int)stream().map(node -> node.allocation().get().membership().cluster().group().get())
+                                                 .distinct()
+                                                 .count(),
+                                    first().get().resources());
     }
 
     /** Returns the nodes of this as a stream */

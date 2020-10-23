@@ -56,7 +56,7 @@ public class RankPropertiesTestCase extends SchemaTestCase {
 
             // Check derived model
             RawRankProfile rawParent = new RawRankProfile(parent, new QueryProfileRegistry(), new ImportedMlModels(), attributeFields);
-            assertEquals("(query(a),1500)", rawParent.configProperties().get(0).toString());
+            assertEquals("(query(a), 1500)", rawParent.configProperties().get(0).toString());
         }
 
         {
@@ -69,7 +69,7 @@ public class RankPropertiesTestCase extends SchemaTestCase {
                                                          new QueryProfileRegistry(),
                                                          new ImportedMlModels(),
                                                          attributeFields);
-            assertEquals("(query(a),2000)", rawChild.configProperties().get(0).toString());
+            assertEquals("(query(a), 2000)", rawChild.configProperties().get(0).toString());
         }
     }
 

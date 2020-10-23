@@ -2,7 +2,9 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
@@ -54,7 +56,7 @@ public class MockProvisioner implements Provisioner {
 
     @Override
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-        activate(transaction, hosts, lock(application));
+        activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock(application), transaction));
     }
 
     @Override
@@ -65,14 +67,26 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
+    public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
+        activated = true;
+        lastApplicationId = transaction.application();
+        lastHosts = hosts;
+    }
+
+    @Override
+    public void remove(ApplicationTransaction transaction) {
+        removed = true;
+        lastApplicationId = transaction.application();
+    }
+
+    @Override
     public void remove(NestedTransaction transaction, ApplicationId application) {
-        remove(transaction, lock(application));
+        remove(new ApplicationTransaction(lock(application), transaction));
     }
 
     @Override
     public void remove(NestedTransaction transaction, ProvisionLock lock) {
-        removed = true;
-        lastApplicationId = lock.application();
+        remove(new ApplicationTransaction(lock, transaction));
     }
 
     @Override

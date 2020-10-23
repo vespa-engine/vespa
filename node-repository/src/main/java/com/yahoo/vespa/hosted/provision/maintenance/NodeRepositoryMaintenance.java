@@ -11,8 +11,8 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetrics;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -56,16 +56,16 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
+                                     MetricsFetcher nodeMetrics, MetricsDb metricsDb) {
         this(nodeRepository, deployer, infraDeployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-             orchestrator, metric, provisionServiceProvider, flagSource, nodeMetrics, nodeMetricsDb);
+             orchestrator, metric, provisionServiceProvider, flagSource, nodeMetrics, metricsDb);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     NodeMetrics nodeMetrics, NodeMetricsDb nodeMetricsDb) {
+                                     MetricsFetcher metricsFetcher, MetricsDb metricsDb) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,
@@ -89,9 +89,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         spareCapacityMaintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval);
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval, metric);
         rebalancer = new Rebalancer(deployer, nodeRepository, metric, defaults.rebalancerInterval);
-        nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, nodeMetrics, nodeMetricsDb, defaults.nodeMetricsCollectionInterval, metric);
-        autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, nodeMetricsDb, deployer, metric, defaults.autoscalingInterval);
-        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, nodeMetricsDb, defaults.scalingSuggestionsInterval, metric);
+        nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, metricsFetcher, metricsDb, defaults.nodeMetricsCollectionInterval, metric);
+        autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval);
+        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric);
         switchRebalancer = new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now

@@ -1,8 +1,8 @@
 <!-- services.xml snippet for the node repository. Included in config server services.xml if the package is installed-->
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <component id="com.yahoo.vespa.hosted.provision.provisioning.InfraDeployerImpl" bundle="node-repository"/>
-<component id="com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsFetcher" bundle="node-repository"/>
-<component id="com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsDb" bundle="node-repository"/>
+<component id="com.yahoo.vespa.hosted.provision.autoscale.MetricsV2MetricsFetcher" bundle="node-repository"/>
+<component id="com.yahoo.vespa.hosted.provision.autoscale.QuestMetricsDb" bundle="node-repository"/>
 <component id="com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner" bundle="node-repository" />
 <component id="NodeRepository" class="com.yahoo.vespa.hosted.provision.NodeRepository" bundle="node-repository"/>
 <component id="com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance" bundle="node-repository"/>

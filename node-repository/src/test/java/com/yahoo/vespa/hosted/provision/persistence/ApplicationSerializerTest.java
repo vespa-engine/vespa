@@ -7,8 +7,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,13 +32,19 @@ public class ApplicationSerializerTest {
                                  new ClusterResources( 8, 4, new NodeResources(1, 2,  3,  4)),
                                  new ClusterResources(12, 6, new NodeResources(3, 6, 21, 24)),
                                  Optional.empty(),
-                                 Optional.empty()));
+                                 Optional.empty(),
+                                 List.of()));
+        var minResources = new NodeResources(1, 2, 3, 4);
         clusters.add(new Cluster(ClusterSpec.Id.from("c2"),
                                  true,
-                                 new ClusterResources( 8, 4, new NodeResources(1, 2, 3, 4)),
+                                 new ClusterResources( 8, 4, minResources),
                                  new ClusterResources(14, 7, new NodeResources(3, 6, 21, 24)),
                                  Optional.of(new ClusterResources(20, 10, new NodeResources(0.5, 4, 14, 16))),
-                                 Optional.of(new ClusterResources(10, 5, new NodeResources(2, 4, 14, 16)))));
+                                 Optional.of(new ClusterResources(10, 5, new NodeResources(2, 4, 14, 16))),
+                                 List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
+                                                          new ClusterResources(12, 6, minResources),
+                                                          7L,
+                                                          Instant.ofEpochMilli(12345L)))));
         Application original = new Application(ApplicationId.from("myTenant", "myApplication", "myInstance"),
                                                clusters);
 
@@ -56,6 +64,7 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.maxResources(), serializedCluster.maxResources());
             assertEquals(originalCluster.suggestedResources(), serializedCluster.suggestedResources());
             assertEquals(originalCluster.targetResources(), serializedCluster.targetResources());
+            assertEquals(originalCluster.scalingEvents(), serializedCluster.scalingEvents());
         }
     }
 
