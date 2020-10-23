@@ -449,4 +449,25 @@ TEST("require that mark/revert works as expected") {
     EXPECT_EQUAL(stash.count_used(), 0u);
 }
 
+void check_array(ArrayRef<float> arr, size_t expect_size) {
+    EXPECT_EQUAL(arr.size(), expect_size);
+    for (size_t i = 0; i < arr.size(); ++i) {
+        arr[i] = float(i);
+    }
+    for (size_t i = 0; i < arr.size(); ++i) {
+        EXPECT_EQUAL(arr[i], float(i));
+    }
+}
+
+TEST("require that uninitialized arrays can be created") {
+    Stash stash(4096);
+    EXPECT_EQUAL(0u, stash.count_used());
+    ArrayRef<float> small_arr = stash.create_uninitialized_array<float>(64);
+    TEST_DO(check_array(small_arr, 64));
+    EXPECT_EQUAL(sum({chunk_header_size(), sizeof(float) * 64}), stash.count_used());
+    ArrayRef<float> big_arr = stash.create_uninitialized_array<float>(2500);
+    TEST_DO(check_array(big_arr, 2500));
+    EXPECT_EQUAL(sum({chunk_header_size(), sizeof(float) * 64}), stash.count_used());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
