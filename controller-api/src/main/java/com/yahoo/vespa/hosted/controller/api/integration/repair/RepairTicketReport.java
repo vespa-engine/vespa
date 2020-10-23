@@ -15,19 +15,22 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RepairTicketReport {
 
-    private static final String REPORT_ID = "repair-ticket";
-    private static final ObjectMapper objectMapper = new ObjectMapper();@JsonIgnore
+    private static final String REPORT_ID = "repairTicket";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public String status;
     public String ticketNumber;
     public long createdMillis;
+    public long updatedMillis;
 
     public RepairTicketReport(@JsonProperty("status") String status,
                               @JsonProperty("ticketNumber") String ticketNumber,
-                              @JsonProperty("createdMillis") long createdMillis) {
+                              @JsonProperty("createdMillis") long createdMillis,
+                              @JsonProperty("updatedMillis") long updatedMillis) {
         this.status = status;
         this.ticketNumber = ticketNumber;
         this.createdMillis = createdMillis;
+        this.updatedMillis = updatedMillis;
     }
 
     public String getStatus() {
@@ -40,6 +43,10 @@ public class RepairTicketReport {
 
     public long getCreatedMillis() {
         return createdMillis;
+    }
+
+    public long getUpdatedMillis() {
+        return updatedMillis;
     }
 
     public static String getReportId() {

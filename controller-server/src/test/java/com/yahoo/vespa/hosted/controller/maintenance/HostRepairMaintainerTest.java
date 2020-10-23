@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.repair.RepairTicketRepo
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -27,8 +28,9 @@ public class HostRepairMaintainerTest {
         var zoneId = ZoneId.from("dev.us-east-1");
         var hostname1 = HostName.from("node-1-tenant-host-dev.us-east-1");
         var hostname2 = HostName.from("node-2-tenant-host-dev.us-east-1");
-        var openTicket = new RepairTicketReport("OPEN", "ticket-1", 123l);
-        var closedTicket = new RepairTicketReport("CLOSED", "ticket-2", 123l);
+        var timestamp = Instant.now().toEpochMilli();
+        var openTicket = new RepairTicketReport("OPEN", "ticket-1", timestamp, timestamp);
+        var closedTicket = new RepairTicketReport("CLOSED", "ticket-2", timestamp, timestamp);
 
         tester.configServer().nodeRepository().addReport(
                 zoneId,

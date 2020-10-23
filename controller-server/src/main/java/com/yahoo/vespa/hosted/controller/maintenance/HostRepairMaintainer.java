@@ -72,7 +72,7 @@ public class HostRepairMaintainer extends ControllerMaintainer {
         if (!reports.containsKey(RepairTicketReport.getReportId())) {
             return false;
         }
-        return getTicketReport(node).getStatus().equals("OPEN");
+        return "OPEN".equals(getTicketReport(node).getStatus());
     }
 
     private RepairTicketReport getTicketReport(Node node) {
