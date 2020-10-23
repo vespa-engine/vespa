@@ -87,19 +87,14 @@ public class NodePrioritizer {
 
     /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
     private List<NodeCandidate> prioritize() {
-        // Group candidates by their cluster switch
-        Map<ClusterSwitch, List<NodeCandidate>> candidatesBySwitch = this.nodes.stream().collect(Collectors.groupingBy(candidate -> {
-            Node nodeOnSwitch = candidate.parent.orElseGet(candidate::toNode);
-            ClusterSpec.Id cluster = candidate.toNode().allocation()
-                                              .map(a -> a.membership().cluster().id())
-                                              .orElseGet(clusterSpec::id);
-            return ClusterSwitch.from(cluster, nodeOnSwitch.switchHostname());
-        }));
+        // Group candidates by their switch hostname
+        Map<Optional<String>, List<NodeCandidate>> candidatesBySwitch = this.nodes.stream()
+                .collect(Collectors.groupingBy(candidate -> candidate.parent.orElseGet(candidate::toNode).switchHostname()));
         // Mark lower priority nodes on shared switch as non-exclusive
         List<NodeCandidate> nodes = new ArrayList<>(this.nodes.size());
         for (var clusterSwitch : candidatesBySwitch.keySet()) {
             List<NodeCandidate> switchCandidates = candidatesBySwitch.get(clusterSwitch);
-            if (clusterSwitch.equals(ClusterSwitch.unknown)) {
+            if (clusterSwitch.isEmpty()) {
                 nodes.addAll(switchCandidates); // Nodes are on exclusive switch by default
             } else {
                 Collections.sort(switchCandidates);
@@ -156,6 +151,7 @@ public class NodePrioritizer {
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
+                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
                 .filter(node -> node.state() == Node.State.active || canStillAllocateToParentOf(node))
                 .map(node -> candidateFrom(node, false))
                 .forEach(nodes::add);
@@ -209,40 +205,6 @@ public class NodePrioritizer {
         Optional<Node> parent = node.parentHostname().flatMap(nodeRepository::getNode);
         if (parent.isEmpty()) return false;
         return nodeRepository.canAllocateTenantNodeTo(parent.get());
-    }
-
-    /** A cluster and its network switch */
-    private static class ClusterSwitch {
-
-        private static final ClusterSwitch unknown = new ClusterSwitch(null, null);
-
-        private final ClusterSpec.Id cluster;
-        private final String switchHostname;
-
-        public ClusterSwitch(ClusterSpec.Id cluster, String switchHostname) {
-            this.cluster = cluster;
-            this.switchHostname = switchHostname;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ClusterSwitch that = (ClusterSwitch) o;
-            return Objects.equals(cluster, that.cluster) &&
-                   Objects.equals(switchHostname, that.switchHostname);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(cluster, switchHostname);
-        }
-
-        public static ClusterSwitch from(ClusterSpec.Id cluster, Optional<String> switchHostname) {
-            if (switchHostname.isEmpty()) return unknown;
-            return new ClusterSwitch(cluster, switchHostname.get());
-        }
-
     }
 
 }
