@@ -97,7 +97,7 @@ public:
     BuildContext(const Schema &schema)
         : _dmk("summary"),
           _bld(schema),
-          _repo(new DocumentTypeRepo(_bld.getDocumentType())),
+          _repo(std::make_shared<DocumentTypeRepo>(_bld.getDocumentType())),
           _summaryExecutor(4, 128 * 1024),
           _noTlSyncer(),
           _str(_summaryExecutor, "summary",
@@ -125,7 +125,7 @@ public:
     }
 
     FieldCacheRepo::UP createFieldCacheRepo(const ResultConfig &resConfig) const {
-        return FieldCacheRepo::UP(new FieldCacheRepo(resConfig, _bld.getDocumentType()));
+        return std::make_unique<FieldCacheRepo>(resConfig, _bld.getDocumentType());
     }
 };
 
@@ -150,8 +150,7 @@ vespalib::string asVstring(const Inspector &value) {
 }
 
 void decode(const ResEntry *entry, vespalib::Slime &slime) {
-    vespalib::Memory mem(entry->_dataval,
-                         entry->_datalen);
+    vespalib::Memory mem(entry->_dataval, entry->_datalen);
     size_t decodeRes = BinaryFormat::decode(mem, slime);
     ASSERT_EQUAL(decodeRes, mem.size);
 }
@@ -216,14 +215,14 @@ public:
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) {
             LOG_ABORT("should not be reached");
         }
-        _ddb.reset(new DocumentDB("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
-                                  DocTypeName(docTypeName), makeBucketSpace(),
-				  *b->getProtonConfigSP(), *this, _summaryExecutor, _summaryExecutor,
-                                  _tls, _dummy, _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
-                                  std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo)),
+        _ddb = std::make_unique<DocumentDB>("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
+                                            DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
+                                            _summaryExecutor, _summaryExecutor, _tls, _dummy, _fileHeaderContext,
+                                            std::make_unique<MemoryConfigStore>(),
+                                            std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo),
         _ddb->start();
         _ddb->waitForOnlineState();
-        _aw = AttributeWriter::UP(new AttributeWriter(_ddb->getReadySubDB()->getAttributeManager()));
+        _aw = std::make_unique<AttributeWriter>(_ddb->getReadySubDB()->getAttributeManager());
         _sa = _ddb->getReadySubDB()->getSummaryAdapter();
     }
     ~DBContext()
@@ -259,10 +258,11 @@ public:
         op->setSerialNum(serialNum);
         op->setDbDocumentId(dbdId);
         op->setPrevDbDocumentId(prevDbdId);
-        _ddb->getWriteService().master().execute(vespalib::makeLambdaTask([this, op = std::move(op)]() {
-            _ddb->getFeedHandler().appendOperation(*op, std::make_shared<search::IgnoreCallback>());
+        vespalib::Gate commitDone;
+        _ddb->getWriteService().master().execute(vespalib::makeLambdaTask([this, op = std::move(op), &commitDone]() {
+            _ddb->getFeedHandler().appendOperation(*op, std::make_shared<search::GateCallback>(commitDone));
         }));
-        _ddb->getWriteService().master().sync();
+        commitDone.await();
         SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));
         if (sv != nullptr) {
             // cf. FeedView::putAttributes()
