@@ -244,13 +244,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     @Override
     public void destroy() {
         executor.shutdown();
+        Instant doom = clock.instant().plus(Duration.ofSeconds(20));
+        while ( ! operations.isEmpty() && clock.instant().isBefore(doom))
+            dispatchEnqueued();
+
+        if ( ! operations.isEmpty())
+            log.log(WARNING, "Failed to empty request queue before shutdown timeout — " + operations.size() + " requests left");
+
+        asyncSession.destroy();
         visits.values().forEach(VisitorSession::destroy);
+
         try {
-            if ( ! executor.awaitTermination(10, TimeUnit.SECONDS)) {
+            if ( ! executor.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), TimeUnit.MILLISECONDS))
                 executor.shutdownNow();
-                if ( ! executor.awaitTermination(10, TimeUnit.SECONDS))
-                    log.log(WARNING, "Failed shutting down /document/v1 executor within 20 seconds");
-            }
         }
         catch (InterruptedException e) {
             log.log(WARNING, "Interrupted waiting for /document/v1 executor to shut down");
