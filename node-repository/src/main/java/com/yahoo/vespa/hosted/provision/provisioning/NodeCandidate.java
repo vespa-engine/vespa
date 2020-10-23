@@ -87,7 +87,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
     /** Returns a copy of this with exclusive switch set to given value */
     public abstract NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch);
 
-    /** Returns the node instance of this candidate, or an invalid node if it cannot be created */
+    /**
+     * Returns the node instance of this candidate, allocating it if necessary.
+     *
+     * @throws IllegalStateException if the node candidate is invalid
+     */
     public abstract Node toNode();
 
     /** Returns whether this node can - as far as we know - be used to run the application workload */
