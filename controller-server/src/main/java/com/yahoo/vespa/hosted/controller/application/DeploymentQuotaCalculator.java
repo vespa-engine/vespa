@@ -51,9 +51,9 @@ public class DeploymentQuotaCalculator {
                 .filter(app -> !app.id().equals(deployingApp))
                 .map(Application::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
 
-        long productionInstances = deploymentSpec.instances().stream()
+        long productionInstances = Math.max(1, deploymentSpec.instances().stream()
                 .filter(instance -> instance.concerns(Environment.prod))
-                .count();
+                .count());
 
         return tenantQuota.withBudget(
                 tenantQuota.subtractUsage(usageOutsideApplication.rate())
