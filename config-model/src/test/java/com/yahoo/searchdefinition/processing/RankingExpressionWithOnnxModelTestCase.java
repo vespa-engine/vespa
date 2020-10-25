@@ -25,7 +25,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         OnnxModelsConfig.Builder builder = new OnnxModelsConfig.Builder();
         ((OnnxModelsConfig.Producer) db).getConfig(builder);
         OnnxModelsConfig config = new OnnxModelsConfig(builder);
-        assertEquals(5, config.model().size());
+        assertEquals(6, config.model().size());
 
         assertEquals("my_model", config.model(0).name());
         assertEquals(3, config.model(0).input().size());
@@ -62,17 +62,24 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals(3, config.model(3).input().size());
         assertEquals(3, config.model(3).output().size());
 
-        assertEquals("dynamic_model", config.model(4).name());
+        assertEquals("dynamic_model", config.model(5).name());
+        assertEquals(1, config.model(5).input().size());
+        assertEquals(1, config.model(5).output().size());
+        assertEquals("rankingExpression(my_function)", config.model(5).input(0).source());
+
+        assertEquals("unbound_model", config.model(4).name());
         assertEquals(1, config.model(4).input().size());
         assertEquals(1, config.model(4).output().size());
         assertEquals("rankingExpression(my_function)", config.model(4).input(0).source());
+
+
     }
 
     private void assertTransformedFeature(DocumentDatabase db) {
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         ((RankProfilesConfig.Producer) db).getConfig(builder);
         RankProfilesConfig config = new RankProfilesConfig(builder);
-        assertEquals(7, config.rankprofile().size());
+        assertEquals(8, config.rankprofile().size());
 
         assertEquals("test_model_config", config.rankprofile(2).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(2).fef().property(0).name());
@@ -108,6 +115,12 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("test_dynamic_model_2", config.rankprofile(6).name());
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(6).fef().property(5).name());
         assertEquals("onnxModel(dynamic_model).my_output{d0:0, d1:2}", config.rankprofile(6).fef().property(5).value());
+
+        assertEquals("test_unbound_model", config.rankprofile(7).name());
+        assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(7).fef().property(0).name());
+        assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(7).fef().property(3).name());
+        assertEquals("onnxModel(unbound_model).my_output{d0:0, d1:1}", config.rankprofile(7).fef().property(3).value());
+
 
     }
 

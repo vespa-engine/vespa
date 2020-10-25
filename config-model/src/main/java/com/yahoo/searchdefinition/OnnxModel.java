@@ -150,54 +150,64 @@ public class OnnxModel {
         if (onnxOutputType == null) {
             throw new IllegalArgumentException("Could not find type for output '" + onnxName + "' " + "in '" + name + "'");
         }
-        if (containsSymbolicDimensionSizes(onnxOutputType)) {
-            return getTensorTypeWithSymbolicDimensions(onnxOutputType, context);
+        if (allDimensionSizesAreKnown(onnxOutputType)) {
+            return vespaTypes.computeIfAbsent(onnxName, v -> typeFrom(onnxOutputType));
         }
-        return vespaTypes.computeIfAbsent(onnxName, v -> typeFrom(onnxOutputType));
+        return getTensorTypeWithUnknownDimensions(onnxOutputType, context);
     }
 
-    private TensorType getTensorTypeWithSymbolicDimensions(Onnx.TypeProto onnxOutputType, MapEvaluationTypeContext context) {
-        Map<String, Long> symbolicSizes = resolveSymbolicDimensionSizes(context);
-        if (symbolicSizes.isEmpty()) {
-            return TensorType.empty;  // Context is probably a rank profile not using this ONNX model
-        }
-        return typeFrom(onnxOutputType, symbolicSizes);
+    private static boolean allDimensionSizesAreKnown(Onnx.TypeProto type) {
+        return type.getTensorType().getShape().getDimList().stream().noneMatch(d ->
+                (d.hasDimParam() && ! d.hasDimValue()) || d.getDimValue() == -1);
     }
 
-    private Map<String, Long> resolveSymbolicDimensionSizes(MapEvaluationTypeContext context) {
+    private TensorType getTensorTypeWithUnknownDimensions(Onnx.TypeProto onnxOutputType, MapEvaluationTypeContext context) {
+        long unboundSize = 0;
         Map<String, Long> symbolicSizes = new HashMap<>();
-        for (String onnxInputName : inputTypes.keySet()) {
 
+        for (String onnxInputName : inputTypes.keySet()) {
             Onnx.TypeProto onnxType = inputTypes.get(onnxInputName);
-            if ( ! containsSymbolicDimensionSizes(onnxType)) {
+            if (allDimensionSizesAreKnown(onnxType)) {
                 continue;
             }
 
             Optional<TensorType> vespaType = resolveInputType(onnxInputName, context);
             if (vespaType.isEmpty()) {
-                return Collections.emptyMap();
+                return TensorType.empty;
             }
 
             var onnxDimensions = onnxType.getTensorType().getShape().getDimList();
             var vespaDimensions = vespaType.get().dimensions();
             if (vespaDimensions.size() != onnxDimensions.size()) {
-                return Collections.emptyMap();
+                return TensorType.empty;
             }
 
             for (int i = 0; i < vespaDimensions.size(); ++i) {
-                if (vespaDimensions.get(i).size().isEmpty() || ! onnxDimensions.get(i).hasDimParam()) {
+                if (vespaDimensions.get(i).size().isEmpty()) {
                     continue;
                 }
-                String symbolicName = onnxDimensions.get(i).getDimParam();
                 Long size = vespaDimensions.get(i).size().get();
-                if (symbolicSizes.containsKey(symbolicName) && ! symbolicSizes.get(symbolicName).equals(size)) {
-                    throw new IllegalArgumentException("Found conflicting sizes for symbolic dimension " +
-                            "'" + symbolicName + "' for input '" + onnxInputName + "' in ONNX model '" +  name + "'");
+
+                // Handle dimensions with size -1 - typically batch dimensions
+                if (onnxDimensions.get(i).getDimValue() == -1) {
+                    if (unboundSize != 0 && unboundSize != size) {
+                        throw new IllegalArgumentException("Found conflicting sizes for unbound dimension " +
+                                "for type '" + onnxOutputType + "' in ONNX model '" + name + "'");
+                    }
+                    unboundSize = size;
+
+                // Handle dimensions with symbolic names
+                } else if (onnxDimensions.get(i).hasDimParam()) {
+                    String symbolicName = onnxDimensions.get(i).getDimParam();
+                    if (symbolicSizes.containsKey(symbolicName) && ! symbolicSizes.get(symbolicName).equals(size)) {
+                        throw new IllegalArgumentException("Found conflicting sizes for symbolic dimension '" +
+                                symbolicName + "' for input '" + onnxInputName + "' in ONNX model '" + name + "'");
+                    }
+                    symbolicSizes.put(symbolicName, size);
                 }
-                symbolicSizes.put(symbolicName, size);
             }
         }
-        return symbolicSizes;
+        return typeFrom(onnxOutputType, symbolicSizes, unboundSize);
     }
 
     private Optional<TensorType> resolveInputType(String onnxInputName, MapEvaluationTypeContext context) {
@@ -217,15 +227,11 @@ public class OnnxModel {
         return Optional.empty();  // if this context does not contain this input
     }
 
-    private static boolean containsSymbolicDimensionSizes(Onnx.TypeProto type) {
-        return type.getTensorType().getShape().getDimList().stream().anyMatch(d -> d.hasDimParam() && ! d.hasDimValue());
-    }
-
     private static TensorType typeFrom(Onnx.TypeProto type) {
-        return typeFrom(type, null);
+        return typeFrom(type, null, 0);
     }
 
-    private static TensorType typeFrom(Onnx.TypeProto type, Map<String, Long> symbolicSizes) {
+    private static TensorType typeFrom(Onnx.TypeProto type, Map<String, Long> symbolicSizes, long unboundSize) {
         String dimensionPrefix = "d"; // standard naming convention: d0, d1, ...
         Onnx.TensorShapeProto shape = type.getTensorType().getShape();
         TensorType.Builder builder = new TensorType.Builder(toValueType(type.getTensorType().getElemType()));
@@ -243,6 +249,9 @@ public class OnnxModel {
                 if (unknownSizes.size() == 1) {
                     onnxDimensionSize = unknownSizes.iterator().next();
                 }
+            }
+            if (onnxDimensionSize < 0) {
+                onnxDimensionSize = unboundSize;
             }
             if (onnxDimensionSize <= 0) {
                 throw new IllegalArgumentException("Unable to determine fixed dimension size when converting from " +

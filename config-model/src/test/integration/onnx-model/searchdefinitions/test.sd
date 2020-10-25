@@ -35,6 +35,12 @@ search test {
         output output: my_output
     }
 
+    onnx-model unbound_model {
+        file:  files/unbound_model.onnx
+        input  input: my_function
+        output output: my_output
+    }
+
     rank-profile test_model_config {
         function my_function() {
             expression: tensor(d0[2])(1)
@@ -92,5 +98,15 @@ search test {
             expression: onnxModel(dynamic_model){d0:0,d1:2}
         }
     }
+
+    rank-profile test_unbound_model {
+        function my_function() {
+            expression: tensor(d0[1],d1[2])(d1)
+        }
+        first-phase {
+            expression: onnxModel(unbound_model){d0:0,d1:1}
+        }
+    }
+
 
 }
