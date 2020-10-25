@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -51,13 +50,14 @@ public class DeploymentQuotaCalculator {
                 .filter(app -> !app.id().equals(deployingApp))
                 .map(Application::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
 
-        long productionInstances = Math.max(1, deploymentSpec.instances().stream()
-                .filter(instance -> instance.concerns(Environment.prod))
+        long productionDeployments = Math.max(1, deploymentSpec.instances().stream()
+                .flatMap(instance -> instance.zones().stream())
+                .filter(zone -> zone.environment().isProduction())
                 .count());
 
         return tenantQuota.withBudget(
                 tenantQuota.subtractUsage(usageOutsideApplication.rate())
-                        .budget().get().divide(BigDecimal.valueOf(productionInstances),
+                        .budget().get().divide(BigDecimal.valueOf(productionDeployments),
                         5, RoundingMode.HALF_UP)); // 1/1000th of a cent should be accurate enough
     }
 }
