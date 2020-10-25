@@ -166,12 +166,17 @@ public class Instance {
         return change;
     }
 
-    /** Returns the total quota usage for this instance, excluding one zone */
+    /** Returns the total quota usage for this instance **/
+    public QuotaUsage quotaUsage() {
+        return deployments.values().stream()
+                .map(Deployment::quota).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
+    /** Returns the total quota usage for this instance, excluding one deployment */
     public QuotaUsage quotaUsageExcluding(ApplicationId application, ZoneId zone) {
         return deployments.values().stream()
                 .filter(d -> !(application.equals(id) && d.zone().equals(zone)))
-                .map(Deployment::quota)
-                .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+                .map(Deployment::quota).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
     @Override
@@ -193,5 +198,4 @@ public class Instance {
     public String toString() {
         return "application '" + id + "'";
     }
-
 }

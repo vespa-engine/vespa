@@ -182,8 +182,14 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
+    /** Returns the total quota usage for this application */
+    public QuotaUsage quotaUsage() {
+        return instances().values().stream()
+                .map(Instance::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
     /** Returns the total quota usage for this application, excluding one specific deployment */
-    public QuotaUsage quotaUsageExcluding(ApplicationId application, ZoneId zone) {
+    public QuotaUsage quotaUsage(ApplicationId application, ZoneId zone) {
         return instances().values().stream()
                 .map(instance -> instance.quotaUsageExcluding(application, zone))
                 .reduce(QuotaUsage::add).orElse(QuotaUsage.none);

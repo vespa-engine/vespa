@@ -534,8 +534,8 @@ public class ApplicationController {
                                                                      clock.instant(),
                                                                      applicationPackage.metaDataZip());
 
-            Quota deploymentQuota = DeploymentQuotaCalculator.calculate(
-                    billingController.getQuota(application.tenant()), asList(application.tenant()), application, zone);
+            Quota deploymentQuota = DeploymentQuotaCalculator.calculate(billingController.getQuota(application.tenant()),
+                    asList(application.tenant()), application, zone, applicationPackage.deploymentSpec());
 
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
