@@ -25,7 +25,7 @@ public:
     MessageTrackerUP handlePut(api::PutCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRemove(api::RemoveCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleUpdate(api::UpdateCommand& cmd, MessageTrackerUP tracker) const;
-    static bool is_async_message(api::MessageType::Id type_id);
+    static bool is_async_message(api::MessageType::Id type_id) noexcept;
 private:
     static bool tasConditionExists(const api::TestAndSetCommand & cmd);
     bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,

@@ -182,7 +182,7 @@ AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP
 }
 
 bool
-AsyncHandler::is_async_message(api::MessageType::Id type_id)
+AsyncHandler::is_async_message(api::MessageType::Id type_id) noexcept
 {
     switch (type_id) {
         case api::MessageType::PUT_ID:

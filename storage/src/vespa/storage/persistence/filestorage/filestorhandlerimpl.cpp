@@ -931,7 +931,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
     PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
     while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
-        iter++;
+        ++iter;
     }
     if ((iter != end) && AsyncHandler::is_async_message(iter->_command->getType().getId())) {
         return getMessage(guard, idx, iter);
