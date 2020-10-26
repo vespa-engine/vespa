@@ -2,6 +2,7 @@
 
 #include "value_codec.h"
 #include "tensor_spec.h"
+#include "array_array_map.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/typify.h>
@@ -186,38 +187,40 @@ struct ContentDecoder {
 
 struct CreateValueFromTensorSpec {
     template <typename T> static std::unique_ptr<Value> invoke(const ValueType &type, const TensorSpec &spec, const ValueBuilderFactory &factory) {
-        using SparseKey = std::vector<vespalib::stringref>;
-        using DenseMap = std::map<size_t,T>;
-        std::map<SparseKey,DenseMap> map;
+        ArrayArrayMap<vespalib::stringref,T> map(type.count_mapped_dimensions(),
+                                                 type.dense_subspace_size(),
+                                                 std::max(spec.cells().size(), size_t(1)));
+        std::vector<vespalib::stringref> sparse_key;
         for (const auto &entry: spec.cells()) {
-            SparseKey sparse_key;
+            sparse_key.clear();
             size_t dense_key = 0;
-            for (const auto &dim: type.dimensions()) {
-                auto pos = entry.first.find(dim.name);
-                assert(pos != entry.first.end());
-                assert(pos->second.is_mapped() == dim.is_mapped());
-                if (dim.is_mapped()) {
-                    sparse_key.push_back(pos->second.name);
+            auto dim = type.dimensions().begin();
+            auto binding = entry.first.begin();
+            for (; dim != type.dimensions().end(); ++dim, ++binding) {
+                assert(binding != entry.first.end());
+                assert(dim->name == binding->first);
+                assert(dim->is_mapped() == binding->second.is_mapped());
+                if (dim->is_mapped()) {
+                    sparse_key.push_back(binding->second.name);
                 } else {
-                    dense_key = (dense_key * dim.size) + pos->second.index;
+                    assert(binding->second.index < dim->size);
+                    dense_key = (dense_key * dim->size) + binding->second.index;
                 }
             }
-            map[sparse_key][dense_key] = entry.second;
+            assert(binding == entry.first.end());
+            assert(dense_key < map.values_per_entry());
+            auto [tag, ignore] = map.lookup_or_add_entry(ConstArrayRef<vespalib::stringref>(sparse_key));
+            map.get_values(tag)[dense_key] = entry.second;
         }
         // if spec is missing the required dense space, add it here:
-        if (map.empty() && type.count_mapped_dimensions() == 0) {
-            map[{}][0] = 0;
+        if ((map.keys_per_entry() == 0) && (map.size() == 0)) {
+            map.add_entry(ConstArrayRef<vespalib::stringref>());
         }
-        auto builder = factory.create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), map.size());
-        for (const auto &entry: map) {
-            auto subspace = builder->add_subspace(entry.first);
-            for (T &cell: subspace) {
-                cell = T{};
-            }
-            for (const auto &cell: entry.second) {
-                subspace[cell.first] = cell.second;
-            }
-        }
+        auto builder = factory.create_value_builder<T>(type, map.keys_per_entry(), map.values_per_entry(), map.size());
+        map.each_entry([&](const auto &keys, const auto &values)
+                       {
+                           memcpy(builder->add_subspace(keys).begin(), values.begin(), values.size() * sizeof(T));
+                       });
         return builder->build(std::move(builder));
     }
 };
