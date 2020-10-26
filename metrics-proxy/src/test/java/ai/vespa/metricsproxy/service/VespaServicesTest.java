@@ -8,7 +8,7 @@ import java.util.List;
 
 import static ai.vespa.metricsproxy.service.VespaServices.ALL_SERVICES;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * TODO: add more tests

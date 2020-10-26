@@ -3,16 +3,15 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author ollivir
@@ -47,25 +46,19 @@ public class SearchPathTest {
         assertFalse(SearchPath.fromString("//").isPresent());
     }
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
     @Test
     public void invalidRangeMustThrowException() {
-        exception.expect(InvalidSearchPathException.class);
-        SearchPath.fromString("[p,0>/0");
+        assertThrows(InvalidSearchPathException.class, () -> SearchPath.fromString("[p,0>/0"));
     }
 
     @Test
     public void invalidPartMustThrowException() {
-        exception.expect(InvalidSearchPathException.class);
-        SearchPath.fromString("p/0");
+        assertThrows(InvalidSearchPathException.class, () -> SearchPath.fromString("p/0"));
     }
 
     @Test
     public void invalidRowMustThrowException() {
-        exception.expect(InvalidSearchPathException.class);
-        SearchPath.fromString("1,2,3/r");
+        assertThrows(InvalidSearchPathException.class, () -> SearchPath.fromString("1,2,3/r"));
     }
 
     @Test

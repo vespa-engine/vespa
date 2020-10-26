@@ -17,7 +17,7 @@ import static com.yahoo.search.query.textserialize.item.test.ParseItemTestCase.p
 import static com.yahoo.search.query.textserialize.item.test.ParseItemTestCase.getWord;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author Tony Vaagenes

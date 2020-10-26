@@ -5,7 +5,7 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.ObjectDumper;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**

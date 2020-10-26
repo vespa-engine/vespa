@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.concurrent.Executor;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author Ulf Lilleengen

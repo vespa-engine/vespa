@@ -14,7 +14,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.xpath.XPathFactory;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>

@@ -7,20 +7,19 @@ import com.yahoo.search.Query;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.function.ThrowingRunnable;
 
 import java.util.Arrays;
 import java.util.Collection;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class GroupingValidatorTestCase {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void requireThatAvailableAttributesDoNotThrow() {
@@ -30,10 +29,9 @@ public class GroupingValidatorTestCase {
 
     @Test
     public void requireThatUnavailableAttributesThrow() {
-        thrown.expect(UnavailableAttributeException.class);
-        thrown.expectMessage(createMessage("bar"));
-        validateGrouping(Arrays.asList("foo"),
-                "all(group(foo) each(output(max(bar))))");
+        assertThrows(UnavailableAttributeException.class, "bar",
+                () -> validateGrouping(Arrays.asList("foo"),
+                "all(group(foo) each(output(max(bar))))"));
     }
 
     @Test
@@ -51,18 +49,16 @@ public class GroupingValidatorTestCase {
 
     @Test
     public void unavailable_primitive_map_key_attribute_throws() {
-        thrown.expect(UnavailableAttributeException.class);
-        thrown.expectMessage(createMessage("map.key"));
-        validateGrouping(Arrays.asList("null"),
-                "all(group(map{\"foo\"}) each(output(count())))");
+        assertThrows(UnavailableAttributeException.class, "map.key",
+                () -> validateGrouping(Arrays.asList("null"),
+                        "all(group(map{\"foo\"}) each(output(count())))"));
     }
 
     @Test
     public void unavailable_primitive_map_value_attribute_throws() {
-        thrown.expect(UnavailableAttributeException.class);
-        thrown.expectMessage(createMessage("map.value"));
-        validateGrouping(Arrays.asList("map.key"),
-                "all(group(map{\"foo\"}) each(output(count())))");
+        assertThrows(UnavailableAttributeException.class, "map.value",
+                () -> validateGrouping(Arrays.asList("map.key"),
+                        "all(group(map{\"foo\"}) each(output(count())))"));
     }
 
     @Test
@@ -73,18 +69,16 @@ public class GroupingValidatorTestCase {
 
     @Test
     public void unavailable_struct_map_key_attribute_throws() {
-        thrown.expect(UnavailableAttributeException.class);
-        thrown.expectMessage(createMessage("map.key"));
-        validateGrouping(Arrays.asList("null"),
-                "all(group(map{\"foo\"}.name) each(output(count())))");
+        assertThrows(UnavailableAttributeException.class, "map.key",
+                () -> validateGrouping(Arrays.asList("null"),
+                        "all(group(map{\"foo\"}.name) each(output(count())))"));
     }
 
     @Test
     public void unavailable_struct_map_value_attribute_throws() {
-        thrown.expect(UnavailableAttributeException.class);
-        thrown.expectMessage(createMessage("map.value.name"));
-        validateGrouping(Arrays.asList("map.key"),
-                "all(group(map{\"foo\"}.name) each(output(count())))");
+        assertThrows(UnavailableAttributeException.class, "map.value.name",
+                () -> validateGrouping(Arrays.asList("map.key"),
+                        "all(group(map{\"foo\"}.name) each(output(count())))"));
     }
 
     @Test
@@ -95,29 +89,31 @@ public class GroupingValidatorTestCase {
 
     @Test
     public void unavailable_key_source_attribute_throws() {
-        thrown.expect(UnavailableAttributeException.class);
-        thrown.expectMessage(createMessage("key_source"));
-        validateGrouping(Arrays.asList("map.key", "map.value"),
-                "all(group(map{attribute(key_source)}) each(output(count())))");
+        assertThrows(UnavailableAttributeException.class, "key_source",
+                () -> validateGrouping(Arrays.asList("map.key", "map.value"),
+                        "all(group(map{attribute(key_source)}) each(output(count())))"));
     }
 
     @Test
     public void key_source_attribute_with_mismatching_data_type_throws() {
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Grouping request references key source attribute 'key_source' with data type 'INT32' " +
-                "that is different than data type 'STRING' of key attribute 'map.key'");
-
-        validateGrouping(setupMismatchingKeySourceAttribute(false),
-                "all(group(map{attribute(key_source)}) each(output(count())))");
+        assertThrows(IllegalArgumentException.class,
+                "Grouping request references key source attribute 'key_source' with data type 'INT32' " +
+                "that is different than data type 'STRING' of key attribute 'map.key'",
+                () -> validateGrouping(setupMismatchingKeySourceAttribute(false),
+                        "all(group(map{attribute(key_source)}) each(output(count())))"));
     }
 
     @Test
     public void key_source_attribute_with_multi_value_collection_type_throws() {
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Grouping request references key source attribute 'key_source' which is not of single value type");
+        assertThrows(IllegalArgumentException.class,
+                "Grouping request references key source attribute 'key_source' which is not of single value type",
+                () -> validateGrouping(setupMismatchingKeySourceAttribute(true),
+                        "all(group(map{attribute(key_source)}) each(output(count())))"));
+    }
 
-        validateGrouping(setupMismatchingKeySourceAttribute(true),
-                "all(group(map{attribute(key_source)}) each(output(count())))");
+    private void assertThrows(Class exceptionClass, String message, ThrowingRunnable throwingRunnable) {
+        Throwable e = org.junit.Assert.assertThrows(exceptionClass, throwingRunnable);
+        assertThat(createMessage(message), containsString(e.getMessage()));
     }
 
     private static AttributesConfig setupMismatchingKeySourceAttribute(boolean matchingDataType) {
