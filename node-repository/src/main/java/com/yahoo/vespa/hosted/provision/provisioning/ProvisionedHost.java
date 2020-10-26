@@ -39,6 +39,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
+        // TODO: Set exclusive to
         return Node.create(id, IP.Config.EMPTY, hostHostname, hostFlavor, NodeType.host)
                 .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
                 .build();
