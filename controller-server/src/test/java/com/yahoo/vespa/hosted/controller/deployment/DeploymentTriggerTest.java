@@ -1218,7 +1218,7 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void test() {
+    public void testTriggeringOfIdleTestJobsWhenFirstDeploymentIsOnNewerVersionThanChange() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().systemTest()
                                                                                .stagingTest()
                                                                                .region("us-east-3")
