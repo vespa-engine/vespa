@@ -3,12 +3,15 @@ package com.yahoo.slime;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
-
-import static com.yahoo.slime.BinaryFormat.*;
+import static com.yahoo.slime.BinaryFormat.decode_double;
+import static com.yahoo.slime.BinaryFormat.decode_meta;
+import static com.yahoo.slime.BinaryFormat.decode_type;
+import static com.yahoo.slime.BinaryFormat.decode_zigzag;
+import static com.yahoo.slime.BinaryFormat.encode_double;
+import static com.yahoo.slime.BinaryFormat.encode_type_and_meta;
+import static com.yahoo.slime.BinaryFormat.encode_zigzag;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class BinaryFormatTestCase {
 

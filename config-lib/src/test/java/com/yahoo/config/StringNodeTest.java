@@ -3,12 +3,11 @@ package com.yahoo.config;
 
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
- * @since 5.1.7
  */
 public class StringNodeTest {
 

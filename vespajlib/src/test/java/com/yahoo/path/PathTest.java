@@ -3,14 +3,14 @@ package com.yahoo.path;
 
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class PathTest {
     @Test
@@ -24,35 +24,35 @@ public class PathTest {
 
     @Test
     public void testEquals() {
-        assertTrue(getAbsolutePath().equals(getAbsolutePath()));
-        assertTrue(getAbsolutePath().equals(getRelativePath()));
-        assertTrue(getAbsolutePath().equals(getWithSlashes()));
-        assertTrue(getAbsolutePath().equals(getAppended()));
-        assertFalse(getAbsolutePath().equals(getOne()));
+        assertEquals(getAbsolutePath(), getAbsolutePath());
+        assertEquals(getAbsolutePath(), getRelativePath());
+        assertEquals(getAbsolutePath(), getWithSlashes());
+        assertEquals(getAbsolutePath(), getAppended());
+        assertNotEquals(getAbsolutePath(), getOne());
 
-        assertTrue(getRelativePath().equals(getAbsolutePath()));
-        assertTrue(getRelativePath().equals(getRelativePath()));
-        assertTrue(getRelativePath().equals(getWithSlashes()));
-        assertTrue(getRelativePath().equals(getAppended()));
-        assertFalse(getRelativePath().equals(getOne()));
+        assertEquals(getRelativePath(), getAbsolutePath());
+        assertEquals(getRelativePath(), getRelativePath());
+        assertEquals(getRelativePath(), getWithSlashes());
+        assertEquals(getRelativePath(), getAppended());
+        assertNotEquals(getRelativePath(), getOne());
 
-        assertTrue(getWithSlashes().equals(getAbsolutePath()));
-        assertTrue(getWithSlashes().equals(getRelativePath()));
-        assertTrue(getWithSlashes().equals(getWithSlashes()));
-        assertTrue(getWithSlashes().equals(getAppended()));
-        assertFalse(getWithSlashes().equals(getOne()));
+        assertEquals(getWithSlashes(), getAbsolutePath());
+        assertEquals(getWithSlashes(), getRelativePath());
+        assertEquals(getWithSlashes(), getWithSlashes());
+        assertEquals(getWithSlashes(), getAppended());
+        assertNotEquals(getWithSlashes(), getOne());
 
-        assertTrue(getAppended().equals(getAbsolutePath()));
-        assertTrue(getAppended().equals(getRelativePath()));
-        assertTrue(getAppended().equals(getWithSlashes()));
-        assertTrue(getAppended().equals(getAppended()));
-        assertFalse(getAppended().equals(getOne()));
+        assertEquals(getAppended(), getAbsolutePath());
+        assertEquals(getAppended(), getRelativePath());
+        assertEquals(getAppended(), getWithSlashes());
+        assertEquals(getAppended(), getAppended());
+        assertNotEquals(getAppended(), getOne());
 
-        assertFalse(getOne().equals(getAbsolutePath()));
-        assertFalse(getOne().equals(getRelativePath()));
-        assertFalse(getOne().equals(getWithSlashes()));
-        assertFalse(getOne().equals(getAppended()));
-        assertTrue(getOne().equals(getOne()));
+        assertNotEquals(getOne(), getAbsolutePath());
+        assertNotEquals(getOne(), getRelativePath());
+        assertNotEquals(getOne(), getWithSlashes());
+        assertNotEquals(getOne(), getAppended());
+        assertEquals(getOne(), getOne());
     }
 
     @Test

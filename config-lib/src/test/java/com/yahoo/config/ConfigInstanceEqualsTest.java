@@ -16,8 +16,8 @@ import static com.yahoo.test.FunctionTestConfig.Myarray;
 import static com.yahoo.test.FunctionTestConfig.RootStruct;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 
 public class ConfigInstanceEqualsTest {
     FunctionTestConfig config1;

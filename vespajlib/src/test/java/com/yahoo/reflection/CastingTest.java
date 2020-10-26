@@ -5,10 +5,11 @@ import org.junit.Test;
 
 import java.util.Optional;
 
-import static com.yahoo.text.StringUtilities.quote;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
 import static com.yahoo.reflection.Casting.cast;
+import static com.yahoo.text.StringUtilities.quote;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertTrue;
 
 public class CastingTest {
     @Test

@@ -18,14 +18,14 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
 import static com.yahoo.text.Utf8.calculateStringPositions;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author <Bjorn Borud
+ * @author Steinar Knutsen
  */
 public class Utf8TestCase {
 

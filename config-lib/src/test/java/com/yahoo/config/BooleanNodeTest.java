@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class BooleanNodeTest {
     @Test
