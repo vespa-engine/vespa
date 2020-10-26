@@ -15,7 +15,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -24,7 +23,8 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 /**
@@ -89,14 +89,9 @@ public class ConfigRetrieverTest {
         }
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Ignore
     @SuppressWarnings("unused")
     public void require_exception_upon_modified_components_keys_without_bootstrap() {
-        expectedException.expect(IllegalArgumentException.class);
-
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
@@ -105,7 +100,8 @@ public class ConfigRetrieverTest {
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(testConfigKey);
         keys.add(new ConfigKey<>(TestConfig.class, ""));
-        retriever.getConfigs(keys, 0);
+        assertThrows(IllegalArgumentException.class,
+                () -> retriever.getConfigs(keys, 0));
     }
 
     @Test

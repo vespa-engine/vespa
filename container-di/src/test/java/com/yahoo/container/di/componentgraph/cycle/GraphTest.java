@@ -2,18 +2,19 @@
 
 package com.yahoo.container.di.componentgraph.cycle;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.A;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.B;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.C;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author gjoranv
@@ -21,9 +22,6 @@ import static org.junit.Assert.assertThat;
 public class GraphTest {
 
     enum Vertices {A, B, C}
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void vertices_and_edges_are_added_and_can_be_retrieved() {
@@ -42,9 +40,9 @@ public class GraphTest {
     public void null_vertices_are_not_allowed() {
         var graph = new Graph<Vertices>();
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Null vertices are not allowed");
-        graph.edge(A, null);
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> graph.edge(A, null));
+        assertThat(e.getMessage(), startsWith("Null vertices are not allowed"));
     }
 
     @Test

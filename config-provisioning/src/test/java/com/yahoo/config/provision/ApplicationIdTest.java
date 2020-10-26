@@ -7,7 +7,7 @@ import com.yahoo.cloud.config.ApplicationIdConfig;
 import com.yahoo.test.TotalOrderTester;
 import org.junit.Test;
 import com.google.common.testing.EqualsTester;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**

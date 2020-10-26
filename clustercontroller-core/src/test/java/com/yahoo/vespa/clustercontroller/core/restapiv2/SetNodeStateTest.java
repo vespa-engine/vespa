@@ -17,9 +17,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStat
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -31,6 +29,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,9 +38,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SetNodeStateTest extends StateRestApiTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     public static class SetUnitStateRequestImpl extends StateRequest implements SetUnitStateRequest {
         private Map<String, UnitState> newStates = new LinkedHashMap<>();
@@ -423,13 +419,14 @@ public class SetNodeStateTest extends StateRestApiTest {
     // important to test (and expected to happen) for requests that have dependencies on cluster
     // state version publishing.
     @Test
-    public void leadership_loss_fails_set_node_state_request() throws Exception {
-        expectedException.expectMessage("Leadership lost before request could complete");
-        expectedException.expect(UnknownMasterException.class);
-
-        SetNodeStateRequest request = createDummySetNodeStateRequest();
-        request.handleFailure(RemoteClusterControllerTask.Failure.of(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST));
-        request.getResult();
+    public void leadership_loss_fails_set_node_state_request() {
+        Exception e = assertThrows(UnknownMasterException.class,
+                () -> {
+                    SetNodeStateRequest request = createDummySetNodeStateRequest();
+                    request.handleFailure(RemoteClusterControllerTask.Failure.of(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST));
+                    request.getResult();
+                });
+        assertEquals("Leadership lost before request could complete", e.getMessage());
     }
 
     @Test
@@ -440,14 +437,15 @@ public class SetNodeStateTest extends StateRestApiTest {
     }
 
     @Test
-    public void deadline_exceeded_fails_set_node_state_request() throws Exception {
-        expectedException.expectMessage("Task exceeded its version wait deadline: gremlins in the computer");
-        expectedException.expect(DeadlineExceededException.class);
-
-        SetNodeStateRequest request = createDummySetNodeStateRequest();
-        request.handleFailure(RemoteClusterControllerTask.Failure.of(
-                RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, "gremlins in the computer"));
-        request.getResult();
+    public void deadline_exceeded_fails_set_node_state_request() {
+        Exception e = assertThrows(DeadlineExceededException.class,
+                () -> {
+                    SetNodeStateRequest request = createDummySetNodeStateRequest();
+                    request.handleFailure(RemoteClusterControllerTask.Failure.of(
+                            RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, "gremlins in the computer"));
+                    request.getResult();
+                });
+        assertEquals("Task exceeded its version wait deadline: gremlins in the computer", e.getMessage());
     }
 
     @Test

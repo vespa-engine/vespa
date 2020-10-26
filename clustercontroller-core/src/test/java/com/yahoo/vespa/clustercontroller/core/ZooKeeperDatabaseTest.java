@@ -4,21 +4,18 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vespa.clustercontroller.core.database.CasWriteFailed;
 import com.yahoo.vespa.clustercontroller.core.database.Database;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabase;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.time.Duration;
 
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 
 public class ZooKeeperDatabaseTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private static class Fixture implements AutoCloseable {
         final ZooKeeperTestServer zkServer;
@@ -75,23 +72,27 @@ public class ZooKeeperDatabaseTest {
     }
 
     @Test
-    public void storing_cluster_state_bundle_with_mismatching_expected_znode_version_throws_exception() throws Exception {
-        expectedException.expect(CasWriteFailed.class);
-        expectedException.expectMessage("version mismatch in cluster state bundle znode (expected -2)");
-        try (Fixture f = new Fixture()) {
-            f.createDatabase();
-            f.db().storeLastPublishedStateBundle(dummyBundle());
-        }
+    public void storing_cluster_state_bundle_with_mismatching_expected_znode_version_throws_exception() {
+        Exception e = assertThrows(CasWriteFailed.class,
+                () -> {
+                    try (Fixture f = new Fixture()) {
+                        f.createDatabase();
+                        f.db().storeLastPublishedStateBundle(dummyBundle());
+                    }
+                });
+        assertThat(e.getMessage(), startsWith("version mismatch in cluster state bundle znode (expected -2)"));
     }
 
     @Test
-    public void storing_cluster_state_version_with_mismatching_expected_znode_version_throws_exception() throws Exception {
-        expectedException.expect(CasWriteFailed.class);
-        expectedException.expectMessage("version mismatch in cluster state version znode (expected -2)");
-        try (Fixture f = new Fixture()) {
-            f.createDatabase();
-            f.db().storeLatestSystemStateVersion(12345);
-        }
+    public void storing_cluster_state_version_with_mismatching_expected_znode_version_throws_exception() {
+        Exception e = assertThrows(CasWriteFailed.class,
+                () -> {
+                    try (Fixture f = new Fixture()) {
+                        f.createDatabase();
+                        f.db().storeLatestSystemStateVersion(12345);
+                    }
+                });
+        assertThat(e.getMessage(), startsWith("version mismatch in cluster state version znode (expected -2)"));
     }
 
     @Test

@@ -10,14 +10,9 @@ import com.google.inject.name.Names;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.container.di.componentgraph.core.ComponentGraph;
-import com.yahoo.container.di.componentgraph.core.ComponentNode;
-import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,8 +20,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Tony Vaagenes
@@ -39,9 +36,6 @@ public class FallbackToGuiceInjectorTest {
     private Injector injector;
     private Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs =
             new HashMap<>();
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Before
     public void createGraph() {
@@ -110,9 +104,9 @@ public class FallbackToGuiceInjectorTest {
         setInjector(emptyGuiceInjector());
         register(ComponentThatCannotBeConstructed.class);
 
-        exception.expect(RuntimeException.class);
-        exception.expectMessage("When resolving dependencies of 'com.yahoo.container.di.componentgraph.core.FallbackToGuiceInjectorTest$ComponentThatCannotBeConstructed'");
-        complete();
+        Exception e = assertThrows(RuntimeException.class, () -> complete());
+        assertEquals("When resolving dependencies of 'com.yahoo.container.di.componentgraph.core.FallbackToGuiceInjectorTest$ComponentThatCannotBeConstructed'",
+                e.getMessage());
     }
 
     public void register(Class<?> componentClass) {

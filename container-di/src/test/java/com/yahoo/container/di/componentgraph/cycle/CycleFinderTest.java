@@ -10,7 +10,7 @@ import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertic
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.D;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author gjoranv

@@ -10,7 +10,7 @@ import static com.yahoo.vespa.clustercontroller.core.matchers.EventTypeIs.eventT
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventTimeIs.eventTimeIs;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
 
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
