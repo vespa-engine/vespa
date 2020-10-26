@@ -70,10 +70,10 @@ public interface ModelContext {
         default int defaultNumResponseThreads() { return 2; }
 
         // TODO(bjorncs) Temporary feature flag
-        double threadPoolSizeFactor();
+        default double threadPoolSizeFactor() { return 2.0; }
 
         // TODO(bjorncs) Temporary feature flag
-        double queueSizeFactor();
+        default double queueSizeFactor() { return 40.0; };
 
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();

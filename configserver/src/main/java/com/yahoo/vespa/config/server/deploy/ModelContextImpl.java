@@ -153,8 +153,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useFastValueTensorImplementation;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final double defaultTermwiseLimit;
-        private final double threadPoolSizeFactor;
-        private final double queueSizefactor;
         private final String jvmGCOPtions;
         private final String feedSequencer;
         private final String responseSequencer;
@@ -164,7 +162,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean skipMbusReplyThread;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
-        private final double feedCoreThreadPoolSizeFactor;
         private final double visibilityDelay;
         private final Quota quota;
         private final boolean tlsUseFSync;
@@ -211,15 +208,11 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             useFastValueTensorImplementation = Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            threadPoolSizeFactor = Flags.DEFAULT_THREADPOOL_SIZE_FACTOR.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             visibilityDelay = Flags.VISIBILITY_DELAY.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             tlsCompressionType = Flags.TLS_COMPRESSION_TYPE.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             tlsUseFSync = Flags.TLS_USE_FSYNC.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            queueSizefactor = Flags.DEFAULT_QUEUE_SIZE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             jvmGCOPtions = Flags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -237,8 +230,6 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
-            feedCoreThreadPoolSizeFactor = Flags.FEED_CORE_THREAD_POOL_SIZE_FACTOR.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.useNewRestapiHandler = Flags.USE_NEW_RESTAPI_HANDLER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
@@ -296,16 +287,6 @@ public class ModelContextImpl implements ModelContext {
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 
         @Override
-        public double threadPoolSizeFactor() {
-            return threadPoolSizeFactor;
-        }
-
-        @Override
-        public double queueSizeFactor() {
-            return queueSizefactor;
-        }
-
-        @Override
         public boolean useContentNodeBtreeDb() {
             return useContentNodeBtreeDb;
         }
@@ -342,7 +323,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
-        @Override public double feedCoreThreadPoolSizeFactor() { return feedCoreThreadPoolSizeFactor; }
         @Override public double visibilityDelay() { return visibilityDelay; }
         @Override public boolean tlsUseFSync() { return tlsUseFSync; }
         @Override public String tlsCompressionType() { return tlsCompressionType; }

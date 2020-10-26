@@ -39,14 +39,13 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
             return;
         }
 
-        double threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
         double vcpu = cluster.vcpu().orElse(0);
-        if (threadPoolSizeFactor <= 0 || vcpu == 0) return;
+        if (vcpu == 0) return;
 
         // Configuration is currently identical to the search handler's threadpool
-        int workerThreads = Math.max(8, (int)Math.ceil(vcpu * threadPoolSizeFactor));
+        int workerThreads = Math.max(8, (int)Math.ceil(vcpu * 2.0));
         builder.maxthreads(workerThreads);
         builder.corePoolSize(workerThreads);
-        builder.queueSize((int)(workerThreads * deployState.getProperties().queueSizeFactor()));
+        builder.queueSize((int)(workerThreads * 40.0));
     }
 }

@@ -107,17 +107,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundDoubleFlag DEFAULT_THREADPOOL_SIZE_FACTOR = defineDoubleFlag(
-            "default-threadpool-size-factor", 0.0,
-            "Default multiplication factor when computing maxthreads for main container threadpool based on available cores",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-    public static final UnboundDoubleFlag DEFAULT_QUEUE_SIZE_FACTOR = defineDoubleFlag(
-            "default-queue-size-factor", 0.0,
-            "Default multiplication factor when computing queuesize for burst handling",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundStringFlag JVM_GC_OPTIONS = defineStringFlag(
             "jvm-gc-options", "",
             "Sets deafult jvm gc options",
@@ -321,12 +310,6 @@ public class Flags {
             "List of IPs or CIDRs that are blocked for outbound connections",
             "Takes effect on next tick"
     );
-
-    public static final UnboundDoubleFlag FEED_CORE_THREAD_POOL_SIZE_FACTOR = defineDoubleFlag(
-            "feed-core-thread-pool-size-factor", 4.0,
-            "Max threads in threadpool for feeding APIs as a factor of vcpu",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint",

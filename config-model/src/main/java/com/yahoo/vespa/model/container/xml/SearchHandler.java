@@ -56,22 +56,21 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
             // User options overrides below configuration
             if (hasUserOptions()) return;
 
-            double threadPoolSizeFactor = deployState.getProperties().threadPoolSizeFactor();
             double vcpu = cluster.vcpu().orElse(0);
-            if (threadPoolSizeFactor <= 0 || vcpu == 0) {
+            if (vcpu == 0) {
                 builder.maxThreads(500);
                 builder.minThreads(500);
                 builder.queueSize(0);
             } else {
                 // Controls max number of concurrent requests per container
-                int workerThreads = Math.max(8, (int)Math.ceil(vcpu * threadPoolSizeFactor));
+                int workerThreads = Math.max(8, (int)Math.ceil(vcpu * 2.0));
                 builder.maxThreads(workerThreads);
                 builder.minThreads(workerThreads);
 
                 // This controls your burst handling capability.
                 // 0 => No extra burst handling beyond you max concurrent requests (maxthreads).
                 // N => N times max concurrent requests as a buffer for handling bursts
-                builder.queueSize((int)(workerThreads * deployState.getProperties().queueSizeFactor()));
+                builder.queueSize((int)(workerThreads * 40.0));
             }
         }
 
