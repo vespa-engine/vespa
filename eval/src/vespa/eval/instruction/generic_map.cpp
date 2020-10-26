@@ -22,7 +22,7 @@ void my_generic_map_op(State &state, uint64_t param_in) {
     Func function(to_map_fun(param_in));
     const Value &a = state.peek(0);
     auto input_cells = a.cells().typify<CT>();
-    auto output_cells = state.stash.create_array<CT>(input_cells.size());
+    auto output_cells = state.stash.create_uninitialized_array<CT>(input_cells.size());
     auto pos = output_cells.begin();
     for (CT value : input_cells) {
         *pos++ = (CT) function(value);

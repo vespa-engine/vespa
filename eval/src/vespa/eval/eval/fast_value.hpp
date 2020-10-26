@@ -253,6 +253,40 @@ template <typename T> FastValue<T>::~FastValue() = default;
 
 //-----------------------------------------------------------------------------
 
+template <typename T>
+struct FastDenseValue final : Value, ValueBuilder<T> {
+
+    ValueType my_type;
+    FastCells<T> my_cells;
+
+    FastDenseValue(const ValueType &type_in, size_t subspace_size_in)
+        : my_type(type_in), my_cells(subspace_size_in)
+    {
+        my_cells.add_cells(subspace_size_in);
+    }
+    ~FastDenseValue() override;
+    const ValueType &type() const override { return my_type; }
+    const Value::Index &index() const override { return TrivialIndex::get(); }
+    TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
+    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) override {
+        return ArrayRef<T>(my_cells.get(0), my_cells.size);
+    }
+    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
+        ValueBuilder<T>* me = this;
+        assert(me == self.get());
+        self.release();
+        return std::unique_ptr<Value>(this);
+    }
+    MemoryUsage get_memory_usage() const override {
+        MemoryUsage usage = self_memory_usage<FastValue<T>>();
+        usage.merge(my_cells.estimate_extra_memory_usage());
+        return usage;
+    }
+};
+template <typename T> FastDenseValue<T>::~FastDenseValue() = default;
+
+//-----------------------------------------------------------------------------
+
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 const Value &
 FastValueIndex::sparse_full_overlap_join(const ValueType &res_type, const Fun &fun,
