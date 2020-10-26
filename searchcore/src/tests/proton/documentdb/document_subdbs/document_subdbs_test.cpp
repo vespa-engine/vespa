@@ -769,18 +769,27 @@ struct DocumentHandler
     }
     void putDoc(PutOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
-        _f.runInMaster([&]() {    feedView->preparePut(op);
-                                  feedView->handlePut(FeedToken(), op); } );
+        _f.runInMaster([&]() {
+            feedView->preparePut(op);
+            feedView->handlePut(FeedToken(), op);
+            feedView->forceCommit(op.getSerialNum());
+        } );
     }
     void moveDoc(MoveOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
-        _f.runInMaster([&]() {    feedView->handleMove(op, IDestructorCallback::SP()); } );
+        _f.runInMaster([&]() {
+            feedView->handleMove(op, IDestructorCallback::SP());
+            feedView->forceCommit(op.getSerialNum());
+        } );
     }
     void removeDoc(RemoveOperation &op)
     {
         IFeedView::SP feedView = _f._subDb.getFeedView();
-        _f.runInMaster([&]() {    feedView->prepareRemove(op);
-                                  feedView->handleRemove(FeedToken(), op); } );
+        _f.runInMaster([&]() {
+            feedView->prepareRemove(op);
+            feedView->handleRemove(FeedToken(), op);
+            feedView->forceCommit(op.getSerialNum());
+        } );
     }
     void putDocs() {
         PutOperation putOp = createPut(std::move(createDoc(1, 22, 33)), Timestamp(10), 10);

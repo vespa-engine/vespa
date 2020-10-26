@@ -31,7 +31,6 @@ DocumentMetaStoreAttribute::DocumentMetaStoreAttribute(const vespalib::string &n
 { }
 
 
-DocumentMetaStoreAttribute::~DocumentMetaStoreAttribute()
-{ }
+DocumentMetaStoreAttribute::~DocumentMetaStoreAttribute() = default;
 
 }

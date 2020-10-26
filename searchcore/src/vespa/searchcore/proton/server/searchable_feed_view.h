@@ -34,38 +34,21 @@ private:
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
 
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document &doc,
-                         bool immediateCommit, OnOperationDoneType onWriteDone);
-
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &doc,
-                         bool immediateCommit, OnOperationDoneType onWriteDone);
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
-                         bool immediateCommit, OnOperationDoneType onWriteDone);
-
-    void performIndexRemove(SerialNum serialNum, search::DocumentIdT lid,
-                            bool immediateCommit, OnRemoveDoneType onWriteDone);
-
-    void performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove,
-                            bool immediateCommit, OnWriteDoneType onWriteDone);
-
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, OnOperationDoneType onWriteDone);
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &doc, OnOperationDoneType onWriteDone);
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc, OnOperationDoneType onWriteDone);
+    void performIndexRemove(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone);
+    void performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
     void performIndexHeartBeat(SerialNum serialNum);
-
 
     void internalDeleteBucket(const DeleteBucketOperation &delOp) override;
     void performSync();
     void heartBeatIndexedFields(SerialNum serialNum) override;
 
-    void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc,
-                          bool immediateCommit, OnOperationDoneType onWriteDone) override;
-
-    void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc,
-                             bool immediateCommit, OnOperationDoneType onWriteDone) override;
-
-    void removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid,
-                             bool immediateCommit, OnRemoveDoneType onWriteDone) override;
-
-    void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
-                             bool immediateCommit, OnWriteDoneType onWriteDone) override;
+    void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc, OnOperationDoneType onWriteDone) override;
+    void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc, OnOperationDoneType onWriteDone) override;
+    void removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone) override;
+    void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone) override;
 
     void performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
     void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;

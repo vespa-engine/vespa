@@ -245,7 +245,8 @@ public:
                               Timestamp(0u), docSize, lid, 0u));
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().incSerialNum();
-        _aw->put(serialNum, doc, lid, true, std::shared_ptr<IDestructorCallback>());
+        _aw->put(serialNum, doc, lid, std::shared_ptr<IDestructorCallback>());
+        _aw->forceCommit(serialNum, std::shared_ptr<IDestructorCallback>());
         _ddb->getReadySubDB()->getAttributeManager()->getAttributeFieldWriter().sync();
         _sa->put(serialNum, lid, doc);
         const GlobalId &gid = docId.getGlobalId();

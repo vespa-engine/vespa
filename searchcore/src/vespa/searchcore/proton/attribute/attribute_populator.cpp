@@ -3,6 +3,8 @@
 #include "attribute_populator.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 #include <vespa/log/log.h>
@@ -73,8 +75,10 @@ void
 AttributePopulator::handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc)
 {
     search::SerialNum serialNum(nextSerialNum());
-    auto populateDoneContext = std::make_shared<PopulateDoneContext>(doc);
-    _writer.put(serialNum, *doc, lid, true, populateDoneContext);
+    _writer.put(serialNum, *doc, lid, std::make_shared<PopulateDoneContext>(doc));
+    vespalib::Gate gate;
+    _writer.forceCommit(serialNum, std::make_shared<search::GateCallback>(gate));
+    gate.await();
 }
 
 void

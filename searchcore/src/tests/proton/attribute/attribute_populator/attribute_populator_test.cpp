@@ -97,12 +97,12 @@ TEST_F("require that reprocess with document populates attribute", Fixture)
     f._pop->handleExisting(5, f._ctx.create(0, 33));
     EXPECT_EQUAL(6u, attr->get()->getNumDocs());
     EXPECT_EQUAL(33, attr->get()->getInt(5));
-    EXPECT_EQUAL(1u, attr->get()->getStatus().getLastSyncToken());
+    EXPECT_EQUAL(0u, attr->get()->getStatus().getLastSyncToken());
 
     f._pop->handleExisting(6, f._ctx.create(1, 44));
     EXPECT_EQUAL(7u, attr->get()->getNumDocs());
     EXPECT_EQUAL(44, attr->get()->getInt(6));
-    EXPECT_EQUAL(2u, attr->get()->getStatus().getLastSyncToken());
+    EXPECT_EQUAL(0u, attr->get()->getStatus().getLastSyncToken());
     f._pop->done();
     EXPECT_EQUAL(CREATE_SERIAL_NUM, attr->get()->getStatus().getLastSyncToken());
 }
