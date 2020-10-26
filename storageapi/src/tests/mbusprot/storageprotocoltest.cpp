@@ -698,7 +698,6 @@ TEST_P(StorageProtocolTest, apply_bucket_diff) {
 
     EXPECT_EQ(nodes, reply2->getNodes());
     EXPECT_EQ(entries, reply2->getDiff());
-    EXPECT_EQ(1234u, reply2->getMaxBufferSize());
 }
 
 namespace {

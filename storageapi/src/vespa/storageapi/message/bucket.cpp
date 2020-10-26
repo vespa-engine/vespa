@@ -394,8 +394,7 @@ ApplyBucketDiffCommand::print(std::ostream& out, bool verbose,
 ApplyBucketDiffReply::ApplyBucketDiffReply(const ApplyBucketDiffCommand& cmd)
     : BucketInfoReply(cmd),
       _nodes(cmd.getNodes()),
-      _diff(cmd.getDiff()),
-      _maxBufferSize(cmd.getMaxBufferSize())
+      _diff(cmd.getDiff())
 {}
 
 ApplyBucketDiffReply::~ApplyBucketDiffReply() = default;
@@ -416,8 +415,7 @@ ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
         if (i != 0) out << ", ";
         out << _nodes[i];
     }
-    out << ", max buffer size " << _maxBufferSize << " bytes"
-        << ", " << _diff.size() << " entries of " << totalSize << " bytes, "
+    out << _diff.size() << " entries of " << totalSize << " bytes, "
         << (100.0 * filled / _diff.size()) << " \% filled)";
     if (_diff.empty()) {
         out << ", no entries";

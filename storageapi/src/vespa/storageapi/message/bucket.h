@@ -309,16 +309,14 @@ public:
 private:
     std::vector<Node> _nodes;
     std::vector<Entry> _diff;
-    uint32_t _maxBufferSize;
 
 public:
     explicit ApplyBucketDiffReply(const ApplyBucketDiffCommand& cmd);
-    ~ApplyBucketDiffReply();
+    ~ApplyBucketDiffReply() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     const std::vector<Entry>& getDiff() const { return _diff; }
     std::vector<Entry>& getDiff() { return _diff; }
-    uint32_t getMaxBufferSize() const { return _maxBufferSize; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
