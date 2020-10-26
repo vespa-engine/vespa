@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
@@ -36,6 +39,7 @@ import static org.mockito.Mockito.when;
  * @author mpolden
  */
 public class NodeFailerTest {
+
 
     private static final Report badTotalMemorySizeReport = Report.basicReport(
             "badTotalMemorySize", HARD_FAIL, Instant.now(), "too low");
@@ -73,7 +77,7 @@ public class NodeFailerTest {
 
         // The first (and the only) ready node and the 1st active node that was allowed to fail should be failed
         Map<Node.State, List<String>> expectedHostnamesByState1Iter = Map.of(
-                Node.State.failed, List.of(hostnamesByState.get(Node.State.active).get(0), hostnamesByState.get(Node.State.ready).get(0)),
+                Node.State.failed, List.of(hostnamesByState.get(Node.State.ready).get(0), hostnamesByState.get(Node.State.active).get(0)),
                 Node.State.active, hostnamesByState.get(Node.State.active).subList(1, 2));
         Map<Node.State, List<String>> hostnamesByState1Iter = tester.nodeRepository.list().childrenOf(hostWithHwFailure).asList().stream()
                 .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
@@ -280,7 +284,40 @@ public class NodeFailerTest {
                    >
                    lastNode.allocation().get().membership().index());
     }
-    
+
+    @Test
+    public void node_failing_can_allocate_spare() {
+        var resources = new NodeResources(1, 20, 15, 1);
+        Capacity capacity = Capacity.from(new ClusterResources(3, 1, resources), false, true);
+        NodeFailTester tester = NodeFailTester.withOneUndeployedApplication(capacity);
+        assertEquals("Test depends on this setting in NodeFailTester", 1, tester.nodeRepository.spareCount());
+        tester.createAndActivateHosts(4, resources); // Just one extra - becomes designated spare
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        tester.activate(NodeFailTester.app1, cluster, capacity);
+
+        String downHost = tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(0).hostname();
+        tester.serviceMonitor.setHostDown(downHost);
+
+        // nothing happens the first 45 minutes
+        for (int minutes = 0; minutes < 45; minutes +=5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            assertEquals(0, tester.deployer.redeployments);
+            assertEquals(3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+            assertEquals(0, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        }
+
+        // downHost should now be failed and replaced
+        tester.clock.advance(Duration.ofDays(1));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+        assertEquals(1, tester.deployer.redeployments);
+        assertEquals(1, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+        assertEquals(downHost, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+    }
+
     @Test
     public void failing_ready_nodes() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
@@ -331,7 +368,6 @@ public class NodeFailerTest {
             assertEquals( 3, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
             assertEquals( 0, tester.nodeRepository.getNodes(NodeType.host, Node.State.failed).size());
         }
-
 
         // Two ready nodes and a ready docker node die, but only 2 of those are failed out
         tester.clock.advance(Duration.ofMinutes(180));
@@ -419,7 +455,6 @@ public class NodeFailerTest {
         assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
         assertEquals(6, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         assertEquals(5, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
-
 
         // We have only 5 hosts remaining, so if we fail another host, we should only be able to redeploy app1's
         // node, while app2's should remain
