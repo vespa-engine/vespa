@@ -218,7 +218,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     private Optional<TensorType> onnxFeatureType(Reference reference) {
-        if ( ! reference.name().equals("onnxModel"))
+        if ( ! reference.name().equals("onnxModel") || ! reference.name().equals("onnx"))
             return Optional.empty();
 
         if ( ! featureTypes.containsKey(reference)) {
