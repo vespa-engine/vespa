@@ -1403,15 +1403,15 @@ App::get_options()
         { "indexing-sequencer", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
         { "put-passes", 1, nullptr, 0 },
-        { "update-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
         { "rpc-targets-per-node", 1, nullptr, 0 },
         { "skip-get-spi-bucket-info", 0, nullptr, 0 },
+        { "update-passes", 1, nullptr, 0 },
+        { "use-async-message-handling", 0, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
         { "use-legacy-bucket-db", 0, nullptr, 0 },
-        { "use-async-message-handling", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
         { "use-storage-chain", 0, nullptr, 0 }
     };
@@ -1424,15 +1424,15 @@ App::get_options()
         LONGOPT_INDEXING_SEQUENCER,
         LONGOPT_MAX_PENDING,
         LONGOPT_PUT_PASSES,
-        LONGOPT_UPDATE_PASSES,
         LONGOPT_REMOVE_PASSES,
         LONGOPT_RESPONSE_THREADS,
         LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_RPC_TARGETS_PER_NODE,
         LONGOPT_SKIP_GET_SPI_BUCKET_INFO,
+        LONGOPT_UPDATE_PASSES,
+        LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
         LONGOPT_USE_DOCUMENT_API,
         LONGOPT_USE_LEGACY_BUCKET_DB,
-        LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
         LONGOPT_USE_MESSAGE_BUS,
         LONGOPT_USE_STORAGE_CHAIN
     };
@@ -1484,14 +1484,14 @@ App::get_options()
             case LONGOPT_SKIP_GET_SPI_BUCKET_INFO:
                 _bm_params.set_skip_get_spi_bucket_info(true);
                 break;
+            case LONGOPT_USE_ASYNC_MESSAGE_HANDLING:
+                _bm_params.set_use_async_message_handling_on_schedule(true);
+                break;
             case LONGOPT_USE_DOCUMENT_API:
                 _bm_params.set_use_document_api(true);
                 break;
             case LONGOPT_USE_LEGACY_BUCKET_DB:
                 _bm_params.set_use_legacy_bucket_db(true);
-                break;
-            case LONGOPT_USE_ASYNC_MESSAGE_HANDLING:
-                _bm_params.set_use_async_message_handling_on_schedule(true);
                 break;
             case LONGOPT_USE_MESSAGE_BUS:
                 _bm_params.set_use_message_bus(true);
