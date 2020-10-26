@@ -36,7 +36,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/default_value_builder_factory.h>
-#include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -230,7 +229,6 @@ Impl  default_tensor_engine_impl(1, "DefaultTensorEngine", "OLD PROD", DefaultTe
 Impl           simple_value_impl(3, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
 Impl             fast_value_impl(0, "          FastValue", "NEW PROD", FastValueBuilderFactory::get(), false);
 Impl   optimized_fast_value_impl(2, "Optimized FastValue", "Optimize", FastValueBuilderFactory::get(), true);
-Impl    packed_mixed_tensor_impl(5, "  PackedMixedTensor", "  Packed", PackedMixedTensorBuilderFactory::get(), false);
 Impl   default_tensor_value_impl(4, "       DefaultValue", "DefaultV", DefaultValueBuilderFactory::get(), false);
 vespalib::string                              short_header("--------");
 
@@ -243,7 +241,6 @@ std::vector<CREF<Impl>> impl_list = {default_tensor_engine_impl,
                                      simple_value_impl,
                                      fast_value_impl,
                                      optimized_fast_value_impl,
-                                     packed_mixed_tensor_impl,
                                      default_tensor_value_impl};
 
 //-----------------------------------------------------------------------------
@@ -982,6 +979,14 @@ void print_summary() {
 }
 
 int main(int argc, char **argv) {
+    const std::string run_only_prod_option = "--limit-implementations";
+    if ((argc > 1) && (argv[1] == run_only_prod_option )) {
+        impl_list.clear();
+        impl_list.push_back(fast_value_impl);
+        impl_list.push_back(default_tensor_engine_impl);
+        ++argv;
+        --argc;
+    }
     ::testing::InitGoogleTest(&argc, argv);
     int result = RUN_ALL_TESTS();
     print_summary();
