@@ -227,13 +227,11 @@ struct Impl {
 //-----------------------------------------------------------------------------
 
 Impl  default_tensor_engine_impl(1, "DefaultTensorEngine", "OLD PROD", DefaultTensorEngine::ref(), false);
+Impl           simple_value_impl(3, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
 Impl             fast_value_impl(0, "          FastValue", "NEW PROD", FastValueBuilderFactory::get(), false);
-#ifndef BM_ONLY_PROD
 Impl   optimized_fast_value_impl(2, "Optimized FastValue", "Optimize", FastValueBuilderFactory::get(), true);
-Impl   default_tensor_value_impl(3, "       DefaultValue", "DefaultV", DefaultValueBuilderFactory::get(), false);
-Impl           simple_value_impl(4, "        SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
 Impl    packed_mixed_tensor_impl(5, "  PackedMixedTensor", "  Packed", PackedMixedTensorBuilderFactory::get(), false);
-#endif
+Impl   default_tensor_value_impl(4, "       DefaultValue", "DefaultV", DefaultValueBuilderFactory::get(), false);
 vespalib::string                              short_header("--------");
 
 constexpr double budget = 5.0;
@@ -241,16 +239,12 @@ constexpr double best_limit = 0.95; // everything within 95% of best performance
 constexpr double bad_limit = 0.90; // BAD: new prod has performance lower than 90% of old prod
 constexpr double good_limit = 1.10; // GOOD: new prod has performance higher than 110% of old prod
 
-std::vector<CREF<Impl>> impl_list = {
-                                     fast_value_impl,
-#ifndef BM_ONLY_PROD
-                                     optimized_fast_value_impl,
+std::vector<CREF<Impl>> impl_list = {default_tensor_engine_impl,
                                      simple_value_impl,
-                                     default_tensor_value_impl,
+                                     fast_value_impl,
+                                     optimized_fast_value_impl,
                                      packed_mixed_tensor_impl,
-#endif
-				     default_tensor_engine_impl
-};
+                                     default_tensor_value_impl};
 
 //-----------------------------------------------------------------------------
 
@@ -988,6 +982,14 @@ void print_summary() {
 }
 
 int main(int argc, char **argv) {
+    const std::string run_only_prod_option = "--limit-implementations";
+    if ((argc > 1) && (argv[1] == run_only_prod_option )) {
+        impl_list.clear();
+        impl_list.push_back(fast_value_impl);
+        impl_list.push_back(default_tensor_engine_impl);
+        ++argv;
+        --argc;
+    }
     ::testing::InitGoogleTest(&argc, argv);
     int result = RUN_ALL_TESTS();
     print_summary();
