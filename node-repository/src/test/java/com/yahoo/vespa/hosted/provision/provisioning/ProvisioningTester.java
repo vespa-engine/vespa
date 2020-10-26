@@ -430,13 +430,9 @@ public class ProvisioningTester {
                     nameResolver.addRecord(String.format("node-%d-of-%s", poolIp, hostname), ipv4Addr);
                 }
             }
-            nodes.add(nodeRepository.createNode(hostname,
-                                                hostname,
-                                                new IP.Config(hostIps, ipAddressPool),
-                                                Optional.empty(),
-                                                flavor,
-                                                reservedTo,
-                                                type));
+            Node.Builder builder = Node.create(hostname, new IP.Config(hostIps, ipAddressPool), hostname, flavor, type);
+            reservedTo.ifPresent(builder::reservedTo);
+            nodes.add(builder.build());
         }
         nodes = nodeRepository.addNodes(nodes, Agent.system);
         return nodes;
@@ -451,13 +447,8 @@ public class ProvisioningTester {
             String ipv4 = "127.0.1." + i;
 
             nameResolver.addRecord(hostname, ipv4);
-            Node node = nodeRepository.createNode(hostname,
-                                                  hostname,
-                                                  new IP.Config(Set.of(ipv4), Set.of()),
-                                                  Optional.empty(),
-                                                  nodeFlavors.getFlavorOrThrow(flavor),
-                                                  Optional.empty(),
-                                                  NodeType.config);
+            Node node = Node.create(hostname, new IP.Config(Set.of(ipv4), Set.of()), hostname,
+                    nodeFlavors.getFlavorOrThrow(flavor), NodeType.config).build();
             nodes.add(node);
         }
 
@@ -522,8 +513,11 @@ public class ProvisioningTester {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
-            nodes.add(nodeRepository.createNode("node-id", hostname, IP.Config.EMPTY, parentHostname,
-                                                new Flavor(resources), Optional.empty(), NodeType.tenant));
+            IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+
+            Node.Builder builder = Node.create("node-id", ipConfig, hostname, new Flavor(resources), NodeType.tenant);
+            parentHostname.ifPresent(builder::parentHostname);
+            nodes.add(builder.build());
         }
         nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());

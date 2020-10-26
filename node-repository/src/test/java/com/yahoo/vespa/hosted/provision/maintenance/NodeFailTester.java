@@ -232,8 +232,13 @@ public class NodeFailTester {
 
     private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
-        for (int i = startIndex; i < startIndex + count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, IP.Config.EMPTY, parentHostname, flavor, Optional.empty(), nodeType));
+        for (int i = startIndex; i < startIndex + count; i++) {
+            String hostname = "host" + i;
+            IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+            Node.Builder builder = Node.create("node" + i, ipConfig, hostname, flavor, nodeType);
+            parentHostname.ifPresent(builder::parentHostname);
+            nodes.add(builder.build());
+        }
 
         nodes = nodeRepository.addNodes(nodes, Agent.system);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());

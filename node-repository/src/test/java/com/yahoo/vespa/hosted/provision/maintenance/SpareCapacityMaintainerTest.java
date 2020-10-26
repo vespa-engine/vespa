@@ -31,7 +31,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -272,13 +271,8 @@ public class SpareCapacityMaintainerTest {
         private void addHosts(int count, NodeResources resources) {
             List<Node> hosts = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                Node host = nodeRepository.createNode("host" + hostIndex,
-                                                      "host" + hostIndex + ".yahoo.com",
-                                                      ipConfig(hostIndex + nodeIndex, true),
-                                                      Optional.empty(),
-                                                      new Flavor(resources),
-                                                      Optional.empty(),
-                                                      NodeType.host);
+                Node host = Node.create("host" + hostIndex, ipConfig(hostIndex + nodeIndex, true),
+                        "host" + hostIndex + ".yahoo.com", new Flavor(resources), NodeType.host).build();
                 hosts.add(host);
                 hostIndex++;
             }
@@ -294,13 +288,9 @@ public class SpareCapacityMaintainerTest {
         private void addNodes(int id, int count, NodeResources resources, int hostOffset) {
             List<Node> nodes = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                Node node = nodeRepository.createNode("node" + nodeIndex,
-                                                      "node" + nodeIndex + ".yahoo.com",
-                                                      ipConfig(hostIndex + nodeIndex, false),
-                                                      Optional.of("host" + ( hostOffset + i) + ".yahoo.com"),
-                                                      new Flavor(resources),
-                                                      Optional.empty(),
-                                                      NodeType.tenant);
+                Node node = Node.create("node" + nodeIndex, ipConfig(hostIndex + nodeIndex, false),
+                        "node" + nodeIndex + ".yahoo.com", new Flavor(resources), NodeType.tenant)
+                        .parentHostname("host" + ( hostOffset + i) + ".yahoo.com").build();
                 nodes.add(node);
                 nodeIndex++;
             }

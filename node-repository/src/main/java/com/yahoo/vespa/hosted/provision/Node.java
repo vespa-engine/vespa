@@ -51,19 +51,16 @@ public final class Node implements Nodelike {
     /** The current allocation of this node, if any */
     private final Optional<Allocation> allocation;
 
-    /** Creates a node in the initial state (reserved) */
-    public static Node createDockerNode(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
-        return new Node("fake-" + hostname, new IP.Config(ipAddresses, Set.of()), hostname, Optional.of(parentHostname),
-                        new Flavor(resources), Status.initial(), State.reserved,
-                        Optional.empty(), History.empty(), type, new Reports(), Optional.empty(), Optional.empty(),
-                        Optional.empty());
+    /** Creates a node builder in the initial state (reserved) */
+    public static Node.Builder createDockerNode(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
+        return new Node.Builder("fake-" + hostname, hostname, new Flavor(resources), State.reserved, type)
+                .ipConfig(ipAddresses, Set.of())
+                .parentHostname(parentHostname);
     }
 
-    /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, IP.Config ipConfig, String hostname, Optional<String> parentHostname,
-                              Optional<String> modelName, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, Optional<String> switchHostname) {
-        return new Node(openStackId, ipConfig, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
-                        Optional.empty(), History.empty(), type, new Reports(), modelName, reservedTo, switchHostname);
+    /** Creates a node builder in the initial state (provisioned) */
+    public static Node.Builder create(String openStackId, IP.Config ipConfig, String hostname, Flavor flavor, NodeType type) {
+        return new Node.Builder(openStackId, hostname, flavor, State.provisioned, type).ipConfig(ipConfig);
     }
 
     /** Creates a node. See also the {@code create} helper methods. */
@@ -482,6 +479,89 @@ public final class Node implements Nodelike {
 
         public double deviation() {  return deviation; }
 
+    }
+
+    public static class Builder {
+        private final String id;
+        private final String hostname;
+        private final Flavor flavor;
+        private final State state;
+        private final NodeType type;
+
+        private String parentHostname;
+        private String modelName;
+        private TenantName reservedTo;
+        private String switchHostname;
+        private Allocation allocation;
+        private IP.Config ipConfig;
+        private Status status;
+        private Reports reports;
+        private History history;
+
+        private Builder(String id, String hostname, Flavor flavor, State state, NodeType type) {
+            this.id = id;
+            this.hostname = hostname;
+            this.flavor = flavor;
+            this.state = state;
+            this.type = type;
+        }
+
+        public Builder parentHostname(String parentHostname) {
+            this.parentHostname = parentHostname;
+            return this;
+        }
+
+        public Builder modelName(String modelName) {
+            this.modelName = modelName;
+            return this;
+        }
+
+        public Builder reservedTo(TenantName reservedTo) {
+            this.reservedTo = reservedTo;
+            return this;
+        }
+
+        public Builder switchHostname(String switchHostname) {
+            this.switchHostname = switchHostname;
+            return this;
+        }
+
+        public Builder allocation(Allocation allocation) {
+            this.allocation = allocation;
+            return this;
+        }
+
+        public Builder ipConfig(IP.Config ipConfig) {
+            this.ipConfig = ipConfig;
+            return this;
+        }
+
+        public Builder ipConfig(Set<String> primary, Set<String> pool) {
+            this.ipConfig = new IP.Config(primary, pool);
+            return this;
+        }
+
+        public Builder status(Status status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder reports(Reports reports) {
+            this.reports = reports;
+            return this;
+        }
+
+        public Builder history(History history) {
+            this.history = history;
+            return this;
+        }
+
+        public Node build() {
+            return new Node(id, Optional.ofNullable(ipConfig).orElse(IP.Config.EMPTY), hostname, Optional.ofNullable(parentHostname),
+                    flavor, Optional.ofNullable(status).orElseGet(Status::initial), state, Optional.ofNullable(allocation),
+                    Optional.ofNullable(history).orElseGet(History::empty), type, Optional.ofNullable(reports).orElseGet(Reports::new),
+                    Optional.ofNullable(modelName), Optional.ofNullable(reservedTo), Optional.ofNullable(switchHostname));
+        }
     }
 
 }

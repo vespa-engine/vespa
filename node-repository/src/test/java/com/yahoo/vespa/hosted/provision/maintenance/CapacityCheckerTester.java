@@ -149,9 +149,8 @@ public class CapacityCheckerTester {
                     .collect(Collectors.toSet());
 
             NodeResources nr = containingNodeResources(childResources, excessCapacity);
-            Node node = nodeRepository.createNode(hostname, hostname,
-                                                  new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                                                  new Flavor(nr), Optional.empty(), NodeType.host);
+            Node node = Node.create(hostname, new IP.Config(Set.of("::"), availableIps), hostname,
+                    new Flavor(nr), NodeType.host).build();
             hosts.computeIfAbsent(tenantHostApp, (ignored) -> new ArrayList<>())
                  .add(node);
         }
@@ -169,10 +168,8 @@ public class CapacityCheckerTester {
             Set<String> availableIps = IntStream.range(2000, 2000 + ips)
                     .mapToObj(n -> String.format("%04X::%04X", hostId, n))
                     .collect(Collectors.toSet());
-            Node node = nodeRepository.createNode(hostname,
-                                                  hostname,
-                                                  new IP.Config(Set.of("::" + (1000 + hostId)), availableIps), Optional.empty(),
-                                                  new Flavor(capacity), Optional.empty(), NodeType.host);
+            Node node = Node.create(hostname, new IP.Config(Set.of("::" + (1000 + hostId)), availableIps), hostname,
+                    new Flavor(capacity), NodeType.host).build();
             hosts.add(node);
         }
         return hosts;
@@ -284,9 +281,10 @@ public class CapacityCheckerTester {
                                              nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         Flavor f = new Flavor(nr);
 
-        Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
-                                              new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
-                                              nodeModel.parentHostname, f, Optional.empty(), nodeModel.type);
+        Node.Builder builder = Node.create(nodeModel.id, new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
+                nodeModel.hostname, f, nodeModel.type);
+        nodeModel.parentHostname.ifPresent(builder::parentHostname);
+        Node node = builder.build();
 
         if (membership != null) {
             return node.allocate(owner, membership, node.resources(), Instant.now());

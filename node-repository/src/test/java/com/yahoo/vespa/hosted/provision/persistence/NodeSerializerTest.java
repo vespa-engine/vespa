@@ -229,7 +229,9 @@ public class NodeSerializerTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Optional.empty(), NodeType.tenant, Optional.empty());
+        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant)
+                .parentHostname(parentHostname)
+                .build();
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
@@ -447,11 +449,8 @@ public class NodeSerializerTest {
         return Node.create("myId",
                            new IP.Config(Set.of("127.0.0.1"), Set.of()),
                            "myHostname",
-                           Optional.empty(),
-                           Optional.empty(),
                            nodeFlavors.getFlavorOrThrow("default"),
-                           Optional.empty(), NodeType.tenant,
-                           Optional.empty());
+                           NodeType.tenant).build();
     }
 
 }
