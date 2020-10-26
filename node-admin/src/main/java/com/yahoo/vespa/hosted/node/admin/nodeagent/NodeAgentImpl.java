@@ -5,13 +5,13 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
-import java.util.logging.Level;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
+import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
@@ -36,6 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -58,6 +60,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final ContainerOperations containerOperations;
+    private final RegistryCredentialsProvider registryCredentialsProvider;
     private final StorageMaintainer storageMaintainer;
     private final Optional<CredentialsMaintainer> credentialsMaintainer;
     private final Optional<AclMaintainer> aclMaintainer;
@@ -97,21 +100,26 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Created in NodeAdminImpl
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
-                         Orchestrator orchestrator, ContainerOperations containerOperations, StorageMaintainer storageMaintainer,
+                         Orchestrator orchestrator, ContainerOperations containerOperations,
+                         RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
-        this(contextSupplier, nodeRepository, orchestrator, containerOperations, storageMaintainer, flagSource, credentialsMaintainer,
-             aclMaintainer, healthChecker, clock, DEFAULT_WARM_UP_DURATION);
+        this(contextSupplier, nodeRepository, orchestrator, containerOperations, registryCredentialsProvider,
+             storageMaintainer, flagSource, credentialsMaintainer, aclMaintainer, healthChecker, clock,
+             DEFAULT_WARM_UP_DURATION);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
-                         Orchestrator orchestrator, ContainerOperations containerOperations, StorageMaintainer storageMaintainer,
+                         Orchestrator orchestrator, ContainerOperations containerOperations,
+                         RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
-                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock, Duration warmUpDuration) {
+                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
+                         Duration warmUpDuration) {
         this.contextSupplier = contextSupplier;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.containerOperations = containerOperations;
+        this.registryCredentialsProvider = registryCredentialsProvider;
         this.storageMaintainer = storageMaintainer;
         this.credentialsMaintainer = credentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
@@ -388,7 +396,10 @@ public class NodeAgentImpl implements NodeAgent {
     private boolean downloadImageIfNeeded(NodeSpec node, Optional<Container> container) {
         if (node.wantedDockerImage().equals(container.map(c -> c.image))) return false;
 
-        return node.wantedDockerImage().map(containerOperations::pullImageAsyncIfNeeded).orElse(false);
+        RegistryCredentials credentials = registryCredentialsProvider.get();
+        return node.wantedDockerImage()
+                   .map(image -> containerOperations.pullImageAsyncIfNeeded(image, credentials))
+                   .orElse(false);
     }
 
     public void converge(NodeAgentContext context) {
