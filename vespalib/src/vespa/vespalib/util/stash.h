@@ -176,6 +176,7 @@ public:
 
     template <typename T>
     ArrayRef<T> create_uninitialized_array(size_t size) {
+        static_assert(std::is_trivially_copyable_v<T>);
         static_assert(can_skip_destruction<T>::value);
         return ArrayRef<T>(reinterpret_cast<T*>(alloc(size * sizeof(T))), size);
     }
