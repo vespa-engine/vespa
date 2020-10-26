@@ -18,7 +18,7 @@ search test {
         }
 
         function mnist_softmax_onnx() {
-            expression: onnx("mnist_softmax")
+            expression: onnx_vespa("mnist_softmax")
         }
 
         function my_xgboost() {
