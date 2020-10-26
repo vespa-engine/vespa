@@ -281,6 +281,7 @@ class BMParams {
     bool     _use_message_bus;
     bool     _use_storage_chain;
     bool     _use_legacy_bucket_db;
+    bool     _use_async_message_handling_on_schedule;
     uint32_t get_start(uint32_t thread_id) const {
         return (_documents / _client_threads) * thread_id + std::min(thread_id, _documents % _client_threads);
     }
@@ -303,7 +304,8 @@ public:
           _use_document_api(false),
           _use_message_bus(false),
           _use_storage_chain(false),
-          _use_legacy_bucket_db(false)
+          _use_legacy_bucket_db(false),
+          _use_async_message_handling_on_schedule(false)
     {
     }
     BMRange get_range(uint32_t thread_id) const {
@@ -326,6 +328,7 @@ public:
     bool get_use_message_bus() const { return _use_message_bus; }
     bool get_use_storage_chain() const { return _use_storage_chain; }
     bool get_use_legacy_bucket_db() const { return _use_legacy_bucket_db; }
+    bool get_use_async_message_handling_on_schedule() const { return _use_async_message_handling_on_schedule; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_max_pending(uint32_t max_pending_in) { _max_pending = max_pending_in; }
     void set_client_threads(uint32_t threads_in) { _client_threads = threads_in; }
@@ -337,13 +340,14 @@ public:
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }
     void set_rpc_targets_per_node(uint32_t targets_in) { _rpc_targets_per_node = targets_in; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
-    void set_enable_distributor(bool enable_distributor_in) { _enable_distributor = enable_distributor_in; }
-    void set_enable_service_layer(bool enable_service_layer_in) { _enable_service_layer = enable_service_layer_in; }
-    void set_skip_get_spi_bucket_info(bool skip_get_spi_bucket_info_in) { _skip_get_spi_bucket_info = skip_get_spi_bucket_info_in; }
-    void set_use_document_api(bool use_document_api_in) { _use_document_api = use_document_api_in; }
-    void set_use_message_bus(bool use_message_bus_in) { _use_message_bus = use_message_bus_in; }
-    void set_use_storage_chain(bool use_storage_chain_in) { _use_storage_chain = use_storage_chain_in; }
-    void set_use_legacy_bucket_db(bool use_legacy_bucket_db_in) { _use_legacy_bucket_db = use_legacy_bucket_db_in; }
+    void set_enable_distributor(bool value) { _enable_distributor = value; }
+    void set_enable_service_layer(bool value) { _enable_service_layer = value; }
+    void set_skip_get_spi_bucket_info(bool value) { _skip_get_spi_bucket_info = value; }
+    void set_use_document_api(bool value) { _use_document_api = value; }
+    void set_use_message_bus(bool value) { _use_message_bus = value; }
+    void set_use_storage_chain(bool value) { _use_storage_chain = value; }
+    void set_use_legacy_bucket_db(bool value) { _use_legacy_bucket_db = value; }
+    void set_use_async_message_handling_on_schedule(bool value) { _use_async_message_handling_on_schedule = value; }
     bool check() const;
     bool needs_service_layer() const { return _enable_service_layer || _enable_distributor || _use_storage_chain || _use_message_bus || _use_document_api; }
     bool needs_distributor() const { return _enable_distributor || _use_document_api; }
@@ -537,6 +541,8 @@ struct MyServiceLayerConfig : public MyStorageConfig
           stor_visitor()
     {
         stor_filestor.numResponseThreads = params.get_response_threads();
+        stor_filestor.numNetworkThreads = params.get_rpc_network_threads();
+        stor_filestor.useAsyncMessageHandlingOnSchedule = params.get_use_async_message_handling_on_schedule();
     }
 
     ~MyServiceLayerConfig();
@@ -1376,9 +1382,10 @@ App::usage()
         "[--enable-service-layer]\n"
         "[--skip-get-spi-bucket-info]\n"
         "[--use-document-api]\n"
+        "[--use-legacy-bucket-db]\n"
+        "[--use-async-message-handling]\n"
         "[--use-message-bus\n"
-        "[--use-storage-chain]\n"
-        "[--use-legacy-bucket-db]" << std::endl;
+        "[--use-storage-chain]" << std::endl;
 }
 
 bool
@@ -1404,6 +1411,7 @@ App::get_options()
         { "skip-get-spi-bucket-info", 0, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
         { "use-legacy-bucket-db", 0, nullptr, 0 },
+        { "use-async-message-handling", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
         { "use-storage-chain", 0, nullptr, 0 }
     };
@@ -1424,6 +1432,7 @@ App::get_options()
         LONGOPT_SKIP_GET_SPI_BUCKET_INFO,
         LONGOPT_USE_DOCUMENT_API,
         LONGOPT_USE_LEGACY_BUCKET_DB,
+        LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
         LONGOPT_USE_MESSAGE_BUS,
         LONGOPT_USE_STORAGE_CHAIN
     };
@@ -1480,6 +1489,9 @@ App::get_options()
                 break;
             case LONGOPT_USE_LEGACY_BUCKET_DB:
                 _bm_params.set_use_legacy_bucket_db(true);
+                break;
+            case LONGOPT_USE_ASYNC_MESSAGE_HANDLING:
+                _bm_params.set_use_async_message_handling_on_schedule(true);
                 break;
             case LONGOPT_USE_MESSAGE_BUS:
                 _bm_params.set_use_message_bus(true);
