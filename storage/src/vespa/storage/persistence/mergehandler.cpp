@@ -403,9 +403,9 @@ MergeHandler::fetchLocalData(
                 || (entries.empty() && alreadyFilled == 0))
             {
                 remainingSize -= entry->getSize();
+                entries.push_back(std::move(entry));
                 LOG(spam, "Added %s, remainingSize is %u",
                     entries.back()->toString().c_str(), remainingSize);
-                entries.push_back(std::move(entry));
             } else {
                 LOG(spam, "Adding %s would exceed chunk size limit of %u; "
                     "not filling up any more diffs for current round",
