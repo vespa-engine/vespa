@@ -7,10 +7,13 @@ import org.junit.After;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
+ * @author gjoranv
  */
 public class ConfigSourceSetTest {
 

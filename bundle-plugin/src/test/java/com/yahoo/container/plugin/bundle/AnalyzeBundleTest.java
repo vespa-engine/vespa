@@ -7,7 +7,6 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.File;
 import java.util.Arrays;
@@ -21,7 +20,8 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Tony Vaagenes
@@ -60,18 +60,14 @@ public class AnalyzeBundleTest {
         assertThat(ExportPackages.packageNames(exports), is(new HashSet<>(exports.get(0).getPackageNames())));
     }
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Test
     public void require_that_invalid_exports_throws_exception() {
-        exception.expect(Exception.class);
-
-        exception.expectMessage(containsString("Invalid manifest in bundle"));
-        exception.expectMessage(matchesPattern("Invalid manifest in bundle '.*errorExport.jar'"));
-        exception.expectCause(throwableMessage(startsWith("Failed parsing Export-Package")));
-
-        AnalyzeBundle.exportedPackages(jarFile("errorExport.jar"));
+        Exception e = assertThrows(Exception.class,
+                () -> AnalyzeBundle.exportedPackages(jarFile("errorExport.jar")));
+        System.out.println(e.getMessage());
+        assertThat(e.getMessage(), containsString("Invalid manifest in bundle"));
+        assertThat(e.getMessage(), matchesPattern("Invalid manifest in bundle '.*errorExport.jar'"));
+        assertThat(e.getCause(), throwableMessage(startsWith("Failed parsing Export-Package")));
     }
 
     private TypeSafeMatcher<String> matchesPattern(String pattern) {

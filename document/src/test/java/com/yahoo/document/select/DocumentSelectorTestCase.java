@@ -28,9 +28,7 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +38,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -48,9 +47,6 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class DocumentSelectorTestCase {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static final DocumentTypeManager manager = new DocumentTypeManager();
 
@@ -768,13 +764,12 @@ public class DocumentSelectorTestCase {
 
     @Test
     public void imported_fields_only_supported_for_simple_expressions() throws ParseException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        // TODO we should probably handle this case specially and give a better exception message
-        exceptionRule.expectMessage("Field 'my_imported_field' not found in type datatype test");
-
         var documents = createDocs();
         // Nested field access is NOT considered a simple expression.
-        evaluate("test.my_imported_field.foo", documents.get(0));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> evaluate("test.my_imported_field.foo", documents.get(0)));
+        // TODO we should probably handle this case specially and give a better exception message
+        assertEquals("Field 'my_imported_field' not found in type datatype test (code: -877171244)", e.getMessage());
     }
 
     @Test

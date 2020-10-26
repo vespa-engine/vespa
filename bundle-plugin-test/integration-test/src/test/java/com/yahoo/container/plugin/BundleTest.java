@@ -30,8 +30,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -45,7 +45,7 @@ public class BundleTest {
     // If bundle-plugin-test is compiled in a mvn command that also built dependencies, e.g. jrt,
     // the artifact is jrt.jar, otherwise the installed and versioned artifact
     // is used: jrt-7-SNAPSHOT.jar or e.g. jrt-7.123.45.jar.
-    private static String snapshotOrVersionOrNone = "(-\\d+((-SNAPSHOT)|((\\.\\d+(\\.\\d+)?)?))?)?\\.jar";
+    private static final String snapshotOrVersionOrNone = "(-\\d+((-SNAPSHOT)|((\\.\\d+(\\.\\d+)?)?))?)?\\.jar";
 
     private JarFile jarFile;
     private Attributes mainAttributes;

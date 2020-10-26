@@ -2,12 +2,15 @@
 package com.yahoo.config.subscription;
 
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.foo.*;
 
+import com.yahoo.foo.AppConfig;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests ConfigSubscriber API, and the ConfigHandle class.

@@ -7,8 +7,8 @@ import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author bjorncs

@@ -19,20 +19,20 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
  */
 public class ConfigFileFormatterTest {
 
-    private String expected_simpletypes = "stringval \"foo\"\n" +
-            "intval 324234\n"  +
-            "longval 324\n"  +
-            "doubleval 3.455\n" +
-            "enumval VAL2\n" +
-            "boolval true\n";
+    private final String expected_simpletypes = "stringval \"foo\"\n" +
+                                                "intval 324234\n" +
+                                                "longval 324\n" +
+                                                "doubleval 3.455\n" +
+                                                "enumval VAL2\n" +
+                                                "boolval true\n";
 
     @Test
     public void require_that_basic_formatting_is_correct() throws IOException {

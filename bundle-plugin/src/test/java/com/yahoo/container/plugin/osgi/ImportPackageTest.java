@@ -8,7 +8,6 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,7 +21,8 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Tony Vaagenes
@@ -84,13 +84,10 @@ public class ImportPackageTest {
         assertThat(new Import("foo", Optional.empty()).importVersionRange(), is(Optional.empty()));
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void require_that_exception_is_thrown_when_major_component_is_non_numeric() {
-        expectedException.expect(IllegalArgumentException.class);
-        new Import("foo", Optional.of("1notValid.2"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Import("foo", Optional.of("1notValid.2")));
     }
 
     @Test

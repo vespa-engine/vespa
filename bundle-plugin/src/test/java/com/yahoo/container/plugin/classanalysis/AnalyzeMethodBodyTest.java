@@ -17,7 +17,8 @@ import static com.yahoo.container.plugin.classanalysis.TestUtilities.name;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 
 /**
  * Tests that classes used in method bodies are included in the imports list.

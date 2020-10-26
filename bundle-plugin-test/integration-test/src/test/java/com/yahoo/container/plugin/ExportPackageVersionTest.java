@@ -12,7 +12,7 @@ import java.util.jar.JarFile;
 import static com.yahoo.container.plugin.BundleTest.findBundleJar;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Verifies that the 'useArtifactVersionForExportPackages' setting for the bundle-plugin works as intended.

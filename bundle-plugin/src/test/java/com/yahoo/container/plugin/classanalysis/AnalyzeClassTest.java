@@ -16,7 +16,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.Test;
 
 import javax.security.auth.login.LoginException;
 import java.awt.Image;
@@ -33,7 +33,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 /**
  * Tests that analysis of class files works.
@@ -133,17 +134,14 @@ public class AnalyzeClassTest {
                 is(Optional.of(new ExportPackageAnnotation(3, 1, 4, "TEST_QUALIFIER-2"))));
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void require_that_export_annotations_are_validated() {
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(containsString("invalid/package-info"));
-        expectedException.expectCause(throwableMessage(containsString("qualifier must follow the format")));
-        expectedException.expectCause(throwableMessage(containsString("'EXAMPLE INVALID QUALIFIER'")));
-
-        Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.invalid.package-info"));
+        Exception e = assertThrows(RuntimeException.class,
+                () -> Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.invalid.package-info")));
+        System.out.println(e.getMessage());
+        assertThat(e.getMessage(), containsString("invalid/package-info"));
+        assertThat(e.getCause(), throwableMessage(containsString("qualifier must follow the format")));
+        assertThat(e.getCause(), throwableMessage(containsString("'EXAMPLE INVALID QUALIFIER'")));
     }
 
     @Test

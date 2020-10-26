@@ -4,10 +4,7 @@ package com.yahoo.document;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -18,15 +15,13 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DocumentIdTestCase {
 
     DocumentTypeManager manager = new DocumentTypeManager();
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setUp() {
@@ -86,16 +81,16 @@ public class DocumentIdTestCase {
 
     @Test
     public void empty_user_location_value_throws_exception() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("ID location value for 'n=' key is empty");
-        new DocumentId("id:namespace:type:n=:foo");
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new DocumentId("id:namespace:type:n=:foo"));
+        assertEquals("ID location value for 'n=' key is empty", e.getMessage());
     }
 
     @Test
     public void empty_group_location_value_throws_exception() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("ID location value for 'g=' key is empty");
-        new DocumentId("id:namespace:type:g=:foo");
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new DocumentId("id:namespace:type:g=:foo"));
+        assertEquals("ID location value for 'g=' key is empty", e.getMessage());
     }
 
     //Compares globalId with C++ implementation located in
