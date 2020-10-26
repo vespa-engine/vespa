@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
@@ -1214,6 +1215,44 @@ public class DeploymentTriggerTest {
         app.runJob(stagingTest);
         tester.triggerJobs();
         app.assertNotRunning(stagingTest);
+    }
+
+    @Test
+    public void testTriggeringOfIdleTestJobsWhenFirstDeploymentIsOnNewerVersionThanChange() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().systemTest()
+                                                                               .stagingTest()
+                                                                               .region("us-east-3")
+                                                                               .region("us-west-1")
+                                                                               .build();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
+        var appToAvoidVersionGC = tester.newDeploymentContext("g", "c", "default").submit().deploy();
+
+        Version version2 = new Version("7.8.9");
+        Version version3 = new Version("8.9.10");
+        tester.controllerTester().upgradeSystem(version2);
+        tester.deploymentTrigger().triggerChange(appToAvoidVersionGC.instanceId(), Change.of(version2));
+        appToAvoidVersionGC.deployPlatform(version2);
+
+        // app upgrades first zone to version3, and then the other two to version2.
+        tester.controllerTester().upgradeSystem(version3);
+        tester.deploymentTrigger().triggerChange(app.instanceId(), Change.of(version3));
+        app.runJob(systemTest).runJob(stagingTest);
+        tester.triggerJobs();
+        tester.upgrader().overrideConfidence(version3, VespaVersion.Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().run();
+        assertEquals(Optional.of(version2), app.instance().change().platform());
+
+        app.runJob(systemTest)
+           .runJob(productionUsEast3)
+           .runJob(stagingTest)
+           .runJob(productionUsWest1);
+
+        assertEquals(version3, app.instanceJobs().get(productionUsEast3).lastSuccess().get().versions().targetPlatform());
+        assertEquals(version2, app.instanceJobs().get(productionUsWest1).lastSuccess().get().versions().targetPlatform());
+        assertEquals(Map.of(), app.deploymentStatus().jobsToRun());
+        assertEquals(Change.empty(), app.instance().change());
+        assertEquals(List.of(), tester.jobs().active());
     }
 
 }

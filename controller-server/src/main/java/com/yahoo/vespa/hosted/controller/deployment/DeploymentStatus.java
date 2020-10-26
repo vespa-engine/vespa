@@ -646,12 +646,10 @@ public class DeploymentStatus {
                 @Override
                 public Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     return RunList.from(job)
-                                  .matching(run -> change.platform().map(run.versions().targetPlatform()::equals).orElse(true))
-                                  .matching(run -> change.application().map(run.versions().targetApplication()::equals).orElse(true))
-                                  .matching(run -> dependent.flatMap(status::deploymentFor)
-                                                            .map(deployment -> Versions.from(change, deployment))
-                                                            .map(run.versions()::targetsMatch)
-                                                            .orElse(true))
+                                  .matching(run -> run.versions().targetsMatch(Versions.from(change,
+                                                                                             status.application,
+                                                                                             dependent.flatMap(status::deploymentFor),
+                                                                                             status.systemVersion)))
                                   .status(RunStatus.success)
                                   .asList().stream()
                                   .map(run -> run.end().get())
