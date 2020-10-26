@@ -63,3 +63,11 @@ enable_merge_local_node_choose_docs_optimalization bool default=true restart
 ## if splitting is expensive, but listing document identifiers is fairly cheap.
 ## This is true for memfile persistence layer, but not for vespa search.
 enable_multibit_split_optimalization bool default=true restart
+
+## Whether or not to use async message handling when scheduling storage messages from FileStorManager.
+##
+## When turned on, the calling thread (e.g. FNET network thread when using Storage API RPC)
+## gets the next async message to handle (if any) as part of scheduling a storage message.
+## This async message is then handled by the calling thread immediately,
+## instead of going via a persistence thread.
+use_async_message_handling_on_schedule bool default=false restart

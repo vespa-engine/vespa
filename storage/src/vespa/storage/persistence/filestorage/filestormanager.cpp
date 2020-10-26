@@ -48,6 +48,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _configFetcher(configUri.getContext()),
       _threadLockCheckInterval(60),
       _failDiskOnError(false),
+      _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>(_component.getLoadTypes()->getMetricLoadTypes())),
       _closed(false),
       _lock()
@@ -151,6 +152,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
 
     _threadLockCheckInterval = config->diskOperationTimeout;
     _failDiskOnError = (config->failDiskAfterErrorCount > 0);
+    _use_async_message_handling_on_schedule = config->useAsyncMessageHandlingOnSchedule;
 
     if (!liveUpdate) {
         _config = std::move(config);
@@ -258,10 +260,20 @@ FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMessage>&
     api::ReturnCode errorCode(api::ReturnCode::OK);
     LOG(spam, "Received %s. Attempting to queue it.", msg->getType().getName().c_str());
 
-    if (_filestorHandler->schedule(msg)) {
-        LOG(spam, "Received persistence message %s. Queued it to disk",
-            msg->getType().getName().c_str());
-        return true;
+    if (_use_async_message_handling_on_schedule) {
+       auto result = _filestorHandler->schedule_and_get_next_async_message(msg);
+       if (result.was_scheduled()) {
+           if (result.has_async_message()) {
+               getThreadLocalHandler().processLockedMessage(result.release_async_message());
+           }
+           return true;
+       }
+    } else {
+        if (_filestorHandler->schedule(msg)) {
+            LOG(spam, "Received persistence message %s. Queued it to disk",
+                msg->getType().getName().c_str());
+            return true;
+        }
     }
     switch (_filestorHandler->getDiskState()) {
         case FileStorHandler::DISABLED:

@@ -182,6 +182,19 @@ AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP
 }
 
 bool
+AsyncHandler::is_async_message(api::MessageType::Id type_id)
+{
+    switch (type_id) {
+        case api::MessageType::PUT_ID:
+        case api::MessageType::UPDATE_ID:
+        case api::MessageType::REMOVE_ID:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool
 AsyncHandler::tasConditionExists(const api::TestAndSetCommand & cmd) {
     return cmd.getCondition().isPresent();
 }

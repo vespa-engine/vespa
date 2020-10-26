@@ -101,6 +101,7 @@ public:
         ~Stripe();
         void flush();
         bool schedule(MessageEntry messageEntry);
+        FileStorHandler::LockedMessage schedule_and_get_next_async_message(MessageEntry entry);
         void waitUntilNoLocks() const;
         void abort(std::vector<std::shared_ptr<api::StorageReply>> & aborted, const AbortBucketOperationsCommand& cmd);
         void waitInactive(const AbortBucketOperationsCommand& cmd) const;
@@ -137,6 +138,8 @@ public:
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
     private:
         bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
+        FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
+
         // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
         // with its locking requirements.
         FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdx & idx,
@@ -184,6 +187,7 @@ public:
     DiskState getDiskState() const override;
     void close() override;
     bool schedule(const std::shared_ptr<api::StorageMessage>&) override;
+    ScheduleAsyncResult schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg) override;
 
     FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId) override;
 
