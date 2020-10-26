@@ -57,6 +57,7 @@ bucket_merge_chunk_size int default=4190208 restart
 ## consumption might increase in a 4.1 to 4.2 upgrade due to this, as 4.1
 ## dont support to only fill in part of the metadata provided and will always
 ## fill all.
+## NB unused and will be removed shortly.
 enable_merge_local_node_choose_docs_optimalization bool default=true restart
 
 ## Whether or not to enable the multibit split optimalization. This is useful

@@ -274,22 +274,15 @@ public:
 private:
     std::vector<Node> _nodes;
     std::vector<Entry> _diff;
-        // We may send more metadata entries that should fit in one apply bucket
-        // diff command, to let node pick which ones it wants to fill in first.
-        // Nodes should verify that they don't fill a command up with more than
-        // this number of bytes.
-    uint32_t _maxBufferSize;
 
 public:
     ApplyBucketDiffCommand(const document::Bucket &bucket,
-                           const std::vector<Node>& nodes,
-                           uint32_t maxBufferSize);
+                           const std::vector<Node>& nodes);
     ~ApplyBucketDiffCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     const std::vector<Entry>& getDiff() const { return _diff; }
     std::vector<Entry>& getDiff() { return _diff; }
-    uint32_t getMaxBufferSize() const { return _maxBufferSize; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(ApplyBucketDiffCommand, onApplyBucketDiff)

@@ -944,7 +944,7 @@ void fill_proto_apply_diff_vector(::google::protobuf::RepeatedPtrField<protobuf:
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::ApplyBucketDiffCommand& msg) const {
     encode_bucket_request<protobuf::ApplyBucketDiffRequest>(buf, msg, [&](auto& req) {
         set_merge_nodes(*req.mutable_nodes(), msg.getNodes());
-        req.set_max_buffer_size(msg.getMaxBufferSize());
+        req.set_max_buffer_size(0x400000); // Unused, GC soon.
         fill_proto_apply_diff_vector(*req.mutable_entries(), msg.getDiff());
     });
 }
@@ -958,7 +958,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::ApplyBucketDiffRepl
 api::StorageCommand::UP ProtocolSerialization7::onDecodeApplyBucketDiffCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::ApplyBucketDiffRequest>(buf, [&](auto& req, auto& bucket) {
         auto nodes = get_merge_nodes(req.nodes());
-        auto cmd = std::make_unique<api::ApplyBucketDiffCommand>(bucket, std::move(nodes), req.max_buffer_size());
+        auto cmd = std::make_unique<api::ApplyBucketDiffCommand>(bucket, std::move(nodes));
         fill_api_apply_diff_vector(cmd->getDiff(), req.entries());
         return cmd;
     });

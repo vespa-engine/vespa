@@ -72,7 +72,7 @@ createGetDiff(const document::BucketId& bucket,
 std::shared_ptr<api::ApplyBucketDiffCommand>
 createApplyDiff(const document::BucketId& bucket,
                 const std::vector<api::MergeBucketCommand::Node>& nodes) {
-    auto cmd = std::make_shared<api::ApplyBucketDiffCommand>(makeDocumentBucket(bucket), nodes, 1024*1024);
+    auto cmd = std::make_shared<api::ApplyBucketDiffCommand>(makeDocumentBucket(bucket), nodes);
     assignCommandMeta(*cmd);
     return cmd;
 }

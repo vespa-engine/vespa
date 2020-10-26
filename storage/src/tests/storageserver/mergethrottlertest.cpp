@@ -1367,8 +1367,7 @@ TEST_F(MergeThrottlerTest, get_bucket_diff_command_not_in_active_set_is_rejected
 TEST_F(MergeThrottlerTest, apply_bucket_diff_command_not_in_active_set_is_rejected) {
     document::BucketId bucket(16, 1234);
     std::vector<api::GetBucketDiffCommand::Node> nodes;
-    auto applyDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(
-            makeDocumentBucket(bucket), nodes, api::Timestamp(1234));
+    auto applyDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(makeDocumentBucket(bucket), nodes);
 
     ASSERT_NO_FATAL_FAILURE(sendAndExpectReply(applyDiffCmd,
             api::MessageType::APPLYBUCKETDIFF_REPLY,

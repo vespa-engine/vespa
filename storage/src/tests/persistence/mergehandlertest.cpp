@@ -285,7 +285,7 @@ MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
     MergeHandler handler = createHandler();
 
     LOG(debug, "Verifying that apply bucket diff is sent on");
-    auto cmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, _maxTimestamp);
+    auto cmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes);
     MessageTracker::UP tracker1 = handler.handleApplyBucketDiff(*cmd, createTracker(cmd, _bucket));
     api::StorageMessage::SP replySent = std::move(*tracker1).stealReplySP();
 
@@ -510,7 +510,7 @@ TEST_F(MergeHandlerTest, chunk_limit_partially_filled_diff) {
     }
 
     setUpChain(MIDDLE);
-    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, maxChunkSize);
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes);
     applyBucketDiffCmd->getDiff() = applyDiff;
 
     MergeHandler handler = createHandler(maxChunkSize);
@@ -591,15 +591,14 @@ MergeHandlerTest::createDummyApplyDiff(int timestampOffset,
         fillDummyApplyDiff(applyDiff);
     }
 
-    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, 1024*1024);
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes);
     applyBucketDiffCmd->getDiff() = applyDiff;
     return applyBucketDiffCmd;
 }
 
 // Must match up with diff used in createDummyApplyDiff
 std::shared_ptr<api::GetBucketDiffCommand>
-MergeHandlerTest::createDummyGetBucketDiff(int timestampOffset,
-                                           uint16_t hasMask)
+MergeHandlerTest::createDummyGetBucketDiff(int timestampOffset, uint16_t hasMask)
 {
     std::vector<api::GetBucketDiffCommand::Entry> diff;
     {
@@ -726,7 +725,7 @@ TEST_F(MergeHandlerTest, entry_removed_after_get_bucket_diff) {
         applyDiff.push_back(e);
     }
     setUpChain(BACK);
-    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, 1024*1024);
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes);
     applyBucketDiffCmd->getDiff() = applyDiff;
 
     auto tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, createTracker(applyBucketDiffCmd, _bucket));
@@ -1148,7 +1147,7 @@ TEST_F(MergeHandlerTest, remove_put_on_existing_timestamp) {
         applyDiff.push_back(e);
     }
 
-    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, 1024*1024);
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes);
     applyBucketDiffCmd->getDiff() = applyDiff;
 
     auto tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, createTracker(applyBucketDiffCmd, _bucket));
