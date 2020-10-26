@@ -63,7 +63,12 @@ public final class Node implements Nodelike {
         return new Node.Builder(openStackId, hostname, flavor, State.provisioned, type).ipConfig(ipConfig);
     }
 
-    /** Creates a node. See also the {@code create} helper methods. */
+    /** Creates a node builder */
+    public static Node.Builder create(String openStackId, String hostname, Flavor flavor, Node.State state, NodeType type) {
+        return new Node.Builder(openStackId, hostname, flavor, state, type);
+    }
+
+    /** DO NOT USE: public for serialization purposes. See {@code create} helper methods. */
     public Node(String id, IP.Config ipConfig, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
                 Reports reports, Optional<String> modelName, Optional<TenantName> reservedTo, Optional<String> switchHostname) {
