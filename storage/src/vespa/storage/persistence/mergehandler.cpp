@@ -1382,7 +1382,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
             }
 
             const size_t diffSizeBefore = s.diff.size();
-            const bool altered = s.removeFromDiff(diff, hasMask);
+            const bool altered = s.removeFromDiff(diff, hasMask, reply.getNodes());
             if (reply.getResult().success()
                 && s.diff.size() == diffSizeBefore
                 && !altered)
