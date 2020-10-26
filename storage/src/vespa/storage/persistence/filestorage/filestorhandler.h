@@ -58,6 +58,30 @@ public:
     };
 
     using LockedMessage = std::pair<BucketLockInterface::SP, api::StorageMessage::SP>;
+    class ScheduleAsyncResult {
+    private:
+        bool _was_scheduled;
+        LockedMessage _async_message;
+
+    public:
+        ScheduleAsyncResult() : _was_scheduled(false), _async_message() {}
+        explicit ScheduleAsyncResult(LockedMessage&& async_message_in)
+            : _was_scheduled(true),
+              _async_message(std::move(async_message_in))
+        {}
+        bool was_scheduled() const {
+            return _was_scheduled;
+        }
+        bool has_async_message() const {
+            return _async_message.first.get() != nullptr;
+        }
+        const LockedMessage& async_message() const {
+            return _async_message;
+        }
+        LockedMessage&& release_async_message() {
+            return std::move(_async_message);
+        }
+    };
 
     enum DiskState {
         AVAILABLE,
@@ -102,6 +126,11 @@ public:
      * @return True if we maanged to schedule operation. False if not
      */
     virtual bool schedule(const std::shared_ptr<api::StorageMessage>&) = 0;
+
+    /**
+     * Schedule the given message to be processed and return the next async message to process (if any).
+     */
+    virtual ScheduleAsyncResult schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg) = 0;
 
     /**
      * Used by file stor threads to get their next message to process.

@@ -10,6 +10,7 @@
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/messagebucket.h>
+#include <vespa/storage/persistence/asynchandler.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -256,6 +257,16 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg)
         return true;
     }
     return false;
+}
+
+FileStorHandler::ScheduleAsyncResult
+FileStorHandlerImpl::schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg)
+{
+    if (getState() == FileStorHandler::AVAILABLE) {
+        document::Bucket bucket = getStorageMessageBucket(*msg);
+        return ScheduleAsyncResult(stripe(bucket).schedule_and_get_next_async_message(MessageEntry(msg, bucket)));
+    }
+    return {};
 }
 
 bool
@@ -911,6 +922,24 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
 }
 
 FileStorHandler::LockedMessage
+FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
+{
+    if (_owner.isClosed() || _owner.isPaused()) {
+        return {};
+    }
+    PriorityIdx& idx(bmi::get<1>(*_queue));
+    PriorityIdx::iterator iter(idx.begin()), end(idx.end());
+
+    while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
+        ++iter;
+    }
+    if ((iter != end) && AsyncHandler::is_async_message(iter->_command->getType().getId())) {
+        return getMessage(guard, idx, iter);
+    }
+    return {};
+}
+
+FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter) {
 
     api::StorageMessage & m(*iter->_command);
@@ -987,6 +1016,14 @@ bool FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
     }
     _cond->notify_all();
     return true;
+}
+
+FileStorHandler::LockedMessage
+FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry entry)
+{
+    std::unique_lock guard(*_lock);
+    _queue->emplace_back(std::move(entry));
+    return get_next_async_message(guard);
 }
 
 void

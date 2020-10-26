@@ -65,13 +65,12 @@ class FileStorManager : public StorageLinkQueued,
     config::ConfigFetcher _configFetcher;
     uint32_t              _threadLockCheckInterval; // In seconds
     bool                  _failDiskOnError;
+    bool                  _use_async_message_handling_on_schedule;
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
     bool       _closed;
     std::mutex _lock;
-
-    friend struct FileStorManagerTest;
 
 public:
     FileStorManager(const config::ConfigUri &, spi::PersistenceProvider&,
@@ -104,6 +103,8 @@ public:
     // shall be upheld since no RPC/MessageBus endpoints have been made available
     // yet at that point in time.
     void initialize_bucket_databases_from_provider();
+
+    const FileStorMetrics& get_metrics() const { return *_metrics; }
 
 private:
     void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
