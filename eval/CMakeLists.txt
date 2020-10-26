@@ -17,6 +17,7 @@ vespa_define_module(
     src/tests/eval/compiled_function
     src/tests/eval/engine_or_factory
     src/tests/eval/fast_sparse_map
+    src/tests/eval/fast_value
     src/tests/eval/function
     src/tests/eval/function_speed
     src/tests/eval/gbdt
