@@ -184,7 +184,9 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out,
     if (type_name == "error") {
         return ValueType::error_type();
     } else if (type_name == "double") {
-        return ValueType::double_type();
+        return ValueType::make_type(CellType::DOUBLE, {});
+    } else if (type_name == "float") {
+        return ValueType::make_type(CellType::FLOAT, {});
     } else if (type_name == "tensor") {
         ValueType::CellType cell_type = parse_cell_type(ctx);
         std::vector<ValueType::Dimension> list = parse_dimension_list(ctx);
@@ -229,14 +231,11 @@ to_spec(const ValueType &type)
 {
     asciistream os;
     size_t cnt = 0;
-    switch (type.type()) {
-    case ValueType::Type::ERROR:
+    if (type.is_error()) {
         os << "error";
-        break;
-    case ValueType::Type::DOUBLE:
-        os << "double";
-        break;
-    case ValueType::Type::TENSOR:
+    } else if (type.is_scalar()) {
+        os << to_name(type.cell_type());
+    } else {
         os << "tensor";
         if (type.cell_type() != CellType::DOUBLE) {
             os << "<" << to_name(type.cell_type()) << ">";
@@ -253,7 +252,6 @@ to_spec(const ValueType &type)
             }
         }
         os << ")";
-        break;
     }
     return os.str();
 }

@@ -26,21 +26,28 @@ std::vector<vespalib::string> str_list(const std::vector<vespalib::string> &list
 
 TEST("require that ERROR value type can be created") {
     ValueType t = ValueType::error_type();
+    EXPECT_TRUE(t.is_error());
     EXPECT_TRUE(t.cell_type() == CellType::DOUBLE);
-    EXPECT_TRUE(t.type() == ValueType::Type::ERROR);
     EXPECT_EQUAL(t.dimensions().size(), 0u);
 }
 
 TEST("require that DOUBLE value type can be created") {
     ValueType t = ValueType::double_type();
+    EXPECT_FALSE(t.is_error());
     EXPECT_TRUE(t.cell_type() == CellType::DOUBLE);
-    EXPECT_TRUE(t.type() == ValueType::Type::DOUBLE);
+    EXPECT_EQUAL(t.dimensions().size(), 0u);
+}
+
+TEST("require that FLOAT value type can be created") {
+    ValueType t = ValueType::make_type(CellType::FLOAT, {});
+    EXPECT_FALSE(t.is_error());
+    EXPECT_TRUE(t.cell_type() == CellType::FLOAT);
     EXPECT_EQUAL(t.dimensions().size(), 0u);
 }
 
 TEST("require that TENSOR value type can be created") {
     ValueType t = ValueType::tensor_type({{"x", 10},{"y"}});
-    EXPECT_TRUE(t.type() == ValueType::Type::TENSOR);
+    EXPECT_FALSE(t.is_error());
     EXPECT_TRUE(t.cell_type() == CellType::DOUBLE);
     ASSERT_EQUAL(t.dimensions().size(), 2u);
     EXPECT_EQUAL(t.dimensions()[0].name, "x");
@@ -51,7 +58,7 @@ TEST("require that TENSOR value type can be created") {
 
 TEST("require that float TENSOR value type can be created") {
     ValueType t = ValueType::tensor_type({{"x", 10},{"y"}}, CellType::FLOAT);
-    EXPECT_TRUE(t.type() == ValueType::Type::TENSOR);
+    EXPECT_FALSE(t.is_error());
     EXPECT_TRUE(t.cell_type() == CellType::FLOAT);
     ASSERT_EQUAL(t.dimensions().size(), 2u);
     EXPECT_EQUAL(t.dimensions()[0].name, "x");
@@ -62,7 +69,7 @@ TEST("require that float TENSOR value type can be created") {
 
 TEST("require that TENSOR value type sorts dimensions") {
     ValueType t = ValueType::tensor_type({{"x", 10}, {"z", 30}, {"y"}});
-    EXPECT_TRUE(t.type() == ValueType::Type::TENSOR);
+    EXPECT_FALSE(t.is_error());
     EXPECT_TRUE(t.cell_type() == CellType::DOUBLE);
     ASSERT_EQUAL(t.dimensions().size(), 3u);
     EXPECT_EQUAL(t.dimensions()[0].name, "x");
@@ -75,8 +82,8 @@ TEST("require that TENSOR value type sorts dimensions") {
 
 TEST("require that 'tensor<float>()' is normalized to 'double'") {
     ValueType t = ValueType::tensor_type({}, CellType::FLOAT);
+    EXPECT_FALSE(t.is_error());
     EXPECT_TRUE(t.cell_type() == CellType::DOUBLE);
-    EXPECT_TRUE(t.type() == ValueType::Type::DOUBLE);
     EXPECT_EQUAL(t.dimensions().size(), 0u);
 }
 
@@ -113,6 +120,7 @@ TEST("require that value types can be compared") {
     TEST_DO(verify_not_equal(ValueType::error_type(), ValueType::double_type()));
     TEST_DO(verify_not_equal(ValueType::error_type(), ValueType::tensor_type({{"x"}})));
     TEST_DO(verify_equal(ValueType::double_type(), ValueType::double_type()));
+    TEST_DO(verify_not_equal(ValueType::double_type(), ValueType::make_type(CellType::FLOAT, {})));
     TEST_DO(verify_equal(ValueType::double_type(), ValueType::tensor_type({})));
     TEST_DO(verify_not_equal(ValueType::double_type(), ValueType::tensor_type({{"x"}})));
     TEST_DO(verify_equal(ValueType::tensor_type({{"x"}, {"y"}}), ValueType::tensor_type({{"y"}, {"x"}})));
@@ -129,6 +137,7 @@ TEST("require that value types can be compared") {
 TEST("require that value type can make spec") {
     EXPECT_EQUAL("error", ValueType::error_type().to_spec());
     EXPECT_EQUAL("double", ValueType::double_type().to_spec());
+    EXPECT_EQUAL("float", ValueType::make_type(CellType::FLOAT, {}).to_spec());
     EXPECT_EQUAL("double", ValueType::tensor_type({}).to_spec());
     EXPECT_EQUAL("double", ValueType::tensor_type({}, CellType::FLOAT).to_spec());
     EXPECT_EQUAL("tensor(x{})", ValueType::tensor_type({{"x"}}).to_spec());
@@ -143,6 +152,7 @@ TEST("require that value type can make spec") {
 
 TEST("require that value type spec can be parsed") {
     EXPECT_EQUAL(ValueType::double_type(), ValueType::from_spec("double"));
+    EXPECT_EQUAL(ValueType::make_type(CellType::FLOAT, {}), ValueType::from_spec("float"));
     EXPECT_EQUAL(ValueType::tensor_type({}), ValueType::from_spec("tensor()"));
     EXPECT_EQUAL(ValueType::tensor_type({{"x"}}), ValueType::from_spec("tensor(x{})"));
     EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}), ValueType::from_spec("tensor(y[10])"));
@@ -153,6 +163,7 @@ TEST("require that value type spec can be parsed") {
 
 TEST("require that value type spec can be parsed with extra whitespace") {
     EXPECT_EQUAL(ValueType::double_type(), ValueType::from_spec(" double "));
+    EXPECT_EQUAL(ValueType::make_type(CellType::FLOAT, {}), ValueType::from_spec(" float "));
     EXPECT_EQUAL(ValueType::tensor_type({}), ValueType::from_spec(" tensor ( ) "));
     EXPECT_EQUAL(ValueType::tensor_type({{"x"}}), ValueType::from_spec(" tensor ( x { } ) "));
     EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}), ValueType::from_spec(" tensor ( y [ 10 ] ) "));
