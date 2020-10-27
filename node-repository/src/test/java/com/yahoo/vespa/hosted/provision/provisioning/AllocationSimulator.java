@@ -11,10 +11,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
-import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.node.Reports;
-import com.yahoo.vespa.hosted.provision.node.Status;
 
 import javax.swing.JFrame;
 import java.util.ArrayList;
@@ -77,11 +73,14 @@ public class AllocationSimulator {
     }
 
     private Node node(String hostname, Flavor flavor, Optional<String> parent, Optional<String> tenant) {
-        var ipConfig = new IP.Config(Set.of("127.0.0.1"), parent.isPresent() ? Set.of() : getAdditionalIP());
-        return new Node("fake", ipConfig, hostname, parent, flavor, Status.initial(),
-                        parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant, flavor), History.empty(),
-                        parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty(), Optional.empty(),
-                        Optional.empty());
+        Node.Builder builder = Node.create("fake", hostname, flavor,
+                parent.isPresent() ? Node.State.ready : Node.State.active,
+                parent.isPresent() ? NodeType.tenant : NodeType.host)
+                .ipConfig(Set.of("127.0.0.1"), parent.isPresent() ? Set.of() : getAdditionalIP());
+        parent.ifPresent(builder::parentHostname);
+        allocation(tenant, flavor).ifPresent(builder::allocation);
+
+        return builder.build();
     }
 
     private Set<String> getAdditionalIP() {

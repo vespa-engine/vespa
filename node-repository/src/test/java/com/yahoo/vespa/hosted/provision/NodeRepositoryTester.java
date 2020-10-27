@@ -12,13 +12,14 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author bratseth
@@ -55,21 +56,21 @@ public class NodeRepositoryTester {
     }
     
     public Node addHost(String id, String hostname, String flavor, NodeType type) {
-        Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
-                                              nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
+        return addNode(id, hostname, null, nodeFlavors.getFlavorOrThrow(flavor), type);
     }
 
     public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {
-        Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
-                                              nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
+        return addNode(id, hostname, parentHostname, nodeFlavors.getFlavorOrThrow(flavor), type);
     }
 
     public Node addNode(String id, String hostname, String parentHostname, NodeResources resources) {
-        Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
-                                              new Flavor(resources), NodeType.tenant);
-        return nodeRepository.addNodes(Collections.singletonList(node), Agent.system).get(0);
+        return addNode(id, hostname, parentHostname, new Flavor(resources), NodeType.tenant);
+    }
+
+    private Node addNode(String id, String hostname, String parentHostname, Flavor flavor, NodeType type) {
+        IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+        Node node = Node.create(id, ipConfig, hostname, flavor, type).parentHostname(parentHostname).build();
+        return nodeRepository.addNodes(List.of(node), Agent.system).get(0);
     }
 
     /**

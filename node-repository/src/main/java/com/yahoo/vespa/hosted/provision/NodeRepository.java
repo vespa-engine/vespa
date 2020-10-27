@@ -12,8 +12,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
@@ -387,18 +385,6 @@ public class NodeRepository extends AbstractComponent {
     }
 
     // ----------------- Node lifecycle -----------------------------------------------------------
-
-    /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
-    public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
-                           Flavor flavor, Optional<TenantName> reservedTo, NodeType type) {
-        if (ipConfig.primary().isEmpty()) // TODO: Remove this. Only test code hits this path
-            ipConfig = ipConfig.with(nameResolver.resolveAll(hostname));
-        return Node.create(openStackId, ipConfig, hostname, parentHostname, Optional.empty(), flavor, reservedTo, type, Optional.empty());
-    }
-
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return createNode(openStackId, hostname, IP.Config.EMPTY, parentHostname, flavor, Optional.empty(), type);
-    }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
     public List<Node> addDockerNodes(LockedNodeList nodes) {

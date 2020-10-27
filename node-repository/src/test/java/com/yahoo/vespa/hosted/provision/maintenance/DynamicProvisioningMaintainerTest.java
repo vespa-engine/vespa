@@ -23,10 +23,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
-import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.node.Reports;
-import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
@@ -292,10 +289,11 @@ public class DynamicProvisioningMaintainerTest {
                             flavor.resources(),
                             Generation.initial(),
                             false));
-            var ipConfig = new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of());
-            return new Node("fake-id-" + hostname, ipConfig, hostname, parentHostname, flavor, Status.initial(),
-                            state, allocation, History.empty(), nodeType, new Reports(), Optional.empty(), Optional.empty(),
-                            Optional.empty());
+            Node.Builder builder = Node.create("fake-id-" + hostname, hostname, flavor, state, nodeType)
+                    .ipConfig(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of());
+            parentHostname.ifPresent(builder::parentHostname);
+            allocation.ifPresent(builder::allocation);
+            return builder.build();
         }
 
         private long provisionedHostsMatching(NodeResources resources) {

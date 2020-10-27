@@ -84,6 +84,7 @@ public class NodeSerializer {
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
     private static final String reservedToKey = "reservedTo";
+    private static final String exclusiveToKey = "exclusiveTo";
     private static final String switchHostnameKey = "switchHostname";
 
     // Node resource fields
@@ -166,6 +167,7 @@ public class NodeSerializer {
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
+        node.exclusiveTo().ifPresent(applicationId -> object.setString(exclusiveToKey, applicationId.serializedForm()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -242,6 +244,7 @@ public class NodeSerializer {
                         Reports.fromSlime(object.field(reportsKey)),
                         modelNameFromSlime(object),
                         reservedToFromSlime(object.field(reservedToKey)),
+                        exclusiveToFromSlime(object.field(exclusiveToKey)),
                         switchHostnameFromSlime(object.field(switchHostnameKey)));
     }
 
@@ -367,6 +370,13 @@ public class NodeSerializer {
         if (object.type() != Type.STRING)
             throw new IllegalArgumentException("Expected 'reservedTo' to be a string but is " + object);
         return Optional.of(TenantName.from(object.asString()));
+    }
+
+    private Optional<ApplicationId> exclusiveToFromSlime(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        if (object.type() != Type.STRING)
+            throw new IllegalArgumentException("Expected 'exclusiveTo' to be a string but is " + object);
+        return Optional.of(ApplicationId.fromSerializedForm(object.asString()));
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

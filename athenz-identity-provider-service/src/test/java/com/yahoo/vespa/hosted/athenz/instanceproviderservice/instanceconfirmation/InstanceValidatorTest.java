@@ -224,14 +224,8 @@ public class InstanceValidatorTest {
         MockNodeFlavors flavors = new MockNodeFlavors();
         List<Node> nodeList = new ArrayList<>();
         for (int i = 0; i < num; i++) {
-            Node node = Node.create("foo" + i,
-                                    new IP.Config(Set.of("::1" + i, "::2" + i, "::3" + i), Set.of()),
-                                    "foo" + i,
-                                    Optional.empty(),
-                                    Optional.empty(),
-                                    flavors.getFlavorOrThrow("default"),
-                                    Optional.empty(),
-                                    NodeType.tenant, Optional.empty());
+            Node node = Node.create("foo" + i, new IP.Config(Set.of("::1" + i, "::2" + i, "::3" + i), Set.of()),
+                    "foo" + i, flavors.getFlavorOrThrow("default"), NodeType.tenant).build();
             nodeList.add(node);
         }
         return nodeList;

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
+import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -38,13 +39,15 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
-        var node = Node.create(id, IP.Config.EMPTY, hostHostname, Optional.empty(), Optional.empty(), hostFlavor, Optional.empty(), NodeType.host, Optional.empty());
-        return node.with(node.status().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
+        // TODO: Set exclusive to
+        return Node.create(id, IP.Config.EMPTY, hostHostname, hostFlavor, NodeType.host)
+                .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
+                .build();
     }
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     public Node generateNode() {
-        return Node.createDockerNode(Set.of(), nodeHostname, hostHostname, nodeResources, NodeType.tenant);
+        return Node.createDockerNode(Set.of(), nodeHostname, hostHostname, nodeResources, NodeType.tenant).build();
     }
 
     public String getId() {

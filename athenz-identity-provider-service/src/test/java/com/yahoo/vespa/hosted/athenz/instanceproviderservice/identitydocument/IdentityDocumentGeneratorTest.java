@@ -59,17 +59,14 @@ public class IdentityDocumentGeneratorTest {
         Node parentNode = Node.create("ostkid",
                                       new IP.Config(Set.of("127.0.0.1"), Set.of()),
                                       parentHostname,
-                                      Optional.empty(),
-                                      Optional.empty(),
                                       new MockNodeFlavors().getFlavorOrThrow("default"),
-                                      Optional.empty(),
-                                      NodeType.host, Optional.empty());
+                                      NodeType.host).build();
         Node containerNode = Node.createDockerNode(Set.of("::1"),
                                                    containerHostname,
                                                    parentHostname,
                                                    new MockNodeFlavors().getFlavorOrThrow("default").resources(),
                                                    NodeType.tenant)
-                .with(allocation);
+                .allocation(allocation).build();
         NodeRepository nodeRepository = mock(NodeRepository.class);
         when(nodeRepository.getNode(eq(parentHostname))).thenReturn(Optional.of(parentNode));
         when(nodeRepository.getNode(eq(containerHostname))).thenReturn(Optional.of(containerNode));

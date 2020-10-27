@@ -24,7 +24,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.slime.Type;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -248,27 +247,22 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     }
 
     private Node createNode(Inspector inspector) {
-        Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
-        Optional<String> modelName = optionalString(inspector.field("modelName"));
         Set<String> ipAddresses = new HashSet<>();
         inspector.field("ipAddresses").traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
         Set<String> ipAddressPool = new HashSet<>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
-        return Node.create(inspector.field("openStackId").asString(),
-                           new IP.Config(ipAddresses, ipAddressPool),
-                           inspector.field("hostname").asString(),
-                           parentHostname,
-                           modelName,
-                           flavorFromSlime(inspector),
-                           reservedToFromSlime(inspector.field("reservedTo")),
-                           nodeTypeFromSlime(inspector.field("type")),
-                           switchHostnameFromSlime(inspector.field("switchHostname")));
-    }
-
-    private Optional<String> switchHostnameFromSlime(Inspector field) {
-        if (!field.valid()) return Optional.empty();
-        return Optional.of(field.asString());
+        Node.Builder builder = Node.create(inspector.field("openStackId").asString(),
+                                           new IP.Config(ipAddresses, ipAddressPool),
+                                           inspector.field("hostname").asString(),
+                                           flavorFromSlime(inspector),
+                                           nodeTypeFromSlime(inspector.field("type")));
+        optionalString(inspector.field("parentHostname")).ifPresent(builder::parentHostname);
+        optionalString(inspector.field("modelName")).ifPresent(builder::modelName);
+        optionalString(inspector.field("reservedTo")).map(TenantName::from).ifPresent(builder::reservedTo);
+        optionalString(inspector.field("exclusiveTo")).map(ApplicationId::fromSerializedForm).ifPresent(builder::exclusiveTo);
+        optionalString(inspector.field("switchHostname")).ifPresent(builder::switchHostname);
+        return builder.build();
     }
 
     private Flavor flavorFromSlime(Inspector inspector) {
@@ -311,13 +305,6 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
         return NodeSerializer.typeFrom(object.asString());
-    }
-
-    private Optional<TenantName> reservedToFromSlime(Inspector object) {
-        if (! object.valid()) return Optional.empty();
-        if ( object.type() != Type.STRING)
-            throw new IllegalArgumentException("Expected 'reservedTo' to be a string but is " + object);
-        return Optional.of(TenantName.from(object.asString()));
     }
 
     public static NodeFilter toNodeFilter(HttpRequest request) {

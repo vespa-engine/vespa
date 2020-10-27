@@ -183,8 +183,7 @@ public class IPTest {
 
     private static Node createNode(Set<String> ipAddresses) {
         return Node.create("id1", new IP.Config(Set.of("127.0.0.1"), ipAddresses),
-                           "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"),
-                           Optional.empty(), NodeType.host, Optional.empty());
+                           "host1", nodeFlavors.getFlavorOrThrow("default"), NodeType.host).build();
     }
 
 }
