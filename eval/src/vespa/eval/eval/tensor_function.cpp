@@ -9,6 +9,7 @@
 #include "visit_stuff.h"
 #include "string_stuff.h"
 #include <vespa/eval/instruction/generic_concat.h>
+#include <vespa/eval/instruction/generic_create.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
@@ -391,8 +392,15 @@ Create::push_children(std::vector<Child::CREF> &children) const
 }
 
 Instruction
-Create::compile_self(EngineOrFactory, Stash &) const
+Create::compile_self(EngineOrFactory engine, Stash &stash) const
 {
+    if (engine.is_factory()) {
+        std::vector<TensorSpec::Address> addresses;
+        for (auto pos = spec().rbegin(); pos != spec().rend(); ++pos) {
+            addresses.push_back(pos->first);
+        }
+        return instruction::GenericCreate::make_instruction(addresses, result_type(), engine.factory(), stash);
+    }
     return Instruction(op_tensor_create, wrap_param<Create>(*this));
 }
 
