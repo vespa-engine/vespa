@@ -192,6 +192,7 @@ private:
      */
     void performDropFeedView(IFeedView::SP feedView);
     void performDropFeedView2(IFeedView::SP feedView);
+    void performDropFeedView3(IFeedView::SP feedView, uint32_t numRetries);
 
     /**
      * Implements IFeedHandlerOwner
