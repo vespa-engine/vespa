@@ -3,13 +3,14 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.config.VespaVersion;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.xml.sax.InputSource;
 
 import java.io.IOException;
 import java.io.StringReader;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author hmusum
@@ -41,9 +42,6 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void testXMLParse() throws IOException {
         SchemaValidator validator = createValidator();
@@ -51,11 +49,11 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    public void testXMLParseError() throws IOException {
+    public void testXMLParseError() {
         SchemaValidator validator = createValidator();
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(expectedErrorMessage("services.xml"));
-        validator.validate(new InputSource(new StringReader(invalidServices)), "services.xml");
+        Exception e = assertThrows(RuntimeException.class,
+                                   () -> validator.validate(new InputSource(new StringReader(invalidServices)), "services.xml"));
+        assertEquals(expectedErrorMessage("services.xml"), e.getMessage());
     }
 
     @Test
@@ -65,11 +63,11 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    public void testXMLParseErrorWithReader() throws IOException {
+    public void testXMLParseErrorWithReader() {
         SchemaValidator validator = createValidator();
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(expectedErrorMessage("input"));
-        validator.validate(new StringReader(invalidServices));
+        Exception e = assertThrows(RuntimeException.class,
+                                   () -> validator.validate(new StringReader(invalidServices)));
+        assertEquals(expectedErrorMessage("input"), e.getMessage());
     }
 
     private SchemaValidator createValidator() {
@@ -86,4 +84,5 @@ public class SchemaValidatorTest {
                 "9:    <adminserver hostalias='node1'>\n" +
                 "10:  </admin>\n";
     }
+
 }

@@ -9,22 +9,18 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author bjorncs
  */
 public class ReferenceFieldTestCase {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void reference_fields_are_parsed_from_search_definition() throws ParseException {
@@ -72,9 +68,8 @@ public class ReferenceFieldTestCase {
                         "}";
         builder.importString(campaignSdContent);
         builder.importString(adSdContent);
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: campaign->ad->campaign.");
-        builder.build();
+        Exception e = assertThrows(DocumentGraphValidator.DocumentGraphException.class, builder::build);
+        assertEquals("Document dependency cycle detected: campaign->ad->campaign.", e.getMessage());
     }
 
     private static void assertSearchContainsReferenceField(String expectedFieldname,

@@ -6,14 +6,13 @@ import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
-import static org.junit.Assert.assertEquals;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author geirst
@@ -36,32 +35,30 @@ public class ImportedFieldsTestCase {
         assertSearchContainsImportedField("my_name", "person_ref", "person", "name", search);
     }
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Test
-    public void field_reference_spec_must_include_dot() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Illegal field reference spec 'campaignrefbudget': Does not include a single '.'");
-        buildAdSearch(joinLines(
-                "search ad {",
-                "  document ad {}",
-                "  import field campaignrefbudget as budget {}",
-                "}"));
+    public void field_reference_spec_must_include_dot() {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> buildAdSearch(joinLines(
+                                           "search ad {",
+                                           "  document ad {}",
+                                           "  import field campaignrefbudget as budget {}",
+                                           "}")));
+        assertEquals("Illegal field reference spec 'campaignrefbudget': Does not include a single '.'",
+                     e.getMessage());
     }
 
     @Test
-    public void fail_duplicate_import() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'ad', import field as 'my_budget': Field already imported");
-        Search search = buildAdSearch(joinLines(
-                "search ad {",
-                "  document ad {",
-                "    field campaign_ref type reference<campaign> { indexing: attribute }",
-                "  }",
-                "  import field campaign_ref.budget as my_budget {}",
-                "  import field campaign_ref.budget as my_budget {}",
-                "}"));
+    public void fail_duplicate_import() {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> buildAdSearch(joinLines(
+                                           "search ad {",
+                                           "  document ad {",
+                                           "    field campaign_ref type reference<campaign> { indexing: attribute }",
+                                           "  }",
+                                           "  import field campaign_ref.budget as my_budget {}",
+                                           "  import field campaign_ref.budget as my_budget {}",
+                                           "}")));
+        assertEquals("For search 'ad', import field as 'my_budget': Field already imported", e.getMessage());
     }
 
     private static Search buildAdSearch(String sdContent) throws ParseException {
@@ -122,38 +119,38 @@ public class ImportedFieldsTestCase {
     }
 
     @Test
-    public void check_illegal_struct_import_missing_array_of_struct_attributes() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'child', import field 'my_elem_array': Field 'elem_array' via reference field 'parent_ref': Is not a struct containing an attribute field.");
-        checkStructImport(new ParentStructSdBuilder().elem_array_name_attr(false).elem_array_weight_attr(false));
+    public void check_illegal_struct_import_missing_array_of_struct_attributes() {
+        assertStructImportThrows(new ParentStructSdBuilder().elem_array_name_attr(false).elem_array_weight_attr(false),
+                                 "For search 'child', import field 'my_elem_array': Field 'elem_array' via reference field 'parent_ref': Is not a struct containing an attribute field.");
     }
 
     @Test
-    public void check_illegal_struct_import_missing_map_of_struct_key_attribute() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.key'): Field 'elem_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        checkStructImport(new ParentStructSdBuilder().elem_map_key_attr(false));
+    public void check_illegal_struct_import_missing_map_of_struct_key_attribute() {
+        assertStructImportThrows(new ParentStructSdBuilder().elem_map_key_attr(false),
+                                 "For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.key'): Field 'elem_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
     }
 
     @Test
-    public void check_illegal_struct_import_missing_map_of_struct_value_attributes() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.value'): Field 'elem_map.value' via reference field 'parent_ref': Is not a struct containing an attribute field.");
-        checkStructImport(new ParentStructSdBuilder().elem_map_value_name_attr(false).elem_map_value_weight_attr(false));
+    public void check_illegal_struct_import_missing_map_of_struct_value_attributes() {
+        assertStructImportThrows(new ParentStructSdBuilder().elem_map_value_name_attr(false).elem_map_value_weight_attr(false),
+                                 "For search 'child', import field 'my_elem_map' (nested to 'my_elem_map.value'): Field 'elem_map.value' via reference field 'parent_ref': Is not a struct containing an attribute field.");
     }
 
     @Test
-    public void check_illegal_struct_import_missing_map_of_primitive_key_attribute() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.key'): Field 'str_int_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        checkStructImport(new ParentStructSdBuilder().str_int_map_key_attr(false));
+    public void check_illegal_struct_import_missing_map_of_primitive_key_attribute() {
+        assertStructImportThrows(new ParentStructSdBuilder().str_int_map_key_attr(false),
+                                 "For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.key'): Field 'str_int_map.key' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
     }
 
     @Test
-    public void check_illegal_struct_import_missing_map_of_primitive_value_attribute() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.value'): Field 'str_int_map.value' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
-        checkStructImport(new ParentStructSdBuilder().str_int_map_value_attr(false));
+    public void check_illegal_struct_import_missing_map_of_primitive_value_attribute() {
+        assertStructImportThrows(new ParentStructSdBuilder().str_int_map_value_attr(false),
+                                 "For search 'child', import field 'my_str_int_map' (nested to 'my_str_int_map.value'): Field 'str_int_map.value' via reference field 'parent_ref': Is not an attribute field. Only attribute fields supported");
+    }
+
+    private void assertStructImportThrows(AncestorStructSdBuilder structSdBuilder, String expectedErrorMessage) {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> checkStructImport(structSdBuilder));
+        assertEquals(expectedErrorMessage, e.getMessage());
     }
 
     private static class NamedSdBuilder {
@@ -413,10 +410,11 @@ public class ImportedFieldsTestCase {
     }
 
     @Test
-    public void check_pos_import_after_pos_zcurve_import() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'child', import field 'my_pos_zcurve': Field 'pos_zcurve' via reference field 'parent_ref': Field already imported");
-        checkPosImport(new ParentPosSdBuilder(), new ChildPosSdBuilder().import_pos_zcurve_before(true));
+    public void check_pos_import_after_pos_zcurve_import() {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> checkPosImport(new ParentPosSdBuilder(), new ChildPosSdBuilder().import_pos_zcurve_before(true)));
+        assertEquals("For search 'child', import field 'my_pos_zcurve': Field 'pos_zcurve' via reference field 'parent_ref': Field already imported",
+                     e.getMessage());
     }
 
     private static ImportedField getImportedField(String name, Search search) {

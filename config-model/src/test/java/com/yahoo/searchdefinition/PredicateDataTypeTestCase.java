@@ -1,15 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import static org.junit.Assert.*;
-
-import com.yahoo.searchdefinition.document.ImmutableSDField;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import com.yahoo.document.DataType;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.parser.ParseException;
+import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Lester Solbakken
@@ -48,9 +50,6 @@ public class PredicateDataTypeTestCase {
     private String upperBoundParameter(long bound) {
         return "upper-bound: " + bound + "\n";
     }
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void requireThatBuilderSetsIndexParametersCorrectly() throws ParseException {
@@ -125,71 +124,61 @@ public class PredicateDataTypeTestCase {
     public void requireThatBuilderFailsIfNoArityValue() throws ParseException {
         String sd = searchSd(predicateFieldSd(attributeFieldSd("")));
 
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Missing arity value in predicate field.");
-        SearchBuilder.createFromString(sd);
-        fail();
+        assertCreateSearchBuilderThrows(sd, "Missing arity value in predicate field.");
     }
 
     @Test
-    public void requireThatBuilderFailsIfBothIndexAndAttribute() throws ParseException {
+    public void requireThatBuilderFailsIfBothIndexAndAttribute() {
         String sd = searchSd(predicateFieldSd("indexing: summary | index | attribute\nindex { arity: 2 }"));
 
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
-        SearchBuilder.createFromString(sd);
+        assertCreateSearchBuilderThrows(sd, "For search 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
     }
 
     @Test
-    public void requireThatBuilderFailsIfIndex() throws ParseException {
+    public void requireThatBuilderFailsIfIndex() {
         String sd = searchSd(predicateFieldSd("indexing: summary | index \nindex { arity: 2 }"));
 
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
-        SearchBuilder.createFromString(sd);
+        assertCreateSearchBuilderThrows(sd, "For search 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
     }
 
 
     @Test
-    public void requireThatBuilderFailsIfIllegalArityValue() throws ParseException {
+    public void requireThatBuilderFailsIfIllegalArityValue() {
         String sd = searchSd(predicateFieldSd(attributeFieldSd(arityParameter(0))));
 
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Invalid arity value in predicate field, must be greater than 1.");
-        SearchBuilder.createFromString(sd);
+        assertCreateSearchBuilderThrows(sd, "Invalid arity value in predicate field, must be greater than 1.");
     }
 
     @Test
     public void requireThatBuilderFailsIfArityParameterExistButNotPredicateField() throws ParseException {
         String sd = searchSd(stringFieldSd(attributeFieldSd(arityParameter(2))));
 
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Arity parameter is used only for predicate type fields.");
-        SearchBuilder.createFromString(sd);
+        assertCreateSearchBuilderThrows(sd, "Arity parameter is used only for predicate type fields.");
     }
 
     @Test
-    public void requireThatBuilderFailsIfBoundParametersExistButNotPredicateField() throws ParseException {
+    public void requireThatBuilderFailsIfBoundParametersExistButNotPredicateField() {
         String sd = searchSd(
                         stringFieldSd(
                             attributeFieldSd(
                                     lowerBoundParameter(100) + upperBoundParameter(1000))));
 
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Parameters lower-bound and upper-bound are used only for predicate type fields.");
-        SearchBuilder.createFromString(sd);
+        assertCreateSearchBuilderThrows(sd, "Parameters lower-bound and upper-bound are used only for predicate type fields.");
     }
 
     @Test
-    public void requireThatArrayOfPredicateFails() throws ParseException {
+    public void requireThatArrayOfPredicateFails() {
         String sd = searchSd(
                         arrayPredicateFieldSd(
                                 attributeFieldSd(
                                         arityParameter(1))));
 
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Collections of predicates are not allowed.");
-        SearchBuilder.createFromString(sd);
+        assertCreateSearchBuilderThrows(sd, "Collections of predicates are not allowed.");
+    }
+
+    private void assertCreateSearchBuilderThrows(String schema, String expectedErrorMessage) {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> SearchBuilder.createFromString(schema));
+        assertThat(e.getMessage(), containsString(expectedErrorMessage));
     }
 
 }

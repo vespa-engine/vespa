@@ -3,18 +3,20 @@ package com.yahoo.config.model.graph;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.test.MockRoot;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ModelGraphTest {
 
@@ -81,25 +83,24 @@ public class ModelGraphTest {
         assertTrue(c.b.contains(b2));
     }
 
-    @Rule
-    public ExpectedException expectedEx = ExpectedException.none();
-
     @Test
     public void require_that_context_must_be_first_ctor_param() {
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("Constructor for " + GraphMock.Bad.class.getName() + " must have as its first argument a " + ConfigModelContext.class.getName());
         ModelNode node = new ModelNode(new GraphMock.Bad.Builder());
         MockRoot root = new MockRoot();
-        node.createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "foo"));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> node.createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "foo")));
+        assertEquals("Constructor for " + GraphMock.Bad.class.getName() + " must have as its first argument a " + ConfigModelContext.class.getName(),
+                     e.getMessage());
     }
 
     @Test
     public void require_that_ctor_arguments_must_be_models_or_collections_of_models() {
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("Unable to find constructor argument class java.lang.String for com.yahoo.config.model.graph.GraphMock$Bad2");
         ModelNode node = new ModelNode(new GraphMock.Bad2.Builder());
         MockRoot root = new MockRoot();
-        node.createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "foo"));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> node.createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "foo")));
+        assertEquals("Unable to find constructor argument class java.lang.String for com.yahoo.config.model.graph.GraphMock$Bad2",
+                     e.getMessage());
     }
 
     @Test

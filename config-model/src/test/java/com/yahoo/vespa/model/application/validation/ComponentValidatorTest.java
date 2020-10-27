@@ -13,7 +13,7 @@ import java.util.logging.Level;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ComponentValidatorTest {
     private static final String JARS_DIR = "src/test/cfg/application/validation/testjars/";

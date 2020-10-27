@@ -5,17 +5,15 @@ import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author bjorncs
  */
 public class FastAccessValidatorTest {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void throws_exception_on_incompatible_use_of_fastaccess() throws ParseException {
@@ -49,12 +47,11 @@ public class FastAccessValidatorTest {
                         "        }",
                         "    }",
                         "}"));
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For search 'test': The following attributes have a type that is incompatible " +
-                        "with fast-access: predicate_attribute, tensor_attribute, reference_attribute. " +
-                        "Predicate, tensor and reference attributes are incompatible with fast-access.");
-        builder.build();
+        Exception e = assertThrows(IllegalArgumentException.class, builder::build);
+        assertEquals("For search 'test': The following attributes have a type that is incompatible " +
+                     "with fast-access: predicate_attribute, tensor_attribute, reference_attribute. " +
+                     "Predicate, tensor and reference attributes are incompatible with fast-access.",
+                     e.getMessage());
     }
 
 }

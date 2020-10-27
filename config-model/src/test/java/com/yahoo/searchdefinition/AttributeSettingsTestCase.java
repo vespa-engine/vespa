@@ -10,15 +10,18 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.util.Optional;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Attribute settings
@@ -26,9 +29,6 @@ import static org.junit.Assert.*;
  * @author  bratseth
  */
 public class AttributeSettingsTestCase extends SchemaTestCase {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void testAttributeSettings() throws IOException, ParseException {
@@ -126,17 +126,18 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
     }
 
     @Test
-    public void requireThatMutableCanNotbeSetInDocument() throws ParseException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.");
-        getSearch("search test {\n" +
-                    "  document test {\n" +
-                    "    field f type int {\n" +
-                    "      indexing: attribute\n" +
-                    "      attribute: mutable\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}\n");
+    public void requireThatMutableCanNotbeSetInDocument() {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> getSearch("search test {\n" +
+                                                   "  document test {\n" +
+                                                   "    field f type int {\n" +
+                                                   "      indexing: attribute\n" +
+                                                   "      attribute: mutable\n" +
+                                                   "    }\n" +
+                                                   "  }\n" +
+                                                   "}\n"));
+        assertEquals("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.",
+                     e.getMessage());
     }
 
     @Test

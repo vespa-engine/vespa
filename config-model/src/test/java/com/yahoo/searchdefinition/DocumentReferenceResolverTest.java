@@ -6,9 +6,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Map;
 
@@ -16,15 +14,13 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class DocumentReferenceResolverTest {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void reference_from_one_document_to_another_is_resolved() {
@@ -66,11 +62,8 @@ public class DocumentReferenceResolverTest {
         fooSearch.addDocument(fooDocument);
 
         DocumentReferenceResolver resolver = new DocumentReferenceResolver(singletonList(fooSearch));
-
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "Invalid document reference 'bar_ref': Could not find document type 'bar'");
-        resolver.resolveReferences(fooDocument);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> resolver.resolveReferences(fooDocument));
+        assertEquals("Invalid document reference 'bar_ref': Could not find document type 'bar'", e.getMessage());
     }
 
     @Test
@@ -89,10 +82,9 @@ public class DocumentReferenceResolverTest {
         fooSearch.addDocument(fooDocument);
 
         DocumentReferenceResolver resolver = new DocumentReferenceResolver(asList(fooSearch, barSearch));
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "The field 'bar_ref' is an invalid document reference. The field must be an attribute.");
-        resolver.resolveReferences(fooDocument);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> resolver.resolveReferences(fooDocument));
+        assertEquals(        "The field 'bar_ref' is an invalid document reference. The field must be an attribute.", e.getMessage());
+
     }
 
 }

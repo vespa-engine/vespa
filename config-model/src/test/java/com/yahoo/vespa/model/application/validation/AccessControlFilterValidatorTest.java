@@ -6,12 +6,13 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.ModelBuilderAddingAccessControlFilter;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author bjorncs
@@ -30,17 +31,12 @@ public class AccessControlFilterValidatorTest {
             "  </container>",
             "</services>");
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
     public void validator_fails_with_empty_access_control_filter_chain() throws IOException, SAXException {
         DeployState deployState = createDeployState();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("The 'access-control' feature is not available in open-source Vespa.");
-        new AccessControlFilterValidator().validate(model, deployState);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> new AccessControlFilterValidator().validate(model, deployState));
+        assertEquals("The 'access-control' feature is not available in open-source Vespa.", e.getMessage());
     }
 
     @Test

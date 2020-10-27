@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.search.test;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -20,6 +19,7 @@ import org.junit.Test;
 
 import java.util.Optional;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -84,7 +84,7 @@ public class SearchNodeTest {
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.deployLogger());
         assertTrue(node.getPreShutdownCommand().isPresent());
-        Assert.assertThat(node.getPreShutdownCommand().get(),
+        assertThat(node.getPreShutdownCommand().get(),
                 CoreMatchers.containsString("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));
     }
 

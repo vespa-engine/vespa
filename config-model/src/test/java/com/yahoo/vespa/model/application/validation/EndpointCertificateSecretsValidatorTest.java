@@ -12,21 +12,21 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Optional;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author andreer
  */
 public class EndpointCertificateSecretsValidatorTest {
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static String servicesXml() {
         return joinLines("<services version='1.0'>",
@@ -46,10 +46,9 @@ public class EndpointCertificateSecretsValidatorTest {
         DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(EndpointCertificateSecrets.MISSING));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        exceptionRule.expect(CertificateNotReadyException.class);
-        exceptionRule.expectMessage("TLS enabled, but could not yet retrieve certificate for application default:default:default");
-
-        new EndpointCertificateSecretsValidator().validate(model, deployState);
+        Exception e = assertThrows(CertificateNotReadyException.class,
+                                   () -> new EndpointCertificateSecretsValidator().validate(model, deployState));
+        assertThat(e.getMessage(), containsString("TLS enabled, but could not yet retrieve certificate for application default:default:default"));
     }
 
     @Test

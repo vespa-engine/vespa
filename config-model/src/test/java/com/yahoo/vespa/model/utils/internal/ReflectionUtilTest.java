@@ -15,14 +15,13 @@ import static com.yahoo.vespa.model.utils.internal.ReflectionUtil.getAllConfigsP
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
  * @author bjorncs
  * @author gjoranv
- * @since 5.1
  */
 public class ReflectionUtilTest {
 

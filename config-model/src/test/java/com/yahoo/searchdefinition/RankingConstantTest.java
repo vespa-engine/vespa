@@ -2,24 +2,22 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Iterator;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
  */
 public class RankingConstantTest {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void tensor_constant_properties_are_set() throws Exception {
@@ -56,35 +54,35 @@ public class RankingConstantTest {
     }
 
     @Test
-    public void tensor_constant_must_have_a_type() throws Exception {
+    public void tensor_constant_must_have_a_type() {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("must have a type");
-        searchBuilder.importString(joinLines(
-                "search test {",
-                "  document test { }",
-                "  constant foo {",
-                "    file: bar.baz",
-                "  }",
-                "}"
-        ));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                     () -> searchBuilder.importString(joinLines(
+                             "search test {",
+                             "  document test { }",
+                             "  constant foo {",
+                             "    file: bar.baz",
+                             "  }",
+                             "}"
+                     )));
+        assertThat(e.getMessage(), containsString("must have a type"));
     }
 
     @Test
-    public void tensor_constant_must_have_a_file() throws Exception {
+    public void tensor_constant_must_have_a_file() {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("must have a file");
-        searchBuilder.importString(joinLines(
-                "search test {",
-                "  document test { }",
-                "  constant foo {",
-                "    type: tensor(x[])",
-                "  }",
-                "}"
-        ));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> searchBuilder.importString(joinLines(
+                                           "search test {",
+                                           "  document test { }",
+                                           "  constant foo {",
+                                           "    type: tensor(x[])",
+                                           "  }",
+                                           "}"
+                                   )));
+        assertThat(e.getMessage(), containsString("must have a file"));
     }
 
     @Test

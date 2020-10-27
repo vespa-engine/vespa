@@ -11,22 +11,18 @@ import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporarySDField;
 import com.yahoo.tensor.TensorType;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author geirst
  */
 public class ImportedFieldsResolverTestCase {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private void resolve_imported_field(String fieldName, String targetFieldName) {
         SearchModel model = new SearchModel();
@@ -59,46 +55,46 @@ public class ImportedFieldsResolverTestCase {
 
     @Test
     public void resolver_fails_if_document_reference_is_not_found() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', import field 'my_attribute_field': "
-                + "Reference field 'not_ref' not found");
-        new SearchModel().addImportedField("my_attribute_field", "not_ref", "budget").resolve();
+        assertImportingThrows("my_attribute_field", "not_ref", "budget",
+                              "For search 'child', import field 'my_attribute_field': "
+                              + "Reference field 'not_ref' not found");
     }
 
     @Test
     public void resolver_fails_if_referenced_field_is_not_found() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', import field 'my_attribute_field': "
-                + "Field 'not_existing' via reference field 'ref': Not found");
-        new SearchModel().addImportedField("my_attribute_field", "ref", "not_existing").resolve();
+        assertImportingThrows("my_attribute_field", "ref", "not_existing",
+                              "For search 'child', import field 'my_attribute_field': "
+                              + "Field 'not_existing' via reference field 'ref': Not found");
     }
 
     @Test
     public void resolver_fails_if_imported_field_is_not_an_attribute() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', import field 'my_not_attribute': "
-                + "Field 'not_attribute' via reference field 'ref': Is not an attribute field. Only attribute fields supported");
-        new SearchModel().addImportedField("my_not_attribute", "ref", "not_attribute").resolve();
+        assertImportingThrows("my_not_attribute", "ref", "not_attribute",
+                              "For search 'child', import field 'my_not_attribute': "
+                              + "Field 'not_attribute' via reference field 'ref': Is not an attribute field. Only attribute fields supported");
     }
 
     @Test
     public void resolver_fails_if_imported_field_is_indexing() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For search 'child', import field 'my_attribute_and_index': " +
-                        "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported");
-        new SearchModel()
-                .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
-                .resolve();
+        assertImportingThrows("my_attribute_and_index", "ref", "attribute_and_index",
+                              "For search 'child', import field 'my_attribute_and_index': " +
+                              "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported");
+        ;
     }
 
     @Test
     public void resolver_fails_if_imported_field_is_of_type_predicate() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For search 'child', import field 'my_predicate_field': " +
-                        "Field 'predicate_field' via reference field 'ref': Is of type 'predicate'. Not supported");
-        new SearchModel().addImportedField("my_predicate_field", "ref", "predicate_field").resolve();
+        assertImportingThrows("my_predicate_field", "ref", "predicate_field",
+                              "For search 'child', import field 'my_predicate_field': " +
+                              "Field 'predicate_field' via reference field 'ref': Is of type 'predicate'. Not supported");
+    }
+
+    private void assertImportingThrows(String fieldName, String referenceFieldName, String targetFieldName, String expectedErrorMessage) {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> new SearchModel()
+                                           .addImportedField(fieldName, referenceFieldName, targetFieldName)
+                                           .resolve());
+        assertEquals(expectedErrorMessage, e.getMessage());
     }
 
     static class SearchModel extends ParentChildSearchModel {

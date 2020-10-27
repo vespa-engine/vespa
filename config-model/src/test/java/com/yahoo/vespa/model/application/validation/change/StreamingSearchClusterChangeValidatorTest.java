@@ -19,7 +19,7 @@ import java.util.List;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.assertEqualActions;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.normalizeServicesInActions;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StreamingSearchClusterChangeValidatorTest {
 

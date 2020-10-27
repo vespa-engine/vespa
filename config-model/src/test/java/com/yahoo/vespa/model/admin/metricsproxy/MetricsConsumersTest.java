@@ -5,9 +5,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
@@ -23,7 +21,10 @@ import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetri
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
 import static java.util.Collections.singleton;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -39,9 +40,6 @@ public class MetricsConsumersTest {
     private static int numSystemMetrics = systemMetricSet.getMetrics().size();
     private static int numNetworkMetrics = networkMetricSet.getMetrics().size();
     private static int numMetricsForVespaConsumer = numVespaMetrics + numSystemMetrics + numNetworkMetrics;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void default_public_consumer_is_set_up_for_self_hosted() {
@@ -102,9 +100,8 @@ public class MetricsConsumersTest {
                                       "    </admin>",
                                       "</services>"
         );
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("'" + consumerId + "' is not allowed as metrics consumer id");
-        consumersConfigFromXml(services, self_hosted);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> consumersConfigFromXml(services, self_hosted));
+        assertThat(e.getMessage(), containsString("'" + consumerId + "' is not allowed as metrics consumer id"));
     }
 
     @Test
@@ -146,9 +143,8 @@ public class MetricsConsumersTest {
                                       "    </admin>",
                                       "</services>"
         );
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("'a' is used as id for two metrics consumers");
-        consumersConfigFromXml(services, self_hosted);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> consumersConfigFromXml(services, self_hosted));
+        assertThat(e.getMessage(), containsString("'a' is used as id for two metrics consumers"));
     }
 
     @Test
@@ -165,9 +161,9 @@ public class MetricsConsumersTest {
                                       "    </admin>",
                                       "</services>"
         );
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("No such metric-set: non-existent");
-        consumersConfigFromXml(services, self_hosted);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> consumersConfigFromXml(services, self_hosted));
+        assertEquals("No such metric-set: non-existent", e.getMessage());
+
     }
 
     @Test

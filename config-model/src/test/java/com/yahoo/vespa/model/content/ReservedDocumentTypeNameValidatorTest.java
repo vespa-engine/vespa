@@ -2,9 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.documentmodel.NewDocumentType;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,10 +12,12 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ReservedDocumentTypeNameValidatorTest {
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+public class ReservedDocumentTypeNameValidatorTest {
 
     private static Map<String, NewDocumentType> asDocTypeMapping(List<String> typeNames) {
         return typeNames.stream().collect(Collectors.toMap(Function.identity(), n -> new NewDocumentType(new NewDocumentType.Name(n))));
@@ -25,16 +25,17 @@ public class ReservedDocumentTypeNameValidatorTest {
 
     @Test
     public void exception_thrown_on_reserved_names() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The following document types conflict with reserved keyword names: " +
-                "'and', 'false', 'id', 'not', 'null', 'or', 'true'. " +
-                "Reserved keywords are 'and', 'false', 'id', 'not', 'null', 'or', 'true'");
-
         // Ensure ordering is consistent for testing
         Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(ReservedDocumentTypeNameValidator.ORDERED_RESERVED_NAMES));
 
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
-        validator.validate(orderedDocTypes);
+
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> validator.validate(orderedDocTypes));
+        assertEquals("The following document types conflict with reserved keyword names: " +
+                     "'and', 'false', 'id', 'not', 'null', 'or', 'true'. " +
+                     "Reserved keywords are 'and', 'false', 'id', 'not', 'null', 'or', 'true'",
+                e.getMessage());
     }
 
     @Test
@@ -45,13 +46,12 @@ public class ReservedDocumentTypeNameValidatorTest {
 
     @Test
     public void validation_is_case_insensitive() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The following document types conflict with reserved keyword names: " +
-                                        "'NULL', 'True', 'anD'.");
-
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
         Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(Arrays.asList("NULL", "True", "anD")));
-        validator.validate(orderedDocTypes);
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> validator.validate(orderedDocTypes));
+        assertThat(e.getMessage(), containsString("The following document types conflict with reserved keyword names: " +
+                                                  "'NULL', 'True', 'anD'."));
     }
 
 }

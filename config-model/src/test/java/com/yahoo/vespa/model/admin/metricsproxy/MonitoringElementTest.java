@@ -2,30 +2,27 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author gjoranv
  */
 public class MonitoringElementTest {
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
     @Test
     public void monitoring_element_is_disallowed_for_hosted_vespa() {
         String services = servicesWithMonitoringElement();
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("The 'monitoring' element cannot be used");
-        getModel(services, hosted);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> getModel(services, hosted));
+        assertThat(e.getMessage(), containsString("The 'monitoring' element cannot be used"));
     }
 
     @Test

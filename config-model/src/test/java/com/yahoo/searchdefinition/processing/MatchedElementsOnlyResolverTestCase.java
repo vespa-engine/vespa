@@ -7,20 +7,16 @@ import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author geirst
  */
 public class MatchedElementsOnlyResolverTestCase {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void complex_field_with_some_struct_field_attributes_gets_default_transform() throws ParseException {
@@ -145,17 +141,18 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    public void unsupported_field_type_throws() throws ParseException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'test', document summary 'default', summary field 'my_field': " +
-                "'matched-elements-only' is not supported for this field type. " +
-                "Supported field types are: array of primitive, weighted set of primitive, " +
-                "array of simple struct, map of primitive type to simple struct, " +
-                "and map of primitive type to primitive type");
-        buildSearch(joinLines("field my_field type string {",
-                "  indexing: summary",
-                "  summary: matched-elements-only",
-                "}"));
+    public void unsupported_field_type_throws() {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> buildSearch(joinLines("field my_field type string {",
+                                                               "  indexing: summary",
+                                                               "  summary: matched-elements-only",
+                                                               "}")));
+        assertEquals("For search 'test', document summary 'default', summary field 'my_field': " +
+                     "'matched-elements-only' is not supported for this field type. " +
+                     "Supported field types are: array of primitive, weighted set of primitive, " +
+                     "array of simple struct, map of primitive type to simple struct, " +
+                     "and map of primitive type to primitive type",
+                     e.getMessage());
     }
 
     private void assertSummaryField(String fieldContent, String fieldName, SummaryTransform expTransform) throws ParseException {

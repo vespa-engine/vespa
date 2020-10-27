@@ -10,19 +10,17 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
  */
 public class SecretStoreValidatorTest {
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static String servicesXml() {
         return joinLines("<services version='1.0'>",
@@ -51,16 +49,14 @@ public class SecretStoreValidatorTest {
 
     @Test
     public void app_without_athenz_in_deployment_fails_validation() throws Exception {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "Container cluster 'default' uses a secret store, so an Athenz domain and" +
-                        " an Athenz service must be declared in deployment.xml.");
-
         DeployState deployState = deployState(servicesXml(), deploymentXml(false));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new SecretStoreValidator().validate(model, deployState);
-
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new SecretStoreValidator().validate(model, deployState));
+        assertEquals("Container cluster 'default' uses a secret store, so an Athenz domain and" +
+                     " an Athenz service must be declared in deployment.xml.",
+                e.getMessage());
     }
 
     @Test

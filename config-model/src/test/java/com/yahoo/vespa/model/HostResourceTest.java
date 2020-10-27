@@ -15,7 +15,7 @@ import java.util.Optional;
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
 import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author gjoranv

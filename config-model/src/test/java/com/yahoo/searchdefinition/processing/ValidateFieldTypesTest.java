@@ -13,11 +13,12 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author bjorncs
@@ -27,9 +28,6 @@ public class ValidateFieldTypesTest {
     private static final String IMPORTED_FIELD_NAME = "imported_myfield";
     private static final String DOCUMENT_NAME = "my_doc";
 
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
     public void throws_exception_if_type_of_document_field_does_not_match_summary_field() {
         Search search = createSearchWithDocument(DOCUMENT_NAME);
@@ -37,11 +35,11 @@ public class ValidateFieldTypesTest {
         search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING));
 
         ValidateFieldTypes validator = new ValidateFieldTypes(search, null, null, null);
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For search '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
-                "Expected int for summary field '" + IMPORTED_FIELD_NAME + "', got string.");
-        validator.process(true, false);
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> validator.process(true, false));
+        assertEquals("For search '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
+                     "Expected int for summary field '" + IMPORTED_FIELD_NAME + "', got string.",
+                     e.getMessage());
     }
 
     private static Search createSearchWithDocument(String documentName) {

@@ -6,47 +6,45 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author bjorncs
  */
 public class UriBindingsValidatorTest {
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
-    public void fails_on_user_handler_binding_with_port() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'http://*:4443/my-handler': binding with port is not allowed");
-        runUriBindingValidator(true, createServicesXmlWithHandler("http://*:4443/my-handler"));
+    public void fails_on_user_handler_binding_with_port() {
+        assertException(
+                createServicesXmlWithHandler("http://*:4443/my-handler"),
+                        "For binding 'http://*:4443/my-handler': binding with port is not allowed");
     }
 
     @Test
-    public void fails_on_user_handler_binding_with_hostname() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'http://myhostname/my-handler': only binding with wildcard ('*') for hostname is allowed");
-        runUriBindingValidator(true, createServicesXmlWithHandler("http://myhostname/my-handler"));
+    public void fails_on_user_handler_binding_with_hostname() {
+        assertException(
+                createServicesXmlWithHandler("http://myhostname/my-handler"),
+                        "For binding 'http://myhostname/my-handler': only binding with wildcard ('*') for hostname is allowed");
     }
 
     @Test
-    public void fails_on_user_handler_binding_with_non_http_scheme() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'ftp://*/my-handler': only 'http' is allowed as scheme");
-        runUriBindingValidator(true, createServicesXmlWithHandler("ftp://*/my-handler"));
+    public void fails_on_user_handler_binding_with_non_http_scheme() {
+        assertException(
+                createServicesXmlWithHandler("ftp://*/my-handler"),
+                        "For binding 'ftp://*/my-handler': only 'http' is allowed as scheme");
     }
 
     @Test
-    public void fails_on_invalid_filter_binding() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For binding 'https://*:4443/my-request-filer-chain': binding with port is not allowed");
-        runUriBindingValidator(true, createServicesXmlWithRequestFilterChain("https://*:4443/my-request-filer-chain"));
+    public void fails_on_invalid_filter_binding() {
+        assertException(
+                createServicesXmlWithRequestFilterChain("https://*:4443/my-request-filer-chain"),
+                        "For binding 'https://*:4443/my-request-filer-chain': binding with port is not allowed");
     }
 
     @Test
@@ -104,6 +102,11 @@ public class UriBindingsValidatorTest {
                 "    </http>",
                 "  </container>",
                 "</services>");
+    }
+
+    private void assertException(String services, String expectedExceptionMessage) {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> runUriBindingValidator(true, services));
+        assertEquals(expectedExceptionMessage, e.getMessage());
     }
 
 }

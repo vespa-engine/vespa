@@ -6,9 +6,7 @@ import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporarySDField;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,14 +15,13 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author bjorncs
  */
 public class DocumentGraphValidatorTest {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void simple_ref_dag_is_allowed() {
@@ -75,10 +72,8 @@ public class DocumentGraphValidatorTest {
         createDocumentReference(search2, search3, "ref_3");
         createDocumentReference(search3, search1, "ref_1");
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc2->doc3->doc1.");
-        validator.validateDocumentGraph(documentListOf(search1, search2, search3));
+        assertValidateDocumentGraphThrows(documentListOf(search1, search2, search3),
+                                          "Document dependency cycle detected: doc1->doc2->doc3->doc1.");
     }
 
     @Test
@@ -88,10 +83,8 @@ public class DocumentGraphValidatorTest {
         Search search3 = createSearchWithName("doc3", search2);
         search1.getDocument().inherit(search3.getDocument());
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc3->doc2->doc1.");
-        validator.validateDocumentGraph(documentListOf(search1, search2, search3));
+        assertValidateDocumentGraphThrows(documentListOf(search1, search2, search3),
+                                          "Document dependency cycle detected: doc1->doc3->doc2->doc1.");
     }
 
     @Test
@@ -101,10 +94,8 @@ public class DocumentGraphValidatorTest {
         Search search3 = createSearchWithName("doc3", search2);
         createDocumentReference(search1, search3, "ref_1");
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc3->doc2->doc1.");
-        validator.validateDocumentGraph(documentListOf(search1, search2, search3));
+        assertValidateDocumentGraphThrows(documentListOf(search1, search2, search3),
+                                          "Document dependency cycle detected: doc1->doc3->doc2->doc1.");
     }
 
     @Test
@@ -112,10 +103,7 @@ public class DocumentGraphValidatorTest {
         Search adSearch = createSearchWithName("ad");
         createDocumentReference(adSearch, adSearch, "ad_ref");
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: ad->ad.");
-        validator.validateDocumentGraph(documentListOf(adSearch));
+        assertValidateDocumentGraphThrows(documentListOf(adSearch), "Document dependency cycle detected: ad->ad.");
     }
 
     @Test
@@ -124,10 +112,13 @@ public class DocumentGraphValidatorTest {
         SDDocumentType document = adSearch.getDocument();
         document.inherit(document);
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: ad->ad.");
-        validator.validateDocumentGraph(documentListOf(adSearch));
+        assertValidateDocumentGraphThrows(documentListOf(adSearch), "Document dependency cycle detected: ad->ad.");
+    }
+
+    private void assertValidateDocumentGraphThrows(List<SDDocumentType> documentTypes, String expectedErrorMessage) {
+        Exception e = assertThrows(DocumentGraphValidator.DocumentGraphException.class,
+                                   () -> new DocumentGraphValidator().validateDocumentGraph(documentTypes));
+        assertEquals(expectedErrorMessage, e.getMessage());
     }
 
     private static List<SDDocumentType> documentListOf(Search... searches) {
@@ -154,4 +145,5 @@ public class DocumentGraphValidatorTest {
         modifiedMap.put(refFieldName, new DocumentReference(refField, to));
         fromDocument.setDocumentReferences(new DocumentReferences(modifiedMap));
     }
+
 }

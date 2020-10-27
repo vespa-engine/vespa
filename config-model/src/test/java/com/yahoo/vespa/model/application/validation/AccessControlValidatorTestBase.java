@@ -8,9 +8,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -22,7 +20,9 @@ import java.time.format.DateTimeFormatter;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.config.provision.Environment.prod;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -32,9 +32,6 @@ public abstract class AccessControlValidatorTestBase {
 
     protected Validator validator;
     protected Zone zone;
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static String servicesXml(boolean addHandler, boolean protection) {
         return joinLines("<services version='1.0'>",
@@ -83,22 +80,14 @@ public abstract class AccessControlValidatorTestBase {
 
     @Test
     public void cluster_with_handler_fails_validation_without_protection() throws IOException, SAXException{
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(containsString("Access-control must be enabled"));
-        exceptionRule.expectMessage(containsString("production zones: [default]"));
-
         DeployState deployState = deployState(servicesXml(true, false));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        validator.validate(model, deployState);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> validator.validate(model, deployState));
     }
 
     @Test
     public void no_http_element_has_same_effect_as_no_write_protection() throws IOException, SAXException{
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(containsString("Access-control must be enabled"));
-        exceptionRule.expectMessage(containsString("production zones: [default]"));
-
         String servicesXml = joinLines("<services version='1.0'>",
                                        "  <container id='default' version='1.0'>",
                                        httpHandlerXml,
@@ -107,7 +96,9 @@ public abstract class AccessControlValidatorTestBase {
         DeployState deployState = deployState(servicesXml);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        validator.validate(model, deployState);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> validator.validate(model, deployState));
+        assertThat(e.getMessage(), containsString("Access-control must be enabled"));
+        assertThat(e.getMessage(), containsString("production zones: [default]"));
     }
 
     @Test

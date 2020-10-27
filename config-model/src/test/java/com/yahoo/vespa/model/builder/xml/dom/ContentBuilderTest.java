@@ -25,9 +25,7 @@ import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,12 +33,13 @@ import java.util.List;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -48,9 +47,6 @@ import static org.junit.Assert.fail;
  * @author baldersheim
  */
 public class ContentBuilderTest extends DomBuilderTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void handleSingleNonSearchPersistentDummy() {
@@ -824,18 +820,18 @@ public class ContentBuilderTest extends DomBuilderTest {
 
     @Test
     public void failWhenNoDocumentsElementSpecified() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The specified content engine requires the <documents> element to be specified.");
-        createContent(
-                "<content version =\"1.0\" id=\"a\">" +
-                        "    <redundancy>3</redundancy>" +
-                        "    <engine>" +
-                        "      <dummy/>" +
-                        "    </engine>" +
-                        "    <group>" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
-                        "    </group>" +
-                        "</content>");
+        Exception e = assertThrows(IllegalArgumentException.class,
+                                   () -> createContent(
+                                           "<content version =\"1.0\" id=\"a\">" +
+                                           "    <redundancy>3</redundancy>" +
+                                           "    <engine>" +
+                                           "      <dummy/>" +
+                                           "    </engine>" +
+                                           "    <group>" +
+                                           "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                                           "    </group>" +
+                                           "</content>"));
+        assertEquals("The specified content engine requires the <documents> element to be specified.", e.getMessage());
     }
 
     private ProtonConfig getProtonConfig(ContentCluster content) {

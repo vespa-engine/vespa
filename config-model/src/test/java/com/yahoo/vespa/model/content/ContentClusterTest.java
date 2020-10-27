@@ -33,28 +33,26 @@ import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ContentClusterTest extends ContentBaseTest {
 
     private final static String HOSTS = "<admin version='2.0'><adminserver hostalias='mockhost' /></admin>";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     ContentCluster parse(String xml) {
         xml = HOSTS + xml;
@@ -806,9 +804,6 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void reserved_document_name_throws_exception() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The following document types conflict with reserved keyword names: 'true'.");
-
         String xml = "<content version=\"1.0\" id=\"storage\">" +
               "  <redundancy>1</redundancy>" +
               "  <documents>" +
@@ -820,7 +815,10 @@ public class ContentClusterTest extends ContentBaseTest {
               "</content>";
 
         List<String> sds = ApplicationPackageUtils.generateSchemas("true");
-        new VespaModelCreatorWithMockPkg(null, xml, sds).create();
+
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new VespaModelCreatorWithMockPkg(null, xml, sds).create());
+        assertThat(e.getMessage(), containsString("The following document types conflict with reserved keyword names: 'true'."));
     }
 
     private void assertClusterHasBucketSpaceMappings(AllClustersBucketSpacesConfig config, String clusterId,
