@@ -20,12 +20,16 @@ using vespalib::make_string_short::fmt;
 
 std::vector<Layout> create_layouts = {
     {x(3)},
-    {x(3),y(2)},
-    float_cells({x(3)}),
+    {x(3),y(5)},
+    {x(3),y(5),z(7)},
+    float_cells({x(3),y(5),z(7)}),
     {x({"a","b","c"})},
     {x({"a","b","c"}),y({"foo","bar"})},
-    float_cells({x({"a","b","c"})}),
-    {x(3),y({"foo", "bar"})}
+    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
+    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
+    {x(3),y({"foo", "bar"}),z(7)},
+    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
+    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
 };
 
 TensorSpec remove_each(const TensorSpec &a, size_t n) {
