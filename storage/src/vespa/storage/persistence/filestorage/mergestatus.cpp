@@ -77,6 +77,10 @@ MergeStatus::MergeStatus(const framework::Clock& clock, const metrics::LoadType&
 
 MergeStatus::~MergeStatus() = default;
 
+/*
+ * Note: hasMask parameter and _entry._hasMask in part vector are per-reply masks,
+ *       based on the nodes returned in the ApplyBucketDiffReply.
+ */
 bool
 MergeStatus::removeFromDiff(
         const std::vector<api::ApplyBucketDiffCommand::Entry>& part,
@@ -124,6 +128,11 @@ MergeStatus::removeFromDiff(
                 it = diff.erase(it);
                 altered = true;
             } else {
+                /* 
+                 * Remap from per-reply mask for the ApplyBucketDiffReply to a
+                 * per-merge-operation mask with same bit assignment as _hasMask in
+                 * the diff vector.
+                 */
                 uint16_t mask = remap_mask(it2->_entry._hasMask);
                 if (mask != it->_hasMask) {
                     // Hasmasks have changed, meaning bucket contents changed on

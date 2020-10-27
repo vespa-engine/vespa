@@ -1303,8 +1303,12 @@ TEST_F(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
         EXPECT_EQ(2u, diff.size());
         EXPECT_EQ(EntryCheck(20000u, 4u), diff[0]._entry);
         EXPECT_EQ(EntryCheck(20100u, 4u), diff[1]._entry);
+        /*
+         * Only fill first diff entry to simulate max chunk size being exceeded
+         * when filling diff entries on source node (node 3).
+         */
         fill_entry(diff[0], *doc1, getEnv().getDocumentTypeRepo());
-        diff[0]._entry._hasMask |= 2u;
+        diff[0]._entry._hasMask |= 2u; // Simulate diff entry having been applied on node 1.
         handler.handleApplyBucketDiffReply(*reply, messageKeeper());
         LOG(debug, "handled first ApplyBucketDiffReply");
     }

@@ -32,6 +32,8 @@ public:
     ~MergeStatus();
 
     /**
+     * Note: hasMask parameter and _entry._hasMask in part vector are per-reply masks,
+     *       based on the nodes returned in ApplyBucketDiffReply.
      * @return true if any entries were removed from the internal diff
      *   or the two diffs had entries with mismatching hasmasks, which
      *   indicates that bucket contents have changed during the merge.
