@@ -2,9 +2,7 @@
 package com.yahoo.document.restapi;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -12,8 +10,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 public class RestUriTest {
 
@@ -27,9 +26,6 @@ public class RestUriTest {
 	    .setCustomQuery(query)
 	    .setFragment("fargment").build();
     }
-
-    @Rule
-	public ExpectedException thrown= ExpectedException.none();
 
     @Test
 	public void testBasic() throws Exception {
@@ -111,9 +107,8 @@ public class RestUriTest {
     }
 
     @Test
-	public void testGroupUnknown() throws Exception {
-        thrown.expect(RestApiException.class);
-        new RestUri(createUri("/document/v1/namespace/doctype/Q/myid", ""));
+	public void testGroupUnknown() {
+        assertThrows(RestApiException.class, () -> new RestUri(createUri("/document/v1/namespace/doctype/Q/myid", "")));
     }
 
     @Test

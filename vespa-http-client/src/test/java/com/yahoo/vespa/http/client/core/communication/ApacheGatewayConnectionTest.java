@@ -19,9 +19,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
@@ -30,12 +28,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -43,9 +43,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ApacheGatewayConnectionTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testProtocolV3() throws Exception {
@@ -253,11 +250,9 @@ public class ApacheGatewayConnectionTest {
     }
 
     @Test
-    public void detailed_error_message_is_extracted_from_error_responses_with_json() throws IOException, ServerResponseException {
+    public void detailed_error_message_is_extracted_from_error_responses_with_json() throws IOException {
         String reasonPhrase = "Unauthorized";
         String errorMessage = "Invalid credentials";
-        expectedException.expect(ServerResponseException.class);
-        expectedException.expectMessage(reasonPhrase + " - " + errorMessage);
 
         ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post  -> createErrorHttpResponse(401, reasonPhrase, errorMessage));
 
@@ -271,9 +266,10 @@ public class ApacheGatewayConnectionTest {
                     "clientId",
                     Clock.systemUTC());
         apacheGatewayConnection.connect();
-        apacheGatewayConnection.handshake();
 
-        apacheGatewayConnection.write(Collections.singletonList(createDoc("42", "content", true)));
+        Exception e = assertThrows(ServerResponseException.class,
+                                   apacheGatewayConnection::handshake);
+        assertThat(e.getMessage(), containsString(reasonPhrase + " - " + errorMessage));
     }
 
     private static ApacheGatewayConnection.HttpClientFactory mockHttpClientFactory(HttpExecuteMock httpExecuteMock) throws IOException {

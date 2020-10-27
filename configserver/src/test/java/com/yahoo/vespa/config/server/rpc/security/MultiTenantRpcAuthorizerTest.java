@@ -120,7 +120,7 @@ public class MultiTenantRpcAuthorizerTest {
     }
 
     @Test
-    public void tenant_node_cannot_access_other_files() throws ExecutionException, InterruptedException {
+    public void tenant_node_cannot_access_other_files() {
         NodeIdentity identity = new NodeIdentity.Builder(NodeType.tenant)
                 .applicationId(APPLICATION_ID)
                 .build();
@@ -139,7 +139,7 @@ public class MultiTenantRpcAuthorizerTest {
     }
 
     @Test
-    public void tenant_node_cannot_access_other_config() throws ExecutionException, InterruptedException {
+    public void tenant_node_cannot_access_other_config() {
         NodeIdentity identity = new NodeIdentity.Builder(NodeType.tenant)
                 .applicationId(EVIL_APP_ID)
                 .build();

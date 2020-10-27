@@ -8,11 +8,13 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SimpleLoggerResultCallbackTest {
+
     @Test
     public void testAverageCalculation() {
         SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(3), 0);

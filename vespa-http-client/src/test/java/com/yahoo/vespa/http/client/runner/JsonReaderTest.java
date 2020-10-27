@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.yahoo.vespa.http.client.JsonTestHelper.inputJson;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
 
 public class JsonReaderTest {
 
