@@ -156,7 +156,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
     }
 
-    /** Returns the current resources of this cluster, or the closes  */
+    /** Returns the current resources of this cluster, or requested min if none */
     private ClusterResources currentResources(ApplicationId applicationId,
                                               ClusterSpec clusterSpec,
                                               Capacity requested) {
