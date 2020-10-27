@@ -24,7 +24,7 @@ private:
 public:
     DenseTensorPeekFunction(std::vector<Child> children, std::vector<std::pair<int64_t,size_t>> spec);
     ~DenseTensorPeekFunction();
-    const eval::ValueType &result_type() const override { return eval::DoubleValue::double_type(); }
+    const eval::ValueType &result_type() const override { return eval::DoubleValue::shared_type(); }
     void push_children(std::vector<Child::CREF> &children) const override;
     eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
