@@ -6,7 +6,8 @@ import org.junit.Test;
 
 import java.nio.file.Files;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -58,7 +59,7 @@ public class ApplicationBuilderTest {
         }
 
         Exception e = assertThrows(RuntimeException.class, () -> builder.servicesXml(""));
-        assertEquals("build method", e.getMessage());
+        assertThat(e.getMessage(), containsString("build method"));
     }
 
     private interface TestCase {
