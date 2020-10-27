@@ -19,9 +19,7 @@ import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentMatcher;
 
 import java.io.ByteArrayOutputStream;
@@ -34,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -61,9 +60,6 @@ public class DocumentRetrieverTest {
     private MessageBusSyncSession mockedSession;
     private PrintStream oldOut;
     private PrintStream oldErr;
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setUpStreams() {
@@ -220,16 +216,14 @@ public class DocumentRetrieverTest {
     }
 
     @Test
-    public void testInvalidLoadType() throws DocumentRetrieverException {
-        exception.expect(DocumentRetrieverException.class);
-        exception.expectMessage("Loadtype with name 'undefinedloadtype' does not exist.\n");
-
+    public void testInvalidLoadType() {
         ClientParameters params = createParameters()
                 .setLoadTypeName("undefinedloadtype")
                 .build();
 
         DocumentRetriever documentRetriever = createDocumentRetriever(params);
-        documentRetriever.retrieveDocuments();
+        Exception e = assertThrows(DocumentRetrieverException.class, documentRetriever::retrieveDocuments);
+        assertEquals("Loadtype with name 'undefinedloadtype' does not exist.\n", e.getMessage());
     }
 
     @Test
@@ -250,10 +244,7 @@ public class DocumentRetrieverTest {
     }
 
     @Test
-    public void testInvalidClusterName() throws DocumentRetrieverException {
-        exception.expect(DocumentRetrieverException.class);
-        exception.expectMessage("The Vespa cluster contains the content clusters storage, not invalidclustername. Please select a valid vespa cluster.");
-
+    public void testInvalidClusterName() {
         ClientParameters params = createParameters()
                 .setCluster("invalidclustername")
                 .build();
@@ -261,20 +252,19 @@ public class DocumentRetrieverTest {
         ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef("storage", "content/cluster.foo/storage")));
 
         DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
-        documentRetriever.retrieveDocuments();
+        Exception e = assertThrows(DocumentRetrieverException.class, documentRetriever::retrieveDocuments);
+        assertEquals("The Vespa cluster contains the content clusters storage, not invalidclustername. Please select a valid vespa cluster.", e.getMessage());
     }
 
     @Test
-    public void testEmtpyClusterList() throws DocumentRetrieverException {
-        exception.expect(DocumentRetrieverException.class);
-        exception.expectMessage("The Vespa cluster does not have any content clusters declared.");
-
+    public void testEmptyClusterList() {
         ClientParameters params = createParameters()
                 .setCluster("invalidclustername")
                 .build();
 
         DocumentRetriever documentRetriever = createDocumentRetriever(params);
-        documentRetriever.retrieveDocuments();
+        Exception e = assertThrows(DocumentRetrieverException.class, documentRetriever::retrieveDocuments);
+        assertEquals("The Vespa cluster does not have any content clusters declared.", e.getMessage());
     }
 
     @Test

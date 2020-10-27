@@ -1,14 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespafeeder;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import com.yahoo.clientmetrics.RouteMetricSet;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
@@ -21,19 +13,24 @@ import com.yahoo.feedapi.DummySessionFactory;
 import com.yahoo.feedhandler.VespaFeedHandler;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespaclient.config.FeederConfig;
-
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class VespaFeederTestCase {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void testParseArgs() throws Exception {
@@ -198,10 +195,10 @@ public class VespaFeederTestCase {
     }
 
     @Test
-    public void feedMalformedJson() throws Exception {
-        exception.expect(VespaFeeder.FeedErrorException.class);
-        exception.expectMessage("JsonParseException");
-        feed("src/test/files/malformedfeed.json", false);
+    public void feedMalformedJson() {
+        Exception e = assertThrows(VespaFeeder.FeedErrorException.class,
+                     () ->feed("src/test/files/malformedfeed.json", false));
+        assertThat(e.getMessage(), containsString("JsonParseException"));
     }
 
     protected FeedFixture feed(String feed, boolean abortOnDataError) throws Exception {
@@ -213,4 +210,5 @@ public class VespaFeederTestCase {
         new VespaFeeder(arguments, feedFixture.typeManager).parseFiles(System.in, feedFixture.printStream);
         return feedFixture;
     }
+
 }

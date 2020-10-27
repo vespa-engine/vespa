@@ -2,7 +2,6 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.google.common.base.Joiner;
 import com.yahoo.collections.Tuple2;
@@ -1953,7 +1952,6 @@ public class JsonReaderTestCase {
         return fieldUpdate;
     }
 
-    // NOTE: Do not call this method multiple times from a test method as it's using the ExpectedException rule
     private void assertParserErrorMatches(String expectedError, String... json) {
         String jsonData = inputJson(json);
 

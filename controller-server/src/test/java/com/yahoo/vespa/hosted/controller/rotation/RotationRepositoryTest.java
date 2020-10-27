@@ -12,16 +12,17 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -29,9 +30,6 @@ import static org.junit.Assert.assertTrue;
  * @author mpolden
  */
 public class RotationRepositoryTest {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     private final RotationsConfig rotationsConfig = new RotationsConfig(
         new RotationsConfig.Builder()
@@ -115,10 +113,9 @@ public class RotationRepositoryTest {
         application2.submit(applicationPackage);
 
         // We're now out of rotations
-        thrown.expect(IllegalStateException.class);
-        thrown.expectMessage("out of rotations");
         var application3 = tester.newDeploymentContext("tenant3", "app3", "default");
-        application3.submit(applicationPackage);
+        Exception e = assertThrows(IllegalStateException.class, () -> application3.submit(applicationPackage));
+        assertThat(e.getMessage(), containsString("out of rotations"));
     }
 
     @Test
@@ -127,9 +124,8 @@ public class RotationRepositoryTest {
                 .globalServiceId("foo")
                 .region("us-east-3")
                 .build();
-        thrown.expect(RuntimeException.class);
-        thrown.expectMessage("less than 2 prod zones are defined");
-        application.submit(applicationPackage);
+        Exception e = assertThrows(RuntimeException.class, () -> application.submit(applicationPackage));
+        assertThat(e.getMessage(), containsString("less than 2 prod zones are defined"));
     }
 
     @Test

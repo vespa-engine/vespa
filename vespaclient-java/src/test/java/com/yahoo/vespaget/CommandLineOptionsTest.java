@@ -4,13 +4,10 @@ package com.yahoo.vespaget;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -18,26 +15,23 @@ import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for {@link CommandLineOptions}
  *
  * @author bjorncs
- * @since 5.26
  */
 public class CommandLineOptionsTest {
 
     private final InputStream emptyStream = new InputStream() {
 
         @Override
-        public int read() throws IOException {
+        public int read() {
             return -1;
         }
     };
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     private ClientParameters getParsedOptions(InputStream in, String... args) {
         CommandLineOptions options = new CommandLineOptions(in);
@@ -99,23 +93,20 @@ public class CommandLineOptionsTest {
 
     @Test
     public void testInvalidCombination3() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Field set option can not be used in combination with print ids option.");
-        getParsedOptions("--printids", "--fieldset", AllFields.NAME);
+        assertParsingOptionsFails("Field set option can not be used in combination with print ids option.",
+                                  "--printids", "--fieldset", AllFields.NAME);
     }
 
     @Test
     public void testInvalidCombination4() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Cluster and route options are mutually exclusive.");
-        getParsedOptions("--route", "dummyroute", "--cluster", "dummycluster");
+        assertParsingOptionsFails("Cluster and route options are mutually exclusive.",
+                                  "--route", "dummyroute", "--cluster", "dummycluster");
     }
 
     @Test
     public void testInvalidPriority() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Invalid priority: 16");
-        getParsedOptions("--priority", "16");
+        assertParsingOptionsFails("Invalid priority: 16",
+                                  "--priority", "16");
     }
 
     @Test
@@ -132,16 +123,14 @@ public class CommandLineOptionsTest {
 
     @Test
     public void testInvalidTraceLevel1() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Invalid tracelevel: -1");
-        getParsedOptions("--trace", "-1");
+        assertParsingOptionsFails("Invalid tracelevel: -1",
+                                  "--trace", "-1");
     }
 
     @Test
     public void testInvalidTraceLevel2() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Invalid tracelevel: 10");
-        getParsedOptions("--trace", "10");
+        assertParsingOptionsFails("Invalid tracelevel: 10",
+                                  "--trace", "10");
     }
 
     @Test
@@ -193,4 +182,10 @@ public class CommandLineOptionsTest {
 
         }
     }
+
+    private void assertParsingOptionsFails(String expectedExceptionMessage, String... commandLine) {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> getParsedOptions(commandLine));
+        assertEquals(expectedExceptionMessage, e.getMessage());
+    }
+
 }

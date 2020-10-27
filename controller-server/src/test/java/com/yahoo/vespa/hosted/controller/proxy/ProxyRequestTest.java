@@ -2,28 +2,25 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.jdisc.http.HttpRequest;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Haakon Dybdahl
  */
 public class ProxyRequestTest {
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
     @Test
-    public void testBadUri() throws Exception {
-        exception.expectMessage("Request path '/path' does not end with proxy path '/zone/v2/'");
-        testRequest("http://domain.tld/path", "/zone/v2/");
+    public void testBadUri() {
+        Exception e = assertThrows(Exception.class,
+                     () -> testRequest("http://domain.tld/path", "/zone/v2/"));
+        assertEquals("Request path '/path' does not end with proxy path '/zone/v2/'", e.getMessage());
     }
 
     @Test
