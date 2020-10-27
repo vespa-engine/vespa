@@ -275,10 +275,13 @@ public abstract class ControllerHttpClient {
                                  (rootObject.field("error-code").valid() ? " (" + rootObject.field("error-code").asString() + ")" : "") +
                                  ": " + rootObject.field("message").asString();
 
-                if (response.statusCode() / 100 == 4)
-                    throw new IllegalArgumentException(message);
+                if (response.statusCode() == 403)
+                    throw new IllegalArgumentException("Access denied for " + request + ": " + message);
 
-                throw new IOException(message);
+                if (response.statusCode() / 100 == 4)
+                    throw new IllegalArgumentException("Bad request for " + request + ": " + message);
+
+                throw new IOException("Failed " + request + ": " + message);
 
             }
             catch (IOException e) { // Catches the above, and timeout exceptions from the client.

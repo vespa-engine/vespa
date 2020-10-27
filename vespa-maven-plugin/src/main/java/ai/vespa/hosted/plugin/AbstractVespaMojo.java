@@ -61,7 +61,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
             throw e;
         }
         catch (Exception e) {
-            throw new MojoExecutionException("Execution failed for application " + name() + ":", e);
+            throw new MojoExecutionException("Execution failed for application " + name(), e);
         }
     }
 
