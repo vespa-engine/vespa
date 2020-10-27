@@ -35,6 +35,7 @@ struct DummyFeedView : public IFeedView
     void forceCommit(search::SerialNum, DoneCallback) override { }
     ILidCommitState & getUncommittedLidsTracker() override;
     bool allowEarlyAck() const override { return false; }
+    bool isDrained() const override { return true; }
 };
 
 }
