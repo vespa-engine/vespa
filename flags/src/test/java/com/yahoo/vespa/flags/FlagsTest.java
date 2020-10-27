@@ -4,6 +4,8 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.yahoo.vespa.flags.custom.HostResources;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -105,6 +107,15 @@ public class FlagsTest {
 
         testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, "desc", "mod"),
                 List.of(instance));
+    }
+
+    @Test
+    public void testSharedHostFlag() {
+        SharedHost sharedHost = new SharedHost(List.of(new HostResources(
+                4.0, 16.0, 50.0, null,
+                "fast", "local",
+                10)));
+        testGeneric(Flags.SHARED_HOST, sharedHost);
     }
 
     private <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T value) {

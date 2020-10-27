@@ -325,7 +325,8 @@ public class DynamicProvisioningMaintainerTest {
         }
 
         @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion) {
+        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
+                                                    ApplicationId applicationId, Version osVersion, boolean forceExclusive) {
             Flavor hostFlavor = flavors.getFlavors().stream()
                                        .filter(f -> !f.isDocker())
                                        .filter(f -> f.resources().compatibleWith(resources))

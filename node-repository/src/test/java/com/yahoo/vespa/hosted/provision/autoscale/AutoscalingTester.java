@@ -276,7 +276,9 @@ class AutoscalingTester {
         }
 
         @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion) {
+        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
+                                                    ApplicationId applicationId, Version osVersion,
+                                                    boolean forceExclusive) {
             Flavor hostFlavor = hostFlavors.stream().filter(f -> matches(f, resources)).findAny()
                                            .orElseThrow(() -> new RuntimeException("No flavor matching " + resources + ". Flavors: " + hostFlavors));
 

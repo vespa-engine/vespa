@@ -88,7 +88,7 @@ public class GroupPreparer {
                             .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
                                                                                  deficit.getFlavor(),
                                                                                  application,
-                                                                                 osVersion))
+                                                                                 osVersion, false))
                             .orElseGet(List::of);
 
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that
