@@ -448,10 +448,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             Set<String> functionNames = rankProfile.getFunctions().keySet();
             if (functionNames.isEmpty()) return;
             for (OnnxModel onnxModel: rankProfile.getSearch().onnxModels().asMap().values()) {
-                for (Map.Entry<String, String> mapping : onnxModel.getInputMap().entrySet()) {
-                    String source = mapping.getValue();
+                for (OnnxModel.OnnxNameMapping mapping : onnxModel.getInputMap()) {
+                    String source = mapping.getVespaName();
                     if (functionNames.contains(source)) {
-                        onnxModel.addInputNameMapping(mapping.getKey(), "rankingExpression(" + source + ")");
+                        mapping.setVespaName("rankingExpression(" + source + ")");
                     }
                 }
             }
@@ -462,7 +462,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             Set<ReferenceNode> replacedSummaryFeatures = new HashSet<>();
             for (Iterator<ReferenceNode> i = summaryFeatures.iterator(); i.hasNext(); ) {
                 ReferenceNode referenceNode = i.next();
-                ReferenceNode replacedNode = (ReferenceNode) OnnxModelTransformer.transformFeature(referenceNode, rankProfile);
+                ReferenceNode replacedNode = OnnxModelTransformer.transformFeature(referenceNode, rankProfile.getSearch());
                 if (referenceNode != replacedNode) {
                     replacedSummaryFeatures.add(replacedNode);
                     i.remove();
