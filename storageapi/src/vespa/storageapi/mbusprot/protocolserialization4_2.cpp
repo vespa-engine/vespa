@@ -193,7 +193,7 @@ void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::ApplyBucketDiffCo
         buf.putShort(nodes[i].index);
         buf.putBoolean(nodes[i].sourceOnly);
     }
-    buf.putInt(msg.getMaxBufferSize());
+    buf.putInt(0x400000);
     const std::vector<api::ApplyBucketDiffCommand::Entry>& entries(msg.getDiff());
     buf.putInt(entries.size());
     for (uint32_t i=0; i<entries.size(); ++i) {
@@ -220,12 +220,12 @@ ProtocolSerialization4_2::onDecodeApplyBucketDiffCommand(BBuf& buf) const
         bool sourceOnly = SH::getBoolean(buf);
         nodes.push_back(Node(index, sourceOnly));
     }
-    uint32_t maxBufferSize(SH::getInt(buf));
-    auto msg = std::make_unique<api::ApplyBucketDiffCommand>(bucket, nodes, maxBufferSize);
+    (void) SH::getInt(buf); // Unused field
+    auto msg = std::make_unique<api::ApplyBucketDiffCommand>(bucket, nodes);
     std::vector<api::ApplyBucketDiffCommand::Entry>& entries(msg->getDiff());
     uint32_t entryCount = SH::getInt(buf);
     if (entryCount > buf.getRemaining()) {
-            // Trigger out of bounds exception rather than out of memory error
+        // Trigger out of bounds exception rather than out of memory error
         buf.incPos(entryCount);
     }
     entries.resize(entryCount);

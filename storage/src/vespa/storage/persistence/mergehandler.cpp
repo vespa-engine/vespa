@@ -17,14 +17,12 @@ namespace storage {
 MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                            const vespalib::string & clusterName, const framework::Clock & clock,
                            uint32_t maxChunkSize,
-                           bool enableMergeLocalNodeChooseDocsOptimalization,
                            uint32_t commonMergeChainOptimalizationMinimumSize)
     : _clock(clock),
       _clusterName(clusterName),
       _env(env),
       _spi(spi),
       _maxChunkSize(maxChunkSize),
-      _enableMergeLocalNodeChooseDocsOptimalization(enableMergeLocalNodeChooseDocsOptimalization),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize)
 {
 }
@@ -653,25 +651,13 @@ MergeHandler::applyDiffLocally(
 }
 
 namespace {
-    void findCandidates(const document::BucketId& id, MergeStatus& status,
-                        bool constrictHasMask, uint16_t hasMask,
-                        uint16_t newHasMask,
-                        uint32_t maxSize, api::ApplyBucketDiffCommand& cmd)
+    void findCandidates(MergeStatus& status, bool constrictHasMask, uint16_t hasMask,
+                        uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
     {
         uint32_t chunkSize = 0;
         for (const auto& entry : status.diff) {
             if (constrictHasMask && entry._hasMask != hasMask) {
                 continue;
-            }
-            if (chunkSize != 0 &&
-                chunkSize + entry._bodySize + entry._headerSize > maxSize)
-            {
-                LOG(spam, "Merge of %s used %d bytes, max is %d. Will "
-                          "fetch in next merge round.",
-                          id.toString().c_str(),
-                          chunkSize + entry._bodySize + entry._headerSize,
-                          maxSize);
-                break;
             }
             chunkSize += entry._bodySize + entry._headerSize;
             cmd.getDiff().emplace_back(entry);
@@ -717,21 +703,12 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
         nodes.push_back(status.nodeList.back());
         assert(nodes.size() > 1);
 
-        // Add all the metadata, and thus use big limit. Max
-        // data to fetch parameter will control amount added.
-        uint32_t maxSize =
-            (_enableMergeLocalNodeChooseDocsOptimalization
-             ? std::numeric_limits<uint32_t>::max()
-             : _maxChunkSize);
-
-        cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes, maxSize);
+        cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes);
         cmd->setAddress(createAddress(_clusterName, nodes[1].index));
-        findCandidates(bucket.getBucketId(),
-                       status,
+        findCandidates(status,
                        true,
                        1 << (status.nodeList.size() - 1),
                        1 << (nodes.size() - 1),
-                       maxSize,
                        *cmd);
         if (cmd->getDiff().size() != 0) break;
         cmd.reset();
@@ -788,15 +765,11 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
                     newMask = 1 << (nodes.size() - 1);
                 }
                 assert(nodes.size() > 1);
-                uint32_t maxSize =
-                    (_enableMergeLocalNodeChooseDocsOptimalization
-                     ? std::numeric_limits<uint32_t>::max()
-                     : _maxChunkSize);
-                cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes, maxSize);
+                cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes);
                 cmd->setAddress(createAddress(_clusterName, nodes[1].index));
                 // Add all the metadata, and thus use big limit. Max
                 // data to fetch parameter will control amount added.
-                findCandidates(bucket.getBucketId(), status, true, e.first, newMask, maxSize, *cmd);
+                findCandidates(status, true, e.first, newMask, *cmd);
                 break;
             }
         }
@@ -805,9 +778,9 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     // If we found no group big enough to handle on its own, do a common
     // merge to merge the remaining data.
     if ( ! cmd ) {
-        cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), status.nodeList, _maxChunkSize);
+        cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), status.nodeList);
         cmd->setAddress(createAddress(_clusterName, status.nodeList[1].index));
-        findCandidates(bucket.getBucketId(), status, false, 0, 0, _maxChunkSize, *cmd);
+        findCandidates(status, false, 0, 0, *cmd);
     }
     cmd->setPriority(status.context.getPriority());
     cmd->setTimeout(status.timeout);
@@ -1312,7 +1285,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
 
         LOG(spam, "Sending ApplyBucketDiff for %s on to node %d",
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index);
-        auto cmd2 = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), cmd.getNodes(), cmd.getMaxBufferSize());
+        auto cmd2 = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), cmd.getNodes());
         cmd2->setAddress(createAddress(_clusterName, cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(cmd.getDiff());
         cmd2->setPriority(cmd.getPriority());

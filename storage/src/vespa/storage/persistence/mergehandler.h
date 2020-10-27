@@ -37,7 +37,6 @@ public:
     MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                  const vespalib::string & clusterName, const framework::Clock & clock,
                  uint32_t maxChunkSize = 4190208,
-                 bool enableMergeLocalNodeChooseDocsOptimalization = true,
                  uint32_t commonMergeChainOptimalizationMinimumSize = 64);
 
     bool buildBucketInfoList(
@@ -70,9 +69,8 @@ private:
     const vespalib::string   &_clusterName;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
-    uint32_t                  _maxChunkSize;
-    bool                      _enableMergeLocalNodeChooseDocsOptimalization;
-    uint32_t                  _commonMergeChainOptimalizationMinimumSize;
+    const uint32_t            _maxChunkSize;
+    const uint32_t            _commonMergeChainOptimalizationMinimumSize;
 
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,

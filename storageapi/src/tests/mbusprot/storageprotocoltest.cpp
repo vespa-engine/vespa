@@ -688,7 +688,7 @@ TEST_P(StorageProtocolTest, apply_bucket_diff) {
     nodes.push_back(13);
     std::vector<ApplyBucketDiffCommand::Entry> entries = {dummy_apply_entry()};
 
-    auto cmd = std::make_shared<ApplyBucketDiffCommand>(_bucket, nodes, 1234);
+    auto cmd = std::make_shared<ApplyBucketDiffCommand>(_bucket, nodes);
     cmd->getDiff() = entries;
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_bucket, cmd2->getBucket());
@@ -698,7 +698,6 @@ TEST_P(StorageProtocolTest, apply_bucket_diff) {
 
     EXPECT_EQ(nodes, reply2->getNodes());
     EXPECT_EQ(entries, reply2->getDiff());
-    EXPECT_EQ(1234u, reply2->getMaxBufferSize());
 }
 
 namespace {
