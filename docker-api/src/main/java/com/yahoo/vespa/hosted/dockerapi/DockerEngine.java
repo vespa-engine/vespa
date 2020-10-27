@@ -384,7 +384,7 @@ public class DockerEngine implements ContainerEngine {
 
         private void sampleDuration() {
             Gauge gauge = metrics.declareGauge("docker.imagePullDurationSecs",
-                                               new Dimensions(Map.of("tag", dockerImage.tagAsVersion().toFullString())));
+                                               new Dimensions(Map.of("image", dockerImage.asString())));
             Duration pullDuration = Duration.between(startedAt, clock.instant());
             gauge.sample(pullDuration.getSeconds());
         }

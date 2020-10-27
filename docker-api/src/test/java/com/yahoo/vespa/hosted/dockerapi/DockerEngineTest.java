@@ -104,7 +104,7 @@ public class DockerEngineTest {
         assertTrue(docker.imageIsDownloaded(image));
         clock.advance(Duration.ofMinutes(10));
         resultCallback.getValue().onComplete();
-        assertPullDuration(Duration.ofMinutes(10), "1.2.3");
+        assertPullDuration(Duration.ofMinutes(10), image.asString());
         assertFalse(docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
     }
 
@@ -134,12 +134,12 @@ public class DockerEngineTest {
         assertTrue("Should return true, new pull scheduled", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
     }
 
-    private void assertPullDuration(Duration duration, String tag) {
-        Optional<DimensionMetrics> byTag = metrics.getDefaultMetrics().stream()
-                                                  .filter(metrics -> tag.equals(metrics.getDimensions().asMap().get("tag")))
-                                                  .findFirst();
-        assertTrue("Found metric for tag=" + tag, byTag.isPresent());
-        Number durationInSecs = byTag.get().getMetrics().get("docker.imagePullDurationSecs");
+    private void assertPullDuration(Duration duration, String image) {
+        Optional<DimensionMetrics> byImage = metrics.getDefaultMetrics().stream()
+                                                         .filter(metrics -> image.equals(metrics.getDimensions().asMap().get("image")))
+                                                         .findFirst();
+        assertTrue("Found metric for image=" + image, byImage.isPresent());
+        Number durationInSecs = byImage.get().getMetrics().get("docker.imagePullDurationSecs");
         assertNotNull(durationInSecs);
         assertEquals(duration, Duration.ofSeconds(durationInSecs.longValue()));
     }
