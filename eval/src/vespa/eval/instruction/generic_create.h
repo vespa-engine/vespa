@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <map>
 
 namespace vespalib { class Stash; }
 namespace vespalib::eval { struct ValueBuilderFactory; }
@@ -14,8 +15,10 @@ namespace vespalib::eval::instruction {
 //-----------------------------------------------------------------------------
 
 struct GenericCreate {
+    using SpecMap = std::map<TensorSpec::Address, size_t>;
+
     static InterpretedFunction::Instruction
-    make_instruction(const std::vector<TensorSpec::Address> &addresses,
+    make_instruction(const SpecMap &spec,
                      const ValueType &res_type,
                      const ValueBuilderFactory &factory,
                      Stash &stash);

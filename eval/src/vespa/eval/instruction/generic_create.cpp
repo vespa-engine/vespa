@@ -37,22 +37,22 @@ struct CreateParam {
         return iter->second;
     }
 
-    CreateParam(const std::vector<TensorSpec::Address> &addresses,
+    CreateParam(const GenericCreate::SpecMap &spec_in,
                 const ValueType &res_type_in,
                 const ValueBuilderFactory &factory_in)
         : res_type(res_type_in),
           num_mapped_dims(res_type.count_mapped_dimensions()),
           dense_subspace_size(res_type.dense_subspace_size()),
-          num_children(addresses.size()),
+          num_children(spec_in.size()),
           my_spec(),
           factory(factory_in)
     {
-        size_t child_idx = 0;
-        for (const auto & addr : addresses) {
+        size_t last_child = num_children - 1;
+        for (const auto & kv : spec_in) {
             Key sparse_addr;
             size_t dense_idx = 0;
             for (const auto &dim : res_type.dimensions()) {
-                auto iter = addr.find(dim.name);
+                auto iter = kv.first.find(dim.name);
                 if (dim.is_mapped()) {
                     sparse_addr.push_back(iter->second.name);
                 } else {
@@ -61,7 +61,9 @@ struct CreateParam {
                     dense_idx += iter->second.index;
                 }
             }
-            indexes(sparse_addr)[dense_idx] = child_idx++;
+            // note: reverse order of children on stack
+            size_t stack_idx = last_child - kv.second;
+            indexes(sparse_addr)[dense_idx] = stack_idx;
         }
     }
 };
@@ -80,11 +82,12 @@ void my_generic_create_op(State &state, uint64_t param_in) {
             sparse_addr.emplace_back(label);
         }
         T *dst = builder->add_subspace(sparse_addr).begin();
-        for (size_t child_idx : kv.second) {
-            if (child_idx == CreateParam::npos) {
+        for (size_t stack_idx : kv.second) {
+            if (stack_idx == CreateParam::npos) {
                 *dst++ = T{};
             } else {
-                *dst++ = state.peek(child_idx).as_double();
+                const Value &child = state.peek(stack_idx);
+                *dst++ = child.as_double();
             }
         }
     }        
@@ -103,12 +106,12 @@ struct SelectGenericCreateOp {
 } // namespace <unnamed>
 
 Instruction
-GenericCreate::make_instruction(const std::vector<TensorSpec::Address> &addresses,
+GenericCreate::make_instruction(const SpecMap &spec,
                                 const ValueType &res_type,
                                 const ValueBuilderFactory &factory,
                                 Stash &stash)
 {
-    const auto &param = stash.create<CreateParam>(addresses, res_type, factory);
+    const auto &param = stash.create<CreateParam>(spec, res_type, factory);
     auto fun = typify_invoke<1,TypifyCellType,SelectGenericCreateOp>(res_type.cell_type());
     return Instruction(fun, wrap_param<CreateParam>(param));
 }

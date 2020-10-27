@@ -395,11 +395,12 @@ Instruction
 Create::compile_self(EngineOrFactory engine, Stash &stash) const
 {
     if (engine.is_factory()) {
-        std::vector<TensorSpec::Address> addresses;
-        for (auto pos = spec().rbegin(); pos != spec().rend(); ++pos) {
-            addresses.push_back(pos->first);
+        std::map<TensorSpec::Address, size_t> generic_spec;
+        size_t child_idx = 0;
+        for (const auto & kv : spec()) {
+            generic_spec[kv.first] = child_idx++;
         }
-        return instruction::GenericCreate::make_instruction(addresses, result_type(), engine.factory(), stash);
+        return instruction::GenericCreate::make_instruction(generic_spec, result_type(), engine.factory(), stash);
     }
     return Instruction(op_tensor_create, wrap_param<Create>(*this));
 }
