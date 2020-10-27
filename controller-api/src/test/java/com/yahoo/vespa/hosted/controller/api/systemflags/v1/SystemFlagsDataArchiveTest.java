@@ -1,5 +1,4 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 
 import com.yahoo.config.provision.Environment;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.FlagData;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedInputStream;
@@ -32,7 +30,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -47,9 +48,6 @@ public class SystemFlagsDataArchiveTest {
 
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @Rule
-    public final ExpectedException expectedException = ExpectedException.none();
 
     private static final FlagsTarget mainControllerTarget = FlagsTarget.forController(SYSTEM);
     private static final FlagsTarget prodUsWestCfgTarget = createConfigserverTarget(Environment.prod, "us-west-1");
@@ -91,9 +89,8 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     public void duplicated_flagdata_is_detected() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("contains redundant flag data for id 'my-test-flag' already set in another directory!");
-        var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-multi-level-with-duplicated-flagdata/"));
+        assertWhenCreatingSystemFlagsDataArchive("src/test/resources/system-flags-multi-level-with-duplicated-flagdata/",
+                                                 "contains redundant flag data for id 'my-test-flag' already set in another directory!");
     }
 
     @Test
@@ -107,29 +104,28 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     public void throws_exception_on_non_json_file() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')");
-        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-invalid-file-name/"));
+        assertWhenCreatingSystemFlagsDataArchive("src/test/resources/system-flags-with-invalid-file-name/",
+                                                 "Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')");
     }
 
     @Test
     public void throws_exception_on_unknown_file() {
         SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-file-name/"));
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json");
-        archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                     () -> archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget)));
+        assertEquals("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json", e.getMessage());
     }
 
     @Test
     public void throws_on_unknown_field() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(
+        String exceptionMessage =
                 "flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: after removing any comment fields the JSON is:\n" +
                 "  {\"id\":\"my-test-flag\",\"rules\":[{\"condition\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"foo.com\"]}],\"value\":\"default\"}]}\n" +
                 "but deserializing this ended up with a JSON that are missing some of the fields:\n" +
                 "  {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}\n" +
-                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
-        SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax";
+        assertWhenCreatingSystemFlagsDataArchive("src/test/resources/system-flags-with-unknown-field-name/",
+                                                 exceptionMessage);
     }
 
     @Test
@@ -234,6 +230,11 @@ public class SystemFlagsDataArchiveTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Non-string email address: 123", e.getMessage());
         }
+    }
+
+    private static void assertWhenCreatingSystemFlagsDataArchive(String directory, String expectedExceptionMessage) {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> SystemFlagsDataArchive.fromDirectory(Paths.get(directory)));
+        assertThat(e.getMessage(), containsString(expectedExceptionMessage));
     }
 
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {
