@@ -47,6 +47,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -71,6 +72,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
@@ -1682,6 +1684,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     keyObject.setString("user", user.getName());
                 });
 
+                var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
+                var usedQuota = applications.stream()
+                        .map(com.yahoo.vespa.hosted.controller.Application::quotaUsage)
+                        .reduce(QuotaUsage.none, QuotaUsage::add);
+
+                toSlime(tenantQuota, usedQuota, object.setObject("quota"));
+
                 break;
             }
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
@@ -1697,6 +1706,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 else
                     toSlime(instance.id(), applicationArray.addObject(), request);
         }
+    }
+
+    private void toSlime(Quota quota, QuotaUsage usage, Cursor object) {
+        quota.budget().ifPresentOrElse(
+                budget -> object.setDouble("budget", budget.doubleValue()),
+                () -> object.setNix("budget")
+        );
+        object.setDouble("budgetUsed", usage.rate());
+
+        // TODO: Retire when we no longer use maxClusterSize as a meaningful limit
+        quota.maxClusterSize().ifPresent(maxClusterSize -> object.setLong("clusterSize", maxClusterSize));
     }
 
     private void toSlime(ClusterResources resources, Cursor object) {
