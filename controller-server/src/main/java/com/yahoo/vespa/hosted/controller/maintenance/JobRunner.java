@@ -90,6 +90,9 @@ public class JobRunner extends ControllerMaintainer {
             controller().jobController().run(id)
                         .ifPresent(run -> controller().applications().deploymentTrigger().notifyOfCompletion(id.application()));
         }
+        catch (TimeoutException e) {
+            // One of the steps are still being run — that's ok, we'll try to finish the run again later.
+        }
         catch (Exception e) {
             log.log(Level.WARNING, "Exception finishing " + id, e);
         }

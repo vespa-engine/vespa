@@ -55,6 +55,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -353,7 +354,10 @@ public class JobController {
     }
 
     /** Changes the status of the given run to inactive, and stores it as a historic run. */
-    public void finish(RunId id) {
+    public void finish(RunId id) throws TimeoutException {
+        // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
+        locked(id.application(), id.type(), report, __ -> { });
+
         locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
             Run finishedRun = run.finished(controller.clock().instant());
             locked(id.application(), id.type(), runs -> {
@@ -588,7 +592,7 @@ public class JobController {
     /** Locks the given step and checks none of its prerequisites are running, then performs the given actions. */
     public void locked(ApplicationId id, JobType type, Step step, Consumer<LockedStep> action) throws TimeoutException {
         try (Lock lock = curator.lock(id, type, step)) {
-            for (Step prerequisite : step.prerequisites()) // Check that no prerequisite is still running.
+            for (Step prerequisite : step.allPrerequisites()) // Check that no prerequisite is still running.
                 try (Lock __ = curator.lock(id, type, prerequisite)) { ; }
 
             action.accept(new LockedStep(lock, step));

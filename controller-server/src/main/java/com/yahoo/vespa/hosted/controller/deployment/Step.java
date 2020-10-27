@@ -1,9 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Steps that make up a deployment job. See {@link JobProfile} for preset profiles.
@@ -70,16 +72,28 @@ public enum Step {
 
     private final boolean alwaysRun;
     private final List<Step> prerequisites;
+    private final List<Step> allPrerequisites;
 
     Step(boolean alwaysRun, Step... prerequisites) {
         this.alwaysRun = alwaysRun;
-        this.prerequisites = ImmutableList.copyOf(prerequisites);
+        this.prerequisites = List.of(prerequisites);
+        this.allPrerequisites = Stream.concat(Stream.of(prerequisites),
+                                              Stream.of(prerequisites).flatMap(pre -> pre.allPrerequisites().stream()))
+                                      .sorted()
+                                      .distinct()
+                                      .collect(toUnmodifiableList());
     }
 
     /** Returns whether this is a cleanup-step, and should always run, regardless of job outcome, when specified in a job. */
     public boolean alwaysRun() { return alwaysRun; }
 
-    /** Returns the prerequisite steps that must be successfully completed before this, assuming the job contains these steps. */
+    /** Returns all prerequisite steps for this, recursively. */
+    public List<Step> allPrerequisites() {
+        return allPrerequisites;
+    }
+
+
+    /** Returns the direct prerequisite steps that must be completed before this, assuming the job contains these steps. */
     public List<Step> prerequisites() { return prerequisites; }
 
 
