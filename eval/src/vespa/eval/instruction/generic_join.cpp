@@ -114,7 +114,7 @@ void my_dense_join_op(State &state, uint64_t param_in) {
     Fun fun(param.function);
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
-    ArrayRef<OCT> out_cells = state.stash.create_array<OCT>(param.dense_plan.out_size);
+    ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(param.dense_plan.out_size);
     OCT *dst = out_cells.begin();
     auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs_cells[lhs_idx], rhs_cells[rhs_idx]); };
     param.dense_plan.execute(0, 0, join_cells);

@@ -5,6 +5,7 @@
 #include "inline_operation.h"
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/alloc.h>
 
 namespace vespalib::eval {
 
@@ -165,33 +166,78 @@ struct FastValueIndex final : Value::Index {
 //-----------------------------------------------------------------------------
 
 template <typename T>
+struct FastCells {
+    static constexpr size_t elem_size = sizeof(T);
+    size_t capacity;
+    size_t size;
+    void *memory;
+    FastCells(size_t initial_capacity)
+        : capacity(roundUp2inN(initial_capacity)),
+          size(0),
+          memory(malloc(elem_size * capacity))
+    {
+        static_assert(std::is_trivially_copyable_v<T>);
+        static_assert(can_skip_destruction<T>::value);
+    }
+    ~FastCells() {
+        free(memory);
+    }
+    void ensure_free(size_t need) {
+        if (__builtin_expect((size + need) > capacity, false)) {
+            capacity = roundUp2inN(size + need);
+            void *new_memory = malloc(elem_size * capacity);
+            memcpy(new_memory, memory, elem_size * size);
+            free(memory);
+            memory = new_memory;
+        }
+    }
+    constexpr T *get(size_t offset) const {
+        return reinterpret_cast<T*>(memory) + offset;
+    }
+    void push_back_fast(T value) {
+        *get(size++) = value;
+    }
+    ArrayRef<T> add_cells(size_t n) {
+        size_t old_size = size;
+        ensure_free(n);
+        size += n;
+        return ArrayRef<T>(get(old_size), n);
+    }
+    MemoryUsage estimate_extra_memory_usage() const {
+        MemoryUsage usage;
+        usage.incAllocatedBytes(elem_size * capacity);
+        usage.incUsedBytes(elem_size * size);
+        return usage;
+    }
+};
+
+//-----------------------------------------------------------------------------
+
+template <typename T>
 struct FastValue final : Value, ValueBuilder<T> {
 
     ValueType my_type;
     size_t my_subspace_size;
     FastValueIndex my_index;
-    std::vector<T> my_cells;
+    FastCells<T> my_cells;
 
     FastValue(const ValueType &type_in, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in)
-        : my_type(type_in), my_subspace_size(subspace_size_in), my_index(num_mapped_dims_in, expected_subspaces_in), my_cells()
-    {
-        my_cells.reserve(subspace_size_in * expected_subspaces_in);
-    }
+        : my_type(type_in), my_subspace_size(subspace_size_in),
+          my_index(num_mapped_dims_in, expected_subspaces_in),
+          my_cells(subspace_size_in * expected_subspaces_in) {}
     ~FastValue() override;
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return my_index; }
-    TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(my_cells)); }
+    TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override {
-        size_t old_size = my_cells.size();
         my_index.map.add_mapping(addr);
-        my_cells.resize(old_size + my_subspace_size);
-        return ArrayRef<T>(&my_cells[old_size], my_subspace_size);
+        return my_cells.add_cells(my_subspace_size);
     }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (my_index.map.num_dims() == 0) {
             assert(my_index.map.size() == 1);
         }
-        assert(my_cells.size() == (my_index.map.size() * my_subspace_size));
+        assert(my_cells.size == (my_index.map.size() * my_subspace_size));
         ValueBuilder<T>* me = this;
         assert(me == self.get());
         self.release();
@@ -199,12 +245,46 @@ struct FastValue final : Value, ValueBuilder<T> {
     }
     MemoryUsage get_memory_usage() const override {
         MemoryUsage usage = self_memory_usage<FastValue<T>>();
-        usage.merge(vector_extra_memory_usage(my_cells));
         usage.merge(my_index.map.estimate_extra_memory_usage());
+        usage.merge(my_cells.estimate_extra_memory_usage());
         return usage;
     }
 };
 template <typename T> FastValue<T>::~FastValue() = default;
+
+//-----------------------------------------------------------------------------
+
+template <typename T>
+struct FastDenseValue final : Value, ValueBuilder<T> {
+
+    ValueType my_type;
+    FastCells<T> my_cells;
+
+    FastDenseValue(const ValueType &type_in, size_t subspace_size_in)
+        : my_type(type_in), my_cells(subspace_size_in)
+    {
+        my_cells.add_cells(subspace_size_in);
+    }
+    ~FastDenseValue() override;
+    const ValueType &type() const override { return my_type; }
+    const Value::Index &index() const override { return TrivialIndex::get(); }
+    TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
+    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) override {
+        return ArrayRef<T>(my_cells.get(0), my_cells.size);
+    }
+    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
+        ValueBuilder<T>* me = this;
+        assert(me == self.get());
+        self.release();
+        return std::unique_ptr<Value>(this);
+    }
+    MemoryUsage get_memory_usage() const override {
+        MemoryUsage usage = self_memory_usage<FastValue<T>>();
+        usage.merge(my_cells.estimate_extra_memory_usage());
+        return usage;
+    }
+};
+template <typename T> FastDenseValue<T>::~FastDenseValue() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -220,7 +300,7 @@ FastValueIndex::sparse_full_overlap_join(const ValueType &res_type, const Fun &f
                                auto rhs_subspace = rhs.map.lookup(hash);
                                if (rhs_subspace != FastSparseMap::npos()) {
                                    result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
-                                   result.my_cells.push_back(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
+                                   result.my_cells.push_back_fast(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
                                }
                            });
     return result;
@@ -240,9 +320,9 @@ FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
                                auto rhs_subspace = rhs.map.lookup(hash);
                                result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
                                if (rhs_subspace != FastSparseMap::npos()) {
-                                   result.my_cells.push_back(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
+                                   result.my_cells.push_back_fast(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
                                } else {
-                                   result.my_cells.push_back(lhs_cells[lhs_subspace]);
+                                   result.my_cells.push_back_fast(lhs_cells[lhs_subspace]);
                                }
                            });
     rhs.map.each_map_entry([&](auto rhs_subspace, auto hash)
@@ -250,7 +330,7 @@ FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
                                auto lhs_subspace = lhs.map.lookup(hash);
                                if (lhs_subspace == FastSparseMap::npos()) {
                                    result.my_index.map.add_mapping(rhs.map.make_addr(rhs_subspace), hash);
-                                   result.my_cells.push_back(rhs_cells[rhs_subspace]);
+                                   result.my_cells.push_back_fast(rhs_cells[rhs_subspace]);
                                }
                            });
 

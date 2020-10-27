@@ -95,7 +95,7 @@ void my_dense_simple_concat_op(State &state, uint64_t param_in) {
     const Value &rhs = state.peek(0);
     const auto a = lhs.cells().typify<LCT>();
     const auto b = rhs.cells().typify<RCT>();
-    ArrayRef<OCT> result = state.stash.create_array<OCT>(a.size() + b.size());
+    ArrayRef<OCT> result = state.stash.create_uninitialized_array<OCT>(a.size() + b.size());
     auto pos = result.begin();
     for (size_t i = 0; i < a.size(); ++i) {
         *pos++ = a[i];
