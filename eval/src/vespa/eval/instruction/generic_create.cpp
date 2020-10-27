@@ -2,6 +2,7 @@
 
 #include "generic_create.h"
 #include <vespa/eval/eval/wrap_param.h>
+#include <vespa/eval/eval/array_array_map.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <cassert>
@@ -16,25 +17,24 @@ using Instruction = InterpretedFunction::Instruction;
 namespace {
 
 struct CreateParam {
-    using Key = std::vector<vespalib::string>;
-    using Indexes = std::vector<size_t>;
-
     const ValueType res_type;
     size_t num_mapped_dims;
     size_t dense_subspace_size;
     size_t num_children;
-    std::map<Key,Indexes> my_spec;
+    ArrayArrayMap<vespalib::string,size_t> my_spec;
     const ValueBuilderFactory &factory;
 
     static constexpr size_t npos = -1;
 
-    Indexes &indexes(Key key) {
-        auto iter = my_spec.find(key);
-        if (iter == my_spec.end()) {
-            Indexes empty(dense_subspace_size, npos);
-            iter = my_spec.emplace(key, empty).first;
+    ArrayRef<size_t> indexes(ConstArrayRef<vespalib::string> key) {
+        auto [tag, first_time] = my_spec.lookup_or_add_entry(key);
+        auto rv = my_spec.get_values(tag);
+        if (first_time) {
+            for (auto & v : rv) {
+                v = npos;
+            }
         }
-        return iter->second;
+        return rv;
     }
 
     CreateParam(const ValueType &res_type_in,
@@ -44,12 +44,12 @@ struct CreateParam {
           num_mapped_dims(res_type.count_mapped_dimensions()),
           dense_subspace_size(res_type.dense_subspace_size()),
           num_children(spec_in.size()),
-          my_spec(),
+          my_spec(num_mapped_dims, dense_subspace_size, spec_in.size() / dense_subspace_size),
           factory(factory_in)
     {
         size_t last_child = num_children - 1;
         for (const auto & entry : spec_in) {
-            Key sparse_key;
+            std::vector<vespalib::string> sparse_key;
             size_t dense_key = 0;
             auto dim = res_type.dimensions().begin();
             auto binding = entry.first.begin();
@@ -81,21 +81,22 @@ void my_generic_create_op(State &state, uint64_t param_in) {
                                                          param.dense_subspace_size,
                                                          param.my_spec.size());
     std::vector<vespalib::stringref> sparse_addr;
-    for (const auto & kv : param.my_spec) {
-        sparse_addr.clear();
-        for (const auto & label : kv.first) {
-            sparse_addr.emplace_back(label);
-        }
-        T *dst = builder->add_subspace(sparse_addr).begin();
-        for (size_t stack_idx : kv.second) {
-            if (stack_idx == CreateParam::npos) {
-                *dst++ = T{};
-            } else {
-                const Value &child = state.peek(stack_idx);
-                *dst++ = child.as_double();
+    param.my_spec.each_entry([&](const auto &key, const auto &values)
+        {
+            sparse_addr.clear();
+            for (const auto & label : key) {
+                sparse_addr.emplace_back(label);
             }
-        }
-    }        
+            T *dst = builder->add_subspace(sparse_addr).begin();
+            for (size_t stack_idx : values) {
+                if (stack_idx == CreateParam::npos) {
+                    *dst++ = T{};
+                } else {
+                    const Value &child = state.peek(stack_idx);
+                    *dst++ = child.as_double();
+                }
+            }
+        });
     const Value &result = *state.stash.create<Value::UP>(builder->build(std::move(builder)));
     state.pop_n_push(param.num_children, result);
 };
