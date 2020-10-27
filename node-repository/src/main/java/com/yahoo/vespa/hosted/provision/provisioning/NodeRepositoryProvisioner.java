@@ -121,21 +121,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     @Override
-    // TODO(mpolden): Remove
-    public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-        try (var lock = lock(application)) {
-            activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
-        }
-    }
-
-    @Override
-    // TODO: Remove after November 2020
-    public void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock) {
-        validate(hosts);
-        activator.activate(hosts, 0, new ApplicationTransaction(lock, transaction));
-    }
-
-    @Override
     public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
         validate(hosts);
         activator.activate(hosts, context.generation(), transaction);
@@ -144,20 +129,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Override
     public void restart(ApplicationId application, HostFilter filter) {
         nodeRepository.restart(ApplicationFilter.from(application, NodeHostFilter.from(filter)));
-    }
-
-    // TODO(mpolden): Remove
-    @Override
-    public void remove(NestedTransaction transaction, ApplicationId application) {
-        try (var lock = lock(application)) {
-            remove(new ApplicationTransaction(lock, transaction));
-        }
-    }
-
-    // TODO: Remove after November 2020
-    @Override
-    public void remove(NestedTransaction transaction, ProvisionLock lock) {
-        remove(new ApplicationTransaction(lock, transaction));
     }
 
     @Override

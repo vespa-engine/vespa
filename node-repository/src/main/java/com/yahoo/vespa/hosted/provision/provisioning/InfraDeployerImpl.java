@@ -132,7 +132,7 @@ public class InfraDeployerImpl implements InfraDeployer {
         if (duperModel.infraApplicationIsActive(applicationId)) {
             try (var lock = provisioner.lock(applicationId)) {
                 NestedTransaction nestedTransaction = new NestedTransaction();
-                provisioner.remove(nestedTransaction, lock);
+                provisioner.remove(new ApplicationTransaction(lock, nestedTransaction));
                 nestedTransaction.commit();
                 duperModel.infraApplicationRemoved(applicationId);
             }

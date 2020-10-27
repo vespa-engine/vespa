@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.yahoo.transaction.NestedTransaction;
-
 import java.util.Collection;
 import java.util.List;
 
@@ -24,46 +22,8 @@ public interface Provisioner {
      */
     List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
 
-    /**
-     * Activates the allocation of nodes to this application captured in the hosts argument.
-     *
-     * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
-     * @param application The {@link ApplicationId} that was activated.
-     * @param hosts a set of {@link HostSpec}.
-     */
-    // TODO(mpolden): Remove
-    void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts);
-
-    /**
-     * Activates the allocation of nodes to this application captured in the hosts argument.
-     *
-     * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
-     * @param hosts       a set of {@link HostSpec}.
-     * @param lock        A provision lock for the relevant application. This must be held when calling this.
-     */
-    // TODO: Remove after November 2020
-    void activate(NestedTransaction transaction, Collection<HostSpec> hosts, ProvisionLock lock);
-
     /** Activates the allocation of nodes to this application captured in the hosts argument. */
     void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction);
-
-    /**
-     * Transactionally remove this application.
-     *
-     * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
-     * @param application the application to remove
-     */
-    // TODO(mpolden): Remove
-    void remove(NestedTransaction transaction, ApplicationId application);
-
-    /**
-     * Transactionally remove application guarded by given lock.
-     *
-     * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
-     * @param lock        A provision lock for the relevant application. This must be held when calling this.
-     */
-    // TODO: Remove after November 2020
-    void remove(NestedTransaction transaction, ProvisionLock lock);
 
     /** Transactionally remove an application under lock. */
     void remove(ApplicationTransaction transaction);

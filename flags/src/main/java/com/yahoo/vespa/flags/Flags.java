@@ -349,12 +349,6 @@ public class Flags {
             "Whether application containers should use the new restapi handler implementation",
             "Takes effect on next internal redeployment");
 
-    public static final UnboundBooleanFlag ALWAYS_ACQUIRE_PROVISION_LOCK = defineFeatureFlag(
-            "always-acquire-provision-lock",
-            true,
-            "Whether provision lock should always be taken when writing nodes",
-            "Takes effect on config server restart");
-
     public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
             "use-access-control-client-authentication",
             false,
