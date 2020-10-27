@@ -18,7 +18,6 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.VespaModel;
@@ -157,10 +156,6 @@ public class RankProfile implements Cloneable {
     /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
-    }
-
-    private Map<String, OnnxModel> onnxModels() {
-        return search != null ? search.onnxModels().asMap() : Collections.emptyMap();
     }
 
     private Stream<ImmutableSDField> allFields() {
@@ -826,20 +821,6 @@ public class RankProfile implements Cloneable {
             }
         }
 
-        // Add output types for ONNX models
-        for (Map.Entry<String, OnnxModel> entry : onnxModels().entrySet()) {
-            String modelName = entry.getKey();
-            OnnxModel model = entry.getValue();
-            Arguments args = new Arguments(new ReferenceNode(modelName));
-
-            TensorType defaultOutputType = model.getTensorType(model.getDefaultOutput(), context);
-            context.setType(new Reference("onnxModel", args, null), defaultOutputType);
-
-            for (Map.Entry<String, String> mapping : model.getOutputMap().entrySet()) {
-                TensorType type = model.getTensorType(mapping.getKey(), context);
-                context.setType(new Reference("onnxModel", args, mapping.getValue()), type);
-            }
-        }
         return context;
     }
 
