@@ -37,8 +37,8 @@ struct CreateParam {
         return iter->second;
     }
 
-    CreateParam(const GenericCreate::SpecMap &spec_in,
-                const ValueType &res_type_in,
+    CreateParam(const ValueType &res_type_in,
+                const GenericCreate::SpecMap &spec_in,
                 const ValueBuilderFactory &factory_in)
         : res_type(res_type_in),
           num_mapped_dims(res_type.count_mapped_dimensions()),
@@ -72,9 +72,9 @@ template <typename T>
 void my_generic_create_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<CreateParam>(param_in);
     auto builder = param.factory.create_value_builder<T>(param.res_type,
-                                                           param.num_mapped_dims,
-                                                           param.dense_subspace_size,
-                                                           param.my_spec.size());
+                                                         param.num_mapped_dims,
+                                                         param.dense_subspace_size,
+                                                         param.my_spec.size());
     std::vector<vespalib::stringref> sparse_addr;
     for (const auto & kv : param.my_spec) {
         sparse_addr.clear();
@@ -106,12 +106,12 @@ struct SelectGenericCreateOp {
 } // namespace <unnamed>
 
 Instruction
-GenericCreate::make_instruction(const SpecMap &spec,
-                                const ValueType &res_type,
+GenericCreate::make_instruction(const ValueType &res_type,
+                                const SpecMap &spec,
                                 const ValueBuilderFactory &factory,
                                 Stash &stash)
 {
-    const auto &param = stash.create<CreateParam>(spec, res_type, factory);
+    const auto &param = stash.create<CreateParam>(res_type, spec, factory);
     auto fun = typify_invoke<1,TypifyCellType,SelectGenericCreateOp>(res_type.cell_type());
     return Instruction(fun, wrap_param<CreateParam>(param));
 }

@@ -67,7 +67,7 @@ TensorSpec perform_generic_create(const TensorSpec &a, const ValueBuilderFactory
         create_spec.emplace(cell.addr, child_idx);
         my_stack.push_back(stash.create<DoubleValue>(cell.value));
     }
-    auto my_op = GenericCreate::make_instruction(create_spec, res_type, factory, stash);
+    auto my_op = GenericCreate::make_instruction(res_type, create_spec, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(my_stack));
 }

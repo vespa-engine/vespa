@@ -18,8 +18,8 @@ struct GenericCreate {
     using SpecMap = std::map<TensorSpec::Address, size_t>;
 
     static InterpretedFunction::Instruction
-    make_instruction(const SpecMap &spec,
-                     const ValueType &res_type,
+    make_instruction(const ValueType &res_type,
+                     const SpecMap &spec,
                      const ValueBuilderFactory &factory,
                      Stash &stash);
 };

@@ -400,7 +400,7 @@ Create::compile_self(EngineOrFactory engine, Stash &stash) const
         for (const auto & kv : spec()) {
             generic_spec[kv.first] = child_idx++;
         }
-        return instruction::GenericCreate::make_instruction(generic_spec, result_type(), engine.factory(), stash);
+        return instruction::GenericCreate::make_instruction(result_type(), generic_spec, engine.factory(), stash);
     }
     return Instruction(op_tensor_create, wrap_param<Create>(*this));
 }
