@@ -27,10 +27,14 @@ import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Gauge;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 
 import java.io.ByteArrayOutputStream;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -58,16 +62,20 @@ public class DockerEngine implements ContainerEngine {
 
     private final DockerClient dockerClient;
     private final DockerImageGarbageCollector dockerImageGC;
+    private final Metrics metrics;
     private final Counter numberOfDockerApiFails;
+    private final Clock clock;
 
     @Inject
     public DockerEngine(Metrics metrics) {
-        this(createDockerClient(), metrics);
+        this(createDockerClient(), metrics, Clock.systemUTC());
     }
 
-    DockerEngine(DockerClient dockerClient, Metrics metrics) {
+    DockerEngine(DockerClient dockerClient, Metrics metrics, Clock clock) {
         this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
+        this.metrics = metrics;
+        this.clock = clock;
 
         numberOfDockerApiFails = metrics.declareCounter("docker.api_fails");
     }
@@ -347,10 +355,13 @@ public class DockerEngine implements ContainerEngine {
     }
 
     private class ImagePullCallback extends PullImageResultCallback {
+
         private final DockerImage dockerImage;
+        private final Instant startedAt;
 
         private ImagePullCallback(DockerImage dockerImage) {
             this.dockerImage = dockerImage;
+            this.startedAt = clock.instant();
         }
 
         @Override
@@ -358,7 +369,6 @@ public class DockerEngine implements ContainerEngine {
             removeScheduledPoll(dockerImage);
             logger.log(Level.SEVERE, "Could not download image " + dockerImage.asString(), throwable);
         }
-
 
         @Override
         public void onComplete() {
@@ -369,7 +379,16 @@ public class DockerEngine implements ContainerEngine {
                 numberOfDockerApiFails.increment();
                 throw new DockerClientException("Could not download image: " + dockerImage);
             }
+            sampleDuration();
         }
+
+        private void sampleDuration() {
+            Gauge gauge = metrics.declareGauge("docker.imagePullDurationSecs",
+                                               new Dimensions(Map.of("tag", dockerImage.tagAsVersion().toFullString())));
+            Duration pullDuration = Duration.between(startedAt, clock.instant());
+            gauge.sample(pullDuration.getSeconds());
+        }
+
     }
 
     // docker-java currently (3.0.8) does not support getting docker stats with stream=false, therefore we need
