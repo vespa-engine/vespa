@@ -5,12 +5,15 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -177,6 +180,19 @@ public class Application {
         return productionDeployments().values().stream().flatMap(List::stream)
                                       .map(Deployment::applicationVersion)
                                       .min(Comparator.naturalOrder());
+    }
+
+    /** Returns the total quota usage for this application */
+    public QuotaUsage quotaUsage() {
+        return instances().values().stream()
+                .map(Instance::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
+    /** Returns the total quota usage for this application, excluding one specific deployment */
+    public QuotaUsage quotaUsage(ApplicationId application, ZoneId zone) {
+        return instances().values().stream()
+                .map(instance -> instance.quotaUsageExcluding(application, zone))
+                .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
     /** Returns the set of deploy keys for this application. */

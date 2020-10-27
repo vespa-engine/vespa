@@ -53,6 +53,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -544,24 +545,18 @@ public class ApplicationController {
                     .filter(tenant-> tenant instanceof AthenzTenant)
                     .map(tenant -> ((AthenzTenant)tenant).domain());
 
-            Optional<Quota> quota = billingController.getQuota(application.tenant(), zone.environment());
-
-            if (platform.isBefore(Version.fromString("7.299"))) {
-                // there is a bug in the configuration model that makes the QuotaValidator fail if the budget
-                // parameter is used.  make sure we don't send budget to deployments with these old versions.
-                // TODO: Remove once < 7.299 is no longer deployed in public and publiccd
-                quota = quota.map(Quota::withoutBudget);
-            }
-
             if (zone.environment().isManuallyDeployed())
                 controller.applications().applicationStore().putMeta(new DeploymentId(application, zone),
                                                                      clock.instant(),
                                                                      applicationPackage.metaDataZip());
 
+            Quota deploymentQuota = DeploymentQuotaCalculator.calculate(billingController.getQuota(application.tenant()),
+                    asList(application.tenant()), application, zone, applicationPackage.deploymentSpec());
+
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           applicationRoles, quota));
+                                                           applicationRoles, deploymentQuota));
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);

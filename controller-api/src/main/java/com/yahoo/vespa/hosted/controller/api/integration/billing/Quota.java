@@ -39,6 +39,10 @@ public class Quota {
         return UNLIMITED;
     }
 
+    public boolean isUnlimited() {
+        return budget.isEmpty() && maxClusterSize().isEmpty();
+    }
+
     public Quota withBudget(BigDecimal budget) {
         return new Quota(maxClusterSize, Optional.ofNullable(budget));
     }
@@ -59,6 +63,11 @@ public class Quota {
     /** Maximum $/hour run-rate for the Vespa deployment */
     public Optional<BigDecimal> budget() {
         return budget;
+    }
+
+    public Quota subtractUsage(double rate) {
+        if (budget().isEmpty()) return this; // (unlimited - rate) is still unlimited
+        return this.withBudget(budget().get().subtract(BigDecimal.valueOf(rate)));
     }
 
     @Override
