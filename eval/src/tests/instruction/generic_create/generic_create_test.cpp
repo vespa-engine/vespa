@@ -84,7 +84,7 @@ void test_generic_create_with(const ValueBuilderFactory &factory) {
         for (size_t n : {2, 3, 4, 5}) {
             TensorSpec partial = remove_each(full, n);
             actual = perform_generic_create(partial, factory);
-            auto filled = spec_from_value(*value_from_spec(partial, factory));
+            auto filled = spec_from_value(*value_from_spec(partial, SimpleValueBuilderFactory::get()));
             EXPECT_EQ(actual, filled);
         }
     }
