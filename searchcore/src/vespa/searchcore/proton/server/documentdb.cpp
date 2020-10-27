@@ -524,6 +524,7 @@ DocumentDB::performDropFeedView3(IFeedView::SP feedView, uint32_t numRetries) {
         LOG(warning, "FeedView for document type '%s' has not been drained. Reposting to check again. %d retries left",
             getName().c_str(), numRetries);
         if (numRetries > 0) {
+            _writeService.sync();
             masterExecute([this, feedView, numRetries]() { performDropFeedView3(feedView, numRetries - 1); });
         }
     }
