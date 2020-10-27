@@ -428,6 +428,19 @@ public class NodeSerializerTest {
         assertEquals(switchHostname, node.switchHostname().get());
     }
 
+    @Test
+    public void exclusive_to_serialization() {
+        Node.Builder builder = Node.create("myId", IP.Config.EMPTY, "myHostname",
+                nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        Node node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(builder.build()));
+        assertFalse(node.exclusiveTo().isPresent());
+
+        ApplicationId exclusiveTo = ApplicationId.from("tenant1", "app1", "instance1");
+        node = builder.exclusiveTo(exclusiveTo).build();
+        node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
+        assertEquals(exclusiveTo, node.exclusiveTo().get());
+    }
+
     private byte[] createNodeJson(String hostname, String... ipAddress) {
         String ipAddressJsonPart = "";
         if (ipAddress.length > 0) {
