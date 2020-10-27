@@ -3,5 +3,10 @@
   "type": "CLOUD",
   "creator": "administrator@tenant",
   "pemDeveloperKeys": [],
+  "quota": {
+    "budget": null,
+    "budgetUsed": 0.0,
+    "clusterSize": 5
+  },
   "applications": []
 }
