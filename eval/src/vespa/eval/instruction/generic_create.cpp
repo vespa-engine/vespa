@@ -48,22 +48,27 @@ struct CreateParam {
           factory(factory_in)
     {
         size_t last_child = num_children - 1;
-        for (const auto & kv : spec_in) {
-            Key sparse_addr;
-            size_t dense_idx = 0;
-            for (const auto &dim : res_type.dimensions()) {
-                auto iter = kv.first.find(dim.name);
-                if (dim.is_mapped()) {
-                    sparse_addr.push_back(iter->second.name);
+        for (const auto & entry : spec_in) {
+            Key sparse_key;
+            size_t dense_key = 0;
+            auto dim = res_type.dimensions().begin();
+            auto binding = entry.first.begin();
+            for (; dim != res_type.dimensions().end(); ++dim, ++binding) {
+                assert(binding != entry.first.end());
+                assert(dim->name == binding->first);
+                assert(dim->is_mapped() == binding->second.is_mapped());
+                if (dim->is_mapped()) {
+                    sparse_key.push_back(binding->second.name);
                 } else {
-                    assert(dim.is_indexed());
-                    dense_idx *= dim.size;
-                    dense_idx += iter->second.index;
+                    assert(binding->second.index < dim->size);
+                    dense_key = (dense_key * dim->size) + binding->second.index;
                 }
             }
+            assert(binding == entry.first.end());
+            assert(dense_key < dense_subspace_size);
             // note: reverse order of children on stack
-            size_t stack_idx = last_child - kv.second;
-            indexes(sparse_addr)[dense_idx] = stack_idx;
+            size_t stack_idx = last_child - entry.second;
+            indexes(sparse_key)[dense_key] = stack_idx;
         }
     }
 };
