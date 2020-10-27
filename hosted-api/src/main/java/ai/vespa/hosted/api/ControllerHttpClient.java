@@ -289,7 +289,7 @@ public abstract class ControllerHttpClient {
 
                 if (attempt < 10)
                     try {
-                        Thread.sleep(100 << attempt);
+                        Thread.sleep(10 << attempt);
                     }
                     catch (InterruptedException f) {
                         throw new RuntimeException(f);
