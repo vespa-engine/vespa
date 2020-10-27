@@ -27,7 +27,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
@@ -39,6 +38,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -52,9 +52,6 @@ public class TenantRepositoryTest {
     private TenantApplicationsTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -175,9 +172,9 @@ public class TenantRepositoryTest {
         tenantRepository.close(); // stop using the one setup in Before method
 
         // Should get exception if config is true
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry());
+        Exception e = assertThrows(RuntimeException.class,
+                                   () -> new FailingDuringBootstrapTenantRepository(createComponentRegistry()));
+        assertEquals("Could not create all tenants when bootstrapping, failed to create: [default]", e.getMessage());
     }
 
     private List<String> readZKChildren(String path) throws Exception {

@@ -14,28 +14,29 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class MemoryCacheTest {
-    private String defName = "foo";
-    private String configId = "id";
-    private String namespace = "bar";
+    private final String defName = "foo";
+    private final String configId = "id";
+    private final String namespace = "bar";
     private static final String defMd5 = "a";
 
-    private long generation = 1L;
-    private String defName2 = "baz-quux";
-    private String namespace2 = "search.config";
+    private final long generation = 1L;
+    private final String defName2 = "baz-quux";
+    private final String namespace2 = "search.config";
     // Test with a config id with / in it
-    private String configId2 = "clients/gateways/gateway/component/com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation";
+    private final String configId2 = "clients/gateways/gateway/component/com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation";
     private static final String defMd52 = "a2";
     private static final String differentDefMd5 = "09ef";
     private static final String configMd5 = "b";
-    private ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
-    private ConfigKey<?> configKey2 = new ConfigKey<>(defName2, configId2, namespace2);
+    private final ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
+    private final ConfigKey<?> configKey2 = new ConfigKey<>(defName2, configId2, namespace2);
     private ConfigCacheKey cacheKey;
     private ConfigCacheKey cacheKeyDifferentMd5;
     private ConfigCacheKey cacheKey2;

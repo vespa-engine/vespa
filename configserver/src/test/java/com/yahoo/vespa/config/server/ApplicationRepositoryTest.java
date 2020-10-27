@@ -51,7 +51,6 @@ import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -69,13 +68,14 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -105,9 +105,6 @@ public class ApplicationRepositoryTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
 
     @Before
     public void setup() throws IOException {
@@ -523,11 +520,11 @@ public class ApplicationRepositoryTest {
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
-        exceptionRule.expect(IllegalStateException.class);
-        exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
-        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
+        Exception e = assertThrows(IllegalStateException.class,
+                                   () -> applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false));
+        assertThat(e.getMessage(), containsString("tenant:test1 Session 3 is not prepared"));
 
-        Session activeSession = applicationRepository.getActiveSession(applicationId());
+                   Session activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
         assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
     }
@@ -540,9 +537,9 @@ public class ApplicationRepositoryTest {
 
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         applicationRepository.prepare(sessionId, prepareParams());
-        exceptionRule.expect(RuntimeException.class);
-        exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
-        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
+        Exception e = assertThrows(RuntimeException.class,
+                                   () -> applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false));
+        assertThat(e.getMessage(), containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
 
         Session activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
@@ -562,9 +559,9 @@ public class ApplicationRepositoryTest {
         result2.sessionId();
 
         applicationRepository.prepare(sessionId2, prepareParams());
-        exceptionRule.expect(ActivationConflictException.class);
-        exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
-        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false);
+        Exception e = assertThrows(ActivationConflictException.class,
+                                   () -> applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false));
+        assertThat(e.getMessage(), containsString("tenant:test1 app:testapp:default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
     }
 
     @Test
@@ -572,13 +569,13 @@ public class ApplicationRepositoryTest {
         PrepareResult result = deployApp(testAppJdiscOnly);
         long sessionId = result.sessionId();
 
-        exceptionRule.expect(IllegalStateException.class);
-        exceptionRule.expectMessage(containsString("Session is active: 2"));
-        applicationRepository.prepare(sessionId, prepareParams());
+        Exception e = assertThrows(IllegalStateException.class,
+                                   () -> applicationRepository.prepare(sessionId, prepareParams()));
+        assertThat(e.getMessage(), containsString("Session is active: 2"));
 
-        exceptionRule.expect(IllegalStateException.class);
-        exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Session 2 is already active"));
-        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
+        Exception e2 = assertThrows(IllegalStateException.class,
+                                    () -> applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false));
+        assertThat(e2.getMessage(), containsString("tenant:test1 app:testapp:default Session 2 is already active"));
     }
 
     @Test
@@ -668,9 +665,9 @@ public class ApplicationRepositoryTest {
 
         applicationRepository.delete(applicationId());
 
-        exceptionRule.expect(com.yahoo.vespa.config.server.NotFoundException.class);
-        exceptionRule.expectMessage(containsString("No such application id: test1.testapp"));
-        resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        Exception e = assertThrows(NotFoundException.class,
+                                   () -> resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion));
+        assertThat(e.getMessage(), containsString("No such application id: test1.testapp"));
     }
 
     private PrepareResult prepareAndActivate(File application) {

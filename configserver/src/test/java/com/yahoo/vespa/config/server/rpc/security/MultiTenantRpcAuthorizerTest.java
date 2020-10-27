@@ -27,9 +27,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +43,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static java.time.temporal.ChronoUnit.DAYS;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -59,9 +60,6 @@ public class MultiTenantRpcAuthorizerTest {
     private static final ApplicationId EVIL_APP_ID = ApplicationId.from("malice", "malice-app", "default");
     private static final HostName HOSTNAME = HostName.from("myhostname");
     private static final FileReference FILE_REFERENCE = new FileReference("myfilereference");
-
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void configserver_can_access_files_and_config() throws InterruptedException, ExecutionException {
@@ -116,11 +114,9 @@ public class MultiTenantRpcAuthorizerTest {
                 new ConfigKey<>(LbServicesConfig.CONFIG_DEF_NAME, "*", LbServicesConfig.CONFIG_DEF_NAMESPACE),
                 HOSTNAME);
 
-        exceptionRule.expectMessage("Node with type 'tenant' is not allowed to access global config [name=lb-services,namespace=cloud.config,configId=*]");
-        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
-
-        authorizer.authorizeConfigRequest(configRequest)
-                .get();
+        assertAuthorizeConfigRequest(authorizer,
+                                     configRequest,
+                                     "Node with type 'tenant' is not allowed to access global config [name=lb-services,namespace=cloud.config,configId=*]");
     }
 
     @Test
@@ -136,11 +132,10 @@ public class MultiTenantRpcAuthorizerTest {
 
         Request fileRequest = createFileRequest(new FileReference("other-file-reference"));
 
-        exceptionRule.expectMessage("Peer is not allowed to access file reference other-file-reference. Peer is owned by mytenant.myapplication. File references owned by this application: [file 'myfilereference']");
-        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
-
-        authorizer.authorizeFileRequest(fileRequest)
-                .get();
+        Exception e = assertThrows(ExecutionException.class,
+                                   () -> authorizer.authorizeFileRequest(fileRequest).get());
+        assertTrue(e.getCause() instanceof AuthorizationException);
+        assertThat(e.getMessage(), containsString("Peer is not allowed to access file reference other-file-reference. Peer is owned by mytenant.myapplication. File references owned by this application: [file 'myfilereference']"));
     }
 
     @Test
@@ -156,11 +151,9 @@ public class MultiTenantRpcAuthorizerTest {
 
         Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
 
-        exceptionRule.expectMessage("Peer is not allowed to access config owned by mytenant.myapplication. Peer is owned by malice.malice-app");
-        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
-
-        authorizer.authorizeConfigRequest(configRequest)
-                .get();
+        assertAuthorizeConfigRequest(authorizer,
+                                     configRequest,
+                                     "Peer is not allowed to access config owned by mytenant.myapplication. Peer is owned by malice.malice-app");
     }
 
     @Test
@@ -175,11 +168,7 @@ public class MultiTenantRpcAuthorizerTest {
 
         Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
 
-        exceptionRule.expectMessage("Host 'myhostname' not found in host registry");
-        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
-
-        authorizer.authorizeConfigRequest(configRequest)
-                .get();
+        assertAuthorizeConfigRequest(authorizer, configRequest, "Host 'myhostname' not found in host registry");
     }
 
     @Test
@@ -195,11 +184,7 @@ public class MultiTenantRpcAuthorizerTest {
 
         Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
 
-        exceptionRule.expectMessage("No handler exists for tenant 'malice'");
-        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
-
-        authorizer.authorizeConfigRequest(configRequest)
-                .get();
+        assertAuthorizeConfigRequest(authorizer, configRequest, "No handler exists for tenant 'malice'");
     }
 
     @Test
@@ -218,6 +203,12 @@ public class MultiTenantRpcAuthorizerTest {
                 .get();
     }
 
+    private void assertAuthorizeConfigRequest(RpcAuthorizer authorizer, Request configRequest, String expectedErrorMessage) {
+        Exception e = assertThrows(ExecutionException.class, () -> authorizer.authorizeConfigRequest(configRequest).get());
+        System.out.println(e.getCause());
+        assertTrue(e.getCause() instanceof AuthorizationException);
+        assertThat(e.getMessage(), containsString(expectedErrorMessage));
+    }
 
     private static RpcAuthorizer createAuthorizer(NodeIdentity identity, HostRegistry<TenantName> hostRegistry) {
         return new MultiTenantRpcAuthorizer(

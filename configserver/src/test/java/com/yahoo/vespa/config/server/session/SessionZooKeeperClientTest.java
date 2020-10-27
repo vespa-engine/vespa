@@ -13,16 +13,15 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.time.Instant;
 import java.util.Optional;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -34,9 +33,6 @@ public class SessionZooKeeperClientTest {
 
     private Curator curator;
     private ConfigCurator configCurator;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -104,9 +100,8 @@ public class SessionZooKeeperClientTest {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Cannot write application id 'someOtherTenant.foo.bim' for tenant 'default'");
-        zkc.writeApplicationId(id);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> zkc.writeApplicationId(id));
+        assertEquals("Cannot write application id 'someOtherTenant.foo.bim' for tenant 'default'", e.getMessage());
     }
 
     @Test

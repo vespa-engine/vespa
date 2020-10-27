@@ -32,10 +32,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -110,9 +110,9 @@ public class ClusterApiImplTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(),
-                    containsString("Changing the state of cfg1 would violate enough-services-up: " +
-                            "Suspension for service type configserver would increase from 33% to 66%, " +
-                            "over the limit of 10%. Services down on resumed hosts: [1 missing config server]."));
+                       containsString("Changing the state of cfg1 would violate enough-services-up: " +
+                                      "Suspension for service type configserver would increase from 33% to 66%, " +
+                                      "over the limit of 10%. Services down on resumed hosts: [1 missing config server]."));
         }
     }
 

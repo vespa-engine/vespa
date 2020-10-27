@@ -2,13 +2,12 @@
 package com.yahoo.application;
 
 import com.yahoo.io.IOUtils;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.nio.file.Files;
 
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -49,22 +48,17 @@ public class ApplicationBuilderTest {
         });
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     @SuppressWarnings("try") // application unreferenced inside try
     public void builder_cannot_be_reused() throws Exception {
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(containsString("build method"));
-
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.servicesXml("<container version=\"1.0\" />");
         try (Application application = builder.build()) {
             // do nothing
         }
 
-        builder.servicesXml(""); // should fail
+        Exception e = assertThrows(RuntimeException.class, () -> builder.servicesXml(""));
+        assertEquals("build method", e.getMessage());
     }
 
     private interface TestCase {

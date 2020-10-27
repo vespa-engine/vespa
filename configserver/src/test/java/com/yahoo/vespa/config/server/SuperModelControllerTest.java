@@ -37,7 +37,7 @@ import java.util.Optional;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**

@@ -16,7 +16,7 @@ import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     protected String baseUrl = "http://foo:1337/application/v2/tenant/default/session/1/content/";
