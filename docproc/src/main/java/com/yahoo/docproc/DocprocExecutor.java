@@ -38,14 +38,8 @@ public class DocprocExecutor {
      */
     public DocprocExecutor(String name, CallStack callStack) {
         this.name = name;
-        String chainDimension = name;
-        if (name != null) {
-            chainDimension = name.replaceAll("[^\\p{Alnum}]", "_");
-            docCounterName = "chain_" + name.replaceAll("[^\\p{Alnum}]", "_") + "_documents";
-        } else {
-            //name is null
-            docCounterName = "chain_" + name + "_documents";
-        }
+        String chainDimension = name != null ? name.replaceAll("[^\\p{Alnum}]", "_") : name;
+        docCounterName = "chain_" + chainDimension + "_documents";
         docCounter = new Counter(docCounterName, callStack.getStatistics(), false);
         this.metric = callStack.getMetric();
         this.callStack = callStack;
@@ -80,7 +74,7 @@ public class DocprocExecutor {
     private void incrementNumDocsProcessed(int num) {
         docCounter.increment(num);
         metric.add(docCounterName, num, null);
-        metric.add(METRIC_NAME_DOCUMENTS_PROCESSED,num,this.context);
+        metric.add(METRIC_NAME_DOCUMENTS_PROCESSED, num, this.context);
     }
 
     private void incrementNumDocsProcessed(Processing processing) {
