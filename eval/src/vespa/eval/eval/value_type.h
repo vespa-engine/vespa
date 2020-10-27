@@ -54,7 +54,7 @@ public:
     ~ValueType();
     CellType cell_type() const { return _cell_type; }
     bool is_error() const { return _error; }
-    bool is_scalar() const { return (!_error && _dimensions.empty()); }
+    bool is_scalar() const { return _dimensions.empty(); }
     bool is_sparse() const;
     bool is_dense() const;
 
@@ -66,7 +66,7 @@ public:
     //           is_double and is_scalar will be interchangeable in
     //           most cases for a while)
 
-    bool is_double() const { return (is_scalar() && (_cell_type == CellType::DOUBLE)); }
+    bool is_double() const { return (!_error && is_scalar() && (_cell_type == CellType::DOUBLE)); }
     bool is_tensor() const { return (!_dimensions.empty()); }
 
     size_t count_indexed_dimensions() const;
