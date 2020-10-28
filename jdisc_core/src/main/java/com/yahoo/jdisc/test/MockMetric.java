@@ -3,6 +3,7 @@ package com.yahoo.jdisc.test;
 
 import com.yahoo.jdisc.Metric;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,10 +39,11 @@ public class MockMetric implements Metric {
 
         private static final MapContext empty = new MapContext(Map.of());
 
-        private final Map<String, ?> dimensions;
+        private final Map<String, Object> dimensions;
 
         private MapContext(Map<String, ?> dimensions) {
-            this.dimensions = dimensions;
+            this.dimensions = new HashMap<>(dimensions.size());
+            this.dimensions.putAll(dimensions);
         }
 
         private static MapContext emptyIfNull(Context context) {
