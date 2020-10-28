@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.model.api.ConfigChangeReindexingAction;
+import com.yahoo.config.model.api.ConfigChangeReindexAction;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
 
@@ -16,7 +16,7 @@ import java.util.Optional;
  *
  * @author bjorncs
  */
-public class VespaReindexingAction extends VespaConfigChangeAction implements ConfigChangeReindexingAction {
+public class VespaReindexAction extends VespaConfigChangeAction implements ConfigChangeReindexAction {
 
     /**
      * The name of this action, which must be a valid ValidationId. This is a string here because
@@ -27,27 +27,27 @@ public class VespaReindexingAction extends VespaConfigChangeAction implements Co
     private final String documentType;
     private final boolean allowed;
 
-    private VespaReindexingAction(ClusterSpec.Id id, String name, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
+    private VespaReindexAction(ClusterSpec.Id id, String name, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
         super(id, message, services);
         this.name = name;
         this.documentType = documentType;
         this.allowed = allowed;
     }
 
-    public static VespaReindexingAction of(
+    public static VespaReindexAction of(
             ClusterSpec.Id id, String name, ValidationOverrides overrides, String message, Instant now) {
-        return new VespaReindexingAction(id, name, message, List.of(), /*documentType*/null, overrides.allows(name, now));
+        return new VespaReindexAction(id, name, message, List.of(), /*documentType*/null, overrides.allows(name, now));
     }
 
-    public static VespaReindexingAction of(
+    public static VespaReindexAction of(
             ClusterSpec.Id id, String name, ValidationOverrides overrides, String message,
             List<ServiceInfo> services, String documentType, Instant now) {
-        return new VespaReindexingAction(id, name, message, services, documentType, overrides.allows(name, now));
+        return new VespaReindexAction(id, name, message, services, documentType, overrides.allows(name, now));
     }
 
     @Override
     public VespaConfigChangeAction modifyAction(String newMessage, List<ServiceInfo> newServices, String documentType) {
-        return new VespaReindexingAction(clusterId(), name, newMessage, newServices, documentType, allowed);
+        return new VespaReindexAction(clusterId(), name, newMessage, newServices, documentType, allowed);
     }
 
     @Override public String name() { return name; }
@@ -61,7 +61,7 @@ public class VespaReindexingAction extends VespaConfigChangeAction implements Co
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        VespaReindexingAction that = (VespaReindexingAction) o;
+        VespaReindexAction that = (VespaReindexAction) o;
         return allowed == that.allowed &&
                 Objects.equals(name, that.name) &&
                 Objects.equals(documentType, that.documentType);

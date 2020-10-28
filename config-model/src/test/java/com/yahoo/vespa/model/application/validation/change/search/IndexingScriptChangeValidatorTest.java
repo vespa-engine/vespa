@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
+import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -50,12 +50,12 @@ public class IndexingScriptChangeValidatorTest {
     private static final String FIELD = "field f1 type string";
     private static final String FIELD_F2 = "field f2 type string";
 
-    private static VespaConfigChangeAction expectedAction(String changedMsg, String fromScript, String toScript) {
-        return expectedAction("f1", changedMsg, fromScript, toScript);
+    private static VespaConfigChangeAction expectedReindexingAction(String changedMsg, String fromScript, String toScript) {
+        return expectedReindexingAction("f1", changedMsg, fromScript, toScript);
     }
 
-    private static VespaConfigChangeAction expectedAction(String field, String changedMsg, String fromScript, String toScript) {
-        return VespaRefeedAction.of(ClusterSpec.Id.from("test"),
+    private static VespaConfigChangeAction expectedReindexingAction(String field, String changedMsg, String fromScript, String toScript) {
+        return VespaReindexAction.of(ClusterSpec.Id.from("test"),
                                     "indexing-change",
                                     ValidationOverrides.empty,
                                     "Field '" + field + "' changed: " +
@@ -65,67 +65,67 @@ public class IndexingScriptChangeValidatorTest {
     }
 
     @Test
-    public void requireThatAddingIndexAspectRequireRefeed() throws Exception {
+    public void requireThatAddingIndexAspectRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: summary }",
                     FIELD + " { indexing: index | summary }").
-        assertValidation(expectedAction("add index aspect",
+        assertValidation(expectedReindexingAction("add index aspect",
                 "{ input f1 | summary f1; }",
                 "{ input f1 | tokenize normalize stem:\"BEST\" | index f1 | summary f1; }"));
     }
 
     @Test
-    public void requireThatRemovingIndexAspectRequireRefeed() throws Exception {
+    public void requireThatRemovingIndexAspectRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: index | summary }",
                     FIELD + " { indexing: summary }").
-                assertValidation(expectedAction("remove index aspect",
+                assertValidation(expectedReindexingAction("remove index aspect",
                         "{ input f1 | tokenize normalize stem:\"BEST\" | index f1 | summary f1; }",
                         "{ input f1 | summary f1; }"));
     }
 
     @Test
-    public void requireThatChangingStemmingRequireRefeed() throws Exception {
+    public void requireThatChangingStemmingRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: index }",
                     FIELD + " { indexing: index \n stemming: none }").
-                assertValidation(expectedAction("stemming: 'best' -> 'none'",
+                assertValidation(expectedReindexingAction("stemming: 'best' -> 'none'",
                         "{ input f1 | tokenize normalize stem:\"BEST\" | index f1; }",
                         "{ input f1 | tokenize normalize | index f1; }"));
     }
 
     @Test
-    public void requireThatChangingNormalizingRequireRefeed() throws Exception {
+    public void requireThatChangingNormalizingRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: index }",
                     FIELD + " { indexing: index \n normalizing: none }").
-                assertValidation(expectedAction("normalizing: 'ACCENT' -> 'NONE'",
+                assertValidation(expectedReindexingAction("normalizing: 'ACCENT' -> 'NONE'",
                         "{ input f1 | tokenize normalize stem:\"BEST\" | index f1; }",
                         "{ input f1 | tokenize stem:\"BEST\" | index f1; }"));
     }
 
     @Test
-    public void requireThatChangingMatchingRequireRefeed() throws Exception {
+    public void requireThatChangingMatchingRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: index \n match: exact }",
                     FIELD + " { indexing: index \n match { gram \n gram-size: 3 } }").
-                assertValidation(expectedAction("matching: 'exact' -> 'gram (size 3)', normalizing: 'LOWERCASE' -> 'CODEPOINT'",
+                assertValidation(expectedReindexingAction("matching: 'exact' -> 'gram (size 3)', normalizing: 'LOWERCASE' -> 'CODEPOINT'",
                         "{ input f1 | exact | index f1; }",
                         "{ input f1 | ngram 3 | index f1; }"));
     }
 
     @Test
-    public void requireThatSettingDynamicSummaryRequireRefeed() throws Exception {
+    public void requireThatSettingDynamicSummaryRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: summary }",
                     FIELD + " { indexing: summary \n summary: dynamic }").
-                assertValidation(expectedAction("summary field 'f1' transform: 'none' -> 'dynamicteaser'",
+                assertValidation(expectedReindexingAction("summary field 'f1' transform: 'none' -> 'dynamicteaser'",
                         "{ input f1 | summary f1; }",
                         "{ input f1 | tokenize normalize stem:\"BEST\" | summary f1; }"));
     }
 
     @Test
-    public void requireThatMultipleChangesRequireRefeed() throws Exception {
+    public void requireThatMultipleChangesRequireReindexing() throws Exception {
          new Fixture(FIELD + " { indexing: index } " + FIELD_F2 + " { indexing: index }",
                      FIELD + " { indexing: index \n stemming: none } " + FIELD_F2 + " { indexing: index \n normalizing: none }").
-                 assertValidation(Arrays.asList(expectedAction("f1", "stemming: 'best' -> 'none'",
+                 assertValidation(Arrays.asList(expectedReindexingAction("f1", "stemming: 'best' -> 'none'",
                                  "{ input f1 | tokenize normalize stem:\"BEST\" | index f1; }",
                                  "{ input f1 | tokenize normalize | index f1; }"),
-                         expectedAction("f2", "normalizing: 'ACCENT' -> 'NONE'",
+                         expectedReindexingAction("f2", "normalizing: 'ACCENT' -> 'NONE'",
                                  "{ input f2 | tokenize normalize stem:\"BEST\" | index f2; }",
                                  "{ input f2 | tokenize stem:\"BEST\" | index f2; }")));
     }
