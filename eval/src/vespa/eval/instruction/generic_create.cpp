@@ -85,7 +85,7 @@ void my_generic_create_op(State &state, uint64_t param_in) {
         {
             sparse_addr.clear();
             for (const auto & label : key) {
-                sparse_addr.emplace_back(label);
+                sparse_addr.push_back(label);
             }
             T *dst = builder->add_subspace(sparse_addr).begin();
             for (size_t stack_idx : values) {
