@@ -123,11 +123,9 @@ void StorBucketDatabase::for_each_mutable_unordered(
 
 void StorBucketDatabase::for_each(
         std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-        const char* clientId,
-        const key_type& first,
-        const key_type& last)
+        const char* clientId)
 {
-    _impl->for_each(std::move(func), clientId, first, last);
+    _impl->for_each(std::move(func), clientId);
 }
 
 std::unique_ptr<bucketdb::ReadGuard<StorBucketDatabase::Entry>>

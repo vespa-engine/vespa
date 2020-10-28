@@ -64,9 +64,7 @@ public:
                                     const char* clientId);
 
     void for_each(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-                  const char* clientId,
-                  const key_type& first = key_type(),
-                  const key_type& last = key_type() - 1);
+                  const char* clientId);
 
     [[nodiscard]] std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const;
 

@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/bucketdb/btree_lockable_map.hpp>
+#include <vespa/storage/bucketdb/striped_btree_lockable_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -9,6 +10,8 @@
 LOG_SETUP(".lockable_map_test");
 
 // FIXME these old tests may have the least obvious semantics and worst naming in the entire storage module
+// FIXME the non-bucket ID based tests only "accidentally" work with the striped DB implementation
+// since they just all happen to look like zero-buckets with count-bits above the minimum threshold.
 
 using namespace ::testing;
 using document::BucketId;
@@ -55,8 +58,7 @@ struct LockableMapTest : ::testing::Test {
     using Map = MapT;
 };
 
-// TODO add striped B-tree DB to this type set once ready
-using MapTypes = ::testing::Types<bucketdb::BTreeLockableMap<A>>;
+using MapTypes = ::testing::Types<bucketdb::BTreeLockableMap<A>, bucketdb::StripedBTreeLockableMap<A>>;
 VESPA_GTEST_TYPED_TEST_SUITE(LockableMapTest, MapTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
@@ -100,46 +102,6 @@ TYPED_TEST(LockableMapTest, simple_usage) {
     EXPECT_EQ(map.erase(16, "foo"), 1);
     EXPECT_EQ(map.size(), 0);
     EXPECT_TRUE(map.empty());
-}
-
-TYPED_TEST(LockableMapTest, comparison) {
-    TypeParam map1;
-    TypeParam map2;
-    bool preExisted;
-
-    // Check empty state is correct
-    EXPECT_EQ(map1, map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_FALSE(map1 != map2);
-
-    // Check that different lengths are ok
-    map1.insert(4, A(1, 2, 3), "foo", preExisted);
-    EXPECT_FALSE(map1 == map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_LT(map2, map1);
-    EXPECT_NE(map1, map2);
-
-    // Check that equal elements are ok
-    map2.insert(4, A(1, 2, 3), "foo", preExisted);
-    EXPECT_EQ(map1, map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_FALSE(map1 != map2);
-
-    // Check that non-equal values are ok
-    map1.insert(6, A(1, 2, 6), "foo", preExisted);
-    map2.insert(6, A(1, 2, 3), "foo", preExisted);
-    EXPECT_FALSE(map1 == map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_LT(map2, map1);
-    EXPECT_NE(map1, map2);
-
-    // Check that non-equal keys are ok
-    map1.erase(6, "foo");
-    map1.insert(7, A(1, 2, 3), "foo", preExisted);
-    EXPECT_FALSE(map1 == map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_LT(map2, map1);
-    EXPECT_NE(map1, map2);
 }
 
 namespace {
@@ -721,16 +683,16 @@ TYPED_TEST(LockableMapTest, find_all_inconsistently_split_6) {
 TYPED_TEST(LockableMapTest, find_all_inconsistent_below_16_bits) {
     TypeParam map;
 
-    document::BucketId id1(1, 0x1); // contains id2-id3
-    document::BucketId id2(3, 0x1);
-    document::BucketId id3(4, 0xD);
+    document::BucketId id1(8,  0b0000'0000'0001); // contains id2-id3
+    document::BucketId id2(10, 0b0011'0000'0001);
+    document::BucketId id3(11, 0b0101'0000'0001);
 
     bool preExisted;
     map.insert(id1.stripUnused().toKey(), A(1,2,3), "foo", preExisted);
     map.insert(id2.stripUnused().toKey(), A(2,3,4), "foo", preExisted);
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
-    document::BucketId id(3, 0x5);
+    document::BucketId id(10, 0b0001'0000'0001);
 
     auto results = map.getAll(id, "foo");
 
