@@ -43,6 +43,7 @@ public class Processing {
 
     /** The registry of docproc services. */
     private ComponentRegistry<DocprocService> docprocServiceRegistry = null;
+
     private boolean getNumDocsCalled = false;
 
     /**
