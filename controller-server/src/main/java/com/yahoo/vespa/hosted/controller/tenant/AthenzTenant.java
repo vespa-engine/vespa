@@ -61,19 +61,12 @@ public class AthenzTenant extends Tenant {
     /** Create a new Athenz tenant */
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
                                       Optional<PropertyId> propertyId) {
-        return new AthenzTenant(requireName(requireNoPrefix(name)), domain, property, propertyId, Optional.empty());
+        return new AthenzTenant(requireName(name), domain, property, propertyId, Optional.empty());
     }
 
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
                                       Optional<PropertyId> propertyId, Optional<Contact> contact) {
-        return new AthenzTenant(requireName(requireNoPrefix(name)), domain, property, propertyId, contact);
-    }
-
-    private static TenantName requireNoPrefix(TenantName name) {
-        if (name.value().startsWith(Tenant.userPrefix)) {
-            throw new IllegalArgumentException("Athenz tenant name cannot have prefix '" + Tenant.userPrefix + "'");
-        }
-        return name;
+        return new AthenzTenant(requireName(name), domain, property, propertyId, contact);
     }
 
     @Override
