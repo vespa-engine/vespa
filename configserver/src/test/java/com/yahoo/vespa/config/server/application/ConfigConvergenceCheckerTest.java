@@ -77,7 +77,7 @@ public class ConfigConvergenceCheckerTest {
             String serviceName = hostAndPort(this.service);
             URI requestUrl = testServer().resolve("/serviceconverge/" + serviceName);
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
-            HttpResponse serviceResponse = checker.checkService(application, hostAndPort(this.service), requestUrl, clientTimeout);
+            HttpResponse serviceResponse = checker.getServiceConfigGenerationJson(application, hostAndPort(this.service), requestUrl, clientTimeout);
             assertResponse("{\n" +
                            "  \"url\": \"" + requestUrl.toString() + "\",\n" +
                            "  \"host\": \"" + hostAndPort(this.service) + "\",\n" +
@@ -92,7 +92,7 @@ public class ConfigConvergenceCheckerTest {
         { // Missing service
             String serviceName = "notPresent:1337";
             URI requestUrl = testServer().resolve("/serviceconverge/" + serviceName);
-            HttpResponse response = checker.checkService(application, "notPresent:1337", requestUrl,clientTimeout);
+            HttpResponse response = checker.getServiceConfigGenerationJson(application, "notPresent:1337", requestUrl, clientTimeout);
             assertResponse("{\n" +
                            "  \"url\": \"" + requestUrl.toString() + "\",\n" +
                            "  \"host\": \"" + serviceName + "\",\n" +
@@ -111,7 +111,7 @@ public class ConfigConvergenceCheckerTest {
             URI requestUrl = testServer().resolve("/serviceconverge");
             URI serviceUrl = testServer().resolve("/serviceconverge/" + serviceName);
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
-            HttpResponse response = checker.servicesToCheck(application, requestUrl, clientTimeout);
+            HttpResponse response = checker.getServiceConfigGenerationsJson(application, requestUrl, clientTimeout);
             assertResponse("{\n" +
                            "  \"services\": [\n" +
                            "    {\n" +
@@ -148,7 +148,7 @@ public class ConfigConvergenceCheckerTest {
             URI requestUrl = testServer().resolve("/serviceconverge");
             URI serviceUrl = testServer().resolve("/serviceconverge/" + hostAndPort(service));
             URI serviceUrl2 = testServer().resolve("/serviceconverge/" + hostAndPort(service2));
-            HttpResponse response = checker.servicesToCheck(application, requestUrl, clientTimeout);
+            HttpResponse response = checker.getServiceConfigGenerationsJson(application, requestUrl, clientTimeout);
             assertResponse("{\n" +
                            "  \"services\": [\n" +
                            "    {\n" +
@@ -182,7 +182,7 @@ public class ConfigConvergenceCheckerTest {
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(aResponse()
                                                                                 .withFixedDelay((int) clientTimeout.plus(Duration.ofSeconds(1)).toMillis())
                                                                                 .withBody("response too slow")));
-        HttpResponse response = checker.checkService(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
+        HttpResponse response = checker.getServiceConfigGenerationJson(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
         // Message contained in a SocketTimeoutException may differ across platforms, so we do a partial match of the response here
         assertResponse((responseBody) -> assertTrue("Response matches", responseBody.startsWith(
                 "{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +

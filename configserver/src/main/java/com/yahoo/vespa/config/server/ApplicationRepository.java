@@ -661,12 +661,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri,
                                                          Duration timeout, Optional<Version> vespaVersion) {
-        return convergeChecker.checkService(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
+        return convergeChecker.getServiceConfigGenerationJson(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
     }
 
     public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri,
                                                             Duration timeoutPerService, Optional<Version> vespaVersion) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
+        return convergeChecker.getServiceConfigGenerationsJson(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
     }
 
     // ---------------- Logs ----------------------------------------------------------------
