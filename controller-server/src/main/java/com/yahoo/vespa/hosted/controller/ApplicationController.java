@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -368,12 +369,8 @@ public class ApplicationController {
     }
 
     private QuotaUsage deploymentQuotaUsage(ZoneId zoneId, ApplicationId applicationId) {
-        var quotaUsage = configServer.nodeRepository().getApplication(zoneId, applicationId)
-                .clusters().values().stream()
-                .map(Cluster::max)
-                .mapToDouble(max -> max.nodes() * max.nodeResources().cost())
-                .sum();
-        return QuotaUsage.create(quotaUsage);
+        var application = configServer.nodeRepository().getApplication(zoneId, applicationId);
+        return DeploymentQuotaCalculator.calculateQuotaUsage(application);
     }
 
     private ApplicationPackage getApplicationPackage(ApplicationId application, ZoneId zone, ApplicationVersion revision) {

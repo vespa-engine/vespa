@@ -1,11 +1,20 @@
 package com.yahoo.vespa.hosted.controller.application;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationData;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -48,4 +57,12 @@ public class DeploymentQuotaCalculatorTest {
         assertEquals(calculated.budget().get().doubleValue(), 0, 1e-5);
     }
 
+    @Test
+    public void using_highest_resource_use() throws IOException, URISyntaxException {
+        var content = new String(Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/application/response/application.json")));
+        var mapper = new ObjectMapper();
+        var application = mapper.readValue(content, ApplicationData.class).toApplication();
+        var usage = DeploymentQuotaCalculator.calculateQuotaUsage(application);
+        assertEquals(1.164, usage.rate(), 0.001);
+    }
 }
