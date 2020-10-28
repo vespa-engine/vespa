@@ -418,7 +418,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         Cursor applications = root.setArray("applications");
         for (ApplicationId id : nodeRepository.applications().ids()) {
             Cursor application = applications.addObject();
-            application.setString("url", withPath("/nodes/v2/applications/" + id.toFullString(), uri).toString());
+            application.setString("url", withPath("/nodes/v2/application/" + id.toFullString(), uri).toString());
             application.setString("id", id.toFullString());
         }
         return new SlimeJsonResponse(slime);

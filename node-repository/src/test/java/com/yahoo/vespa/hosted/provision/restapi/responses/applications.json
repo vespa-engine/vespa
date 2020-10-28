@@ -1,19 +1,19 @@
 {
   "applications" : [
     {
-      "url" : "http://localhost:8080/nodes/v2/applications/tenant4.application4.instance4",
+      "url" : "http://localhost:8080/nodes/v2/application/tenant4.application4.instance4",
       "id" : "tenant4.application4.instance4"
     },
     {
-      "url" : "http://localhost:8080/nodes/v2/applications/tenant2.application2.instance2",
+      "url" : "http://localhost:8080/nodes/v2/application/tenant2.application2.instance2",
       "id" : "tenant2.application2.instance2"
     },
     {
-      "url" : "http://localhost:8080/nodes/v2/applications/tenant3.application3.instance3",
+      "url" : "http://localhost:8080/nodes/v2/application/tenant3.application3.instance3",
       "id" : "tenant3.application3.instance3"
     },
     {
-      "url" : "http://localhost:8080/nodes/v2/applications/tenant1.application1.instance1",
+      "url" : "http://localhost:8080/nodes/v2/application/tenant1.application1.instance1",
       "id" : "tenant1.application1.instance1"
     }
   ]
