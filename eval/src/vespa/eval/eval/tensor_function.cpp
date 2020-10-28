@@ -13,6 +13,7 @@
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
+#include <vespa/eval/instruction/generic_peek.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/vespalib/objects/objectdumper.h>
@@ -494,8 +495,23 @@ Peek::push_children(std::vector<Child::CREF> &children) const
 }
 
 Instruction
-Peek::compile_self(EngineOrFactory, Stash &) const
+Peek::compile_self(EngineOrFactory engine, Stash &stash) const
 {
+    if (engine.is_factory()) {
+        instruction::GenericPeek::SpecMap generic_spec;
+        size_t child_idx = 0;
+        for (const auto & [dim_name, label_or_child] : spec()) {
+            std::visit(vespalib::overload {
+                    [&](const TensorSpec::Label &label) {
+                        generic_spec.emplace(dim_name, label);
+                    },
+                    [&](const TensorFunction::Child &) {
+                        generic_spec.emplace(dim_name, child_idx++);
+                    }
+                }, label_or_child);
+        }
+        return instruction::GenericPeek::make_instruction(param_type(), result_type(), generic_spec, engine.factory(), stash);
+    }
     return Instruction(op_tensor_peek, wrap_param<Peek>(*this));
 }
 
