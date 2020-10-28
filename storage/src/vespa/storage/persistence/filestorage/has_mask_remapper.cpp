@@ -8,7 +8,8 @@ namespace storage {
 
 HasMaskRemapper::HasMaskRemapper(const std::vector<api::MergeBucketCommand::Node> &all_nodes,
                                  const std::vector<api::MergeBucketCommand::Node> &nodes)
-    : _mask_remap()
+    : _mask_remap(),
+      _all_remapped(0u)
 {
     if (nodes != all_nodes) {
         vespalib::hash_map<uint32_t, uint32_t> node_index_to_mask(all_nodes.size());
@@ -22,7 +23,10 @@ HasMaskRemapper::HasMaskRemapper(const std::vector<api::MergeBucketCommand::Node
             mask = node_index_to_mask[node.index];
             assert(mask != 0u);
             _mask_remap.push_back(mask);
+            _all_remapped |= mask;
         }
+    } else {
+        _all_remapped = ((1u << all_nodes.size()) - 1);
     }
 }
 
@@ -39,8 +43,16 @@ HasMaskRemapper::operator()(uint16_t mask) const
             }
         }
         mask = new_mask;
+    } else {
+        mask &= _all_remapped;
     }
     return mask;
+}
+
+uint16_t
+HasMaskRemapper::operator()(uint16_t mask, uint16_t keep_from_full_mask) const
+{
+    return (operator()(mask) | (keep_from_full_mask & ~_all_remapped));
 }
 
 }

@@ -12,6 +12,7 @@ namespace storage {
 class HasMaskRemapper
 {
     std::vector<uint16_t> _mask_remap;
+    uint16_t _all_remapped;
 
 public:
     HasMaskRemapper(const std::vector<api::MergeBucketCommand::Node> &all_nodes,
@@ -19,6 +20,7 @@ public:
     ~HasMaskRemapper();
 
     uint16_t operator()(uint16_t mask) const;
+    uint16_t operator()(uint16_t mask, uint16_t keep_from_full_mask) const;
 };
 
 }

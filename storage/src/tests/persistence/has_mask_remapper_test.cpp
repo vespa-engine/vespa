@@ -15,6 +15,7 @@ TEST(HasMaskRemapperTest, test_remap_none)
     for (uint32_t i = 0; i < (1u << merge_operation_nodes.size()); ++i) {
         EXPECT_EQ(i, remap_mask(i));
     }
+    EXPECT_EQ(31u, remap_mask(255u));
 }
 
 TEST(HasMaskRemapperTest, test_remap_subset)
@@ -37,6 +38,20 @@ TEST(HasMaskRemapperTest, test_remap_swapped_subset)
         remapped.push_back(remap_mask(i));
     }
     EXPECT_EQ((std::vector<uint16_t>{0u, 2u, 1u, 3u}), remapped);
+}
+
+TEST(HasMaskRemapperTest, test_keep_unremapped_bits)
+{
+    NodeList reply_nodes{{0, true}, {1, true}, {3, false}};
+    HasMaskRemapper remap_mask(merge_operation_nodes, reply_nodes);
+    EXPECT_EQ(20u, remap_mask(0u, (1u << 5) - 1));
+    EXPECT_EQ(11u, remap_mask((1u << 3) - 1, 0u));
+    EXPECT_EQ(31u, remap_mask((1u << 3) - 1, (1u << 5) - 1));
+    EXPECT_EQ(24u, remap_mask(4u, 16u));
+    HasMaskRemapper same_nodes_remap_mask(merge_operation_nodes, merge_operation_nodes);
+    EXPECT_EQ(31u, same_nodes_remap_mask(255u, 0u));
+    EXPECT_EQ(224u, same_nodes_remap_mask(0u, 255u));
+    EXPECT_EQ(255u, same_nodes_remap_mask(255u, 255u));
 }
 
 }
