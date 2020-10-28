@@ -97,6 +97,7 @@ public class NodeRepositoryMock implements NodeRepository {
                 .resources(new NodeResources(24, 24, 500, 1))
                 .clusterId("clusterA")
                 .clusterType(Node.ClusterType.container)
+                .exclusiveTo(ApplicationId.from("t1", "a1", "i1"))
                 .build();
         var nodeB = new Node.Builder()
                 .hostname(HostName.from("hostB"))
