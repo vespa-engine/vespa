@@ -18,7 +18,6 @@ vespa_define_module(
     storageframework
 
     EXTERNAL_DEPENDS
-    Judy
     ${VESPA_GLIBC_RT_LIB}
 
     LIBS

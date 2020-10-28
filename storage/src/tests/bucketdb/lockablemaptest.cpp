@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/storage/bucketdb/judymultimap.h>
-#include <vespa/storage/bucketdb/judymultimap.hpp>
-#include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <vespa/storage/bucketdb/btree_lockable_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -58,7 +55,8 @@ struct LockableMapTest : ::testing::Test {
     using Map = MapT;
 };
 
-using MapTypes = ::testing::Types<LockableMap<JudyMultiMap<A>>, bucketdb::BTreeLockableMap<A>>;
+// TODO add striped B-tree DB to this type set once ready
+using MapTypes = ::testing::Types<bucketdb::BTreeLockableMap<A>>;
 VESPA_GTEST_TYPED_TEST_SUITE(LockableMapTest, MapTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
