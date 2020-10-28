@@ -44,7 +44,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     // This is the document selector string as derived from the subscription tag.
     private String routingSelector = null;
-    private List<DocumentDatabase> documentDbs = new LinkedList<>();
+    private final List<DocumentDatabase> documentDbs = new LinkedList<>();
     private final UnionConfiguration unionCfg;
     private int maxNodesDownPerFixedRow = 0;
 
@@ -52,7 +52,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
-    private List<SearchNode> searchNodes = new ArrayList<>();
+    private final List<SearchNode> searchNodes = new ArrayList<>();
 
     /**
      * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
@@ -64,7 +64,7 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(AbstractConfigProducer parent, String clusterName, int index, DeployState deployState) {
+    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index, DeployState deployState) {
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
@@ -86,7 +86,7 @@ public class IndexedSearchCluster extends SearchCluster
      * services file on initialization, this can NOT be used at runtime to determine indexing chain. When initialization
      * is done, the {@link #getIndexingServiceName()} method holds the actual indexing docproc chain object.
      *
-     * @return The name of the docproc cluster associated with this.
+     * @return the name of the docproc cluster associated with this
      */
     public String getIndexingClusterName() {
         return hasExplicitIndexingCluster() ? indexingClusterName : getClusterName() + ".indexing";
@@ -104,7 +104,7 @@ public class IndexedSearchCluster extends SearchCluster
      * Sets the name of the docproc cluster running indexing for this search cluster. This is for initial configuration,
      * and will not reflect the actual indexing chain. See {@link #getIndexingClusterName} for more detail.
      *
-     * @param name The name of the docproc cluster associated with this.
+     * @param name the name of the docproc cluster associated with this
      */
     public void setIndexingClusterName(String name) {
         indexingClusterName = name;
@@ -118,8 +118,8 @@ public class IndexedSearchCluster extends SearchCluster
      * Sets the docproc chain that will be running indexing for this search cluster. This is set by the
      * {@link com.yahoo.vespa.model.content.Content} model during build.
      *
-     * @param chain the chain that is to run indexing for this cluster.
-     * @return this, to allow chaining.
+     * @param chain the chain that is to run indexing for this cluster
+     * @return this, to allow chaining
      */
     public AbstractSearchCluster setIndexingChain(DocprocChain chain) {
         indexingChain = chain;
@@ -280,7 +280,7 @@ public class IndexedSearchCluster extends SearchCluster
         if (dispatchSpec.getNumDispatchGroups() != null) {
             this.dispatchSpec = new DispatchSpec.Builder().setGroups
                     (DispatchGroupBuilder.createDispatchGroups(getSearchNodes(),
-                            dispatchSpec.getNumDispatchGroups())).build();
+                                                               dispatchSpec.getNumDispatchGroups())).build();
         } else {
             this.dispatchSpec = dispatchSpec;
         }
@@ -343,7 +343,7 @@ public class IndexedSearchCluster extends SearchCluster
      * which is the parent to this. This avoids building the config multiple times.
      */
     public static class UnionConfiguration
-            extends AbstractConfigProducer
+            extends AbstractConfigProducer<UnionConfiguration>
             implements AttributesConfig.Producer {
         private final List<DocumentDatabase> docDbs;
 
@@ -372,7 +372,7 @@ public class IndexedSearchCluster extends SearchCluster
             }
         }
 
-        private UnionConfiguration(AbstractConfigProducer parent, List<DocumentDatabase> docDbs) {
+        private UnionConfiguration(AbstractConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
             super(parent, "union");
             this.docDbs = docDbs;
         }

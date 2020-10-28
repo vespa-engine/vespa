@@ -49,7 +49,7 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
     /**
      * Constructs a new document protocol based on the content of the given plugins.
      *
-     * @param plugins The plugins to reflect on.
+     * @param plugins the plugins to reflect on
      */
     DocumentProtocol(ConfigModelRepo plugins) {
         application = createApplicationSpec(plugins);
@@ -61,8 +61,8 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
      * Creates a service index based on the plugins loaded. This means to fill the index with all services known by this
      * protocol by traversing the plugins.
      *
-     * @param plugins All initialized plugins of the Vespa model.
-     * @return The index of all known services.
+     * @param plugins All initialized plugins of the Vespa model
+     * @return the index of all known services
      */
     private static ApplicationSpec createApplicationSpec(ConfigModelRepo plugins) {
         ApplicationSpec ret = new ApplicationSpec();
@@ -73,12 +73,12 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
             }
         }
 
-        for (ContainerCluster containerCluster: ContainerModel.containerClusters(plugins)) {
+        for (ContainerCluster<?> containerCluster: ContainerModel.containerClusters(plugins)) {
             ContainerDocproc containerDocproc = containerCluster.getDocproc();
             if (containerDocproc != null) {
                 createDocprocChainSpec(ret,
-                        containerDocproc.getChains().allChains().allComponents(),
-                        containerCluster.getContainers());
+                                       containerDocproc.getChains().allChains().allComponents(),
+                                       containerCluster.getContainers());
             }
         }
 
@@ -87,7 +87,7 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
 
     private static void createDocprocChainSpec(ApplicationSpec spec,
                                                List<DocprocChain> docprocChains,
-                                               List<Container> containerNodes) {
+                                               List<? extends Container> containerNodes) {
         for (DocprocChain chain: docprocChains) {
             for (Container node: containerNodes)
                 spec.addService(NAME, node.getConfigId() + "/chain." + chain.getComponentId().stringValue());
@@ -105,8 +105,9 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
         try {
             new DocumentSelector(selector);
         } catch (com.yahoo.document.select.parser.ParseException e) {
-            throw new IllegalArgumentException("Failed to parse selector '" + selector + "' for route '" + clusterConfigId +
-                    "' in policy 'DocumentRouteSelector'.");
+            throw new IllegalArgumentException("Failed to parse selector '" + selector +
+                                               "' for route '" + clusterConfigId +
+                                               "' in policy 'DocumentRouteSelector'.");
         }
         DocumentrouteselectorpolicyConfig.Route.Builder routeBuilder = new DocumentrouteselectorpolicyConfig.Route.Builder();
         routeBuilder.name(clusterConfigId);
@@ -117,13 +118,13 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
     /**
      * This function extrapolates any routes for the document protocol that it can from the vespa model.
      *
-     * @param plugins All initialized plugins of the vespa model.
-     * @return Routing table for the document protocol.
+     * @param plugins all initialized plugins of the vespa model
+     * @return routing table for the document protocol
      */
     private static RoutingTableSpec createRoutingTable(ConfigModelRepo plugins) {
         // Build simple hops and routes.
         List<ContentCluster> content = Content.getContentClusters(plugins);
-        Collection<ContainerCluster> containerClusters = ContainerModel.containerClusters(plugins);
+        Collection<ContainerCluster<?>> containerClusters = ContainerModel.containerClusters(plugins);
 
         RoutingTableSpec table = new RoutingTableSpec(NAME);
         addContainerClusterDocprocHops(containerClusters, table);
@@ -140,10 +141,10 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
         return table;
     }
 
-    private static void addContainerClusterDocprocHops(Collection<ContainerCluster> containerClusters,
+    private static void addContainerClusterDocprocHops(Collection<ContainerCluster<?>> containerClusters,
                                                        RoutingTableSpec table) {
 
-        for (ContainerCluster cluster: containerClusters) {
+        for (ContainerCluster<?> cluster: containerClusters) {
             ContainerDocproc docproc = cluster.getDocproc();
 
             if (docproc != null) {
@@ -182,8 +183,8 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
      * Create hops to all configured storage nodes for the Document protocol. The "Distributor" policy resolves its
      * recipients using slobrok lookups, so it requires no configured recipients.
      *
-     * @param content The storage model from {@link com.yahoo.vespa.model.VespaModel}.
-     * @param table   The routing table to add to.
+     * @param content the storage model from {@link com.yahoo.vespa.model.VespaModel}
+     * @param table   the routing table to add to
      */
     private static void addContentRouting(List<ContentCluster> content, RoutingTableSpec table) {
 
@@ -210,7 +211,7 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
      * policy "SearchCluster" will decide which cluster(s) are to receive every document passed through it based on a
      * document select string derived from services.xml.
      *
-     * @param table  The routing table to add to.
+     * @param table the routing table to add to
      */
     private static void addIndexingHop(List<ContentCluster> content, RoutingTableSpec table) {
         if (content.isEmpty()) {
@@ -232,12 +233,12 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
      * is an unambiguous docproc cluster in the application, the {@code default} route will pass through it.
      * The {@code default-get} route skips the docproc but is otherwise identical to the {@code default} route.
      *
-     * @param content The content model from {@link com.yahoo.vespa.model.VespaModel}.
+     * @param content the content model from {@link com.yahoo.vespa.model.VespaModel}
      * @param containerClusters a collection of {@link com.yahoo.vespa.model.container.ContainerCluster}s
-     * @param table   The routing table to add to.
+     * @param table the routing table to add to
      */
     private static void addDefaultRoutes(List<ContentCluster> content,
-                                         Collection<ContainerCluster> containerClusters,
+                                         Collection<ContainerCluster<?>> containerClusters,
                                          RoutingTableSpec table) {
         if (content.isEmpty() || !indexingHopExists(table)) {
             return;
@@ -268,22 +269,19 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
         return false;
     }
 
-    private static String getContainerClustersDocprocHop(Collection<ContainerCluster> containerClusters) {
+    private static String getContainerClustersDocprocHop(Collection<ContainerCluster<?>> containerClusters) {
         DocprocChain result = null;
 
-        for (ContainerCluster containerCluster: containerClusters) {
+        for (ContainerCluster<?> containerCluster: containerClusters) {
             DocprocChain defaultChain = getDefaultChain(containerCluster.getDocproc());
             if (defaultChain != null) {
                 if (result != null)
                     throw new RuntimeException("Only a single default docproc chain is allowed across all container clusters");
-
                 result = defaultChain;
             }
         }
 
-        return result == null ?
-                null:
-                result.getServiceName();
+        return result == null ? null: result.getServiceName();
     }
 
     private static DocprocChain getDefaultChain(ContainerDocproc docproc) {
@@ -297,7 +295,7 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
      * the second naming element. This can only be done to those routes that do not share primary name elements with
      * other routes (e.g. a search clusters with the same name as a storage cluster).
      *
-     * @param table The routing table whose route names are to be simplified.
+     * @param table the routing table whose route names are to be simplified
      */
     private static void simplifyRouteNames(RoutingTableSpec table) {
         if (table == null || !table.hasRoutes()) {
@@ -356,8 +354,8 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
      * Returns a simplified version of the given route name. This method will remove the first component of the name as
      * separated by a forward slash, and then remove the first component of the remaining name as separated by a dot.
      *
-     * @param name The route name to simplify.
-     * @return The simplified route name.
+     * @param name the route name to simplify
+     * @return the simplified route name
      */
     private static String simplifyRouteName(String name) {
         String[] foo = name.split("/", 2);
@@ -380,4 +378,5 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
     public RoutingTableSpec getRoutingTableSpec() {
         return routingTable;
     }
+
 }

@@ -109,7 +109,7 @@ public class NodeRebooterTest {
     }
 
     private void makeReadyHosts(int count, ProvisioningTester tester) {
-        List<Node> hosts = tester.makeReadyNodes(count, new NodeResources(64, 256, 1000, 10), NodeType.host, 10);
+        tester.makeReadyNodes(count, new NodeResources(64, 256, 1000, 10), NodeType.host, 10);
     }
 
     /** Set current reboot generation to the wanted reboot generation whenever it is larger (i.e record a reboot) */

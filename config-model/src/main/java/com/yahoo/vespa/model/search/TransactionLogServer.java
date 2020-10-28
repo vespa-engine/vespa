@@ -27,7 +27,9 @@ public class TransactionLogServer extends AbstractService  {
         }
     }
 
-    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName, ModelContext.Properties featureFlags) {
+    public TransactionLogServer(AbstractConfigProducer<?> searchNode,
+                                String clusterName,
+                                ModelContext.Properties featureFlags) {
         super(searchNode, "transactionlogserver");
         portsMeta.on(0).tag("tls");
         setProp("clustername", clusterName);
@@ -37,6 +39,7 @@ public class TransactionLogServer extends AbstractService  {
     }
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<TransactionLogServer> {
+
         private final String clusterName;
         public Builder(String clusterName) {
             this.clusterName = clusterName;
@@ -46,6 +49,7 @@ public class TransactionLogServer extends AbstractService  {
         protected TransactionLogServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             return new TransactionLogServer(ancestor, clusterName, deployState.getProperties());
         }
+
     }
 
     public int getPortCount() {
