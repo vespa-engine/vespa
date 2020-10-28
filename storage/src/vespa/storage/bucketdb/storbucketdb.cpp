@@ -2,8 +2,6 @@
 
 #include "storbucketdb.h"
 #include "btree_lockable_map.h"
-#include "judymultimap.hpp"
-#include "lockablemap.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.bucketdb.stor_bucket_db");
@@ -40,10 +38,6 @@ operator<<(std::ostream& out, const StorageBucketInfo& info) {
 
 namespace {
 
-std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_legacy_db_impl() {
-    return std::make_unique<LockableMap<JudyMultiMap<StorageBucketInfo>>>();
-}
-
 std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_btree_db_impl() {
     return std::make_unique<BTreeLockableMap<StorageBucketInfo>>();
 }
@@ -52,9 +46,8 @@ std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_btree_db_impl() {
 
 } // bucketdb
 
-StorBucketDatabase::StorBucketDatabase(bool use_btree_db)
-    : _impl(use_btree_db ? bucketdb::make_btree_db_impl()
-                         : bucketdb::make_legacy_db_impl())
+StorBucketDatabase::StorBucketDatabase([[maybe_unused]] bool use_btree_db)
+    : _impl(bucketdb::make_btree_db_impl())
 {}
 
 void
@@ -141,7 +134,5 @@ std::unique_ptr<bucketdb::ReadGuard<StorBucketDatabase::Entry>>
 StorBucketDatabase::acquire_read_guard() const {
     return _impl->acquire_read_guard();
 }
-
-template class JudyMultiMap<bucketdb::StorageBucketInfo>;
 
 } // storage

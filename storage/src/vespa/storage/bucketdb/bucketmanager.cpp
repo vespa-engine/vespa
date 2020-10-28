@@ -2,7 +2,6 @@
 
 #include "bucketmanager.h"
 #include "minimumusedbitstracker.h"
-#include "lockablemap.hpp"
 #include <iomanip>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -22,6 +21,7 @@
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <chrono>
+#include <thread>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.manager");

@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storage/bucketdb/judyarray.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <iomanip>
 #include <iostream>
