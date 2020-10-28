@@ -18,7 +18,7 @@ import java.util.List;
  *
  * @author Peter Boros
  */
-public abstract class AbstractSearchCluster extends AbstractConfigProducer
+public abstract class AbstractSearchCluster extends AbstractConfigProducer<AbstractSearchCluster>
     implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,
@@ -28,10 +28,10 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     protected String clusterName;
     protected int index;
     private Double visibilityDelay = 0.0;
-    private List<String> documentNames = new ArrayList<>();
-    private List<SchemaSpec> localSDS = new LinkedList<>();
+    private final List<String> documentNames = new ArrayList<>();
+    private final List<SchemaSpec> localSDS = new LinkedList<>();
 
-    public AbstractSearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
+    public AbstractSearchCluster(AbstractConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
         this.clusterName = clusterName;
         this.index = index;

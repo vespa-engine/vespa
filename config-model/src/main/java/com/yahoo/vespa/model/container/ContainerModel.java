@@ -54,8 +54,8 @@ public class ContainerModel extends ConfigModel {
         getCluster().initialize(searchClustersByName);
     }
 
-    public static Collection<ContainerCluster> containerClusters(ConfigModelRepo models) {
-        List<ContainerCluster> containerClusters = new ArrayList<>();
+    public static Collection<ContainerCluster<?>> containerClusters(ConfigModelRepo models) {
+        List<ContainerCluster<?>> containerClusters = new ArrayList<>();
 
         for (ContainerModel model: models.getModels(ContainerModel.class))
             containerClusters.add(model.getCluster());
