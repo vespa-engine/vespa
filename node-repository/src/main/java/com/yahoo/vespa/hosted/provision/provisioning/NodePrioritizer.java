@@ -37,7 +37,7 @@ public class NodePrioritizer {
     private final NodeRepository nodeRepository;
     /** Whether node specification allows new nodes to be allocated. */
     private final boolean canAllocateNew;
-    private final boolean canAllocateToSpaceHosts;
+    private final boolean canAllocateToSpareHosts;
     private final boolean topologyChange;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
@@ -74,8 +74,8 @@ public class NodePrioritizer {
         // In dynamically provisioned zones, we can always take spare hosts since we can provision new on-demand,
         // NodeCandidate::compareTo will ensure that they will not be used until there is no room elsewhere.
         // In non-dynamically provisioned zones, we only allow allocating to spare hosts to replace failed nodes.
-        this.canAllocateToSpaceHosts = isReplacement(
-                nodesInCluster.size(), nodesInCluster.state(Node.State.failed).size()) || dynamicProvisioning;
+        this.canAllocateToSpareHosts = dynamicProvisioning ||
+                isReplacement(nodesInCluster.size(), nodesInCluster.state(Node.State.failed).size());
         // Do not allocate new nodes for exclusive deployments in dynamically provisioned zones: provision new host instead.
         this.canAllocateNew = requestedNodes instanceof NodeSpec.CountNodeSpec
                 && (!dynamicProvisioning || !requestedNodes.isExclusive());
@@ -121,7 +121,7 @@ public class NodePrioritizer {
     private void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
             NodeCandidate candidate = candidateFrom(node, true);
-            if (!candidate.violatesSpares || canAllocateToSpaceHosts) {
+            if (!candidate.violatesSpares || canAllocateToSpareHosts) {
                 nodes.add(candidate);
             }
         }
@@ -135,7 +135,7 @@ public class NodePrioritizer {
             if (host.type() == NodeType.host && !nodeRepository.canAllocateTenantNodeTo(host)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.exclusiveTo().isPresent()) continue; // Never allocate new nodes to exclusive hosts
-            if ( spareHosts.contains(host) && !canAllocateToSpaceHosts) continue;
+            if ( spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
             nodes.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
@@ -167,7 +167,7 @@ public class NodePrioritizer {
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> node.state() == Node.State.ready)
                 .map(node -> candidateFrom(node, false))
-                .filter(n -> !n.violatesSpares || canAllocateToSpaceHosts)
+                .filter(n -> !n.violatesSpares || canAllocateToSpareHosts)
                 .forEach(nodes::add);
     }
 
