@@ -1,71 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mergestatus.h"
+#include "has_mask_remapper.h"
 #include <ostream>
 #include <vespa/log/log.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <cassert>
 
 LOG_SETUP(".mergestatus");
 
 namespace storage {
-
-namespace {
-
-/*
- * Class for remapping bit masks from a partial set of nodes to a full
- * set of nodes.
- */
-class MaskRemapper
-{
-    std::vector<uint16_t> _mask_remap;
-
-public:
-    MaskRemapper(const std::vector<api::MergeBucketCommand::Node> &all_nodes,
-                 const std::vector<api::MergeBucketCommand::Node> &nodes);
-    ~MaskRemapper();
-
-    uint16_t operator()(uint16_t mask) const;
-};
-
-MaskRemapper::MaskRemapper(const std::vector<api::MergeBucketCommand::Node> &all_nodes,
-                           const std::vector<api::MergeBucketCommand::Node> &nodes)
-    : _mask_remap()
-{
-    if (nodes != all_nodes) {
-        vespalib::hash_map<uint32_t, uint32_t> node_index_to_mask(all_nodes.size());
-        uint16_t mask = 1u;
-        for (const auto& node : all_nodes) {
-            node_index_to_mask[node.index] = mask;
-            mask <<= 1;
-        }
-        _mask_remap.reserve(nodes.size());
-        for (const auto& node : nodes) {
-            mask = node_index_to_mask[node.index];
-            assert(mask != 0u);
-            _mask_remap.push_back(mask);
-        }
-    }
-}
-
-MaskRemapper::~MaskRemapper() = default;
-
-uint16_t
-MaskRemapper::operator()(uint16_t mask) const
-{
-    if (!_mask_remap.empty()) {
-        uint16_t new_mask = 0u;
-        for (uint32_t i = 0u; i < _mask_remap.size(); ++i) {
-            if ((mask & (1u << i)) != 0u) {
-                new_mask |= _mask_remap[i];
-            }
-        }
-        mask = new_mask;
-    }
-    return mask;
-}
-
-}
 
 MergeStatus::MergeStatus(const framework::Clock& clock, const metrics::LoadType& lt,
                          api::StorageMessage::Priority priority,
@@ -91,7 +33,7 @@ MergeStatus::removeFromDiff(
     std::vector<api::ApplyBucketDiffCommand::Entry>::const_iterator it2(
             part.begin());
     bool altered = false;
-    MaskRemapper remap_mask(nodeList, nodes);
+    HasMaskRemapper remap_mask(nodeList, nodes);
     // We expect part array to be sorted in the same order as in the diff,
     // and that all entries in the part should exist in the source list.
     while (it != diff.end() && it2 != part.end()) {
