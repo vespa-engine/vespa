@@ -50,6 +50,14 @@ public class HostCapacity {
                          .collect(Collectors.toSet());
     }
 
+    public Set<Node> findSpareHostsInDynamicallyProvisionedZones(List<Node> candidates) {
+        return candidates.stream()
+                .filter(node -> node.type() == NodeType.host)
+                .filter(host -> host.state() == Node.State.active)
+                .filter(host -> allNodes.childrenOf(host).isEmpty())
+                .collect(Collectors.toSet());
+    }
+
     private int compareWithoutInactive(Node hostA, Node hostB) {
         int result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
         if (result != 0) return result;
