@@ -123,10 +123,6 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
      *         without wantToDeprovision (which means an operator is looking at the node).
      */
     private List<Node> provision(List<NodeResources> advertisedSpareCapacity, NodeList nodes) {
-        if (!nodeRepository().zone().getCloud().dynamicProvisioning()) {
-            return List.of();
-        }
-
         Map<String, Node> hostsByHostname = new HashMap<>(nodes.hosts().asList().stream()
                 .filter(host -> host.state() != Node.State.parked || host.status().wantToDeprovision())
                 .collect(Collectors.toMap(Node::hostname, Function.identity())));
