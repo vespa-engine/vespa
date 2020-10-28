@@ -161,24 +161,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag TLS_COMPRESSION_TYPE = defineStringFlag(
-            "tls-compression-type", "NONE",
-            "Selects type of compression, valid values are NONE, NONE_MULTI, LZ4, ZSTD",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag TLS_USE_FSYNC = defineFeatureFlag(
-            "tls-use-fsync", false,
-            "Whether to use fsync when writing to the TLS.",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag VISIBILITY_DELAY = defineDoubleFlag(
-            "visibility-delay", 0.0,
-            "Default visibility-delay",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_DIRECT_STORAGE_API_RPC = defineFeatureFlag(
             "use-direct-storage-api-rpc", false,
             "Whether to use direct RPC for Storage API communication between content cluster nodes.",

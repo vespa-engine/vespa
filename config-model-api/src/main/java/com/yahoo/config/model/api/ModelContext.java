@@ -84,9 +84,10 @@ public interface ModelContext {
         boolean skipCommunicationManagerThread();
         boolean skipMbusRequestThread();
         boolean skipMbusReplyThread();
-        boolean tlsUseFSync();
-        String tlsCompressionType();
-        double visibilityDelay();
+        // TODO(balder) Last used on 7.305
+        default boolean tlsUseFSync() { return true; }
+        default String tlsCompressionType() { return "ZSTD"; }
+        default double visibilityDelay() { return 0.0; }
 
         boolean useContentNodeBtreeDb();
 

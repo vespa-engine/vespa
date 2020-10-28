@@ -803,9 +803,9 @@ public class ContentBuilderTest extends DomBuilderTest {
 
     }
 
-    private void verifyThatFeatureFlagControlsVisibilityDelayDefault(double defaultVisibiliDelay, Double xmlOverride, double expected) {
+    private void verifyThatFeatureFlagControlsVisibilityDelayDefault(Double xmlOverride, double expected) {
         String hostedXml = xmlWithVisibilityDelay(xmlOverride);
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setVisibilityDelay(defaultVisibiliDelay));
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties());
         VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withServices(hostedXml)
                 .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
@@ -816,10 +816,9 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
     @Test
     public void verifyThatFeatureFlagControlsVisibilityDelayDefault() {
-        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.0, null, 0.0);
-        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.3, null, 0.3);
-        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.0, 0.5, 0.5);
-        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.3, 0.6, 0.6);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(null, 0.0);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.5, 0.5);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.6, 0.6);
     }
 
     @Test
