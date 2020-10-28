@@ -400,7 +400,7 @@ public class InternalStepRunner implements StepRunner {
     private Version testerPlatformVersion(RunId id) {
         return application(id.application()).change().isPinned()
                ? controller.jobController().run(id).get().versions().targetPlatform()
-               : controller.systemVersion();
+               : controller.readSystemVersion();
     }
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {

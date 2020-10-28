@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.net.URI;
@@ -289,6 +290,7 @@ class JobControllerApiHandlerHelper {
 
         Map<JobId, List<Versions>> jobsToRun = status.jobsToRun();
         Cursor stepsArray = responseObject.setArray("steps");
+        VersionStatus versionStatus = controller.readVersionStatus();
         for (DeploymentStatus.StepStatus stepStatus : status.allSteps()) {
             Change change = status.application().require(stepStatus.instance()).change();
             Cursor stepObject = stepsArray.addObject();
@@ -305,7 +307,7 @@ class JobControllerApiHandlerHelper {
                       .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
             stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
             stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
-            stepStatus.blockedUntil(Change.of(controller.systemVersion())) // Dummy version — just anything with a platform.
+            stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))) // Dummy version — just anything with a platform.
                       .ifPresent(until -> stepObject.setLong("platformBlockedUntil", until.toEpochMilli()));
             application.latestVersion().map(Change::of).flatMap(stepStatus::blockedUntil) // Dummy version — just anything with an application.
                       .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
@@ -322,7 +324,7 @@ class JobControllerApiHandlerHelper {
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
                 List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
-                latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(controller.versionStatus().versions(),
+                latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(versionStatus.versions(),
                                                                            application.deploymentSpec().requireInstance(stepStatus.instance()).upgradePolicy())
                           .ifPresent(latestPlatform -> {
                               Cursor latestPlatformObject = latestVersionsObject.setObject("platform");

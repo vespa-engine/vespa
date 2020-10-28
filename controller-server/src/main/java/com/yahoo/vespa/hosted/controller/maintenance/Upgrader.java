@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
@@ -53,12 +54,13 @@ public class Upgrader extends ControllerMaintainer {
     @Override
     public boolean maintain() {
         // Determine target versions for each upgrade policy
-        Version canaryTarget = controller().systemVersion();
-        Collection<Version> defaultTargets = targetVersions(Confidence.normal);
-        Collection<Version> conservativeTargets = targetVersions(Confidence.high);
+        VersionStatus versionStatus = controller().readVersionStatus();
+        Version canaryTarget = controller().systemVersion(versionStatus);
+        Collection<Version> defaultTargets = targetVersions(Confidence.normal, versionStatus);
+        Collection<Version> conservativeTargets = targetVersions(Confidence.high, versionStatus);
 
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
-        for (VespaVersion version : controller().versionStatus().versions()) {
+        for (VespaVersion version : versionStatus.versions()) {
             if (version.confidence() == Confidence.broken)
                 cancelUpgradesOf(instances().upgradingTo(version.versionNumber())
                                             .not().with(UpgradePolicy.canary),
@@ -93,16 +95,16 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     /** Returns the target versions for given confidence, one per major version in the system */
-    private Collection<Version> targetVersions(Confidence confidence) {
-        return controller().versionStatus().versions().stream()
-                           // Ensure we never pick a version newer than the system
-                           .filter(v -> !v.versionNumber().isAfter(controller().systemVersion()))
-                           .filter(v -> v.confidence().equalOrHigherThan(confidence))
-                           .map(VespaVersion::versionNumber)
-                           .collect(Collectors.toMap(Version::getMajor, // Key on major version
-                                                     Function.identity(),  // Use version as value
-                                                     BinaryOperator.<Version>maxBy(naturalOrder()))) // Pick highest version when merging versions within this major
-                           .values();
+    private Collection<Version> targetVersions(Confidence confidence, VersionStatus versionStatus) {
+        return versionStatus.versions().stream()
+                            // Ensure we never pick a version newer than the system
+                            .filter(v -> !v.versionNumber().isAfter(controller().systemVersion(versionStatus)))
+                            .filter(v -> v.confidence().equalOrHigherThan(confidence))
+                            .map(VespaVersion::versionNumber)
+                            .collect(Collectors.toMap(Version::getMajor, // Key on major version
+                                                      Function.identity(),  // Use version as value
+                                                      BinaryOperator.<Version>maxBy(naturalOrder()))) // Pick highest version when merging versions within this major
+                            .values();
     }
 
     /** Returns a list of all production application instances, except those which are pinned, which we should not manipulate here. */

@@ -52,7 +52,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<Version> {
 
     @Override
     protected Optional<Version> targetVersion() {
-        return controller().versionStatus().controllerVersion()
+        return controller().readVersionStatus().controllerVersion()
                            .filter(vespaVersion -> !vespaVersion.isSystemVersion())
                            .filter(vespaVersion -> vespaVersion.confidence() != VespaVersion.Confidence.broken)
                            .map(VespaVersion::versionNumber);

@@ -93,12 +93,13 @@ public class VersionStatus {
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
         Version newSystemVersion = infrastructureVersions.keySet().stream().min(Comparator.naturalOrder()).get();
-        Version systemVersion = controller.versionStatus().systemVersion()
-                                          .map(VespaVersion::versionNumber)
-                                          .orElse(newSystemVersion);
+        VersionStatus versionStatus = controller.readVersionStatus();
+        Version systemVersion = versionStatus.systemVersion()
+                                             .map(VespaVersion::versionNumber)
+                                             .orElse(newSystemVersion);
         if (newSystemVersion.isBefore(systemVersion)) {
             log.warning("Refusing to lower system version from " +
-                        controller.systemVersion() +
+                        systemVersion +
                         " to " +
                         newSystemVersion +
                         ", nodes on " + newSystemVersion + ": " +
@@ -126,7 +127,8 @@ public class VersionStatus {
                                                           systemVersion,
                                                           isReleased,
                                                           systemApplicationVersions.matching(statistics.version()),
-                                                          controller);
+                                                          controller,
+                                                          versionStatus);
                 versions.add(vespaVersion);
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Unable to create VespaVersion for version " +
@@ -155,7 +157,7 @@ public class VersionStatus {
                 }
                 for (var node : nodes) {
                     // Only use current node version if config has converged
-                    var version = configConverged ? node.currentVersion() : controller.systemVersion();
+                    var version = configConverged ? node.currentVersion() : controller.readSystemVersion();
                     var nodeVersion = new NodeVersion(node.hostname(), zone.getId(), version, node.wantedVersion(),
                                                       node.suspendedSince());
                     nodeVersions.put(nodeVersion.hostname(), nodeVersion);
@@ -183,14 +185,15 @@ public class VersionStatus {
                                               Version systemVersion,
                                               boolean isReleased,
                                               NodeVersions nodeVersions,
-                                              Controller controller) {
+                                              Controller controller,
+                                              VersionStatus versionStatus) {
         var latestVersion = controllerVersions.stream().max(Comparator.naturalOrder()).get();
         var controllerVersion = controllerVersions.stream().min(Comparator.naturalOrder()).get();
         var isSystemVersion = statistics.version().equals(systemVersion);
         var isControllerVersion = statistics.version().equals(controllerVersion.version());
         var confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
         var confidenceIsOverridden = confidence != null;
-        var previousStatus = controller.versionStatus().version(statistics.version());
+        var previousStatus = versionStatus.version(statistics.version());
 
         // Compute confidence
         if (!confidenceIsOverridden) {
@@ -199,7 +202,11 @@ public class VersionStatus {
                 confidence = VespaVersion.confidenceFrom(statistics, controller);
             } else {
                 // This is an older version so we preserve the existing confidence, if any
-                confidence = getOrUpdateConfidence(statistics, controller);
+                confidence = versionStatus.versions().stream()
+                                          .filter(v -> statistics.version().equals(v.versionNumber()))
+                                          .map(VespaVersion::confidence)
+                                          .findFirst()
+                                          .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller));
             }
         }
 
@@ -225,19 +232,6 @@ public class VersionStatus {
                                 isReleased,
                                 nodeVersions,
                                 confidence);
-    }
-
-    /**
-     * Calculate confidence from given deployment statistics.
-     *
-     * @return previously calculated confidence for this version. If none exists, a new confidence will be calculated.
-     */
-    private static VespaVersion.Confidence getOrUpdateConfidence(DeploymentStatistics statistics, Controller controller) {
-        return controller.versionStatus().versions().stream()
-                         .filter(v -> statistics.version().equals(v.versionNumber()))
-                         .map(VespaVersion::confidence)
-                         .findFirst()
-                         .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller));
     }
 
 }

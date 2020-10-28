@@ -189,7 +189,7 @@ public class DeploymentTrigger {
         Instance instance = application.require(applicationId.instance());
         DeploymentStatus status = jobs.deploymentStatus(application);
         JobId job = new JobId(instance.id(), jobType);
-        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.systemVersion());
+        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
         String reason = "Job triggered manually by " + user;
         Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
         if (jobs.isEmpty() || ! requireTests)

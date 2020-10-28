@@ -339,7 +339,7 @@ public class MetricsReporterTest {
             upgradeTo(version, hosts.subList(1, hosts.size()), zone, tester);
             runAll(tester::computeVersionStatus, reporter);
             assertPlatformChangeDuration(Duration.ZERO, hosts);
-            assertEquals(version, tester.controller().systemVersion());
+            assertEquals(version, tester.controller().readSystemVersion());
             assertPlatformNodeCount(hosts.size(), version);
         }
     }

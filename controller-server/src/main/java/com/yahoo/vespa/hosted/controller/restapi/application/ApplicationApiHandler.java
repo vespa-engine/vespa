@@ -1120,7 +1120,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
      */
     private Version compileVersion(TenantAndApplicationId id) {
         Version oldestPlatform = controller.applications().oldestInstalledPlatform(id);
-        VersionStatus versionStatus = controller.versionStatus();
+        VersionStatus versionStatus = controller.readVersionStatus();
         return versionStatus.versions().stream()
                             .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
                             .filter(VespaVersion::isReleased)
@@ -1374,16 +1374,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         StringBuilder response = new StringBuilder();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             Version version = Version.fromString(versionString);
+            VersionStatus versionStatus = controller.readVersionStatus();
             if (version.equals(Version.emptyVersion))
-                version = controller.systemVersion();
-            if ( ! systemHasVersion(version))
+                version = controller.systemVersion(versionStatus);
+            if ( versionStatus.version(version) == null)
                 throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
                                                    "Version is not active in this system. " +
-                                                   "Active versions: " + controller.versionStatus().versions()
-                                                                                   .stream()
-                                                                                   .map(VespaVersion::versionNumber)
-                                                                                   .map(Version::toString)
-                                                                                   .collect(joining(", ")));
+                                                   "Active versions: " + versionStatus.versions()
+                                                                                      .stream()
+                                                                                      .map(VespaVersion::versionNumber)
+                                                                                      .map(Version::toString)
+                                                                                      .collect(joining(", ")));
             Change change = Change.of(version);
             if (pin)
                 change = change.withPin();
@@ -1494,10 +1495,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
             // To avoid second guessing the orchestrated upgrades of system applications
             // we don't allow to deploy these during an system upgrade (i.e when new vespa is being rolled out)
-            if (controller.versionStatus().isUpgrading()) {
+            VersionStatus versionStatus = controller.readVersionStatus();
+            if (versionStatus.isUpgrading()) {
                 throw new IllegalArgumentException("Deployment of system applications during a system upgrade is not allowed");
             }
-            Optional<VespaVersion> systemVersion = controller.versionStatus().systemVersion();
+            Optional<VespaVersion> systemVersion = versionStatus.systemVersion();
             if (systemVersion.isEmpty()) {
                 throw new IllegalArgumentException("Deployment of system applications is not permitted until system version is determined");
             }
@@ -1895,10 +1897,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Scanner scanner = new Scanner(stream).useDelimiter("\\A");
         if ( ! scanner.hasNext()) return null;
         return scanner.next();
-    }
-
-    private boolean systemHasVersion(Version version) {
-        return controller.versionStatus().versions().stream().anyMatch(v -> v.versionNumber().equals(version));
     }
 
     private static boolean recurseOverTenants(HttpRequest request) {
