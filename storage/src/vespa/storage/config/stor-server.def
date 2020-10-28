@@ -87,4 +87,4 @@ simulated_bucket_request_latency_msec int default=0
 
 ## If set, content node processes will use a B-tree backed bucket database implementation
 ## instead of the legacy Judy-based implementation.
-use_content_node_btree_bucket_db bool default=false restart
+use_content_node_btree_bucket_db bool default=true restart

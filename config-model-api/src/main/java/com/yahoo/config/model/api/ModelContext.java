@@ -88,7 +88,8 @@ public interface ModelContext {
         String tlsCompressionType();
         double visibilityDelay();
 
-        boolean useContentNodeBtreeDb();
+        // TODO(balder) Last used on 7.306
+        default boolean useContentNodeBtreeDb() { return true; }
 
         boolean useThreePhaseUpdates();
 

@@ -147,7 +147,6 @@ public class ModelContextImpl implements ModelContext {
         private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
-        private final boolean useContentNodeBtreeDb;
         private final boolean useThreePhaseUpdates;
         private final boolean useDirectStorageApiRpc;
         private final boolean useFastValueTensorImplementation;
@@ -199,8 +198,6 @@ public class ModelContextImpl implements ModelContext {
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            useContentNodeBtreeDb = Flags.USE_CONTENT_NODE_BTREE_DB.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             useThreePhaseUpdates = Flags.USE_THREE_PHASE_UPDATES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -285,11 +282,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-
-        @Override
-        public boolean useContentNodeBtreeDb() {
-            return useContentNodeBtreeDb;
-        }
 
         @Override
         public boolean useThreePhaseUpdates() {
