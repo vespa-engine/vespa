@@ -8,8 +8,8 @@ import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
 import com.yahoo.vespa.model.container.docproc.model.DocumentProcessorModel;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author Einar M R Rosenvinge
@@ -22,9 +22,7 @@ public class IndexingProcessor extends DocumentProcessor {
         super(new DocumentProcessorModel(new BundleInstantiationSpecification(new ComponentId(DocumentProcessor.INDEXER),
                                                                               new ComponentSpecification(DocumentProcessor.INDEXER),
                                                                               new ComponentSpecification(docprocsBundleSpecification)),
-                                         new Dependencies(Collections.<String>emptyList(),
-                                                          Collections.<String>emptyList(),
-                                                          Collections.<String>emptyList()),
+                                         new Dependencies(List.of(), List.of(), List.of()),
                                          new HashMap<>()));
     }
 

@@ -288,16 +288,22 @@ ValueType::rename(const std::vector<vespalib::string> &from,
 }
 
 ValueType
+ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in)
+{
+    sort_dimensions(dimensions_in);
+    if (!verify_dimensions(dimensions_in)) {
+        return error_type();
+    }
+    return ValueType(cell_type, std::move(dimensions_in));
+}
+
+ValueType
 ValueType::tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type)
 {
     if (dimensions_in.empty()) {
         return double_type();
     }
-    sort_dimensions(dimensions_in);
-    if (!verify_dimensions(dimensions_in)) {
-        return error_type();
-    }
-    return ValueType(Type::TENSOR, cell_type, std::move(dimensions_in));
+    return make_type(cell_type, std::move(dimensions_in));
 }
 
 ValueType
@@ -338,7 +344,7 @@ ValueType::join(const ValueType &lhs, const ValueType &rhs)
 ValueType
 ValueType::merge(const ValueType &lhs, const ValueType &rhs)
 {
-    if ((lhs.type() != rhs.type()) ||
+    if ((lhs.is_error() != rhs.is_error()) ||
         (lhs.dimensions() != rhs.dimensions()))
     {
         return error_type();

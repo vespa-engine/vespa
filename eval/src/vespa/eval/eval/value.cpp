@@ -56,7 +56,11 @@ Value::as_double() const
     return typify_invoke<1,TypifyCellType,MySum>(type().cell_type(), cells());
 }
 
-ValueType DoubleValue::_type = ValueType::double_type();
+template <typename T>
+ValueType ScalarValue<T>::_type = ValueType::make_type(get_cell_type<T>(), {});
+
+template class ScalarValue<double>;
+template class ScalarValue<float>;
 
 } // namespace vespalib::eval
 } // namespace vespalib
