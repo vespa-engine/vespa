@@ -5,12 +5,19 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
 import com.yahoo.statistics.Counter;
 import com.yahoo.text.Utf8;
 
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * An executor executed incoming processings on its CallStack
@@ -27,7 +34,7 @@ public class DocprocExecutor {
     private final String docCounterName;
     private final Counter docCounter;
     private final Metric metric;
-    private Metric.Context context;
+    private Function<String, Metric.Context> contexts;
     private final CallStack callStack;
 
     /**
@@ -44,7 +51,7 @@ public class DocprocExecutor {
         this.metric = callStack.getMetric();
         this.callStack = callStack;
         this.callStack.setName(name);
-        this.context = this.metric.createContext(Collections.singletonMap("chain", chainDimension));
+        this.contexts = cachedContexts(chainDimension);
     }
 
     /**
@@ -59,7 +66,7 @@ public class DocprocExecutor {
         this.docCounterName = oldExecutor.docCounterName;
         this.docCounter = oldExecutor.docCounter;
         this.metric = oldExecutor.metric;
-        this.context = oldExecutor.context;
+        this.contexts = oldExecutor.contexts;
         this.callStack = callStack;
     }
 
@@ -71,16 +78,14 @@ public class DocprocExecutor {
         return name;
     }
 
-    private void incrementNumDocsProcessed(int num) {
-        docCounter.increment(num);
-        metric.add(docCounterName, num, null);
-        metric.add(METRIC_NAME_DOCUMENTS_PROCESSED, num, this.context);
-    }
-
     private void incrementNumDocsProcessed(Processing processing) {
-        int increment = processing.getNumDocsToBeProcessed();
-        if (increment != 0) {
-            incrementNumDocsProcessed(increment);
+        List<DocumentOperation> operations = processing.getOnceOperationsToBeProcessed();
+        if ( ! operations.isEmpty()) {
+            docCounter.increment(operations.size());
+            metric.add(docCounterName, operations.size(), null);
+            operations.stream()
+                      .collect(groupingBy(operation -> operation.getId().getDocType(), counting()))
+                      .forEach((type, count) -> metric.add(METRIC_NAME_DOCUMENTS_PROCESSED, count, contexts.apply(type)));
         }
     }
 
@@ -176,4 +181,15 @@ public class DocprocExecutor {
         }
         return progress;
     }
+
+    private Function<String, Metric.Context> cachedContexts(String chainDimension) {
+        Map<String, Metric.Context> contextCache = new ConcurrentHashMap<>();
+        return documentType -> contextCache.computeIfAbsent(documentType, type -> {
+            Map<String, String> dimensions = new HashMap<>(2);
+            dimensions.put("chain", chainDimension);
+            dimensions.put("documentType", type);
+            return metric.createContext(dimensions);
+        });
+    }
+
 }
