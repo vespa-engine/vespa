@@ -89,7 +89,7 @@ public class NodeRepositoryNode {
     @JsonProperty("reservedTo")
     private String reservedTo;
     @JsonProperty("exclusiveTo")
-    private NodeOwner exclusiveTo;
+    private String exclusiveTo;
 
     public String getUrl() {
         return url;
@@ -377,9 +377,9 @@ public class NodeRepositoryNode {
 
     public void setReservedTo(String reservedTo) { this.reservedTo = reservedTo; }
 
-    public NodeOwner getExclusiveTo() { return exclusiveTo; }
+    public String getExclusiveTo() { return exclusiveTo; }
 
-    public void setExclusiveTo(NodeOwner exclusiveTo) { this.exclusiveTo = exclusiveTo; }
+    public void setExclusiveTo(String exclusiveTo) { this.exclusiveTo = exclusiveTo; }
 
     @Override
     public String toString() {
