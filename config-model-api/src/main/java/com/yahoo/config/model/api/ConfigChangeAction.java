@@ -4,7 +4,6 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Contains the action to be performed on the given services to handle a config change
@@ -15,7 +14,7 @@ import java.util.Optional;
 public interface ConfigChangeAction {
 
     enum Type {
-        RESTART("restart"), REFEED("refeed");
+        RESTART("restart"), REFEED("refeed"), REINDEXING("reindexing");
 
         private final String type;
 
