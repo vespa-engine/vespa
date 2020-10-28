@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class IndexingProcessor extends DocumentProcessor {
 

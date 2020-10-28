@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.container.docproc.model.DocumentProcessorModel;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentProcessor extends ChainedComponent<DocumentProcessorModel> {
 
