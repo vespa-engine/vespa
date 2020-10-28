@@ -39,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -68,7 +69,7 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
         List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), flavor, application1, Version.emptyVersion);
+        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), flavor, application1, Version.emptyVersion, false);
 
         // Total of 8 nodes should now be in node-repo, 4 hosts in state provisioned, and 4 reserved nodes
         assertEquals(8, tester.nodeRepository().list().size());
@@ -86,7 +87,7 @@ public class DynamicDockerProvisionTest {
         List<Integer> expectedProvisionIndexes = List.of(100, 101);
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("large"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
-        verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor, application, Version.emptyVersion);
+        verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor, application, Version.emptyVersion, false);
 
         // Ready the provisioned hosts, add an IP addresses to pool and activate them
         for (Integer i : expectedProvisionIndexes) {
@@ -101,7 +102,7 @@ public class DynamicDockerProvisionTest {
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().flavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor);
         // Verify there was only 1 call to provision hosts (during the first prepare)
-        verify(hostProvisioner).provisionHosts(any(), any(), any(), any());
+        verify(hostProvisioner).provisionHosts(any(), any(), any(), any(), anyBoolean());
 
         // Node-repo should now consist of 2 active hosts with 2 reserved nodes on each
         assertEquals(6, tester.nodeRepository().list().size());
@@ -345,7 +346,7 @@ public class DynamicDockerProvisionTest {
             return provisionIndexes.stream()
                     .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeResources, Version.emptyVersion))
                     .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any());
+        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), anyBoolean());
     }
 
     private static class MockHostProvisioner implements HostProvisioner {
@@ -359,7 +360,7 @@ public class DynamicDockerProvisionTest {
         }
 
         @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion) {
+        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion, boolean forceExclusive) {
             Optional<Flavor> hostFlavor = hostFlavors.stream().filter(f -> compatible(f, resources)).findFirst();
             if (hostFlavor.isEmpty())
                 throw new OutOfCapacityException("No host flavor matches " + resources);

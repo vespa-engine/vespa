@@ -21,14 +21,16 @@ public interface HostProvisioner {
      *
      * @param provisionIndexes list of unique provision indexes which will be used to generate the node hostnames
      *                         on the form of <code>[prefix][index].[domain]</code>
-     * @param resources the resources needed per node
+     * @param resources the resources needed per node - the provisioned host may be significantly larger
      * @param applicationId id of the application that will own the provisioned host
      * @param osVersion the OS version to use. If this version does not exist, implementations may choose a suitable
      *                  fallback version.
+     * @param forceExclusive whether to force the provisioning of an exclusive host.
      * @return list of {@link ProvisionedHost} describing the provisioned nodes
      */
     List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
-                                         ApplicationId applicationId, Version osVersion);
+                                         ApplicationId applicationId, Version osVersion,
+                                         boolean forceExclusive);
 
     /**
      * Continue provisioning of given list of Nodes.

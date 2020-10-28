@@ -4,6 +4,7 @@ package com.yahoo.vespa.flags;
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.custom.HostCapacity;
+import com.yahoo.vespa.flags.custom.SharedHost;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -62,13 +63,6 @@ public class Flags {
             "Takes effect on next tick.",
             HOSTNAME);
 
-    public static final UnboundLongFlag THIN_POOL_GB = defineLongFlag(
-            "thin-pool-gb", -1,
-            "The size of the disk reserved for the thin pool with dynamic provisioning in AWS, in base-2 GB. " +
-                    "If <0, the default is used (which may depend on the zone and node type).",
-            "Takes effect immediately (but used only during provisioning).",
-            NODE_TYPE);
-
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
             "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
@@ -94,6 +88,12 @@ public class Flags {
             "List of node resources and their count that should be provisioned." +
             "In a dynamically provisioned zone this specifies the unallocated (i.e. pre-provisioned) capacity. " +
             "Otherwise it specifies the total (unallocated or not) capacity.",
+            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
+
+    public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
+            "shared-host", SharedHost.createDisabled(), SharedHost.class,
+            "Specifies whether shared hosts can be provisioned, and if so, the advertised " +
+            "node resources of the host, the maximum number of containers, etc.",
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
     public static final UnboundListFlag<String> INACTIVE_MAINTENANCE_JOBS = defineListFlag(
