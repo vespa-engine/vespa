@@ -2,8 +2,7 @@
 package com.yahoo.docproc;
 
 import com.yahoo.container.StatisticsConfig;
-import com.yahoo.docproc.jdisc.metric.MockMetric;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
