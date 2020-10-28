@@ -40,8 +40,6 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useDirectStorageApiRpc = false;
     private boolean useFastValueTensorImplementation = false;
     private double defaultTermwiseLimit = 1.0;
-    private double threadPoolSizeFactor = 0.0;
-    private double queueSizeFactor = 0.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
     private String responseSequencerType = "ADAPTIVE";
