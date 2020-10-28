@@ -173,19 +173,19 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag TLS_COMPRESSION_TYPE = defineStringFlag(
-            "tls-compression-type", "NONE",
+            "tls-compression-type", "ZSTD",
             "Selects type of compression, valid values are NONE, NONE_MULTI, LZ4, ZSTD",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag TLS_USE_FSYNC = defineFeatureFlag(
-            "tls-use-fsync", false,
+            "tls-use-fsync", true,
             "Whether to use fsync when writing to the TLS.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag VISIBILITY_DELAY = defineDoubleFlag(
-            "visibility-delay", 0.0,
+            "visibility-delay", 0.0009,
             "Default visibility-delay",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
