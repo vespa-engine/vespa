@@ -3,6 +3,7 @@
 vespa_add_library(eval_instruction OBJECT
     SOURCES
     generic_concat
+    generic_create
     generic_join
     generic_reduce
     generic_map
