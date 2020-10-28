@@ -15,6 +15,7 @@ import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -79,6 +80,8 @@ class JDiscServerConnector extends ServerConnector {
             dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
             dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
             dimensions.put(MetricDefinitions.CLIENT_AUTHENTICATED_DIMENSION, Boolean.toString(clientAuthenticated));
+            String serverName = Optional.ofNullable(request.getServerName()).orElse("unknown");
+            dimensions.put(MetricDefinitions.REQUEST_SERVER_NAME_DIMENSION, serverName);
             return metric.createContext(dimensions);
         });
     }
