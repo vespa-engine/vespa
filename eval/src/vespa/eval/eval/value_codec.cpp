@@ -187,9 +187,9 @@ struct ContentDecoder {
 
 struct CreateValueFromTensorSpec {
     template <typename T> static std::unique_ptr<Value> invoke(const ValueType &type, const TensorSpec &spec, const ValueBuilderFactory &factory) {
-        ArrayArrayMap<vespalib::stringref,T> map(type.count_mapped_dimensions(),
-                                                 type.dense_subspace_size(),
-                                                 std::max(spec.cells().size(), size_t(1)));
+        size_t dense_size = type.dense_subspace_size();
+        ArrayArrayMap<vespalib::stringref,T> map(type.count_mapped_dimensions(), dense_size,
+                                                 std::max(spec.cells().size() / dense_size, size_t(1)));
         std::vector<vespalib::stringref> sparse_key;
         for (const auto &entry: spec.cells()) {
             sparse_key.clear();

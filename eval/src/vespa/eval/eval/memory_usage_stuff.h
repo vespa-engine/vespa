@@ -12,7 +12,10 @@ MemoryUsage self_memory_usage() { return MemoryUsage(sizeof(T), sizeof(T), 0, 0)
 
 template <typename T>
 MemoryUsage vector_extra_memory_usage(const std::vector<T> &vec) {
-    return MemoryUsage(sizeof(T) * vec.size(), sizeof(T) * vec.capacity(), 0, 0);
+    MemoryUsage usage;
+    usage.incAllocatedBytes(sizeof(T) * vec.capacity());
+    usage.incUsedBytes(sizeof(T) * vec.size());
+    return usage;
 }
 
 }
