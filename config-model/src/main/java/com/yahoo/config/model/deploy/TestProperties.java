@@ -72,12 +72,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-    @Override public double threadPoolSizeFactor() {
-        return threadPoolSizeFactor;
-    }
-    @Override public double queueSizeFactor() {
-        return queueSizeFactor;
-    }
     @Override public boolean useContentNodeBtreeDb() { return useContentNodeBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
@@ -134,16 +128,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setUseFastValueTensorImplementation(boolean useFastValueTensorImplementation) {
         this.useFastValueTensorImplementation = useFastValueTensorImplementation;
-        return this;
-    }
-
-    public TestProperties setThreadPoolSizeFactor(double threadPoolSizeFactor) {
-        this.threadPoolSizeFactor = threadPoolSizeFactor;
-        return this;
-    }
-
-    public TestProperties setQueueSizeFactor(double queueSizeFactor) {
-        this.queueSizeFactor = queueSizeFactor;
         return this;
     }
 
