@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Clock;
@@ -51,6 +52,7 @@ public class MetricsReporter extends ControllerMaintainer {
     public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
     public static final String OS_NODE_COUNT = "deployment.nodeCountByOsVersion";
     public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
+    public static final String BROKEN_SYSTEM_VERSION = "deployment.brokenSystemVersion";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
     public static final String OPERATION_PREFIX = "operation.";
@@ -72,9 +74,18 @@ public class MetricsReporter extends ControllerMaintainer {
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
-        reportInfrastructureUpgradeMetrics();
+        VersionStatus versionStatus = controller().readVersionStatus();
+        reportInfrastructureUpgradeMetrics(versionStatus);
         reportAuditLog();
+        reportBrokenSystemVersion(versionStatus);
         return true;
+    }
+
+    private void reportBrokenSystemVersion(VersionStatus versionStatus) {
+        Version systemVersion = controller().systemVersion(versionStatus);
+        VespaVersion.Confidence confidence = versionStatus.version(systemVersion).confidence();
+        int isBroken = confidence == VespaVersion.Confidence.broken ? 1 : 0;
+        metric.set(BROKEN_SYSTEM_VERSION, isBroken, metric.createContext(Map.of()));
     }
 
     private void reportAuditLog() {
@@ -109,9 +120,9 @@ public class MetricsReporter extends ControllerMaintainer {
         }
     }
 
-    private void reportInfrastructureUpgradeMetrics() {
+    private void reportInfrastructureUpgradeMetrics(VersionStatus versionStatus) {
         Map<NodeVersion, Duration> osChangeDurations = osChangeDurations();
-        Map<NodeVersion, Duration> platformChangeDurations = platformChangeDurations();
+        Map<NodeVersion, Duration> platformChangeDurations = platformChangeDurations(versionStatus);
         reportChangeDurations(osChangeDurations, OS_CHANGE_DURATION);
         reportChangeDurations(platformChangeDurations, PLATFORM_CHANGE_DURATION);
         reportNodeCount(osChangeDurations.keySet(), OS_NODE_COUNT);
@@ -182,8 +193,8 @@ public class MetricsReporter extends ControllerMaintainer {
         });
     }
 
-    private Map<NodeVersion, Duration> platformChangeDurations() {
-        return changeDurations(controller().versionStatus().versions(), VespaVersion::nodeVersions);
+    private Map<NodeVersion, Duration> platformChangeDurations(VersionStatus versionStatus) {
+        return changeDurations(versionStatus.versions(), VespaVersion::nodeVersions);
     }
 
     private Map<NodeVersion, Duration> osChangeDurations() {
