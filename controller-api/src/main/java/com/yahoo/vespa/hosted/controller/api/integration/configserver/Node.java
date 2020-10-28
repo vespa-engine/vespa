@@ -51,6 +51,7 @@ public class Node {
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
     private final Optional<TenantName> reservedTo;
+    private final Optional<ApplicationId> exclusiveTo;
     private final Map<String, JsonNode> reports;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
@@ -58,7 +59,8 @@ public class Node {
                 Optional<Instant> currentFirmwareCheck, Optional<Instant> wantedFirmwareCheck, ServiceState serviceState,
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
-                Optional<TenantName> reservedTo, DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports) {
+                Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
+                DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -84,6 +86,7 @@ public class Node {
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
         this.reservedTo = reservedTo;
+        this.exclusiveTo = exclusiveTo;
         this.wantedDockerImage = wantedDockerImage;
         this.currentDockerImage = currentDockerImage;
         this.reports = reports;
@@ -193,6 +196,8 @@ public class Node {
 
     public Optional<TenantName> reservedTo() { return reservedTo; }
 
+    public Optional<ApplicationId> exclusiveTo() { return exclusiveTo; }
+
     public Map<String, JsonNode> reports() {
         return reports;
     }
@@ -267,6 +272,7 @@ public class Node {
         private boolean wantToRetire;
         private boolean wantToDeprovision;
         private Optional<TenantName> reservedTo = Optional.empty();
+        private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private Map<String, JsonNode> reports = new HashMap<>();
 
         public Builder() { }
@@ -299,6 +305,7 @@ public class Node {
             this.wantToRetire = node.wantToRetire;
             this.wantToDeprovision = node.wantToDeprovision;
             this.reservedTo = node.reservedTo;
+            this.exclusiveTo = node.exclusiveTo;
             this.reports = node.reports;
         }
 
@@ -437,11 +444,16 @@ public class Node {
             return this;
         }
 
+        public Builder exclusiveTo(ApplicationId exclusiveTo) {
+            this.exclusiveTo = Optional.of(exclusiveTo);
+            return this;
+        }
+
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                            cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo,
+                            cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo, exclusiveTo,
                             wantedDockerImage, currentDockerImage, reports);
         }
 
