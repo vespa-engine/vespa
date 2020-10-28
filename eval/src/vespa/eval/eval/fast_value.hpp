@@ -288,6 +288,15 @@ template <typename T> FastDenseValue<T>::~FastDenseValue() = default;
 
 //-----------------------------------------------------------------------------
 
+template <typename T>
+struct FastScalarBuilder final : ValueBuilder<T> {
+    T _value;
+    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) final override { return ArrayRef<T>(&_value, 1); }
+    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>>) final override { return std::make_unique<ScalarValue<T>>(_value); }
+};
+
+//-----------------------------------------------------------------------------
+
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 const Value &
 FastValueIndex::sparse_full_overlap_join(const ValueType &res_type, const Fun &fun,

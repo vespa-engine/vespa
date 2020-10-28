@@ -32,18 +32,17 @@ void my_generic_map_op(State &state, uint64_t param_in) {
     state.pop_push(result_ref);
 }
 
-template <typename Func>
-void my_double_map_op(State &state, uint64_t param_in) {
+template <typename CT, typename Func>
+void my_scalar_map_op(State &state, uint64_t param_in) {
     Func function(to_map_fun(param_in));
     const Value &a = state.peek(0);
-    state.pop_push(state.stash.create<DoubleValue>(function(a.as_double())));
+    state.pop_push(state.stash.create<ScalarValue<CT>>(function(a.cells().typify<CT>()[0])));
 }
 
 struct SelectGenericMapOp {
     template <typename CT, typename Func> static auto invoke(const ValueType &type) {
-        if (type.is_double()) {
-            assert((std::is_same<CT,double>::value));
-            return my_double_map_op<Func>;
+        if (type.is_scalar()) {
+            return my_scalar_map_op<CT, Func>;
         }
         return my_generic_map_op<CT, Func>;
     }
