@@ -26,12 +26,12 @@ public class VersionStatusUpdaterTest {
     public void testVersionUpdating() {
         ControllerTester tester = new ControllerTester();
         tester.controller().updateVersionStatus(new VersionStatus(Collections.emptyList()));
-        assertFalse(tester.controller().versionStatus().systemVersion().isPresent());
+        assertFalse(tester.controller().readVersionStatus().systemVersion().isPresent());
 
         VersionStatusUpdater updater = new VersionStatusUpdater(tester.controller(), Duration.ofDays(1)
         );
         updater.maintain();
-        assertTrue(tester.controller().versionStatus().systemVersion().isPresent());
+        assertTrue(tester.controller().readVersionStatus().systemVersion().isPresent());
     }
 
     @Test

@@ -109,7 +109,7 @@ public class VersionStatusTest {
         ControllerTester tester = new ControllerTester();
         Version version0 = Version.fromString("6.2");
         tester.upgradeSystem(version0);
-        assertEquals(version0, tester.controller().systemVersion());
+        assertEquals(version0, tester.controller().readSystemVersion());
 
         // Downgrade one config server in each zone
         Version ancientVersion = Version.fromString("5.1");
@@ -122,7 +122,7 @@ public class VersionStatusTest {
         }
 
         tester.computeVersionStatus();
-        assertEquals(version0, tester.controller().systemVersion());
+        assertEquals(version0, tester.controller().readSystemVersion());
     }
 
     @Test
@@ -161,7 +161,7 @@ public class VersionStatusTest {
 
         tester.triggerJobs();
         tester.controllerTester().computeVersionStatus();
-        List<VespaVersion> versions = tester.controller().versionStatus().versions();
+        List<VespaVersion> versions = tester.controller().readVersionStatus().versions();
         assertEquals("The two versions above exist", 2, versions.size());
 
         VespaVersion v1 = versions.get(0);
@@ -336,8 +336,8 @@ public class VersionStatusTest {
         assertEquals("All canaries deployed + < 90% of defaults: Normal",
                      Confidence.normal, confidence(tester.controller(), version2));
         assertTrue("Status for version without applications is removed",
-                   tester.controller().versionStatus().versions().stream()
-                           .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)));
+                   tester.controller().readVersionStatus().versions().stream()
+                         .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)));
 
         // Another default application upgrades, raising confidence to high
         default8.deployPlatform(version2);
@@ -375,7 +375,7 @@ public class VersionStatusTest {
                      VespaVersion.Confidence.broken, confidence(tester.controller(), version3));
 
         // Test version order
-        List<VespaVersion> versions = tester.controller().versionStatus().versions();
+        List<VespaVersion> versions = tester.controller().readVersionStatus().versions();
         assertEquals(List.of("6.2", "6.4", "6.5"), versions.stream().map(version -> version.versionNumber().toString()).collect(Collectors.toList()));
 
         // Check release status is correct (static data in MockMavenRepository).
@@ -426,7 +426,7 @@ public class VersionStatusTest {
         canary0.abortJob(stagingTest);
         tester.controllerTester().computeVersionStatus();
         assertFalse("Previous version should be forgotten, as canary only had test jobs run on it",
-                    tester.controller().versionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version1)));
+                    tester.controller().readVersionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version1)));
 
         // App succeeds with tests, but fails production deployment
         canary0.runJob(systemTest)
@@ -459,7 +459,7 @@ public class VersionStatusTest {
         canary0.runJob(productionUsWest1);
         tester.controllerTester().computeVersionStatus();
         assertFalse("Previous version should be forgotten, as canary only had test jobs run on it",
-                    tester.controller().versionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version2)));
+                    tester.controller().readVersionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version2)));
         assertEquals("Canary OK, but not done upgrading, so confidence for version3: Low",
                      Confidence.low, confidence(tester.controller(), version3));
     }
@@ -510,9 +510,9 @@ public class VersionStatusTest {
         var commitSha0 = "badc0ffee";
         var commitDate0 = Instant.EPOCH;
         tester.controllerTester().upgradeSystem(version0);
-        assertEquals(version0, tester.controller().versionStatus().systemVersion().get().versionNumber());
-        assertEquals(commitSha0, tester.controller().versionStatus().systemVersion().get().releaseCommit());
-        assertEquals(commitDate0, tester.controller().versionStatus().systemVersion().get().committedAt());
+        assertEquals(version0, tester.controller().readVersionStatus().systemVersion().get().versionNumber());
+        assertEquals(commitSha0, tester.controller().readVersionStatus().systemVersion().get().releaseCommit());
+        assertEquals(commitDate0, tester.controller().readVersionStatus().systemVersion().get().committedAt());
 
         // Deploy app on version0 to keep computing statistics for that version
         tester.newDeploymentContext().submit().deploy();
@@ -523,13 +523,13 @@ public class VersionStatusTest {
         var commitDate1 = Instant.ofEpochMilli(123);
         tester.controllerTester().upgradeController(version1, commitSha1, commitDate1);
         tester.controllerTester().upgradeSystemApplications(version1);
-        assertEquals(version1, tester.controller().versionStatus().systemVersion().get().versionNumber());
-        assertEquals(commitSha1, tester.controller().versionStatus().systemVersion().get().releaseCommit());
-        assertEquals(commitDate1, tester.controller().versionStatus().systemVersion().get().committedAt());
+        assertEquals(version1, tester.controller().readVersionStatus().systemVersion().get().versionNumber());
+        assertEquals(commitSha1, tester.controller().readVersionStatus().systemVersion().get().releaseCommit());
+        assertEquals(commitDate1, tester.controller().readVersionStatus().systemVersion().get().committedAt());
 
         // Commit details for previous version are preserved
-        assertEquals(commitSha0, tester.controller().versionStatus().version(version0).releaseCommit());
-        assertEquals(commitDate0, tester.controller().versionStatus().version(version0).committedAt());
+        assertEquals(commitSha0, tester.controller().readVersionStatus().version(version0).releaseCommit());
+        assertEquals(commitDate0, tester.controller().readVersionStatus().version(version0).committedAt());
     }
 
     @Test
@@ -548,7 +548,7 @@ public class VersionStatusTest {
                             .submit(new ApplicationPackageBuilder().upgradePolicy("default").region("us-west-1").build())
                             .deploy();
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.high, tester.controller().versionStatus().version(version0).confidence());
+        assertSame(Confidence.high, tester.controller().readVersionStatus().version(version0).confidence());
 
         // System and canary0 is upgraded within allowed time window
         Version version1 = Version.fromString("7.2");
@@ -556,25 +556,25 @@ public class VersionStatusTest {
         tester.upgrader().maintain();
         canary0.deployPlatform(version1);
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.low, tester.controller().versionStatus().version(version1).confidence());
+        assertSame(Confidence.low, tester.controller().readVersionStatus().version(version1).confidence());
 
         // canary1 breaks just outside allowed upgrade window
         assertEquals(12, tester.controllerTester().hourOfDayAfter(Duration.ofHours(7)));
         canary1.failDeployment(systemTest);
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.broken, tester.controller().versionStatus().version(version1).confidence());
+        assertSame(Confidence.broken, tester.controller().readVersionStatus().version(version1).confidence());
 
         // Second canary is fixed later in the day. All canaries are now fixed, but confidence is not raised as we're
         // outside the allowed time window
         assertEquals(20, tester.controllerTester().hourOfDayAfter(Duration.ofHours(8)));
         canary1.deployPlatform(version1);
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.broken, tester.controller().versionStatus().version(version1).confidence());
+        assertSame(Confidence.broken, tester.controller().readVersionStatus().version(version1).confidence());
 
         // Early morning arrives, confidence is raised and normal application upgrades
         assertEquals(5, tester.controllerTester().hourOfDayAfter(Duration.ofHours(9)));
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.normal, tester.controller().versionStatus().version(version1).confidence());
+        assertSame(Confidence.normal, tester.controller().readVersionStatus().version(version1).confidence());
         tester.upgrader().maintain();
         tester.triggerJobs();
         default0.deployPlatform(version1);
@@ -587,21 +587,21 @@ public class VersionStatusTest {
         canary0.deployPlatform(version2);
         canary1.deployPlatform(version2);
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.low, tester.controller().versionStatus().version(version2).confidence());
+        assertSame(Confidence.low, tester.controller().readVersionStatus().version(version2).confidence());
 
         // Confidence override takes precedence over time window constraints
         tester.upgrader().overrideConfidence(version2, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.normal, tester.controller().versionStatus().version(version2).confidence());
+        assertSame(Confidence.normal, tester.controller().readVersionStatus().version(version2).confidence());
         tester.upgrader().overrideConfidence(version2, Confidence.low);
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.low, tester.controller().versionStatus().version(version2).confidence());
+        assertSame(Confidence.low, tester.controller().readVersionStatus().version(version2).confidence());
         tester.upgrader().removeConfidenceOverride(version2);
 
         // Next morning arrives, confidence is raised and normal application upgrades
         assertEquals(7, tester.controllerTester().hourOfDayAfter(Duration.ofHours(17)));
         tester.controllerTester().computeVersionStatus();
-        assertSame(Confidence.normal, tester.controller().versionStatus().version(version2).confidence());
+        assertSame(Confidence.normal, tester.controller().readVersionStatus().version(version2).confidence());
         tester.upgrader().maintain();
         tester.triggerJobs();
         default0.deployPlatform(version2);
@@ -650,7 +650,7 @@ public class VersionStatusTest {
         // Upgrade succeeds
         context.deployPlatform(version2);
         tester.controllerTester().computeVersionStatus();
-        assertEquals(1, tester.controller().versionStatus().versions().size());
+        assertEquals(1, tester.controller().readVersionStatus().versions().size());
         assertOnVersion(version2, context.instanceId(), tester);
 
         // System is upgraded and application starts upgrading to next version
@@ -663,14 +663,14 @@ public class VersionStatusTest {
                .runJob(stagingTest)
                .failDeployment(productionUsWest1);
         tester.controllerTester().computeVersionStatus();
-        assertEquals(2, tester.controller().versionStatus().versions().size());
+        assertEquals(2, tester.controller().readVersionStatus().versions().size());
         for (var version : List.of(version2, version3)) {
             assertOnVersion(version, context.instanceId(), tester);
         }
     }
 
     private void assertOnVersion(Version version, ApplicationId instance, DeploymentTester tester) {
-        var vespaVersion = tester.controller().versionStatus().version(version);
+        var vespaVersion = tester.controller().readVersionStatus().version(version);
         assertNotNull("Statistics for version " + version + " exist", vespaVersion);
         var statistics = DeploymentStatistics.compute(List.of(version), tester.deploymentStatuses()).get(0);
         assertTrue("Application is on version " + version,
@@ -683,11 +683,11 @@ public class VersionStatusTest {
     }
 
     private Confidence confidence(Controller controller, Version version) {
-        return controller.versionStatus().versions().stream()
-                .filter(v -> v.versionNumber().equals(version))
-                .findFirst()
-                .map(VespaVersion::confidence)
-                .orElseThrow(() -> new IllegalArgumentException("Expected to find version: " + version));
+        return controller.readVersionStatus().versions().stream()
+                         .filter(v -> v.versionNumber().equals(version))
+                         .findFirst()
+                         .map(VespaVersion::confidence)
+                         .orElseThrow(() -> new IllegalArgumentException("Expected to find version: " + version));
     }
 
 }

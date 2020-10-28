@@ -163,7 +163,7 @@ public class Controller extends AbstractComponent {
 
     /** Replace the current version status by a new one */
     public void updateVersionStatus(VersionStatus newStatus) {
-        VersionStatus currentStatus = versionStatus();
+        VersionStatus currentStatus = readVersionStatus();
         if (newStatus.systemVersion().isPresent() &&
             ! newStatus.systemVersion().equals(currentStatus.systemVersion())) {
             log.info("Changing system version from " + printableVersion(currentStatus.systemVersion()) +
@@ -177,7 +177,7 @@ public class Controller extends AbstractComponent {
     }
     
     /** Returns the latest known version status. Calling this is free but the status may be slightly out of date. */
-    public VersionStatus versionStatus() { return curator.readVersionStatus(); }
+    public VersionStatus readVersionStatus() { return curator.readVersionStatus(); }
 
     /** Remove confidence override for versions matching given filter */
     public void removeConfidenceOverride(Predicate<Version> filter) {
@@ -189,10 +189,15 @@ public class Controller extends AbstractComponent {
     }
     
     /** Returns the current system version: The controller should drive towards running all applications on this version */
-    public Version systemVersion() {
-        return versionStatus().systemVersion()
-                              .map(VespaVersion::versionNumber)
-                              .orElse(Vtag.currentVersion);
+    public Version readSystemVersion() {
+        return systemVersion(readVersionStatus());
+    }
+
+    /** Returns the current system version from given status: The controller should drive towards running all applications on this version */
+    public Version systemVersion(VersionStatus versionStatus) {
+        return versionStatus.systemVersion()
+                            .map(VespaVersion::versionNumber)
+                            .orElse(Vtag.currentVersion);
     }
 
     /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS

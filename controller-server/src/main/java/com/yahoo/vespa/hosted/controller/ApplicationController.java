@@ -239,7 +239,7 @@ public class ApplicationController {
                                                                   .map(Node::currentVersion)
                                                                   .filter(version -> ! version.isEmpty()))
                                      .min(naturalOrder())
-                                     .orElse(controller.systemVersion());
+                                     .orElseGet(controller::readSystemVersion);
     }
 
     /**
@@ -414,7 +414,7 @@ public class ApplicationController {
                     platformVersion = options.vespaVersion.map(Version::new)
                                                           .orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                                     .flatMap(this::lastCompatibleVersion)
-                                                                                    .orElseGet(controller::systemVersion));
+                                                                                    .orElseGet(controller::readSystemVersion));
                 }
                 else {
                     JobType jobType = JobType.from(controller.system(), zone)
@@ -893,7 +893,7 @@ public class ApplicationController {
 
     /** Returns the latest known version within the given major. */
     public Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
-        return controller.versionStatus().versions().stream()
+        return controller.readVersionStatus().versions().stream()
                          .map(VespaVersion::versionNumber)
                          .filter(version -> version.getMajor() == targetMajorVersion)
                          .max(naturalOrder());

@@ -295,7 +295,7 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.proxy, Version.emptyVersion, zone1);
         tester.computeVersionStatus();
-        assertEquals(version1, tester.controller().systemVersion());
+        assertEquals(version1, tester.controller().readSystemVersion());
     }
 
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
@@ -333,11 +333,11 @@ public class SystemUpgraderTest {
     }
 
     private void assertSystemVersion(Version version) {
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        assertEquals(version, tester.controller().readSystemVersion());
     }
 
     private void assertControllerVersion(Version version) {
-        assertEquals(version, tester.controller().versionStatus().controllerVersion().get().versionNumber());
+        assertEquals(version, tester.controller().readVersionStatus().controllerVersion().get().versionNumber());
     }
 
     private void assertWantedVersion(SystemApplication application, Version version, ZoneApi first, ZoneApi... rest) {
