@@ -3,6 +3,7 @@
 vespa_add_executable(storage_persistence_gtest_runner_app TEST
     SOURCES
     bucketownershipnotifiertest.cpp
+    has_mask_remapper_test.cpp
     mergehandlertest.cpp
     persistencequeuetest.cpp
     persistencetestutils.cpp
