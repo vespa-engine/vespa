@@ -162,10 +162,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean skipMbusReplyThread;
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
-        private final double visibilityDelay;
         private final Quota quota;
-        private final boolean tlsUseFSync;
-        private final String tlsCompressionType;
         private final boolean useNewRestapiHandler;
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final double jettyThreadpoolSizeFactor;
@@ -207,12 +204,6 @@ public class ModelContextImpl implements ModelContext {
             useDirectStorageApiRpc = Flags.USE_DIRECT_STORAGE_API_RPC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             useFastValueTensorImplementation = Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            visibilityDelay = Flags.VISIBILITY_DELAY.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            tlsCompressionType = Flags.TLS_COMPRESSION_TYPE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            tlsUseFSync = Flags.TLS_USE_FSYNC.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             jvmGCOPtions = Flags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -323,9 +314,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
-        @Override public double visibilityDelay() { return visibilityDelay; }
-        @Override public boolean tlsUseFSync() { return tlsUseFSync; }
-        @Override public String tlsCompressionType() { return tlsCompressionType; }
         @Override public Quota quota() { return quota; }
 
         @Override public boolean useNewRestapiHandler() { return useNewRestapiHandler; }

@@ -39,12 +39,9 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useThreePhaseUpdates = false;
     private boolean useDirectStorageApiRpc = false;
     private boolean useFastValueTensorImplementation = false;
-    private boolean tlsUseFSync = false;
-    private String tlsCompressionType = "NONE";
     private double defaultTermwiseLimit = 1.0;
     private double threadPoolSizeFactor = 0.0;
     private double queueSizeFactor = 0.0;
-    private double visibilityDelay = 0.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
     private String responseSequencerType = "ADAPTIVE";
@@ -84,9 +81,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
     @Override public Quota quota() { return quota; }
-    @Override public double visibilityDelay() { return visibilityDelay; }
-    @Override public boolean tlsUseFSync() { return tlsUseFSync; }
-    @Override public String tlsCompressionType() { return tlsCompressionType; }
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
 
@@ -140,21 +134,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setHostedVespa(boolean hostedVespa) {
         this.hostedVespa = hostedVespa;
-        return this;
-    }
-
-    public TestProperties setTlsUseFSync(boolean useFSync) {
-        this.tlsUseFSync = useFSync;
-        return this;
-    }
-
-    public TestProperties setTlsCompressionType(String type) {
-        this.tlsCompressionType = type;
-        return this;
-    }
-
-    public TestProperties setVisibilityDelay(double visibilityDelay) {
-        this.visibilityDelay = visibilityDelay;
         return this;
     }
 

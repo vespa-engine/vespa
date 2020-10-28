@@ -40,7 +40,7 @@ public class SearchNodeTest {
 
     private void prepare(MockRoot root, SearchNode node) {
         Host host = new Host(root, "mockhost");
-        TransactionLogServer tls = new TransactionLogServer(root, "mycluster", root.getDeployState().getProperties());
+        TransactionLogServer tls = new TransactionLogServer(root, "mycluster");
         tls.setHostResource(new HostResource(host));
         tls.setBasePort(100);
         tls.initService(root.deployLogger());
@@ -99,23 +99,6 @@ public class SearchNodeTest {
         TranslogserverConfig.Builder tlsBuilder = new TranslogserverConfig.Builder();
         node.getConfig(tlsBuilder);
         return tlsBuilder.build();
-    }
-
-    @Test
-    public void requireThaFeatureFlagCanControlTlsUseFSync() {
-        assertFalse(getTlsConfig(new TestProperties()).usefsync());
-        assertFalse(getTlsConfig(new TestProperties().setTlsUseFSync(false)).usefsync());
-        assertTrue(getTlsConfig(new TestProperties().setTlsUseFSync(true)).usefsync());
-    }
-
-    @Test
-    public void requireThaFeatureFlagCanControlCompressionType() {
-        assertEquals(TranslogserverConfig.Compression.Type.NONE, getTlsConfig(new TestProperties()).compression().type());
-        assertEquals(TranslogserverConfig.Compression.Type.NONE, getTlsConfig(new TestProperties().setTlsCompressionType("NONE")).compression().type());
-        assertEquals(TranslogserverConfig.Compression.Type.NONE_MULTI, getTlsConfig(new TestProperties().setTlsCompressionType("NONE_MULTI")).compression().type());
-        assertEquals(TranslogserverConfig.Compression.Type.ZSTD, getTlsConfig(new TestProperties().setTlsCompressionType("ZSTD")).compression().type());
-        assertEquals(TranslogserverConfig.Compression.Type.LZ4, getTlsConfig(new TestProperties().setTlsCompressionType("LZ4")).compression().type());
-        assertEquals(TranslogserverConfig.Compression.Type.NONE, getTlsConfig(new TestProperties().setTlsCompressionType("zstd")).compression().type());
     }
 
 }
