@@ -11,7 +11,7 @@ import com.yahoo.container.StatisticsConfig;
 /**
  * A single integer value which can be incremented.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author  Steinar Knutsen
  */
 public class Counter extends Handle {
     // The current value of this counter

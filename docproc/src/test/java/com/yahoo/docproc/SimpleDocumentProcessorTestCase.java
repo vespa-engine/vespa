@@ -2,7 +2,7 @@
 package com.yahoo.docproc;
 
 import com.yahoo.container.StatisticsConfig;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
@@ -12,20 +12,23 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.idstring.IdIdString;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.statistics.StatisticsImpl;
 import org.junit.Test;
+
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SimpleDocumentProcessorTestCase {
 
-    private static DocprocService setupDocprocService(SimpleDocumentProcessor processor) {
-        CallStack stack = new CallStack("default", new StatisticsImpl(new StatisticsConfig(new StatisticsConfig.Builder())), new NullMetric());
+    private static DocprocService setupDocprocService(SimpleDocumentProcessor processor, Metric metric) {
+        CallStack stack = new CallStack("default", new StatisticsImpl(new StatisticsConfig(new StatisticsConfig.Builder())), metric);
         stack.addLast(processor);
         DocprocService service = new DocprocService("default");
         service.setCallStack(stack);
@@ -57,7 +60,8 @@ public class SimpleDocumentProcessorTestCase {
                                      new DocumentUpdate(type, "id:this:foobar::is:an:update"),
                                      new DocumentRemove(new DocumentId("id:this:foobar::is:a:remove")));
 
-        DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor());
+        MockMetric metric = new MockMetric();
+        DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor(), metric);
         service.getExecutor().process(p);
 
         assertEquals(3, p.getDocumentOperations().size());
@@ -66,6 +70,8 @@ public class SimpleDocumentProcessorTestCase {
         assertTrue(p.getDocumentOperations().get(1) instanceof DocumentUpdate);
         assertTrue(p.getDocumentOperations().get(2) instanceof DocumentRemove);
         assertEquals("id:foobar:foobar::12345", p.getDocumentOperations().get(2).getId().toString());
+        assertEquals(Map.of(Map.of("chain", "default", "documenttype", "foobar"), 3.0),
+                     metric.metrics().get("documents_processed"));
     }
 
     @Test
@@ -73,7 +79,7 @@ public class SimpleDocumentProcessorTestCase {
         DocumentType type = createTestType();
 
         Processing p = getProcessing(new DocumentPut(type, "id:this:foobar::is:a:document"));
-        DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor());
+        DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor(), new MockMetric());
         service.getExecutor().process(p);
 
         assertEquals(1, p.getDocumentOperations().size());
@@ -89,7 +95,7 @@ public class SimpleDocumentProcessorTestCase {
                                      new DocumentRemove(new DocumentId("id:this:foobar::is:a:remove")),
                                      new DocumentPut(type, "id:this:foobar::is:a:document2"));
 
-        DocprocService service = setupDocprocService(new SimpleDocumentProcessorThrowingOnRemovesAndUpdates());
+        DocprocService service = setupDocprocService(new SimpleDocumentProcessorThrowingOnRemovesAndUpdates(), new MockMetric());
         try {
             service.getExecutor().process(p);
         } catch (RuntimeException re) {
