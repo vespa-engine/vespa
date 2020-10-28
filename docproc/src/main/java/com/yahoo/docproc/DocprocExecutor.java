@@ -187,7 +187,7 @@ public class DocprocExecutor {
         return documentType -> contextCache.computeIfAbsent(documentType, type -> {
             Map<String, String> dimensions = new HashMap<>(2);
             dimensions.put("chain", chainDimension);
-            dimensions.put("documentType", type);
+            dimensions.put("documenttype", type);
             return metric.createContext(dimensions);
         });
     }

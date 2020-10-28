@@ -70,7 +70,7 @@ public class SimpleDocumentProcessorTestCase {
         assertTrue(p.getDocumentOperations().get(1) instanceof DocumentUpdate);
         assertTrue(p.getDocumentOperations().get(2) instanceof DocumentRemove);
         assertEquals("id:foobar:foobar::12345", p.getDocumentOperations().get(2).getId().toString());
-        assertEquals(Map.of(Map.of("chain", "default", "documentType", "foobar"), 3.0),
+        assertEquals(Map.of(Map.of("chain", "default", "documenttype", "foobar"), 3.0),
                      metric.metrics().get("documents_processed"));
     }
 
