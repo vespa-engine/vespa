@@ -110,7 +110,7 @@ void my_generic_reduce_op(State &state, uint64_t param_in) {
     state.pop_push(result_ref);
 };
 
-template <typename ICT, typename AGGR>
+template <typename ICT, typename OCT, typename AGGR>
 void my_full_reduce_op(State &state, uint64_t) {
     auto cells = state.peek(0).cells().typify<ICT>();
     if (cells.size() > 0) {
@@ -128,18 +128,16 @@ void my_full_reduce_op(State &state, uint64_t) {
         aggr[0].merge(aggr[1]);
         aggr[0].merge(aggr[2]);
         aggr[0].merge(aggr[3]);
-        state.pop_push(state.stash.create<DoubleValue>(aggr[0].result()));
+        state.pop_push(state.stash.create<ScalarValue<OCT>>(aggr[0].result()));
     } else {
-        state.pop_push(state.stash.create<DoubleValue>(0.0));
+        state.pop_push(state.stash.create<ScalarValue<OCT>>(0.0));
     }
 };
 
 struct SelectGenericReduceOp {
     template <typename ICT, typename OCT, typename AGGR> static auto invoke(const ReduceParam &param) {
-        if (param.res_type.is_double()) {
-            bool output_is_double = std::is_same_v<OCT, double>;
-            assert(output_is_double);
-            return my_full_reduce_op<ICT, typename AGGR::template templ<ICT>>;
+        if (param.res_type.is_scalar()) {
+            return my_full_reduce_op<ICT, OCT, typename AGGR::template templ<ICT>>;
         }
         return my_generic_reduce_op<ICT, OCT, typename AGGR::template templ<ICT>>;
     }
