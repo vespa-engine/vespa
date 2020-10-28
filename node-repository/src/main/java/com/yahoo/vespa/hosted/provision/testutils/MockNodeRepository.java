@@ -90,7 +90,7 @@ public class MockNodeRepository extends NodeRepository {
                 .parentHostname("dockerhost1.yahoo.com")
                 .status(Status.initial()
                         .withVespaVersion(new Version("6.41.0"))
-                        .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")))
+                        .withContainerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")))
                 .build();
         nodes.add(node4);
 
@@ -98,7 +98,7 @@ public class MockNodeRepository extends NodeRepository {
                 .parentHostname("dockerhost2.yahoo.com")
                 .status(Status.initial()
                         .withVespaVersion(new Version("1.2.3"))
-                        .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3")))
+                        .withContainerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3")))
                 .build();
         nodes.add(node5);
 
@@ -112,7 +112,7 @@ public class MockNodeRepository extends NodeRepository {
                 .parentHostname("parent1.yahoo.com")
                 .status(Status.initial()
                         .withVespaVersion(Version.fromString("5.104.142"))
-                        .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:5.104.142")))
+                        .withContainerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:5.104.142")))
                 .build();
         nodes.add(node10);
 

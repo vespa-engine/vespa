@@ -68,7 +68,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
         updateLockMetrics();
         nodes.forEach(node -> updateNodeMetrics(node, serviceModel));
-        updateStateMetrics(nodes);
+        updateNodeCountMetrics(nodes);
         updateMaintenanceMetrics();
         updateDockerMetrics(nodes);
         updateTenantUsageMetrics(nodes);
@@ -222,11 +222,11 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         return contextMap.computeIfAbsent(dimensions, metric::createContext);
     }
 
-    private void updateStateMetrics(NodeList nodes) {
+    private void updateNodeCountMetrics(NodeList nodes) {
         Map<Node.State, List<Node>> nodesByState = nodes.nodeType(NodeType.tenant).asList().stream()
                 .collect(Collectors.groupingBy(Node::state));
 
-        // Metrics pr state
+        // Count per state
         for (Node.State state : Node.State.values()) {
             List<Node> nodesInState = nodesByState.getOrDefault(state, List.of());
             metric.set("hostedVespa." + state.name() + "Hosts", nodesInState.size(), null);
@@ -315,4 +315,5 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 .map(node -> node.flavor().resources().justNumbers())
                 .reduce(dockerHost.flavor().resources().justNumbers(), NodeResources::subtract);
     }
+
 }

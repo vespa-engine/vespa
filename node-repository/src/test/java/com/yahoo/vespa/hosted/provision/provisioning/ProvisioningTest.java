@@ -175,7 +175,7 @@ public class ProvisioningTest {
         HostSpec host1 = state1.container0.iterator().next();
         Node node1 = tester.nodeRepository().getNode(host1.hostname()).get();
         DockerImage dockerImage = DockerImage.fromString(dockerImageRepo).withTag(Version.fromString("1.2.3"));
-        tester.nodeRepository().write(node1.with(node1.status().withDockerImage(dockerImage)), () -> {});
+        tester.nodeRepository().write(node1.with(node1.status().withContainerImage(dockerImage)), () -> {});
 
         // redeploy
         SystemState state2 = prepare(application1, tester, 1, 1, 1 ,1 , false, defaultResources, "1.2.3", Optional.of(dockerImageRepo));
@@ -183,7 +183,7 @@ public class ProvisioningTest {
 
         host1 = state2.container0.iterator().next();
         node1 = tester.nodeRepository().getNode(host1.hostname()).get();
-        assertEquals(dockerImage, node1.status().dockerImage().get());
+        assertEquals(dockerImage, node1.status().containerImage().get());
     }
 
     @Test
