@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 
 import java.util.List;
 import java.util.Optional;
@@ -82,7 +83,7 @@ public class GroupPreparer {
                                                                                  deficit.getFlavor(),
                                                                                  application,
                                                                                  osVersion,
-                                                                                 requestedNodes.isExclusive()))
+                                                                                 requestedNodes.isExclusive() ? HostSharing.exclusive : HostSharing.any))
                             .orElseGet(List::of);
 
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that
