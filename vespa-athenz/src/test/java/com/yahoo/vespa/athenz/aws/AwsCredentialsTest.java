@@ -9,25 +9,27 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
+import static org.junit.Assert.assertFalse;
+
 /**
  * @author tokle
  */
-public class AwsCredentialProviderTest {
+public class AwsCredentialsTest {
 
     @Test
     public void refreshes_correctly() {
         Clock clock = Clock.systemUTC();
         // Does not require refresh when expires in 10 minutes
-        Assert.assertFalse(AwsCredentialsProvider.shouldRefresh(getCredentials(clock.instant().plus(Duration.ofMinutes(10)))));
+        assertFalse(AwsCredentials.shouldRefresh(getCredentials(clock.instant().plus(Duration.ofMinutes(10)))));
 
         // Requires refresh when expires in 3 minutes
-        Assert.assertTrue(AwsCredentialsProvider.shouldRefresh(getCredentials(clock.instant().plus(Duration.ofMinutes(3)))));
+        Assert.assertTrue(AwsCredentials.shouldRefresh(getCredentials(clock.instant().plus(Duration.ofMinutes(3)))));
 
         // Requires refresh when expired
-        Assert.assertTrue(AwsCredentialsProvider.shouldRefresh(getCredentials(clock.instant().minus(Duration.ofMinutes(1)))));
+        Assert.assertTrue(AwsCredentials.shouldRefresh(getCredentials(clock.instant().minus(Duration.ofMinutes(1)))));
 
         // Refreshes when no credentials provided
-        Assert.assertTrue(AwsCredentialsProvider.shouldRefresh(null));
+        Assert.assertTrue(AwsCredentials.shouldRefresh(null));
     }
 
     private AwsTemporaryCredentials getCredentials(Instant expiration) {
