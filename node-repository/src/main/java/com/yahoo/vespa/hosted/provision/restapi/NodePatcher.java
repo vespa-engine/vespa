@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
@@ -148,6 +149,8 @@ public class NodePatcher {
                 return patchRequiredDiskSpeed(node, asString(value));
             case "reservedTo":
                 return value.type() == Type.NIX ? node.withoutReservedTo() : node.withReservedTo(TenantName.from(value.asString()));
+            case "exclusiveTo":
+                return node.withExclusiveTo(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
             case "switchHostname":
                 return value.type() == Type.NIX ? node.withoutSwitchHostname() : node.withSwitchHostname(value.asString());
             default :
