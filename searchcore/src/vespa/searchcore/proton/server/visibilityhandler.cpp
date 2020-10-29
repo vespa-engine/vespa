@@ -32,10 +32,6 @@ VisibilityHandler::internalCommit(bool force)
         (void) wasCommitTaskSpawned;
     }
 }
-void
-VisibilityHandler::commit()
-{
-}
 
 void
 VisibilityHandler::commitAndWait(ILidCommitState & unCommittedLidTracker)

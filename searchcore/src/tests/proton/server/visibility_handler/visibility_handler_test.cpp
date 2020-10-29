@@ -103,27 +103,6 @@ public:
                      _writeService.masterObserver().getExecuteCnt());
     }
 
-    void
-    testCommit(vespalib::duration visibilityDelay, bool internal,
-               uint32_t expForceCommitCount, SerialNum expCommittedSerialNum,
-               uint32_t expMasterExecuteCnt,
-               SerialNum currSerialNum = 10u)
-    {
-        _feedViewReal->setTracker(visibilityDelay);
-        _getSerialNum.setSerialNum(currSerialNum);
-        if (internal) {
-            VisibilityHandler *visibilityHandler = &_visibilityHandler;
-            auto task = makeLambdaTask([=]() { visibilityHandler->commit(); });
-            _writeService.master().execute(std::move(task));
-        } else {
-            _visibilityHandler.commit();
-        }
-        _writeService.master().sync();
-        checkCommitPostCondition(expForceCommitCount,
-                                 expCommittedSerialNum,
-                                 expMasterExecuteCnt);
-    }
-
     proton::PendingLidTracker::Token
     createToken(proton::PendingLidTrackerBase & tracker, SerialNum serialNum, uint32_t lid) {
         if (serialNum == 0) {
@@ -161,16 +140,6 @@ public:
     }
 };
 
-}
-
-TEST_F("Check external commit with zero visibility delay", Fixture)
-{
-    f.testCommit(0s, false, 0u, 0u, 0u);
-}
-
-TEST_F("Check internal commit with zero visibility delay", Fixture)
-{
-    f.testCommit(0s, true, 0u, 0u, 1u);
 }
 
 TEST_F("Check external commitAndWait with zero visibility delay", Fixture)

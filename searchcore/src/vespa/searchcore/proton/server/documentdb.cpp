@@ -556,7 +556,6 @@ DocumentDB::close()
     // Abort any ongoing maintenance
     stopMaintenance();
 
-    _visibility.commit();
     _writeService.sync();
 
     // The attributes in the ready sub db is also the total set of attributes.
@@ -901,17 +900,6 @@ DocumentDB::syncFeedView()
     IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
-    _writeService.sync();
-    /*
-     * Don't call commit() on visibility handler during transaction
-     * log replay since the serial number used for the commit will be
-     * too high until the replay is complete. This check can be
-     * removed again when feed handler has improved tracking of serial
-     * numbers during replay.
-     */
-    if (_state.getAllowReconfig()) {
-        _visibility.commit();
-    }
     _writeService.sync();
 
     _feedView.set(newFeedView);

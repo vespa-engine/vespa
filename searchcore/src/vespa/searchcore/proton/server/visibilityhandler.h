@@ -26,7 +26,6 @@ public:
                       IThreadingService &threadingService,
                       const FeedViewHolder &feedView);
     ~VisibilityHandler() override;
-    void commit() override;
     void commitAndWait(ILidCommitState & unCommittedLidTracker) override;
     void commitAndWait(ILidCommitState &, uint32_t ) override;
     void commitAndWait(ILidCommitState &, const std::vector<uint32_t> & ) override;
