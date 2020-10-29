@@ -747,6 +747,9 @@ public class ProvisioningTester {
                             .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
         }
 
+        @Override
+        public long thinPoolSizeInBase2Gb(Zone zone, NodeType nodeType) { return 0; }
+
     }
 
 }

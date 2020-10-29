@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -121,6 +122,9 @@ public class DockerProvisioningCompleteHostCalculatorTest {
             return realResources.withMemoryGb(realResources.memoryGb() + memoryOverhead)
                                 .withDiskGb(realResources.diskGb() + diskOverhead);
         }
+
+        @Override
+        public long thinPoolSizeInBase2Gb(Zone zone, NodeType nodeType) { return 0; }
 
         /**
          * Returns the memory overhead resulting if the given advertised resources are placed on the given node

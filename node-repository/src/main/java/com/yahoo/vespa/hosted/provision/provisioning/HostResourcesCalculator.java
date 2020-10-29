@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 
@@ -33,5 +35,10 @@ public interface HostResourcesCalculator {
      * Returns the advertised resources we need to request to be sure to get at least the given real resources.
      */
     NodeResources realToRequest(NodeResources realResources);
+
+    /**
+     * Returns the needed thin pool size in base2 Gb.
+     */
+    long thinPoolSizeInBase2Gb(Zone zone, NodeType nodeType);
 
 }
