@@ -6,4 +6,4 @@ vespa_add_executable(eval_generic_peek_test_app TEST
     vespaeval
     GTest::GTest
 )
-vespa_add_test(NAME eval_generic_peek_test_app COMMAND eval_generic_peek_test_app)
+vespa_add_test(NAME eval_generic_peek_test_app NO_VALGRIND COMMAND eval_generic_peek_test_app)
