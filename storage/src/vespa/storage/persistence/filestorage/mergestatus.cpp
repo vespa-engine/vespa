@@ -54,7 +54,7 @@ MergeStatus::removeFromDiff(
             // time around, or if no copies have that doc anymore. (Can happen
             // due to reverting or corruption)
             if (it2->_entry._hasMask == hasMask
-                || it2->_entry._hasMask == 0)
+                || ((it2->_entry._hasMask == 0) && (remap_mask(0u, it->_hasMask) == 0u)))
             {
                 if (it2->_entry._hasMask == 0) {
                     LOG(debug, "Merge entry %s no longer exists on any nodes",
@@ -73,9 +73,9 @@ MergeStatus::removeFromDiff(
                 /* 
                  * Remap from per-reply mask for the ApplyBucketDiffReply to a
                  * per-merge-operation mask with same bit assignment as _hasMask in
-                 * the diff vector.
+                 * the diff vector. Keep bits for nodes not involved in reply.
                  */
-                uint16_t mask = remap_mask(it2->_entry._hasMask);
+                uint16_t mask = remap_mask(it2->_entry._hasMask, it->_hasMask);
                 if (mask != it->_hasMask) {
                     // Hasmasks have changed, meaning bucket contents changed on
                     // one or more of the nodes during merging.

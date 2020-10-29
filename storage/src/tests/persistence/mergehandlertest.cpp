@@ -1078,6 +1078,8 @@ TEST_F(MergeHandlerTest, remove_from_diff) {
     diff[1]._hasMask = 0x6;
 
     status.diff.insert(status.diff.end(), diff.begin(), diff.end());
+    using NodeList = decltype(_nodes);
+    status.nodeList = NodeList{{0, true}, {1, true}, {2, true}};
 
     {
         std::vector<api::ApplyBucketDiffCommand::Entry> applyDiff(2);
