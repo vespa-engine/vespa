@@ -62,6 +62,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -168,7 +171,7 @@ public class DocumentV1ApiTest {
     }
 
     @Test
-    public void testResponses() {
+    public void testResponses() throws ExecutionException, InterruptedException {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         // GET at non-existent path returns 404 with available paths
         var response = driver.sendRequest("http://localhost/document/v1/not-found");
@@ -194,6 +197,7 @@ public class DocumentV1ApiTest {
             assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
+            assertEquals(1000, parameters.getSessionTimeoutMs());
             // Put some documents in the response
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc1, 0);
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc2, 0);
@@ -204,7 +208,7 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
-                                      "&selection=all%20the%20things&fieldSet=[id]");
+                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1\"," +
                        "  \"documents\": [" +
@@ -487,6 +491,28 @@ public class DocumentV1ApiTest {
                        "  \"message\": \"error\"" +
                        "}", response2.readAll());
         assertEquals(500, response2.getStatus());
+
+        // Request timeout is dispatched after timeout has passed.
+        CountDownLatch latch = new CountDownLatch(1);
+        var assertions = Executors.newSingleThreadExecutor().submit(() -> {
+            access.session.expect((id, parameters) -> {
+                try {
+                    latch.await();
+                }
+                catch (InterruptedException e) {
+                    fail("Not supposed to be interrupted");
+                }
+                return new Result(Result.ResultType.SUCCESS, null);
+            });
+            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=0.001");
+            assertSameJson("{" +
+                           "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
+                           "  \"message\": \"Request timeout after 1ms\"" +
+                           "}", response4.readAll());
+            assertEquals(504, response4.getStatus());
+        });
+        latch.countDown();
+        assertions.get();
 
         driver.close();
     }

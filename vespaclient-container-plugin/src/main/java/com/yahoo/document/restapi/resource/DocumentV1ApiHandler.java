@@ -110,7 +110,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static final Logger log = Logger.getLogger(DocumentV1ApiHandler.class.getName());
-    private static final Parser<Integer> numberParser = Integer::parseInt;
+    private static final Parser<Integer> integerParser = Integer::parseInt;
+    private static final Parser<Double> doubleParser = Double::parseDouble;
     private static final Parser<Boolean> booleanParser = Boolean::parseBoolean;
 
     private static final CompletionHandler logException = new CompletionHandler() {
@@ -127,8 +128,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static final JsonFactory jsonFactory = new JsonFactory();
 
-    private static final Duration requestTimeout = Duration.ofSeconds(175);
-    private static final Duration visitTimeout = Duration.ofSeconds(120);
+    private static final Duration defaultTimeout = Duration.ofSeconds(175);
 
     private static final String CREATE = "create";
     private static final String CONDITION = "condition";
@@ -140,6 +140,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String WANTED_DOCUMENT_COUNT = "wantedDocumentCount";
     private static final String CONCURRENCY = "concurrency";
     private static final String BUCKET_SPACE = "bucketSpace";
+    private static final String TIMEOUT = "timeout";
+    private static final String TRACE_LEVEL = "traceLevel";
 
     private final Clock clock;
     private final Metric metric;
@@ -185,33 +187,22 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                              TimeUnit.MILLISECONDS);
     }
 
-    DocumentV1ApiHandler(Clock clock, DocumentOperationParser parser, Metric metric, MetricReceiver metricReceiver,
-                         int maxThrottled, DocumentAccess access, Map<String, StorageCluster> clusters) {
-        this.clock = clock;
-        this.parser = parser;
-        this.metric = metric;
-        this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
-        this.maxThrottled = maxThrottled;
-        this.access = access;
-        this.asyncSession = access.createAsyncSession(new AsyncParameters());
-        this.clusters = clusters;
-        this.operations = new ConcurrentLinkedDeque<>();
-        this.executor.scheduleWithFixedDelay(this::dispatchEnqueued, 10, 10, TimeUnit.MILLISECONDS); // TODO jonmv: make testable.
-    }
-
     // ------------------------------------------------ Requests -------------------------------------------------
 
     @Override
     public ContentChannel handleRequest(Request rawRequest, ResponseHandler rawResponseHandler) {
-        rawRequest.setTimeout(requestTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        HttpRequest request = (HttpRequest) rawRequest;
+        rawRequest.setTimeout(getProperty(request, TIMEOUT, doubleParser)
+                                      .map(timeoutSeconds -> (long) (timeoutSeconds * 1000))
+                                      .orElse(defaultTimeout.toMillis()),
+                              TimeUnit.MILLISECONDS);
 
-        HandlerMetricContextUtil.onHandle(rawRequest, metric, getClass());
+        HandlerMetricContextUtil.onHandle(request, metric, getClass());
         ResponseHandler responseHandler = response -> {
-            HandlerMetricContextUtil.onHandled(rawRequest, metric, getClass());
+            HandlerMetricContextUtil.onHandled(request, metric, getClass());
             return rawResponseHandler.handleResponse(response);
         };
 
-        HttpRequest request = (HttpRequest) rawRequest;
         try {
             Path requestPath = new Path(request.getUri());
             for (String path : handlers.keySet())
@@ -238,7 +229,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     @Override
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        timeout((HttpRequest) request, "Request timeout after " + requestTimeout, responseHandler);
+        timeout((HttpRequest) request, "Request timeout after " + request.getTimeout(TimeUnit.MILLISECONDS) + "ms", responseHandler);
     }
 
     @Override
@@ -757,11 +748,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     // ------------------------------------------------- Visits ------------------------------------------------
 
     private VisitorParameters parseParameters(HttpRequest request, DocumentPath path) {
-        int wantedDocumentCount = Math.min(1 << 10, getProperty(request, WANTED_DOCUMENT_COUNT, numberParser).orElse(1));
+        int wantedDocumentCount = Math.min(1 << 10, getProperty(request, WANTED_DOCUMENT_COUNT, integerParser).orElse(1));
         if (wantedDocumentCount <= 0)
              throw new IllegalArgumentException("wantedDocumentCount must be positive");
 
-        int concurrency = Math.min(100, getProperty(request, CONCURRENCY, numberParser).orElse(1));
+        int concurrency = Math.min(100, getProperty(request, CONCURRENCY, integerParser).orElse(1));
         if (concurrency <= 0)
             throw new IllegalArgumentException("concurrency must be positive");
 
@@ -783,7 +774,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(concurrency));
-        parameters.setSessionTimeoutMs(visitTimeout.toMillis());
+        parameters.setSessionTimeoutMs(Math.max(1, request.getTimeout(TimeUnit.MILLISECONDS) - 5000));
         parameters.visitInconsistentBuckets(true);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
@@ -817,7 +808,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         switch (code) {
                             case TIMEOUT:
                                 if ( ! hasVisitedAnyBuckets()) {
-                                    response.writeMessage("No buckets visited within timeout of " + visitTimeout);
+                                    response.writeMessage("No buckets visited within timeout of " +
+                                                          parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
                                     response.respond(Response.Status.GATEWAY_TIMEOUT);
                                     break;
                                 }
@@ -979,7 +971,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         DocumentPath(Path path) {
             this.path = requireNonNull(path);
-            this.group = Optional.ofNullable(path.get("number")).map(numberParser::parse).map(Group::of)
+            this.group = Optional.ofNullable(path.get("number")).map(integerParser::parse).map(Group::of)
                                  .or(() -> Optional.ofNullable(path.get("group")).map(Group::of));
         }
 
