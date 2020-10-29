@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import org.junit.Test;
 
 import java.net.URI;
@@ -80,7 +81,8 @@ public class TenantSerializerTest {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
-                                                               otherPublicKey, new SimplePrincipal("jane")));
+                                                               otherPublicKey, new SimplePrincipal("jane")),
+                                             TenantInfo.EmptyInfo);
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
