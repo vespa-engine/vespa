@@ -12,13 +12,11 @@ using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
                                                uint32_t defaultTaskLimit_,
-                                               uint32_t semiUnboundTaskLimit_,
                                                OptimizeFor optimize_,
                                                uint32_t kindOfWatermark_,
                                                vespalib::duration reactionTime_)
     : _indexingThreads(indexingThreads_),
       _defaultTaskLimit(defaultTaskLimit_),
-      _semiUnboundTaskLimit(semiUnboundTaskLimit_),
       _optimize(optimize_),
       _kindOfWatermark(kindOfWatermark_),
       _reactionTime(reactionTime_)
@@ -60,7 +58,6 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
 {
     uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing, concurrency, cpuInfo);
     return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
-                                  std::max(uint32_t(cfg.indexing.tasklimit), (cfg.indexing.semiunboundtasklimit / indexingThreads)),
                                   selectOptimization(cfg.indexing.optimize),
                                   cfg.indexing.kindOfWatermark,
                                   vespalib::from_s(cfg.indexing.reactiontime));
@@ -68,14 +65,13 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
 
 ThreadingServiceConfig
 ThreadingServiceConfig::make(uint32_t indexingThreads) {
-    return ThreadingServiceConfig(indexingThreads, 100, 1000, OptimizeFor::LATENCY, 0, 10ms);
+    return ThreadingServiceConfig(indexingThreads, 100, OptimizeFor::LATENCY, 0, 10ms);
 }
 
 void
 ThreadingServiceConfig::update(const ThreadingServiceConfig& cfg)
 {
     _defaultTaskLimit = cfg._defaultTaskLimit;
-    _semiUnboundTaskLimit = cfg._semiUnboundTaskLimit;
 }
 
 bool
@@ -83,7 +79,6 @@ ThreadingServiceConfig::operator==(const ThreadingServiceConfig &rhs) const
 {
     return _indexingThreads == rhs._indexingThreads &&
         _defaultTaskLimit == rhs._defaultTaskLimit &&
-        _semiUnboundTaskLimit == rhs._semiUnboundTaskLimit &&
         _optimize == rhs._optimize &&
         _kindOfWatermark == rhs._kindOfWatermark &&
         _reactionTime == rhs._reactionTime;
