@@ -56,6 +56,7 @@ import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
+import com.yahoo.search.query.ParameterParser;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.yolean.Exceptions;
@@ -111,9 +112,11 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
+    private static final Duration defaultTimeout = Duration.ofSeconds(175);
+
     private static final Logger log = Logger.getLogger(DocumentV1ApiHandler.class.getName());
     private static final Parser<Integer> integerParser = Integer::parseInt;
-    private static final Parser<Double> doubleParser = Double::parseDouble;
+    private static final Parser<Long> timeoutMillisParser = value -> ParameterParser.asMilliSeconds(value, defaultTimeout.toMillis());
     private static final Parser<Boolean> booleanParser = Boolean::parseBoolean;
 
     private static final CompletionHandler logException = new CompletionHandler() {
@@ -129,8 +132,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     };
 
     private static final JsonFactory jsonFactory = new JsonFactory();
-
-    private static final Duration defaultTimeout = Duration.ofSeconds(175);
 
     private static final String CREATE = "create";
     private static final String CONDITION = "condition";
@@ -193,19 +194,18 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     @Override
     public ContentChannel handleRequest(Request rawRequest, ResponseHandler rawResponseHandler) {
-        HttpRequest request = (HttpRequest) rawRequest;
-        rawRequest.setTimeout(getProperty(request, TIMEOUT, doubleParser)
-                                      .map(timeoutSeconds -> (long) (timeoutSeconds * 1000))
-                                      .orElse(defaultTimeout.toMillis()),
-                              TimeUnit.MILLISECONDS);
-
-        HandlerMetricContextUtil.onHandle(request, metric, getClass());
+        HandlerMetricContextUtil.onHandle(rawRequest, metric, getClass());
         ResponseHandler responseHandler = response -> {
-            HandlerMetricContextUtil.onHandled(request, metric, getClass());
+            HandlerMetricContextUtil.onHandled(rawRequest, metric, getClass());
             return rawResponseHandler.handleResponse(response);
         };
 
+        HttpRequest request = (HttpRequest) rawRequest;
         try {
+            request.setTimeout(getProperty(request, TIMEOUT, timeoutMillisParser)
+                                       .orElse(defaultTimeout.toMillis()),
+                               TimeUnit.MILLISECONDS);
+
             Path requestPath = new Path(request.getUri());
             for (String path : handlers.keySet())
                 if (requestPath.matches(path)) {

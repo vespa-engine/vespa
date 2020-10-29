@@ -279,7 +279,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, null));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go");
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=123");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
                        "  \"id\": \"id:space:music::one\"" +
@@ -368,7 +368,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, true));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true", PUT,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true&timeout=1e1s", PUT,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
@@ -526,7 +526,7 @@ public class DocumentV1ApiTest {
                 }
                 return new Result(Result.ResultType.SUCCESS, null);
             });
-            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=0.001");
+            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=1ms");
             assertSameJson("{" +
                            "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
                            "  \"message\": \"Request timeout after 1ms\"" +
