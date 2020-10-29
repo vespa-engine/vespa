@@ -128,9 +128,7 @@ public class TenantSerializerTest {
         Slime slime = new Slime();
         Cursor parentCursor = slime.setObject();
         serializer.toSlime(fullInfo, parentCursor);
-        TenantInfo roundTripInfo = serializer.tenantInfoFromSlime(parentCursor);
-        String toStr = parentCursor.toString();
-
+        TenantInfo roundTripInfo = serializer.tenantInfoFromSlime(parentCursor.field("info"));
 
         assertTrue(fullInfo.equals(roundTripInfo));
     }

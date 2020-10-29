@@ -23,7 +23,6 @@ import java.security.Principal;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -59,7 +58,7 @@ public class TenantSerializer {
     private static final String customerIdField = "customerId";
     private static final String productCodeField = "productCode";
     private static final String pemDeveloperKeysField = "pemDeveloperKeys";
-    private static final String tenantInfo = "info";
+    private static final String tenantInfoField = "info";
 
     public Slime toSlime(Tenant tenant) {
         Slime slime = new Slime();
@@ -134,7 +133,7 @@ public class TenantSerializer {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
-        TenantInfo info = tenantInfoFromSlime(tenantObject);
+        TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
         return new CloudTenant(name, creator, developerKeys, info);
     }
 
@@ -147,8 +146,7 @@ public class TenantSerializer {
         return keys.build();
     }
 
-    TenantInfo tenantInfoFromSlime(Inspector parentObject) {
-        Inspector infoObject = parentObject.field("info");
+    TenantInfo tenantInfoFromSlime(Inspector infoObject) {
         if (!infoObject.valid()) return TenantInfo.EmptyInfo;
 
         return TenantInfo.EmptyInfo
