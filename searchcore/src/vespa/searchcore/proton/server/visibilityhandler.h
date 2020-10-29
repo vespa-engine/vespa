@@ -26,9 +26,6 @@ public:
                       IThreadingService &threadingService,
                       const FeedViewHolder &feedView);
     ~VisibilityHandler() override;
-    void setVisibilityDelay(vespalib::duration visibilityDelay) { _visibilityDelay = visibilityDelay; }
-    vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
-    bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
     void commit() override;
     void commitAndWait(ILidCommitState & unCommittedLidTracker) override;
     void commitAndWait(ILidCommitState &, uint32_t ) override;
@@ -40,7 +37,6 @@ private:
     const IGetSerialNum  & _serial;
     IThreadingService    & _writeService;
     const FeedViewHolder & _feedView;
-    vespalib::duration     _visibilityDelay;
     SerialNum              _lastCommitSerialNum;
     std::mutex             _lock;
 };

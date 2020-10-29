@@ -208,8 +208,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
 
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
-    vespalib::duration visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
-    _visibility.setVisibilityDelay(visibilityDelay);
 }
 
 void DocumentDB::registerReference()
@@ -441,21 +439,17 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         commit_result = _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
     }
-    bool hasVisibilityDelayChanged = false;
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
         _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<search::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
         _writeService.sync();
-        vespalib::duration visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
-        hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
-        _visibility.setVisibilityDelay(visibilityDelay);
     }
     if (_state.getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
         _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
     _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());
-    if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
+    if (params.shouldSubDbsChange()) {
         applySubDBConfig(*configSnapshot, serialNum, params);
         if (serialNum < _feedHandler->getSerialNum()) {
             // Not last entry in tls.  Reprocessing should already be done.

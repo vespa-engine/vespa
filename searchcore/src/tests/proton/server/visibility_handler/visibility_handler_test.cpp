@@ -111,7 +111,6 @@ public:
     {
         _feedViewReal->setTracker(visibilityDelay);
         _getSerialNum.setSerialNum(currSerialNum);
-        _visibilityHandler.setVisibilityDelay(visibilityDelay);
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
             auto task = makeLambdaTask([=]() { visibilityHandler->commit(); });
@@ -143,7 +142,6 @@ public:
     {
         _feedViewReal->setTracker(visibilityDelay);
         _getSerialNum.setSerialNum(currSerialNum);
-        _visibilityHandler.setVisibilityDelay(visibilityDelay);
         constexpr uint32_t MY_LID=13;
         proton::PendingLidTrackerBase * lidTracker = _feedViewReal->_tracker.get();
         {
@@ -170,29 +168,9 @@ TEST_F("Check external commit with zero visibility delay", Fixture)
     f.testCommit(0s, false, 0u, 0u, 0u);
 }
 
-TEST_F("Check external commit with nonzero visibility delay", Fixture)
-{
-    f.testCommit(1s, false, 1u, 10u, 1u);
-}
-
-TEST_F("Check external commit with nonzero visibility delay and no new feed operation", Fixture)
-{
-    f.testCommit(1s, false, 1u, 0u, 1u, 0u);
-}
-
 TEST_F("Check internal commit with zero visibility delay", Fixture)
 {
     f.testCommit(0s, true, 0u, 0u, 1u);
-}
-
-TEST_F("Check internal commit with nonzero visibility delay", Fixture)
-{
-    f.testCommit(1s, true, 1u, 10u, 1u);
-}
-
-TEST_F("Check internal commit with nonzero visibility delay and no new feed operation", Fixture)
-{
-    f.testCommit(1s, true, 1u, 0u, 1u, 0u);
 }
 
 TEST_F("Check external commitAndWait with zero visibility delay", Fixture)
