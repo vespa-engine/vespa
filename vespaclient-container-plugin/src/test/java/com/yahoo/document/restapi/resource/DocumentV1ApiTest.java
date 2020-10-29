@@ -449,15 +449,6 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // GET with wrong timeout fails
-        access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?timeout=30us");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"Failed parsing '30us': For input string: \\\"30u\\\"\"" +
-                       "}", response.readAll());
-        assertEquals(400, response.getStatus());
-
         // INSUFFICIENT_STORAGE is a 507
         access.session.expect((id, parameters) -> {
             parameters.responseHandler().get().handleResponse(new Response(0, "disk full", Response.Outcome.INSUFFICIENT_STORAGE));

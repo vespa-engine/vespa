@@ -56,6 +56,7 @@ import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
+import com.yahoo.search.query.ParameterParser;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.yolean.Exceptions;
@@ -100,7 +101,6 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -112,13 +112,11 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
+    private static final Duration defaultTimeout = Duration.ofSeconds(175);
+
     private static final Logger log = Logger.getLogger(DocumentV1ApiHandler.class.getName());
     private static final Parser<Integer> integerParser = Integer::parseInt;
-    private static final Parser<Double> timeoutParser = value -> {
-        int suffixLength = value.endsWith("ms") ? 2 : value.endsWith("s") ? 1 : 0;
-        double factor = suffixLength == 2 ? 1e-3 : 1;
-        return Double.parseDouble(value.substring(0, value.length() - suffixLength)) * factor;
-    };
+    private static final Parser<Long> timeoutMillisParser = value -> ParameterParser.asMilliSeconds(value, defaultTimeout.toMillis());
     private static final Parser<Boolean> booleanParser = Boolean::parseBoolean;
 
     private static final CompletionHandler logException = new CompletionHandler() {
@@ -134,8 +132,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     };
 
     private static final JsonFactory jsonFactory = new JsonFactory();
-
-    private static final Duration defaultTimeout = Duration.ofSeconds(175);
 
     private static final String CREATE = "create";
     private static final String CONDITION = "condition";
@@ -206,8 +202,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         HttpRequest request = (HttpRequest) rawRequest;
         try {
-            request.setTimeout(getProperty(request, TIMEOUT, timeoutParser)
-                                       .map(timeoutSeconds -> (long) (timeoutSeconds * 1000))
+            request.setTimeout(getProperty(request, TIMEOUT, timeoutMillisParser)
                                        .orElse(defaultTimeout.toMillis()),
                                TimeUnit.MILLISECONDS);
 
