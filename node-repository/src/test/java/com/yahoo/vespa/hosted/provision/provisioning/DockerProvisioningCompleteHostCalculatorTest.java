@@ -124,7 +124,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(Zone zone, NodeType nodeType) { return 0; }
+        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
 
         /**
          * Returns the memory overhead resulting if the given advertised resources are placed on the given node

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
@@ -48,7 +47,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
         public NodeResources realToRequest(NodeResources resources) { return resources; }
 
         @Override
-        public long thinPoolSizeInBase2Gb(Zone zone, NodeType nodeType) { return 0; }
+        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
 
     }
 

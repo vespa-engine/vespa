@@ -79,7 +79,7 @@ public class NodeResourceLimits {
     // Note: Assumes node type 'host'
     private long getThinPoolSize(NodeResources.StorageType storageType) {
         if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning())
-            return nodeRepository.resourcesCalculator().thinPoolSizeInBase2Gb(zone(), NodeType.host);
+            return nodeRepository.resourcesCalculator().thinPoolSizeInBase2Gb(NodeType.host);
         else
             return 4;
     }
