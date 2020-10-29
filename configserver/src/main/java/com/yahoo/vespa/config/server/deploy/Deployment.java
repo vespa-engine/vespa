@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
+import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
@@ -17,7 +18,6 @@ import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -26,8 +26,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 
 /**
  * The process of deploying an application.
@@ -111,11 +109,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            Session previousActiveSession;
-            CompletionWaiter waiter;
-            try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
-                previousActiveSession = applicationRepository.getActiveSession(applicationId);
-                waiter = applicationRepository.activate(session, previousActiveSession, applicationId, params.force());
+            Activation activation;
+            try {
+                activation = applicationRepository.activate(session, applicationId, tenant, params.force());
             }
             catch (RuntimeException e) {
                 throw e;
@@ -124,11 +120,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 throw new InternalServerException("Error when activating '" + applicationId + "'", e);
             }
 
-            waiter.awaitCompletion(timeoutBudget.timeLeft());
+            activation.awaitCompletion(timeoutBudget.timeLeft());
             log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
                                 provisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
                                 ". Config generation " + session.getMetaData().getGeneration() +
-                                (previousActiveSession != null ? ". Based on session " + previousActiveSession.getSessionId() : "") +
+                                activation.sourceSessionId().stream().mapToObj(id -> ". Based on session " + id).findFirst().orElse("") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
 
             if (configChangeActions != null && provisioner.isPresent()) {
