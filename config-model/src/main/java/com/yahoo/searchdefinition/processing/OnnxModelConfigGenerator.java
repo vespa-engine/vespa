@@ -14,6 +14,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.vespa.model.ml.OnnxModelInfo;
 
 import java.util.Map;
 
@@ -77,9 +78,9 @@ public class OnnxModelConfigGenerator extends Processor {
                     String modelConfigName = OnnxModelTransformer.asValidIdentifier(path);
 
                     // Only add the configuration if the model can actually be found.
-                    if ( ! OnnxModelTypeResolver.modelFileExists(path, search.applicationPackage())) {
+                    if ( ! OnnxModelInfo.modelExists(path, search.applicationPackage())) {
                         path = ApplicationPackage.MODELS_DIR.append(path).toString();
-                        if ( ! OnnxModelTypeResolver.modelFileExists(path, search.applicationPackage())) {
+                        if ( ! OnnxModelInfo.modelExists(path, search.applicationPackage())) {
                             return;
                         }
                     }

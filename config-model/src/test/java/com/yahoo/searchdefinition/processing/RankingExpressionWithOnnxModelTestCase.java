@@ -1,27 +1,61 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.io.IOUtils;
+import com.yahoo.path.Path;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
+import org.junit.After;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 public class RankingExpressionWithOnnxModelTestCase {
 
-    @Test
-    public void testOnnxModelFeature() {
-        VespaModel model = new VespaModelCreatorWithFilePkg("src/test/integration/onnx-model").create();
-        DocumentDatabase db = ((IndexedSearchCluster)model.getSearchClusters().get(0)).getDocumentDbs().get(0);
-        assertTransformedFeature(db);
-        assertGeneratedConfig(db);
+    private final Path applicationDir = Path.fromString("src/test/integration/onnx-model/");
+
+    @After
+    public void removeGeneratedModelFiles() {
+        IOUtils.recursiveDeleteDir(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
     }
 
-    private void assertGeneratedConfig(DocumentDatabase db) {
+    @Test
+    public void testOnnxModelFeature() throws Exception  {
+        VespaModel model = loadModel(applicationDir);
+        assertTransformedFeature(model);
+        assertGeneratedConfig(model);
+
+        Path storedApplicationDir = applicationDir.append("copy");
+        try {
+            storedApplicationDir.toFile().mkdirs();
+            IOUtils.copy(applicationDir.append("services.xml").toString(), storedApplicationDir.append("services.xml").toString());
+            IOUtils.copyDirectory(applicationDir.append("schemas").toFile(), storedApplicationDir.append("schemas").toFile());
+            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
+                    storedApplicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+
+            VespaModel storedModel = loadModel(storedApplicationDir);
+            assertTransformedFeature(storedModel);
+            assertGeneratedConfig(storedModel);
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(storedApplicationDir.toFile());
+        }
+    }
+
+    private VespaModel loadModel(Path path) throws Exception {
+        FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(path.toFile());
+        DeployState state = new DeployState.Builder().applicationPackage(applicationPackage).build();
+        return new VespaModel(state);
+    }
+
+    private void assertGeneratedConfig(VespaModel model) {
+        DocumentDatabase db = ((IndexedSearchCluster)model.getSearchClusters().get(0)).getDocumentDbs().get(0);
         OnnxModelsConfig.Builder builder = new OnnxModelsConfig.Builder();
         ((OnnxModelsConfig.Producer) db).getConfig(builder);
         OnnxModelsConfig config = new OnnxModelsConfig(builder);
@@ -72,10 +106,10 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals(1, config.model(4).output().size());
         assertEquals("rankingExpression(my_function)", config.model(4).input(0).source());
 
-
     }
 
-    private void assertTransformedFeature(DocumentDatabase db) {
+    private void assertTransformedFeature(VespaModel model) {
+        DocumentDatabase db = ((IndexedSearchCluster)model.getSearchClusters().get(0)).getDocumentDbs().get(0);
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         ((RankProfilesConfig.Producer) db).getConfig(builder);
         RankProfilesConfig config = new RankProfilesConfig(builder);

@@ -95,7 +95,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         // are there other cases we would like to resolve globally?
     }
 
-        @Override
+    @Override
     public TensorType getType(Reference reference) {
         // computeIfAbsent without concurrent modification due to resolve adding more resolved entries:
 
