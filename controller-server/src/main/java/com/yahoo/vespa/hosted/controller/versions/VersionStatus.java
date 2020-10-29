@@ -1,9 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -14,8 +11,10 @@ import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -36,11 +35,11 @@ public class VersionStatus {
 
     private static final Logger log = Logger.getLogger(VersionStatus.class.getName());
 
-    private final ImmutableList<VespaVersion> versions;
+    private final List<VespaVersion> versions;
     
     /** Create a version status. DO NOT USE: Public for testing and serialization only */
     public VersionStatus(List<VespaVersion> versions) {
-        this.versions = ImmutableList.copyOf(versions);
+        this.versions = List.copyOf(versions);
     }
 
     /** Returns the current version of controllers in this system */
@@ -77,23 +76,27 @@ public class VersionStatus {
     }
 
     /** Create the empty version status */
-    public static VersionStatus empty() { return new VersionStatus(ImmutableList.of()); }
+    public static VersionStatus empty() { return new VersionStatus(List.of()); }
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
-        var systemApplicationVersions = findSystemApplicationVersions(controller);
-        var controllerVersions = findControllerVersions(controller);
+        VersionStatus versionStatus = controller.readVersionStatus();
+        NodeVersions systemApplicationVersions = findSystemApplicationVersions(controller, versionStatus);
+        Map<ControllerVersion, List<HostName>> controllerVersions = findControllerVersions(controller);
 
-        var infrastructureVersions = ArrayListMultimap.<Version, HostName>create();
-        for (var kv : controllerVersions.asMap().entrySet()) {
-            infrastructureVersions.putAll(kv.getKey().version(), kv.getValue());
+        Map<Version, List<HostName>> infrastructureVersions = new HashMap<>();
+        for (var kv : controllerVersions.entrySet()) {
+            infrastructureVersions.computeIfAbsent(kv.getKey().version(), (k) -> new ArrayList<>())
+                                  .addAll(kv.getValue());
         }
-        infrastructureVersions.putAll(systemApplicationVersions.asVersionMap());
+        for (var kv : systemApplicationVersions.asMap().entrySet()) {
+            infrastructureVersions.computeIfAbsent(kv.getValue().currentVersion(), (k) -> new ArrayList<>())
+                                  .add(kv.getKey());
+        }
 
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
         Version newSystemVersion = infrastructureVersions.keySet().stream().min(Comparator.naturalOrder()).get();
-        VersionStatus versionStatus = controller.readVersionStatus();
         Version systemVersion = versionStatus.systemVersion()
                                              .map(VespaVersion::versionNumber)
                                              .orElse(newSystemVersion);
@@ -111,9 +114,9 @@ public class VersionStatus {
         }
 
 
-        var deploymentStatistics = DeploymentStatistics.compute(infrastructureVersions.keySet(),
-                                                                controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
-                                                                                                                            .withProjectId()));
+        List<DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(infrastructureVersions.keySet(),
+                                                                                       controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
+                                                                                                                                                    .withProjectId()));
         List<VespaVersion> versions = new ArrayList<>();
         List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
 
@@ -141,7 +144,7 @@ public class VersionStatus {
         return new VersionStatus(versions);
     }
 
-    private static NodeVersions findSystemApplicationVersions(Controller controller) {
+    private static NodeVersions findSystemApplicationVersions(Controller controller, VersionStatus versionStatus) {
         var nodeVersions = new LinkedHashMap<HostName, NodeVersion>();
         for (var zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (var application : SystemApplication.all()) {
@@ -150,14 +153,14 @@ public class VersionStatus {
                                       .filter(SystemUpgrader::eligibleForUpgrade)
                                       .collect(Collectors.toList());
                 if (nodes.isEmpty()) continue;
-                var configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
+                boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
                     log.log(Level.WARNING, "Config for " + application.id() + " in " + zone.getId() +
                                               " has not converged");
                 }
                 for (var node : nodes) {
                     // Only use current node version if config has converged
-                    var version = configConverged ? node.currentVersion() : controller.readSystemVersion();
+                    var version = configConverged ? node.currentVersion() : controller.systemVersion(versionStatus);
                     var nodeVersion = new NodeVersion(node.hostname(), zone.getId(), version, node.wantedVersion(),
                                                       node.suspendedSince());
                     nodeVersions.put(nodeVersion.hostname(), nodeVersion);
@@ -167,14 +170,16 @@ public class VersionStatus {
         return NodeVersions.copyOf(nodeVersions);
     }
 
-    private static ListMultimap<ControllerVersion, HostName> findControllerVersions(Controller controller) {
-        ListMultimap<ControllerVersion, HostName> versions = ArrayListMultimap.create();
+    private static Map<ControllerVersion, List<HostName>> findControllerVersions(Controller controller) {
+        Map<ControllerVersion, List<HostName>> versions = new HashMap<>();
         if (controller.curator().cluster().isEmpty()) { // Use vtag if we do not have cluster
-            versions.put(ControllerVersion.CURRENT, controller.hostname());
+            versions.computeIfAbsent(ControllerVersion.CURRENT, (k) -> new ArrayList<>())
+                    .add(controller.hostname());
         } else {
             for (String host : controller.curator().cluster()) {
                 HostName hostname = HostName.from(host);
-                versions.put(controller.curator().readControllerVersion(hostname), hostname);
+                versions.computeIfAbsent(controller.curator().readControllerVersion(hostname), (k) -> new ArrayList<>())
+                        .add(hostname);
             }
         }
         return versions;
@@ -187,13 +192,13 @@ public class VersionStatus {
                                               NodeVersions nodeVersions,
                                               Controller controller,
                                               VersionStatus versionStatus) {
-        var latestVersion = controllerVersions.stream().max(Comparator.naturalOrder()).get();
-        var controllerVersion = controllerVersions.stream().min(Comparator.naturalOrder()).get();
-        var isSystemVersion = statistics.version().equals(systemVersion);
-        var isControllerVersion = statistics.version().equals(controllerVersion.version());
-        var confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
-        var confidenceIsOverridden = confidence != null;
-        var previousStatus = versionStatus.version(statistics.version());
+        ControllerVersion latestVersion = controllerVersions.stream().max(Comparator.naturalOrder()).get();
+        ControllerVersion controllerVersion = controllerVersions.stream().min(Comparator.naturalOrder()).get();
+        boolean isSystemVersion = statistics.version().equals(systemVersion);
+        boolean isControllerVersion = statistics.version().equals(controllerVersion.version());
+        VespaVersion.Confidence confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
+        boolean confidenceIsOverridden = confidence != null;
+        VespaVersion existingVespaVersion = versionStatus.version(statistics.version());
 
         // Compute confidence
         if (!confidenceIsOverridden) {
@@ -213,14 +218,14 @@ public class VersionStatus {
         // Preserve existing commit details if we've previously computed status for this version
         var commitSha = latestVersion.commitSha();
         var commitDate = latestVersion.commitDate();
-        if (previousStatus != null) {
-            commitSha = previousStatus.releaseCommit();
-            commitDate = previousStatus.committedAt();
+        if (existingVespaVersion != null) {
+            commitSha = existingVespaVersion.releaseCommit();
+            commitDate = existingVespaVersion.committedAt();
 
             // Keep existing confidence if we cannot raise it at this moment in time
             if (!confidenceIsOverridden &&
-                !previousStatus.confidence().canChangeTo(confidence, controller.clock().instant())) {
-                confidence = previousStatus.confidence();
+                !existingVespaVersion.confidence().canChangeTo(confidence, controller.clock().instant())) {
+                confidence = existingVespaVersion.confidence();
             }
         }
 
