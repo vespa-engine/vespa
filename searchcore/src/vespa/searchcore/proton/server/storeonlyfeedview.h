@@ -186,9 +186,6 @@ private:
                         Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
-    
-    // Ack token early if visibility delay is nonzero
-    void considerEarlyAck(FeedToken &token);
 
     void makeUpdatedDocument(SerialNum serialNum, Lid lid, const DocumentUpdate & update, OnOperationDoneType onWriteDone,
                              PromisedDoc promisedDoc, PromisedStream promisedStream);
@@ -254,7 +251,6 @@ public:
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
     ILidCommitState & getUncommittedLidsTracker() override;
-    bool allowEarlyAck() const final override;
 };
 
 }

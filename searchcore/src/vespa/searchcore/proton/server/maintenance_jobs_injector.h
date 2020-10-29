@@ -52,7 +52,6 @@ struct MaintenanceJobsInjector
                            const std::shared_ptr<IBucketStateCalculator> &calc,
                            IDiskMemUsageNotifier &diskMemUsageNotifier,
                            DocumentDBJobTrackers &jobTrackers,
-                           ICommitable & commit,
                            IAttributeManagerSP readyAttributeManager,
                            IAttributeManagerSP notReadyAttributeManager,
                            std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
