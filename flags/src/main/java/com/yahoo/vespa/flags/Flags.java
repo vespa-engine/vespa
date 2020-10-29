@@ -262,9 +262,9 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBigDecimalFlag TENANT_BUDGET_QUOTA = defineBigDecimalFlag(
-            "tenant-budget-quota", new BigDecimal("5.00"),
-            "The budget in $/hr a tenant is allowed spend per instance, as calculated by NodeResources",
+    public static final UnboundIntFlag TENANT_BUDGET_QUOTA = defineIntFlag(
+            "tenant-budget-quota", -1,
+            "The budget in cents/hr a tenant is allowed spend per instance, as calculated by NodeResources",
             "Only takes effect on next deployment, if set to a value other than the default for flag!",
             APPLICATION_ID
     );
@@ -363,12 +363,6 @@ public class Flags {
     public static UnboundDoubleFlag defineDoubleFlag(String flagId, double defaultValue, String description,
                                                      String modificationEffect, FetchVector.Dimension... dimensions) {
         return define(UnboundDoubleFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
-    }
-
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
-    public static UnboundBigDecimalFlag defineBigDecimalFlag(String flagId, BigDecimal defaultValue, String description,
-                                                             String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(UnboundBigDecimalFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
