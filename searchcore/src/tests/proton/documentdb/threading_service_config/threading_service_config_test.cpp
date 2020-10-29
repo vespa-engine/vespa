@@ -56,11 +56,17 @@ TEST_F("require that default task limit is set", Fixture)
     EXPECT_EQUAL(500u, f.make(24).defaultTaskLimit());
 }
 
+TEST_F("require that semiunbound task limit is scaled based on indexing threads", Fixture)
+{
+    EXPECT_EQUAL(12500u, f.make(24).semiUnboundTaskLimit());
+}
+
 namespace {
 
-void assertConfig(uint32_t exp_indexing_threads, uint32_t exp_default_task_limit, const ThreadingServiceConfig &config) {
+void assertConfig(uint32_t exp_indexing_threads, uint32_t exp_default_task_limit, uint32_t exp_semi_unbound_task_limit, const ThreadingServiceConfig &config) {
     EXPECT_EQUAL(exp_indexing_threads, config.indexingThreads());
     EXPECT_EQUAL(exp_default_task_limit, config.defaultTaskLimit());
+    EXPECT_EQUAL(exp_semi_unbound_task_limit, config.semiUnboundTaskLimit());
 }
 
 }
@@ -68,11 +74,11 @@ void assertConfig(uint32_t exp_indexing_threads, uint32_t exp_default_task_limit
 TEST_FF("require that config can be somewhat updated", Fixture(), Fixture(2, 1000, 100000))
 {
     auto cfg1 = f1.make(1);
-    assertConfig(2u, 500u, cfg1);
+    assertConfig(2u, 500u, 25000u, cfg1);
     const auto cfg2 = f2.make(13);
-    assertConfig(3u, 1000u, cfg2);
+    assertConfig(3u, 1000u, 33333u, cfg2);
     cfg1.update(cfg2);
-    assertConfig(2u, 1000u, cfg1); // Indexing threads not changed
+    assertConfig(2u, 1000u, 33333u, cfg1); // Indexing threads not changed
 }
 
 TEST_MAIN()
