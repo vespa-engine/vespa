@@ -72,4 +72,21 @@ public class TenantInfoAddress {
     public boolean isEmpty() {
         return (addressLines + postalCodeOrZip + city + country + stateRegionProvince).isEmpty();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TenantInfoAddress that = (TenantInfoAddress) o;
+        return addressLines.equals(that.addressLines) &&
+                postalCodeOrZip.equals(that.postalCodeOrZip) &&
+                city.equals(that.city) &&
+                stateRegionProvince.equals(that.stateRegionProvince) &&
+                country.equals(that.country);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(addressLines, postalCodeOrZip, city, stateRegionProvince, country);
+    }
 }

@@ -51,4 +51,20 @@ public class TenantInfoBillingContact {
     public boolean isEmpty() {
         return (name + email + phone).isEmpty() && address.isEmpty();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TenantInfoBillingContact that = (TenantInfoBillingContact) o;
+        return name.equals(that.name) &&
+                email.equals(that.email) &&
+                phone.equals(that.phone) &&
+                address.equals(that.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, email, phone, address);
+    }
 }

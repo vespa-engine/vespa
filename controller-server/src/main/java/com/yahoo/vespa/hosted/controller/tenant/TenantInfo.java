@@ -103,4 +103,24 @@ public class TenantInfo {
                 && address.isEmpty()
                 && billingContact.isEmpty();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TenantInfo that = (TenantInfo) o;
+        return name.equals(that.name) &&
+                email.equals(that.email) &&
+                website.equals(that.website) &&
+                contactName.equals(that.contactName) &&
+                contactEmail.equals(that.contactEmail) &&
+                invoiceEmail.equals(that.invoiceEmail) &&
+                address.equals(that.address) &&
+                billingContact.equals(that.billingContact);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, email, website, contactName, contactEmail, invoiceEmail, address, billingContact);
+    }
 }

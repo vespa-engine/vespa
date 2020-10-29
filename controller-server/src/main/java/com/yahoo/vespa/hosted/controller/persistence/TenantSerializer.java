@@ -134,7 +134,7 @@ public class TenantSerializer {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
-        TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfo));
+        TenantInfo info = tenantInfoFromSlime(tenantObject);
         return new CloudTenant(name, creator, developerKeys, info);
     }
 
@@ -147,13 +147,17 @@ public class TenantSerializer {
         return keys.build();
     }
 
-    private TenantInfo tenantInfoFromSlime(Inspector infoObject) {
+    TenantInfo tenantInfoFromSlime(Inspector parentObject) {
+        Inspector infoObject = parentObject.field("info");
+        if (!infoObject.valid()) return TenantInfo.EmptyInfo;
+
         return TenantInfo.EmptyInfo
                 .withName(infoObject.field("name").asString())
                 .withEmail(infoObject.field("email").asString())
                 .withWebsite(infoObject.field("website").asString())
                 .withContactName(infoObject.field("contactName").asString())
                 .withContactEmail(infoObject.field("contactEmail").asString())
+                .withInvoiceEmail(infoObject.field("invoiceEmail").asString())
                 .withAddress(tenantInfoAddressFromSlime(infoObject.field("address")))
                 .withBillingContact(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")));
     }
@@ -175,12 +179,13 @@ public class TenantSerializer {
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
     }
 
-    public void toSlime(TenantInfo info, Cursor parentCursor) {
+    void toSlime(TenantInfo info, Cursor parentCursor) {
         if (info.isEmpty()) return;
         Cursor infoCursor = parentCursor.setObject("info");
         infoCursor.setString("name", info.name());
         infoCursor.setString("email", info.email());
         infoCursor.setString("website", info.website());
+        infoCursor.setString("invoiceEmail", info.invoiceEmail());
         infoCursor.setString("contactName", info.contactName());
         infoCursor.setString("contactEmail", info.contactEmail());
         toSlime(info.address(), infoCursor);
@@ -201,7 +206,7 @@ public class TenantSerializer {
     private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
-        Cursor addressCursor = parentCursor.setObject("address");
+        Cursor addressCursor = parentCursor.setObject("billingContact");
         addressCursor.setString("name", billingContact.name());
         addressCursor.setString("email", billingContact.email());
         addressCursor.setString("phone", billingContact.phone());
