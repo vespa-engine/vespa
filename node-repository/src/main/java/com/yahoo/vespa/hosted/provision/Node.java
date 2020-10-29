@@ -340,7 +340,6 @@ public final class Node implements Nodelike {
                         allocation, history, type, reports, modelName, Optional.empty(), exclusiveTo, switchHostname);
     }
 
-    // TODO (freva): Remove after all existing hosts have been patched to correct value
     public Node withExclusiveTo(ApplicationId exclusiveTo) {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
                 allocation, history, type, reports, modelName, reservedTo, Optional.ofNullable(exclusiveTo), switchHostname);
