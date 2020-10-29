@@ -783,7 +783,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(concurrency));
-        parameters.setTimeoutMs(visitTimeout.toMillis());
+        parameters.setSessionTimeoutMs(visitTimeout.toMillis());
         parameters.visitInconsistentBuckets(true);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
