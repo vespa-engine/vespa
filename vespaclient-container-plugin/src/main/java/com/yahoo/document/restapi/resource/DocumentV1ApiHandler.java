@@ -52,6 +52,8 @@ import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.messagebus.StaticThrottlePolicy;
+import com.yahoo.messagebus.Trace;
+import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
 import com.yahoo.text.Text;
@@ -110,7 +112,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static final Logger log = Logger.getLogger(DocumentV1ApiHandler.class.getName());
-    private static final Parser<Integer> numberParser = Integer::parseInt;
+    private static final Parser<Integer> integerParser = Integer::parseInt;
+    private static final Parser<Double> doubleParser = Double::parseDouble;
     private static final Parser<Boolean> booleanParser = Boolean::parseBoolean;
 
     private static final CompletionHandler logException = new CompletionHandler() {
@@ -127,8 +130,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static final JsonFactory jsonFactory = new JsonFactory();
 
-    private static final Duration requestTimeout = Duration.ofSeconds(175);
-    private static final Duration visitTimeout = Duration.ofSeconds(120);
+    private static final Duration defaultTimeout = Duration.ofSeconds(175);
 
     private static final String CREATE = "create";
     private static final String CONDITION = "condition";
@@ -140,6 +142,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String WANTED_DOCUMENT_COUNT = "wantedDocumentCount";
     private static final String CONCURRENCY = "concurrency";
     private static final String BUCKET_SPACE = "bucketSpace";
+    private static final String TIMEOUT = "timeout";
+    private static final String TRACE_LEVEL = "traceLevel";
 
     private final Clock clock;
     private final Metric metric;
@@ -185,33 +189,22 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                              TimeUnit.MILLISECONDS);
     }
 
-    DocumentV1ApiHandler(Clock clock, DocumentOperationParser parser, Metric metric, MetricReceiver metricReceiver,
-                         int maxThrottled, DocumentAccess access, Map<String, StorageCluster> clusters) {
-        this.clock = clock;
-        this.parser = parser;
-        this.metric = metric;
-        this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
-        this.maxThrottled = maxThrottled;
-        this.access = access;
-        this.asyncSession = access.createAsyncSession(new AsyncParameters());
-        this.clusters = clusters;
-        this.operations = new ConcurrentLinkedDeque<>();
-        this.executor.scheduleWithFixedDelay(this::dispatchEnqueued, 10, 10, TimeUnit.MILLISECONDS); // TODO jonmv: make testable.
-    }
-
     // ------------------------------------------------ Requests -------------------------------------------------
 
     @Override
     public ContentChannel handleRequest(Request rawRequest, ResponseHandler rawResponseHandler) {
-        rawRequest.setTimeout(requestTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        HttpRequest request = (HttpRequest) rawRequest;
+        rawRequest.setTimeout(getProperty(request, TIMEOUT, doubleParser)
+                                      .map(timeoutSeconds -> (long) (timeoutSeconds * 1000))
+                                      .orElse(defaultTimeout.toMillis()),
+                              TimeUnit.MILLISECONDS);
 
-        HandlerMetricContextUtil.onHandle(rawRequest, metric, getClass());
+        HandlerMetricContextUtil.onHandle(request, metric, getClass());
         ResponseHandler responseHandler = response -> {
-            HandlerMetricContextUtil.onHandled(rawRequest, metric, getClass());
+            HandlerMetricContextUtil.onHandled(request, metric, getClass());
             return rawResponseHandler.handleResponse(response);
         };
 
-        HttpRequest request = (HttpRequest) rawRequest;
         try {
             Path requestPath = new Path(request.getUri());
             for (String path : handlers.keySet())
@@ -238,7 +231,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     @Override
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        timeout((HttpRequest) request, "Request timeout after " + requestTimeout, responseHandler);
+        timeout((HttpRequest) request, "Request timeout after " + request.getTimeout(TimeUnit.MILLISECONDS) + "ms", responseHandler);
     }
 
     @Override
@@ -318,13 +311,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            DocumentOperationParameters rawParameters = parameters();
-            rawParameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).route())
-                                                         .map(rawParameters::withRoute)
-                                                         .orElse(rawParameters);
-            rawParameters = getProperty(request, FIELD_SET).map(rawParameters::withFieldSet)
-                                                           .orElse(rawParameters);
-            DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> {
+            DocumentOperationParameters parameters = parametersFromRequest(request, CLUSTER, FIELD_SET)
+                    .withResponseHandler(response -> {
                 handle(path, handler, response, (document, jsonResponse) -> {
                     if (document != null) {
                         jsonResponse.writeSingleDocument(document);
@@ -345,9 +333,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             enqueueAndDispatch(request, handler, () -> {
                 DocumentPut put = parser.parsePut(in, path.id().toString());
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
-                DocumentOperationParameters rawParameters = getProperty(request, ROUTE).map(parameters()::withRoute)
-                                                                                       .orElse(parameters());
-                DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> handle(path, handler, response));
+                DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                        .withResponseHandler(response -> handle(path, handler, response));
                 return () -> dispatchOperation(() -> asyncSession.put(put, parameters));
             });
         });
@@ -359,10 +346,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             enqueueAndDispatch(request, handler, () -> {
                 DocumentUpdate update = parser.parseUpdate(in, path.id().toString());
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
-                getProperty(request, CREATE).map(booleanParser::parse).ifPresent(update::setCreateIfNonExistent);
-                DocumentOperationParameters rawParameters = getProperty(request, ROUTE).map(parameters()::withRoute)
-                                                                                       .orElse(parameters());
-                DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> handle(path, handler, response));
+                getProperty(request, CREATE, booleanParser).ifPresent(update::setCreateIfNonExistent);
+                DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                        .withResponseHandler(response -> handle(path, handler, response));
                 return () -> dispatchOperation(() -> asyncSession.update(update, parameters));
             });
         });
@@ -373,12 +359,38 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         enqueueAndDispatch(request, handler, () -> {
             DocumentRemove remove = new DocumentRemove(path.id());
             getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(remove::setCondition);
-            DocumentOperationParameters rawParameters = getProperty(request, ROUTE).map(parameters()::withRoute)
-                                                                                   .orElse(parameters());
-            DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> handle(path, handler, response));
+            DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                    .withResponseHandler(response -> handle(path, handler, response));
             return () -> dispatchOperation(() -> asyncSession.remove(remove, parameters));
         });
         return ignoredContent;
+    }
+
+    private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
+        DocumentOperationParameters parameters = getProperty(request, TRACE_LEVEL, integerParser).map(parameters()::withTraceLevel)
+                                                                                                 .orElse(parameters());
+        for (String name : names) switch (name) {
+            case CLUSTER:
+                parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).route())
+                                                          .map(parameters::withRoute)
+                                                          .orElse(parameters);
+                break;
+            case CONDITION:
+                parameters = getProperty(request, ROUTE).map(parameters::withRoute)
+                                                        .orElse(parameters);
+                break;
+            case FIELD_SET:
+                parameters = getProperty(request, FIELD_SET).map(parameters::withFieldSet)
+                                                            .orElse(parameters);
+                break;
+            case ROUTE:
+                parameters = getProperty(request, ROUTE).map(parameters::withRoute)
+                                                        .orElse(parameters);
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized document operation parameter name '" + name + "'");
+        }
+        return parameters;
     }
 
     /** Dispatches enqueued requests until one is blocked. */
@@ -508,6 +520,26 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         synchronized void writeDocId(DocumentId id) throws IOException {
             json.writeStringField("id", id.toString());
+        }
+
+        synchronized void writeTrace(Trace trace) throws IOException {
+            if (trace != null && ! trace.getRoot().isEmpty()) {
+                writeTrace(trace.getRoot());
+            }
+        }
+
+        private void writeTrace(TraceNode node) throws IOException {
+            if (node.hasNote())
+                json.writeStringField("message", node.getNote());
+            if ( ! node.isLeaf()) {
+                json.writeArrayFieldStart(node.isStrict() ? "trace" : "fork");
+                for (int i = 0; i < node.getNumChildren(); i++) {
+                    json.writeStartObject();
+                    writeTrace(node.getChild(i));
+                    json.writeEndObject();
+                }
+                json.writeEndArray();
+            }
         }
 
         synchronized void writeSingleDocument(Document document) throws IOException {
@@ -723,6 +755,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static void handle(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response, SuccessCallback callback) {
         try (JsonResponse jsonResponse = JsonResponse.create(path, handler)) {
+            jsonResponse.writeTrace(response.getTrace());
             if (response.isSuccess())
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
             else {
@@ -757,11 +790,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     // ------------------------------------------------- Visits ------------------------------------------------
 
     private VisitorParameters parseParameters(HttpRequest request, DocumentPath path) {
-        int wantedDocumentCount = Math.min(1 << 10, getProperty(request, WANTED_DOCUMENT_COUNT, numberParser).orElse(1));
+        int wantedDocumentCount = Math.min(1 << 10, getProperty(request, WANTED_DOCUMENT_COUNT, integerParser).orElse(1));
         if (wantedDocumentCount <= 0)
              throw new IllegalArgumentException("wantedDocumentCount must be positive");
 
-        int concurrency = Math.min(100, getProperty(request, CONCURRENCY, numberParser).orElse(1));
+        int concurrency = Math.min(100, getProperty(request, CONCURRENCY, integerParser).orElse(1));
         if (concurrency <= 0)
             throw new IllegalArgumentException("concurrency must be positive");
 
@@ -783,7 +816,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(concurrency));
-        parameters.setSessionTimeoutMs(visitTimeout.toMillis());
+        parameters.setSessionTimeoutMs(Math.max(1, request.getTimeout(TimeUnit.MILLISECONDS) - 5000));
         parameters.visitInconsistentBuckets(true);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
@@ -817,7 +850,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         switch (code) {
                             case TIMEOUT:
                                 if ( ! hasVisitedAnyBuckets()) {
-                                    response.writeMessage("No buckets visited within timeout of " + visitTimeout);
+                                    response.writeMessage("No buckets visited within timeout of " +
+                                                          parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
                                     response.respond(Response.Status.GATEWAY_TIMEOUT);
                                     break;
                                 }
@@ -979,7 +1013,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         DocumentPath(Path path) {
             this.path = requireNonNull(path);
-            this.group = Optional.ofNullable(path.get("number")).map(numberParser::parse).map(Group::of)
+            this.group = Optional.ofNullable(path.get("number")).map(integerParser::parse).map(Group::of)
                                  .or(() -> Optional.ofNullable(path.get("group")).map(Group::of));
         }
 
