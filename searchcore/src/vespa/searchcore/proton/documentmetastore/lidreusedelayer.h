@@ -27,7 +27,6 @@ class LidReuseDelayer
     searchcorespi::index::IThreadingService &_writeService;
     IStore &_documentMetaStore;
     const bool _immediateCommit;
-    const bool _allowEarlyAck;
     LidReuseDelayerConfig _config;
     std::vector<uint32_t> _pendingLids; // lids waiting for commit
 
@@ -39,7 +38,6 @@ public:
     bool delayReuse(const std::vector<uint32_t> &lids);
     std::vector<uint32_t> getReuseLids();
 
-    bool allowEarlyAck() const { return _allowEarlyAck; }
     const LidReuseDelayerConfig & getConfig() const { return _config; }
 };
 
