@@ -149,7 +149,7 @@ public class NodePatcher {
                 return patchRequiredDiskSpeed(node, asString(value));
             case "reservedTo":
                 return value.type() == Type.NIX ? node.withoutReservedTo() : node.withReservedTo(TenantName.from(value.asString()));
-            case "exclusiveTo": // TODO (freva): Remove after all existing hosts have been patched to correct value
+            case "exclusiveTo":
                 return node.withExclusiveTo(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
             case "switchHostname":
                 return value.type() == Type.NIX ? node.withoutSwitchHostname() : node.withSwitchHostname(value.asString());
