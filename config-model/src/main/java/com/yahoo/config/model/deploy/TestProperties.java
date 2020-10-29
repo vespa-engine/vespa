@@ -35,7 +35,6 @@ public class TestProperties implements ModelContext.Properties {
     private Zone zone;
     private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean useContentNodeBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
     private boolean useDirectStorageApiRpc = false;
     private boolean useFastValueTensorImplementation = false;
@@ -67,7 +66,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-    @Override public boolean useContentNodeBtreeDb() { return useContentNodeBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
     @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
@@ -100,11 +98,6 @@ public class TestProperties implements ModelContext.Properties {
     }
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
-        return this;
-    }
-
-    public TestProperties setUseContentNodeBtreeDB(boolean useBtreeDb) {
-        useContentNodeBtreeDb = useBtreeDb;
         return this;
     }
 

@@ -149,12 +149,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_CONTENT_NODE_BTREE_DB = defineFeatureFlag(
-            "use-content-node-btree-db", true,
-            "Whether to use the new B-tree bucket database on the content node.",
-            "Takes effect at restart of content node process",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
