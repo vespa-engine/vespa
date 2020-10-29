@@ -9,10 +9,13 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
-import com.yahoo.vespa.hosted.controller.tenant.*;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 import org.junit.Test;
 
 import java.net.URI;
@@ -130,7 +133,7 @@ public class TenantSerializerTest {
         serializer.toSlime(fullInfo, parentCursor);
         TenantInfo roundTripInfo = serializer.tenantInfoFromSlime(parentCursor.field("info"));
 
-        assertTrue(fullInfo.equals(roundTripInfo));
+        assertEquals(fullInfo, roundTripInfo);
     }
 
     private Contact contact() {
