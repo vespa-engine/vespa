@@ -1,9 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 
@@ -29,15 +27,6 @@ public class NodeVersions {
 
     public Map<HostName, NodeVersion> asMap() {
         return nodeVersions;
-    }
-
-    /** Returns host names in this, grouped by version */
-    public ListMultimap<Version, HostName> asVersionMap() {
-        var versions = ImmutableListMultimap.<Version, HostName>builder();
-        for (var kv : nodeVersions.entrySet()) {
-            versions.put(kv.getValue().currentVersion(), kv.getKey());
-        }
-        return versions.build();
     }
 
     /** Returns host names in this */

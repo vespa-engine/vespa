@@ -1,9 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -14,8 +11,10 @@ import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -36,11 +35,11 @@ public class VersionStatus {
 
     private static final Logger log = Logger.getLogger(VersionStatus.class.getName());
 
-    private final ImmutableList<VespaVersion> versions;
+    private final List<VespaVersion> versions;
     
     /** Create a version status. DO NOT USE: Public for testing and serialization only */
     public VersionStatus(List<VespaVersion> versions) {
-        this.versions = ImmutableList.copyOf(versions);
+        this.versions = List.copyOf(versions);
     }
 
     /** Returns the current version of controllers in this system */
@@ -77,19 +76,23 @@ public class VersionStatus {
     }
 
     /** Create the empty version status */
-    public static VersionStatus empty() { return new VersionStatus(ImmutableList.of()); }
+    public static VersionStatus empty() { return new VersionStatus(List.of()); }
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
         VersionStatus versionStatus = controller.readVersionStatus();
         NodeVersions systemApplicationVersions = findSystemApplicationVersions(controller, versionStatus);
-        ListMultimap<ControllerVersion, HostName> controllerVersions = findControllerVersions(controller);
+        Map<ControllerVersion, List<HostName>> controllerVersions = findControllerVersions(controller);
 
-        ArrayListMultimap<Version, HostName> infrastructureVersions = ArrayListMultimap.create();
-        for (var kv : controllerVersions.asMap().entrySet()) {
-            infrastructureVersions.putAll(kv.getKey().version(), kv.getValue());
+        Map<Version, List<HostName>> infrastructureVersions = new HashMap<>();
+        for (var kv : controllerVersions.entrySet()) {
+            infrastructureVersions.computeIfAbsent(kv.getKey().version(), (k) -> new ArrayList<>())
+                                  .addAll(kv.getValue());
         }
-        infrastructureVersions.putAll(systemApplicationVersions.asVersionMap());
+        for (var kv : systemApplicationVersions.asMap().entrySet()) {
+            infrastructureVersions.computeIfAbsent(kv.getValue().currentVersion(), (k) -> new ArrayList<>())
+                                  .add(kv.getKey());
+        }
 
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
@@ -167,14 +170,16 @@ public class VersionStatus {
         return NodeVersions.copyOf(nodeVersions);
     }
 
-    private static ListMultimap<ControllerVersion, HostName> findControllerVersions(Controller controller) {
-        ListMultimap<ControllerVersion, HostName> versions = ArrayListMultimap.create();
+    private static Map<ControllerVersion, List<HostName>> findControllerVersions(Controller controller) {
+        Map<ControllerVersion, List<HostName>> versions = new HashMap<>();
         if (controller.curator().cluster().isEmpty()) { // Use vtag if we do not have cluster
-            versions.put(ControllerVersion.CURRENT, controller.hostname());
+            versions.computeIfAbsent(ControllerVersion.CURRENT, (k) -> new ArrayList<>())
+                    .add(controller.hostname());
         } else {
             for (String host : controller.curator().cluster()) {
                 HostName hostname = HostName.from(host);
-                versions.put(controller.curator().readControllerVersion(hostname), hostname);
+                versions.computeIfAbsent(controller.curator().readControllerVersion(hostname), (k) -> new ArrayList<>())
+                        .add(hostname);
             }
         }
         return versions;
