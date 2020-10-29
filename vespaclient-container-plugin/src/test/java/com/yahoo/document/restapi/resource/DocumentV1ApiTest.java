@@ -43,6 +43,7 @@ import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
+import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.slime.Inspector;
@@ -61,6 +62,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -320,11 +322,16 @@ public class DocumentV1ApiTest {
             DocumentPut expectedPut = new DocumentPut(doc2);
             expectedPut.setCondition(new TestAndSetCondition("test it"));
             assertEquals(expectedPut, put);
-            assertEquals(parameters(), parameters);
-            parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc2));
+            assertEquals(parameters().withTraceLevel(9), parameters);
+            Trace trace = new Trace(9);
+            trace.trace(7, "Tracy Chapman", false);
+            trace.getRoot().addChild(new TraceNode().setStrict(false)
+                                                    .addChild("Fast Car")
+                                                    .addChild("Baby Can I Hold You"));
+            parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc2, trace));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it", POST,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it&traceLevel=9", POST,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": \"Asa-Chan & Jun-Ray\"" +
@@ -332,7 +339,22 @@ public class DocumentV1ApiTest {
                                       "}");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"id\": \"id:space:music:n=1:two\"" +
+                       "  \"id\": \"id:space:music:n=1:two\"," +
+                       "  \"trace\": [" +
+                       "    {" +
+                       "      \"message\": \"Tracy Chapman\"" +
+                       "    }," +
+                       "    {" +
+                       "      \"fork\": [" +
+                       "        {" +
+                       "          \"message\": \"Fast Car\"" +
+                       "        }," +
+                       "        {" +
+                       "          \"message\": \"Baby Can I Hold You\"" +
+                       "        }" +
+                       "      ]" +
+                       "    }" +
+                       "  ]" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 

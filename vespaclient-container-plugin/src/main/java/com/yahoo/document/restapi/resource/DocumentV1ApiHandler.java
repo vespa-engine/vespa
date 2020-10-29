@@ -52,6 +52,8 @@ import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.messagebus.StaticThrottlePolicy;
+import com.yahoo.messagebus.Trace;
+import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
 import com.yahoo.text.Text;
@@ -309,13 +311,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            DocumentOperationParameters rawParameters = parameters();
-            rawParameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).route())
-                                                         .map(rawParameters::withRoute)
-                                                         .orElse(rawParameters);
-            rawParameters = getProperty(request, FIELD_SET).map(rawParameters::withFieldSet)
-                                                           .orElse(rawParameters);
-            DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> {
+            DocumentOperationParameters parameters = parametersFromRequest(request, CLUSTER, FIELD_SET)
+                    .withResponseHandler(response -> {
                 handle(path, handler, response, (document, jsonResponse) -> {
                     if (document != null) {
                         jsonResponse.writeSingleDocument(document);
@@ -336,9 +333,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             enqueueAndDispatch(request, handler, () -> {
                 DocumentPut put = parser.parsePut(in, path.id().toString());
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
-                DocumentOperationParameters rawParameters = getProperty(request, ROUTE).map(parameters()::withRoute)
-                                                                                       .orElse(parameters());
-                DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> handle(path, handler, response));
+                DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                        .withResponseHandler(response -> handle(path, handler, response));
                 return () -> dispatchOperation(() -> asyncSession.put(put, parameters));
             });
         });
@@ -350,10 +346,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             enqueueAndDispatch(request, handler, () -> {
                 DocumentUpdate update = parser.parseUpdate(in, path.id().toString());
                 getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(update::setCondition);
-                getProperty(request, CREATE).map(booleanParser::parse).ifPresent(update::setCreateIfNonExistent);
-                DocumentOperationParameters rawParameters = getProperty(request, ROUTE).map(parameters()::withRoute)
-                                                                                       .orElse(parameters());
-                DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> handle(path, handler, response));
+                getProperty(request, CREATE, booleanParser).ifPresent(update::setCreateIfNonExistent);
+                DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                        .withResponseHandler(response -> handle(path, handler, response));
                 return () -> dispatchOperation(() -> asyncSession.update(update, parameters));
             });
         });
@@ -364,12 +359,38 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         enqueueAndDispatch(request, handler, () -> {
             DocumentRemove remove = new DocumentRemove(path.id());
             getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(remove::setCondition);
-            DocumentOperationParameters rawParameters = getProperty(request, ROUTE).map(parameters()::withRoute)
-                                                                                   .orElse(parameters());
-            DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> handle(path, handler, response));
+            DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
+                    .withResponseHandler(response -> handle(path, handler, response));
             return () -> dispatchOperation(() -> asyncSession.remove(remove, parameters));
         });
         return ignoredContent;
+    }
+
+    private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
+        DocumentOperationParameters parameters = getProperty(request, TRACE_LEVEL, integerParser).map(parameters()::withTraceLevel)
+                                                                                                 .orElse(parameters());
+        for (String name : names) switch (name) {
+            case CLUSTER:
+                parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).route())
+                                                          .map(parameters::withRoute)
+                                                          .orElse(parameters);
+                break;
+            case CONDITION:
+                parameters = getProperty(request, ROUTE).map(parameters::withRoute)
+                                                        .orElse(parameters);
+                break;
+            case FIELD_SET:
+                parameters = getProperty(request, FIELD_SET).map(parameters::withFieldSet)
+                                                            .orElse(parameters);
+                break;
+            case ROUTE:
+                parameters = getProperty(request, ROUTE).map(parameters::withRoute)
+                                                        .orElse(parameters);
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized document operation parameter name '" + name + "'");
+        }
+        return parameters;
     }
 
     /** Dispatches enqueued requests until one is blocked. */
@@ -499,6 +520,26 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         synchronized void writeDocId(DocumentId id) throws IOException {
             json.writeStringField("id", id.toString());
+        }
+
+        synchronized void writeTrace(Trace trace) throws IOException {
+            if (trace != null && ! trace.getRoot().isEmpty()) {
+                writeTrace(trace.getRoot());
+            }
+        }
+
+        private void writeTrace(TraceNode node) throws IOException {
+            if (node.hasNote())
+                json.writeStringField("message", node.getNote());
+            if ( ! node.isLeaf()) {
+                json.writeArrayFieldStart(node.isStrict() ? "trace" : "fork");
+                for (int i = 0; i < node.getNumChildren(); i++) {
+                    json.writeStartObject();
+                    writeTrace(node.getChild(i));
+                    json.writeEndObject();
+                }
+                json.writeEndArray();
+            }
         }
 
         synchronized void writeSingleDocument(Document document) throws IOException {
@@ -714,6 +755,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static void handle(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response, SuccessCallback callback) {
         try (JsonResponse jsonResponse = JsonResponse.create(path, handler)) {
+            jsonResponse.writeTrace(response.getTrace());
             if (response.isSuccess())
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
             else {
