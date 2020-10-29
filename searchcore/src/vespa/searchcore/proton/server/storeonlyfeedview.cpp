@@ -351,11 +351,6 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 }
 
 bool
-StoreOnlyFeedView::needImmediateCommit() const {
-    return _lidReuseDelayer.needImmediateCommit();
-}
-
-bool
 StoreOnlyFeedView::allowEarlyAck() const {
     return _lidReuseDelayer.allowEarlyAck();
 }
