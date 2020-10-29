@@ -39,7 +39,6 @@ public:
     bool delayReuse(const std::vector<uint32_t> &lids);
     std::vector<uint32_t> getReuseLids();
 
-    bool needImmediateCommit() const { return _immediateCommit; }
     bool allowEarlyAck() const { return _allowEarlyAck; }
     const LidReuseDelayerConfig & getConfig() const { return _config; }
 };
