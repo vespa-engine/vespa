@@ -279,7 +279,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, null));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go");
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=123");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
                        "  \"id\": \"id:space:music::one\"" +
@@ -368,7 +368,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, true));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true", PUT,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true&timeout=1e1s", PUT,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
@@ -449,6 +449,15 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
+        // GET with wrong timeout fails
+        access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?timeout=30us");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"message\": \"Failed parsing '30us': For input string: \\\"30u\\\"\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
         // INSUFFICIENT_STORAGE is a 507
         access.session.expect((id, parameters) -> {
             parameters.responseHandler().get().handleResponse(new Response(0, "disk full", Response.Outcome.INSUFFICIENT_STORAGE));
@@ -526,7 +535,7 @@ public class DocumentV1ApiTest {
                 }
                 return new Result(Result.ResultType.SUCCESS, null);
             });
-            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=0.001");
+            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=1ms");
             assertSameJson("{" +
                            "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
                            "  \"message\": \"Request timeout after 1ms\"" +
