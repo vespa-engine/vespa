@@ -49,6 +49,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -197,7 +198,10 @@ public class DocumentV1ApiTest {
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc1, 0);
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc2, 0);
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc3, 0);
-            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "message");
+            VisitorStatistics statistics = new VisitorStatistics();
+            statistics.setBucketsVisited(1);
+            parameters.getControlHandler().onVisitorStatistics(statistics);
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
                                       "&selection=all%20the%20things&fieldSet=[id]");
