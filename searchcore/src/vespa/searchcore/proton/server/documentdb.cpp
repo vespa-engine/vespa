@@ -210,6 +210,9 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
     vespalib::duration visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
     _visibility.setVisibilityDelay(visibilityDelay);
+    if (_visibility.hasVisibilityDelay()) {
+        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
+    }
 }
 
 void DocumentDB::registerReference()
@@ -454,7 +457,11 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     if (_state.getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
         _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
-    _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());
+    if (_visibility.hasVisibilityDelay()) {
+        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
+    } else {
+        _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());
+    }
     if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
         applySubDBConfig(*configSnapshot, serialNum, params);
         if (serialNum < _feedHandler->getSerialNum()) {
