@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
@@ -40,7 +41,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -72,7 +72,8 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), resources, application1, Version.emptyVersion, false);
+        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), resources, application1,
+                Version.emptyVersion, HostSharing.any);
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
         assertEquals(8, tester.nodeRepository().list().size());
@@ -96,7 +97,8 @@ public class DynamicDockerProvisionTest {
         // Deploy new exclusive application
         ApplicationId application3 = ProvisioningTester.makeApplicationId();
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), resources, application3, Version.emptyVersion, true);
+        verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), resources, application3,
+                Version.emptyVersion, HostSharing.exclusive);
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
         assertEquals(20, tester.nodeRepository().list().size());
@@ -425,7 +427,7 @@ public class DynamicDockerProvisionTest {
                         return provisionedHost;
                     })
                     .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), anyBoolean());
+        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any());
     }
 
     private static class MockHostProvisioner implements HostProvisioner {
@@ -439,12 +441,14 @@ public class DynamicDockerProvisionTest {
         }
 
         @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion, boolean forceExclusive) {
+        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
+                                                    ApplicationId applicationId, Version osVersion, HostSharing sharing) {
             Optional<Flavor> hostFlavor = hostFlavors.stream().filter(f -> compatible(f, resources)).findFirst();
             if (hostFlavor.isEmpty())
                 throw new OutOfCapacityException("No host flavor matches " + resources);
             return provisionIndexes.stream()
-                                   .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), "host-" + i + "-1", resources, osVersion))
+                                   .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), Optional.empty(),
+                                           "host-" + i + "-1", resources, osVersion))
                                    .collect(Collectors.toList());
         }
 

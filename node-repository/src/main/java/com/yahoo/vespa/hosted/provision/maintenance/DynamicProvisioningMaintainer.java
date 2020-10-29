@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.yolean.Exceptions;
@@ -44,7 +45,6 @@ import java.util.stream.IntStream;
 public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(DynamicProvisioningMaintainer.class.getName());
-    private static final ApplicationId preprovisionAppId = ApplicationId.from("hosted-vespa", "tenant-host", "preprovision");
 
     private final HostProvisioner hostProvisioner;
     private final ListFlag<HostCapacity> targetCapacityFlag;
@@ -155,7 +155,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
             try {
                 Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
                 List<Node> hosts = hostProvisioner.provisionHosts(nodeRepository().database().getProvisionIndexes(1),
-                                                                  resources, preprovisionAppId, osVersion, false)
+                                                                  resources, ApplicationId.defaultId(), osVersion,
+                                                                  HostSharing.shared)
                                                   .stream()
                                                   .map(ProvisionedHost::generateHost)
                                                   .collect(Collectors.toList());
