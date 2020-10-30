@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -390,6 +391,9 @@ public class AutoscalingTest {
         public NodeResources realToRequest(NodeResources resources) {
             return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
         }
+
+        @Override
+        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
 
     }
 

@@ -265,6 +265,9 @@ class AutoscalingTester {
             return resources.withMemoryGb(resources.memoryGb() + 3);
         }
 
+        @Override
+        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
+
     }
 
     private class MockHostProvisioner implements HostProvisioner {

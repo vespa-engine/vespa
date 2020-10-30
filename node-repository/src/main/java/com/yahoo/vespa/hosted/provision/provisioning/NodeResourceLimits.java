@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -75,15 +76,12 @@ public class NodeResourceLimits {
         return minRealDiskGb() + getThinPoolSize(requested.storageType());
     }
 
-    // TODO: Calculate thin pool size instead of hardcoding
+    // Note: Assumes node type 'host'
     private long getThinPoolSize(NodeResources.StorageType storageType) {
-        if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning()) {
-            if (zone().system() == SystemName.Public)
-                return 12;
-            else
-                return 24;
-        }
-        return 4;
+        if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning())
+            return nodeRepository.resourcesCalculator().thinPoolSizeInBase2Gb(NodeType.host);
+        else
+            return 4;
     }
 
     private double minRealVcpu() { return minAdvertisedVcpu(); }
