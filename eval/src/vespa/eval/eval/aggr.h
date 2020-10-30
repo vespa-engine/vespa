@@ -145,12 +145,14 @@ public:
             return std::numeric_limits<T>::quiet_NaN();
         }
         std::vector<T> tmp = _seen;
-        std::sort(tmp.begin(), tmp.end());
-        size_t cnt = tmp.size();
-        if ((cnt % 2) == 0) {
-            return ((tmp[cnt/2] + tmp[(cnt-1)/2]) / T{2});
+        size_t n = (tmp.size() / 2);
+        std::nth_element(tmp.begin(), tmp.begin() + n, tmp.end());
+        T result = tmp[n]; // the nth element
+        if ((tmp.size() % 2) == 0) {
+            result += *std::max_element(tmp.begin(), tmp.begin() + n);
+            result /= T{2};
         }
-        return tmp[cnt/2];
+        return result;
     }
 };
 
