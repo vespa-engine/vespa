@@ -500,15 +500,15 @@ Peek::compile_self(EngineOrFactory engine, Stash &stash) const
     if (engine.is_factory()) {
         instruction::GenericPeek::SpecMap generic_spec;
         size_t child_idx = 0;
-        for (const auto & kv : spec()) {
+        for (const auto & [dim_name, label_or_child] : spec()) {
             std::visit(vespalib::overload {
                     [&](const TensorSpec::Label &label) {
-                        generic_spec.emplace(kv.first, label);
+                        generic_spec.emplace(dim_name, label);
                     },
                     [&](const TensorFunction::Child &) {
-                        generic_spec.emplace(kv.first, child_idx++);
+                        generic_spec.emplace(dim_name, child_idx++);
                     }
-                }, kv.second);
+                }, label_or_child);
         }
         return instruction::GenericPeek::make_instruction(param_type(), result_type(), generic_spec, engine.factory(), stash);
     }

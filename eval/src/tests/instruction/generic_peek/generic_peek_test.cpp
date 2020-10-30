@@ -23,13 +23,12 @@ using vespalib::make_string_short::fmt;
 std::vector<Layout> peek_layouts = {
     {x(4)},
     {x(4),y(5)},
-    {x(4),y(5),z(7)},
-    float_cells({x(4),y(5),z(7)}),
+    {x(4),y(5),z(3)},
+    float_cells({x(4),y(5),z(3)}),
     {x({"-1","0","2"})},
-    {x({"-1","0","2"}),y({"-2","0","1"})},
     {x({"-1","0","2"}),y({"-2","0","1"}),z({"-2","-1","0","1","2"})},
-    float_cells({x({"-1","0","2"}),y({"-2","0","1"}),z({"-2","-1","0","1","2"})}),
-    {x(4),y({"-2","0","1"}),z(7)},
+    float_cells({x({"-1","0","2"}),y({"-2","0","1"})}),
+    {x(4),y({"-2","0","1"}),z(3)},
     {x({"-1","0","2"}),y(5),z({"-2","-1","0","1","2"})},
     float_cells({x({"-1","0","2"}),y(5),z({"-2","-1","0","1","2"})})
 };
@@ -52,11 +51,14 @@ TensorSpec reference_peek(const TensorSpec &param, const vespalib::string &resul
                        [&](const TensorSpec::Label &label) {
                            addr.emplace(dim_name, label);
                        },
-                       [&](const size_t &index) {
+                       [&](const size_t &child_value) {
+                           // here, label_or_child is a size_t specifying the value
+                           // we pretend a child produced
                            if (is_mapped_dim(dim_name)) {
-                               addr.emplace(dim_name, vespalib::make_string("%" PRId64, int64_t(index)));
+                               // (but cast to signed first, to allow labels like the string "-2")
+                               addr.emplace(dim_name, vespalib::make_string("%zd", ssize_t(child_value)));
                            } else {
-                               addr.emplace(dim_name, size_t(index));
+                               addr.emplace(dim_name, child_value);
                            }
                        }
                    }, label_or_child);
@@ -94,8 +96,13 @@ TensorSpec perform_generic_peek(const TensorSpec &a, const ValueType &result_typ
     size_t child_idx = 0;
     for (auto & [dim_name, label_or_child] : spec) {
         if (std::holds_alternative<size_t>(label_or_child)) {
+            // here, label_or_child is a size_t specifying the value
+            // this child should produce (but cast to signed first,
+            // to allow negative values)
             ssize_t child_value = std::get<size_t>(label_or_child);
             my_stack.push_back(stash.create<DoubleValue>(child_value));
+            // overwrite label_or_child, now it should be the index of
+            // the child for make_instruction
             label_or_child = child_idx++;
         }
     }
@@ -104,7 +111,7 @@ TensorSpec perform_generic_peek(const TensorSpec &a, const ValueType &result_typ
     return spec_from_value(single.eval(my_stack));
 }
 
-vespalib::string to_str(const GenericPeek::SpecMap &spec) {
+vespalib::string to_str(const PeekSpec &spec) {
     vespalib::asciistream os;
     os << "{ ";
     for (const auto & [dim, label_or_index] : spec) {
@@ -120,49 +127,57 @@ vespalib::string to_str(const GenericPeek::SpecMap &spec) {
             }
         }
     }
+    os << "}";
     return os.str();
 }
 
-void check_peek_for_dims(const TensorSpec &input,
-                         GenericPeek::SpecMap spec,
+void verify_peek_equal(const TensorSpec &input,
+                       const PeekSpec &spec,
+                       const ValueBuilderFactory &factory)
+{
+    ValueType param_type = ValueType::from_spec(input.type());
+    std::vector<vespalib::string> reduce_dims;
+    for (const auto & [dim_name, ignored] : spec) {
+        reduce_dims.push_back(dim_name);
+    }
+    if (reduce_dims.empty()) return;
+    ValueType result_type = param_type.reduce(reduce_dims);
+    auto expect = reference_peek(input, result_type.to_spec(), spec);
+    SCOPED_TRACE(fmt("peek input: %s\n  peek spec: %s\n  peek result %s\n",
+                     input.to_string().c_str(),
+                     to_str(spec).c_str(),
+                     expect.to_string().c_str()));
+    auto actual = perform_generic_peek(input, result_type, spec, factory);
+    EXPECT_EQ(actual, expect);
+}
+
+void fill_dims_and_check(const TensorSpec &input,
+                         PeekSpec spec,
                          std::vector<ValueType::Dimension> dimensions,
                          const ValueBuilderFactory &factory)
 {
     if (dimensions.empty()) {
-        ValueType param_type = ValueType::from_spec(input.type());
-        std::vector<vespalib::string> reduce_dims;
-        for (const auto & [dim_name, ignored] : spec) {
-            reduce_dims.push_back(dim_name);
-        }
-        // if (reduce_dims.empty()) return;
-        // ValueType result_type = param_type.reduce(reduce_dims);
-        ValueType result_type = reduce_dims.empty() ? param_type : param_type.reduce(reduce_dims);
-        auto expect = reference_peek(input, result_type.to_spec(), spec);
-        SCOPED_TRACE(fmt("peek input: %s\n  peek spec: %s\n  peek result %s\n",
-                         input.to_string().c_str(),
-                         to_str(spec).c_str(),
-                         expect.to_string().c_str()));
-        auto actual = perform_generic_peek(input, result_type, spec, factory);
-        EXPECT_EQ(actual, expect);
+        verify_peek_equal(input, spec, factory);
         return;
     }
     auto dim = dimensions.back();
     dimensions.pop_back();
-    check_peek_for_dims(input, spec, dimensions, factory);
-    for (size_t label_value : {-2, -1, 0, 1, 2, 3}) {
+    fill_dims_and_check(input, spec, dimensions, factory);
+    for (int64_t label_value : {-2, -1, 0, 1, 3}) {
         if (dim.is_indexed()) {
-            if (label_value > dim.size) continue;
-            TensorSpec::Label label(label_value);
+            size_t index = label_value;
+            if (index >= dim.size) continue;
+            TensorSpec::Label label(index);
             spec.insert_or_assign(dim.name, label);
         } else {
-            TensorSpec::Label label(make_string("%" PRId64, int64_t(label_value)));
+            TensorSpec::Label label(make_string("%" PRId64, label_value));
             spec.insert_or_assign(dim.name, label);
         }
-        check_peek_for_dims(input, spec, dimensions, factory);
+        fill_dims_and_check(input, spec, dimensions, factory);
     }
-    for (size_t child_value : {-2, -1, 0, 1, 2, 3}) {
-        spec.insert_or_assign(dim.name, child_value);
-        check_peek_for_dims(input, spec, dimensions, factory);
+    for (int64_t child_value : {-2, -1, 0, 1, 3}) {
+        spec.insert_or_assign(dim.name, size_t(child_value));
+        fill_dims_and_check(input, spec, dimensions, factory);
     }
 }
 
@@ -171,8 +186,8 @@ void test_generic_peek_with(const ValueBuilderFactory &factory) {
         TensorSpec input = spec(layout, N());
         ValueType input_type = ValueType::from_spec(input.type());
         const auto &dims = input_type.dimensions();
-        GenericPeek::SpecMap spec;
-        check_peek_for_dims(input, spec, dims, factory);
+        PeekSpec spec;
+        fill_dims_and_check(input, spec, dims, factory);
     }
 }
 
