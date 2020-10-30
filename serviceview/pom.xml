@@ -34,6 +34,11 @@
           <artifactId>bundle-plugin</artifactId>
           <extensions>true</extensions>
         </plugin>
+        <plugin>
+          <!-- Explicit for IntelliJ to detect correct language level from parent -->
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+        </plugin>
       </plugins>
     </build>
 </project>
