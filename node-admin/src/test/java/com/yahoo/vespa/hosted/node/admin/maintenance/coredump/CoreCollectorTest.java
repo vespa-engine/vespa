@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoreCollector.GDB_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -21,7 +22,6 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class CoreCollectorTest {
-    private final String GDB_PATH = "/opt/rh/devtoolset-9/root/bin/gdb";
     private final String JDK_PATH = "/path/to/jdk/java";
     private final ContainerOperations docker = mock(ContainerOperations.class);
     private final CoreCollector coreCollector = new CoreCollector(docker);
@@ -159,6 +159,11 @@ public class CoreCollectorTest {
                 "bin_path", JDK_PATH,
                 "backtrace_all_threads", List.of(jstack));
         assertEquals(expectedData, coreCollector.collect(context, TEST_CORE_PATH));
+    }
+
+    @Test
+    public void metadata_for_java_heap_dump() {
+        assertEquals(Map.of("bin_path", "java"), coreCollector.collect(context, Paths.get("java_pid123.hprof")));
     }
 
     private void mockExec(String[] cmd, String output) {
