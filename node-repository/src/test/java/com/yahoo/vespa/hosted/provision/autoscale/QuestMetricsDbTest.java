@@ -69,6 +69,30 @@ public class QuestMetricsDbTest {
     }
 
     @Test
+    public void testWriteOldData() {
+        String dataDir = "data/QuestMetricsDbWriteOldData";
+        IOUtils.recursiveDeleteDir(new File(dataDir));
+        IOUtils.createDirectory(dataDir + "/metrics");
+        ManualClock clock = new ManualClock("2020-10-01T00:00:00");
+        QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
+        Instant startTime = clock.instant();
+        clock.advance(Duration.ofSeconds(300));
+        db.add(timeseriesAt(10, clock.instant(), "host1", "host2", "host3"));
+        clock.advance(Duration.ofSeconds(1));
+
+        List<NodeTimeseries> nodeTimeSeries1 = db.getNodeTimeseries(startTime, Set.of("host1"));
+        assertEquals(10, nodeTimeSeries1.get(0).size());
+
+        db.add(timeseriesAt(10, clock.instant().minus(Duration.ofSeconds(20)), "host1", "host2", "host3"));
+        List<NodeTimeseries> nodeTimeSeries2 = db.getNodeTimeseries(startTime, Set.of("host1"));
+        assertEquals("Recent data is accepted", 20, nodeTimeSeries2.get(0).size());
+
+        db.add(timeseriesAt(10, clock.instant().minus(Duration.ofSeconds(200)), "host1", "host2", "host3"));
+        List<NodeTimeseries> nodeTimeSeries3 = db.getNodeTimeseries(startTime, Set.of("host1"));
+        assertEquals("Too old data is rejected", 20, nodeTimeSeries3.get(0).size());
+    }
+
+    @Test
     public void testGc() {
         String dataDir = "data/QuestMetricsDbGc";
         IOUtils.recursiveDeleteDir(new File(dataDir));
@@ -102,4 +126,16 @@ public class QuestMetricsDbTest {
         return timeseries;
     }
 
+    private Collection<Pair<String, MetricSnapshot>> timeseriesAt(int countPerHost, Instant at, String ... hosts) {
+        Collection<Pair<String, MetricSnapshot>> timeseries = new ArrayList<>();
+        for (int i = 1; i <= countPerHost; i++) {
+            for (String host : hosts)
+                timeseries.add(new Pair<>(host, new MetricSnapshot(at,
+                                                                   i * 0.1,
+                                                                   i * 0.2,
+                                                                   i * 0.4,
+                                                                   i % 100)));
+        }
+        return timeseries;
+    }
 }
