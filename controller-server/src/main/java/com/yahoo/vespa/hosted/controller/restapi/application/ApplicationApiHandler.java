@@ -91,6 +91,9 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -212,6 +215,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
@@ -352,6 +356,52 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         toSlime(slime.setObject(), tenant, request);
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse tenantInfo(String tenantName) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .filter(tenant -> tenant instanceof CloudTenant)
+                .map(tenant -> (CloudTenant)tenant)
+                .map(tenant -> tenantInfo(tenant.info()))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
+    }
+
+    private HttpResponse tenantInfo(TenantInfo info) {
+        Slime slime = new Slime();
+        Cursor infoCursor = slime.setObject();
+        if (!info.isEmpty()) {
+            infoCursor.setString("name", info.name());
+            infoCursor.setString("email", info.email());
+            infoCursor.setString("website", info.website());
+            infoCursor.setString("invoiceEmail", info.invoiceEmail());
+            infoCursor.setString("contactName", info.contactName());
+            infoCursor.setString("contactEmail", info.contactEmail());
+            toSlime(info.address(), infoCursor);
+            toSlime(info.billingContact(), infoCursor);
+        }
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private void toSlime(TenantInfoAddress address, Cursor parentCursor) {
+        if (address.isEmpty()) return;
+
+        Cursor addressCursor = parentCursor.setObject("address");
+        addressCursor.setString("addressLines", address.addressLines());
+        addressCursor.setString("postalCodeOrZip", address.postalCodeOrZip());
+        addressCursor.setString("city", address.city());
+        addressCursor.setString("stateRegionProvince", address.stateRegionProvince());
+        addressCursor.setString("country", address.country());
+    }
+
+    private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
+        if (billingContact.isEmpty()) return;
+
+        Cursor addressCursor = parentCursor.setObject("billingContact");
+        addressCursor.setString("name", billingContact.name());
+        addressCursor.setString("email", billingContact.email());
+        addressCursor.setString("phone", billingContact.phone());
+        toSlime(billingContact.address(), addressCursor);
     }
 
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
