@@ -735,7 +735,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                     String msg = "Got exception of type " + e.getClass().getName() +
                             " with message '" + e.getMessage() +
                             "' while processing reply in visitor session";
-                    e.printStackTrace();
+                    log.log(Level.WARNING, msg, e);
                     transitionTo(new StateDescription(State.FAILED, msg));
                 } catch (Throwable t) {
                     // We can't reliably handle this; take a nosedive
