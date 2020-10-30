@@ -5,16 +5,16 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
-import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
+import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -35,6 +35,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -152,17 +153,20 @@ public class RankSetupValidator extends Validator {
         // Assist verify-ranksetup in finding the actual ONNX model files
         Map<String, OnnxModel> models = db.getDerivedConfiguration().getSearch().onnxModels().asMap();
         if (models.values().size() > 0) {
-            ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder());  // assume defaults
-            String fileRefDir = Defaults.getDefaults().underVespaHome(cfg.fileReferencesDir());
             List<String> config = new ArrayList<>(models.values().size() * 2);
             for (OnnxModel model : models.values()) {
-                String modelFilename = Paths.get(model.getFileName()).getFileName().toString();
-                String modelPath = Paths.get(fileRefDir, model.getFileReference(), modelFilename).toString();
+                String modelPath = getFileRepositoryPath(model.getFilePath(), model.getFileReference());
                 config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, model.getFileReference()));
                 config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
             }
             IOUtils.writeFile(dir + configName, StringUtilities.implodeMultiline(config), false);
         }
+    }
+
+    public static String getFileRepositoryPath(Path path, String fileReference) {
+        ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder());  // assume defaults
+        String fileRefDir = Defaults.getDefaults().underVespaHome(cfg.fileReferencesDir());
+        return Paths.get(fileRefDir, fileReference, path.getName()).toString();
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {

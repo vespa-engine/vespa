@@ -18,6 +18,7 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.VespaModel;
@@ -156,6 +157,10 @@ public class RankProfile implements Cloneable {
     /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
+    }
+
+    private Map<String, OnnxModel> onnxModels() {
+        return search != null ? search.onnxModels().asMap() : Collections.emptyMap();
     }
 
     private Stream<ImmutableSDField> allFields() {
@@ -821,7 +826,47 @@ public class RankProfile implements Cloneable {
             }
         }
 
+        // Add output types for ONNX models
+        for (Map.Entry<String, OnnxModel> entry : onnxModels().entrySet()) {
+            String modelName = entry.getKey();
+            OnnxModel model = entry.getValue();
+            Arguments args = new Arguments(new ReferenceNode(modelName));
+            Map<String, TensorType> inputTypes = resolveOnnxInputTypes(model, context);
+
+            TensorType defaultOutputType = model.getTensorType(model.getDefaultOutput(), inputTypes);
+            context.setType(new Reference("onnxModel", args, null), defaultOutputType);
+
+            for (Map.Entry<String, String> mapping : model.getOutputMap().entrySet()) {
+                TensorType type = model.getTensorType(mapping.getKey(), inputTypes);
+                context.setType(new Reference("onnxModel", args, mapping.getValue()), type);
+            }
+        }
         return context;
+    }
+
+    private Map<String, TensorType> resolveOnnxInputTypes(OnnxModel model, MapEvaluationTypeContext context) {
+        Map<String, TensorType> inputTypes = new HashMap<>();
+        for (String onnxInputName : model.getInputMap().keySet()) {
+            resolveOnnxInputType(onnxInputName, model, context).ifPresent(type -> inputTypes.put(onnxInputName, type));
+        }
+        return inputTypes;
+    }
+
+    private Optional<TensorType> resolveOnnxInputType(String onnxInputName, OnnxModel model, MapEvaluationTypeContext context) {
+        String source = model.getInputMap().get(onnxInputName);
+        if (source != null) {
+            // Source is either a simple reference (query/attribute/constant)...
+            Optional<Reference> reference = Reference.simple(source);
+            if (reference.isPresent()) {
+                return Optional.of(context.getType(reference.get()));
+            }
+            // ... or a function
+            ExpressionFunction func = context.getFunction(source);
+            if (func != null) {
+                return Optional.of(func.getBody().type(context));
+            }
+        }
+        return Optional.empty();  // if this context does not contain this input
     }
 
     private void addAttributeFeatureTypes(ImmutableSDField field, Map<Reference, TensorType> featureTypes) {

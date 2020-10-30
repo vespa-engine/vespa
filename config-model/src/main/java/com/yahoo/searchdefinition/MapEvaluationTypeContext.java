@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -94,7 +95,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         // are there other cases we would like to resolve globally?
     }
 
-        @Override
+    @Override
     public TensorType getType(Reference reference) {
         // computeIfAbsent without concurrent modification due to resolve adding more resolved entries:
 
@@ -158,6 +159,12 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
             }
 
+            // A reference to an ONNX model?
+            Optional<TensorType> onnxFeatureType = onnxFeatureType(reference);
+            if (onnxFeatureType.isPresent()) {
+                return onnxFeatureType.get();
+            }
+
             // A reference to a feature which returns a tensor?
             Optional<TensorType> featureTensorType = tensorFeatureType(reference);
             if (featureTensorType.isPresent()) {
@@ -208,6 +215,26 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         if (function == null) return Optional.empty();
         if (function.arguments().size() != reference.arguments().size()) return Optional.empty();
         return Optional.of(function);
+    }
+
+    private Optional<TensorType> onnxFeatureType(Reference reference) {
+        if ( ! reference.name().equals("onnxModel"))
+            return Optional.empty();
+
+        if ( ! featureTypes.containsKey(reference)) {
+            String configOrFileName = reference.arguments().expressions().get(0).toString();
+
+            // Look up standardized format as added in RankProfile
+            String modelConfigName = OnnxModelTransformer.getModelConfigName(reference);
+            String modelOutput = OnnxModelTransformer.getModelOutput(reference, null);
+
+            reference  = new Reference("onnxModel", new Arguments(new ReferenceNode(modelConfigName)), modelOutput);
+            if ( ! featureTypes.containsKey(reference)) {
+                throw new IllegalArgumentException("Missing onnx-model config for '" + configOrFileName + "'");
+            }
+        }
+
+        return Optional.of(featureTypes.get(reference));
     }
 
     /**
