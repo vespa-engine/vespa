@@ -20,14 +20,6 @@ class HitCollector {
 public:
     using Hit = std::pair<uint32_t, feature_t>;
 
-    /**
-     * Interface used to calculate the second phase score for the documents being re-ranked.
-     */
-    struct DocumentScorer {
-        virtual ~DocumentScorer() {}
-        virtual feature_t score(uint32_t docId) = 0;
-    };
-
 private:
     enum class SortOrder { NONE, DOC_ID, HEAP };
 
@@ -46,9 +38,6 @@ private:
     std::pair<Scores, Scores> _ranges;
     feature_t _scale;
     feature_t _adjust;
-
-    bool _hasReRanked;
-    bool _needReScore;
 
     struct ScoreComparator {
         bool operator() (const Hit & lhs, const Hit & rhs) const {
@@ -178,15 +167,9 @@ public:
     SortedHitSequence getSortedHitSequence(size_t max_hits);
 
     const std::vector<Hit> & getReRankedHits() const { return _reRankedHits; }
+    void setReRankedHits(std::vector<Hit> hits);
 
-    /**
-     * Re-ranks the given hits by invoking the score() method on the
-     * given document scorer. The hits are sorted on doc id so that
-     * score() is called in doc id order.
-     **/
-    size_t reRank(DocumentScorer &scorer, std::vector<Hit> hits);
-
-    std::pair<Scores, Scores> getRanges() const;
+    const std::pair<Scores, Scores> &getRanges() const { return _ranges; }
     void setRanges(const std::pair<Scores, Scores> &ranges);
 
     /**

@@ -14,26 +14,28 @@ using namespace search::queryeval;
 
 typedef std::map<uint32_t, feature_t> ScoreMap;
 
-struct BasicScorer : public HitCollector::DocumentScorer
+using Ranges = std::pair<Scores, Scores>;
+
+struct BasicScorer
 {
     feature_t _scoreDelta;
     explicit BasicScorer(feature_t scoreDelta) : _scoreDelta(scoreDelta) {}
-    feature_t score(uint32_t docId) override {
-        return docId + _scoreDelta;
+    feature_t score(uint32_t docid) const {
+        return (docid + _scoreDelta);
     }
 };
 
-struct PredefinedScorer : public HitCollector::DocumentScorer
+struct PredefinedScorer
 {
     ScoreMap _scores;
     explicit PredefinedScorer(ScoreMap scores) : _scores(std::move(scores)) {}
-    feature_t score(uint32_t docId) override {
-        feature_t retval = default_rank_value;
-        auto itr = _scores.find(docId);
+    feature_t score(uint32_t docid) const {
+        feature_t my_score = default_rank_value;
+        auto itr = _scores.find(docid);
         if (itr != _scores.end()) {
-            retval = itr->second;
+            my_score = itr->second;
         }
-        return retval;
+        return my_score;
     }
 };
 
@@ -44,6 +46,20 @@ std::vector<HitCollector::Hit> extract(SortedHitSequence seq) {
         seq.next();
     }
     return ret;
+}
+
+template <typename Scorer>
+size_t do_reRank(const Scorer &scorer, HitCollector &hc, size_t count) {
+    Ranges ranges;
+    auto hits = extract(hc.getSortedHitSequence(count));
+    for (auto &[docid, score]: hits) {
+        ranges.first.update(score);
+        score = scorer.score(docid);
+        ranges.second.update(score);
+    }
+    hc.setRanges(ranges);
+    hc.setReRankedHits(std::move(hits));
+    return hc.getReRankedHits().size();
 }
 
 void checkResult(const ResultSet & rs, const std::vector<RankedHit> & exp)
@@ -156,7 +172,7 @@ struct Fixture {
         }
     }
     size_t reRank(size_t count) {
-        return hc.reRank(scorer, extract(hc.getSortedHitSequence(count)));
+        return do_reRank(scorer, hc, count);
     }
     size_t reRank() { return reRank(5); }
 };
@@ -295,7 +311,7 @@ void testScaling(const std::vector<feature_t> &initScores,
 
     PredefinedScorer scorer(std::move(finalScores));
     // perform second phase ranking
-    EXPECT_EQUAL(2u, hc.reRank(scorer, extract(hc.getSortedHitSequence(2))));
+    EXPECT_EQUAL(2u, do_reRank(scorer, hc, 2));
 
     // check results
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
@@ -462,7 +478,7 @@ TEST_F("require that result set is merged correctly with second phase ranking (d
         f.hc.addHit(i, i + 1000);
         addExpectedHitForMergeTest(f, expRh, i);
     }
-    EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer, extract(f.hc.getSortedHitSequence(f.maxHeapSize))));
+    EXPECT_EQUAL(f.maxHeapSize, do_reRank(scorer, f.hc, f.maxHeapSize));
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
     TEST_DO(checkResult(*rs, expRh));
 }

@@ -202,8 +202,8 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
     uint32_t matches = context.matches;
     if (do_limit && context.isBelowLimit()) {
         const size_t searchedSoFar = scheduler.total_size(thread_id);
-        LOG(debug, "Limit not reached (had %d) at docid=%d which is after %zu docs.",
-            matches, scheduler.total_span(thread_id).end, searchedSoFar);
+        LOG(debug, "Limit not reached (had %d) after %zu docs.",
+            matches, searchedSoFar);
         estimate_match_frequency(matches, searchedSoFar);
         tools.match_limiter().updateDocIdSpaceEstimate(searchedSoFar, 0);
     }
@@ -293,35 +293,31 @@ MatchThread::findMatches(MatchTools &tools)
     trace->addEvent(4, "Start match and first phase rank");
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
-        { // 2nd phase ranking
-            trace->addEvent(4, "Start second phase rerank");
-            tools.setup_second_phase();
-            DocidRange docid_range = scheduler.total_span(thread_id);
-            tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hit_seq = matchToolsFactory.should_diversify()
-                                  ? hits.getSortedHitSequence(matchParams.arraySize)
-                                  : hits.getSortedHitSequence(matchParams.heapSize);
-            trace->addEvent(5, "Synchronize before second phase rerank");
-            WaitTimer select_best_timer(wait_time_s);
-            auto kept_hits = communicator.selectBest(sorted_hit_seq);
-            select_best_timer.done();
-            DocumentScorer scorer(tools.rank_program(), tools.search());
-            if (tools.getDoom().hard_doom()) {
-                kept_hits.clear();
-            }
-            uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
-            if (auto onReRankTask = matchToolsFactory.createOnReRankTask()) {
-                onReRankTask->run(hits.getReRankedHits());
-            }
-            thread_stats.docsReRanked(reRanked);
+        trace->addEvent(4, "Start second phase rerank");
+        tools.setup_second_phase();
+        DocidRange docid_range(1, matchParams.numDocs);
+        tools.search().initRange(docid_range.begin, docid_range.end);
+        auto sorted_hit_seq = matchToolsFactory.should_diversify()
+                              ? hits.getSortedHitSequence(matchParams.arraySize)
+                              : hits.getSortedHitSequence(matchParams.heapSize);
+        trace->addEvent(5, "Synchronize before second phase rerank");
+        WaitTimer get_second_phase_work_timer(wait_time_s);
+        auto my_work = communicator.get_second_phase_work(sorted_hit_seq, thread_id);
+        get_second_phase_work_timer.done();
+        DocumentScorer scorer(tools.rank_program(), tools.search());
+        if (tools.getDoom().hard_doom()) {
+            my_work.clear();
         }
-        { // rank scaling
-            trace->addEvent(5, "Synchronize before rank scaling");
-            auto my_ranges = hits.getRanges();
-            WaitTimer range_cover_timer(wait_time_s);
-            auto ranges = communicator.rangeCover(my_ranges);
-            range_cover_timer.done();
-            hits.setRanges(ranges);
+        scorer.score(my_work);
+        thread_stats.docsReRanked(my_work.size());
+        trace->addEvent(5, "Synchronize before rank scaling");
+        WaitTimer complete_second_phase_timer(wait_time_s);
+        auto [kept_hits, ranges] = communicator.complete_second_phase(my_work, thread_id);
+        complete_second_phase_timer.done();
+        hits.setReRankedHits(std::move(kept_hits));
+        hits.setRanges(ranges);
+        if (auto onReRankTask = matchToolsFactory.createOnReRankTask()) {
+            onReRankTask->run(hits.getReRankedHits());
         }
     }
     trace->addEvent(4, "Create result set");
