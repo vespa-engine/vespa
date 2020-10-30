@@ -45,14 +45,9 @@ private:
     vespalib::string             _subDbName;
     uint32_t                     _distributionKey;
 
-    void reconfigureFeedView(const SearchView::SP &searchView);
-
-    void reconfigureFeedView(const IIndexWriter::SP &indexWriter,
-                             const ISummaryAdapter::SP &summaryAdapter,
-                             IAttributeWriter::SP attrWriter,
+    void reconfigureFeedView(IAttributeWriter::SP attrWriter,
                              const search::index::Schema::SP &schema,
-                             const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             const SearchView::SP &searchView);
+                             const std::shared_ptr<const document::DocumentTypeRepo> &repo);
 
     void reconfigureMatchView(const searchcorespi::IndexSearchable::SP &indexSearchable);
 
