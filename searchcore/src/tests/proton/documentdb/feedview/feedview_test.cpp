@@ -489,6 +489,7 @@ FeedTokenContext::~FeedTokenContext() = default;
 struct FixtureBase
 {
     MyTracer             _tracer;
+    PendingLidTracker    _pendingLidsForCommit;
     SchemaContext        sc;
     IIndexWriter::SP     iw;
     ISummaryAdapter::SP  sa;
@@ -677,6 +678,7 @@ struct FixtureBase
 
 FixtureBase::FixtureBase()
     : _tracer(),
+      _pendingLidsForCommit(),
       sc(),
       iw(std::make_shared<MyIndexWriter>(_tracer)),
       sa(std::make_shared<MySummaryAdapter>(*sc._builder->getDocumentTypeRepo())),
@@ -721,6 +723,7 @@ struct SearchableFeedViewFixture : public FixtureBase
                 sc.getRepo(),
                 _writeService),
            pc.getParams(),
+           _pendingLidsForCommit,
            FastAccessFeedView::Context(aw, _docIdLimit),
            SearchableFeedView::Context(iw))
     {
@@ -744,6 +747,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
                 sc.getRepo(),
                 _writeService),
            pc.getParams(),
+           _pendingLidsForCommit,
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
     }

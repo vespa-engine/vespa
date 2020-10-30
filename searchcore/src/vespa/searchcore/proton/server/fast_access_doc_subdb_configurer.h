@@ -25,7 +25,8 @@ private:
     void reconfigureFeedView(const FastAccessFeedView::SP &curr,
                              const search::index::Schema::SP &schema,
                              const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             IAttributeWriter::SP attrWriter);
+                             IAttributeWriter::SP attrWriter,
+                             PendingLidTrackerBase & pendingLidsForCommit);
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
@@ -35,7 +36,8 @@ public:
 
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig &newConfig,
                                              const DocumentDBConfig &oldConfig,
-                                             const AttributeCollectionSpec &attrSpec);
+                                             const AttributeCollectionSpec &attrSpec,
+                                             PendingLidTrackerBase & pendingLidsForCommit);
 };
 
 } // namespace proton

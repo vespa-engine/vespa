@@ -139,7 +139,7 @@ private:
     const document::DocumentType                            *_docType;
     LidReuseDelayer                                          _lidReuseDelayer;
     PendingLidTracker                                        _pendingLidsForDocStore;
-    std::unique_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
+    PendingLidTrackerBase                                   &_pendingLidsForCommit;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -207,7 +207,7 @@ protected:
     virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
     virtual void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
 public:
-    StoreOnlyFeedView(const Context &ctx, const PersistentParams &params);
+    StoreOnlyFeedView(const Context &ctx, const PersistentParams &params, PendingLidTrackerBase & pendingLidsForCommit);
     ~StoreOnlyFeedView() override;
 
     const ISummaryAdapter::SP &getSummaryAdapter() const { return _summaryAdapter; }
@@ -244,7 +244,6 @@ public:
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-    ILidCommitState & getUncommittedLidsTracker() override;
 };
 
 }

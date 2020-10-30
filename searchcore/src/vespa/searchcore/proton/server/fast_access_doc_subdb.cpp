@@ -116,6 +116,7 @@ FastAccessDocSubDB::initFeedView(IAttributeWriter::SP writer, const DocumentDBCo
     auto feedView = std::make_shared<FastAccessFeedView>(
             getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
+            getUncommittedLidsTracker(),
             FastAccessFeedView::Context(std::move(writer), _docIdLimit));
 
     _fastAccessFeedView.set(feedView);
@@ -264,7 +265,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         AttributeCollectionSpec::UP attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
         IReprocessingInitializer::UP initializer =
-                configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec);
+                configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, getUncommittedLidsTracker());
         if (initializer->hasReprocessors()) {
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));

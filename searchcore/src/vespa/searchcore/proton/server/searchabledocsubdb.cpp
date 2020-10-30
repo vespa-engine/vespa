@@ -155,7 +155,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         AttributeCollectionSpec::UP attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
         IReprocessingInitializer::UP initializer =
-                _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params, resolver);
+                _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params, resolver, getUncommittedLidsTracker());
         if (initializer && initializer->hasReprocessors()) {
             tasks.emplace_back(createReprocessingTask(*initializer, newConfigSnapshot.getDocumentTypeRepoSP()));
         }
@@ -164,7 +164,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
     } else {
-        _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params, resolver);
+        _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params, resolver, getUncommittedLidsTracker());
     }
     syncViews();
     return tasks;
@@ -229,6 +229,7 @@ SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter,
     assert(_writeService.master().isCurrentThread());
     auto feedView = std::make_shared<SearchableFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
+            getUncommittedLidsTracker(),
             FastAccessFeedView::Context(std::move(attrWriter), _docIdLimit),
             SearchableFeedView::Context(getIndexWriter()));
 

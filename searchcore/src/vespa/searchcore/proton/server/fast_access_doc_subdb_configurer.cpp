@@ -18,7 +18,8 @@ void
 FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &curr,
                                                   const Schema::SP &schema,
                                                   const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                                  IAttributeWriter::SP writer)
+                                                  IAttributeWriter::SP writer,
+                                                  PendingLidTrackerBase & pendingLidsForCommit)
 {
     _feedView.set(std::make_shared<FastAccessFeedView>(
             StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
@@ -27,7 +28,8 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &
                                        curr->getGidToLidChangeHandler(),
                                        repo,
                                        curr->getWriteService()),
-                 curr->getPersistentParams(),
+            curr->getPersistentParams(),
+            pendingLidsForCommit,
             FastAccessFeedView::Context(std::move(writer),curr->getDocIdLimit())));
 }
 
@@ -45,11 +47,13 @@ FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 IReprocessingInitializer::UP
 FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
-                                          const AttributeCollectionSpec &attrSpec)
+                                          const AttributeCollectionSpec &attrSpec,
+                                          PendingLidTrackerBase & pendingLidsForCommit)
 {
     FastAccessFeedView::SP oldView = _feedView.get();
     IAttributeWriter::SP writer = _factory->create(oldView->getAttributeWriter(), attrSpec);
-    reconfigureFeedView(oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
+    reconfigureFeedView(oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(),
+                        writer, pendingLidsForCommit);
 
     const document::DocumentType *newDocType = newConfig.getDocumentType();
     const document::DocumentType *oldDocType = oldConfig.getDocumentType();

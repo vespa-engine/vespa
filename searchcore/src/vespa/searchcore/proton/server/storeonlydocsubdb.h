@@ -156,6 +156,7 @@ private:
     TlsSyncer                        _tlsSyncer;
     DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
+    PendingLidTracker                          _pendingLidsForCommit;
 
     IFlushTargetList getFlushTargets() override;
 protected:
@@ -233,6 +234,7 @@ public:
     void close() override;
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
+    PendingLidTrackerBase & getUncommittedLidsTracker() override { return _pendingLidsForCommit; }
 };
 
 }

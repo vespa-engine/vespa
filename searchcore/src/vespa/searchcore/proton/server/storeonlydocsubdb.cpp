@@ -389,11 +389,12 @@ void
 StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
-    auto feedView = std::make_unique<StoreOnlyFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
-                                                        getFeedViewPersistentParams());
+    auto feedView = std::make_shared<StoreOnlyFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
+                                                        getFeedViewPersistentParams(),
+                                                        getUncommittedLidsTracker());
 
     // XXX: Not exception safe.
-    _iFeedView.set(StoreOnlyFeedView::SP(feedView.release()));
+    _iFeedView.set(std::move(feedView));
 }
 
 vespalib::string

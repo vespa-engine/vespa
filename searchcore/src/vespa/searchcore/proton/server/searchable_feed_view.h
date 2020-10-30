@@ -55,6 +55,7 @@ private:
 
 public:
     SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
+                       PendingLidTrackerBase & pendingLidsForCommit,
                        const FastAccessFeedView::Context &fastUpdateCtx, Context ctx);
 
     ~SearchableFeedView() override;

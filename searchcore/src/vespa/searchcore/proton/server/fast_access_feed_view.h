@@ -51,8 +51,8 @@ protected:
     void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
 public:
-    FastAccessFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
-                       const PersistentParams &params, const Context &ctx);
+    FastAccessFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
+                       PendingLidTrackerBase & pendingLidsForCommit, const Context &ctx);
     ~FastAccessFeedView();
 
     virtual const IAttributeWriter::SP &getAttributeWriter() const {

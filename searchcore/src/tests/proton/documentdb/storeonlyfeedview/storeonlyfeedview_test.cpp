@@ -43,7 +43,7 @@ private:
     int &_heartbeatCount;
 
 public:
-    MySummaryAdapter(int &removeCount, int &putCount, int &heartbeatCount)
+    MySummaryAdapter(int &removeCount, int &putCount, int &heartbeatCount) noexcept
         : _rmCount(removeCount),
           _putCount(putCount),
           _heartbeatCount(heartbeatCount) {
@@ -86,6 +86,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
                       const PersistentParams &params,
+                      PendingLidTrackerBase & pendingLidsForCommit,
                       int &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
@@ -94,7 +95,8 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                                                      *gidToLidChangeHandler,
                                                      myGetDocumentTypeRepo(),
                                                      writeService),
-                          params),
+                          params,
+                          pendingLidsForCommit),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
         heartBeatAttributesCount(0),
@@ -132,9 +134,10 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
                           const PersistentParams &params,
+                          PendingLidTrackerBase & pendingLidsForCommit,
                           int &outstandingMoveOps_) :
             MyMinimalFeedView(summaryAdapter, metaStore, writeService,
-                              params, outstandingMoveOps_),
+                              params, pendingLidsForCommit, outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
             removeAttributesCount(0),
@@ -187,6 +190,7 @@ struct FixtureBase {
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
+    PendingLidTracker pendingLidsForCoomit;
     typename FeedViewType::UP feedview;
     SerialNum serial_num;
  
@@ -195,21 +199,22 @@ struct FixtureBase {
           putCount(0),
           heartbeatCount(0),
           outstandingMoveOps(0),
-          metaStore(new DocumentMetaStore(std::make_shared<BucketDBOwner>(),
-                                          DocumentMetaStore::getFixedName(),
-                                          search::GrowStrategy(),
-                                          std::make_shared<DocumentMetaStore::DefaultGidCompare>(),
-                                          subDbType)),
+          metaStore(std::make_shared<DocumentMetaStore>(std::make_shared<BucketDBOwner>(),
+                                                        DocumentMetaStore::getFixedName(),
+                                                        search::GrowStrategy(),
+                                                        std::make_shared<DocumentMetaStore::DefaultGidCompare>(),
+                                                        subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
+          pendingLidsForCoomit(),
           feedview(),
           serial_num(2u)
     {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
-        ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
+        ISummaryAdapter::SP adapter = std::make_shared<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
         feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService,
-                                                  params, outstandingMoveOps);
+                                                  params, pendingLidsForCoomit, outstandingMoveOps);
     }
 
     ~FixtureBase() {
