@@ -375,8 +375,6 @@ StoreOnlyFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                                    FutureStream futureStream, OnOperationDoneType onDone)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, this] () mutable {
                 (void) onDone;
@@ -386,20 +384,16 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                     _summaryAdapter->put(serialNum, lid, os);
                 }
             }));
-#pragma GCC diagnostic pop
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, OnOperationDoneType onDone)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
             makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, lid, this] {
                 (void) onDone;
                 (void) trackerToken;
                 _summaryAdapter->put(serialNum, lid, *doc);
             }));
-#pragma GCC diagnostic pop
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
     summaryExecutor().execute(
