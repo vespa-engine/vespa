@@ -239,7 +239,6 @@ public:
     void heartBeat(search::SerialNum serialNum) override;
     void sync() override;
     void forceCommit(SerialNum serialNum, DoneCallback onDone) override;
-    bool isDrained() const override;
 
     /**
      * Prune lids present in operation.  Caller must call doneSegment()
