@@ -16,7 +16,6 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 
 using vespa::config::search::RankProfilesConfig;
 using proton::matching::MatchingStats;

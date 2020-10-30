@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/common/transient_memory_usage_provider.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
