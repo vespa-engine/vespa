@@ -73,26 +73,31 @@ public:
 
     struct Context
     {
-        const ISummaryAdapter::SP               &_summaryAdapter;
-        const search::index::Schema::SP         &_schema;
-        const IDocumentMetaStoreContext::SP     &_documentMetaStoreContext;
-        IGidToLidChangeHandler                  &_gidToLidChangeHandler;
-        const std::shared_ptr<const document::DocumentTypeRepo>    &_repo;
-        searchcorespi::index::IThreadingService &_writeService;
+        ISummaryAdapter::SP                                _summaryAdapter;
+        search::index::Schema::SP                          _schema;
+        IDocumentMetaStoreContext::SP                      _documentMetaStoreContext;
+        std::shared_ptr<const document::DocumentTypeRepo>  _repo;
+        std::shared_ptr<PendingLidTrackerBase>             _pendingLidsForCommit;
+        IGidToLidChangeHandler                            &_gidToLidChangeHandler;
+        searchcorespi::index::IThreadingService           &_writeService;
 
-        Context(const ISummaryAdapter::SP &summaryAdapter,
-                const search::index::Schema::SP &schema,
-                const IDocumentMetaStoreContext::SP &documentMetaStoreContext,
+        Context(ISummaryAdapter::SP summaryAdapter,
+                search::index::Schema::SP schema,
+                IDocumentMetaStoreContext::SP documentMetaStoreContext,
+                std::shared_ptr<const document::DocumentTypeRepo> repo,
+                std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
                 IGidToLidChangeHandler &gidToLidChangeHandler,
-                const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                 searchcorespi::index::IThreadingService &writeService)
-            : _summaryAdapter(summaryAdapter),
-              _schema(schema),
-              _documentMetaStoreContext(documentMetaStoreContext),
+            : _summaryAdapter(std::move(summaryAdapter)),
+              _schema(std::move(schema)),
+              _documentMetaStoreContext(std::move(documentMetaStoreContext)),
+              _repo(std::move(repo)),
+              _pendingLidsForCommit(std::move(pendingLidsForCommit)),
               _gidToLidChangeHandler(gidToLidChangeHandler),
-              _repo(repo),
               _writeService(writeService)
         {}
+        Context(Context &&) noexcept;
+        ~Context();
     };
 
     struct PersistentParams
@@ -139,7 +144,7 @@ private:
     const document::DocumentType                            *_docType;
     LidReuseDelayer                                          _lidReuseDelayer;
     PendingLidTracker                                        _pendingLidsForDocStore;
-    std::unique_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
+    std::shared_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -207,7 +212,7 @@ protected:
     virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
     virtual void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
 public:
-    StoreOnlyFeedView(const Context &ctx, const PersistentParams &params);
+    StoreOnlyFeedView(Context ctx, const PersistentParams &params);
     ~StoreOnlyFeedView() override;
 
     const ISummaryAdapter::SP &getSummaryAdapter() const { return _summaryAdapter; }
@@ -244,7 +249,7 @@ public:
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-    ILidCommitState & getUncommittedLidsTracker() override;
+    std::shared_ptr<PendingLidTrackerBase> getUncommittedLidTracker() { return _pendingLidsForCommit; }
 };
 
 }

@@ -27,16 +27,17 @@ typedef AttributeReprocessingInitializer::Config ARIConfig;
 
 void
 SearchableDocSubDBConfigurer::reconfigureFeedView(IAttributeWriter::SP attrWriter,
-                                                  const Schema::SP &schema,
-                                                  const std::shared_ptr<const DocumentTypeRepo> &repo)
+                                                  Schema::SP schema,
+                                                  std::shared_ptr<const DocumentTypeRepo> repo)
 {
     SearchableFeedView::SP curr = _feedView.get();
     _feedView.set(std::make_shared<SearchableFeedView>(
             StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
-                    schema,
+                    std::move(schema),
                     curr->getDocumentMetaStore(),
+                    std::move(repo),
+                    curr->getUncommittedLidTracker(),
                     curr->getGidToLidChangeHandler(),
-                    repo,
                     curr->getWriteService()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(std::move(attrWriter), curr->getDocIdLimit()),

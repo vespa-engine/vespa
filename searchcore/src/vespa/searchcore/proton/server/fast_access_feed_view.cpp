@@ -61,9 +61,8 @@ FastAccessFeedView::heartBeatAttributes(SerialNum serialNum)
     _attributeWriter->heartBeat(serialNum);
 }
 
-FastAccessFeedView::FastAccessFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
-                                       const PersistentParams &params, const Context &ctx)
-    : Parent(storeOnlyCtx, params),
+FastAccessFeedView::FastAccessFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params, const Context &ctx)
+    : Parent(std::move(storeOnlyCtx), params),
       _attributeWriter(ctx._attrWriter),
       _docIdLimit(ctx._docIdLimit)
 {}

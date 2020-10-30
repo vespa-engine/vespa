@@ -209,24 +209,19 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
     meta_store.move(op.getPrevLid(), op.getLid(), op.get_prepare_serial_num());
 }
 
-std::unique_ptr<PendingLidTrackerBase>
-createUncommitedLidTracker() {
-    return std::make_unique<PendingLidTracker>();
-}
-
 }  // namespace
 
-StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams &params)
+StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams &params)
     : IFeedView(),
       FeedDebugger(),
-      _summaryAdapter(ctx._summaryAdapter),
-      _documentMetaStoreContext(ctx._documentMetaStoreContext),
+      _summaryAdapter(std::move(ctx._summaryAdapter)),
+      _documentMetaStoreContext(std::move(ctx._documentMetaStoreContext)),
       _repo(ctx._repo),
       _docType(nullptr),
       _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get()),
       _pendingLidsForDocStore(),
-      _pendingLidsForCommit(createUncommitedLidTracker()),
-      _schema(ctx._schema),
+      _pendingLidsForCommit(std::move(ctx._pendingLidsForCommit)),
+      _schema(std::move(ctx._schema)),
       _writeService(ctx._writeService),
       _params(params),
       _metaStore(_documentMetaStoreContext->get()),
@@ -236,16 +231,13 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
 }
 
 StoreOnlyFeedView::~StoreOnlyFeedView() = default;
+StoreOnlyFeedView::Context::Context(Context &&) noexcept = default;
+StoreOnlyFeedView::Context::~Context() = default;
 
 void
 StoreOnlyFeedView::sync()
 {
     _writeService.summary().sync();
-}
-
-ILidCommitState &
-StoreOnlyFeedView::getUncommittedLidsTracker() {
-    return *_pendingLidsForCommit;
 }
 
 void
