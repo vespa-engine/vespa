@@ -60,30 +60,4 @@ private:
     vespalib::hash_map<uint32_t, uint32_t> _pending;
 };
 
-namespace common::internal {
-    class CommitList;
-}
-/**
- * Use for tracking lids in 2 phases which is needed when visibility-delay is non-zero.
- * It tracks lids that are in feed pipeline, lids where commit has been started and when they fully complete.
- */
-class TwoPhasePendingLidTracker : public PendingLidTrackerBase
-{
-public:
-    TwoPhasePendingLidTracker();
-    ~TwoPhasePendingLidTracker() override;
-    Token produce(uint32_t lid) override;
-    Snapshot produceSnapshot() override;
-private:
-    friend common::internal::CommitList;
-    void consume(uint32_t lid) override;
-    void consumeSnapshot(uint64_t sequenceIdWhenStarted);
-    LidList pendingLids() const override;
-    State waitFor(MonitorGuard & guard, State state, uint32_t lid) const override;
-    uint64_t _sequenceId;
-    uint64_t _lastCommitStarted;
-    uint64_t _lastCommitCompleted;
-    vespalib::hash_map<uint32_t, uint64_t> _pending;
-};
-
 }
