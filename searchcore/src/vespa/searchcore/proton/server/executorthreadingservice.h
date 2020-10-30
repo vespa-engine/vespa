@@ -28,6 +28,7 @@ private:
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldWriter;
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _attributeFieldWriter;
 
+    void syncOnce();
 public:
     using OptimizeFor = vespalib::Executor::OptimizeFor;
     /**
