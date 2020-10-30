@@ -234,15 +234,16 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_that_config_change_actions_are_in_response() throws Exception {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
-        assertResponseContains(response, "\"configChangeActions\":{\"restart\":[],\"refeed\":[]}");
+        assertResponseContains(response, "\"configChangeActions\":{\"restart\":[],\"refeed\":[],\"reindex\":[]}");
     }
 
     @Test
     public void require_that_config_change_actions_are_not_logged_if_not_existing() throws Exception {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
-        assertResponseNotContains(response, "Change(s) between active and new application that require restart");
-        assertResponseNotContains(response, "Change(s) between active and new application that require re-feed");
+        assertResponseNotContains(response, "Change(s) between active and new application that may require restart");
+        assertResponseNotContains(response, "Change(s) between active and new application that may require re-feed");
+        assertResponseNotContains(response, "Change(s) between active and new application that may require re-index");
     }
 
     @Test
