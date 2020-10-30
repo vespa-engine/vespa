@@ -254,7 +254,7 @@ public class SessionPreparer {
         void preprocess() {
             try {
                 this.preprocessedApplicationPackage = applicationPackage.preprocess(properties.zone(), logger);
-            } catch (IOException | TransformerException | ParserConfigurationException | SAXException e) {
+            } catch (IOException e) {
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId, e);
             }
             checkTimeout("preprocess");

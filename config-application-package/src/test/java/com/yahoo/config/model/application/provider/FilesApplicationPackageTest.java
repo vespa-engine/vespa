@@ -10,10 +10,7 @@ import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -32,7 +29,7 @@ public class FilesApplicationPackageTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void testPreprocessing() throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    public void testPreprocessing() throws IOException {
         File appDir = temporaryFolder.newFolder();
         IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), appDir);
         assertTrue(new File(appDir, "services.xml").exists());

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
@@ -601,28 +601,32 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return searchDefinitionContents();
     }
 
-    private void preprocessXML(File destination, File inputXml, Zone zone) throws ParserConfigurationException, TransformerException, SAXException, IOException {
-        Document document = new XmlPreProcessor(appDir,
-                                                inputXml,
-                                                metaData.getApplicationId().instance(),
-                                                zone.environment(),
-                                                zone.region()).run();
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        try (FileOutputStream outputStream = new FileOutputStream(destination)) {
-            transformer.transform(new DOMSource(document), new StreamResult(outputStream));
+    private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
+        if ( ! inputXml.exists()) return;
+        try {
+            Document document = new XmlPreProcessor(appDir,
+                                                    inputXml,
+                                                    metaData.getApplicationId().instance(),
+                                                    zone.environment(),
+                                                    zone.region()).run();
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            try (FileOutputStream outputStream = new FileOutputStream(destination)) {
+                transformer.transform(new DOMSource(document), new StreamResult(outputStream));
+            }
+        } catch (TransformerException |ParserConfigurationException | SAXException e) {
+            throw new RuntimeException("Error preprocessing " + inputXml.getAbsolutePath() + ": " + e.getMessage(), e);
         }
     }
 
     @Override
-    public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
         IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
                                                                                          ! name.equals(SERVICES) &&
                                                                                          ! name.equals(HOSTS) &&
                                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
         preprocessXML(new File(preprocessedDir, SERVICES), getServicesFile(), zone);
-        if (getHostsFile().exists())
-            preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
+        preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
         FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
