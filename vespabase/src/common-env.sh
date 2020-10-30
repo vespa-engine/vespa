@@ -205,7 +205,7 @@ checkjava () {
 }
 
 runvalidation() {
-    run=$vespa_base__validationscript
+    run=$VESPA_VALIDATIONSCRIPT
     if [ "$run" ]; then
 	if [ -x "$run" ]; then
 	    if $run ; then
