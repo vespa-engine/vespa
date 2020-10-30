@@ -80,8 +80,8 @@ public class QuestMetricsDb implements MetricsDb {
     public void add(Collection<Pair<String, MetricSnapshot>> snapshots) {
         try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), tableName)) {
             for (var snapshot : snapshots) {
-                long atMillis = snapshot.getSecond().at().toEpochMilli();
-                if (atMillis < highestTimestampAdded) continue; // Ignore old data without causing an exception in QuestDb
+                long atMillis = adjustIfRecent(snapshot.getSecond().at().toEpochMilli(), highestTimestampAdded);
+                if (atMillis < highestTimestampAdded) continue; // Ignore old data
                 highestTimestampAdded = atMillis;
                 TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
                 row.putStr(0, snapshot.getFirst());
@@ -157,6 +157,17 @@ public class QuestMetricsDb implements MetricsDb {
         catch (SqlException e) {
             throw new IllegalStateException("Could not create Quest db table '" + tableName + "'", e);
         }
+    }
+
+    private long adjustIfRecent(long timestamp, long highestTimestampAdded) {
+        if (timestamp >= highestTimestampAdded) return timestamp;
+
+        // We cannot add old data to QuestDb, but we want to use all recent information
+        long oneMinute = 60 * 1000;
+        if (timestamp >= highestTimestampAdded - oneMinute) return highestTimestampAdded;
+
+        // Too old; discard
+        return timestamp;
     }
 
     private ListMap<String, MetricSnapshot> getSnapshots(Instant startTime,
