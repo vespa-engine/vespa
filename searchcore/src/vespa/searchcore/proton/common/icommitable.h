@@ -12,7 +12,6 @@ class ILidCommitState;
  **/
 class ICommitable {
 public:
-    virtual void commit() = 0;
     virtual void commitAndWait(ILidCommitState & unCommittedLidTracker) = 0;
     virtual void commitAndWait(ILidCommitState &uncommittedLidTracker, uint32_t lid) = 0;
     virtual void commitAndWait(ILidCommitState &uncommittedLidTracker, const std::vector<uint32_t> & lid) = 0;

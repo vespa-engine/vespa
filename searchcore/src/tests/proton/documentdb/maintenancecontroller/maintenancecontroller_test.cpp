@@ -388,7 +388,6 @@ public:
     ~MaintenanceControllerFixture() override;
 
     void syncSubDBs();
-    void commit() override { }
     void commitAndWait(ILidCommitState & ) override { }
     void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
         commitAndWait(tracker);

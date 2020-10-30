@@ -14,7 +14,6 @@ VisibilityHandler::VisibilityHandler(const IGetSerialNum & serial,
     : _serial(serial),
       _writeService(writeService),
       _feedView(feedView),
-      _visibilityDelay(vespalib::duration::zero()),
       _lastCommitSerialNum(0),
       _lock()
 {
@@ -31,13 +30,6 @@ VisibilityHandler::internalCommit(bool force)
         std::lock_guard<std::mutex> guard(_lock);
         bool wasCommitTaskSpawned = startCommit(guard, force);
         (void) wasCommitTaskSpawned;
-    }
-}
-void
-VisibilityHandler::commit()
-{
-    if (hasVisibilityDelay()) {
-        internalCommit(true);
     }
 }
 

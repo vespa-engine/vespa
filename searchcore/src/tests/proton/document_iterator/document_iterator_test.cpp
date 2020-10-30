@@ -275,10 +275,8 @@ struct PairDR : DocumentRetrieverBaseForTest {
 };
 
 struct Committer : public ICommitable {
-    size_t _commitCount;
     size_t _commitAndWaitCount;
-    Committer() : _commitCount(0), _commitAndWaitCount(0) { }
-    void commit() override { _commitCount++; }
+    Committer() : _commitAndWaitCount(0) { }
     void commitAndWait(ILidCommitState &) override { _commitAndWaitCount++; }
     void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
         commitAndWait(tracker);
@@ -512,7 +510,6 @@ void verifyReadConsistency(DocumentIterator & itr, Committer & committer) {
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
     TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
-    EXPECT_EQUAL(0u, committer._commitCount);
 }
 
 void verifyStrongReadConsistency(DocumentIterator & itr) {

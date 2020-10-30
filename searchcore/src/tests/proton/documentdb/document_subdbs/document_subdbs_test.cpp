@@ -254,10 +254,8 @@ struct TwoAttrSchema : public OneAttrSchema
 };
 
 struct Committer : public ICommitable {
-    size_t _commitCount;
     size_t _commitAndWaitCount;
-    Committer() : _commitCount(0), _commitAndWaitCount(0) { }
-    void commit() override { _commitCount++; }
+    Committer() : _commitAndWaitCount(0) { }
     void commitAndWait(ILidCommitState & ) override { _commitAndWaitCount++; }
     void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
         commitAndWait(tracker);

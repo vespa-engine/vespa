@@ -208,8 +208,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
 
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
-    vespalib::duration visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
-    _visibility.setVisibilityDelay(visibilityDelay);
 }
 
 void DocumentDB::registerReference()
@@ -441,21 +439,17 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         commit_result = _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
     }
-    bool hasVisibilityDelayChanged = false;
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
         _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<search::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
         _writeService.sync();
-        vespalib::duration visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
-        hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
-        _visibility.setVisibilityDelay(visibilityDelay);
     }
     if (_state.getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
         _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
     _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());
-    if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
+    if (params.shouldSubDbsChange()) {
         applySubDBConfig(*configSnapshot, serialNum, params);
         if (serialNum < _feedHandler->getSerialNum()) {
             // Not last entry in tls.  Reprocessing should already be done.
@@ -562,7 +556,6 @@ DocumentDB::close()
     // Abort any ongoing maintenance
     stopMaintenance();
 
-    _visibility.commit();
     _writeService.sync();
 
     // The attributes in the ready sub db is also the total set of attributes.
@@ -907,17 +900,6 @@ DocumentDB::syncFeedView()
     IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
-    _writeService.sync();
-    /*
-     * Don't call commit() on visibility handler during transaction
-     * log replay since the serial number used for the commit will be
-     * too high until the replay is complete. This check can be
-     * removed again when feed handler has improved tracking of serial
-     * numbers during replay.
-     */
-    if (_state.getAllowReconfig()) {
-        _visibility.commit();
-    }
     _writeService.sync();
 
     _feedView.set(newFeedView);
