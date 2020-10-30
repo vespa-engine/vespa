@@ -116,7 +116,6 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         });
     }
 
-
     /**
      * Provision hosts to ensure there is room to allocate spare nodes.
      *
