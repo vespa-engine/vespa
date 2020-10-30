@@ -127,11 +127,7 @@ class NodeAllocation {
                     ++rejectedDueToClashingParentHost;
                     continue;
                 }
-                if ( ! exclusiveTo(application, candidate.parentHostname())) {
-                    ++rejectedDueToExclusivity;
-                    continue;
-                }
-                if ( requestedNodes.isExclusive() && ! hostsOnly(application, candidate.parentHostname())) {
+                if ( violatesExclusivity(candidate)) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
@@ -158,7 +154,7 @@ class NodeAllocation {
         if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
         if (candidate.wantToRetire()) return true;
-        if (requestedNodes.isExclusive() && ! hostsOnly(application, candidate.parentHostname())) return true;
+        if (violatesExclusivity(candidate)) return true;
         return false;
     }
 
@@ -182,35 +178,16 @@ class NodeAllocation {
         return false;
     }
 
-    /**
-     * If a parent host is given, and it hosts another application which requires exclusive access
-     * to the physical host, then we cannot host this application on it.
-     */
-    private boolean exclusiveTo(ApplicationId applicationId, Optional<String> parentHostname) {
-        if (parentHostname.isEmpty()) return true;
-        for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
+    private boolean violatesExclusivity(NodeCandidate candidate) {
+        if (candidate.parentHostname().isEmpty()) return false;
+        for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
-                 ! allocatedTo(applicationId, nodeOnHost))
-                return false;
+            // If either this node or the other node on this host require exclusivity, they must have the same owner
+            if (requestedNodes.isExclusive() || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
+                if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
+            }
         }
-        return true;
-    }
-
-    /** Returns true if this host only hosts the given application (in any instance) */
-    private boolean hostsOnly(ApplicationId application, Optional<String> parentHostname) {
-        if (parentHostname.isEmpty()) return true; // yes, as host is exclusive
-
-        for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
-            if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( ! allocatedTo(application, nodeOnHost)) return false;
-        }
-        return true;
-    }
-
-    private boolean allocatedTo(ApplicationId applicationId, Node node) {
-        if (node.allocation().isEmpty()) return false;
-        return node.allocation().get().owner().equals(applicationId);
+        return false;
     }
 
     /**
