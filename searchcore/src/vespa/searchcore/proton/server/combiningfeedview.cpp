@@ -233,17 +233,6 @@ CombiningFeedView::forceCommit(search::SerialNum serialNum, DoneCallback onDone)
     }
 }
 
-bool
-CombiningFeedView::isDrained() const
-{
-    for (const auto &view : _views) {
-        if ( ! view->isDrained()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 void
 CombiningFeedView::
 handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp)

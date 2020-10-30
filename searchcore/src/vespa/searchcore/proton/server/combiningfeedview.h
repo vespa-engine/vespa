@@ -79,7 +79,6 @@ public:
     void sync() override;
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-    bool isDrained() const override;
 
     // Called by document db executor
     void setCalculator(const IBucketStateCalculator::SP &newCalc);

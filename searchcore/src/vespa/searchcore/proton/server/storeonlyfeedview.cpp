@@ -844,10 +844,4 @@ StoreOnlyFeedView::getDocumentMetaStorePtr() const
     return &_documentMetaStoreContext->get();
 }
 
-bool
-StoreOnlyFeedView::isDrained() const
-{
-    return _pendingLidsForDocStore.getState() == ILidCommitState::State::COMPLETED;
-}
-
 } // namespace proton

@@ -479,6 +479,15 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     }
 }
 
+
+namespace {
+void
+doNothing(IFeedView::SP)
+{
+    // Called by index executor, delays when feed view is dropped.
+}
+}  // namespace
+
 void
 DocumentDB::performDropFeedView(IFeedView::SP feedView)
 {
@@ -499,21 +508,7 @@ DocumentDB::performDropFeedView2(IFeedView::SP feedView) {
     // Also called by DocumentDB::receive() method to keep feed view alive
     _writeService.indexFieldInverter().sync();
     _writeService.indexFieldWriter().sync();
-    masterExecute([this, feedView]() { performDropFeedView3(feedView, 10); });
-}
-
-void
-DocumentDB::performDropFeedView3(IFeedView::SP feedView, uint32_t numRetries) {
-    // We must keep the feedView allive until all operations are drained.
-    // TODO: This is a very brittle appraoch that we should reconsider.
-    if (feedView && ! feedView->isDrained()) {
-        LOG(warning, "FeedView for document type '%s' has not been drained. Reposting to check again. %d retries left",
-            getName().c_str(), numRetries);
-        if (numRetries > 0) {
-            _writeService.sync();
-            masterExecute([this, feedView, numRetries]() { performDropFeedView3(feedView, numRetries - 1); });
-        }
-    }
+    masterExecute([feedView]() { doNothing(feedView); });
 }
 
 
