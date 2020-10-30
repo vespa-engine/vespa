@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.yolean.Exceptions;
 
+import javax.naming.NameNotFoundException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -93,7 +94,10 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 nodeRepository().failRecursively(
                         host.hostname(), Agent.operator, "Failed by HostProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
-                log.log(Level.WARNING, "Failed to provision " + host.hostname() + ", will retry in " + interval(), e);
+                if (e.getCause() instanceof NameNotFoundException)
+                    log.log(Level.INFO, "Failed to provision " + host.hostname() + ", will retry in " + interval() + ": " + e.getMessage());
+                else
+                    log.log(Level.WARNING, "Failed to provision " + host.hostname() + ", will retry in " + interval(), e);
             }
         });
     }
