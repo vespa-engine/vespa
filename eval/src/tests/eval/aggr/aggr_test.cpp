@@ -87,6 +87,23 @@ TEST("require that MEDIAN aggregator works as expected") {
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 150.0);
 }
 
+TEST("require that MEDIAN aggregator ignores NaN values") {
+    Stash stash;
+    Aggregator &aggr = Aggregator::create(Aggr::MEDIAN, stash);
+    double my_nan = std::numeric_limits<double>::quiet_NaN();
+    aggr.first(my_nan);
+    aggr.next(my_nan);
+    aggr.next(my_nan);
+    EXPECT_TRUE(std::isnan(aggr.result()));
+    aggr.next(10.0);
+    EXPECT_EQUAL(aggr.result(), 10.0);
+    aggr.next(my_nan);
+    aggr.next(my_nan);
+    EXPECT_EQUAL(aggr.result(), 10.0);
+    aggr.next(20.0);
+    EXPECT_EQUAL(aggr.result(), 15.0);
+}
+
 TEST("require that MIN aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::MIN, stash);
@@ -117,6 +134,7 @@ float aggr_merge(const std::vector<float> &a, const std::vector<float> &b) {
 }
 
 TEST("require that aggregator merge works") {
+    float my_nan = std::numeric_limits<float>::quiet_NaN();
     EXPECT_EQUAL(aggr_merge<Avg>({1,2},{3,4}), 2.5);
     EXPECT_EQUAL(aggr_merge<Count>({1,2},{3,4}), 4.0);
     EXPECT_EQUAL(aggr_merge<Prod>({1,2},{3,4}), 24.0);
@@ -125,6 +143,7 @@ TEST("require that aggregator merge works") {
     EXPECT_EQUAL(aggr_merge<Median>({1,2},{3,4}), 2.5);
     EXPECT_EQUAL(aggr_merge<Median>({1,2},{3,4,5}), 3);
     EXPECT_EQUAL(aggr_merge<Median>({0,1,2},{3,4}), 2);
+    EXPECT_EQUAL(aggr_merge<Median>({my_nan,2,my_nan},{my_nan,4}), 3);
     EXPECT_EQUAL(aggr_merge<Min>({1,2},{3,4}), 1.0);
 }
 

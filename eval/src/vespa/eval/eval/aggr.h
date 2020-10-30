@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cmath>
 
 namespace vespalib {
 
@@ -126,11 +127,17 @@ private:
     std::vector<T> _seen;
 public:
     constexpr Median() : _seen() {}
-    constexpr Median(T value) : _seen({value}) {}
-    constexpr void sample(T value) { _seen.push_back(value); }
+    constexpr Median(T value) : _seen() {
+        sample(value);
+    }
+    constexpr void sample(T value) {
+        if (!std::isnan(value)) {
+            _seen.push_back(value);
+        }
+    }
     constexpr void merge(const Median &rhs) {
         for (T value: rhs._seen) {
-            _seen.push_back(value);
+            sample(value);
         }
     };
     constexpr T result() const {
