@@ -895,6 +895,7 @@ DocumentDB::syncFeedView()
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _writeService.sync();
+    _writeService.sync(); // Needs a second sync as more task might be posted
 
     _feedView.set(newFeedView);
     _feedHandler->setActiveFeedView(newFeedView.get());
