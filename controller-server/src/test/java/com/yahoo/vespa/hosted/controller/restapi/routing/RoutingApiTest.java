@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.routing;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -184,6 +185,21 @@ public class RoutingApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("policy/zone-status-in.json"));
+
+        // Endpoint is removed
+        applicationPackage = new ApplicationPackageBuilder()
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                .region(westZone.region())
+                .region(eastZone.region())
+                .allow(ValidationId.globalEndpointChange)
+                .build();
+        context.submit(applicationPackage).deploy();
+
+        // GET deployment status. Now empty as no routing policies have global endpoints
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
+                                              "", Request.Method.GET),
+                              "{\"deployments\":[]}");
     }
 
     @Test
