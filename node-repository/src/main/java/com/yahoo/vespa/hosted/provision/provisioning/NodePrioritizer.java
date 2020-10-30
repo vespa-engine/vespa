@@ -132,7 +132,7 @@ public class NodePrioritizer {
         if ( !canAllocateNew) return;
 
         for (Node host : allNodes) {
-            if (host.type() == NodeType.host && !nodeRepository.canAllocateTenantNodeTo(host)) continue;
+            if ( ! nodeRepository.canAllocateTenantNodeTo(host)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.exclusiveTo().isPresent()) continue; // Never allocate new nodes to exclusive hosts
             if ( spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
@@ -156,7 +156,7 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
-                .filter(node -> node.state() == Node.State.active || canStillAllocateToParentOf(node))
+                .filter(node -> node.state() == Node.State.active || canStillAllocate(node))
                 .map(node -> candidateFrom(node, false))
                 .forEach(nodes::add);
     }
@@ -204,8 +204,8 @@ public class NodePrioritizer {
      *
      * @return true if we still want to allocate the given node to its parent
      */
-    private boolean canStillAllocateToParentOf(Node node) {
-        if (node.parentHostname().isEmpty()) return true;
+    private boolean canStillAllocate(Node node) {
+        if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
         Optional<Node> parent = allNodes.parentOf(node);
         if (parent.isEmpty()) return false;
         return nodeRepository.canAllocateTenantNodeTo(parent.get());

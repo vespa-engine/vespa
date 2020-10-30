@@ -15,6 +15,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -24,9 +25,14 @@ import com.yahoo.vespa.hosted.provision.maintenance.ReservationExpirer;
 import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.duper.ConfigServerHostApplication;
+import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -876,6 +882,37 @@ public class ProvisioningTest {
         SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
+    }
+
+    @Test
+    public void allocates_reserved_nodes_for_type_spec_deployment() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().build();
+        Function<InfraApplication, Collection<HostSpec>> prepareAndActivate = app -> tester.activate(app.getApplicationId(),
+                tester.prepare(app.getApplicationId(), app.getClusterSpecWithVersion(Version.fromString("1.2.3")), app.getCapacity()));
+
+        // Add 2 config server hosts and 2 config servers
+        Flavor flavor = tester.nodeRepository().flavors().getFlavorOrThrow("default");
+        List<Node> nodes = List.of(
+                Node.create("cfghost1", new IP.Config(Set.of("::1:0"), Set.of("::1:1")), "cfghost1", flavor, NodeType.confighost).build(),
+                Node.create("cfghost2", new IP.Config(Set.of("::2:0"), Set.of("::2:1")), "cfghost2", flavor, NodeType.confighost).ipConfig(Set.of("::2:0"), Set.of("::2:1")).build(),
+                Node.create("cfg1", new IP.Config(Set.of("::1:1"), Set.of()), "cfg1", flavor, NodeType.config).parentHostname("cfghost1").build(),
+                Node.create("cfg2", new IP.Config(Set.of("::2:1"), Set.of()), "cfg2", flavor, NodeType.config).parentHostname("cfghost2").build());
+        tester.nodeRepository().setReady(tester.nodeRepository().addNodes(nodes, Agent.system), Agent.system, ProvisioningTest.class.getSimpleName());
+
+        InfraApplication cfgHostApp = new ConfigServerHostApplication();
+        InfraApplication cfgApp = new ConfigServerApplication();
+
+        // Attempt to prepare & activate cfg, this should fail as cfg hosts are not active
+        try {
+            prepareAndActivate.apply(cfgApp);
+        } catch (ParentHostUnavailableException ignored) { }
+        assertEquals(2, tester.nodeRepository().list(cfgApp.getApplicationId()).state(Node.State.reserved).size());
+
+        prepareAndActivate.apply(cfgHostApp);
+
+        // After activating cfg hosts, we can activate cfgs and all 4 should become active
+        prepareAndActivate.apply(cfgApp);
+        assertEquals(4, tester.nodeRepository().list().state(Node.State.active).size());
     }
 
     @Test
