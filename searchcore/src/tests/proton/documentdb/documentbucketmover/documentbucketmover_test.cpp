@@ -188,7 +188,8 @@ MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::share
       _metaStore(*_metaStoreSP),
       _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
       _retriever(_realRetriever),
-      _subDb("my_sub_db", subDbId, _metaStoreSP, _retriever, IFeedView::SP()), _docs(),
+      _subDb("my_sub_db", subDbId, _metaStoreSP, _retriever, IFeedView::SP(), nullptr),
+      _docs(),
       _bucketDBHandler(*bucketDB)
 {
     _bucketDBHandler.addDocumentMetaStore(_metaStoreSP.get(), 0);
@@ -239,7 +240,8 @@ struct MoveFixture
                                                   sourceSubDbId,
                                                   _source._subDb.meta_store(),
                                                   _source._subDb.retriever(),
-                                                  _source._subDb.feed_view());
+                                                  _source._subDb.feed_view(),
+                                                  nullptr);
         _mover.setupForBucket(bucket, &_source._subDb, targetSubDbId, _handler, _bucketDb);
     }
     void moveDocuments(size_t maxDocsToMove) {

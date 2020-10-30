@@ -228,6 +228,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 struct MySubDb {
     test::DummyDocumentSubDb sub_db;
     MaintenanceDocumentSubDB maintenance_sub_db;
+    PendingLidTracker _pendingLidsForCommit;
     MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);
     ~MySubDb();
 };
@@ -236,7 +237,8 @@ MySubDb::MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore
     : sub_db(std::move(bucket_db), SUBDB_ID),
       maintenance_sub_db(sub_db.getName(), sub_db.getSubDbId(), sub_db.getDocumentMetaStoreContext().getSP(),
                          std::make_shared<MyDocumentRetriever>(repo, store),
-                         std::make_shared<MyFeedView>(repo))
+                         std::make_shared<MyFeedView>(repo),
+                         &_pendingLidsForCommit)
 {
 }
 

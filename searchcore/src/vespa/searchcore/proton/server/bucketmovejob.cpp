@@ -116,7 +116,7 @@ BucketMoveJob::scanBuckets(size_t maxBucketsToScan, IFrozenBucketHandler::Exclus
     return ScanResult(bucketsScanned, passDone);
 }
 
-void
+bool
 BucketMoveJob::moveDocuments(DocumentBucketMover &mover,
                              size_t maxDocsToMove,
                              IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard)
@@ -125,14 +125,15 @@ BucketMoveJob::moveDocuments(DocumentBucketMover &mover,
         bucketGuard = _frozenBuckets.acquireExclusiveBucket(mover.getBucket());
         if (! bucketGuard) {
             maybeDelayMover(mover, mover.getBucket());
-            return;
+            return true;
         }
     }
     assert(mover.getBucket() == bucketGuard->getBucket());
-    mover.moveDocuments(maxDocsToMove);
+    if ( ! mover.moveDocuments(maxDocsToMove)) return false;
     if (mover.bucketDone()) {
         _modifiedHandler.notifyBucketModified(mover.getBucket());
     }
+    return true;
 }
 
 namespace {
@@ -279,12 +280,12 @@ BucketMoveJob::changedCalculator()
     maybeCancelMover(_delayedMover);
 }
 
-void
+bool
 BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
                            size_t maxDocsToMove)
 {
     if (done()) {
-        return;
+        return true;
     }
     IFrozenBucketHandler::ExclusiveBucketGuard::UP bucketGuard;
     // Look for delayed bucket to be processed now
@@ -297,8 +298,7 @@ BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
         }
     }
     if (!_delayedMover.bucketDone()) {
-        moveDocuments(_delayedMover, maxDocsToMove, bucketGuard);
-        return;
+        return moveDocuments(_delayedMover, maxDocsToMove, bucketGuard);
     }
     if (_mover.bucketDone()) {
         size_t bucketsScanned = 0;
@@ -324,8 +324,9 @@ BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
         }
     }
     if (!_mover.bucketDone()) {
-        moveDocuments(_mover, maxDocsToMove, bucketGuard);
+        return moveDocuments(_mover, maxDocsToMove, bucketGuard);
     }
+    return true;
 }
 
 bool
@@ -334,7 +335,10 @@ BucketMoveJob::run()
     if (isBlocked()) {
         return true; // indicate work is done, since node state is bad
     }
-    scanAndMove(200, 1);
+    /// Returning false here will immediately post the job back on the executor. This will give a busy loop,
+    /// but this is considered fine as it is very rare and it will be intermingled with multiple feed operations.
+    if ( ! scanAndMove(200, 1) ) return false;
+
     if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
         return true;
     }
