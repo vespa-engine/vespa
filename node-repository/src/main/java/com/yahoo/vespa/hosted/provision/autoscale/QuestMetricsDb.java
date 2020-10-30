@@ -49,6 +49,8 @@ public class QuestMetricsDb implements MetricsDb {
     private final String dataDir;
     private final CairoEngine engine;
 
+    private long highestTimestampAdded = 0;
+
     @Inject
     public QuestMetricsDb() {
         this(Defaults.getDefaults().underVespaHome("var/db/vespa/autoscaling"), Clock.systemUTC());
@@ -67,6 +69,7 @@ public class QuestMetricsDb implements MetricsDb {
         // silence Questdb's custom logging system
         IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
         System.setProperty("questdbLog", dataDir + "/quest-log.conf");
+        System.setProperty("org.jooq.no-logo", "true");
 
         CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
         engine = new CairoEngine(configuration);
@@ -78,6 +81,8 @@ public class QuestMetricsDb implements MetricsDb {
         try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), tableName)) {
             for (var snapshot : snapshots) {
                 long atMillis = snapshot.getSecond().at().toEpochMilli();
+                if (atMillis < highestTimestampAdded) continue; // Ignore old data without causing an exception in QuestDb
+                highestTimestampAdded = atMillis;
                 TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
                 row.putStr(0, snapshot.getFirst());
                 row.putFloat(2, (float)snapshot.getSecond().cpu());
