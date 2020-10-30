@@ -114,23 +114,13 @@ template <typename ICT, typename OCT, typename AGGR>
 void my_full_reduce_op(State &state, uint64_t) {
     auto cells = state.peek(0).cells().typify<ICT>();
     if (cells.size() > 0) {
-        AGGR aggr[4];
-        size_t i = 0;
-        for (; (i + 3) < cells.size(); i += 4) {
-            aggr[0].sample(cells[i+0]);
-            aggr[1].sample(cells[i+1]);
-            aggr[2].sample(cells[i+2]);
-            aggr[3].sample(cells[i+3]);
+        AGGR aggr;
+        for (ICT value: cells) {
+            aggr.sample(value);
         }
-        for (; i < cells.size(); ++i) {
-            aggr[0].sample(cells[i]);
-        }
-        aggr[0].merge(aggr[1]);
-        aggr[0].merge(aggr[2]);
-        aggr[0].merge(aggr[3]);
-        state.pop_push(state.stash.create<ScalarValue<OCT>>(aggr[0].result()));
+        state.pop_push(state.stash.create<ScalarValue<OCT>>(aggr.result()));
     } else {
-        state.pop_push(state.stash.create<ScalarValue<OCT>>(0.0));
+        state.pop_push(state.stash.create<ScalarValue<OCT>>(OCT{0}));
     }
 };
 
