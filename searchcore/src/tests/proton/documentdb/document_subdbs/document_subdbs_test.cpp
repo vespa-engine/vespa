@@ -5,7 +5,6 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchcore/proton/common/icommitable.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
@@ -253,18 +252,6 @@ struct TwoAttrSchema : public OneAttrSchema
     }
 };
 
-struct Committer : public ICommitable {
-    size_t _commitAndWaitCount;
-    Committer() : _commitAndWaitCount(0) { }
-    void commitAndWait(ILidCommitState & ) override { _commitAndWaitCount++; }
-    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
-        commitAndWait(tracker);
-    }
-    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
-        commitAndWait(tracker);
-    }
-};
-
 struct MyConfigSnapshot
 {
     typedef std::unique_ptr<MyConfigSnapshot> UP;
@@ -279,7 +266,7 @@ struct MyConfigSnapshot
           _bootstrap()
     {
         auto documenttypesConfig = std::make_shared<DocumenttypesConfig>(_builder.getDocumenttypesConfig());
-        TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB());
+        auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
         _bootstrap = std::make_shared<BootstrapConfig>(1,
                                  documenttypesConfig,
                                  _builder.getDocumentTypeRepo(),

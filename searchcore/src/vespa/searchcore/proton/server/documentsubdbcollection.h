@@ -32,7 +32,6 @@ class DocumentDBConfig;
 struct DocumentDBTaggedMetrics;
 class MaintenanceController;
 struct MetricsWireService;
-class ICommitable;
 struct IDocumentDBReferenceResolver;
 class IGetSerialNum;
 class DocTypeName;
@@ -119,10 +118,10 @@ public:
     void setBucketStateCalculator(const IBucketStateCalculatorSP &calc);
 
     void createRetrievers();
-    void maintenanceSync(MaintenanceController &mc, ICommitable &commit);
+    void maintenanceSync(MaintenanceController &mc);
 
     // Internally synchronized
-    RetrieversSP getRetrievers(IDocumentRetriever::ReadConsistency consistency, ICommitable & visibilityHandler);
+    RetrieversSP getRetrievers(IDocumentRetriever::ReadConsistency consistency);
 
     IDocumentSubDB *getReadySubDB() { return _subDBs[_readySubDbId]; }
     const IDocumentSubDB *getReadySubDB() const { return _subDBs[_readySubDbId]; }

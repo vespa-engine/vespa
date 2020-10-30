@@ -354,7 +354,7 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 };
 
 
-class MaintenanceControllerFixture : public ICommitable
+class MaintenanceControllerFixture
 {
 public:
     MyExecutor                    _executor;
@@ -385,16 +385,9 @@ public:
 
     MaintenanceControllerFixture();
 
-    ~MaintenanceControllerFixture() override;
+    ~MaintenanceControllerFixture();
 
     void syncSubDBs();
-    void commitAndWait(ILidCommitState & ) override { }
-    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
-        commitAndWait(tracker);
-    }
-    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
-        commitAndWait(tracker);
-    }
     void performSyncSubDBs();
     void notifyClusterStateChanged();
     void performNotifyClusterStateChanged();

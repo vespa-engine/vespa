@@ -166,7 +166,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _writeFilter(),
       _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>()),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
-      _visibility(*_feedHandler, _writeService, _feedView),
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
               makeSubDBConfig(protonCfg.distribution,
@@ -731,7 +730,7 @@ BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
 std::shared_ptr<std::vector<IDocumentRetriever::SP> >
 DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistency)
 {
-    return _subDBs.getRetrievers(consistency, _visibility);
+    return _subDBs.getRetrievers(consistency);
 }
 
 SerialNum
@@ -905,7 +904,7 @@ DocumentDB::syncFeedView()
     _feedView.set(newFeedView);
     _feedHandler->setActiveFeedView(newFeedView.get());
     _subDBs.createRetrievers();
-    _subDBs.maintenanceSync(_maintenanceController, _visibility);
+    _subDBs.maintenanceSync(_maintenanceController);
 
     // Ensure that old feed view is referenced until all index executor tasks
     // depending on it has completed.
