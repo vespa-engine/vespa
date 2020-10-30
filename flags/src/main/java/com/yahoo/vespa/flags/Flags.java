@@ -15,7 +15,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -267,7 +266,7 @@ public class Flags {
             "tenant-budget-quota", -1,
             "The budget in cents/hr a tenant is allowed spend per instance, as calculated by NodeResources",
             "Only takes effect on next deployment, if set to a value other than the default for flag!",
-            TENANT_ID
+            APPLICATION_ID
     );
 
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(

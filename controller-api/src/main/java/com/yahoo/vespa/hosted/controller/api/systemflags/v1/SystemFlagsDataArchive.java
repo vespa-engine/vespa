@@ -221,9 +221,6 @@ public class SystemFlagsDataArchive {
             } else if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.CONSOLE_USER_EMAIL))) {
                 condition.get("values").forEachArrayElement(conditionValue -> conditionValue.asString()
                         .orElseThrow(() -> new IllegalArgumentException("Non-string email address: " + conditionValue)));
-            } else if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.TENANT_ID))) {
-                condition.get("values").forEachArrayElement(conditionValue -> conditionValue.asString()
-                        .orElseThrow(() -> new IllegalArgumentException("Non-string tenant ID: " + conditionValue)));
             }
         }));
     }
