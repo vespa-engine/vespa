@@ -7,6 +7,7 @@
 #include <limits>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 namespace vespalib {
 
@@ -20,7 +21,7 @@ struct BinaryOperation;
  * Enumeration of all different aggregators that are allowed to be
  * used in tensor reduce expressions.
  **/
-enum class Aggr { AVG, COUNT, PROD, SUM, MAX, MIN };
+enum class Aggr { AVG, COUNT, PROD, SUM, MAX, MEDIAN, MIN };
 
 /**
  * Utiliy class used to map between aggregator enum value and symbolic
@@ -120,6 +121,32 @@ public:
     constexpr T result() const { return _max; }
 };
 
+template <typename T> class Median {
+private:
+    std::vector<T> _seen;
+public:
+    constexpr Median() : _seen() {}
+    constexpr Median(T value) : _seen({value}) {}
+    constexpr void sample(T value) { _seen.push_back(value); }
+    constexpr void merge(const Median &rhs) {
+        for (T value: rhs._seen) {
+            _seen.push_back(value);
+        }
+    };
+    constexpr T result() const {
+        if (_seen.empty()) {
+            return std::numeric_limits<T>::quiet_NaN();
+        }
+        std::vector<T> tmp = _seen;
+        std::sort(tmp.begin(), tmp.end());
+        size_t cnt = tmp.size();
+        if ((cnt % 2) == 0) {
+            return ((tmp[cnt/2] + tmp[(cnt-1)/2]) / T{2});
+        }
+        return tmp[cnt/2];
+    }
+};
+
 template <typename T> class Min {
 private:
     T _min;
@@ -137,12 +164,13 @@ struct TypifyAggr {
     template <template<typename> typename TT> using Result = TypifyResultSimpleTemplate<TT>;
     template <typename F> static decltype(auto) resolve(Aggr aggr, F &&f) {
         switch (aggr) {
-        case Aggr::AVG:   return f(Result<aggr::Avg>());
-        case Aggr::COUNT: return f(Result<aggr::Count>());
-        case Aggr::PROD:  return f(Result<aggr::Prod>());
-        case Aggr::SUM:   return f(Result<aggr::Sum>());
-        case Aggr::MAX:   return f(Result<aggr::Max>());
-        case Aggr::MIN:   return f(Result<aggr::Min>());
+        case Aggr::AVG:    return f(Result<aggr::Avg>());
+        case Aggr::COUNT:  return f(Result<aggr::Count>());
+        case Aggr::PROD:   return f(Result<aggr::Prod>());
+        case Aggr::SUM:    return f(Result<aggr::Sum>());
+        case Aggr::MAX:    return f(Result<aggr::Max>());
+        case Aggr::MEDIAN: return f(Result<aggr::Median>());
+        case Aggr::MIN:    return f(Result<aggr::Min>());
         }
         abort();
     }
