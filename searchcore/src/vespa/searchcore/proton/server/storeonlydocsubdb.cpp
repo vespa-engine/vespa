@@ -44,7 +44,6 @@ using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
-using proton::documentmetastore::LidReuseDelayerConfig;
 
 namespace proton {
 
@@ -339,7 +338,7 @@ StoreOnlyDocSubDB::getStoreOnlyFeedViewContext(const DocumentDBConfig &configSna
 {
     return StoreOnlyFeedView::Context(getSummaryAdapter(), configSnapshot.getSchemaSP(), _metaStoreCtx,
                                       *_gidToLidChangeHandler, configSnapshot.getDocumentTypeRepoSP(),
-                                      _writeService, LidReuseDelayerConfig(configSnapshot));
+                                      _writeService);
 }
 
 StoreOnlyFeedView::PersistentParams

@@ -34,8 +34,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const SearchView::SP &searchVi
                         curr->getAttributeWriter(),
                         curr->getSchema(),
                         curr->getDocumentTypeRepo(),
-                        searchView,
-                        curr->getLidReuseDelayerConfig());
+                        searchView);
 }
 
 void
@@ -44,8 +43,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
                                                   IAttributeWriter::SP attrWriter,
                                                   const Schema::SP &schema,
                                                   const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                                  const SearchView::SP &searchView,
-                                                  const LidReuseDelayerConfig & lidReuseDelayerConfig)
+                                                  const SearchView::SP &searchView)
 {
     SearchableFeedView::SP curr = _feedView.get();
     _feedView.set(std::make_shared<SearchableFeedView>(
@@ -54,8 +52,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
                     searchView->getDocumentMetaStore(),
                     curr->getGidToLidChangeHandler(),
                     repo,
-                    curr->getWriteService(),
-                    lidReuseDelayerConfig),
+                    curr->getWriteService()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(std::move(attrWriter), curr->getDocIdLimit()),
             SearchableFeedView::Context(indexWriter)));
@@ -263,8 +260,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                             std::move(attrWriter),
                             newConfig.getSchemaSP(),
                             newConfig.getDocumentTypeRepoSP(),
-                            searchView,
-                            LidReuseDelayerConfig(newConfig));
+                            searchView);
     }
     return initializer;
 }

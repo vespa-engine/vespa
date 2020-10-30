@@ -3,7 +3,6 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
@@ -86,7 +85,6 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
     MyMinimalFeedView(const ISummaryAdapter::SP &summaryAdapter,
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
-                      documentmetastore::LidReuseDelayerConfig &lidReuseDelayerConfig,
                       const PersistentParams &params,
                       int &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
@@ -95,8 +93,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                           std::make_shared<DocumentMetaStoreContext>(metaStore),
                                                      *gidToLidChangeHandler,
                                                      myGetDocumentTypeRepo(),
-                                                     writeService,
-                                                     lidReuseDelayerConfig),
+                                                     writeService),
                           params),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
@@ -134,10 +131,9 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
     MoveOperationFeedView(const ISummaryAdapter::SP &summaryAdapter,
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
-                          documentmetastore::LidReuseDelayerConfig &lidReuseDelayerConfig,
                           const PersistentParams &params,
                           int &outstandingMoveOps_) :
-            MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayerConfig,
+            MyMinimalFeedView(summaryAdapter, metaStore, writeService,
                               params, outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
@@ -191,8 +187,8 @@ struct FixtureBase {
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
-    documentmetastore::LidReuseDelayerConfig lidReuseDelayerConfig;
     typename FeedViewType::UP feedview;
+    SerialNum serial_num;
  
     explicit FixtureBase(SubDbType subDbType = SubDbType::READY)
         : removeCount(0),
@@ -206,18 +202,18 @@ struct FixtureBase {
                                           subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
-          lidReuseDelayerConfig(),
-          feedview()
+          feedview(),
+          serial_num(2u)
     {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
         ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
-        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayerConfig,
+        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService,
                                                   params, outstandingMoveOps);
     }
 
     ~FixtureBase() {
-        writeService.sync();
+        this->force_commit();
     }
 
     void addSingleDocToMetaStore(uint32_t expected_lid) {
@@ -243,6 +239,10 @@ struct FixtureBase {
         test::runInMaster(writeService, func);
     }
 
+    void force_commit() {
+        runInMaster([this] () { static_cast<IFeedView&>(*feedview).forceCommit(serial_num); });
+        writeService.sync();
+    }
 };
 
 using Fixture = FixtureBase<MyMinimalFeedView>;

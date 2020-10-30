@@ -223,7 +223,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _documentMetaStoreContext(ctx._documentMetaStoreContext),
       _repo(ctx._repo),
       _docType(nullptr),
-      _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get(), ctx._lidReuseDelayerConfig),
+      _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get()),
       _pendingLidsForDocStore(),
       _pendingLidsForCommit(createUncommitedLidTracker()),
       _schema(ctx._schema),
