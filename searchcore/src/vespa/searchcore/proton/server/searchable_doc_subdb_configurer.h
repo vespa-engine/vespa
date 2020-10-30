@@ -36,7 +36,6 @@ class SearchableDocSubDBConfigurer
 private:
     typedef vespalib::VarHolder<SearchView::SP> SearchViewHolder;
     typedef vespalib::VarHolder<SearchableFeedView::SP> FeedViewHolder;
-    using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
     const ISummaryManager::SP   &_summaryMgr;
     SearchViewHolder            &_searchView;
     FeedViewHolder              &_feedView;
@@ -53,8 +52,7 @@ private:
                              IAttributeWriter::SP attrWriter,
                              const search::index::Schema::SP &schema,
                              const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             const SearchView::SP &searchView,
-                             const LidReuseDelayerConfig & lidReuseDelayerConfig);
+                             const SearchView::SP &searchView);
 
     void reconfigureMatchView(const searchcorespi::IndexSearchable::SP &indexSearchable);
 

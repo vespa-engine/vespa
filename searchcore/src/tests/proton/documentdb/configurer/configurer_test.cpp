@@ -7,7 +7,6 @@
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -51,7 +50,6 @@ using Configurer = SearchableDocSubDBConfigurer;
 using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
 using SummarySetup = SummaryManager::SummarySetup;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
-using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
 const vespalib::string BASE_DIR("baseDir");
 const vespalib::string DOC_TYPE("invalid");
@@ -214,8 +212,7 @@ Fixture::initViewSet(ViewSet &views)
                             views.searchView.get()->getDocumentMetaStore(),
                             *views._gidToLidChangeHandler,
                             views.repo,
-                            views._writeService,
-                            LidReuseDelayerConfig()),
+                            views._writeService),
                             SearchableFeedView::PersistentParams(
                                     views.serialNum,
                                     views.serialNum,
@@ -260,7 +257,7 @@ struct MyFastAccessFeedView
         _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
         std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
         StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, *_gidToLidChangeHandler, repo,
-                                                _writeService, LidReuseDelayerConfig());
+                                                _writeService);
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
         auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
                                                  _writeService.attributeFieldWriter(), _writeService.shared(), _hwInfo);

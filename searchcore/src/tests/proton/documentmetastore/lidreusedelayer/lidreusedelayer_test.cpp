@@ -128,7 +128,6 @@ class Fixture
 {
 public:
     using LidReuseDelayer = documentmetastore::LidReuseDelayer;
-    using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
     vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeServiceReal;
     test::ThreadingServiceObserver _writeService;
@@ -140,7 +139,7 @@ public:
           _writeServiceReal(_sharedExecutor),
           _writeService(_writeServiceReal),
           _store(),
-          _lidReuseDelayer(std::make_unique<LidReuseDelayer>(_writeService, _store, LidReuseDelayerConfig()))
+          _lidReuseDelayer(std::make_unique<LidReuseDelayer>(_writeService, _store))
     {
     }
 
@@ -195,15 +194,6 @@ public:
         return res;
     }
 
-    void
-    configureLidReuseDelayer(bool immediateCommit, bool hasIndexedOrAttributeFields) {
-        runInMaster([&] () {
-            _lidReuseDelayer = std::make_unique<LidReuseDelayer>(_writeService, _store,
-                                                                 LidReuseDelayerConfig(immediateCommit ? vespalib::duration::zero() : 1ms,
-                                                                                       hasIndexedOrAttributeFields));
-        } );
-    }
-
     void commit() {
         runInMaster([&] () { cycleLids(_lidReuseDelayer->getReuseLids()); });
     }
@@ -230,87 +220,42 @@ public:
 
 TEST_F("require that nothing happens before free list is active", Fixture)
 {
-    f.configureLidReuseDelayer(true, true);
     EXPECT_FALSE(f.delayReuse(4));
     EXPECT_FALSE(f.delayReuse({ 5, 6}));
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
-    EXPECT_TRUE(assertThreadObserver(3, 0, 0, f._writeService));
-}
-
-
-TEST_F("require that single lid is delayed", Fixture)
-{
-    f._store._freeListActive = true;
-    f.configureLidReuseDelayer(true, true);
-    EXPECT_TRUE(f.delayReuse(4));
-    f.scheduleDelayReuseLid(4);
-    EXPECT_TRUE(f._store.assertWork(1, 0, 1));
-    EXPECT_TRUE(assertThreadObserver(4, 1, 0, f._writeService));
-}
-
-
-TEST_F("require that lid vector is delayed", Fixture)
-{
-    f._store._freeListActive = true;
-    f.configureLidReuseDelayer(true, true);
-    EXPECT_TRUE(f.delayReuse({ 5, 6, 7}));
-    f.scheduleDelayReuseLids({ 5, 6, 7});
-    EXPECT_TRUE(f._store.assertWork(0, 1, 3));
-    EXPECT_TRUE(assertThreadObserver(4, 1, 0, f._writeService));
+    EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
 }
 
 
 TEST_F("require that reuse can be batched", Fixture)
 {
     f._store._freeListActive = true;
-    f.configureLidReuseDelayer(false, true);
     EXPECT_FALSE(f.delayReuse(4));
     EXPECT_FALSE(f.delayReuse({ 5, 6, 7}));
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
-    EXPECT_TRUE(assertThreadObserver(3, 0, 0, f._writeService));
+    EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
     f.commit();
     EXPECT_TRUE(f._store.assertWork(0, 1, 4));
-    EXPECT_TRUE(assertThreadObserver(5, 1, 0, f._writeService));
+    EXPECT_TRUE(assertThreadObserver(4, 1, 0, f._writeService));
     EXPECT_FALSE(f.delayReuse(8));
     EXPECT_FALSE(f.delayReuse({ 9, 10}));
     EXPECT_TRUE(f._store.assertWork(0, 1, 4));
-    EXPECT_TRUE(assertThreadObserver(7, 1, 0, f._writeService));
+    EXPECT_TRUE(assertThreadObserver(6, 1, 0, f._writeService));
 }
 
 
 TEST_F("require that single element array is optimized", Fixture)
 {
     f._store._freeListActive = true;
-    f.configureLidReuseDelayer(false, true);
     EXPECT_FALSE(f.delayReuse({ 4}));
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
-    EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
+    EXPECT_TRUE(assertThreadObserver(1, 0, 0, f._writeService));
     f.commit();
-    f.configureLidReuseDelayer(true, true);
     EXPECT_TRUE(f._store.assertWork(1, 0, 1));
-    EXPECT_TRUE(assertThreadObserver(5, 1, 0, f._writeService));
-    EXPECT_TRUE(f.delayReuse({ 8}));
-    f.scheduleDelayReuseLids({ 8});
-    EXPECT_TRUE(f._store.assertWork(2, 0, 2));
-    EXPECT_TRUE(assertThreadObserver(8, 2, 0, f._writeService));
-}
-
-
-TEST_F("require that lids are reused faster with no indexed fields", Fixture)
-{
-    f._store._freeListActive = true;
-    f.configureLidReuseDelayer(true, false);
-    EXPECT_FALSE(f.delayReuse(4));
-    EXPECT_TRUE(f._store.assertWork(1, 0, 1));
-    EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
-    EXPECT_FALSE(f.delayReuse({ 5, 6, 7}));
-    EXPECT_TRUE(f._store.assertWork(1, 1, 4));
-    EXPECT_TRUE(assertThreadObserver(3, 0, 0, f._writeService));
+    EXPECT_TRUE(assertThreadObserver(3, 1, 0, f._writeService));
 }
 
 }
-
-
 
 TEST_MAIN()
 {
