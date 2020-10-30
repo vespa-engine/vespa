@@ -22,11 +22,10 @@ private:
     IAttributeWriterFactory::UP _factory;
     vespalib::string             _subDbName;
 
-    void reconfigureFeedView(const FastAccessFeedView::SP &curr,
-                             const search::index::Schema::SP &schema,
-                             const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             IAttributeWriter::SP attrWriter,
-                             PendingLidTrackerBase & pendingLidsForCommit);
+    void reconfigureFeedView(FastAccessFeedView & curr,
+                             search::index::Schema::SP schema,
+                             std::shared_ptr<const document::DocumentTypeRepo> repo,
+                             IAttributeWriter::SP attrWriter);
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
@@ -36,8 +35,7 @@ public:
 
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig &newConfig,
                                              const DocumentDBConfig &oldConfig,
-                                             const AttributeCollectionSpec &attrSpec,
-                                             PendingLidTrackerBase & pendingLidsForCommit);
+                                             const AttributeCollectionSpec &attrSpec);
 };
 
 } // namespace proton

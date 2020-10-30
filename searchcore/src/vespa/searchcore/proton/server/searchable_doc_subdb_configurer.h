@@ -46,9 +46,8 @@ private:
     uint32_t                     _distributionKey;
 
     void reconfigureFeedView(IAttributeWriter::SP attrWriter,
-                             const search::index::Schema::SP &schema,
-                             const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             PendingLidTrackerBase & pendingLidsForCommit);
+                             search::index::Schema::SP schema,
+                             std::shared_ptr<const document::DocumentTypeRepo> repo);
 
     void reconfigureMatchView(const searchcorespi::IndexSearchable::SP &indexSearchable);
 
@@ -82,16 +81,14 @@ public:
     void reconfigure(const DocumentDBConfig &newConfig,
                      const DocumentDBConfig &oldConfig,
                      const ReconfigParams &params,
-                     IDocumentDBReferenceResolver &resolver,
-                     PendingLidTrackerBase & pendingLidsForCommit);
+                     IDocumentDBReferenceResolver &resolver);
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,
                 const DocumentDBConfig &oldConfig,
                 const AttributeCollectionSpec &attrSpec,
                 const ReconfigParams &params,
-                IDocumentDBReferenceResolver &resolver,
-                PendingLidTrackerBase & pendingLidsForCommit);
+                IDocumentDBReferenceResolver &resolver);
 };
 
 } // namespace proton

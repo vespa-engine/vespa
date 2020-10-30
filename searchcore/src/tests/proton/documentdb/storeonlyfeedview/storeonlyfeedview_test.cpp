@@ -86,17 +86,17 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
                       const PersistentParams &params,
-                      PendingLidTrackerBase & pendingLidsForCommit,
+                      std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
                       int &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
-                          search::index::Schema::SP(),
-                          std::make_shared<DocumentMetaStoreContext>(metaStore),
-                                                     *gidToLidChangeHandler,
+                                                     search::index::Schema::SP(),
+                                                     std::make_shared<DocumentMetaStoreContext>(metaStore),
                                                      myGetDocumentTypeRepo(),
+                                                     std::move(pendingLidsForCommit),
+                                                     *gidToLidChangeHandler,
                                                      writeService),
-                          params,
-                          pendingLidsForCommit),
+                          params),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
         heartBeatAttributesCount(0),
@@ -134,10 +134,10 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
                           const PersistentParams &params,
-                          PendingLidTrackerBase & pendingLidsForCommit,
+                          std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
                           int &outstandingMoveOps_) :
             MyMinimalFeedView(summaryAdapter, metaStore, writeService,
-                              params, pendingLidsForCommit, outstandingMoveOps_),
+                              params, std::move(pendingLidsForCommit), outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
             removeAttributesCount(0),
@@ -190,7 +190,7 @@ struct FixtureBase {
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
-    PendingLidTracker pendingLidsForCoomit;
+    std::shared_ptr<PendingLidTrackerBase> pendingLidsForCoomit;
     typename FeedViewType::UP feedview;
     SerialNum serial_num;
  
@@ -206,7 +206,7 @@ struct FixtureBase {
                                                         subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
-          pendingLidsForCoomit(),
+          pendingLidsForCoomit(std::make_shared<PendingLidTracker>()),
           feedview(),
           serial_num(2u)
     {

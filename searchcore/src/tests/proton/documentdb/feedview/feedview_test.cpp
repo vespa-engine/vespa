@@ -489,7 +489,7 @@ FeedTokenContext::~FeedTokenContext() = default;
 struct FixtureBase
 {
     MyTracer             _tracer;
-    PendingLidTracker    _pendingLidsForCommit;
+    std::shared_ptr<PendingLidTracker>    _pendingLidsForCommit;
     SchemaContext        sc;
     IIndexWriter::SP     iw;
     ISummaryAdapter::SP  sa;
@@ -678,7 +678,7 @@ struct FixtureBase
 
 FixtureBase::FixtureBase()
     : _tracer(),
-      _pendingLidsForCommit(),
+      _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       sc(),
       iw(std::make_shared<MyIndexWriter>(_tracer)),
       sa(std::make_shared<MySummaryAdapter>(*sc._builder->getDocumentTypeRepo())),
@@ -716,14 +716,10 @@ struct SearchableFeedViewFixture : public FixtureBase
     SearchableFeedView fv;
     SearchableFeedViewFixture() :
         FixtureBase(),
-        fv(StoreOnlyFeedView::Context(sa,
-                sc._schema,
-                _dmsc,
-                *_gidToLidChangeHandler,
-                sc.getRepo(),
-                _writeService),
+        fv(StoreOnlyFeedView::Context(sa, sc._schema, _dmsc,
+                                      sc.getRepo(), _pendingLidsForCommit,
+                                      *_gidToLidChangeHandler, _writeService),
            pc.getParams(),
-           _pendingLidsForCommit,
            FastAccessFeedView::Context(aw, _docIdLimit),
            SearchableFeedView::Context(iw))
     {
@@ -740,14 +736,9 @@ struct FastAccessFeedViewFixture : public FixtureBase
     FastAccessFeedView fv;
     FastAccessFeedViewFixture() :
         FixtureBase(),
-        fv(StoreOnlyFeedView::Context(sa,
-                sc._schema,
-                _dmsc,
-                *_gidToLidChangeHandler,
-                sc.getRepo(),
-                _writeService),
+        fv(StoreOnlyFeedView::Context(sa, sc._schema, _dmsc, sc.getRepo(), _pendingLidsForCommit,
+                                      *_gidToLidChangeHandler, _writeService),
            pc.getParams(),
-           _pendingLidsForCommit,
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
     }

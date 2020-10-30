@@ -211,17 +211,17 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
 
 }  // namespace
 
-StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams &params, PendingLidTrackerBase & pendingLidsForCommit)
+StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams &params)
     : IFeedView(),
       FeedDebugger(),
-      _summaryAdapter(ctx._summaryAdapter),
-      _documentMetaStoreContext(ctx._documentMetaStoreContext),
+      _summaryAdapter(std::move(ctx._summaryAdapter)),
+      _documentMetaStoreContext(std::move(ctx._documentMetaStoreContext)),
       _repo(ctx._repo),
       _docType(nullptr),
       _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get()),
       _pendingLidsForDocStore(),
-      _pendingLidsForCommit(pendingLidsForCommit),
-      _schema(ctx._schema),
+      _pendingLidsForCommit(std::move(ctx._pendingLidsForCommit)),
+      _schema(std::move(ctx._schema)),
       _writeService(ctx._writeService),
       _params(params),
       _metaStore(_documentMetaStoreContext->get()),
@@ -231,6 +231,8 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
 }
 
 StoreOnlyFeedView::~StoreOnlyFeedView() = default;
+StoreOnlyFeedView::Context::Context(Context &&) noexcept = default;
+StoreOnlyFeedView::Context::~Context() = default;
 
 void
 StoreOnlyFeedView::sync()
@@ -242,7 +244,7 @@ void
 StoreOnlyFeedView::forceCommit(SerialNum serialNum, DoneCallback onDone)
 {
     internalForceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
-                                                                        _pendingLidsForCommit.produceSnapshot(),
+                                                                        _pendingLidsForCommit->produceSnapshot(),
                                                                         std::move(onDone)));
 }
 
@@ -262,7 +264,7 @@ StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneTyp
 IPendingLidTracker::Token
 StoreOnlyFeedView::get_pending_lid_token(const DocumentOperation &op)
 {
-    return (op.getValidDbdId(_params._subDbId) ? _pendingLidsForCommit.produce(op.getLid()) : IPendingLidTracker::Token());
+    return (op.getValidDbdId(_params._subDbId) ? _pendingLidsForCommit->produce(op.getLid()) : IPendingLidTracker::Token());
 }
 
 void
@@ -322,7 +324,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
     }
     if (docAlreadyExists && putOp.changedDbdId()) {
         assert(!putOp.getValidDbdId(_params._subDbId));
-        internalRemove(std::move(token), _pendingLidsForCommit.produce(putOp.getPrevLid()), serialNum,
+        internalRemove(std::move(token), _pendingLidsForCommit->produce(putOp.getPrevLid()), serialNum,
                        std::move(pendingNotifyRemoveDone), putOp.getPrevLid(), IDestructorCallback::SP());
     }
 }
@@ -592,7 +594,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
             assert(!rmOp.getValidDbdId(_params._subDbId));
-            internalRemove(std::move(token), _pendingLidsForCommit.produce(rmOp.getPrevLid()), serialNum,
+            internalRemove(std::move(token), _pendingLidsForCommit->produce(rmOp.getPrevLid()), serialNum,
                            std::move(pendingNotifyRemoveDone), rmOp.getPrevLid(), IDestructorCallback::SP());
         }
     }
@@ -606,12 +608,12 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithGid 
     const SerialNum serialNum = rmOp.getSerialNum();
     DocumentId dummy;
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, rmOp.getGlobalId(), dummy);
-    auto uncommitted = _pendingLidsForCommit.produce(rmOp.getLid());
+    auto uncommitted = _pendingLidsForCommit->produce(rmOp.getLid());
 
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
             assert(!rmOp.getValidDbdId(_params._subDbId));
-            internalRemove(std::move(token), _pendingLidsForCommit.produce(rmOp.getPrevLid()), serialNum, std::move(pendingNotifyRemoveDone),
+            internalRemove(std::move(token), _pendingLidsForCommit->produce(rmOp.getPrevLid()), serialNum, std::move(pendingNotifyRemoveDone),
                            rmOp.getPrevLid(), IDestructorCallback::SP());
         }
     }
@@ -778,7 +780,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     if (moveOp.getValidDbdId(_params._subDbId)) {
         const document::GlobalId &gid = docId.getGlobalId();
         std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(FeedToken(), _pendingLidsForCommit.produce(moveOp.getLid()),
+            createPutDoneContext(FeedToken(), _pendingLidsForCommit->produce(moveOp.getLid()),
                                  _gidToLidChangeHandler, doc, gid, moveOp.getLid(), serialNum,
                                  moveOp.changedDbdId() && useDocumentMetaStore(serialNum), doneCtx);
         putSummary(serialNum, moveOp.getLid(), doc, onWriteDone);
@@ -786,7 +788,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
         putIndexedFields(serialNum, moveOp.getLid(), doc, onWriteDone);
     }
     if (docAlreadyExists && moveOp.changedDbdId()) {
-        internalRemove(FeedToken(), _pendingLidsForCommit.produce(moveOp.getPrevLid()), serialNum, std::move(pendingNotifyRemoveDone), moveOp.getPrevLid(), doneCtx);
+        internalRemove(FeedToken(), _pendingLidsForCommit->produce(moveOp.getPrevLid()), serialNum, std::move(pendingNotifyRemoveDone), moveOp.getPrevLid(), doneCtx);
     }
 }
 
@@ -825,7 +827,7 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
     if (useDocumentMetaStore(serialNum)) {
         getDocumentMetaStore()->get().compactLidSpace(op.getLidLimit());
         auto commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
-                                                                _pendingLidsForCommit.produceSnapshot(),
+                                                                _pendingLidsForCommit->produceSnapshot(),
                                                                 DoneCallback()));
         commitContext->holdUnblockShrinkLidSpace();
         internalForceCommit(serialNum, commitContext);

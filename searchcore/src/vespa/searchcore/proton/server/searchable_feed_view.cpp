@@ -30,10 +30,9 @@ SearchableFeedView::Context::Context(const IIndexWriter::SP &indexWriter)
 
 SearchableFeedView::Context::~Context() = default;
 
-SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
-                                       PendingLidTrackerBase & pendingLidsForCommit,
+SearchableFeedView::SearchableFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params,
                                        const FastAccessFeedView::Context &fastUpdateCtx, Context ctx)
-    : Parent(storeOnlyCtx, params, pendingLidsForCommit, fastUpdateCtx),
+    : Parent(std::move(storeOnlyCtx), params, fastUpdateCtx),
       _indexWriter(ctx._indexWriter),
       _hasIndexedFields(_schema->getNumIndexFields() > 0)
 { }

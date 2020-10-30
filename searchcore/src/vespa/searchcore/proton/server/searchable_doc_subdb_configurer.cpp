@@ -27,20 +27,19 @@ typedef AttributeReprocessingInitializer::Config ARIConfig;
 
 void
 SearchableDocSubDBConfigurer::reconfigureFeedView(IAttributeWriter::SP attrWriter,
-                                                  const Schema::SP &schema,
-                                                  const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                                  PendingLidTrackerBase & pendingLidsForCommit)
+                                                  Schema::SP schema,
+                                                  std::shared_ptr<const DocumentTypeRepo> repo)
 {
     SearchableFeedView::SP curr = _feedView.get();
     _feedView.set(std::make_shared<SearchableFeedView>(
             StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
-                    schema,
+                    std::move(schema),
                     curr->getDocumentMetaStore(),
+                    std::move(repo),
+                    curr->getUncommittedLidTracker(),
                     curr->getGidToLidChangeHandler(),
-                    repo,
                     curr->getWriteService()),
             curr->getPersistentParams(),
-            pendingLidsForCommit,
             FastAccessFeedView::Context(std::move(attrWriter), curr->getDocIdLimit()),
             SearchableFeedView::Context(curr->getIndexWriter())));
 }
@@ -138,12 +137,11 @@ SearchableDocSubDBConfigurer::
 reconfigure(const DocumentDBConfig &newConfig,
             const DocumentDBConfig &oldConfig,
             const ReconfigParams &params,
-            IDocumentDBReferenceResolver &resolver,
-            PendingLidTrackerBase & pendingLidsForCommit)
+            IDocumentDBReferenceResolver &resolver)
 {
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, attrSpec, params, resolver, pendingLidsForCommit);
+    reconfigure(newConfig, oldConfig, attrSpec, params, resolver);
 }
 
 namespace {
@@ -175,8 +173,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
                                           const AttributeCollectionSpec &attrSpec,
                                           const ReconfigParams &params,
-                                          IDocumentDBReferenceResolver &resolver,
-                                          PendingLidTrackerBase & pendingLidsForCommit)
+                                          IDocumentDBReferenceResolver &resolver)
 {
     bool shouldMatchViewChange = false;
     bool shouldSearchViewChange = false;
@@ -242,8 +239,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     if (shouldFeedViewChange) {
         reconfigureFeedView(std::move(attrWriter),
                             newConfig.getSchemaSP(),
-                            newConfig.getDocumentTypeRepoSP(),
-                            pendingLidsForCommit);
+                            newConfig.getDocumentTypeRepoSP());
     }
     return initializer;
 }

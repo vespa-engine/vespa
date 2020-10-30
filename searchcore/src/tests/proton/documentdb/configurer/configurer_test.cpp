@@ -151,7 +151,7 @@ struct Fixture
     EmptyConstantValueFactory _constantValueFactory;
     ConstantValueRepo _constantValueRepo;
     vespalib::ThreadStackExecutor _summaryExecutor;
-    PendingLidTracker _pendingLidsForCommit;
+    std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     ViewSet _views;
     MyDocumentDBReferenceResolver _resolver;
     ConfigurerUP _configurer;
@@ -166,7 +166,7 @@ Fixture::Fixture()
       _constantValueFactory(),
       _constantValueRepo(_constantValueFactory),
       _summaryExecutor(8, 128*1024),
-      _pendingLidsForCommit(),
+      _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _views(),
       _resolver(),
       _configurer()
@@ -210,18 +210,14 @@ Fixture::initViewSet(ViewSet &views)
                                   std::move(matchView)));
     views.feedView.set(
             make_shared<SearchableFeedView>(StoreOnlyFeedView::Context(summaryAdapter,
-                            schema,
-                            views.searchView.get()->getDocumentMetaStore(),
-                            *views._gidToLidChangeHandler,
-                            views.repo,
-                            views._writeService),
-                                            SearchableFeedView::PersistentParams(
-                                    views.serialNum,
-                                    views.serialNum,
-                                    views._docTypeName,
-                                    0u /* subDbId */,
-                                    SubDbType::READY),
-                                            _pendingLidsForCommit,
+                                                                       schema,
+                                                                       views.searchView.get()->getDocumentMetaStore(),
+                                                                       views.repo,
+                                                                       _pendingLidsForCommit,
+                                                                       *views._gidToLidChangeHandler,
+                                                                       views._writeService),
+                                            SearchableFeedView::PersistentParams(views.serialNum, views.serialNum,
+                                                                                 views._docTypeName, 0u, SubDbType::READY),
                                             FastAccessFeedView::Context(attrWriter, views._docIdLimit),
                                             SearchableFeedView::Context(indexWriter)));
 }
@@ -238,35 +234,37 @@ struct MyFastAccessFeedView
 
     proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
+    std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     VarHolder<FastAccessFeedView::SP> _feedView;
 
-    explicit MyFastAccessFeedView(IThreadingService &writeService, PendingLidTrackerBase & pendinglidsForCommit)
+    explicit MyFastAccessFeedView(IThreadingService &writeService)
         : _fileHeaderContext(),
           _docIdLimit(0),
           _writeService(writeService),
           _hwInfo(),
           _dmsc(),
           _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
+          _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
           _feedView()
     {
-        init(pendinglidsForCommit);
+        init();
     }
 
     ~MyFastAccessFeedView();
 
-    void init(PendingLidTrackerBase & pendinglidsForCommit) {
+    void init() {
         MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
         Schema::SP schema = std::make_shared<Schema>();
         _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
         std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
-        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, *_gidToLidChangeHandler, repo,
-                                                _writeService);
+        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
+                                                _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
         auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
                                                  _writeService.attributeFieldWriter(), _writeService.shared(), _hwInfo);
         auto writer = std::make_shared<AttributeWriter>(mgr);
         FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
-        _feedView.set(std::make_shared<FastAccessFeedView>(storeOnlyCtx, params, pendinglidsForCommit, fastUpdateCtx));
+        _feedView.set(std::make_shared<FastAccessFeedView>(std::move(storeOnlyCtx), params, fastUpdateCtx));
     }
 };
 
@@ -276,13 +274,12 @@ struct FastAccessFixture
 {
     vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeService;
-    PendingLidTracker _pendingLidsForCommit;
     MyFastAccessFeedView _view;
     FastAccessDocSubDBConfigurer _configurer;
     FastAccessFixture()
         : _sharedExecutor(1, 0x10000),
           _writeService(_sharedExecutor),
-          _view(_writeService, _pendingLidsForCommit),
+          _view(_writeService),
           _configurer(_view._feedView, std::make_unique<AttributeWriterFactory>(), "test")
     {
         vespalib::rmdir(BASE_DIR, true);
@@ -466,7 +463,7 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
     AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver, f._pendingLidsForCommit);
+    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -505,7 +502,7 @@ checkAttributeWriterChangeOnRepoChange(Fixture &f, bool docTypeRepoChanged)
     AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(CCR().setDocumentTypeRepoChanged(docTypeRepoChanged));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver, f._pendingLidsForCommit);
+    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
     auto newAttributeWriter = getAttributeWriter(f);
     if (docTypeRepoChanged) {
         EXPECT_NOT_EQUAL(oldAttributeWriter, newAttributeWriter);
@@ -526,7 +523,7 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
     AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     IReprocessingInitializer::UP init =
-            f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver, f._pendingLidsForCommit);
+            f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -538,7 +535,7 @@ TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
     AttributeCollectionSpec::AttributeList specList;
     AttributeCollectionSpec spec(specList, 1, 0);
     FastAccessFeedView::SP o = f._view._feedView.get();
-    f._configurer.reconfigure(*createConfig(), *createConfig(), spec, f._pendingLidsForCommit);
+    f._configurer.reconfigure(*createConfig(), *createConfig(), spec);
     FastAccessFeedView::SP n = f._view._feedView.get();
 
     FastAccessFeedViewComparer cmp(o, n);
@@ -553,7 +550,7 @@ TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFi
     AttributeCollectionSpec::AttributeList specList;
     AttributeCollectionSpec spec(specList, 1, 0);
     IReprocessingInitializer::UP init =
-            f._configurer.reconfigure(*createConfig(), *createConfig(), spec, f._pendingLidsForCommit);
+            f._configurer.reconfigure(*createConfig(), *createConfig(), spec);
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -565,7 +562,7 @@ TEST_F("require that we can reconfigure summary manager", Fixture)
     ViewPtrs o = f._views.getViewPtrs();
     ReconfigParams params(CCR().setSummarymapChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), params, f._resolver, f._pendingLidsForCommit);
+    f._configurer->reconfigure(*createConfig(), *createConfig(), params, f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -585,7 +582,7 @@ TEST_F("require that we can reconfigure matchers", Fixture)
     ViewPtrs o = f._views.getViewPtrs();
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     f._configurer->reconfigure(*createConfig(o.fv->getSchema()), *createConfig(o.fv->getSchema()),
-            ReconfigParams(CCR().setRankProfilesChanged(true)), f._resolver, f._pendingLidsForCommit);
+            ReconfigParams(CCR().setRankProfilesChanged(true)), f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
