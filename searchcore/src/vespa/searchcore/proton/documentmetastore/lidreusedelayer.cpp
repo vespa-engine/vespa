@@ -16,6 +16,7 @@ LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService, IStore &docume
     : _writeService(writeService),
       _documentMetaStore(documentMetaStore),
       _immediateCommit(config.visibilityDelay() == vespalib::duration::zero()),
+      _allowEarlyAck(config.allowEarlyAck()),
       _config(config),
       _pendingLids()
 {

@@ -880,7 +880,7 @@ MaintenanceControllerFixture::injectMaintenanceJobs()
                                             _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
                                             _calc,
                                             _diskMemUsageNotifier,
-                                            _jobTrackers,
+                                            _jobTrackers, *this,
                                             _readyAttributeManager,
                                             _notReadyAttributeManager,
                                             std::make_unique<const AttributeConfigInspector>(AttributesConfigBuilder()),

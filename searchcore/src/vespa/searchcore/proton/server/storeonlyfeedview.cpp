@@ -210,8 +210,12 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
 }
 
 std::unique_ptr<PendingLidTrackerBase>
-createUncommitedLidTracker() {
-    return std::make_unique<PendingLidTracker>();
+createUncommitedLidTracker(bool allowEarlyAck) {
+    if (allowEarlyAck) {
+        return std::make_unique<TwoPhasePendingLidTracker>();
+    } else {
+        return std::make_unique<PendingLidTracker>();
+    }
 }
 
 }  // namespace
@@ -225,7 +229,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _docType(nullptr),
       _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get(), ctx._lidReuseDelayerConfig),
       _pendingLidsForDocStore(),
-      _pendingLidsForCommit(createUncommitedLidTracker()),
+      _pendingLidsForCommit(createUncommitedLidTracker(_lidReuseDelayer.allowEarlyAck())),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
       _params(params),
@@ -276,6 +280,14 @@ StoreOnlyFeedView::get_pending_lid_token(const DocumentOperation &op)
 }
 
 void
+StoreOnlyFeedView::considerEarlyAck(FeedToken & token)
+{
+    if (allowEarlyAck() && token) {
+        token.reset();
+    }
+}
+
+void
 StoreOnlyFeedView::putAttributes(SerialNum, Lid, const Document &, OnPutDoneType) {}
 
 void
@@ -317,6 +329,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(putOp, docId.getGlobalId(), docId);
     auto uncommitted = get_pending_lid_token(putOp);
+    considerEarlyAck(token);
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
 
@@ -335,6 +348,11 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
         internalRemove(std::move(token), _pendingLidsForCommit->produce(putOp.getPrevLid()), serialNum,
                        std::move(pendingNotifyRemoveDone), putOp.getPrevLid(), IDestructorCallback::SP());
     }
+}
+
+bool
+StoreOnlyFeedView::allowEarlyAck() const {
+    return _lidReuseDelayer.allowEarlyAck();
 }
 
 void
@@ -469,6 +487,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         _metaStore.commit(serialNum, serialNum);
     }
     auto uncommitted = get_pending_lid_token(updOp);
+    considerEarlyAck(token);
 
     auto onWriteDone = createUpdateDoneContext(std::move(token), std::move(uncommitted), updOp.getUpdate());
     UpdateScope updateScope(*_schema, upd);
@@ -592,6 +611,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
 
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, docId.getGlobalId(), docId);
     auto uncommitted = get_pending_lid_token(rmOp);
+    considerEarlyAck(token);
 
     if (rmOp.getValidDbdId(_params._subDbId)) {
         auto clearDoc = std::make_unique<Document>(*_docType, docId);
@@ -617,6 +637,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithGid 
     DocumentId dummy;
     PendingNotifyRemoveDone pendingNotifyRemoveDone = adjustMetaStore(rmOp, rmOp.getGlobalId(), dummy);
     auto uncommitted = _pendingLidsForCommit->produce(rmOp.getLid());
+    considerEarlyAck(token);
 
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
@@ -735,7 +756,8 @@ StoreOnlyFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
         _params._docTypeName.toString().c_str(), bucket.toString().c_str(), lidsToRemove.size());
 
     if (!lidsToRemove.empty()) {
-        delOp.setLidsToRemove(_params._subDbId, std::make_shared<LidVectorContext>(_metaStore.getCommittedDocIdLimit(), lidsToRemove));
+        LidVectorContext::SP ctx(new LidVectorContext(_metaStore.getCommittedDocIdLimit(), lidsToRemove));
+        delOp.setLidsToRemove(_params._subDbId, ctx);
     }
 }
 

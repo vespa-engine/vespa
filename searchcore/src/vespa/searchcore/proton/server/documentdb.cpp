@@ -959,6 +959,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
             _calc, // IBucketStateCalculator::SP
             _dmUsageForwarder,
             _jobTrackers,
+            _visibility,  // ICommitable
             _subDBs.getReadySubDB()->getAttributeManager(),
             _subDBs.getNotReadySubDB()->getAttributeManager(),
             std::move(attribute_config_inspector),
