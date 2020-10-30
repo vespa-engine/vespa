@@ -10,7 +10,10 @@ import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -247,7 +250,9 @@ public interface ApplicationPackage {
      *
      * @return A new application package instance pointing to a new location
      */
-    default ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException  {
+    // TODO: TransformerException, ParserConfigurationException, SAXException can be removed from 'throws' when 7.308 is latest version in use
+    default ApplicationPackage preprocess(Zone zone, DeployLogger logger)
+            throws IOException, TransformerException, ParserConfigurationException, SAXException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
     }
 
