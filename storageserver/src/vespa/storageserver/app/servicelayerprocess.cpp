@@ -2,6 +2,7 @@
 
 #include "servicelayerprocess.h"
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/storage/common/content_bucket_db_options.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageserver/servicelayernode.h>
@@ -14,11 +15,16 @@ namespace storage {
 
 namespace {
 
-bool configured_to_use_btree_db(const config::ConfigUri& config_uri) {
+ContentBucketDbOptions bucket_db_options_from_config(const config::ConfigUri& config_uri) {
     using vespa::config::content::core::StorServerConfig;
     auto server_config = config::ConfigGetter<StorServerConfig>::getConfig(
             config_uri.getConfigId(), config_uri.getContext());
-    return server_config->useContentNodeBtreeBucketDb;
+    // For now, limit to max 8 bits, i.e. 256 sub DBs.
+    // 0 bits (the default value) disables striping entirely.
+    auto n_stripe_bits = std::min(std::max(server_config->contentNodeBucketDbStripeBits, 0), 8);
+    ContentBucketDbOptions opts;
+    opts.n_stripe_bits = n_stripe_bits;
+    return opts;
 }
 
 }
@@ -29,7 +35,7 @@ ServiceLayerProcess::ServiceLayerProcess(const config::ConfigUri& configUri)
       _node(),
       _storage_chain_builder(),
       _context(std::make_unique<framework::defaultimplementation::RealClock>(),
-               configured_to_use_btree_db(configUri))
+               bucket_db_options_from_config(configUri))
 {
 }
 

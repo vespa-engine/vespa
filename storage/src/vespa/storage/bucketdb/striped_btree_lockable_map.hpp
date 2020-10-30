@@ -17,10 +17,8 @@ constexpr uint8_t used_bits_of(uint64_t key) noexcept {
 
 }
 
-// TODO rename to sharded_btree_lockable_map instead?
-
 template <typename T>
-StripedBTreeLockableMap<T>::StripedBTreeLockableMap(uint16_t n_stripe_bits)
+StripedBTreeLockableMap<T>::StripedBTreeLockableMap(uint8_t n_stripe_bits)
     : _n_stripe_bits(n_stripe_bits),
       _n_stripes(1ULL << _n_stripe_bits),
       _stripes()

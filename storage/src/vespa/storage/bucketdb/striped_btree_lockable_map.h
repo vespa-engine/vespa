@@ -25,14 +25,14 @@ public:
     using Decision     = typename ParentType::Decision;
     using BucketId     = document::BucketId;
 
-    constexpr static uint16_t MaxStripeBits = 8;
+    constexpr static uint8_t MaxStripeBits = 8;
 private:
     using StripedDBType = BTreeLockableMap<T>;
-    uint16_t _n_stripe_bits;
+    uint8_t _n_stripe_bits;
     size_t _n_stripes;
     std::vector<std::unique_ptr<StripedDBType>> _stripes;
 public:
-    explicit StripedBTreeLockableMap(uint16_t n_stripe_bits = 4);
+    explicit StripedBTreeLockableMap(uint8_t n_stripe_bits = 4);
     ~StripedBTreeLockableMap() override;
 
     size_t size() const noexcept override;

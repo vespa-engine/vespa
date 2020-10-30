@@ -10,6 +10,8 @@
 
 namespace storage {
 
+struct ContentBucketDbOptions;
+
 class StorBucketDatabase {
     std::unique_ptr<bucketdb::AbstractBucketMap<bucketdb::StorageBucketInfo>> _impl;
 public:
@@ -25,7 +27,7 @@ public:
         CREATE_IF_NONEXISTING = 1
     };
 
-    explicit StorBucketDatabase(bool use_btree_db = false);
+    explicit StorBucketDatabase(const ContentBucketDbOptions&);
 
     void insert(const document::BucketId&, const bucketdb::StorageBucketInfo&,
                 const char* clientId);

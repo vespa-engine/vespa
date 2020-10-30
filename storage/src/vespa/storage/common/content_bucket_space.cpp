@@ -4,9 +4,10 @@
 
 namespace storage {
 
-ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace, bool use_btree_db)
+ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace,
+                                       const ContentBucketDbOptions& db_opts)
     : _bucketSpace(bucketSpace),
-      _bucketDatabase(use_btree_db),
+      _bucketDatabase(db_opts),
       _lock(),
       _clusterState(),
       _distribution(),
