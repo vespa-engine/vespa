@@ -443,11 +443,7 @@ TEST_F("require that we can reconfigure index searchable", Fixture)
     }
     { // verify feed view
         FeedViewComparer cmp(o.fv, n.fv);
-        cmp.expect_not_equal();
-        cmp.expect_equal_index_adapter();
-        cmp.expect_equal_attribute_writer();
-        cmp.expect_equal_summary_adapter();
-        cmp.expect_equal_schema();
+        cmp.expect_equal();
     }
 }
 
@@ -601,11 +597,7 @@ TEST_F("require that we can reconfigure matchers", Fixture)
     }
     { // verify feed view
         FeedViewComparer cmp(o.fv, n.fv);
-        cmp.expect_not_equal();
-        cmp.expect_equal_index_adapter();
-        cmp.expect_equal_attribute_writer();
-        cmp.expect_equal_summary_adapter();
-        cmp.expect_equal_schema();
+        cmp.expect_equal();
     }
 }
 

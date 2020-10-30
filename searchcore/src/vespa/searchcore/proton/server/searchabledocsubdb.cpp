@@ -240,9 +240,8 @@ SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter,
 /**
  * Handle reconfigure caused by index manager changing state.
  *
- * Flush engine is disabled (for all document dbs) during initial replay and
- * recovery feed modes, the flush engine has not started.  For a resurrected
- * document type, flushing might occur during replay.
+ * Flush engine is disabled (for all document dbs) during initial replay, the
+ * flush engine has not started.
  */
 bool
 SearchableDocSubDB::reconfigure(vespalib::Closure0<bool>::UP closure)
@@ -254,7 +253,6 @@ SearchableDocSubDB::reconfigure(vespalib::Closure0<bool>::UP closure)
     // Everything should be quiet now.
 
     SearchView::SP oldSearchView = _rSearchView.get();
-    IFeedView::SP oldFeedView = _iFeedView.get();
 
     bool ret = true;
 

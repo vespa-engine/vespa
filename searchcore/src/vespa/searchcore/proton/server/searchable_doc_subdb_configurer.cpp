@@ -26,36 +26,21 @@ using matching::OnnxModels;
 typedef AttributeReprocessingInitializer::Config ARIConfig;
 
 void
-SearchableDocSubDBConfigurer::reconfigureFeedView(const SearchView::SP &searchView)
-{
-    SearchableFeedView::SP curr = _feedView.get();
-    reconfigureFeedView(curr->getIndexWriter(),
-                        curr->getSummaryAdapter(),
-                        curr->getAttributeWriter(),
-                        curr->getSchema(),
-                        curr->getDocumentTypeRepo(),
-                        searchView);
-}
-
-void
-SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexWriter,
-                                                  const ISummaryAdapter::SP &summaryAdapter,
-                                                  IAttributeWriter::SP attrWriter,
+SearchableDocSubDBConfigurer::reconfigureFeedView(IAttributeWriter::SP attrWriter,
                                                   const Schema::SP &schema,
-                                                  const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                                  const SearchView::SP &searchView)
+                                                  const std::shared_ptr<const DocumentTypeRepo> &repo)
 {
     SearchableFeedView::SP curr = _feedView.get();
     _feedView.set(std::make_shared<SearchableFeedView>(
-            StoreOnlyFeedView::Context(summaryAdapter,
+            StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
                     schema,
-                    searchView->getDocumentMetaStore(),
+                    curr->getDocumentMetaStore(),
                     curr->getGidToLidChangeHandler(),
                     repo,
                     curr->getWriteService()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(std::move(attrWriter), curr->getDocIdLimit()),
-            SearchableFeedView::Context(indexWriter)));
+            SearchableFeedView::Context(curr->getIndexWriter())));
 }
 
 void
@@ -144,8 +129,6 @@ SearchableDocSubDBConfigurer::reconfigureIndexSearchable()
     const IIndexWriter::SP &indexWriter = feedView->getIndexWriter();
     const searchcorespi::IIndexManager::SP &indexManager = indexWriter->getIndexManager();
     reconfigureMatchView(indexManager->getSearchable());
-    const SearchView::SP searchView(_searchView.get());
-    reconfigureFeedView(searchView);
 }
 
 void
@@ -246,7 +229,6 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         IndexSearchable::SP indexSearchable = searchView->getIndexSearchable();
         reconfigureMatchView(matchers, indexSearchable, attrMgr);
         searchView = _searchView.get();
-        shouldFeedViewChange = true;
     }
 
     if (shouldSearchViewChange) {
@@ -254,13 +236,9 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     }
 
     if (shouldFeedViewChange) {
-        SearchableFeedView::SP curr = _feedView.get();
-        reconfigureFeedView(curr->getIndexWriter(),
-                            curr->getSummaryAdapter(),
-                            std::move(attrWriter),
+        reconfigureFeedView(std::move(attrWriter),
                             newConfig.getSchemaSP(),
-                            newConfig.getDocumentTypeRepoSP(),
-                            searchView);
+                            newConfig.getDocumentTypeRepoSP());
     }
     return initializer;
 }
