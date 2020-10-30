@@ -26,7 +26,6 @@ class DocumentDBConfig;
 struct IDocumentDBReferenceResolver;
 struct MetricsWireService;
 class GidToLidChangeHandler;
-class ICommitable;
 
 /**
  * The searchable sub database supports searching and keeps all attribute fields in memory and
