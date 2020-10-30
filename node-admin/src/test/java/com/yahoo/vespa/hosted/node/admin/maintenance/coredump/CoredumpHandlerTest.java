@@ -45,7 +45,6 @@ import static org.mockito.Mockito.when;
  */
 public class CoredumpHandlerTest {
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final Path donePath = fileSystem.getPath("/home/docker/dumps");
     private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld")
             .fileSystem(fileSystem).build();
     private final Path crashPathInContainer = fileSystem.getPath("/var/crash");
