@@ -180,9 +180,16 @@ class NodeAllocation {
 
     private boolean violatesExclusivity(NodeCandidate candidate) {
         if (candidate.parentHostname().isEmpty()) return false;
+
+        // In dynamic provisioned zones a node requiring exclusivity must be on a host that has exclusiveTo equal to its owner
+        if (nodeRepository.zone().getCloud().dynamicProvisioning())
+            return requestedNodes.isExclusive() &&
+                    ! candidate.parent.flatMap(Node::exclusiveTo).map(application::equals).orElse(false);
+
+        // In non-dynamic provisioned zones we require that if either of the nodes on the host requires exclusivity,
+        // then all the nodes on the host must have the same owner
         for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-            // If either this node or the other node on this host require exclusivity, they must have the same owner
             if (requestedNodes.isExclusive() || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
                 if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
             }
@@ -367,7 +374,7 @@ class NodeAllocation {
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
     private List<NodeCandidate> byUnretiringPriority(Collection<NodeCandidate> candidates) {
         return candidates.stream()
-                         .sorted(Comparator.comparing((NodeCandidate n) -> n.wantToRetire())
+                         .sorted(Comparator.comparing(NodeCandidate::wantToRetire)
                                            .thenComparing(n -> n.allocation().get().membership().index()))
                          .collect(Collectors.toList());
     }
@@ -384,7 +391,7 @@ class NodeAllocation {
             reasons.add("insufficient real resources on hosts");
 
         if (reasons.isEmpty()) return "";
-        return ": Not enough nodes available due to " + reasons.stream().collect(Collectors.joining(", "));
+        return ": Not enough nodes available due to " + String.join(", ", reasons);
     }
 
     static class FlavorCount {
