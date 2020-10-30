@@ -96,6 +96,7 @@ public class DynamicDockerProvisionTest {
 
         // Deploy new exclusive application
         ApplicationId application3 = ProvisioningTester.makeApplicationId();
+        mockHostProvisioner(hostProvisioner, "large", 3, application3);
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, resources);
         verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), resources, application3,
                 Version.emptyVersion, HostSharing.exclusive);
@@ -156,6 +157,28 @@ public class DynamicDockerProvisionTest {
         ApplicationId application4 = ProvisioningTester.makeApplicationId();
         prepareAndActivate(application4, clusterSpec("mycluster"), 3, 1, resources);
         assertEquals(5, tester.nodeRepository().getNodes(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
+    }
+
+    @Test
+    public void retires_on_exclusivity_violation() {
+        ApplicationId application1 = ProvisioningTester.makeApplicationId();
+        NodeResources resources = new NodeResources(1, 4, 10, 1);
+
+        mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
+        prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
+        Set<Node> initialNodes = tester.nodeRepository().list(application1).stream().collect(Collectors.toSet());
+        assertEquals(4, initialNodes.size());
+
+        // Redeploy same application with exclusive=true
+        mockHostProvisioner(hostProvisioner, "large", 3, application1);
+        prepareAndActivate(application1, clusterSpec("mycluster", true), 4, 1, resources);
+        assertEquals(8, tester.nodeRepository().list(application1).size());
+        assertEquals(initialNodes, tester.nodeRepository().list(application1).retired().stream().collect(Collectors.toSet()));
+
+        // Redeploy without exclusive again is no-op
+        prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
+        assertEquals(8, tester.nodeRepository().list(application1).size());
+        assertEquals(initialNodes, tester.nodeRepository().list(application1).retired().stream().collect(Collectors.toSet()));
     }
 
     @Test

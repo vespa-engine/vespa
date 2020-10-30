@@ -127,11 +127,7 @@ class NodeAllocation {
                     ++rejectedDueToClashingParentHost;
                     continue;
                 }
-                if ( ! exclusiveTo(application, candidate.parentHostname())) {
-                    ++rejectedDueToExclusivity;
-                    continue;
-                }
-                if ( requestedNodes.isExclusive() && ! hostsOnly(application, candidate.parentHostname())) {
+                if ( violatesExclusivity(candidate)) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
@@ -158,7 +154,7 @@ class NodeAllocation {
         if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
         if (candidate.wantToRetire()) return true;
-        if (requestedNodes.isExclusive() && ! hostsOnly(application, candidate.parentHostname())) return true;
+        if (violatesExclusivity(candidate)) return true;
         return false;
     }
 
@@ -182,35 +178,23 @@ class NodeAllocation {
         return false;
     }
 
-    /**
-     * If a parent host is given, and it hosts another application which requires exclusive access
-     * to the physical host, then we cannot host this application on it.
-     */
-    private boolean exclusiveTo(ApplicationId applicationId, Optional<String> parentHostname) {
-        if (parentHostname.isEmpty()) return true;
-        for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
+    private boolean violatesExclusivity(NodeCandidate candidate) {
+        if (candidate.parentHostname().isEmpty()) return false;
+
+        // In dynamic provisioned zones a node requiring exclusivity must be on a host that has exclusiveTo equal to its owner
+        if (nodeRepository.zone().getCloud().dynamicProvisioning())
+            return requestedNodes.isExclusive() &&
+                    ! candidate.parent.flatMap(Node::exclusiveTo).map(application::equals).orElse(false);
+
+        // In non-dynamic provisioned zones we require that if either of the nodes on the host requires exclusivity,
+        // then all the nodes on the host must have the same owner
+        for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
-                 ! allocatedTo(applicationId, nodeOnHost))
-                return false;
+            if (requestedNodes.isExclusive() || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
+                if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
+            }
         }
-        return true;
-    }
-
-    /** Returns true if this host only hosts the given application (in any instance) */
-    private boolean hostsOnly(ApplicationId application, Optional<String> parentHostname) {
-        if (parentHostname.isEmpty()) return true; // yes, as host is exclusive
-
-        for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
-            if (nodeOnHost.allocation().isEmpty()) continue;
-            if ( ! allocatedTo(application, nodeOnHost)) return false;
-        }
-        return true;
-    }
-
-    private boolean allocatedTo(ApplicationId applicationId, Node node) {
-        if (node.allocation().isEmpty()) return false;
-        return node.allocation().get().owner().equals(applicationId);
+        return false;
     }
 
     /**
@@ -390,7 +374,7 @@ class NodeAllocation {
     /** Prefer to unretire nodes we don't want to retire, and otherwise those with lower index */
     private List<NodeCandidate> byUnretiringPriority(Collection<NodeCandidate> candidates) {
         return candidates.stream()
-                         .sorted(Comparator.comparing((NodeCandidate n) -> n.wantToRetire())
+                         .sorted(Comparator.comparing(NodeCandidate::wantToRetire)
                                            .thenComparing(n -> n.allocation().get().membership().index()))
                          .collect(Collectors.toList());
     }
@@ -407,7 +391,7 @@ class NodeAllocation {
             reasons.add("insufficient real resources on hosts");
 
         if (reasons.isEmpty()) return "";
-        return ": Not enough nodes available due to " + reasons.stream().collect(Collectors.joining(", "));
+        return ": Not enough nodes available due to " + String.join(", ", reasons);
     }
 
     static class FlavorCount {
