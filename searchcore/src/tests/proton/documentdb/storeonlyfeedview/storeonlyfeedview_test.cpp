@@ -190,7 +190,7 @@ struct FixtureBase {
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
-    std::shared_ptr<PendingLidTrackerBase> pendingLidsForCoomit;
+    std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit;
     typename FeedViewType::UP feedview;
     SerialNum serial_num;
  
@@ -206,7 +206,7 @@ struct FixtureBase {
                                                         subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
-          pendingLidsForCoomit(std::make_shared<PendingLidTracker>()),
+          pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
           feedview(),
           serial_num(2u)
     {
@@ -214,7 +214,7 @@ struct FixtureBase {
         metaStore->constructFreeList();
         ISummaryAdapter::SP adapter = std::make_shared<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
         feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService,
-                                                  params, pendingLidsForCoomit, outstandingMoveOps);
+                                                  params, pendingLidsForCommit, outstandingMoveOps);
     }
 
     ~FixtureBase() {
