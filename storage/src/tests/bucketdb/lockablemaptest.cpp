@@ -262,6 +262,29 @@ TYPED_TEST(LockableMapTest, iterating) {
     }
 }
 
+TYPED_TEST(LockableMapTest, explicit_iterator_is_key_ordered) {
+    TypeParam map;
+    bool preExisted;
+    map.insert(16, A(16, 0, 0), "foo", preExisted);
+    map.insert(18, A(18, 0, 0), "foo", preExisted);
+    map.insert(11, A(11, 0, 0), "foo", preExisted);
+    map.insert(14, A(14, 0, 0), "foo", preExisted);
+    map.insert(20, A(20, 0, 0), "foo", preExisted);
+
+    std::string expected("11 - A(11, 0, 0)\n"
+                         "14 - A(14, 0, 0)\n"
+                         "16 - A(16, 0, 0)\n"
+                         "18 - A(18, 0, 0)\n"
+                         "20 - A(20, 0, 0)\n");
+    ConstProcessor<TypeParam> cproc;
+
+    auto guard = map.acquire_read_guard();
+    for (auto iter = guard->create_iterator(); iter->valid(); iter->next()) {
+        cproc(iter->key(), iter->value());
+    }
+    EXPECT_EQ(expected, cproc.toString());
+}
+
 TYPED_TEST(LockableMapTest, chunked_iteration_is_transparent_across_chunk_sizes) {
     TypeParam map;
     bool preExisted;
