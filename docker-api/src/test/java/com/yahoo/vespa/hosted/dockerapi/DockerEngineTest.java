@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.DockerCmdExecFactory;
 import com.github.dockerjava.api.command.ExecCreateCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
@@ -42,7 +43,8 @@ public class DockerEngineTest {
     private final DockerClient dockerClient = mock(DockerClient.class);
     private final Metrics metrics = new Metrics();
     private final ManualClock clock = new ManualClock();
-    private final DockerEngine docker = new DockerEngine(dockerClient, metrics, clock);
+    private final DockerEngine docker = new DockerEngine(
+            new DockerEngine.DockerClientWithExecFactory(dockerClient, mock(DockerCmdExecFactory.class)), metrics, clock);
 
     @Test
     public void testExecuteCompletes() {
