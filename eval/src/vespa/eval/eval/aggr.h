@@ -127,24 +127,26 @@ private:
     std::vector<T> _seen;
 public:
     constexpr Median() : _seen() {}
-    constexpr Median(T value) : _seen() {
-        sample(value);
-    }
-    constexpr void sample(T value) {
-        if (!std::isnan(value)) {
-            _seen.push_back(value);
-        }
-    }
+    constexpr Median(T value) : _seen({value}) {}
+    constexpr void sample(T value) { _seen.push_back(value); }
     constexpr void merge(const Median &rhs) {
         for (T value: rhs._seen) {
-            sample(value);
+            _seen.push_back(value);
         }
     };
     constexpr T result() const {
         if (_seen.empty()) {
             return std::numeric_limits<T>::quiet_NaN();
         }
-        std::vector<T> tmp = _seen;
+        std::vector<T> tmp;
+        tmp.reserve(_seen.size());
+        for (T value: _seen) {
+            if (!std::isnan(value)) {
+                tmp.push_back(value);
+            } else {
+                return std::numeric_limits<T>::quiet_NaN();
+            }
+        }
         size_t n = (tmp.size() / 2);
         std::nth_element(tmp.begin(), tmp.begin() + n, tmp.end());
         T result = tmp[n]; // the nth element
