@@ -24,7 +24,9 @@ DocumentBucketMover::moveDocument(DocumentIdT lid,
                                   const document::GlobalId &gid,
                                   Timestamp timestamp)
 {
-    if ( _source->lidNeedsCommit(lid) ) return false;
+    if ( _source->lidNeedsCommit(lid) ) {
+        return false;
+    }
     Document::SP doc(_source->retriever()->getFullDocument(lid));
     if (!doc || doc->getId().getGlobalId() != gid)
         return true; // Failed to retrieve document, removed or changed identity
@@ -134,7 +136,9 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
         setBucketDone();
     }
     for (const MoveKey & key : toMove) {
-        if ( ! moveDocument(key._lid, key._gid, key._timestamp)) return false;
+        if ( ! moveDocument(key._lid, key._gid, key._timestamp)) {
+            return false;
+        }
     }
     return true;
 }

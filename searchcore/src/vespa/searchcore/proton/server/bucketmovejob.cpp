@@ -129,7 +129,9 @@ BucketMoveJob::moveDocuments(DocumentBucketMover &mover,
         }
     }
     assert(mover.getBucket() == bucketGuard->getBucket());
-    if ( ! mover.moveDocuments(maxDocsToMove)) return false;
+    if ( ! mover.moveDocuments(maxDocsToMove)) {
+        return false;
+    }
     if (mover.bucketDone()) {
         _modifiedHandler.notifyBucketModified(mover.getBucket());
     }
@@ -337,7 +339,9 @@ BucketMoveJob::run()
     }
     /// Returning false here will immediately post the job back on the executor. This will give a busy loop,
     /// but this is considered fine as it is very rare and it will be intermingled with multiple feed operations.
-    if ( ! scanAndMove(200, 1) ) return false;
+    if ( ! scanAndMove(200, 1) ) {
+        return false;
+    }
 
     if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
         return true;

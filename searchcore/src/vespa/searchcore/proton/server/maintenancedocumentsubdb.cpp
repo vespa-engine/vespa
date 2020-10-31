@@ -43,7 +43,7 @@ MaintenanceDocumentSubDB::clear()
 
 bool
 MaintenanceDocumentSubDB::lidNeedsCommit(search::DocumentIdT lid) const {
-    return (_pendingLidsForCommit &&
+    return ((_pendingLidsForCommit != nullptr) &&
             (_pendingLidsForCommit->getState(lid) == ILidCommitState::State::NEED_COMMIT));
 }
 
