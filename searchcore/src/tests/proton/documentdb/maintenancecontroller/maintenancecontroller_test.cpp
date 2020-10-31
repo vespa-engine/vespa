@@ -493,7 +493,7 @@ MyDocumentSubDB::getSubDB()
     return MaintenanceDocumentSubDB("my_sub_db", _subDBId,
                                     _metaStoreSP,
                                     retriever,
-                                    IFeedView::SP());
+                                    IFeedView::SP(), nullptr);
 }
 
 

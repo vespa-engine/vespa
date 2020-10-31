@@ -128,7 +128,7 @@ DocumentSubDBCollection::createRetrievers()
 
 namespace {
 
-IDocumentRetriever::SP
+std::shared_ptr<CommitAndWaitDocumentRetriever>
 wrapRetriever(IDocumentRetriever::SP retriever, ILidCommitState & unCommittedLidsTracker)
 {
     return std::make_shared<CommitAndWaitDocumentRetriever>(std::move(retriever), unCommittedLidsTracker);
@@ -163,18 +163,21 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc) {
                                         getReadySubDB()->getDocumentMetaStoreContext().getSP(),
                                         wrapRetriever((*retrievers)[_readySubDbId],
                                                       getReadySubDB()->getUncommittedLidsTracker()),
-                                        getReadySubDB()->getFeedView());
+                                        getReadySubDB()->getFeedView(),
+                                        &getReadySubDB()->getUncommittedLidsTracker());
     MaintenanceDocumentSubDB remSubDB(getRemSubDB()->getName(),
                                       _remSubDbId,
                                       getRemSubDB()->getDocumentMetaStoreContext().getSP(),
                                       wrapRetriever((*retrievers)[_remSubDbId], getRemSubDB()->getUncommittedLidsTracker()),
-                                      getRemSubDB()->getFeedView());
+                                      getRemSubDB()->getFeedView(),
+                                      &getRemSubDB()->getUncommittedLidsTracker());
     MaintenanceDocumentSubDB notReadySubDB(getNotReadySubDB()->getName(),
                                            _notReadySubDbId,
                                            getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
                                            wrapRetriever((*retrievers)[_notReadySubDbId],
                                                          getNotReadySubDB()->getUncommittedLidsTracker()),
-                                           getNotReadySubDB()->getFeedView());
+                                           getNotReadySubDB()->getFeedView(),
+                                           &getNotReadySubDB()->getUncommittedLidsTracker());
     mc.syncSubDBs(readySubDB, remSubDB, notReadySubDB);
 }
 

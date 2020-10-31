@@ -113,7 +113,7 @@ private:
     void maybeCancelMover(DocumentBucketMover &mover);
     void maybeDelayMover(DocumentBucketMover &mover, document::BucketId bucket);
 
-    void
+    bool
     moveDocuments(DocumentBucketMover &mover,
                   size_t maxDocsToMove,
                   IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard);
@@ -151,10 +151,10 @@ public:
                   const vespalib::string &docTypeName,
                   document::BucketSpace bucketSpace);
 
-    virtual ~BucketMoveJob();
+    ~BucketMoveJob() override;
 
     void changedCalculator();
-    void scanAndMove(size_t maxBucketsToScan, size_t maxDocsToMove);
+    bool scanAndMove(size_t maxBucketsToScan, size_t maxDocsToMove);
 
     bool done() const {
         // Ignores _delayedBucketsFrozen, since no work can be done there yet
@@ -166,22 +166,22 @@ public:
     }
 
     // IMaintenanceJob API
-    virtual bool run() override;
+    bool run() override;
 
     // IClusterStateChangedHandler API
-    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
 
     // IBucketFreezeListener API
-    virtual void notifyThawedBucket(const document::BucketId &bucket) override;
+    void notifyThawedBucket(const document::BucketId &bucket) override;
 
     // IBucketStateChangedHandler API
-    virtual void notifyBucketStateChanged(const document::BucketId &bucketId,
+    void notifyBucketStateChanged(const document::BucketId &bucketId,
                                           storage::spi::BucketInfo::ActiveState newState) override;
 
-    virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
+    void notifyDiskMemUsage(DiskMemUsageState state) override;
 
     // bucketdb::IBucketCreateListener API
-    virtual void notifyCreateBucket(const document::BucketId &bucket) override;
+    void notifyCreateBucket(const document::BucketId &bucket) override;
 };
 
 } // namespace proton
