@@ -12,8 +12,8 @@
       <configuration>
 
         <phases>
-          <process-resources>org.apache.maven.plugins:maven-resources-plugin:resources</process-resources>
           <generate-sources>com.yahoo.vespa:bundle-plugin:generateSources</generate-sources>
+          <process-resources>org.apache.maven.plugins:maven-resources-plugin:resources</process-resources>
           <compile>org.apache.maven.plugins:maven-compiler-plugin:compile</compile>
           <process-test-resources>
               org.apache.maven.plugins:maven-resources-plugin:testResources,
