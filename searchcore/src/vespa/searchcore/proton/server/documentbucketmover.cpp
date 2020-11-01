@@ -129,16 +129,17 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
             toMove.push_back(MoveKey(lid, metaData.getGid(), metaData.getTimestamp()));
             ++docsMoved;
         }
-        _lastGid = metaData.getGid();
-        _lastGidValid = true;
     }
-    if (itr == end) {
-        setBucketDone();
-    }
+    bool done = (itr == end);
     for (const MoveKey & key : toMove) {
         if ( ! moveDocument(key._lid, key._gid, key._timestamp)) {
             return false;
         }
+        _lastGid = key._gid;
+        _lastGidValid = true;
+    }
+    if (done) {
+        setBucketDone();
     }
     return true;
 }
