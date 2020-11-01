@@ -74,6 +74,29 @@ DocumentBucketMover::setupForBucket(const BucketId &bucket,
     _lastGidValid = false;
 }
 
+
+namespace
+{
+
+class MoveKey
+{
+public:
+    DocumentIdT _lid;
+    document::GlobalId _gid;
+    Timestamp _timestamp;
+
+    MoveKey(DocumentIdT lid,
+            const document::GlobalId &gid,
+            Timestamp timestamp)
+        : _lid(lid),
+          _gid(gid),
+          _timestamp(timestamp)
+    {
+    }
+};
+
+}
+
 void
 DocumentBucketMover::setBucketDone() {
     _bucketDone = true;
@@ -90,6 +113,8 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
     const Iterator end = _source->meta_store()->upperBound(_bucket);
     size_t docsMoved = 0;
     size_t docsSkipped = 0; // In absence of a proper cost metric
+    typedef std::vector<MoveKey> MoveVec;
+    MoveVec toMove;
     for (; itr != end && docsMoved < maxDocsToMove; ++itr) {
         DocumentIdT lid = itr.getKey();
         const RawDocumentMetaData &metaData = _source->meta_store()->getRawMetaData(lid);
@@ -100,15 +125,20 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
                 docsSkipped = 0;
             }
         } else {
-            if ( ! moveDocument(lid, metaData.getGid(), metaData.getTimestamp())) {
-                return false;
-            }
+            // moveDocument(lid, metaData.getTimestamp());
+            toMove.push_back(MoveKey(lid, metaData.getGid(), metaData.getTimestamp()));
             ++docsMoved;
         }
-        _lastGid = metaData.getGid();
+    }
+    bool done = (itr == end);
+    for (const MoveKey & key : toMove) {
+        if ( ! moveDocument(key._lid, key._gid, key._timestamp)) {
+            return false;
+        }
+        _lastGid = key._gid;
         _lastGidValid = true;
     }
-    if (itr == end) {
+    if (done) {
         setBucketDone();
     }
     return true;
