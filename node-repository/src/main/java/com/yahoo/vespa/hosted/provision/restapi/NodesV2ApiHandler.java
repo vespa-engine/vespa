@@ -148,6 +148,10 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             nodeRepository.reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
+        else if (path.startsWith("/nodes/v2/state/breakfixed/")) {
+            List<Node> breakfixedNodes = nodeRepository.breakfixRecursively(lastElement(path), Agent.operator, "Breakfixed through the nodes/v2 API");
+            return new MessageResponse("Breakfixed " + hostnamesAsString(breakfixedNodes));
+        }
 
         throw new NotFoundException("Cannot put to path '" + path + "'");
     }

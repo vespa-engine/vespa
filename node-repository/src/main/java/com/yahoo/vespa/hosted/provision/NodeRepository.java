@@ -534,11 +534,12 @@ public class NodeRepository extends AbstractComponent {
                 .filter(node -> node.state() != State.provisioned)
                 .filter(node -> node.state() != State.failed)
                 .filter(node -> node.state() != State.parked)
+                .filter(node -> node.state() != State.breakfixed)
                 .map(Node::hostname)
                 .collect(Collectors.toList());
         if ( ! hostnamesNotAllowedToDirty.isEmpty())
             illegal("Could not deallocate " + nodeToDirty + ": " +
-                    hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked]");
+                    hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
 
         return nodesToDirty.stream().map(node -> setDirty(node, agent, reason)).collect(Collectors.toList());
     }
@@ -589,6 +590,21 @@ public class NodeRepository extends AbstractComponent {
      */
     public Node reactivate(String hostname, Agent agent, String reason) {
         return move(hostname, true, State.active, agent, Optional.of(reason));
+    }
+
+    /**
+     * Moves a host to breakfixed state, removing any children.
+     */
+    public List<Node> breakfixRecursively(String hostname, Agent agent, String reason) {
+        Node node = getNode(hostname).orElseThrow(() ->
+                new NoSuchNodeException("Could not breakfix " + hostname + ": Node not found"));
+
+        try (Mutex lock = lockUnallocated()) {
+            requireBreakfixable(node);
+            List<Node> removed = removeChildren(node, false);
+            removed.add(move(node, State.breakfixed, agent, Optional.of(reason)));
+            return removed;
+        }
     }
 
     private List<Node> moveRecursively(String hostname, State toState, Agent agent, Optional<String> reason) {
@@ -664,10 +680,7 @@ public class NodeRepository extends AbstractComponent {
             requireRemovable(node, false, force);
 
             if (node.type().isHost()) {
-                List<Node> children = list().childrenOf(node).asList();
-                children.forEach(child -> requireRemovable(child, true, force));
-                db.removeNodes(children);
-                List<Node> removed = new ArrayList<>(children);
+                List<Node> removed = removeChildren(node, force);
                 if (zone.getCloud().dynamicProvisioning() || node.type() != NodeType.host)
                     db.removeNodes(List.of(node));
                 else {
@@ -690,6 +703,13 @@ public class NodeRepository extends AbstractComponent {
         if (node.state() != State.deprovisioned)
             throw new IllegalArgumentException(node + " must be deprovisioned before it can be forgotten");
         db.removeNodes(List.of(node));
+    }
+
+    private List<Node> removeChildren(Node node, boolean force) {
+        List<Node> children = list().childrenOf(node).asList();
+        children.forEach(child -> requireRemovable(child, true, force));
+        db.removeNodes(children);
+        return new ArrayList<>(children);
     }
 
     /**
@@ -719,6 +739,28 @@ public class NodeRepository extends AbstractComponent {
             Set<State> legalStates = EnumSet.of(State.provisioned, State.failed, State.parked);
             if (! legalStates.contains(node.state()))
                 illegal(node + " can not be removed as it is not in the states " + legalStates);
+        }
+    }
+
+    /**
+     * Throws if given node cannot be breakfixed.
+     * Breakfix is allowed if the following is true:
+     *  - Node is tenant host
+     *  - Node is in zone without dynamic provisioning
+     *  - Node is in parked or failed state
+     */
+    private void requireBreakfixable(Node node) {
+        if (zone().getCloud().dynamicProvisioning()) {
+            illegal("Can not breakfix in zone: " + zone());
+        }
+
+        if (node.type() != NodeType.host) {
+            illegal(node + " can not be breakfixed as it is not a tenant host");
+        }
+
+        Set<State> legalStates = EnumSet.of(State.failed, State.parked);
+        if (! legalStates.contains(node.state())) {
+            illegal(node + " can not be removed as it is not in the states " + legalStates);
         }
     }
 
