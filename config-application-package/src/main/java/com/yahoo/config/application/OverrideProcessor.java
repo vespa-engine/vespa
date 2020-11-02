@@ -4,7 +4,6 @@ package com.yahoo.config.application;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
-import java.util.logging.Level;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -19,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -219,11 +219,20 @@ class OverrideProcessor implements PreProcessor {
         // if node capacity is specified explicitly for some combination we should require that capacity
         elements.forEach(element -> {
             if (element.getTagName().equals("nodes"))
-                if (element.getChildNodes().getLength() == 0) // specifies capacity, not a list of nodes
+                if (!hasChildWithTagName(element, "node")) // specifies capacity, not a list of nodes
                     element.setAttribute("required", "true");
         });
     }
-    
+
+    private static boolean hasChildWithTagName(Element element, String childName) {
+        for (var child : XML.getChildren(element)) {
+            if (child.getTagName().equals(childName))
+                return true;
+        }
+
+        return false;
+    }
+
     /**
      * Retains all elements where at least one element is overridden. Removes non-overridden elements from map.
      */
