@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.DockerCmdExecFactory;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
@@ -19,7 +18,6 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.async.ResultCallbackTemplate;
-import com.github.dockerjava.core.command.AuthCmdImpl;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
@@ -63,7 +61,6 @@ public class DockerEngine implements ContainerEngine {
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
     private final DockerClient dockerClient;
-    private final DockerCmdExecFactory dockerFactory;
     private final DockerImageGarbageCollector dockerImageGC;
     private final Metrics metrics;
     private final Counter numberOfDockerApiFails;
@@ -74,9 +71,8 @@ public class DockerEngine implements ContainerEngine {
         this(createDockerClient(), metrics, Clock.systemUTC());
     }
 
-    DockerEngine(DockerClientWithExecFactory clientWithExecFactory, Metrics metrics, Clock clock) {
-        this.dockerClient = clientWithExecFactory.dockerClient;
-        this.dockerFactory = clientWithExecFactory.dockerCmdExecFactory;
+    DockerEngine(DockerClient dockerClient, Metrics metrics, Clock clock) {
+        this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
         this.metrics = metrics;
         this.clock = clock;
@@ -96,12 +92,11 @@ public class DockerEngine implements ContainerEngine {
                 logger.log(Level.INFO, "Starting download of " + image.asString());
                 if (!registryCredentials.equals(RegistryCredentials.none)) {
                     AuthConfig authConfig = new AuthConfig().withUsername(registryCredentials.username())
-                            .withPassword(registryCredentials.password())
-                            .withRegistryAddress(registryCredentials.registryAddress());
-
-                    // Need to create AuthCmdImpl directly since DockerClient.authCmd() will throw
-                    // exception when username/registry url is not set
-                    new AuthCmdImpl(this.dockerFactory.createAuthCmdExec(), authConfig).exec();
+                                                            .withPassword(registryCredentials.password())
+                                                            .withRegistryAddress(registryCredentials.registryAddress());
+                    dockerClient.authCmd()
+                                .withAuthConfig(authConfig)
+                                .exec();
                 }
                 dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
                 return true;
@@ -419,7 +414,7 @@ public class DockerEngine implements ContainerEngine {
         }
     }
 
-    private static DockerClientWithExecFactory createDockerClient() {
+    private static DockerClient createDockerClient() {
         JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(10)
                 .withMaxTotalConnections(100)
@@ -430,18 +425,7 @@ public class DockerEngine implements ContainerEngine {
                 .withDockerHost("unix:///var/run/docker.sock")
                 .build();
 
-        return new DockerClientWithExecFactory(
-                DockerClientImpl.getInstance(dockerClientConfig).withDockerCmdExecFactory(dockerFactory),
-                dockerFactory);
-    }
-
-    static class DockerClientWithExecFactory {
-        private final DockerClient dockerClient;
-        private final DockerCmdExecFactory dockerCmdExecFactory;
-
-        public DockerClientWithExecFactory(DockerClient dockerClient, DockerCmdExecFactory dockerCmdExecFactory) {
-            this.dockerClient = dockerClient;
-            this.dockerCmdExecFactory = dockerCmdExecFactory;
-        }
+        return DockerClientImpl.getInstance(dockerClientConfig)
+                .withDockerCmdExecFactory(dockerFactory);
     }
 }
