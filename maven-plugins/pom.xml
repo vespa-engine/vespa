@@ -16,11 +16,11 @@
     <url>http://yahoo.github.io/vespa</url>
 
     <modules>
+        <module>../abi-check-plugin</module>
         <module>../annotations</module>
         <module>../bundle-plugin</module>
-        <module>../configgen</module>
         <module>../config-class-plugin</module>
+        <module>../configgen</module>
         <module>../vespa-application-maven-plugin</module>
-        <module>../abi-check-plugin</module>
     </modules>
 </project>

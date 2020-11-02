@@ -1,16 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation.sourceref;
 
-import static com.yahoo.container.util.Util.quote;
+import com.yahoo.component.ComponentSpecification;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.processing.request.Properties;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.yahoo.component.ComponentSpecification;
-import com.yahoo.prelude.IndexFacts;
-import com.yahoo.processing.request.Properties;
 
 /**
  * Maps a source reference to search chain invocation specs.
@@ -65,9 +63,9 @@ public class SourceRefResolver {
             return searchChainResolver.resolve(new ComponentSpecification(cluster), sourceToProviderMap);
         }
         catch (UnresolvedSearchChainException e) {
-            throw new UnresolvedSearchChainException("Failed to resolve cluster search chain " + quote(cluster) +
-                                                     " when using source ref " + quote(sourceRef) +
-                                                     " as a document name.");
+            throw new UnresolvedSearchChainException("Failed to resolve cluster search chain '" + cluster +
+                                                     "' when using source ref '" + sourceRef +
+                                                     "' as a document name.");
         }
     }
 

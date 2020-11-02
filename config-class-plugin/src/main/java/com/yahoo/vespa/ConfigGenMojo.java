@@ -19,7 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
 
@@ -36,8 +36,7 @@ public class ConfigGenMojo extends AbstractMojo {
      * Generate source to here.
      */
     @Parameter(property = "plugin.configuration.outputDirectory",
-            defaultValue = "${project.build.directory}/generated-sources/vespa-configgen-plugin",
-            required = true)
+            defaultValue = "${project.build.directory}/generated-sources/vespa-configgen-plugin")
     private File outputDirectory;
 
 	/**
@@ -69,7 +68,7 @@ public class ConfigGenMojo extends AbstractMojo {
      * If true, the config sources are only intended for use during testing.
      *
      */
-    @Parameter(property = "plugin.configuration.testConfig", defaultValue = "false", required = true)
+    @Parameter(property = "plugin.configuration.testConfig", defaultValue = "false")
     private boolean testConfig;
 
     /**
@@ -103,11 +102,6 @@ public class ConfigGenMojo extends AbstractMojo {
     public void execute()
         throws MojoExecutionException
     {
-        if (new CloverChecker(getLog()).isForkedCloverLifecycle(project, outputDirectory.toPath())) {
-            getLog().info("Skipping config generation in forked clover lifecycle.");
-            return;
-        }
-
         List<String> defFileNames = getDefFileNames();
 
         // Silent failure when there are no def-files to process...
@@ -115,13 +109,7 @@ public class ConfigGenMojo extends AbstractMojo {
             return;
         }
 
-        // append all def-file names together
-        StringBuilder configSpec = new StringBuilder();
-        boolean notFirst = false;
-        for (String defFile : defFileNames) {
-            if (notFirst) { configSpec.append(","); } else { notFirst = true; }
-            configSpec.append(defFile);
-        }
+        String configSpec = String.join(",", defFileNames);
 
         boolean generateSources;
         // optionally create the output directory
@@ -139,7 +127,7 @@ public class ConfigGenMojo extends AbstractMojo {
             getLog().debug("Will generate config class files");
             try {
                 MakeConfigProperties config = new MakeConfigProperties(outputDirectory.toString(),
-                                                                       configSpec.toString(),
+                                                                       configSpec,
                                                                        null,
                                                                        null,
                                                                        null,
@@ -160,35 +148,31 @@ public class ConfigGenMojo extends AbstractMojo {
     }
 
     private boolean isSomeGeneratedFileStale(File outputDirectory, List<String> defFileNames) {
-        long oldestGeneratedModifiedTime = Long.MAX_VALUE;
-        try {
-            List<File> files = Files.walk(outputDirectory.toPath())
+        long oldestGeneratedModifiedTime = walk(outputDirectory.toPath())
                     .filter(Files::isRegularFile)
                     .map(Path::toFile)
-                    .collect(Collectors.toList());
-            for (File f : files) {
-                getLog().debug("Checking generated file " + f);
-                final long l = f.lastModified();
-                if (l < oldestGeneratedModifiedTime) {
-                    oldestGeneratedModifiedTime = l;
-                }
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+                    .peek(f -> getLog().debug("Checking generated file " + f))
+                    .mapToLong(File::lastModified)
+                    .min()
+                    .orElse(Long.MAX_VALUE);
 
-        long lastModifiedSource = 0;
-        for (String sourceFile : defFileNames) {
-            getLog().debug("Checking source file " + sourceFile);
-            File f = new File(sourceFile);
-            final long l = f.lastModified();
-            if (l > lastModifiedSource) {
-                lastModifiedSource = l;
-            }
-        }
+        long lastModifiedSource = defFileNames.stream()
+                .peek(sourceFile -> getLog().debug("Checking source file " + sourceFile))
+                .map(File::new)
+                .mapToLong(File::lastModified)
+                .max()
+                .orElse(0L);
 
         getLog().debug("lastModifiedSource: " + lastModifiedSource + ", oldestTGeneratedModified: " + oldestGeneratedModifiedTime);
         return lastModifiedSource > oldestGeneratedModifiedTime;
+    }
+
+    private static Stream<Path> walk(Path path) {
+        try {
+            return Files.walk(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void addSourceRoot(String outputDirectory) {

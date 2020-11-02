@@ -58,7 +58,6 @@ import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.yahoo.collections.CollectionUtil.first;
-import static com.yahoo.container.util.Util.quote;
 import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceProperties;
 
 /**
@@ -105,7 +104,7 @@ public class FederationSearcher extends ForkingSearcher {
                                                   ComponentRegistry<TargetSelector> targetSelectors) {
         if (selectorId.isEmpty()) return null;
         return checkNotNull(targetSelectors.getComponent(selectorId),
-                            "Missing target selector with id" + quote(selectorId));
+                            "Missing target selector with id '" + selectorId + "'");
     }
 
     // for testing
