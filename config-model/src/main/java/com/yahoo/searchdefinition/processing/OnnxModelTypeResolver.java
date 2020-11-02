@@ -32,6 +32,11 @@ public class OnnxModelTypeResolver extends Processor {
         for (OnnxModel onnxModel : search.onnxModels().asMap().values()) {
             OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(onnxModel.getFileName(), search.applicationPackage());
 
+            // Temporary, to disregard type information when model info is not available
+            if (onnxModelInfo == null) {
+                continue;
+            }
+
             // Add any missing input and output fields that were not specified in the onnx-model configuration
             for (String onnxName : onnxModelInfo.getInputs()) {
                 onnxModel.addInputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
