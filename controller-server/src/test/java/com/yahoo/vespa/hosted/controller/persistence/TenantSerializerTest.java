@@ -93,6 +93,18 @@ public class TenantSerializerTest {
     }
 
     @Test
+    public void cloud_tenant_with_info() {
+        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                Optional.of(new SimplePrincipal("foobar-user")),
+                ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
+                        otherPublicKey, new SimplePrincipal("jane")),
+                TenantInfo.EMPTY.withName("Ofni Tnanet"));
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.info(), serialized.info());
+    }
+
+
+    @Test
     public void cloud_tenant_with_tenant_info_partial() {
         TenantInfo partialInfo = TenantInfo.EMPTY
                 .withAddress(TenantInfoAddress.EMPTY.withCity("Hønefoss"));
