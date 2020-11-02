@@ -407,7 +407,7 @@ void BTreeLockableMap<T>::ReadGuardImpl::for_each(std::function<void(uint64_t, c
 template <typename T>
 std::unique_ptr<ConstIterator<const T&>>
 BTreeLockableMap<T>::ReadGuardImpl::create_iterator() const {
-    return _snapshot.template create_iterator(); // TODO test
+    return _snapshot.create_iterator(); // TODO test
 }
 
 template <typename T>
