@@ -4,14 +4,18 @@ package com.yahoo.vespa.hosted.controller.persistence;// Copyright 2018 Yahoo Ho
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 import org.junit.Test;
 
 import java.net.URI;
@@ -80,11 +84,68 @@ public class TenantSerializerTest {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
-                                                               otherPublicKey, new SimplePrincipal("jane")));
+                                                               otherPublicKey, new SimplePrincipal("jane")),
+                                             TenantInfo.EMPTY);
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
         assertEquals(tenant.developerKeys(), serialized.developerKeys());
+    }
+
+    @Test
+    public void cloud_tenant_with_info() {
+        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                Optional.of(new SimplePrincipal("foobar-user")),
+                ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
+                        otherPublicKey, new SimplePrincipal("jane")),
+                TenantInfo.EMPTY.withName("Ofni Tnanet"));
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.info(), serialized.info());
+    }
+
+
+    @Test
+    public void cloud_tenant_with_tenant_info_partial() {
+        TenantInfo partialInfo = TenantInfo.EMPTY
+                .withAddress(TenantInfoAddress.EMPTY.withCity("Hønefoss"));
+
+        Slime slime = new Slime();
+        Cursor parentObject = slime.setObject();
+        serializer.toSlime(partialInfo, parentObject);
+        assertEquals("{\"info\":{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"invoiceEmail\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"address\":{\"addressLines\":\"\",\"postalCodeOrZip\":\"\",\"city\":\"Hønefoss\",\"stateRegionProvince\":\"\",\"country\":\"\"}}}", slime.toString());
+    }
+
+    @Test
+    public void cloud_tenant_with_tenant_info_full() {
+        TenantInfo fullInfo = TenantInfo.EMPTY
+                .withName("My Company")
+                .withEmail("email@mycomp.any")
+                .withWebsite("http://mycomp.any")
+                .withContactEmail("ceo@mycomp.any")
+                .withContactName("My Name")
+                .withInvoiceEmail("invoice@mycomp.any")
+                .withAddress(TenantInfoAddress.EMPTY
+                        .withCity("Hønefoss")
+                        .withAddressLines("Riperbakken 2")
+                        .withCountry("Norway")
+                        .withPostalCodeOrZip("3510")
+                        .withStateRegionProvince("Viken"))
+                .withBillingContact(TenantInfoBillingContact.EMPTY
+                        .withEmail("thomas@sodor.com")
+                        .withName("Thomas The Tank Engine")
+                        .withPhone("NA")
+                        .withAddress(TenantInfoAddress.EMPTY
+                                .withCity("Suddery")
+                                .withCountry("Sodor")
+                                .withAddressLines("Central Station")
+                                .withStateRegionProvince("Irish Sea")));
+
+        Slime slime = new Slime();
+        Cursor parentCursor = slime.setObject();
+        serializer.toSlime(fullInfo, parentCursor);
+        TenantInfo roundTripInfo = serializer.tenantInfoFromSlime(parentCursor.field("info"));
+
+        assertEquals(fullInfo, roundTripInfo);
     }
 
     private Contact contact() {

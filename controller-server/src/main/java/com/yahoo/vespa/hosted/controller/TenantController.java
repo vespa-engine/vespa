@@ -133,7 +133,7 @@ public class TenantController {
     }
 
     private void requireNonExistent(TenantName name) {
-        if (   "hosted-vespa".equals(name.value())
+        if ("hosted-vespa".equals(name.value())
             || get(name).isPresent()
             // Underscores are allowed in existing tenant names, but tenants with - and _ cannot co-exist. E.g.
             // my-tenant cannot be created if my_tenant exists.

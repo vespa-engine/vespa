@@ -12,9 +12,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 
 import java.security.Principal;
 import java.security.PublicKey;
@@ -102,20 +102,22 @@ public abstract class LockedTenant {
 
         private final Optional<Principal> creator;
         private final BiMap<PublicKey, Principal> developerKeys;
+        private final TenantInfo info;
 
-        private Cloud(TenantName name, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys) {
+        private Cloud(TenantName name, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
             super(name);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;
+            this.info = info;
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), Optional.empty(), tenant.developerKeys());
+            this(tenant.name(), Optional.empty(), tenant.developerKeys(), tenant.info());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, creator, developerKeys);
+            return new CloudTenant(name, creator, developerKeys, info);
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
@@ -123,13 +125,13 @@ public abstract class LockedTenant {
             if (keys.containsKey(key))
                 throw new IllegalArgumentException("Key " + KeyUtils.toPem(key) + " is already owned by " + keys.get(key));
             keys.put(key, principal);
-            return new Cloud(name, creator, keys);
+            return new Cloud(name, creator, keys, info);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
             BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
-            return new Cloud(name, creator, keys);
+            return new Cloud(name, creator, keys, info);
         }
 
     }

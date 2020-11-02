@@ -11,13 +11,13 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,7 +68,8 @@ public class SignatureFilterTest {
 
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      Optional.empty(),
-                                                     ImmutableBiMap.of()));
+                                                     ImmutableBiMap.of(),
+                                                     TenantInfo.EMPTY));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
 
@@ -107,7 +108,8 @@ public class SignatureFilterTest {
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      Optional.empty(),
-                                                     ImmutableBiMap.of(publicKey, () -> "user")));
+                                                     ImmutableBiMap.of(publicKey, () -> "user"),
+                                                     TenantInfo.EMPTY));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                               new SecurityContext(new SimplePrincipal("user"),
                                                   Set.of(Role.reader(id.tenant()),
