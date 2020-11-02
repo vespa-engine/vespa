@@ -140,6 +140,7 @@ struct IterateView : public Value::Index::View {
 
 //-----------------------------------------------------------------------------
 
+using JoinAddrSource = instruction::SparseJoinPlan::Source;
 // This is the class instructions will look for when optimizing sparse
 // operations by calling inline functions directly.
 
@@ -155,9 +156,15 @@ struct FastValueIndex final : Value::Index {
 
     template <typename LCT, typename RCT, typename OCT, typename Fun>
         static const Value &sparse_only_merge(const ValueType &res_type, const Fun &fun,
-                                         const FastValueIndex &lhs, const FastValueIndex &rhs,
-                                         ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells,
-                                         Stash &stash) __attribute((noinline));
+                const FastValueIndex &lhs, const FastValueIndex &rhs,
+                ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells,
+                Stash &stash) __attribute((noinline));
+
+    template <typename LCT, typename RCT, typename OCT, typename Fun>
+        static const Value &sparse_no_overlap_join(const ValueType &res_type, const Fun &fun,
+                const FastValueIndex &lhs, const FastValueIndex &rhs,
+                const std::vector<JoinAddrSource> &addr_sources,
+                ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash);
 
     size_t size() const override { return map.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
@@ -359,5 +366,50 @@ FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
 }
 
 //-----------------------------------------------------------------------------
+
+template <typename LCT, typename RCT, typename OCT, typename Fun>
+const Value &
+FastValueIndex::sparse_no_overlap_join(const ValueType &res_type, const Fun &fun,
+                                       const FastValueIndex &lhs, const FastValueIndex &rhs,
+                                       const std::vector<JoinAddrSource> &addr_sources,
+                                       ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash)
+{
+    using HashedLabelRef = std::reference_wrapper<const FastSparseMap::HashedLabel>;
+    auto &result = stash.create<FastValue<OCT>>(res_type, res_type.count_mapped_dimensions(), 1, lhs.map.size()*rhs.map.size());
+    std::vector<HashedLabelRef> output_addr;
+    lhs.map.each_map_entry([&](auto lhs_subspace, auto)
+        {
+            auto l_addr = lhs.map.make_addr(lhs_subspace);
+            rhs.map.each_map_entry([&](auto rhs_subspace, auto)
+                {
+                    auto r_addr = rhs.map.make_addr(rhs_subspace);
+                    output_addr.clear();
+                    size_t l_idx = 0;
+                    size_t r_idx = 0;
+                    for (JoinAddrSource source : addr_sources) {
+                        switch (source) {
+                        case JoinAddrSource::LHS:
+                            output_addr.push_back(l_addr[l_idx++]);
+                            break;
+                        case JoinAddrSource::RHS:
+                            output_addr.push_back(r_addr[r_idx++]);
+                            break;
+                        default:
+                            abort();
+                        }
+                    }
+                    assert(l_idx == l_addr.size());
+                    assert(r_idx == r_addr.size());
+
+                    ConstArrayRef<HashedLabelRef> output_addr_ref(output_addr);
+                    auto idx = result.my_index.map.add_mapping(output_addr_ref);
+                    if (__builtin_expect((idx == result.my_cells.size), true)) {
+                        auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
+                        result.my_cells.push_back_fast(cell_value);
+                    }
+                });
+        });
+    return result;
+}
 
 }
