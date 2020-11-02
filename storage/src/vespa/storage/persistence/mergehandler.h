@@ -24,6 +24,7 @@ namespace storage {
 
 namespace spi { struct PersistenceProvider; }
 class PersistenceUtil;
+class ApplyBucketDiffEntryResult;
 
 class MergeHandler : public Types {
 
@@ -82,10 +83,10 @@ private:
      * Invoke either put, remove or unrevertable remove on the SPI
      * depending on the flags in the diff entry.
      */
-    void applyDiffEntry(const spi::Bucket&,
-                        const api::ApplyBucketDiffCommand::Entry&,
-                        spi::Context& context,
-                        const document::DocumentTypeRepo& repo) const;
+    ApplyBucketDiffEntryResult applyDiffEntry(const spi::Bucket&,
+                                              const api::ApplyBucketDiffCommand::Entry&,
+                                              spi::Context& context,
+                                              const document::DocumentTypeRepo& repo) const;
 
     /**
      * Fill entries-vector with metadata for bucket up to maxTimestamp,

@@ -2,12 +2,15 @@
 
 #include "mergehandler.h"
 #include "persistenceutil.h"
+#include "apply_bucket_diff_entry_complete.h"
+#include "apply_bucket_diff_entry_result.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
+#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mergehandler");
@@ -37,22 +40,6 @@ constexpr int getDeleteFlag() {
 /**
  * Throws std::runtime_error if result has an error.
  */
-void
-checkResult(const spi::Result& result,
-            const spi::Bucket& bucket,
-            const document::DocumentId& docId,
-            const char* op)
-{
-    if (result.hasError()) {
-        vespalib::asciistream ss;
-        ss << "Failed " << op
-           << " for " << docId.toString()
-           << " in " << bucket
-           << ": " << result.toString();
-        throw std::runtime_error(ss.str());
-    }
-}
-
 void
 checkResult(const spi::Result& result, const spi::Bucket& bucket, const char* op)
 {
@@ -493,25 +480,27 @@ MergeHandler::deserializeDiffDocument(
     return doc;
 }
 
-void
+ApplyBucketDiffEntryResult
 MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
                              const api::ApplyBucketDiffCommand::Entry& e,
                              spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
+    std::promise<std::pair<std::unique_ptr<spi::Result>, double>> result_promise;
+    auto future_result = result_promise.get_future();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
         DocumentId docId = doc->getId();
-        framework::MilliSecTimer start_time(_clock);
-        checkResult(_spi.put(bucket, timestamp, std::move(doc), context), bucket, docId, "put");
-        _env._metrics.merge_handler_metrics.put_latency.addValue(start_time.getElapsedTimeAsDouble());
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock);
+        _spi.putAsync(bucket, timestamp, std::move(doc), context, std::move(complete));
+        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "put", _env._metrics.merge_handler_metrics.put_latency);
     } else {
         DocumentId docId(e._docName);
-        framework::MilliSecTimer start_time(_clock);
-        checkResult(_spi.remove(bucket, timestamp, docId, context), bucket, docId, "remove");
-        _env._metrics.merge_handler_metrics.remove_latency.addValue(start_time.getElapsedTimeAsDouble());
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock);
+        _spi.removeAsync(bucket, timestamp, docId, context, std::move(complete));
+        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "remove", _env._metrics.merge_handler_metrics.remove_latency);
     }
 }
 
@@ -534,6 +523,7 @@ MergeHandler::applyDiffLocally(
     uint32_t byteCount = 0;
     uint32_t addedCount = 0;
     uint32_t notNeededByteCount = 0;
+    std::vector<ApplyBucketDiffEntryResult> async_results;
 
     std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
@@ -572,7 +562,7 @@ MergeHandler::applyDiffLocally(
             ++i;
             LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
                 bucket.toString().c_str(), e.toString().c_str());
-            applyDiffEntry(bucket, e, context, repo);
+            async_results.push_back(applyDiffEntry(bucket, e, context, repo));
         } else {
             assert(spi::Timestamp(e._entry._timestamp) == existing.getTimestamp());
             // Diffing for existing timestamp; should either both be put
@@ -585,7 +575,7 @@ MergeHandler::applyDiffLocally(
                     "timestamp in %s. Diff slot: %s. Existing slot: %s",
                     bucket.toString().c_str(), e.toString().c_str(),
                     existing.toString().c_str());
-                applyDiffEntry(bucket, e, context, repo);
+                async_results.push_back(applyDiffEntry(bucket, e, context, repo));
             } else {
                 // Duplicate put, just ignore it.
                 LOG(debug, "During diff apply, attempting to add slot "
@@ -617,8 +607,14 @@ MergeHandler::applyDiffLocally(
         LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
             bucket.toString().c_str(), e.toString().c_str());
 
-        applyDiffEntry(bucket, e, context, repo);
+        async_results.push_back(applyDiffEntry(bucket, e, context, repo));
         byteCount += e._headerBlob.size() + e._bodyBlob.size();
+    }
+    for (auto &result_to_check : async_results) {
+        result_to_check.wait();
+    }
+    for (auto &result_to_check : async_results) {
+        result_to_check.check_result();
     }
 
     if (byteCount + notNeededByteCount != 0) {

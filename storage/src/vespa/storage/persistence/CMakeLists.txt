@@ -1,6 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(storage_spersistence OBJECT
     SOURCES
+    apply_bucket_diff_entry_complete.cpp
+    apply_bucket_diff_entry_result.cpp
     asynchandler.cpp
     bucketownershipnotifier.cpp
     bucketprocessor.cpp
