@@ -125,7 +125,12 @@ public class OnnxModelInfo {
         if (app.getFile(generatedModelInfoPath(pathInApplicationPackage)).exists()) {
             return loadFromGeneratedInfo(pathInApplicationPackage, app);
         }
-        throw new IllegalArgumentException("Unable to find ONNX model file or generated ONNX info file");
+
+        // Temporary:
+        return null;
+
+        // This is the correct behaviour after we've gotten applications through.
+        // throw new IllegalArgumentException("Unable to find ONNX model file or generated ONNX info file");
     }
 
     static public boolean modelExists(String path, ApplicationPackage app) {
