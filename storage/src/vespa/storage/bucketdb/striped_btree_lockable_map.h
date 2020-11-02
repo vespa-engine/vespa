@@ -7,12 +7,14 @@
 
 namespace storage::bucketdb {
 
-// Bucket database implementation that stripes all superbuckets across
-// a set of disjoint sub-DBs. All locking is handled by the individual
-// sub-DBs, meaning that accessing one does not cause contention for
-// readers/writers accessing another.
-// Ordered iteration is transparently provided by the const for_each method
-// and by read guards.
+/**
+ * Bucket database implementation that stripes all superbuckets across
+ * a set of disjoint sub-DBs. All locking is handled by the individual
+ * sub-DBs, meaning that accessing one does not cause contention for
+ * readers/writers accessing another.
+ * Ordered iteration is transparently provided by the const for_each method
+ * and by read guards.
+ */
 template <typename T>
 class StripedBTreeLockableMap final : public AbstractBucketMap<T> {
 public:

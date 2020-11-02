@@ -5,6 +5,13 @@
 
 namespace storage::bucketdb {
 
+/**
+ * Iterator interface for iterating over entries in a bucket database.
+ * Implementations shall guarantee that iteration happens in natural key order.
+ *
+ * Key type is in the standard u64 "reversed bucket ID bits" form.
+ * Value type is always a (possibly wrapped) const reference to the entry itself.
+ */
 template <typename ConstRefT>
 class ConstIterator {
 public:
