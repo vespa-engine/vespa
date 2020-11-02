@@ -21,19 +21,23 @@ spi::Result spi_result_ok;
 spi::Result spi_result_fail(spi::Result::ErrorType::RESOURCE_EXHAUSTED, "write blocked");
 document::BucketIdFactory bucket_id_factory;
 const char *test_op = "put";
+metrics::DoubleAverageMetric dummy_metric("dummy", metrics::DoubleAverageMetric::Tags(), "dummy desc");
 
 ApplyBucketDiffEntryResult
 make_result(spi::Result &spi_result, const DocumentId &doc_id)
 {
-    std::promise<std::unique_ptr<spi::Result>> result_promise;
-    result_promise.set_value(std::make_unique<spi::Result>(spi_result));
+    std::promise<std::pair<std::unique_ptr<spi::Result>, double>> result_promise;
+    result_promise.set_value(std::make_pair(std::make_unique<spi::Result>(spi_result), 0.1));
     spi::Bucket bucket(makeDocumentBucket(bucket_id_factory.getBucketId(doc_id)));
-    return ApplyBucketDiffEntryResult(result_promise.get_future(), bucket, doc_id, test_op);
+    return ApplyBucketDiffEntryResult(result_promise.get_future(), bucket, doc_id, test_op, dummy_metric);
 }
 
 void
 check_results(ResultVector results)
 {
+    for (auto& result : results) {
+        result.wait();
+    }
     for (auto& result : results) {
         result.check_result();
     }
