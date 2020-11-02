@@ -82,7 +82,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Check all services in given application. Returns the minimum current generation of all services */
-    public ServiceListResponse getServiceConfigGenerationsJson(Application application, URI requestUrl, Duration timeoutPerService) {
+    public ServiceListResponse getServiceConfigGenerationsResponse(Application application, URI requestUrl, Duration timeoutPerService) {
         Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService);
         long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
         return new ServiceListResponse(200, currentGenerations, requestUrl, application.getApplicationGeneration(),
@@ -90,7 +90,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Check service identified by host and port in given application */
-    public ServiceResponse getServiceConfigGenerationJson(Application application, String hostAndPortToCheck, URI requestUrl, Duration timeout) {
+    public ServiceResponse getServiceConfigGenerationResponse(Application application, String hostAndPortToCheck, URI requestUrl, Duration timeout) {
         Long wantedGeneration = application.getApplicationGeneration();
         try {
             if ( ! hostInApplication(application, hostAndPortToCheck))

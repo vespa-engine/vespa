@@ -25,7 +25,7 @@ public class ReindexingStatus implements Reindexing {
 
     ReindexingStatus(Map<String, Long> pending, Map<String, Status> ready) {
         this.pending = Map.copyOf(pending);
-        this.ready = ready;
+        this.ready = Map.copyOf(ready);
     }
 
     /** No reindexing pending or ready. */
