@@ -15,6 +15,6 @@ public interface ConfigChangeReindexAction extends ConfigChangeAction {
     /** @return name identifying this kind of change, used to identify names which should be allowed */
     String name();
 
-    /** @return name of the document type that must bed re-indexed, or empty if all document types */
+    /** @return name of the document type that must be re-indexed, or empty if all document types */
     Optional<String> getDocumentType();
 }
