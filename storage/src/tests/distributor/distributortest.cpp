@@ -521,6 +521,7 @@ TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configurati
     builder.prioritySplitLargeBucket = 9;
     builder.prioritySplitInconsistentBucket = 10;
     builder.priorityGarbageCollection = 11;
+    builder.priorityMergeGlobalBuckets = 12;
 
     getConfig().configure(builder);
 
@@ -536,6 +537,7 @@ TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configurati
     EXPECT_EQ(9, static_cast<int>(mp.splitLargeBucket));
     EXPECT_EQ(10, static_cast<int>(mp.splitInconsistentBucket));
     EXPECT_EQ(11, static_cast<int>(mp.garbageCollection));
+    EXPECT_EQ(12, static_cast<int>(mp.mergeGlobalBuckets));
 }
 
 TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {

@@ -94,6 +94,7 @@ DistributorConfiguration::configureMaintenancePriorities(
     mp.mergeMoveToIdealNode = cfg.priorityMergeMoveToIdealNode;
     mp.mergeOutOfSyncCopies = cfg.priorityMergeOutOfSyncCopies;
     mp.mergeTooFewCopies = cfg.priorityMergeTooFewCopies;
+    mp.mergeGlobalBuckets = cfg.priorityMergeGlobalBuckets;
     mp.activateNoExistingActive = cfg.priorityActivateNoExistingActive;
     mp.activateWithExistingActive = cfg.priorityActivateWithExistingActive;
     mp.deleteBucketCopy = cfg.priorityDeleteBucketCopy;

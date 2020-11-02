@@ -89,6 +89,12 @@ priority_merge_out_of_sync_copies int default=120
 ## Merge for restoring redundancy of copies
 priority_merge_too_few_copies int default=120
 
+## Merge that involves a global bucket. There are generally significantly fewer such
+## buckets than default-space buckets, and searches to documents in the default space
+## may depend on the presence of (all) global documents. Consequently, this priority
+## should be higher (i.e. numerically smaller) than that of regular merges.
+priority_merge_global_buckets int default=115
+
 ## Copy activation when there are no other active copies (likely causing
 ## lack of search coverage for that bucket)
 priority_activate_no_existing_active int default=100
@@ -96,7 +102,7 @@ priority_activate_no_existing_active int default=100
 ## Copy activation when there is already an active copy for the bucket.
 priority_activate_with_existing_active int default=100
 
-## Deletion of bucket copy. Cheap on VDS, not necessarily so on indexed search.
+## Deletion of bucket copy.
 priority_delete_bucket_copy int default=100
 
 ## Joining caused by bucket siblings getting sufficiently small to fit into a
