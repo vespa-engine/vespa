@@ -14,7 +14,7 @@ import java.util.List;
 public interface ConfigChangeAction {
 
     enum Type {
-        RESTART("restart"), REFEED("refeed"), REINDEXING("reindexing");
+        RESTART("restart"), REFEED("refeed"), REINDEX("reindex");
 
         private final String type;
 
