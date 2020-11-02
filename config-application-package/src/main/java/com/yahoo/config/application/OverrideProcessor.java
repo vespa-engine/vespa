@@ -218,20 +218,21 @@ class OverrideProcessor implements PreProcessor {
     private void doElementSpecificProcessingOnOverride(List<Element> elements) {
         // if node capacity is specified explicitly for some combination we should require that capacity
         elements.forEach(element -> {
-            if (element.getTagName().equals("nodes")) {
-                boolean hasNodeChild = false;
-                for (var child : XML.getChildren(element)) {
-                    if (child.getTagName().equals("node")) {
-                        hasNodeChild = true;
-                        break;
-                    }
-                }
-                if (!hasNodeChild) // specifies capacity, not a list of nodes
+            if (element.getTagName().equals("nodes"))
+                if (!hasChildWithTagName(element, "node")) // specifies capacity, not a list of nodes
                     element.setAttribute("required", "true");
-            }
         });
     }
-    
+
+    private static boolean hasChildWithTagName(Element element, String childName) {
+        for (var child : XML.getChildren(element)) {
+            if (child.getTagName().equals(childName))
+                return true;
+        }
+
+        return false;
+    }
+
     /**
      * Retains all elements where at least one element is overridden. Removes non-overridden elements from map.
      */
