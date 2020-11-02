@@ -165,6 +165,9 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useNewRestapiHandler;
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final double jettyThreadpoolSizeFactor;
+        private final boolean useAsyncMessageHandlingOnSchedule;
+        private final int contentNodeBucketDBStripeBits;
+        private final int mergeChunkSize;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -229,6 +232,12 @@ public class ModelContextImpl implements ModelContext {
             this.jettyThreadpoolSizeFactor = Flags.JETTY_THREADPOOL_SCALE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
                     .value();
+            useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            contentNodeBucketDBStripeBits = Flags.CONETNT_NODE_BUCKET_DB_STRIPE_BITS.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            mergeChunkSize = Flags.MERGE_CHUNK_SIZE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override
@@ -313,6 +322,13 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
 
         @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
+
+        @Override public boolean useAsyncMessageHandlingOnSchedule() { return false; }
+
+        @Override public int contentNodeBucketDBStripeBits() { return 0; }
+
+        @Override
+        public int mergeChunkSize() { return 0; }
     }
 
 }

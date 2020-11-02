@@ -89,6 +89,10 @@ public interface ModelContext {
         default String tlsCompressionType() { return "ZSTD"; }
         default double visibilityDelay() { return 0.0; }
 
+        boolean useAsyncMessageHandlingOnSchedule();
+        int contentNodeBucketDBStripeBits();
+        int mergeChunkSize();
+
         // TODO(balder) Last used on 7.306
         default boolean useContentNodeBtreeDb() { return true; }
 

@@ -47,6 +47,8 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final ContentCluster cluster;
     private final int reponseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
+    private final boolean useAsyncMessageHandlingOnSchedule;
+    private final int mergeChunkSize;
 
     private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
         try {
@@ -56,10 +58,15 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         }
     }
     public FileStorProducer(ModelContext.Properties properties, ContentCluster parent, Integer numThreads) {
+        final int twoMB = 0x200000;
+        final int fourK = 0x1000;
         this.numThreads = numThreads;
         this.cluster = parent;
         this.reponseNumThreads = properties.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(properties.responseSequencerType());
+        useAsyncMessageHandlingOnSchedule = properties.useAsyncMessageHandlingOnSchedule();
+        mergeChunkSize = ((properties.mergeChunkSize() + (twoMB-1))/twoMB)*twoMB - fourK;
+
     }
 
     @Override
@@ -70,6 +77,8 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.enable_multibit_split_optimalization(cluster.getPersistence().enableMultiLevelSplitting());
         builder.num_response_threads(reponseNumThreads);
         builder.response_sequencer_type(responseSequencerType);
+        builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
+        builder.bucket_merge_chunk_size(mergeChunkSize);
     }
 
 }

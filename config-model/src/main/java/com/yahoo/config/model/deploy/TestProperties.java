@@ -49,6 +49,9 @@ public class TestProperties implements ModelContext.Properties {
     private Quota quota = Quota.unlimited();
     private boolean useAccessControlTlsHandshakeClientAuth;
     private double jettyThreadpoolSizeFactor = 0.0;
+    private boolean useAsyncMessagehandlingOnSchedule = false;
+    private int contentNodeBucketDBStripeBits = 0;
+    private int mergeChunkSize = 0x400000 - 0x1000; // 4M -4k
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -79,6 +82,23 @@ public class TestProperties implements ModelContext.Properties {
     @Override public Quota quota() { return quota; }
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
+    @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessagehandlingOnSchedule; }
+    @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
+    @Override public int mergeChunkSize() { return mergeChunkSize; }
+
+    public TestProperties setMergeChunkSize(int size) {
+        mergeChunkSize = size;
+        return this;
+    }
+    public TestProperties setContentNodeBucketDBStripeBits(int bits) {
+        contentNodeBucketDBStripeBits = bits;
+        return this;
+    }
+
+    public TestProperties setAsyncMessageHandlingOnSchedule(boolean value) {
+        useAsyncMessagehandlingOnSchedule = value;
+        return this;
+    }
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
