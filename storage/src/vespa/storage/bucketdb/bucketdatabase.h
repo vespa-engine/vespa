@@ -141,10 +141,10 @@ public:
 
     virtual uint32_t childCount(const document::BucketId&) const = 0;
 
-    using ReadGuard = bucketdb::ReadGuard<Entry>;
+    using ReadGuard = bucketdb::ReadGuard<Entry, ConstEntryRef>;
 
     virtual std::unique_ptr<ReadGuard> acquire_read_guard() const {
-        return std::unique_ptr<bucketdb::ReadGuard<Entry>>();
+        return std::unique_ptr<bucketdb::ReadGuard<Entry, ConstEntryRef>>();
     }
 
     [[nodiscard]] virtual vespalib::MemoryUsage memory_usage() const noexcept = 0;

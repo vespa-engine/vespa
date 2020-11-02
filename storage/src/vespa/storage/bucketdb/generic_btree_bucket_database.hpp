@@ -565,6 +565,41 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::for_each(Func f
 }
 
 template <typename DataStoreTraitsT>
+class GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::ConstIteratorImpl
+    : public ConstIterator<typename DataStoreTraitsT::ConstValueRef>
+{
+    const typename GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot& _snapshot;
+    typename BTree::ConstIterator _iter;
+public:
+    using ConstValueRef = typename DataStoreTraitsT::ConstValueRef;
+
+    explicit ConstIteratorImpl(const GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot& snapshot)
+        : _snapshot(snapshot),
+          _iter(_snapshot._frozen_view.begin())
+    {}
+    ~ConstIteratorImpl() override = default;
+
+    void next() noexcept override {
+        ++_iter;
+    }
+    bool valid() const noexcept override {
+        return _iter.valid();
+    }
+    uint64_t key() const noexcept override {
+        return _iter.getKey();
+    }
+    ConstValueRef value() const override {
+        return ByConstRef::apply(*_snapshot._db, _iter);
+    }
+};
+
+template <typename DataStoreTraitsT>
+std::unique_ptr<ConstIterator<typename DataStoreTraitsT::ConstValueRef>>
+GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::create_iterator() const {
+    return std::make_unique<ConstIteratorImpl>(*this);
+}
+
+template <typename DataStoreTraitsT>
 uint64_t GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::generation() const noexcept {
     return _guard.getGeneration();
 }

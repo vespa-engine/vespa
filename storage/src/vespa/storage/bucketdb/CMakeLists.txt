@@ -10,6 +10,7 @@ vespa_add_library(storage_bucketdb OBJECT
     bucketmanagermetrics.cpp
     generic_btree_bucket_database.cpp
     storbucketdb.cpp
+    striped_btree_lockable_map.cpp
     DEPENDS
 )
 vespa_generate_config(storage_bucketdb stor-bucketdb.def)
