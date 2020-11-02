@@ -896,7 +896,7 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_spi_failures) {
     ExpectedExceptionSpec exceptions[] = {
         { PersistenceProviderWrapper::FAIL_CREATE_ITERATOR, "create iterator" },
         { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },
-        { PersistenceProviderWrapper::FAIL_PUT, "Failed put" },
+        { PersistenceProviderWrapper::FAIL_PUT | PersistenceProviderWrapper::FAIL_REMOVE, "Failed put" },
         { PersistenceProviderWrapper::FAIL_REMOVE, "Failed remove" },
     };
 
