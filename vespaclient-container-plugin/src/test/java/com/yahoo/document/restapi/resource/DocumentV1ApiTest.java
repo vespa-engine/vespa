@@ -289,7 +289,7 @@ public class DocumentV1ApiTest {
         // GET with full document ID is a document get operation.
         access.session.expect((id, parameters) -> {
             assertEquals(doc1.getId(), id);
-            assertEquals(parameters(), parameters);
+            assertEquals(parameters().withFieldSet("music:[document]"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc1));
             return new Result(Result.ResultType.SUCCESS, null);
         });
@@ -306,7 +306,7 @@ public class DocumentV1ApiTest {
         // GET with not encoded / in user specified part of document id is perfectly OK ... щ(ಥДಥщ)
         access.session.expect((id, parameters) -> {
             assertEquals(new DocumentId("id:space:music::one/two/three"), id);
-            assertEquals(parameters(), parameters);
+            assertEquals(parameters().withFieldSet("music:[document]"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0));
             return new Result(Result.ResultType.SUCCESS, null);
         });
