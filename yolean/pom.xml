@@ -38,6 +38,11 @@
                 <extensions>true</extensions>
             </plugin>
             <plugin>
+                <!-- Needed for IntelliJ -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>abi-check-plugin</artifactId>
             </plugin>
