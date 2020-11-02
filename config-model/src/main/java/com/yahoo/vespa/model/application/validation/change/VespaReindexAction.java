@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Represents an action to re-index a document type in order to handle a config change.
@@ -51,7 +50,7 @@ public class VespaReindexAction extends VespaConfigChangeAction implements Confi
     }
 
     @Override public String name() { return name; }
-    @Override public Optional<String> getDocumentType() { return Optional.ofNullable(documentType); }
+    @Override public String getDocumentType() { return documentType; }
     @Override public boolean allowed() { return allowed; }
     @Override public boolean ignoreForInternalRedeploy() { return false; }
     @Override public String toString() { return super.toString() + ", documentType='" + documentType + "'"; }

@@ -27,7 +27,7 @@ public class ReindexActions {
             if (action.getType().equals(ConfigChangeAction.Type.REINDEX)) {
                 ConfigChangeReindexAction reindexChange = (ConfigChangeReindexAction) action;
                 for (ServiceInfo service : reindexChange.getServices()) {
-                    addEntry(reindexChange.name(), reindexChange.allowed(), reindexChange.getDocumentType().orElse(null), service).
+                    addEntry(reindexChange.name(), reindexChange.allowed(), reindexChange.getDocumentType(), service).
                             addService(service).
                             addMessage(action.getMessage());
                 }
