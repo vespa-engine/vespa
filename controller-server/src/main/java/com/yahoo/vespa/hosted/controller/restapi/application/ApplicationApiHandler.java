@@ -1284,8 +1284,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return controller.serviceRegistry().configServer().getApplicationPackageContent(deploymentId, "/" + restPath, request.getUri());
     }
 
-
-
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
@@ -1737,10 +1735,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Scanner scanner = new Scanner(stream).useDelimiter("\\A");
         if ( ! scanner.hasNext()) return null;
         return scanner.next();
-    }
-
-    private boolean systemHasVersion(Version version) {
-        return controller.versionStatus().versions().stream().anyMatch(v -> v.versionNumber().equals(version));
     }
 
     private static boolean recurseOverDeployments(HttpRequest request) {

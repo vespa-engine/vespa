@@ -150,6 +150,11 @@ public class TenantResponses {
         object.setString("url", ApplicationApiHandler.withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
     }
 
+    private Tenant getTenantOrThrow(String tenantName) {
+        return controller.tenants().get(tenantName)
+                .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
+    }
+
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tenantType(tenant));
@@ -204,11 +209,6 @@ public class TenantResponses {
                 else
                     ApplicationApiHandler.toSlime(instance.id(), applicationArray.addObject(), request);
         }
-    }
-
-    private Tenant getTenantOrThrow(String tenantName) {
-        return controller.tenants().get(tenantName)
-                .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
     }
 
     HttpResponse updateTenant(String tenantName, HttpRequest request) {
